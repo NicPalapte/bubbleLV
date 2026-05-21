@@ -112,35 +112,58 @@ class PyGAEBAdapter:
         from pygaeb.models.boq import Lot as PyLot
 
         assert isinstance(lot, PyLot)
-        sections = [self._map_category(cat) for cat in lot.body.categories]
+        sections: list[ParsedSection] = []
+        for cat in lot.body.categories:
+            sections.extend(self._collect_sections(cat, parent_rno_path=[]))
         return ParsedLot(
             lot_id=lot.rno,
             label=lot.label or None,
             sections=sections,
         )
 
-    def _map_category(self, cat: object) -> ParsedSection:
-        """Map a pyGAEB BoQCtgy (category/section) to ParsedSection."""
+    def _collect_sections(
+        self, cat: object, parent_rno_path: list[str]
+    ) -> list[ParsedSection]:
+        """Recursively collect sections; leaf categories become ParsedSection instances.
+
+        GAEB allows BoQCtgy to nest arbitrarily before reaching items.  A
+        category with subcategories is structural only; a category with items
+        (and no subcategories) is a leaf that maps to one ParsedSection.
+        """
         from pygaeb.models.boq import BoQCtgy
 
         assert isinstance(cat, BoQCtgy)
-        positions = [self._map_item(item) for item in cat.items]
-        return ParsedSection(
-            section_id=cat.rno,
-            label=cat.label or None,
-            positions=positions,
-        )
+        current_path = parent_rno_path + [cat.rno]
 
-    def _map_item(self, item: object) -> ParsedPosition:
-        """Map a pyGAEB Item to ParsedPosition."""
+        if cat.subcategories:
+            sections: list[ParsedSection] = []
+            for sub in cat.subcategories:
+                sections.extend(self._collect_sections(sub, current_path))
+            return sections
+
+        section_id = ".".join(current_path)
+        positions = [self._map_item(item, current_path) for item in cat.items]
+        return [
+            ParsedSection(
+                section_id=section_id,
+                label=cat.label or None,
+                positions=positions,
+            )
+        ]
+
+    def _map_item(self, item: object, parent_rno_path: list[str]) -> ParsedPosition:
+        """Map a pyGAEB Item to ParsedPosition.
+
+        Args:
+            item: pyGAEB Item instance.
+            parent_rno_path: RNO number segments of ancestor categories
+                (e.g. ['001', '002']).  The item's own oz is appended to
+                produce a fully-qualified position number like '001.002.0010'.
+        """
         from pygaeb.models.item import Item
 
         assert isinstance(item, Item)
-        # Build fully-qualified OZ: join parent category path with item RNoPart.
-        # e.g. hierarchy_path=['01'], oz='0010' → '01.0010'
-        # Build fully-qualified OZ: join parent path with item RNoPart
-        # e.g. hierarchy_path=['01'], oz='0010' → '01.0010'
-        oz = ".".join(list(item.hierarchy_path or []) + [item.oz])
+        oz = ".".join(parent_rno_path + [item.oz])
         position_type = _ITEM_TYPE_MAP.get(
             item.item_type.value if item.item_type else "Normal",
             PositionType.NORMAL,
