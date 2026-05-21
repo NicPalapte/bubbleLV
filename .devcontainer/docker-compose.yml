@@ -1,0 +1,37 @@
+services:
+  app:
+    image: mcr.microsoft.com/devcontainers/python:3-3.12-bookworm
+    volumes:
+      - ..:/workspaces:cached
+    environment:
+      DATABASE_URL: postgresql+asyncpg://lvmanager:lvmanager@db:5432/lvmanager
+      SECRET_KEY: dev-secret-key-change-in-production
+      ENVIRONMENT: development
+      STORAGE_BACKEND: local
+      STORAGE_PATH: /workspace/.storage
+    depends_on:
+      db:
+        condition: service_healthy
+    command: sleep infinity
+    ports: 
+      - 8000:8000
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: lvmanager
+      POSTGRES_PASSWORD: lvmanager
+      POSTGRES_DB: lvmanager
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lvmanager -d lvmanager"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:
