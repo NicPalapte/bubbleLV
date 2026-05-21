@@ -1,4 +1,11 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(python -m pytest tests/ -x --tb=short --no-header -q)",
+      "Bash(python3 -c ' *)",
+      "Bash(python -m pytest tests/ --tb=short --no-header -q)"
+    ]
+  },
   "hooks": {
     "PostToolUse": [
       {
@@ -14,5 +21,16 @@
         ]
       }
     ]
+  },
+  "codeExecutionPolicy": {
+    "autoApprove": {
+      "patterns": [
+        "python -c.*",
+        "python3 -c.*",
+        "pytest.*",
+        "ruff.*",
+        "mypy.*"
+      ]
+    }
   }
 }
