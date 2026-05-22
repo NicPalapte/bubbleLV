@@ -1,0 +1,842 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- GXML Toolbox V3.3 R20230829;  http://www.gaeb-toolbox.de/ 
+ gtcConverter.dll used version 2024.07.02  -->
+<GAEB xmlns="http://www.gaeb.de/GAEB_DA_XML/DA83/3.3">
+ <GAEBInfo>
+  <Version>3.3</Version>
+  <VersDate>2021-05</VersDate>
+  <Date>2026-05-22</Date>
+  <Time>11:12:53</Time>
+  <ProgSystem>/ GXML Toolbox V3.3 R20230829</ProgSystem>
+  <ProgName>iTWO_64 V25.0.650</ProgName>
+ </GAEBInfo>
+ <PrjInfo>
+  <NamePrj>TT</NamePrj>
+  <LblPrj>Test</LblPrj>
+  <Cur>EUR</Cur>
+  <CurLbl>Euro</CurLbl>
+  <BidCommPerm>Yes</BidCommPerm>
+  <AlterBidPerm>Yes</AlterBidPerm>
+ </PrjInfo>
+ <Award>
+  <DP>83</DP>
+  <AwardInfo>
+   <Cur>EUR</Cur>
+   <CurLbl>Euro</CurLbl>
+   <SubmLoc>W&#x26;F Mandaport</SubmLoc>
+  </AwardInfo>
+  <BoQ ID="AAAAAAABIDHIAAAA">
+   <BoQInfo>
+    <Name>1</Name>
+    <LblBoQ>LV</LblBoQ>
+    <Date>2026-05-22</Date>
+    <OutlCompl>AllTxt</OutlCompl>
+    <BoQBkdn>
+     <Type>BoQLevel</Type>
+     <LblBoQBkdn>Abschnitt</LblBoQBkdn>
+     <Length>2</Length>
+     <Num>Yes</Num>
+    </BoQBkdn>
+    <BoQBkdn>
+     <Type>Item</Type>
+     <Length>4</Length>
+     <Num>Yes</Num>
+    </BoQBkdn>
+    <BoQBkdn>
+     <Type>Index</Type>
+     <Length>1</Length>
+     <Num>No</Num>
+     <Alignment>left</Alignment>
+    </BoQBkdn>
+    <Ctlg>
+     <CtlgID>AAAAAAABIDDIAHOI</CtlgID>
+     <CtlgType>work category</CtlgType>
+     <CtlgName>Leistungsbereichkatalog</CtlgName>
+    </Ctlg>
+    <Ctlg>
+     <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+     <CtlgType>locality</CtlgType>
+     <CtlgName>Orte</CtlgName>
+    </Ctlg>
+   </BoQInfo>
+   <BoQBody>
+    <BoQCtgy ID="AAAAAAABIDIGAAAA" RNoPart="1">
+     <LblTx>
+      <p style="text-align:left;margin-top:0pt;margin-bottom:0pt;">
+       <span>Gründungen</span>
+      </p>
+     </LblTx>
+     <BoQBody>
+      <Itemlist>
+       <Item ID="AAAAAAABIDIGBEAA" RNoPart="10">
+        <Qty>657.540</Qty>
+        <QtySplit>
+         <Qty>134.180</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111659</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>261.680</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111660</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>261.680</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111661</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QU>m2</QU>
+        <CtlgAssign>
+         <CtlgID>AAAAAAABIDDIAHOI</CtlgID>
+         <CtlgCode>117</CtlgCode>
+        </CtlgAssign>
+        <Description ID="R20260504155625067000036">
+         <StLNo Type="StLK">2111721014111111</StLNo>
+         <WICNo>Teilleistungskatalog/117/ 2. 1.  3565. </WICNo>
+         <CompleteText>
+          <DetailTxt>
+           <Text>
+            <p style="text-align:left;margin-top:0pt;margin-bottom:0pt;">
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Stahlspundwand entsprechend statischen und konstrukti-</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">ven Erfordernissen, einschließlich Eck-, Abzweig- sowie</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Pass- und Keilbohlen nach Unterlagen des AG herstellen.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Abgerechnet wird nach Länge in der Wandachse, horizon-</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">tal, multipliziert mit der vereinbarten Bohlenlänge.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Spundwand für temporären Baugrubenverbau.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Bohlenlänge über 9,00 bis 12,00 m.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Stahlsorte = S 240 GP.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">min Wy = 800 cm3/m.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Spundwand wasserdicht. Anforderungen nach Unterlagen</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">des AG.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Spundwand freistehend.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Einbringhilfe = Lockerungsbohrung durchführen.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Einbringen durch Rammen.</span>
+            </p>
+           </Text>
+          </DetailTxt>
+          <OutlineText>
+           <OutlTxt>
+            <TextOutlTxt>
+             <p style="text-align:left;margin-top:0pt;margin-bottom:0pt;">
+              <span>Stahlspundwand herstellen</span>
+              <br/>
+              <span>Baugrubenverbau*Länge ü. 9-12 m</span>
+              <br/>
+              <span>S 240 GP*min Wy 800 cm3/m</span>
+              <br/>
+              <span>dicht, n.U.d.AG*Spundwand freist.</span>
+              <br/>
+              <span>Lockerungsbohrung*rammen</span>
+             </p>
+            </TextOutlTxt>
+           </OutlTxt>
+          </OutlineText>
+          <!-- GAEB version used: 330 -->
+          <!-- GAEB version used: 330 -->
+         </CompleteText>
+        </Description>
+       </Item>
+       <Item ID="AAAAAAABIDIGEGNA" RNoPart="20">
+        <Qty>657.540</Qty>
+        <QtySplit>
+         <Qty>134.180</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111659</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>261.680</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111660</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>261.680</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111661</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QU>m2</QU>
+        <CtlgAssign>
+         <CtlgID>AAAAAAABIDDIAHOI</CtlgID>
+         <CtlgCode>117</CtlgCode>
+        </CtlgAssign>
+        <Description ID="R20260504155625083000037">
+         <StLNo Type="StLK">211172151401</StLNo>
+         <WICNo>Teilleistungskatalog/117/ 2. 3.  1003. </WICNo>
+         <CompleteText>
+          <DetailTxt>
+           <Text>
+            <p style="text-align:left;margin-top:0pt;margin-bottom:0pt;">
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Stahlspundwand ziehen. Spundwand nach Unterlagen des</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">AG. Abgerechnet wird nach Länge in der Wandachse, hori-</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">zontal, multipliziert mit der tatsächlichen Boh-</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">lenlänge.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Ziehen nach Wahl des AN.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Bohlenlänge über 9,00 bis 12,00 m.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Bohlen nach Wahl des AN verwerten.</span>
+            </p>
+           </Text>
+          </DetailTxt>
+          <OutlineText>
+           <OutlTxt>
+            <TextOutlTxt>
+             <p style="text-align:left;margin-top:0pt;margin-bottom:0pt;">
+              <span>Stahlspundwand ziehen</span>
+              <br/>
+              <span>ziehen Wahl d. AN*Länge ü. 9-12 m</span>
+              <br/>
+              <span>Bohlen verwerten</span>
+             </p>
+            </TextOutlTxt>
+           </OutlTxt>
+          </OutlineText>
+          <!-- GAEB version used: 330 -->
+          <!-- GAEB version used: 330 -->
+         </CompleteText>
+        </Description>
+       </Item>
+       <Item ID="AAAAAAABIDIGHDBA" RNoPart="30">
+        <Qty>657.540</Qty>
+        <QtySplit>
+         <Qty>134.180</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111659</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>261.680</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111660</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>261.680</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111661</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QU>m2</QU>
+        <CtlgAssign>
+         <CtlgID>AAAAAAABIDDIAHOI</CtlgID>
+         <CtlgCode>117</CtlgCode>
+        </CtlgAssign>
+        <Description ID="R20260504155625092000038">
+         <StLNo Type="StLK">2111722501</StLNo>
+         <WICNo>Teilleistungskatalog/117/ 2. 4.  1000. </WICNo>
+         <CompleteText>
+          <DetailTxt>
+           <Text>
+            <p style="text-align:left;margin-top:0pt;margin-bottom:0pt;">
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Stahlspundwand säubern. Anhaftenden Boden von freige-</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">legter Fläche der Stahlspundwand entfernen. Abgerechnet</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">wird nach Länge in der Wandachse, horizontal, multipli-</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">ziert mit der freigelegten Höhe.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Spundwand für Baugrubenverbau.</span>
+            </p>
+           </Text>
+          </DetailTxt>
+          <OutlineText>
+           <OutlTxt>
+            <TextOutlTxt>
+             <p style="text-align:left;margin-top:0pt;margin-bottom:0pt;">
+              <span>Stahlspundwand säubern</span>
+              <br/>
+              <span>Baugrubenverbau</span>
+             </p>
+            </TextOutlTxt>
+           </OutlTxt>
+          </OutlineText>
+          <!-- GAEB version used: 330 -->
+          <!-- GAEB version used: 330 -->
+         </CompleteText>
+        </Description>
+       </Item>
+      </Itemlist>
+     </BoQBody>
+    </BoQCtgy>
+    <BoQCtgy ID="AAAAAAABIDIHAAAA" RNoPart="2">
+     <LblTx>
+      <p style="text-align:left;margin-top:0pt;margin-bottom:0pt;">
+       <span>Ing.Bauten aus Beton und Stahlbeton</span>
+      </p>
+     </LblTx>
+     <BoQBody>
+      <Itemlist>
+       <Item ID="AAAAAAABIDIHBEAA" RNoPart="10">
+        <Qty>35.000</Qty>
+        <QtySplit>
+         <Qty>35.000</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111644</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QU>m3</QU>
+        <CtlgAssign>
+         <CtlgID>AAAAAAABIDDIAHOI</CtlgID>
+         <CtlgCode>118</CtlgCode>
+        </CtlgAssign>
+        <Description ID="R20260504155625102000040">
+         <StLNo Type="StLK">21118318112200</StLNo>
+         <WICNo>Teilleistungskatalog/118/ 1. 1. 1024. </WICNo>
+         <CompleteText>
+          <DetailTxt>
+           <Text>
+            <p style="text-align:left;margin-top:0pt;margin-bottom:0pt;">
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Bewehrten Beton in Schalung nach Unterlagen des AG her-</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">stellen. Schalung, Bewehrung und Traggerüst der Bemes-</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">sungsklasse B werden gesondert vergütet.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Bauteil = Fundament.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Art der Verwendung = Stahlbeton.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Druckfestigkeitsklasse C20/25.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Expositionsklasse XC2 und XA1.</span>
+            </p>
+           </Text>
+          </DetailTxt>
+          <OutlineText>
+           <OutlTxt>
+            <TextOutlTxt>
+             <p style="text-align:left;margin-top:0pt;margin-bottom:0pt;">
+              <span>Bew. Beton herst., Schalung gesond.</span>
+              <br/>
+              <span>Fundament*Stahlbeton</span>
+              <br/>
+              <span>C20/25*XC2 und XA1</span>
+             </p>
+            </TextOutlTxt>
+           </OutlTxt>
+          </OutlineText>
+          <!-- GAEB version used: 330 -->
+          <!-- GAEB version used: 330 -->
+         </CompleteText>
+        </Description>
+       </Item>
+       <Item ID="AAAAAAABIDIHDFHI" RNoPart="20">
+        <Qty>91.440</Qty>
+        <QtySplit>
+         <Qty>10.160</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111650</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>10.160</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111656</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>10.160</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111657</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>10.160</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111655</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>10.160</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111658</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>10.160</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111652</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>10.160</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111651</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>10.160</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111654</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>10.160</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111653</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QU>m3</QU>
+        <CtlgAssign>
+         <CtlgID>AAAAAAABIDDIAHOI</CtlgID>
+         <CtlgCode>118</CtlgCode>
+        </CtlgAssign>
+        <Description ID="R20260504155625115000041">
+         <StLNo Type="StLK">21118318313100</StLNo>
+         <WICNo>Teilleistungskatalog/118/ 1. 1. 3040. </WICNo>
+         <CompleteText>
+          <DetailTxt>
+           <Text>
+            <p style="text-align:left;margin-top:0pt;margin-bottom:0pt;">
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Bewehrten Beton in Schalung nach Unterlagen des AG her-</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">stellen. Schalung, Bewehrung und Traggerüst der Bemes-</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">sungsklasse B werden gesondert vergütet.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Bauteil = Pfeiler.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Art der Verwendung = Stahlbeton.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Druckfestigkeitsklasse C25/30.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Expositionsklasse XC2.</span>
+            </p>
+           </Text>
+          </DetailTxt>
+          <OutlineText>
+           <OutlTxt>
+            <TextOutlTxt>
+             <p style="text-align:left;margin-top:0pt;margin-bottom:0pt;">
+              <span>Bew. Beton herst., Schalung gesond.</span>
+              <br/>
+              <span>Pfeiler*Stahlbeton</span>
+              <br/>
+              <span>C25/30*XC2</span>
+             </p>
+            </TextOutlTxt>
+           </OutlTxt>
+          </OutlineText>
+          <!-- GAEB version used: 330 -->
+          <!-- GAEB version used: 330 -->
+         </CompleteText>
+        </Description>
+       </Item>
+       <Item ID="AAAAAAABIDIHIPGI" RNoPart="30">
+        <Qty>219.000</Qty>
+        <QtySplit>
+         <Qty>219.000</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111649</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QU>m3</QU>
+        <CtlgAssign>
+         <CtlgID>AAAAAAABIDDIAHOI</CtlgID>
+         <CtlgCode>118</CtlgCode>
+        </CtlgAssign>
+        <Description ID="R20260504155625126000042">
+         <StLNo Type="StLK">21118318314100</StLNo>
+         <WICNo>Teilleistungskatalog/118/ 1. 1. 3060. </WICNo>
+         <CompleteText>
+          <DetailTxt>
+           <Text>
+            <p style="text-align:left;margin-top:0pt;margin-bottom:0pt;">
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Bewehrten Beton in Schalung nach Unterlagen des AG her-</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">stellen. Schalung, Bewehrung und Traggerüst der Bemes-</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">sungsklasse B werden gesondert vergütet.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Bauteil = Pfeiler.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Art der Verwendung = Stahlbeton.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Druckfestigkeitsklasse C30/37.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Expositionsklasse XC2.</span>
+            </p>
+           </Text>
+          </DetailTxt>
+          <OutlineText>
+           <OutlTxt>
+            <TextOutlTxt>
+             <p style="text-align:left;margin-top:0pt;margin-bottom:0pt;">
+              <span>Bew. Beton herst., Schalung gesond.</span>
+              <br/>
+              <span>Pfeiler*Stahlbeton</span>
+              <br/>
+              <span>C30/37*XC2</span>
+             </p>
+            </TextOutlTxt>
+           </OutlTxt>
+          </OutlineText>
+          <!-- GAEB version used: 330 -->
+          <!-- GAEB version used: 330 -->
+         </CompleteText>
+        </Description>
+       </Item>
+       <Item ID="AAAAAAABIDIHKOHI" RNoPart="40">
+        <Qty>0.280</Qty>
+        <QtySplit>
+         <Qty>0.280</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111644</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QU>t</QU>
+        <CtlgAssign>
+         <CtlgID>AAAAAAABIDDIAHOI</CtlgID>
+         <CtlgCode>118</CtlgCode>
+        </CtlgAssign>
+        <Description ID="R20260504155625130000043">
+         <StLNo Type="StLK">2211821312</StLNo>
+         <WICNo>Teilleistungskatalog/118/ 2. 1. 1001. </WICNo>
+         <CompleteText>
+          <DetailTxt>
+           <Text>
+            <p style="text-align:left;margin-top:0pt;margin-bottom:0pt;">
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Betonstahl entsprechend statischen und konstruktiven</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Erfordernissen einbauen.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Bauteil = Fundament.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Stahlsorte BSt 500 M.</span>
+            </p>
+           </Text>
+          </DetailTxt>
+          <OutlineText>
+           <OutlTxt>
+            <TextOutlTxt>
+             <p style="text-align:left;margin-top:0pt;margin-bottom:0pt;">
+              <span>Betonstahl einbauen</span>
+              <br/>
+              <span>Fundament*BSt 500 M</span>
+             </p>
+            </TextOutlTxt>
+           </OutlTxt>
+          </OutlineText>
+          <!-- GAEB version used: 330 -->
+          <!-- GAEB version used: 330 -->
+         </CompleteText>
+        </Description>
+       </Item>
+       <Item ID="AAAAAAABIDIHMNAA" RNoPart="50">
+        <Qty>1.640</Qty>
+        <QtySplit>
+         <Qty>1.100</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111649</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>0.060</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111650</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>0.060</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111656</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>0.060</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111657</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>0.060</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111655</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>0.060</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111658</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>0.060</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111652</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>0.060</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111651</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>0.060</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111654</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>0.060</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111653</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QU>t</QU>
+        <CtlgAssign>
+         <CtlgID>AAAAAAABIDDIAHOI</CtlgID>
+         <CtlgCode>118</CtlgCode>
+        </CtlgAssign>
+        <Description ID="R20260504155625144000044">
+         <StLNo Type="StLK">2211821331</StLNo>
+         <WICNo>Teilleistungskatalog/118/ 2. 1. 1004. </WICNo>
+         <CompleteText>
+          <DetailTxt>
+           <Text>
+            <p style="text-align:left;margin-top:0pt;margin-bottom:0pt;">
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Betonstahl entsprechend statischen und konstruktiven</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Erfordernissen einbauen.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Bauteil = Pfeiler.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Stahlsorte BSt 500 S.</span>
+            </p>
+           </Text>
+          </DetailTxt>
+          <OutlineText>
+           <OutlTxt>
+            <TextOutlTxt>
+             <p style="text-align:left;margin-top:0pt;margin-bottom:0pt;">
+              <span>Betonstahl einbauen</span>
+              <br/>
+              <span>Pfeiler*BSt 500 S</span>
+             </p>
+            </TextOutlTxt>
+           </OutlTxt>
+          </OutlineText>
+          <!-- GAEB version used: 330 -->
+          <!-- GAEB version used: 330 -->
+         </CompleteText>
+        </Description>
+       </Item>
+       <Item ID="AAAAAAABIDIICLCA" RNoPart="60">
+        <Qty>1.640</Qty>
+        <QtySplit>
+         <Qty>1.100</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111649</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>0.060</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111650</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>0.060</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111656</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>0.060</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111657</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>0.060</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111655</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>0.060</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111658</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>0.060</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111652</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>0.060</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111651</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>0.060</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111654</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QtySplit>
+         <Qty>0.060</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111653</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QU>t</QU>
+        <CtlgAssign>
+         <CtlgID>AAAAAAABIDDIAHOI</CtlgID>
+         <CtlgCode>118</CtlgCode>
+        </CtlgAssign>
+        <Description ID="R20260504155625163000045">
+         <StLNo Type="StLK">2211821361</StLNo>
+         <WICNo>Teilleistungskatalog/118/ 2. 1. 1010. </WICNo>
+         <CompleteText>
+          <DetailTxt>
+           <Text>
+            <p style="text-align:left;margin-top:0pt;margin-bottom:0pt;">
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Betonstahl entsprechend statischen und konstruktiven</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Erfordernissen einbauen.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Bauteil = Rahmen.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Stahlsorte BSt 500 S.</span>
+            </p>
+           </Text>
+          </DetailTxt>
+          <OutlineText>
+           <OutlTxt>
+            <TextOutlTxt>
+             <p style="text-align:left;margin-top:0pt;margin-bottom:0pt;">
+              <span>Betonstahl einbauen</span>
+              <br/>
+              <span>Rahmen*BSt 500 S</span>
+             </p>
+            </TextOutlTxt>
+           </OutlTxt>
+          </OutlineText>
+          <!-- GAEB version used: 330 -->
+          <!-- GAEB version used: 330 -->
+         </CompleteText>
+        </Description>
+       </Item>
+       <Item ID="AAAAAAABIDIIIKGA" RNoPart="70">
+        <Qty>0.280</Qty>
+        <QtySplit>
+         <Qty>0.280</Qty>
+         <CtlgAssign>
+          <CtlgID>AAAAAAABIDHKJHHA</CtlgID>
+          <CtlgCode>111644</CtlgCode>
+         </CtlgAssign>
+        </QtySplit>
+        <QU>t</QU>
+        <CtlgAssign>
+         <CtlgID>AAAAAAABIDDIAHOI</CtlgID>
+         <CtlgCode>118</CtlgCode>
+        </CtlgAssign>
+        <Description ID="R20260504155625175000046">
+         <StLNo Type="StLK">2211821362</StLNo>
+         <WICNo>Teilleistungskatalog/118/ 2. 1. 1011. </WICNo>
+         <CompleteText>
+          <DetailTxt>
+           <Text>
+            <p style="text-align:left;margin-top:0pt;margin-bottom:0pt;">
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Betonstahl entsprechend statischen und konstruktiven</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Erfordernissen einbauen.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Bauteil = Rahmen.</span>
+             <br/>
+             <span style="font-family:Arial;font-size:10pt;Color:rgb(0,0,0);">Stahlsorte BSt 500 M.</span>
+            </p>
+           </Text>
+          </DetailTxt>
+          <OutlineText>
+           <OutlTxt>
+            <TextOutlTxt>
+             <p style="text-align:left;margin-top:0pt;margin-bottom:0pt;">
+              <span>Betonstahl einbauen</span>
+              <br/>
+              <span>Rahmen*BSt 500 M</span>
+             </p>
+            </TextOutlTxt>
+           </OutlTxt>
+          </OutlineText>
+          <!-- GAEB version used: 330 -->
+          <!-- GAEB version used: 330 -->
+         </CompleteText>
+        </Description>
+       </Item>
+      </Itemlist>
+     </BoQBody>
+    </BoQCtgy>
+   </BoQBody>
+  </BoQ>
+ </Award>
+</GAEB>
