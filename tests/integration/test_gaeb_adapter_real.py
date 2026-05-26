@@ -74,6 +74,34 @@ def test_position_fields(parsed: ParsedLV) -> None:
     assert pos.position_type == PositionType.NORMAL
 
 
+@pytest.fixture(scope="module")
+def deges_bytes() -> bytes:
+    return (FIXTURES_DIR / "DEGES-Test.X83").read_bytes()
+
+
+@pytest.fixture(scope="module")
+def deges_parsed(adapter: PyGAEBAdapter, deges_bytes: bytes) -> ParsedLV:
+    return adapter.parse_bytes(deges_bytes, "DEGES-Test.X83")
+
+
+def test_deges_itwo_file_parses_without_error(deges_parsed: ParsedLV) -> None:
+    assert isinstance(deges_parsed, ParsedLV)
+
+
+def test_deges_all_positions_parsed(deges_parsed: ParsedLV) -> None:
+    all_positions = [
+        p for lot in deges_parsed.lots for s in lot.sections for p in s.positions
+    ]
+    assert len(all_positions) == 10
+
+
+def test_deges_no_empty_oz(deges_parsed: ParsedLV) -> None:
+    for lot in deges_parsed.lots:
+        for section in lot.sections:
+            for pos in section.positions:
+                assert pos.oz.strip() != ""
+
+
 def test_version_error_for_unsupported_version(adapter: PyGAEBAdapter) -> None:
     """Passing a document whose version resolves to GAEB 90 raises GAEBVersionError."""
     from unittest.mock import MagicMock, patch
