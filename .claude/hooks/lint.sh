@@ -27,9 +27,9 @@ if command -v ruff &>/dev/null; then
   RUFF_OUT=$(ruff check --fix "$FILE_PATH" 2>&1) || true
   RUFF_FMT=$(ruff format "$FILE_PATH" 2>&1) || true
 
-  # Prüfen ob nach Auto-Fix noch Fehler übrig sind
-  RUFF_REMAINING=$(ruff check "$FILE_PATH" 2>&1) || true
-  if [[ -n "$RUFF_REMAINING" ]]; then
+  # Prüfen ob nach Auto-Fix noch Fehler übrig sind (exit code 1 = Fehler)
+  RUFF_REMAINING=$(ruff check "$FILE_PATH" 2>&1) || RUFF_EXIT=$?
+  if [[ "${RUFF_EXIT:-0}" -ne 0 ]]; then
     ERRORS+="### ruff\n${RUFF_REMAINING}\n\n"
   fi
 else
