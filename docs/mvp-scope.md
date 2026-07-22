@@ -76,7 +76,7 @@ Bewusst **nicht** im MVP. Alles hier wird abgelehnt oder auf „später" vertrö
 |---|---|
 | Analytik-Seiten (`lv-analytics.jsx`) | nur Viewer |
 | Aufgaben / `TasksBlock` | keine Task-Verwaltung |
-| Notizen (`lv-notes.jsx`) | Tabellen dürfen im Datenmodell existieren, werden im UI aber nicht bespielt |
+| Notizen (`lv-notes.jsx`) | Modelle dürfen existieren, werden im UI aber nicht bespielt; hängen ab Schritt 2 der Roadmap am `WBSNode` (`wbs_node_id`), nicht an der Position — siehe [`vision.md`](vision.md) |
 | Vergabepakete (`lv-vergabe.jsx`), NU-Anfragen, Bieterfragen | inkl. der Vergabepaket-Kanten im Graph |
 | Status **ändern** | Status ist nur Filter-Facette (Default `OPEN` aus Import), keine UI-Bearbeitung |
 | Auth / Azure AD SSO | lokaler Dev-Betrieb ohne Login; Auth-Schicht bleibt nur abstrahiert vorhanden |
