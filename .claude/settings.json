@@ -4,7 +4,15 @@
       "Bash(python -m pytest tests/ -x --tb=short --no-header -q)",
       "Bash(python3 -c ' *)",
       "Bash(python -m pytest tests/ --tb=short --no-header -q)",
-      "Bash(python -c ' *)"
+      "Bash(python -c ' *)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git show*)",
+      "Bash(git branch)",
+      "Bash(git add *)",
+      "Bash(git commit*)",
+      "Bash(git mv *)"
     ]
   },
   "hooks": {
