@@ -138,7 +138,7 @@ Jede Statusänderung wird im Audit-Log protokolliert.
 ## Entwicklungsrichtlinien
 
 Die vollständigen Vorgaben für den Coding-Agenten stehen in
-[`CLAUDE.md`](CLAUDE.md). Kurzübersicht:
+[`.claude/CLAUDE.md`](.claude/CLAUDE.md). Kurzübersicht:
 
 - **Async first** – alle DB-Operationen und Endpunkte sind `async`
 - **Pydantic v2** für alle Schemas – kein `dict`-Return aus Endpunkten
