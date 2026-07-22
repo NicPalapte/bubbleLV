@@ -109,29 +109,11 @@ erfordert nur einen neuen Adapter – kein anderer Code wird berührt.
 
 ---
 
-## MVP-Scope (Phase 1)
+## MVP-Scope (ein Release)
 
-Der MVP umfasst drei Features. Alles andere ist bewusst ausgeschlossen –
-Details und Phasenzuordnung siehe [`docs/mvp-scope.md`](docs/mvp-scope.md).
-
-### F-01 · GAEB-Import & Parsing
-
-GAEB DA XML-Dateien (Versionen 2.0–3.3) hochladen, parsen und strukturiert
-in PostgreSQL persistieren. Ein Re-Import aktualisiert bestehende Positionen
-anhand der **Ordnungszahl (OZ)** als natürlichem Schlüssel – manuell gesetzte
-Status und Notizen bleiben dabei erhalten.
-
-### F-02 · LV-Viewer
-
-Das Leistungsverzeichnis hierarchisch (Los → Abschnitt → Position) durchsuchen
-und einsehen. Volltextsuche über Kurz- und Langtext via PostgreSQL `tsvector`.
-LVs mit 2000+ Positionen müssen initial unter 2 Sekunden laden.
-
-### F-03 · Positionsmanagement
-
-Status (`OPEN | IN_PROGRESS | REVIEW | DONE | BLOCKED`) und Zuständigkeit
-pro Position setzen, Notizen hinterlegen, Fortschritt aggregiert abrufen.
-Jede Statusänderung wird im Audit-Log protokolliert.
+Ein einziges MVP: LV-Viewer (Tree + Bubble-Graph + Tabelle) auf quellen-agnostischer
+Datenbasis, mit Klassifizierung, Suche, Facetten-Filter und Zuständigkeit.
+Details → docs/mvp-scope.md · Umsetzungsplan → docs/implementation-plan.md
 
 ---
 
