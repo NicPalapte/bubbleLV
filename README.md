@@ -1,12 +1,21 @@
 # Bubble
 
-Webbasierte Bid-Management-App für Bauunternehmen. Bubble ergänzt
-**iTwo** als Kalkulationssoftware – er ersetzt iTwo nicht, sondern übernimmt
-die Angebotskoordination drum herum: GAEB-Dateien importieren, Leistungsverzeichnisse
-strukturiert einsehen und den Bearbeitungsstand je Position nachverfolgen.
+Ein kostenloser LV-Viewer: GAEB-Leistungsverzeichnis importieren, automatisch
+klassifizieren und als interaktiven Graph im Browser durchsuchen und filtern.
 
 Die Besonderheit ist, dass sich das Leistungsverzeichnis interaktiv als Nodes in einem Browser anschauenlässt. 
 Die Nodes lassen sich nach verschiedenen Attributen, Beziehungen und Größen anschauen, filtern und sortieren. 
+
+Bubble ergänzt dabei **iTwo** als Kalkulationssoftware – er ersetzt iTwo nicht,
+sondern übernimmt die Angebotskoordination drum herum.
+
+## Datenmodell
+
+Unter dem Viewer liegt eine quellen-agnostische Struktur: das Leistungsverzeichnis
+ist eine von mehreren möglichen Quellen, die diese Struktur befüllt (Details:
+[`docs/architecture/data-model.md`](docs/architecture/data-model.md)). Perspektivisch
+ist das Rückgrat eine eigene Work-Breakdown-Struktur (WBSNode), an der weitere
+Domänendaten hängen können – im MVP wird sie 1:1 aus der LV-Hierarchie erzeugt.
 
 ---
 

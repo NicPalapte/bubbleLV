@@ -24,6 +24,9 @@ Edit/Write (`.claude/hooks/lint.sh`)._
 - **Parsing:** pyGAEB, gekapselt hinter `PyGAEBAdapter`
 
 ## Architektur (nicht verhandelbar)
+- Jede Domänen-Entität referenziert einen WBSNode (Pflicht-FK). Keine verwaisten
+  Objekte. Details: @docs/architecture/data-model.md
+
 ### Backend
 - `router → service → repository → DB` – keine Logik in Routen
 - Pydantic v2 für alle Schemas – kein `dict`-Return aus Endpunkten
@@ -56,6 +59,10 @@ Edit/Write (`.claude/hooks/lint.sh`)._
 - Docstrings (Google-Style) für alle public functions und Klassen
 - Logging via `structlog` – kein `print`
 - Zeilenlänge ≤ 88 Zeichen (Python)
+
+## Domänenwissen
+Norm-/DIN-/VOB-Nummer zitieren; bei Unsicherheit über normative Inhalte nachfragen
+statt erfinden. Details/Index: @docs/domain/
 
 ## Commits (Conventional Commits)
 Vor jeder neuen Aufgabe prüfen, ob ein passender Branch aktiv ist. Falls `main` aktiv

@@ -8,14 +8,17 @@
 ```
 LV ──1:n── Lot ──1:n── Section ──(self 1:n via parent_id)── Section
  │                          │
- │                          └──1:n── Position ──1:n── (Note)        [Note im MVP ungenutzt]
- └──1:n── Position                         │
-                                           └──1:n── (AuditLog)      [im MVP ungenutzt]
+ │                          └──1:n── Position    [Note im MVP ungenutzt]
+ └──1:n── Position                               [AuditLog im MVP ungenutzt]
 ```
 
 Die Hierarchie (Los → Abschnitt → Position, Abschnitt selbst-verschachtelbar) ist
 generisch. Nichts daran ist GAEB-spezifisch — GAEB ist nur eine von mehreren möglichen
 Quellen, die diese Struktur befüllen.
+
+`Note`/`AuditLog` hängen konzeptionell **nicht** an `Position`, sondern ab Schritt 2
+der Roadmap ([`vision.md`](../vision.md)) am `WBSNode` — siehe
+[Attach-Point](#wbsnode--universelle-work-breakdown-spine) weiter unten.
 
 ## Quellen-agnostische Felder (WP-1)
 
@@ -112,3 +115,73 @@ LV-Struktur und alle Zuständigkeiten bleiben unangetastet.
 Eine Migration für: `LV.source_type`, `LV.source_metadata`, `Position.attributes`, und das
 Entfernen/Umziehen von `LV.gaeb_version` nach `source_metadata`. Bestehende Datensätze
 (falls vorhanden) auf `source_type='GAEB'` backfillen.
+
+---
+
+## WBSNode — universelle Work-Breakdown-Spine
+
+> **Spec, kein DDL/ORM.** Die WBSNode-Implementierung (Modell, Migration, Umstellung
+> der Domänen-Entitäten) ist ein eigenes, späteres Arbeitspaket:
+> [`.claude/commands/wp-wbs.md`](../../.claude/commands/wp-wbs.md). Hier wird nur das
+> Konzept festgehalten, gegen das schon jetzt entworfen wird.
+
+### Konzept
+
+`WBSNode` ist eine eigenständige Entität mit eigener Identität — ein self-referenzieller
+Baum, unabhängig von der LV-Tabelle:
+
+| Feld | Typ | Zweck |
+|---|---|---|
+| `id` | UUID | eigene Identität |
+| `parent_id` | UUID, nullable | self-ref Baum |
+| `kind` | Enum (`project \| lot \| section \| position \| …`) | Knotentyp |
+| `code` | `str` | Kurzkennung (z. B. OZ, Los-/Abschnittsnummer) |
+| `label` | `str \| null` | Anzeigename |
+| `sort_order` | `int` | Geschwister-Reihenfolge |
+| `project_id` | FK | Projekt-Scope |
+| `din276_kostengruppe` | `str \| null` | vorgesehener Attribut-Slot, **im MVP ungenutzt** |
+
+### MVP-Mapping: LV ist eine Projektion auf die WBS
+
+Im MVP erzeugt der Import pro LV-Struktur-/Positionsknoten **genau einen** WBSNode
+(1:1) — jedes Los, jeder Abschnitt, jede Position bekommt einen korrespondierenden
+`WBSNode`. Die LV-Position behält ihre eigene Abrechnungs-Identität (OZ, Menge, EP,
+`attributes`) und verweist per FK auf ihren `WBSNode`. Damit ist das LV **eine
+Projektion** auf die WBS, nicht umgekehrt: die WBS ist das Rückgrat, das LV eine von
+mehreren möglichen Sichten darauf.
+
+**Attach-Point für Domänen-Entitäten ist `wbs_node_id`, nicht `position_id`.** Notiz,
+Aufgabe, später Termin, Vergabepaket usw. hängen am WBSNode — das gilt auch dann, wenn
+der Knoten (im MVP) 1:1 einer LV-Position entspricht.
+
+### WBS ≠ LV
+
+- **LV** ist die Abrechnungs-/Preisstruktur: OZ, Menge, Einheitspreis, Vertragslogik.
+- **WBS** ist die Leistungs-/Ergebnisstruktur: was geleistet werden muss, unabhängig
+  davon, wie es abgerechnet wird.
+
+Im MVP fallen beide 1:1 zusammen, das ist aber ein Spezialfall. Später ist eine
+n:m-Zuordnung vorgesehen (ein WBSNode ↔ mehrere LV-Positionen, oder eine Position →
+mehrere Arbeitspaket-Knoten), z. B. über eine Mapping-Tabelle `wbs_node_position`.
+Dieser Pfad bleibt offen, wird aber **jetzt nicht gebaut**.
+
+### Erweiterungsregel (Invariante)
+
+> **Am Bau existieren mehrere legitime Zerlegungen gleichzeitig, n:m zueinander:**
+> LV/OZ · WBS/Arbeitspakete · DIN-276-Kosten · Ort/Bauteil/Geschoss · Gewerk/STLB ·
+> Organisation/Firma · IFC-Objekt · Zeit/Vorgang.
+>
+> Es gibt daher bewusst **keinen einzigen Baum, der alle Informationen enthält.**
+> Die WBS ist ein **privilegierter Anker**, kein Universalbehälter.
+>
+> Neue Informationsarten werden **entweder**
+> - als Attribut/Kante an einen bestehenden Knoten gehängt, **oder**
+> - als neuer Knotentyp mit typisierter Kante zur WBS eingeführt.
+>
+> Das Rückgrat wird **nie umgebaut, um neue Information aufzunehmen** — Erweiterung
+> erfolgt durch Beziehung, nicht durch Strukturänderung. Ziel ist eine
+> **erweiterbare**, keine **vollständige** Struktur.
+
+Diese Regel gilt für jede künftige Entität (Notiz, Aufgabe, Termin, Vergabepaket, …):
+Pflicht-FK auf `WBSNode`, siehe [`.claude/CLAUDE.md`](../../.claude/CLAUDE.md#architektur-nicht-verhandelbar).
+Kein Domänen-Objekt bleibt ohne diesen Anker.
