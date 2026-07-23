@@ -24,6 +24,7 @@ from app.database import Base
 if TYPE_CHECKING:
     from app.models.audit_log import AuditLog
     from app.models.lv import LV, Section
+    from app.models.wbs_node import WBSNode
 
 
 class PositionStatus(enum.StrEnum):
@@ -56,6 +57,9 @@ class Position(Base):
     section_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("section.id"), nullable=True
     )
+    wbs_node_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("wbs_node.id"), nullable=False
+    )
     oz: Mapped[str] = mapped_column(String(64), nullable=False)
     short_text: Mapped[str] = mapped_column(Text, nullable=False, default="")
     long_text: Mapped[str] = mapped_column(Text, nullable=False, default="")
@@ -84,22 +88,24 @@ class Position(Base):
 
     lv: Mapped["LV"] = relationship(back_populates="positions")
     section: Mapped["Section | None"] = relationship(back_populates="positions")
+    wbs_node: Mapped["WBSNode"] = relationship()
     audit_logs: Mapped[list["AuditLog"]] = relationship(
-        back_populates="position", cascade="all, delete-orphan"
-    )
-    notes: Mapped[list["Note"]] = relationship(
         back_populates="position", cascade="all, delete-orphan"
     )
 
 
 class Note(Base):
-    """Append-only user note attached to a Position."""
+    """Append-only user note; attach point is the WBSNode, not the Position.
+
+    See `docs/architecture/data-model.md#wbsnode--universelle-work-breakdown-spine`
+    — domain entities anchor on `wbs_node_id`, independent of the LV projection.
+    """
 
     __tablename__ = "note"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    position_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("position.id"), nullable=False
+    wbs_node_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("wbs_node.id"), nullable=False
     )
     content: Mapped[str] = mapped_column(Text, nullable=False)
     author_id: Mapped[uuid.UUID | None] = mapped_column(nullable=True)
@@ -107,4 +113,4 @@ class Note(Base):
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
 
-    position: Mapped[Position] = relationship(back_populates="notes")
+    wbs_node: Mapped["WBSNode"] = relationship(back_populates="notes")
