@@ -13,9 +13,7 @@
         "charliermarsh.ruff",
         "mtxr.sqltools",
         "mtxr.sqltools-driver-pg",
-        "humao.rest-client",
-        "eamodio.gitlens",
-        "anthropic.claude-code"
+        "humao.rest-client"
       ],
       "settings": {
         "python.defaultInterpreterPath": "/usr/local/bin/python",
@@ -28,7 +26,8 @@
   },
 
   "features": {
-    "ghcr.io/devcontainers/features/github-cli:1": {}
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
   },
 
   "postCreateCommand": "pip install -e '.[dev]'",
