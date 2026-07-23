@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.lv import LV, Lot, Section
 from app.models.position import Position, PositionStatus
+from app.models.wbs_node import WBSNode, WBSNodeKind
 from app.schemas.lv_draft import LotDraft, LVDraft, PositionDraft, SectionDraft
 
 log = structlog.get_logger(__name__)
@@ -41,10 +42,19 @@ class LVRepository:
 
         for lot_draft in draft.lots:
             lot = await self._upsert_lot(lv.id, lot_draft)
+            lot_wbs = await self._upsert_wbs_node(
+                project_id=project_id,
+                kind=WBSNodeKind.LOT,
+                parent_id=None,
+                code=lot_draft.number,
+                label=lot_draft.label,
+            )
             await self._session.flush()
 
             for section_draft in lot_draft.sections:
-                await self._persist_section(lv.id, lot.id, None, section_draft)
+                await self._persist_section(
+                    lv.id, lot.id, None, lot_wbs.id, project_id, section_draft
+                )
 
         await self._session.flush()
         await self._session.refresh(lv)
@@ -115,15 +125,28 @@ class LVRepository:
         lv_id: uuid.UUID,
         lot_id: uuid.UUID,
         parent_id: uuid.UUID | None,
+        parent_wbs_id: uuid.UUID,
+        project_id: str,
         draft: SectionDraft,
     ) -> None:
-        """Recursively upsert a section, its positions, and nested sections."""
+        """Recursively upsert a section, its WBSNode, positions, and children."""
         section = await self._upsert_section(lot_id, parent_id, draft)
+        section_wbs = await self._upsert_wbs_node(
+            project_id=project_id,
+            kind=WBSNodeKind.SECTION,
+            parent_id=parent_wbs_id,
+            code=draft.number,
+            label=draft.label,
+        )
         await self._session.flush()
-        await self._upsert_positions(lv_id, section.id, draft.positions)
+        await self._upsert_positions(
+            lv_id, section.id, section_wbs.id, project_id, draft.positions
+        )
 
         for child_draft in draft.sections:
-            await self._persist_section(lv_id, lot_id, section.id, child_draft)
+            await self._persist_section(
+                lv_id, lot_id, section.id, section_wbs.id, project_id, child_draft
+            )
 
     async def _upsert_section(
         self,
@@ -157,16 +180,26 @@ class LVRepository:
         self,
         lv_id: uuid.UUID,
         section_id: uuid.UUID,
+        section_wbs_id: uuid.UUID,
+        project_id: str,
         positions: list[PositionDraft],
     ) -> None:
         now = datetime.now(UTC)
         for p in positions:
+            position_wbs = await self._upsert_wbs_node(
+                project_id=project_id,
+                kind=WBSNodeKind.POSITION,
+                parent_id=section_wbs_id,
+                code=p.oz,
+                label=p.short_text or None,
+            )
             stmt = (
                 pg_insert(Position)
                 .values(
                     id=uuid.uuid4(),
                     lv_id=lv_id,
                     section_id=section_id,
+                    wbs_node_id=position_wbs.id,
                     oz=p.oz,
                     short_text=p.short_text,
                     long_text=p.long_text,
@@ -191,12 +224,54 @@ class LVRepository:
                         "unit_price": p.unit_price,
                         "position_type": p.position_type,
                         "section_id": section_id,
+                        "wbs_node_id": position_wbs.id,
                         "attributes": p.attributes,
                         "updated_at": now,
                     },
                 )
             )
             await self._session.execute(stmt)
+
+    async def _upsert_wbs_node(
+        self,
+        project_id: str,
+        kind: WBSNodeKind,
+        parent_id: uuid.UUID | None,
+        code: str,
+        label: str | None,
+    ) -> WBSNode:
+        """Upsert one WBSNode, deduplicated by (project_id, kind, parent_id, code).
+
+        Root nodes (`parent_id is None`, i.e. `kind=LOT`) match via the partial
+        unique index on `(project_id, kind, code) WHERE parent_id IS NULL` instead,
+        since Postgres never treats two NULLs as conflicting under a regular
+        unique constraint.
+        """
+        insert_stmt = pg_insert(WBSNode).values(
+            id=uuid.uuid4(),
+            parent_id=parent_id,
+            kind=kind,
+            code=code,
+            label=label,
+            sort_order=0,
+            project_id=project_id,
+        )
+        if parent_id is None:
+            stmt = insert_stmt.on_conflict_do_update(
+                index_elements=["project_id", "kind", "code"],
+                index_where=WBSNode.parent_id.is_(None),
+                set_={"label": label},
+            ).returning(WBSNode.id)
+        else:
+            stmt = insert_stmt.on_conflict_do_update(
+                constraint="uq_wbs_node_parent_code",
+                set_={"label": label},
+            ).returning(WBSNode.id)
+        result = await self._session.execute(stmt)
+        wbs_node_id: uuid.UUID = result.scalar_one()
+        wbs_node_row = await self._session.get(WBSNode, wbs_node_id)
+        assert wbs_node_row is not None
+        return wbs_node_row
 
     async def get_lv_by_project_id(self, project_id: str) -> LV | None:
         """Return the LV for a given project_id, or None if not found."""
