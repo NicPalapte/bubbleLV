@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"/>
+<title>Bubble · LV-Viewer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f5f7fa; --panel:#fbfcfd; --white:#ffffff;
+    --grid:#e4ecf4; --grid2:#d6e0ec; --line:#c9d4e0; --line2:#a9bbcf;
+    --ink:#1a2533; --dim:#6b7d92; --mute:#97a6ba;
+    --blue:#2563eb; --blueS:#dbe7fd; --blueD:#1d4ed8; --cyan:#0891b2;
+    --amber:#d97706; --amberS:#fde8c4;
+    --greenS:#cdebd8; --greenD:#0f8a4c;
+    --mono:'IBM Plex Mono', ui-monospace, monospace;
+    --sans:'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  }
+  *,*::before,*::after{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; height:100%; background:var(--paper); color:var(--ink);
+    font-family:var(--mono); font-size:12px; }
+  ::-webkit-scrollbar{ width:8px; height:8px } ::-webkit-scrollbar-thumb{ background:#c9d4e0; border-radius:4px }
+  ::-webkit-scrollbar-track{ background:transparent }
+  button{ font:inherit; color:inherit; }
+</style>
+</head>
+<body>
+<template id="__bundler_thumbnail" data-bg-color="#f5f7fa">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="800" fill="#f5f7fa"/>
+    <g fill="none" stroke="#2563eb" stroke-width="2">
+      <circle cx="600" cy="400" r="180" fill="#dbe7fd" fill-opacity="0.6"/>
+      <circle cx="380" cy="300" r="90" fill="#dbe7fd" fill-opacity="0.6"/>
+      <circle cx="820" cy="320" r="110" fill="#dbe7fd" fill-opacity="0.6"/>
+      <circle cx="430" cy="540" r="70" fill="#dbe7fd" fill-opacity="0.6"/>
+      <circle cx="780" cy="560" r="85" fill="#dbe7fd" fill-opacity="0.6"/>
+    </g>
+    <g stroke="#a9bbcf" stroke-width="1.5" stroke-dasharray="6 6">
+      <line x1="380" y1="300" x2="600" y2="400"/>
+      <line x1="820" y1="320" x2="600" y2="400"/>
+      <line x1="430" y1="540" x2="600" y2="400"/>
+      <line x1="780" y1="560" x2="600" y2="400"/>
+    </g>
+    <text x="600" y="408" text-anchor="middle" font-family="monospace" font-size="28" fill="#1a2533" font-weight="600">LV-Viewer</text>
+  </svg>
+</template>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="lv-data.jsx"></script>
+<script type="text/babel" src="lv-notes.jsx"></script>
+<script type="text/babel" src="lv-analytics.jsx"></script>
+<script type="text/babel" src="lv-vergabe.jsx"></script>
+<script type="text/babel" src="lv-graph.jsx"></script>
+<script type="text/babel" src="lv-main.jsx"></script>
+</body>
+</html>

@@ -4,10 +4,51 @@ import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.gaeb_adapter import GAEBParserProtocol, PyGAEBAdapter
+from app.models.lv import SourceType
 from app.repositories.lv import LVRepository
-from app.schemas.gaeb import LVImportResponse
+from app.schemas.gaeb import LVImportResponse, ParsedLot, ParsedLV, ParsedSection
+from app.schemas.lv_draft import LotDraft, LVDraft, PositionDraft, SectionDraft
 
 log = structlog.get_logger(__name__)
+
+
+def _map_to_draft(parsed: ParsedLV) -> LVDraft:
+    """Map the adapter's `ParsedLV` onto the neutral `LVDraft` write model."""
+    return LVDraft(
+        project_name=parsed.project_name,
+        client=parsed.client,
+        deadline=parsed.deadline,
+        source_type=SourceType.GAEB,
+        source_metadata={"gaeb_version": parsed.gaeb_version},
+        lots=[_map_lot(lot) for lot in parsed.lots],
+    )
+
+
+def _map_lot(lot: ParsedLot) -> LotDraft:
+    return LotDraft(
+        number=lot.lot_id,
+        label=lot.label,
+        sections=[_map_section(section) for section in lot.sections],
+    )
+
+
+def _map_section(section: ParsedSection) -> SectionDraft:
+    return SectionDraft(
+        number=section.section_id,
+        label=section.label,
+        positions=[
+            PositionDraft(
+                oz=p.oz,
+                short_text=p.short_text,
+                long_text=p.long_text,
+                unit=p.unit,
+                quantity=p.quantity,
+                unit_price=p.unit_price,
+                position_type=p.position_type,
+            )
+            for p in section.positions
+        ],
+    )
 
 
 class GAEBImportService:
@@ -51,13 +92,14 @@ class GAEBImportService:
         log.info("gaeb.import_start", project_id=project_id, filename=filename)
 
         parsed = self._adapter.parse_bytes(data, filename)
+        draft = _map_to_draft(parsed)
 
         existing = await self._repo.get_lv_by_project_id(project_id)
         existing_count = (
             await self._repo.count_positions(existing.id) if existing else 0
         )
 
-        lv = await self._repo.persist_lv(project_id, parsed)
+        lv = await self._repo.persist_lv(project_id, draft)
 
         total = await self._repo.count_positions(lv.id)
         created = max(0, total - existing_count)

@@ -2,17 +2,28 @@
 
 from __future__ import annotations
 
+import enum
 import uuid
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import Enum as SAEnum
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
 
 if TYPE_CHECKING:
     from app.models.position import Position
+
+
+class SourceType(enum.StrEnum):
+    """Origin of an LV's data, independent of its persisted structure."""
+
+    GAEB = "GAEB"
+    MANUAL = "MANUAL"
+    EXCEL = "EXCEL"
 
 
 class LV(Base):
@@ -25,12 +36,17 @@ class LV(Base):
     project_name: Mapped[str | None] = mapped_column(String(512))
     client: Mapped[str | None] = mapped_column(String(512))
     deadline: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    gaeb_version: Mapped[str | None] = mapped_column(String(16))
+    source_type: Mapped[SourceType] = mapped_column(SAEnum(SourceType), nullable=False)
+    source_metadata: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, nullable=False, default=dict, server_default="{}"
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
     )
 
     lots: Mapped[list[Lot]] = relationship(
@@ -60,7 +76,7 @@ class Lot(Base):
 
 
 class Section(Base):
-    """An Abschnitt (section/category) within a Lot; supports one level of nesting."""
+    """An Abschnitt (section/category) within a Lot; self-nestable via parent_id."""
 
     __tablename__ = "section"
     __table_args__ = (
