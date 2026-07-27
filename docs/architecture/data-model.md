@@ -61,14 +61,26 @@ welche Keys neben `positionsart` befüllt werden, hängt vom Ergebnis der vorher
 |---|---|---|---|
 | `positionsart` | `str` | `"bauteil"` | Positionsart (`bauteil \| personal \| planung \| baustelleneinrichtung \| nebenleistung \| sonstige`) |
 
+**Für jede Position, sobald ein STLB-Bau-Leistungsbereich (LB) erkannt wurde** (Stufe 0,
+siehe [`architecture/backend.md`](backend.md#klassifizierung-wp-2--austauschbar-regel--llm-mehrstufig-erweiterbar)) —
+unabhängig von `positionsart`, da z. B. auch `baustelleneinrichtung` ein eigener LB ist:
+
+| Key | Typ | Beispiel | Facette |
+|---|---|---|---|
+| `gewerk_lb` | `str \| null` | `"012"` | STLB-Bau-LB-Nummer (Ruleset-Key, normbasiert) |
+| `gewerk` | `str \| null` | `"Beton- und Stahlbetonarbeiten"` | Gewerk (LB-Bezeichnung, Anzeigewert) |
+
+Kein LB-Treffer (Referenzkatalog noch leer oder Text passt zu keinem LB) ⇒ beide Keys
+`null`, `positionsart` kommt dann aus dem heuristischen Fallback (siehe
+`architecture/backend.md`) statt aus dem LB.
+
 **Nur wenn `positionsart == "bauteil"`:**
 
 | Key | Typ | Beispiel | Facette | Gilt für |
 |---|---|---|---|---|
 | `bauteiltyp` | `str \| null` | `"Wand"` | Bauteiltyp | alle Bauteil-Positionen |
-| `gewerk` | `str \| null` | `"Ortbeton"` | Gewerk/Material | alle Bauteil-Positionen |
-| `beton` | `str \| null` | `"C30/37"` | Betongüte | Gewerk `Ortbeton`/`Fertigteil` |
-| `expo` | `list[str]` | `["XC2","XD1"]` | Expositionsklasse | Gewerk `Ortbeton`/`Fertigteil` |
+| `beton` | `str \| null` | `"C30/37"` | Betongüte | LB `Beton-/Stahlbetonarbeiten` |
+| `expo` | `list[str]` | `["XC2","XD1"]` | Expositionsklasse | LB `Beton-/Stahlbetonarbeiten` |
 | `tragend` | `bool \| null` | `true` | tragend/nichttragend | tragfähige Bauteiltypen |
 | `dicke` | `str \| null` | `"30 cm"` | (Anzeige) | Ruleset-abhängig |
 | `hoehe` | `str \| null` | `"3–4 m"` | (Anzeige) | Ruleset-abhängig |
@@ -102,14 +114,15 @@ können, trägt `attributes` einen reservierten Meta-Block. Die Facetten-Keys bl
 ```jsonc
 {
   "positionsart": "bauteil",
+  "gewerk_lb": "012",
+  "gewerk": "Beton- und Stahlbetonarbeiten",
   "bauteiltyp": "Wand",
-  "gewerk": "Ortbeton",
   "beton": "C30/37",
   "expo": ["XC2", "XD1"],
   "tragend": true,
   "_meta": {
     "classifier": "rule",
-    "ruleset": "ortbeton_wand",
+    "ruleset": "012_wand",
     "version": 1,
     "confidence": 1.0,
     "at": "2026-…"
@@ -119,7 +132,7 @@ können, trägt `attributes` einen reservierten Meta-Block. Die Facetten-Keys bl
 
 `_meta.ruleset` hält fest, welches konkrete `PropertyRuleset` (oder `"fallback"`) die
 Attribute geliefert hat — wichtig, um später nachzuvollziehen, welche
-Bauteiltyp/Gewerk-Kombinationen noch keinen eigenen Ruleset haben.
+Bauteiltyp/LB-Kombinationen noch keinen eigenen Ruleset haben.
 
 Das kostet **keine** zusätzliche Migration im MVP (steckt im vorhandenen `attributes`-JSONB).
 Sollte später feinere Abfragbarkeit nötig werden, können `classified_by` / `classified_at`

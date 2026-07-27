@@ -27,18 +27,22 @@ Excel oder manueller Eingabe gespeist werden kann. Details:
 ### 2 · Klassifizierung von Kurz- und Langtext
 
 Beim Import werden aus Kurz-/Langtext strukturierte Merkmale extrahiert und in einem
-flexiblen `attributes`-Feld je Position abgelegt — **mehrstufig**: zuerst wird erkannt,
-ob eine Position überhaupt ein physisches **Bauteil** beschreibt oder eine andere Art
-Leistung (Personal, Planung, Baustelleneinrichtung, Nebenleistung, …) — letztere
-bekommen ein eigenes, kleineres Merkmalsschema. Für Bauteil-Positionen werden
-**Bauteiltyp** (Wand, Decke, Fundament, …) und **Gewerk/Material** (Ortbeton,
-Fertigteil, Mauerwerk, Holzbau, Stahlbau, …, perspektivisch angelehnt an
-STLB-Bau-Leistungsbereiche) erkannt; die eigentliche Eigenschafts-Extraktion läuft über
-ein **Ruleset je Bauteiltyp/Gewerk-Kombination**, das sich schrittweise um weitere
-Gewerke ergänzen lässt, ohne Bestehendes zu ändern. Die Klassifizierung liegt hinter
-einer austauschbaren Schnittstelle (`ClassifierProtocol`); im MVP arbeitet ein
-**regelbasierter** Extraktor (heuristisch), ein **LLM-Klassifizierer** kann später ohne
-Umbau eingehängt und per Config aktiviert werden.
+flexiblen `attributes`-Feld je Position abgelegt — **mehrstufig**: zuerst wird der Text
+direkt gegen die **STLB-Bau-Leistungsbereiche (LB)** gematcht (Referenzkatalog, siehe
+[`architecture/backend.md`](architecture/backend.md)); daraus ergeben sich **Gewerk**
+(LB-Nummer + Bezeichnung, normbasiert statt Freitext) und — für eindeutig
+nicht-physische LBs wie Baustelleneinrichtung — direkt die **Positionsart**. Fehlt ein
+LB-Treffer (unvollständiger Referenzkatalog oder LV ohne STLB-Bezug), fällt die
+Positionsart-Erkennung auf eine Stichwort-/Einheiten-Heuristik zurück
+(`bauteil | personal | planung | baustelleneinrichtung | nebenleistung | sonstige`).
+Für Bauteil-Positionen wird zusätzlich der **Bauteiltyp** (Wand, Decke, Fundament, …)
+erkannt — ein LB deckt meist mehrere Bauteiltypen ab, daher bleibt das ein eigener
+Erkennungsschritt. Die eigentliche Eigenschafts-Extraktion läuft über ein **Ruleset je
+Bauteiltyp/LB-Kombination**, das sich schrittweise um weitere LBs ergänzen lässt, ohne
+Bestehendes zu ändern. Die Klassifizierung liegt hinter einer austauschbaren
+Schnittstelle (`ClassifierProtocol`); im MVP arbeitet ein **regelbasierter** Extraktor
+(heuristisch), ein **LLM-Klassifizierer** kann später ohne Umbau eingehängt und per
+Config aktiviert werden.
 
 Für Ortbeton-/Fertigteil-Bauteile erkannte Merkmale (Beispiel-Ruleset; weitere Gewerke
 folgen inkrementell, siehe WP-2 in [`implementation-plan.md`](implementation-plan.md)):

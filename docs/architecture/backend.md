@@ -122,40 +122,65 @@ class ClassifierInput(BaseModel):             # entkoppelt vom Persistenzmodell
 - Ergebnis (`attributes` + `meta`) landet in `Position.attributes`; Provenance-Konvention
   siehe [`data-model.md`](data-model.md).
 
-### `RuleBasedClassifier` (MVP) — vierstufige Pipeline hinter dem Protocol
+### `RuleBasedClassifier` (MVP) — dreistufige Pipeline hinter dem Protocol
 
 Nach außen bleibt `RuleBasedClassifier.classify()` ein einziger Aufruf. Intern
-orchestriert er vier Stufen; ab Stufe 3 ist die eigentliche Eigenschafts-Extraktion
+orchestriert er drei Stufen; ab Stufe 2 ist die eigentliche Eigenschafts-Extraktion
 **pluggable**, damit neue Bauteiltypen/Gewerke inkrementell hinzukommen, ohne den
-Klassifizierer selbst zu ändern:
+Klassifizierer selbst zu ändern. Gegenüber der ursprünglichen Fassung matcht Stufe 0
+**direkt gegen die STLB-Bau-Leistungsbereiche (LB)**, statt Positionsart und Gewerk in
+zwei getrennten, freitext-basierten Heuristiken zu erraten — die separate WorkType-Stufe
+entfällt dadurch:
 
 ```
 ClassifierInput
     │
     ▼
-Stufe 0 — PositionKind      → attributes.positionsart
-    │        ("bauteil" | "personal" | "planung" | "baustelleneinrichtung" | …)
+Stufe 0 — StlbMatch          → attributes.gewerk_lb    (LB-Nummer, z. B. "012")
+    │                          attributes.gewerk        (LB-Bezeichnung, Katalog-Anzeigewert)
+    │                          attributes.positionsart   (aus LB-Katalog: positionsart_default,
+    │                                                     falls der LB eindeutig nicht-physisch ist,
+    │                                                     sonst vorläufig "bauteil")
     │
-    ├── nicht "bauteil" ──► Nicht-Bauteil-Ruleset (per positionsart) ──► attributes
+    ├── kein LB-Treffer ──► Fallback: heuristische Positionsart-Erkennung (Stichworte/
+    │                       Einheit, wie bisher) ──► attributes.positionsart, gewerk*=null
+    │
+    ├── positionsart != "bauteil" ──► Nicht-Bauteil-Ruleset (per positionsart) ──► attributes
     │
     ▼ ("bauteil")
 Stufe 1 — ObjectType         → attributes.bauteiltyp   ("Wand" | "Decke" | "Fundament" | …)
     │
     ▼
-Stufe 2 — WorkType            → attributes.gewerk       ("Ortbeton" | "Fertigteil" | "Holzbau" | …)
-    │
-    ▼
-Stufe 3 — RulesetRegistry.resolve(bauteiltyp, gewerk)
+Stufe 2 — RulesetRegistry.resolve(bauteiltyp, gewerk_lb)
     │
     ├── Ruleset gefunden ──► Ruleset.extract(item)   ──► spezifische Attribute (z. B. beton, expo, tragend)
     └── kein Ruleset       ──► FallbackRuleset.extract(item) ──► Basis-Attribute (Maße, Stichworte)
 ```
 
+**Stufe 0 (`StlbMatch`)** matcht `short_text`/`long_text` gegen die vom Maintainer
+gepflegte Referenztabelle
+[`domain/reference/stlb-bau-leistungsbereiche.csv`](../domain/reference/stlb-bau-leistungsbereiche.csv)
+(Spalten: `lb_nummer`, `lb_bezeichnung`, `positionsart_default`, `keywords`,
+`quelle_version` — Format/Herkunft siehe
+[`domain/README.md`](../domain/README.md#stlb-bau-leistungsbereiche-als-primäre-klassifizierungsquelle-wp-2)).
+Die Datei wird geladen, nicht in Python hartkodiert — Aktualisierung/Erweiterung der
+LB-Zuordnung braucht keine Code-Änderung. Solange die CSV keine echten Zeilen enthält,
+matcht Stufe 0 nie und **jede** Position läuft über den Fallback-Pfad (heutiges
+Verhalten) — kein Fehler, keine erfundenen LB-Nummern.
+
+> **Hinweis für später:** GAEB DA XML v3.x kennt pro Position ein natives
+> `<STLBBau>`-Element (Katalog+Gruppe, optionale Ausprägungs-IDs) — bei LVs aus
+> STLB-Bau-Standardtexten wäre das eine zuverlässigere Quelle als Text-Matching. Das
+> aktuell eingebundene `pyGAEB` parst dieses Element nicht (nur den generischen,
+> anderen `CtlgAssign`-Mechanismus). Eine native Extraktion ist deshalb **kein Teil von
+> WP-2**, sondern eine eigene, später zu entscheidende Erweiterung von
+> `PyGAEBAdapter`/`ClassifierInput` — nicht stillschweigend nachrüsten.
+
 ```python
 # app/services/classification/rulesets/base.py
 class RulesetKey(NamedTuple):
     bauteiltyp: str
-    gewerk: str
+    gewerk_lb: str          # STLB-Bau-LB-Nummer, nicht die Freitext-Bezeichnung
 
 class PropertyRuleset(Protocol):
     key: RulesetKey
@@ -163,32 +188,39 @@ class PropertyRuleset(Protocol):
 
 class RulesetRegistry:
     def register(self, ruleset: PropertyRuleset) -> None: ...
-    def resolve(self, bauteiltyp: str, gewerk: str) -> PropertyRuleset:
-        """Exakter (bauteiltyp, gewerk)-Treffer, sonst `FallbackRuleset`."""
+    def resolve(self, bauteiltyp: str, gewerk_lb: str) -> PropertyRuleset:
+        """Exakter (bauteiltyp, gewerk_lb)-Treffer, sonst `FallbackRuleset`."""
 ```
 
-- **Registrierung ist additiv:** ein neues Gewerk (z. B. Stahlbau) kommt als neues
-  `PropertyRuleset`-Modul + `registry.register(...)` hinzu. Bestehende Rulesets,
-  Stufe 0–2 und die äußere `ClassifierProtocol`-Signatur bleiben unverändert.
+- **Registrierung ist additiv:** ein neuer LB (z. B. Stahlbau) kommt als neue Zeile in
+  der Referenz-CSV + neues `PropertyRuleset`-Modul + `registry.register(...)` hinzu.
+  Bestehende Rulesets, Stufe 0–1 und die äußere `ClassifierProtocol`-Signatur bleiben
+  unverändert.
+- **Ruleset-Key ist die LB-Nummer, nicht die LB-Bezeichnung:** Bezeichnungen können sich
+  zwischen Katalogversionen ändern, die Nummer bleibt stabil. `gewerk` (Bezeichnung)
+  bleibt zusätzlich in `attributes` für die Anzeige/Facette.
 - **Kein Fehler bei fehlendem Ruleset:** `RulesetRegistry.resolve()` fällt auf
   `FallbackRuleset` zurück (nur Maße/Stichworte) — das MVP muss nicht für jede
-  Bauteiltyp/Gewerk-Kombination ein eigenes Ruleset mitbringen.
+  Bauteiltyp/LB-Kombination ein eigenes Ruleset mitbringen.
+- **Ein LB deckt i. d. R. mehrere Bauteiltypen ab** (z. B. "Beton- und
+  Stahlbetonarbeiten" → Wand, Decke, Fundament, …) — Stufe 0 ersetzt deshalb **nicht**
+  Stufe 1 (Bauteiltyp), auch wenn sie Positionsart und Gewerk in einem Schritt liefert.
 - **Nicht-Bauteil-Positionen** (`positionsart != "bauteil"`, z. B. Personal-,
-  Planungs-, Baustelleneinrichtungskosten) durchlaufen Stufe 1/2 nicht — sie haben kein
-  `bauteiltyp`/`gewerk` und ein eigenes, kleineres Eigenschaftsschema (siehe
+  Planungs-, Baustelleneinrichtungskosten) durchlaufen Stufe 1 nicht — sie haben kein
+  `bauteiltyp` und ein eigenes, kleineres Eigenschaftsschema (siehe
   [`data-model.md`](data-model.md)). Auch dafür ist die Zuordnung
   `positionsart → Ruleset` registrierbar statt hart codiert.
 - **Nur `rule_based.py` kennt die Registry und einzelne Rulesets.** Aufrufer außerhalb
   des Pakets importieren weiterhin ausschließlich `ClassifierProtocol`/`get_classifier()`.
 - `meta.classifier = "rule"`, zusätzlich `meta.ruleset` (aufgelöster Ruleset-Key oder
   `"fallback"`), `meta.confidence = 1.0` (deterministisch).
-- **Gewerk-Taxonomie:** perspektivisch an STLB-Bau-Leistungsbereiche angelehnt; die
-  konkrete LB-Nummern-Zuordnung ist **offen und vor einem entsprechenden Ruleset zu
-  verifizieren** (nicht erfinden) — siehe [`domain/README.md`](../domain/README.md).
-  Bis dahin ist `gewerk` ein Freitext-Label ohne Normbezug.
+- **Gewerk-Taxonomie:** `gewerk`/`gewerk_lb` kommen direkt aus der STLB-Bau-Referenz-CSV
+  — solange diese leer ist, bleiben beide `null` und `positionsart` kommt aus dem
+  bisherigen Heuristik-Fallback (nicht erfinden) — siehe
+  [`domain/README.md`](../domain/README.md).
 
 **LLM (später, out of MVP scope):** prompt-basierte Extraktion desselben mehrstufigen
-`attributes`-Schemas (Positionsart, Bauteiltyp, Gewerk, Eigenschaften), batched, mit
+`attributes`-Schemas (Positionsart, Bauteiltyp, Gewerk/LB, Eigenschaften), batched, mit
 `meta.confidence` je Ergebnis. Slot ist vorhanden; Anbindung ist ein eigenes
 Post-MVP-Arbeitspaket (siehe [`implementation-plan.md`](../implementation-plan.md)).
 

@@ -49,15 +49,31 @@ pauschal anzunehmen.
 
 ---
 
-## Offene Verifikation: STLB-Bau-Gewerke-Zuordnung (WP-2)
+## STLB-Bau-Leistungsbereiche als primäre Klassifizierungsquelle (WP-2)
 
-Die Klassifizierung (Bauteiltyp × Gewerk/Material, siehe
+Die Klassifizierung (siehe
 [`architecture/backend.md`](../architecture/backend.md#klassifizierung-wp-2--austauschbar-regel--llm-mehrstufig-erweiterbar))
-soll `gewerk` perspektivisch an STLB-Bau-Leistungsbereiche (LB) andocken. Die konkrete
-LB-Nummern-Zuordnung (z. B. welcher LB zu „Ortbeton", „Fertigteil", „Holzbau",
-„Stahlbau" gehört) ist **nicht verifiziert** und wird vor Implementierung eines
-entsprechenden Rulesets **nicht erfunden**, sondern nachgefragt/belegt. Bis dahin ist
-`gewerk` ein internes Freitext-Label ohne Normbezug. Bauteiltyp (`Wand`, `Decke`,
-`Fundament`, …) und Positionsart (`bauteil`, `personal`, `planung`, …) sind ebenfalls
-interne, nicht-normative Arbeits-Taxonomien — bewusst klein im MVP, inkrementell
-erweiterbar.
+matcht Kurz-/Langtext **direkt gegen die STLB-Bau-Leistungsbereiche (LB)** — nicht erst
+gegen ein internes Freitext-Gewerk-Vokabular. Das liefert `gewerk`/`gewerk_lb` **und**,
+für die eindeutig nicht-physischen LBs (z. B. Baustelleneinrichtung), direkt
+`positionsart` — beides normbasiert statt erfunden.
+
+**Referenzdaten (vom Maintainer bereitzustellen, nicht zu erfinden):**
+[`reference/stlb-bau-leistungsbereiche.csv`](reference/stlb-bau-leistungsbereiche.csv) —
+eine Zeile je STLB-Bau-LB mit Spalten `lb_nummer`, `lb_bezeichnung`,
+`positionsart_default` (nur gesetzt für eindeutig nicht-Bauteil-LBs, sonst leer),
+`keywords` (Pipe-getrennte Stichworte für den Text-Abgleich) und `quelle_version`
+(Version/Stand des STLB-Bau-Katalogs, aus dem die Zeile stammt). Solange diese Datei
+nur das Format, aber keine echten LB-Zeilen enthält, bleibt die Zuordnung offen — der
+Klassifizierer fällt dann für jede Position auf die heuristische Positionsart-/
+Bauteiltyp-Erkennung zurück (kein Fehler, siehe `architecture/backend.md`).
+
+**Warum nicht nur Freitext:** LB-Nummern sind stabil und normbasiert; ein Ruleset-Key
+`(bauteiltyp, gewerk_lb)` bleibt gültig, auch wenn sich Bezeichnungen zwischen
+Katalogversionen ändern. Details/Grenzen der LB-Granularität (ein LB deckt meist mehrere
+Bauteiltypen ab, daher bleibt Bauteiltyp-Erkennung als eigene Stufe nötig) siehe
+`architecture/backend.md`.
+
+Bauteiltyp (`Wand`, `Decke`, `Fundament`, …) und die nicht-physischen `positionsart`-Werte
+(`personal`, `planung`, …) ohne LB-Zuordnung bleiben interne, nicht-normative
+Arbeits-Taxonomien — bewusst klein im MVP, inkrementell erweiterbar.
