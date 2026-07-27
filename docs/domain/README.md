@@ -46,3 +46,18 @@ Bodenklassen-Begriffe enthalten. Diese Logik darf **nicht** als aktuelle Regel
 zementiert werden — bei Erdarbeiten-Positionen ist zu prüfen, ob Homogenbereich- oder
 (veraltete) Bodenklassen-Terminologie vorliegt, statt eine der beiden Systematiken
 pauschal anzunehmen.
+
+---
+
+## Offene Verifikation: STLB-Bau-Gewerke-Zuordnung (WP-2)
+
+Die Klassifizierung (Bauteiltyp × Gewerk/Material, siehe
+[`architecture/backend.md`](../architecture/backend.md#klassifizierung-wp-2--austauschbar-regel--llm-mehrstufig-erweiterbar))
+soll `gewerk` perspektivisch an STLB-Bau-Leistungsbereiche (LB) andocken. Die konkrete
+LB-Nummern-Zuordnung (z. B. welcher LB zu „Ortbeton", „Fertigteil", „Holzbau",
+„Stahlbau" gehört) ist **nicht verifiziert** und wird vor Implementierung eines
+entsprechenden Rulesets **nicht erfunden**, sondern nachgefragt/belegt. Bis dahin ist
+`gewerk` ein internes Freitext-Label ohne Normbezug. Bauteiltyp (`Wand`, `Decke`,
+`Fundament`, …) und Positionsart (`bauteil`, `personal`, `planung`, …) sind ebenfalls
+interne, nicht-normative Arbeits-Taxonomien — bewusst klein im MVP, inkrementell
+erweiterbar.

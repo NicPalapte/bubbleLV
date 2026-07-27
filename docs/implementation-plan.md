@@ -37,29 +37,70 @@ Schritte:
 
 ## WP-2 · Klassifizierung hinter austauschbarer Schnittstelle  · `feat(classify)`
 
-**Ziel:** Merkmale aus Kurz-/Langtext erzeugen und in `attributes` ablegen — hinter einem
-`ClassifierProtocol`, sodass später ein LLM-Klassifizierer ohne Umbau eingehängt werden kann.
-Design: [`architecture/backend.md`](architecture/backend.md#klassifizierung-wp-2--austauschbar-regel--llm).
+**Ziel:** Merkmale aus Kurz-/Langtext **mehrstufig** erzeugen und in `attributes`
+ablegen — hinter `ClassifierProtocol` (Signatur bleibt stabil, WP-7/LLM bleibt ohne
+Umbau einhängbar). Neu gegenüber der ursprünglichen Fassung: die Klassifizierung
+entscheidet zuerst, ob eine Position überhaupt ein physisches Bauteil beschreibt,
+erkennt danach Bauteiltyp und Gewerk/Material getrennt, und delegiert die eigentliche
+Eigenschafts-Extraktion an ein **Ruleset pro (Bauteiltyp, Gewerk)-Kombination** — neue
+Gewerke kommen als neues Ruleset hinzu, ohne den Klassifizierer selbst umzubauen.
+Design: [`architecture/backend.md`](architecture/backend.md#klassifizierung-wp-2--austauschbar-regel--llm-mehrstufig-erweiterbar).
 
 Schritte:
 1. Paket `app/services/classification/` mit `base.py`: `ClassifierProtocol`,
-   `ClassifierInput`, `ClassificationResult` (`attributes` + `meta`).
-2. `rule_based.py` → `RuleBasedClassifier`: Betongüte (`C\d\d/\d\d`), Expositionsklassen
-   (`X[CDFSA]\d`), tragend/nichttragend, Maße (Dicke/Höhe), Stichworte. `meta.classifier="rule"`.
-3. Factory `get_classifier()` + Config `settings.CLASSIFIER` (`rule | llm`, Default `rule`).
-   `llm.py` als Platzhalter mit `NotImplementedError` anlegen (Slot für Post-MVP).
-4. Aufruf über `ClassifierInput` (nicht über die DB) als Schritt über `LVDraft` **vor**
-   `persist_lv` — quellen- **und** klassifizierer-unabhängig. `_meta` in `attributes` schreiben.
-5. `ReclassifyService.reclassify(lv_id)`: persistierte Positionen → `ClassifierInput` →
-   aktiver Classifier → nur `attributes` aktualisieren (kein Neu-Import, Zuständigkeit bleibt).
-6. Unit-Tests gegen bekannte Fixture-Positionen; Klassifizierer über das Protocol gemockt.
+   `ClassifierInput`, `ClassificationResult` (`attributes` + `meta`) — Protocol-Signatur
+   unverändert gegenüber der ursprünglichen Planung.
+2. **Stufe 0 (Positionsart):** Bauteil vs. Nicht-Bauteil (`personal`, `planung`,
+   `baustelleneinrichtung`, `nebenleistung`, `sonstige`) anhand Stichworten/Einheit
+   (z. B. `Std`, `psch`, „Baustelleneinrichtung", „Bauleitung"). Ergebnis:
+   `attributes.positionsart`. Nicht-Bauteil-Positionen bekommen ein eigenes,
+   kleineres Eigenschaftsschema (kein `beton`/`tragend`) über eigene Rulesets
+   (`PersonalRuleset`, `PlanungRuleset`, `BaustelleneinrichtungRuleset`, …).
+3. **Stufe 1 (nur `positionsart="bauteil"`):** Bauteiltyp-Erkennung (`Wand`, `Decke`,
+   `Fundament`, … — kleines, erweiterbares Vokabular) → `attributes.bauteiltyp`.
+4. **Stufe 2 (nur Bauteil):** Gewerk-/Material-Erkennung (`Ortbeton`, `Fertigteil`,
+   `Mauerwerk`, `Holzbau`, `Stahlbau`, …) → `attributes.gewerk`. Ausrichtung an
+   STLB-Bau-Leistungsbereichen ist das Ziel; die LB-Nummern-Zuordnung ist **offen und
+   vor Umsetzung zu verifizieren** (nicht erfinden, siehe
+   [`domain/README.md`](domain/README.md)) — MVP startet mit Freitext-Gewerk-Label,
+   LB-Code als optionales Zusatzfeld sobald verifiziert.
+5. **Ruleset-Registry** (`app/services/classification/rulesets/`): `PropertyRuleset`-
+   Protocol, ein Ruleset je (Bauteiltyp, Gewerk) extrahiert die für diese Kombination
+   relevanten Eigenschaften (z. B. Ortbeton-Wand: Betongüte `C\d\d/\d\d`,
+   Expositionsklassen `X[CDFSA]\d`, tragend/nichttragend, Maße, Stichworte). Eine
+   Registry löst `(bauteiltyp, gewerk) → Ruleset` auf; fehlt ein Ruleset für die
+   Kombination, greift ein generischer Fallback-Extraktor (nur Maße/Stichworte,
+   **kein Fehler**) — der Mechanismus, über den neue Gewerke inkrementell
+   nachgezogen werden, ohne bestehende Ergebnisse zu verändern.
+6. `llm.py`-Platzhalter (`NotImplementedError`, Slot für WP-7) unverändert.
+7. Factory `get_classifier()` + `settings.CLASSIFIER` (`rule | llm`, Default `rule`)
+   unverändert.
+8. Klassifizierung weiterhin als Schritt über `LVDraft` **vor** `persist_lv`;
+   `_meta` (`classifier`, `ruleset`, `version`, `confidence`, `at`) in `attributes`.
+9. `ReclassifyService.reclassify(lv_id)`: persistierte Positionen → `ClassifierInput`
+   → aktiver Classifier → nur `attributes` aktualisieren (kein Neu-Import, Vertrag
+   unverändert).
+10. Unit-Tests: je Stufe, je registriertem Ruleset, Fallback-Pfad (Bauteiltyp/Gewerk
+    ohne Ruleset liefert Basis-Attribute statt Fehler), Nicht-Bauteil-Pfad.
 
 **Fertig, wenn:**
-- Bekannte Positionen liefern erwartete `attributes` (z. B. `02.010` → `beton:"C30/37"`,
-  `expo:["XC2","XD1"]`, `tragend:true`) inkl. `_meta.classifier="rule"`.
-- Positionen ohne Merkmale erhalten leere Facetten ohne Fehler.
-- Der Aufrufer importiert nur `ClassifierProtocol`/`get_classifier` — nie `RuleBasedClassifier` direkt.
-- `ReclassifyService` aktualisiert `attributes` ohne die LV-Struktur oder `assignee_id` anzufassen.
+- `02.010` (Ortbeton-Wand) → `positionsart:"bauteil"`, `bauteiltyp:"Wand"`,
+  `gewerk:"Ortbeton"`, `beton:"C30/37"`, `expo:["XC2","XD1"]`, `tragend:true`,
+  `_meta.classifier="rule"`, `_meta.ruleset="ortbeton_wand"`.
+- Eine Personal-/Baustelleneinrichtungs-Position → `positionsart` entsprechend gesetzt,
+  **keine** `beton`/`tragend`-Keys.
+- Eine Bauteil-Position mit (noch) unbekannter Bauteiltyp/Gewerk-Kombination erhält
+  Basis-Attribute über den Fallback-Extraktor, **kein** Fehler.
+- Positionen ohne erkennbare Merkmale: leere Facetten ohne Fehler.
+- Der Aufrufer importiert nur `ClassifierProtocol`/`get_classifier` — nie
+  `RuleBasedClassifier` oder ein konkretes Ruleset direkt.
+- `ReclassifyService` aktualisiert `attributes` ohne LV-Struktur oder `assignee_id`
+  anzufassen.
+- `pytest` grün, Coverage ≥ 80 %.
+
+Für die MVP-Abnahme genügt ein initiales Ruleset-Set (z. B. Ortbeton + Fertigteil für
+Wand/Decke/Fundament, plus die Nicht-Bauteil-Rulesets); weitere Gewerke/Bauteiltypen
+werden inkrementell nachgezogen, siehe [`mvp-scope.md`](mvp-scope.md).
 
 ---
 

@@ -50,20 +50,48 @@ Default `OPEN` (aus Import) und ist nur Filter-Facette, nicht editierbar.
 
 ## `attributes` — Schema der Klassifizierung
 
-Frei erweiterbar, aber mit vereinbarten Schlüsseln, damit die Facetten stabil sind:
+Frei erweiterbar, aber mit vereinbarten Schlüsseln, damit die Facetten stabil sind.
+Die Klassifizierung ist **mehrstufig** (siehe
+[`architecture/backend.md`](backend.md#klassifizierung-wp-2--austauschbar-regel--llm-mehrstufig-erweiterbar));
+welche Keys neben `positionsart` befüllt werden, hängt vom Ergebnis der vorherigen Stufe ab.
+
+**Stufe 0 — für jede Position gesetzt:**
 
 | Key | Typ | Beispiel | Facette |
 |---|---|---|---|
-| `beton` | `str \| null` | `"C30/37"` | Betongüte |
-| `expo` | `list[str]` | `["XC2","XD1"]` | Expositionsklasse |
-| `tragend` | `bool \| null` | `true` | tragend/nichttragend |
-| `dicke` | `str \| null` | `"30 cm"` | (Anzeige) |
-| `hoehe` | `str \| null` | `"3–4 m"` | (Anzeige) |
+| `positionsart` | `str` | `"bauteil"` | Positionsart (`bauteil \| personal \| planung \| baustelleneinrichtung \| nebenleistung \| sonstige`) |
+
+**Nur wenn `positionsart == "bauteil"`:**
+
+| Key | Typ | Beispiel | Facette | Gilt für |
+|---|---|---|---|---|
+| `bauteiltyp` | `str \| null` | `"Wand"` | Bauteiltyp | alle Bauteil-Positionen |
+| `gewerk` | `str \| null` | `"Ortbeton"` | Gewerk/Material | alle Bauteil-Positionen |
+| `beton` | `str \| null` | `"C30/37"` | Betongüte | Gewerk `Ortbeton`/`Fertigteil` |
+| `expo` | `list[str]` | `["XC2","XD1"]` | Expositionsklasse | Gewerk `Ortbeton`/`Fertigteil` |
+| `tragend` | `bool \| null` | `true` | tragend/nichttragend | tragfähige Bauteiltypen |
+| `dicke` | `str \| null` | `"30 cm"` | (Anzeige) | Ruleset-abhängig |
+| `hoehe` | `str \| null` | `"3–4 m"` | (Anzeige) | Ruleset-abhängig |
+
+**Nur wenn `positionsart != "bauteil"`** — eigenes, kleineres Schema, **kein**
+`bauteiltyp`/`gewerk`/`beton`/`tragend`; Keys kommen aus dem jeweiligen
+Nicht-Bauteil-Ruleset (z. B. `PersonalRuleset`, `PlanungRuleset`), initial minimal
+und inkrementell erweiterbar — nicht als vollständiges Schema vorab festgelegt.
+
+**Für alle Positionen:**
+
+| Key | Typ | Beispiel | Facette |
+|---|---|---|---|
 | `keywords` | `list[str]` | `["WA-Beton","CEM III/A"]` | Besonderheiten |
 
+Welches `PropertyRuleset` (Bauteil-Positionen) bzw. Nicht-Bauteil-Ruleset zuständig ist,
+entscheidet die `RulesetRegistry` im Klassifizierer — fehlt eine Zuordnung, liefert ein
+Fallback-Extraktor Basis-Attribute statt eines Fehlers (siehe
+[`architecture/backend.md`](backend.md)).
+
 Facetten-Filter im Frontend werden **dynamisch aus den vorkommenden Werten** erzeugt
-(wie im Design). Neue Klassifizierungs-Keys erscheinen automatisch, sobald der Extraktor
-sie liefert — ohne Schema-Migration.
+(wie im Design). Neue Klassifizierungs-Keys erscheinen automatisch, sobald ein
+(neues) Ruleset sie liefert — ohne Schema-Migration.
 
 ### Provenance (vorbereitet für LLM)
 
@@ -73,12 +101,25 @@ können, trägt `attributes` einen reservierten Meta-Block. Die Facetten-Keys bl
 
 ```jsonc
 {
+  "positionsart": "bauteil",
+  "bauteiltyp": "Wand",
+  "gewerk": "Ortbeton",
   "beton": "C30/37",
   "expo": ["XC2", "XD1"],
   "tragend": true,
-  "_meta": { "classifier": "rule", "version": 1, "confidence": 1.0, "at": "2026-…" }
+  "_meta": {
+    "classifier": "rule",
+    "ruleset": "ortbeton_wand",
+    "version": 1,
+    "confidence": 1.0,
+    "at": "2026-…"
+  }
 }
 ```
+
+`_meta.ruleset` hält fest, welches konkrete `PropertyRuleset` (oder `"fallback"`) die
+Attribute geliefert hat — wichtig, um später nachzuvollziehen, welche
+Bauteiltyp/Gewerk-Kombinationen noch keinen eigenen Ruleset haben.
 
 Das kostet **keine** zusätzliche Migration im MVP (steckt im vorhandenen `attributes`-JSONB).
 Sollte später feinere Abfragbarkeit nötig werden, können `classified_by` / `classified_at`

@@ -81,17 +81,18 @@ class LVDraft(BaseModel):
 - Idempotenz unverändert: OZ als natürlicher Schlüssel (`uq_position_lv_oz`),
   `on_conflict_do_update`. Manuelle Zuständigkeiten bleiben beim Re-Import erhalten.
 
-## Klassifizierung (WP-2) — austauschbar (Regel ↔ LLM)
+## Klassifizierung (WP-2) — austauschbar (Regel ↔ LLM), mehrstufig, erweiterbar
 
 Die Klassifizierung liegt hinter einem **Protocol**, analog zur pyGAEB-Adaptergrenze.
 So ist der regelbasierte Extraktor des MVP später gegen einen LLM-Klassifizierer
 austauschbar (oder mit ihm kombinierbar) — ohne Änderung an Import, Persistenz oder API.
+Diese äußere Schnittstelle ist bewusst schmal und **stabil**:
 
 ```python
 # app/services/classification/base.py
 class ClassificationResult(BaseModel):
-    attributes: dict[str, Any] = {}          # beton, expo, tragend, dicke, hoehe, keywords
-    meta: ClassificationMeta                  # classifier-id, version, confidence
+    attributes: dict[str, Any] = {}          # siehe data-model.md — mehrstufig befüllt
+    meta: ClassificationMeta                  # classifier-id, ruleset-id, version, confidence
 
 class ClassifierProtocol(Protocol):
     async def classify(self, item: ClassifierInput) -> ClassificationResult: ...
@@ -121,13 +122,75 @@ class ClassifierInput(BaseModel):             # entkoppelt vom Persistenzmodell
 - Ergebnis (`attributes` + `meta`) landet in `Position.attributes`; Provenance-Konvention
   siehe [`data-model.md`](data-model.md).
 
-**MVP (`RuleBasedClassifier`):** heuristische Extraktoren — Betongüte (`C\d\d/\d\d`),
-Expositionsklassen (`X[CDFSA]\d`), tragend/nichttragend, Maße, Stichworte. `meta.classifier
-= "rule"`, `meta.confidence = 1.0` (deterministisch). Bewusst unvollständig, erweiterbar.
+### `RuleBasedClassifier` (MVP) — vierstufige Pipeline hinter dem Protocol
 
-**LLM (später, out of MVP scope):** prompt-basierte Extraktion desselben `attributes`-Schemas,
-batched, mit `meta.confidence` je Ergebnis. Slot ist vorhanden; Anbindung ist ein
-eigenes Post-MVP-Arbeitspaket (siehe [`implementation-plan.md`](../implementation-plan.md)).
+Nach außen bleibt `RuleBasedClassifier.classify()` ein einziger Aufruf. Intern
+orchestriert er vier Stufen; ab Stufe 3 ist die eigentliche Eigenschafts-Extraktion
+**pluggable**, damit neue Bauteiltypen/Gewerke inkrementell hinzukommen, ohne den
+Klassifizierer selbst zu ändern:
+
+```
+ClassifierInput
+    │
+    ▼
+Stufe 0 — PositionKind      → attributes.positionsart
+    │        ("bauteil" | "personal" | "planung" | "baustelleneinrichtung" | …)
+    │
+    ├── nicht "bauteil" ──► Nicht-Bauteil-Ruleset (per positionsart) ──► attributes
+    │
+    ▼ ("bauteil")
+Stufe 1 — ObjectType         → attributes.bauteiltyp   ("Wand" | "Decke" | "Fundament" | …)
+    │
+    ▼
+Stufe 2 — WorkType            → attributes.gewerk       ("Ortbeton" | "Fertigteil" | "Holzbau" | …)
+    │
+    ▼
+Stufe 3 — RulesetRegistry.resolve(bauteiltyp, gewerk)
+    │
+    ├── Ruleset gefunden ──► Ruleset.extract(item)   ──► spezifische Attribute (z. B. beton, expo, tragend)
+    └── kein Ruleset       ──► FallbackRuleset.extract(item) ──► Basis-Attribute (Maße, Stichworte)
+```
+
+```python
+# app/services/classification/rulesets/base.py
+class RulesetKey(NamedTuple):
+    bauteiltyp: str
+    gewerk: str
+
+class PropertyRuleset(Protocol):
+    key: RulesetKey
+    def extract(self, item: ClassifierInput) -> dict[str, Any]: ...
+
+class RulesetRegistry:
+    def register(self, ruleset: PropertyRuleset) -> None: ...
+    def resolve(self, bauteiltyp: str, gewerk: str) -> PropertyRuleset:
+        """Exakter (bauteiltyp, gewerk)-Treffer, sonst `FallbackRuleset`."""
+```
+
+- **Registrierung ist additiv:** ein neues Gewerk (z. B. Stahlbau) kommt als neues
+  `PropertyRuleset`-Modul + `registry.register(...)` hinzu. Bestehende Rulesets,
+  Stufe 0–2 und die äußere `ClassifierProtocol`-Signatur bleiben unverändert.
+- **Kein Fehler bei fehlendem Ruleset:** `RulesetRegistry.resolve()` fällt auf
+  `FallbackRuleset` zurück (nur Maße/Stichworte) — das MVP muss nicht für jede
+  Bauteiltyp/Gewerk-Kombination ein eigenes Ruleset mitbringen.
+- **Nicht-Bauteil-Positionen** (`positionsart != "bauteil"`, z. B. Personal-,
+  Planungs-, Baustelleneinrichtungskosten) durchlaufen Stufe 1/2 nicht — sie haben kein
+  `bauteiltyp`/`gewerk` und ein eigenes, kleineres Eigenschaftsschema (siehe
+  [`data-model.md`](data-model.md)). Auch dafür ist die Zuordnung
+  `positionsart → Ruleset` registrierbar statt hart codiert.
+- **Nur `rule_based.py` kennt die Registry und einzelne Rulesets.** Aufrufer außerhalb
+  des Pakets importieren weiterhin ausschließlich `ClassifierProtocol`/`get_classifier()`.
+- `meta.classifier = "rule"`, zusätzlich `meta.ruleset` (aufgelöster Ruleset-Key oder
+  `"fallback"`), `meta.confidence = 1.0` (deterministisch).
+- **Gewerk-Taxonomie:** perspektivisch an STLB-Bau-Leistungsbereiche angelehnt; die
+  konkrete LB-Nummern-Zuordnung ist **offen und vor einem entsprechenden Ruleset zu
+  verifizieren** (nicht erfinden) — siehe [`domain/README.md`](../domain/README.md).
+  Bis dahin ist `gewerk` ein Freitext-Label ohne Normbezug.
+
+**LLM (später, out of MVP scope):** prompt-basierte Extraktion desselben mehrstufigen
+`attributes`-Schemas (Positionsart, Bauteiltyp, Gewerk, Eigenschaften), batched, mit
+`meta.confidence` je Ergebnis. Slot ist vorhanden; Anbindung ist ein eigenes
+Post-MVP-Arbeitspaket (siehe [`implementation-plan.md`](../implementation-plan.md)).
 
 ## Read-API (WP-3)
 
