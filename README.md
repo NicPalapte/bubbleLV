@@ -29,7 +29,7 @@ Domänendaten hängen können – im MVP wird sie 1:1 aus der LV-Hierarchie erze
 | Datenbank     | PostgreSQL + SQLAlchemy 2.x + Alembic                |
 | GAEB-Parsing  | `pyGAEB` – gekapselt hinter `PyGAEBAdapter`          |
 | Auth          | JWT via `fastapi-users` (vorbereitet für Azure AD SSO)|
-| Frontend      | React + Tailwind (separates Repository)              |
+| Frontend      | React + Tailwind             |
 | Testing       | pytest + pytest-asyncio + httpx                      |
 | Linting       | ruff + mypy                                          |
 
