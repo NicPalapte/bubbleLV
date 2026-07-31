@@ -4,11 +4,20 @@
 > außen bleibt bewusst schmal (siehe [`README.md`](../README.md)). Hier steht die
 > längere Sicht, gegen die architektonisch entworfen wird (v. a.
 > [`architecture/data-model.md`](architecture/data-model.md)).
+>
+> **Aktueller Stand:** Das MVP ist zu einer **reinen Frontend-Anwendung** ohne Server
+> geworden (kein Login, nichts wird gespeichert) — siehe
+> [`mvp-scope.md`](mvp-scope.md), [`architecture/pipeline.md`](architecture/pipeline.md).
+> Schritte 2–6 unten setzen alle eine Server-Komponente mit Persistenz voraus (Notizen,
+> Aufgaben, Termine hängen an einem `WBSNode`, der eine Session überlebt) und sind
+> damit **pausiert**, solange das MVP frontend-only bleibt. Die frühere
+> Backend-Planung ist auf `archive/backend-mvp` gesichert, falls dieser Weg später
+> wieder aufgenommen wird.
 
-## Roadmap in sechs Schritten
+## Roadmap in sechs Schritten (Post-MVP, setzt eine künftige Server-Komponente voraus)
 
 Das MVP ist Schritt 1. Jeder weitere Schritt hängt Domänen-Daten an den `WBSNode`
-(siehe [`architecture/data-model.md`](architecture/data-model.md#wbsnode--universelle-work-breakdown-spine))
+(siehe [`architecture/data-model.md`](architecture/data-model.md#wbsnode--zurückgestellt-setzt-einen-server-voraus))
 statt eine neue, isolierte Struktur zu bauen.
 
 1. **LV-Viewer / Graph** — GAEB importieren, klassifizieren, als Bubble-Graph und

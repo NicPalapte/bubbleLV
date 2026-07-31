@@ -1,5 +1,5 @@
 {
-  "name": "LVBubbles",
+  "name": "Bubble",
   "dockerComposeFile": "docker-compose.yml",
   "service": "app",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
@@ -7,20 +7,13 @@
   "customizations": {
     "vscode": {
       "extensions": [
-        "ms-python.python",
-        "ms-python.vscode-pylance",
-        "ms-python.black-formatter",
-        "charliermarsh.ruff",
-        "mtxr.sqltools",
-        "mtxr.sqltools-driver-pg",
-        "humao.rest-client"
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss"
       ],
       "settings": {
-        "python.defaultInterpreterPath": "/usr/local/bin/python",
         "editor.formatOnSave": true,
-        "editor.defaultFormatter": "ms-python.black-formatter",
-        "python.testing.pytestEnabled": true,
-        "python.testing.pytestArgs": ["tests"]
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
       }
     }
   },
@@ -30,12 +23,11 @@
     "ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
   },
 
-  "postCreateCommand": "pip install -e '.[dev]'",
+  "postCreateCommand": "if [ -f frontend/package.json ]; then npm --prefix frontend install; fi",
   "remoteUser": "root",
 
-  "forwardPorts": [8000, 5432],
+  "forwardPorts": [5173],
   "portsAttributes": {
-    "8000": { "label": "FastAPI", "onAutoForward": "notify" },
-    "5432": { "label": "PostgreSQL", "onAutoForward": "silent" }
+    "5173": { "label": "Vite Dev Server", "onAutoForward": "notify" }
   }
 }
