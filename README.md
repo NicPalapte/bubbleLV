@@ -1,7 +1,9 @@
 # Bubble
 
-Ein kostenloser LV-Viewer: GAEB-Leistungsverzeichnis importieren, automatisch
-klassifizieren und als interaktiven Graph im Browser durchsuchen und filtern.
+Ein kostenloser LV-Viewer: GAEB-Leistungsverzeichnis laden, automatisch klassifizieren
+und als interaktiven Graph im Browser durchsuchen und filtern — **komplett
+client-seitig**. Keine Installation, kein Login, kein Server: die Datei verlässt den
+Browser nie, es wird nichts gespeichert.
 
 Die Besonderheit ist, dass sich das Leistungsverzeichnis interaktiv als Nodes in einem Browser anschauenlässt. 
 Die Nodes lassen sich nach verschiedenen Attributen, Beziehungen und Größen anschauen, filtern und sortieren. 
@@ -11,11 +13,9 @@ sondern übernimmt die Angebotskoordination drum herum.
 
 ## Datenmodell
 
-Unter dem Viewer liegt eine quellen-agnostische Struktur: das Leistungsverzeichnis
-ist eine von mehreren möglichen Quellen, die diese Struktur befüllt (Details:
-[`docs/architecture/data-model.md`](docs/architecture/data-model.md)). Perspektivisch
-ist das Rückgrat eine eigene Work-Breakdown-Struktur (WBSNode), an der weitere
-Domänendaten hängen können – im MVP wird sie 1:1 aus der LV-Hierarchie erzeugt.
+Die LV-Struktur (Los → Abschnitt → Position, Abschnitt selbst-verschachtelbar) ist
+quellen-agnostisch beschrieben: GAEB ist die einzige Quelle im MVP, aber nichts am
+Modell ist GAEB-spezifisch. Details: [`docs/architecture/data-model.md`](docs/architecture/data-model.md).
 
 ---
 
@@ -25,95 +25,90 @@ Domänendaten hängen können – im MVP wird sie 1:1 aus der LV-Hierarchie erze
 
 | Schicht       | Technologie                                          |
 |---------------|------------------------------------------------------|
-| Backend       | Python 3.12 / FastAPI (async)                        |
-| Datenbank     | PostgreSQL + SQLAlchemy 2.x + Alembic                |
-| GAEB-Parsing  | `pyGAEB` – gekapselt hinter `PyGAEBAdapter`          |
-| Auth          | JWT via `fastapi-users` (vorbereitet für Azure AD SSO)|
-| Frontend      | React + Tailwind             |
-| Testing       | pytest + pytest-asyncio + httpx                      |
-| Linting       | ruff + mypy                                          |
+| App           | Vite · React · TypeScript · Tailwind (`frontend/`)   |
+| GAEB-Parsing  | eigener TS-Parser, gekapselt hinter `GaebParser`      |
+| Persistenz    | **keine** — alles im Browser-Speicher einer Session   |
+| Testing       | Vitest                                                |
+| Linting       | ESLint + Prettier                                     |
 
-### Schichtenmodell
+Es gibt kein Backend, keine Datenbank, keinen Login. Eine hochgeladene Datei wird per
+`FileReader` im Browser gelesen, geparst, klassifiziert und in React-State gehalten —
+nichts wird an einen Server geschickt oder in `localStorage` abgelegt. Ein Reload
+verwirft den Stand; das ist gewollt.
+
+### Client-seitige Pipeline
 
 ```
-HTTP-Request
-    │
+Datei (Drag&Drop/Input)
+    │  FileReader
     ▼
-Router          ← nur HTTP-Layer, keine Logik
-    │
+GaebParser          ← einzige Stelle mit GAEB-XML-Kenntnis
+    │  → LVDraft (quellen-agnostisch, ohne GAEB-Begriffe)
     ▼
-Service         ← Business-Logik
-    │
+classify(draft)      ← Klassifizierung Kurz-/Langtext, befüllt Position.attributes
     ▼
-Repository      ← DB-Zugriff (Query-Layer)
-    │
+buildTree(draft)      ← rekursiver LVNode-Baum für Tree, Graph und Tabelle
     ▼
-PostgreSQL
+React State (Session-only, kein localStorage für Fachdaten)
 ```
 
-Routen delegieren ausschließlich an den Service-Layer. Kein direkter
-DB-Zugriff aus Routen oder Services – nur über das Repository.
+`matchPos` ist die einzige Quelle für Filter-/Suchlogik. Tree und Bubble-Graph
+konsumieren denselben rekursiven `LVNode`-Baum.
 
 ### Projektstruktur
 
 ```
-lv-manager/
+bubble/
 ├── .devcontainer/
-    ├── devcontainer.json
-    ├── docker-compose.yml    
-├── app/
-│   ├── main.py                  # FastAPI App, Router-Registration
-│   ├── config.py                # Settings via pydantic-settings
-│   ├── database.py              # Async SQLAlchemy Engine & Session
-│   ├── adapters/
-│   │   └── gaeb_adapter.py      # PyGAEBAdapter – einzige pyGAEB-Abhängigkeit
-│   ├── models/                  # SQLAlchemy ORM Models
-│   ├── schemas/                 # Pydantic v2 Request/Response Schemas
-│   ├── routers/                 # FastAPI Router
-│   ├── services/                # Business-Logik
-│   ├── repositories/            # DB-Zugriff
-│   └── core/
-│       ├── auth.py              # JWT + SSO-Abstraktion
-│       ├── exceptions.py        # GAEBParseError, GAEBValidationError, GAEBVersionError
-│       ├── email.py
-│       └── storage.py
-├── alembic/                     # DB-Migrationen
+│   ├── devcontainer.json
+│   └── docker-compose.yml
+├── frontend/                     # wird in WP-D angelegt
+│   ├── src/
+│   │   ├── lib/
+│   │   │   ├── gaeb/             # GaebParser – einzige Stelle mit GAEB-Kenntnis
+│   │   │   ├── classify/         # RuleBasedClassifier (TS-Port aus WP-2)
+│   │   │   └── tree/             # buildTree – LVDraft → LVNode
+│   │   ├── components/
+│   │   ├── state/
+│   │   └── types/
+│   └── tests/
+│       └── fixtures/             # echte GAEB DA XML-Testdateien
 ├── tests/
-│   ├── conftest.py
-│   ├── fixtures/                # Echte GAEB DA XML-Testdateien
-│   ├── unit/
-│   ├── integration/
-│   └── api/
-├── .claude/
-    ├── CLAUDE.md                # Coding-Agent-Instruktionen
-│   ├── settings.json            # Claude Code Hook-Konfiguration
-│   └── hooks/lint.sh            # Automatisches Linting nach jedem Edit/Write
+│   └── fixtures/                 # GAEB DA XML-Testdateien (Quelle, siehe oben)
 ├── docs/
-│   └── mvp-scope.md             # Feature-Specs und Out-of-Scope-Liste              
-├── pyproject.toml
+│   ├── mvp-scope.md              # Feature-Specs und Out-of-Scope-Liste
+│   ├── implementation-plan.md    # Arbeitspakete WP-A…G
+│   └── architecture/
+├── .claude/
+│   ├── CLAUDE.md                 # Coding-Agent-Instruktionen
+│   ├── settings.json             # Claude Code Hook-Konfiguration
+│   └── hooks/lint.sh             # ESLint + Prettier nach jedem Edit/Write
 ```
 
-### GAEB-Adapter-Pattern
+### GAEB-Parser-Pattern
 
-`pyGAEB` ist eine junge Bibliothek – um Breaking Changes abzufangen, ist sie
-vollständig hinter einem Adapter-Pattern gekapselt:
+GAEB DA XML (Versionen 2.0–3.3) ist ein offenes XML-Format. Statt einer Server-Library
+wie `pyGAEB` gibt es einen eigenen, schlanken TS-Parser, der wie zuvor der
+Python-Adapter vollständig gekapselt ist:
 
 ```
-GAEBParserProtocol (ABC)
-    └── PyGAEBAdapter   ← app/adapters/gaeb_adapter.py
+GaebParser (Interface)
+    └── XmlGaebParser   ← frontend/src/lib/gaeb/parser.ts
 ```
 
-`pyGAEB`-interne Typen verlassen die Adaptergrenze nie. Alle Methoden
-geben ausschließlich eigene Pydantic-Modelle zurück. Ein Bibliothekswechsel
-erfordert nur einen neuen Adapter – kein anderer Code wird berührt.
+GAEB-XML-Elemente (`<Award>`, `<BoQ>`, `<BoQBody>`, `<BoQCtgy>`, …) verlassen die
+Adaptergrenze nie. Der Parser liefert ausschließlich `LVDraft`-Typen (eigene TS-Typen,
+kein GAEB-Vokabular). Ein Format-/Versionswechsel erfordert nur Änderungen an dieser
+einen Stelle.
 
 ---
 
 ## MVP-Scope (ein Release)
 
-Ein einziges MVP: LV-Viewer (Tree + Bubble-Graph + Tabelle) auf quellen-agnostischer
-Datenbasis, mit Klassifizierung, Suche, Facetten-Filter und Zuständigkeit.
-Details → docs/mvp-scope.md · Umsetzungsplan → docs/implementation-plan.md
+Ein einziges MVP, frontend-only: GAEB laden → klassifizieren → als Bubble-Graph und
+Tabelle einsehen, mit Suche und Facetten-Filter. Kein Server, kein Login, keine
+Persistenz über die Session hinaus. Details → docs/mvp-scope.md · Umsetzungsplan →
+docs/implementation-plan.md
 
 ---
 
@@ -122,12 +117,11 @@ Details → docs/mvp-scope.md · Umsetzungsplan → docs/implementation-plan.md
 Die vollständigen Vorgaben für den Coding-Agenten stehen in
 [`.claude/CLAUDE.md`](.claude/CLAUDE.md). Kurzübersicht:
 
-- **Async first** – alle DB-Operationen und Endpunkte sind `async`
-- **Pydantic v2** für alle Schemas – kein `dict`-Return aus Endpunkten
-- **Alembic** für alle Schema-Änderungen – nie `Base.metadata.create_all()` in Produktion
-- **Conventional Commits** – `feat|fix|refactor|test|chore|docs|perf(<scope>): <beschreibung>`
-- **Coverage** ≥ 80 % – `pytest tests/ -x --cov=app --cov-fail-under=80`
+- **Kein Server, keine DB** — Import, Klassifizierung, Baum-Aufbau, Suche/Filter laufen
+  vollständig im Browser
+- **Kein `localStorage` für Fachdaten** — Session-Zustand lebt nur in React-State
+- **Strikte TS-Types** überall, kein `any` ohne Kommentar
+- **Conventional Commits** — `feat|fix|refactor|test|chore|docs|perf(<scope>): <beschreibung>`
 - **Linting** läuft automatisch via Claude Code Hook nach jedem Edit/Write
 
 Vollständiges PRD: [Notion](https://www.notion.so/35a380b03be5817ba3d4f7a83474320a)
-

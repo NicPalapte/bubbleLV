@@ -1,7 +1,8 @@
 # Architektur — Frontend
 
-> Vite · React · TypeScript · Tailwind. Lebt in `frontend/`. Lokal lauffähig,
-> Backend über Dev-Proxy. Referenz-Design (nicht ausgeliefert): `design/`.
+> Vite · React · TypeScript · Tailwind. Lebt in `frontend/`. **Rein client-seitig,
+> kein Server** — die App lädt sich einmal statisch, danach passiert alles im
+> Browser. Referenz-Design (nicht ausgeliefert): `design/`.
 
 ## Herkunft & Portierung
 
@@ -9,9 +10,11 @@ Das Design liegt als Single-File-React mit Browser-globalem `React`, Fixture-Dat
 (`window.LV`) und `localStorage` vor. Portiert wird zu einer echten, modularen
 TS-App. Beim Port gilt:
 
-- **Keine Fixture-Daten** — alles kommt aus der API.
-- **Kein `localStorage` für Fachdaten** — Zuständigkeit wird im Backend persistiert.
-  Reiner UI-Zustand (Auswahl, Zoom, aktive Filter) darf in React-State/Context leben.
+- **Keine Fixture-Daten** — alles kommt aus der lokalen Pipeline (Datei → Parser →
+  Klassifizierung → Baum, siehe [`pipeline.md`](pipeline.md)).
+- **Kein `localStorage` für Fachdaten** — es gibt keine Persistenz über die Session
+  hinaus, auch nicht clientseitig. Reiner UI-Zustand (Auswahl, Zoom, aktive Filter)
+  darf in React-State/Context leben, muss aber einen Reload nicht überleben.
 - `matchPos` bleibt die **einzige** Quelle für Filter-/Suchlogik.
 
 ## Ordnerstruktur
@@ -19,47 +22,53 @@ TS-App. Beim Port gilt:
 ```
 frontend/
 ├── index.html
-├── vite.config.ts            # Proxy /api → FastAPI (kein CORS im Dev)
+├── vite.config.ts
 ├── package.json
 ├── tailwind.config.js
+├── tests/
+│   └── fixtures/                     # echte GAEB DA XML-Testdateien
 └── src/
     ├── main.tsx
     ├── App.tsx
     ├── pages/ViewerPage.tsx          # 3-Spalten-Layout
-    ├── api/
-    │   ├── client.ts                 # fetch-Wrapper, Fehlerbehandlung
-    │   └── lv.ts                     # getTree, getPosition, setAssignee
-    ├── types/lv.ts                   # LVNode, PositionSummary, PositionDetail, Facets
+    ├── types/
+    │   ├── lvDraft.ts                # LVDraft, LotDraft, SectionDraft, PositionDraft
+    │   └── lvNode.ts                 # LVNode, PositionSummary, PositionDetail, Facets
     ├── lib/
+    │   ├── gaeb/
+    │   │   └── parser.ts             # GaebParser — einzige Stelle mit GAEB-Kenntnis
+    │   ├── classify/                 # Klassifizierung (Regel-Pipeline, siehe pipeline.md)
+    │   ├── tree/
+    │   │   └── buildTree.ts          # LVDraft → LVNode-Baum
     │   ├── matchPos.ts               # Filter/Suche — single source of truth
     │   └── graph/                    # Graph-Engine (aus lv-graph.jsx)
-    │       ├── buildTree.ts          # LVNode → interner Graph-Baum
     │       ├── layoutRadial.ts       # radiales Tidy-Tree-Layout
     │       └── lod.ts                # Zoom-Schwellen, Culling, Cluster
     ├── state/
-    │   └── viewer.ts                 # view-Modus, Selektion, Filter, Suche (Context)
+    │   └── viewer.ts                 # LVNode-Baum, Selektion, Filter, Suche (Context)
     └── components/
         ├── layout/{Tree,TopBar,PropertiesPanel}.tsx
+        ├── upload/FileDropzone.tsx   # Drag&Drop/Datei-Dialog → Pipeline
         ├── graph/{BubbleGraph,BubbleNode,GraphControls}.tsx
         ├── table/PositionsTable.tsx
         ├── filter/{FilterStrip,FacetButton,RangeButton}.tsx
-        └── common/{Status,Member,AssigneePicker,Highlighted}.tsx
+        └── common/{Status,Highlighted}.tsx
 ```
 
 ## Datenfluss
 
 ```
-ViewerPage
-  └─ lädt getTree(projectId) → LVNode-Baum
+FileDropzone
+  └─ Datei → GaebParser → classify() → buildTree() → LVNode-Baum in state/viewer.ts
        ├─ Tree            (linke Spalte, konsumiert LVNode)
        ├─ BubbleGraph     (Mitte, konsumiert denselben LVNode-Baum)
        ├─ PositionsTable  (Mitte, alternativer Modus)
-       └─ PropertiesPanel (rechts, getPosition(id) bei Auswahl)
+       └─ PropertiesPanel (rechts, zeigt Details des gewählten LVNode)
 matchPos(position, filters, search)  ← überall identisch für Sichtbarkeit/Dimmen
 ```
 
-Tree und Graph teilen sich **denselben** `LVNode`-Baum aus dem Backend — das ist der
-direkte Nutzen der rekursiven API und der quellen-agnostischen DB.
+Tree und Graph teilen sich **denselben** `LVNode`-Baum, der lokal aus der geladenen
+Datei aufgebaut wird — kein Fetch, kein Server, ein Contract für beide Ansichten.
 
 ## Bubble-Graph (Kern des Produkts)
 
@@ -89,25 +98,22 @@ Skalierungs-Testwerkzeug hinter einem Flag denkbar, nicht im Default-Pfad).
 | `components/layout/Tree.tsx` | `Tree` in `lv-main.jsx` | linke Hierarchie, filter-/suchbewusst |
 | `components/layout/TopBar.tsx` | `TopBar` | Suchleiste + Facetten-Buttons |
 | `components/layout/PropertiesPanel.tsx` | rechte Spalte in `lv-main.jsx` | Positionsdetails |
+| `components/upload/FileDropzone.tsx` | — (neu) | Datei laden → Pipeline anstoßen |
 | `components/graph/*` | `lv-graph.jsx` (`Bubbles`, Layout) | Bubble-Graph |
 | `components/table/PositionsTable.tsx` | `PositionsTable` | Positionsliste, sortierbar |
 | `components/filter/*` | `FilterStrip`,`FacetButton`,`RangeButton` | Facetten + aktive-Filter-Chips |
 | `components/common/Highlighted.tsx` | `Highlighted` | rendert `**…**` im Langtext |
-| `components/common/{Member,AssigneePicker}.tsx` | `Member`,`AssigneePicker`,`useAssignees` | Zuständigkeit |
 | `components/common/Status.tsx` | `Status` | Status-Badge (nur Anzeige/Filter) |
 | `lib/matchPos.ts` | `matchPos` | Filter/Suche |
 
 **Nicht portiert:** `TasksBlock`, `lv-notes.jsx`, `lv-analytics.jsx`, `lv-vergabe.jsx`,
-`wf-*.jsx`, `design-canvas.jsx` (Design-/Wireframe-Gerüst → nur Referenz in `design/`).
-
-## Zuständigkeit (Responsibility)
-
-`AssigneePicker` schreibt über `setAssignee(positionId, assigneeId)` →
-`PATCH /api/positions/{id}`. Optimistisches UI-Update, danach Server-Wahrheit.
-Team-Roster (`TEAM`) bleibt vorerst clientseitige Konstante; kann später ein
-Endpunkt werden.
+`wf-*.jsx`, `design-canvas.jsx` (Design-/Wireframe-Gerüst → nur Referenz in `design/`),
+sowie `Member`/`AssigneePicker`/`useAssignees` — Zuständigkeit ist ohne Server/Persistenz
+bewusst nicht Teil des MVP (siehe [`mvp-scope.md`](../mvp-scope.md#out-of-scope)).
 
 ## Dev-Betrieb
 
-`npm run dev` im DevContainer; `vite.config.ts` proxyt `/api` auf die FastAPI-App.
-Node ist im DevContainer vorhanden. Kein Deployment im MVP — lokal genügt.
+`npm run dev` im DevContainer, Node ist dort vorhanden. Kein Proxy nötig — es gibt
+keine API. `npm run build` erzeugt ein Static-Bundle, das ohne Backend von einem
+beliebigen statischen Host ausgeliefert werden kann (Ziel: frei im Internet
+erreichbar, siehe [`mvp-scope.md`](../mvp-scope.md)).
