@@ -1,0 +1,11 @@
+/* Bubble — element defaults. Import last. */
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink);font-family:var(--mono);font-size:12px}
+button{font:inherit;color:inherit}
+a{color:var(--blueD);text-decoration:none;border-bottom:1px solid var(--line2)}
+a:hover{color:var(--blue);border-bottom-color:var(--blue)}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:#c9d4e0;border-radius:4px}
+::-webkit-scrollbar-track{background:transparent}
+/* Blueprint canvas background */
+.bp-canvas{background:var(--paper);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:var(--grid-cell) var(--grid-cell);background-position:-1px -1px}

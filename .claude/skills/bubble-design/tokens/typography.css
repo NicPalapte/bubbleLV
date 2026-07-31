@@ -1,0 +1,31 @@
+/* Bubble — Typography. Webfonts come from Google Fonts (no local binaries).
+   Add to <head>:
+   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet"> */
+:root{
+  --mono:'IBM Plex Mono', ui-monospace, monospace;
+  --sans:'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+
+  /* Sizes — small and dense. The UI runs 8–12px; only object titles go bigger. */
+  --fs-micro:8px;      /* uppercase eyebrow inside property rows */
+  --fs-label:9px;      /* SECTION LABELS, badges, meta */
+  --fs-meta:10px;      /* chips, dropdown rows, secondary meta */
+  --fs-body:10.5px;    /* list rows, task text */
+  --fs-row:11px;       /* table cells, tree rows — the workhorse size */
+  --fs-cell:12px;      /* toolbar strong text */
+  --fs-prose:12.5px;   /* Langtext / longer German prose (sans) */
+  --fs-title-sm:14px;
+  --fs-title:15px;     /* position title in props panel */
+  --fs-title-lg:18px;  /* section / lot title */
+
+  --lh-tight:1.3;
+  --lh-prose:1.55;
+
+  --ls-label:.6px;     /* uppercase 9px labels */
+  --ls-caps:.5px;
+  --ls-title:-0.2px;   /* Space Grotesk 15px+ */
+
+  --fw-regular:400;
+  --fw-medium:500;
+  --fw-semi:600;
+  --fw-bold:700;
+}

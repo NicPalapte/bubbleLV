@@ -1,0 +1,48 @@
+/* Bubble — Color. Cool blue-grey blueprint palette; one blue accent, amber = attention. */
+:root{
+  /* Surfaces */
+  --paper:#f5f7fa;   /* app background / canvas */
+  --panel:#fbfcfd;   /* zebra rows, sub-toolbars, inset blocks */
+  --white:#ffffff;   /* panels, tables, popovers */
+
+  /* Lines — four steps, thinnest to strongest */
+  --grid:#e4ecf4;    /* hairline row dividers, blueprint grid */
+  --grid2:#d6e0ec;   /* dotted canvas pattern, dashed placeholders */
+  --line:#c9d4e0;    /* default 1px border */
+  --line2:#a9bbcf;   /* emphasised border, popover edge, dividers */
+
+  /* Text */
+  --ink:#1a2533;     /* primary */
+  --dim:#6b7d92;     /* secondary / values */
+  --mute:#97a6ba;    /* labels, counts, disabled */
+
+  /* Accent — blue is selection + interaction, never decoration */
+  --blue:#2563eb;
+  --blueS:#dbe7fd;   /* selected row / active chip background */
+  --blueD:#1d4ed8;   /* text on --blueS */
+  --cyan:#0891b2;    /* second accent: gradients, BIM role */
+
+  /* Semantic */
+  --amber:#d97706;  --amberS:#fde8c4;   /* offen / needs attention */
+  --greenD:#0f8a4c; --greenS:#cdebd8;   /* geprüft / günstigstes Angebot */
+  --red:#dc2626;    --redD:#b91c1c;     /* abgelaufen, +% über Schätzung */
+
+  /* Team / role identity colors (avatars) */
+  --member-pl:#2563eb;
+  --member-bim:#0891b2;
+  --member-statik:#7c3aed;
+  --member-kalk:#0f8a4c;
+  --member-ava:#d97706;
+
+  /* Semantic aliases */
+  --bg-app:var(--paper);
+  --bg-surface:var(--white);
+  --bg-sunken:var(--panel);
+  --bg-selected:var(--blueS);
+  --text-primary:var(--ink);
+  --text-secondary:var(--dim);
+  --text-label:var(--mute);
+  --border-default:var(--line);
+  --border-strong:var(--line2);
+  --border-hairline:var(--grid);
+}

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"/><title>Bubble — Foundations</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+body{padding:28px;font-family:var(--mono)}
+h2{font-family:var(--sans);font-size:13px;font-weight:600;margin:26px 0 10px;color:var(--ink)}
+h2:first-child{margin-top:0}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}
+.sw{width:112px}
+.chip{width:112px;height:44px;border:1px solid var(--line)}
+.cap{font-size:9px;letter-spacing:.6px;color:var(--mute);text-transform:uppercase;margin-top:5px}
+.val{font-size:9px;color:var(--dim)}
+.card{background:var(--white);border:1px solid var(--line);padding:14px 16px}
+.lbl{font-size:9px;letter-spacing:.6px;color:var(--mute);text-transform:uppercase}
+</style></head><body class="bp-canvas">
+<h2>Surfaces &amp; lines</h2>
+<div class="row" id="a"></div>
+<h2>Text</h2>
+<div class="row" id="b"></div>
+<h2>Accent &amp; semantic</h2>
+<div class="row" id="c"></div>
+<h2>Vergabepaket hues — oklch(0.63 0.15 h)</h2>
+<div class="row" id="d"></div>
+<h2>Type</h2>
+<div class="card" style="max-width:640px">
+<div style="font-family:var(--sans);font-size:18px;font-weight:600;color:var(--ink)">Außenwände Untergeschoss</div>
+<div style="font-family:var(--sans);font-size:15px;font-weight:600;color:var(--ink);margin-top:6px">Bodenplatte C30/37 d=30cm</div>
+<div style="font-family:var(--sans);font-size:12.5px;line-height:1.55;color:var(--ink);margin-top:8px">Langtext in Space Grotesk 12.5 px — Beton der Druckfestigkeitsklasse C30/37, Expositionsklassen XC2/XD1, Einbau lagenweise.</div>
+<div style="margin-top:12px" class="lbl">Kennzahlen</div>
+<div style="font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:4px">OZ 03.010 · 248 m³ · 1.284,50 € · <span style="color:var(--ink)">318.556 €</span></div>
+<div style="font-family:var(--mono);font-size:10px;color:var(--mute);margin-top:6px">10.5 px Zeilen · 10 px Meta · 9 px Label · 8 px Mikro</div>
+</div>
+<h2>Components</h2>
+<div class="card" style="max-width:640px;display:flex;flex-direction:column;gap:12px">
+<div class="row" style="align-items:center">
+<span style="display:inline-flex;align-items:center;gap:5;padding:1px 7px 1px 6px;border:1px solid #0f8a4c33;background:var(--greenS);color:var(--greenD);border-radius:2px;font-size:9px;line-height:14px"><span style="width:5px;height:5px;border-radius:50%;background:var(--greenD);display:inline-block;margin-right:5px"></span>geprüft</span>
+<span style="display:inline-flex;align-items:center;padding:1px 7px 1px 6px;border:1px solid #d9770633;background:var(--amberS);color:var(--amber);border-radius:2px;font-size:9px;line-height:14px"><span style="width:5px;height:5px;border-radius:50%;background:var(--amber);display:inline-block;margin-right:5px"></span>offen</span>
+<span style="display:inline-flex;align-items:center;padding:1px 7px 1px 6px;border:1px solid #6b7d9233;background:#eef2f7;color:var(--dim);border-radius:2px;font-size:9px;line-height:14px"><span style="width:5px;height:5px;border-radius:50%;background:var(--mute);display:inline-block;margin-right:5px"></span>entwurf</span>
+</div>
+<div class="row">
+<button style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--blue);background:var(--blueS);color:var(--blueD);font-family:var(--mono);font-size:10px;line-height:14px;cursor:pointer">Vergabepaket ▾ <span style="padding:0 5px;min-width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;background:var(--blue);color:#fff;font-size:9px;border-radius:7px">3</span></button>
+<button style="padding:4px 10px;border:1px solid var(--line);background:var(--white);color:var(--dim);font-family:var(--mono);font-size:10px;line-height:14px;cursor:pointer">Status ▾</button>
+<button style="padding:4px 10px;border:1px dashed var(--line2);background:var(--white);color:var(--dim);font-family:var(--mono);font-size:10px;line-height:14px;cursor:pointer">✕ zurücksetzen</button>
+<span style="display:flex;border:1px solid var(--line)"><span style="padding:4px 10px;font-size:9.5px;background:var(--blueS);color:var(--blueD);font-weight:500">Hervorheben</span><span style="padding:4px 10px;font-size:9.5px;background:var(--white);color:var(--dim);border-left:1px solid var(--line)">Ausblenden</span></span>
+</div>
+<div class="row" style="align-items:center">
+<span style="width:22px;height:22px;border-radius:50%;background:#2563eb1c;border:1px solid #2563eb;color:#2563eb;font-size:9.5px;display:inline-flex;align-items:center;justify-content:center">JT</span>
+<span style="width:22px;height:22px;border-radius:50%;background:#0891b21c;border:1px solid #0891b2;color:#0891b2;font-size:9.5px;display:inline-flex;align-items:center;justify-content:center">MK</span>
+<span style="width:22px;height:22px;border-radius:50%;background:#7c3aed1c;border:1px solid #7c3aed;color:#7c3aed;font-size:9.5px;display:inline-flex;align-items:center;justify-content:center">RH</span>
+<span style="width:22px;height:22px;border-radius:50%;background:#0f8a4c1c;border:1px solid #0f8a4c;color:#0f8a4c;font-size:9.5px;display:inline-flex;align-items:center;justify-content:center">CS</span>
+<span style="width:22px;height:22px;border-radius:50%;background:#d977061c;border:1px solid #d97706;color:#d97706;font-size:9.5px;display:inline-flex;align-items:center;justify-content:center">AW</span>
+<span style="font-size:10px;color:var(--mute);margin-left:6px">▸ ▾ ▣ ⊞ ? ✓ ◆ ◯ ⌕ ← ‹ › ↑ ↓ ↗ ✕ ⚠ § ∑ ∅</span>
+</div>
+</div>
+<script>
+const S=(id,items)=>{document.getElementById(id).innerHTML=items.map(([n,v])=>
+ '<div class="sw"><div class="chip" style="background:'+v+'"></div><div class="cap">'+n+'</div><div class="val">'+v+'</div></div>').join('')};
+S('a',[['paper','#f5f7fa'],['panel','#fbfcfd'],['white','#ffffff'],['grid','#e4ecf4'],['grid2','#d6e0ec'],['line','#c9d4e0'],['line2','#a9bbcf']]);
+S('b',[['ink','#1a2533'],['dim','#6b7d92'],['mute','#97a6ba']]);
+S('c',[['blue','#2563eb'],['blueS','#dbe7fd'],['blueD','#1d4ed8'],['cyan','#0891b2'],['amber','#d97706'],['amberS','#fde8c4'],['greenD','#0f8a4c'],['greenS','#cdebd8'],['red','#dc2626']]);
+S('d',[255,350,175,70,300,140].map(h=>['VP h'+h,'oklch(0.63 0.15 '+h+')']));
+</script>
+</body></html>
