@@ -1,0 +1,12 @@
+/* Bubble — Elevation & motion. Almost flat: borders do the work, one shadow exists. */
+:root{
+  --shadow-popover:0 8px 24px rgba(26,37,51,0.10);  /* the only real shadow */
+  --shadow-hairline:0 1px 0 rgba(26,37,51,0.02);    /* floating canvas toolbar */
+  --scrim:rgba(255,255,255,0.94);                   /* over-canvas capsule bg */
+
+  --dur-fast:.1s;    /* hover backgrounds */
+  --dur-base:.12s;   /* chip state change */
+  --ease:ease;       /* no custom curves, no bounce */
+  --dim-nonmatch:.32;  /* filtered-out position */
+  --dim-section:.4;    /* filtered-out section / empty group */
+}
