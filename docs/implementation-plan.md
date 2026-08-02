@@ -111,9 +111,29 @@ Schritte:
 3. `src/state/viewer.ts` (Context/Reducer): hält den aktuellen `LVNode`-Baum,
    Auswahl, Zoom, aktive Filter — reiner UI-/Session-State, kein `localStorage`.
 
+**Was der Parser aus WP-B liefert** (Annahmen für `buildTree`, verifiziert gegen die
+Fixtures in `frontend/tests/fixtures/`):
+- `SectionDraft.number` und `PositionDraft.oz` sind bereits **vollständige Pfade**
+  (`"001.002"`, `"001.002.0050"`), keine lokalen Teilnummern. Indexpositionen tragen
+  den Index als letztes Segment (`"001.001.0010.A"`), damit die OZ eindeutig bleibt —
+  `oz` ist deshalb als Knoten-ID brauchbar, muss aber nach `kind` präfixiert werden
+  (`section:001.002` vs. `position:001.002.0050`), weil ein namenloser Wrapper-
+  Abschnitt dieselbe Nummer tragen kann wie sein Los.
+- `LotDraft.number` ist **leer**, wenn die Datei keine Los-Ebene hat (häufigster Fall,
+  z. B. die BVBS-Musterdatei). Dann trägt das Los nur ein Label → `LVNode.code` darf
+  leer sein, die Tree-Spalte muss auf das Label ausweichen.
+- Positionen ohne eigenen LV-Bereich hängen in einem Wrapper-Abschnitt mit
+  `label: null` — der Baum bekommt also nie Positionen direkt unter einem Los.
+- `unitPrice` ist in x83-Dateien (Angebotsaufforderung) meist `null`; Preise stehen
+  erst in x84. `totalPrice` = Σ `quantity × unitPrice` mit `null` als 0 ⇒ der
+  Größenmodus „Gesamtpreis" kann für ein ganzes LV 0 sein. Der Graph (WP-F) braucht
+  dafür einen Fallback auf „Anzahl" statt Bubbles mit Radius 0.
+
 **Fertig, wenn:**
 - Eine geparste + klassifizierte Fixture ergibt einen `LVNode`-Baum mit korrekten
   Aggregatwerten (Stichprobe manuell verifiziert).
+- Ein LV ohne Los-Ebene und ein LV mit Los-Ebene (`sample.X83`) ergeben beide einen
+  vollständigen Baum ohne verlorene Positionen.
 
 ---
 
@@ -127,16 +147,32 @@ Schritte:
    `FilterStrip`, `FacetButton`/`RangeButton`, `Highlighted`, `Status`.
 2. `src/lib/matchPos.ts` — Filter-/Suchlogik 1:1 aus dem Design (single source of
    truth), arbeitet auf dem `LVNode`-Baum aus WP-D.
-3. Datei-Upload-Komponente (Drag & Drop + Datei-Dialog) → `FileReader` →
-   `GaebParser` → `classify` → `buildTree` → State. Große Dateien: Pipeline in einem
-   Web Worker, damit die UI responsiv bleibt.
+3. Datei-Upload-Komponente (Drag & Drop + Datei-Dialog) → `file.arrayBuffer()` →
+   `getGaebParser().parse()` → `mapToLvDraft()` → `classify` → `buildTree` → State.
+   Große Dateien: Pipeline in einem Web Worker, damit die UI responsiv bleibt.
 4. Fehleranzeige für `GAEBParseError`/`GAEBValidationError`/`GAEBVersionError`.
+
+**Anbindung an den Parser aus WP-B:**
+- **Bytes, nicht Text:** `file.arrayBuffer()` verwenden, **nicht** `FileReader.readAsText`.
+  Der Parser liest das Encoding aus der XML-Deklaration (GAEB-Exporte sind oft
+  ISO-8859-1); vorab als UTF-8 dekodierter Text zerstört Umlaute in Positionstexten.
+- Import ausschließlich aus `src/lib/gaeb` (Barrel), nie aus `parser.ts` — die drei
+  Exception-Klassen kommen aus derselben Quelle und sind per `instanceof` prüfbar.
+- Der Parser hängt nur an `DOMParser` und `TextDecoder`, beide im Web Worker
+  verfügbar — die ganze Pipeline ist ohne Umbau workerfähig.
+- Facette „Positionsart": `positionType` ist `NORMAL | ALTERNATIV | BEDARF |
+  ZULAGENPOSITION`; alle vier kommen in `gaeb-xml-beispiel.x83` vor und eignen sich als
+  Testfall für den Filter.
+- Suche über `longText` trifft auch Unterbeschreibungen (`<SubDescr>`), die der Parser
+  an den Langtext der Position anhängt. `shortText` ist nie leer, solange ein Langtext
+  existiert (Fallback auf dessen erste Zeile).
 
 **Fertig, wenn:**
 - App lädt eine echte GAEB-Datei per Drag & Drop und zeigt Tree + Tabelle.
 - Suche und alle Facetten-Filter (inkl. Hervorheben/Ausblenden) funktionieren.
 - `grep -R "window.LV\|localStorage" frontend/src` liefert nichts für Fachdaten.
-- Eine defekte/nicht unterstützte Datei zeigt eine verständliche Fehlermeldung.
+- Eine defekte/nicht unterstützte Datei zeigt eine verständliche Fehlermeldung
+  (`unsupported-version.x83` aus den Fixtures als Handprobe).
 
 ---
 
