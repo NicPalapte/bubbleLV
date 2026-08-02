@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(python3 -c \"import alembic; print\\(alembic.__version__\\)\")",
+      "Bash(pip show *)",
+      "Bash(nc -zv db 5432)",
+      "Bash(python3 *)",
+      "Bash(pytest tests/ -x --cov=app --cov-fail-under=80)"
+    ]
+  }
+}
