@@ -12,6 +12,24 @@ der passende Branch aktiv ist; auf `main` nur hinweisen, keinen Branch selbst an
 > auf dem Branch `archive/backend-mvp` gesichert. Dieser Plan ersetzt sie vollständig
 > für das frontend-only MVP.
 
+## Stand
+
+| WP | Status |
+|---|---|
+| WP-A · Frontend-Gerüst | ✅ umgesetzt |
+| WP-B · GAEB-Parser | ✅ umgesetzt |
+| WP-C · Klassifizierung | ✅ umgesetzt (`src/lib/classify/`) |
+| WP-D · In-Memory-Baum | ✅ umgesetzt (`src/lib/tree/`, `src/state/`) |
+| WP-E · Viewer: Tree + Tabelle + Suche + Filter | ✅ umgesetzt (`src/components/`, `src/lib/matchPos.ts`) |
+| WP-F · Bubble-Graph | ✅ umgesetzt (`src/lib/graph/`, `src/components/graph/`) |
+| WP-G · Eigenschaften-Panel + Static-Deploy | ✅ umgesetzt |
+
+Offen bleibt bewusst die inhaltliche Pflege der `keywords`-Spalte in
+[`domain/reference/stlb-bau-leistungsbereiche.csv`](domain/reference/stlb-bau-leistungsbereiche.csv)
+— ohne sie greift Stufe 0 nur selten und die Positionen laufen über den
+Heuristik-Fallback (kein Fehler, siehe
+[`domain/README.md`](domain/README.md#stlb-bau-leistungsbereiche-als-primäre-klassifizierungsquelle-wp-2)).
+
 ---
 
 ## WP-A · Frontend-Gerüst  · `feat(frontend)`
@@ -158,8 +176,12 @@ Schritte:
   ISO-8859-1); vorab als UTF-8 dekodierter Text zerstört Umlaute in Positionstexten.
 - Import ausschließlich aus `src/lib/gaeb` (Barrel), nie aus `parser.ts` — die drei
   Exception-Klassen kommen aus derselben Quelle und sind per `instanceof` prüfbar.
-- Der Parser hängt nur an `DOMParser` und `TextDecoder`, beide im Web Worker
-  verfügbar — die ganze Pipeline ist ohne Umbau workerfähig.
+- **Korrektur zur ursprünglichen Annahme:** `DOMParser` ist laut HTML-Spezifikation
+  nur im Window-Scope definiert und in keinem Browser im Worker verfügbar. Der
+  Parser-Schritt bleibt deshalb im Haupt-Thread (nativer XML-Parser, entsprechend
+  schnell); in den Worker wandert der rechenintensive Teil — Klassifizierung +
+  `buildTree` — über das `structuredClone`-fähige `LVDraft`. Details:
+  [`architecture/pipeline.md`](architecture/pipeline.md#wo-der-worker-ansetzt-und-warum-nicht-früher).
 - Facette „Positionsart": `positionType` ist `NORMAL | ALTERNATIV | BEDARF |
   ZULAGENPOSITION`; alle vier kommen in `gaeb-xml-beispiel.x83` vor und eignen sich als
   Testfall für den Filter.

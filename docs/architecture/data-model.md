@@ -84,8 +84,8 @@ Kein LB-Treffer (Referenzkatalog noch leer oder Text passt zu keinem LB) ⇒ bei
 | Key | Typ | Beispiel | Facette | Gilt für |
 |---|---|---|---|---|
 | `bauteiltyp` | `string \| null` | `"Wand"` | Bauteiltyp | alle Bauteil-Positionen |
-| `beton` | `string \| null` | `"C30/37"` | Betongüte | LB `Beton-/Stahlbetonarbeiten` |
-| `expo` | `string[]` | `["XC2","XD1"]` | Expositionsklasse | LB `Beton-/Stahlbetonarbeiten` |
+| `beton` | `string \| null` | `"C30/37"` | Betongüte | LB `Beton-/Stahlbetonarbeiten`; genormte Schreibweise auch im Fallback (s. u.) |
+| `expo` | `string[]` | `["XC2","XD1"]` | Expositionsklasse | wie `beton` |
 | `tragend` | `boolean \| null` | `true` | tragend/nichttragend | tragfähige Bauteiltypen |
 | `dicke` | `string \| null` | `"30 cm"` | (Anzeige) | Ruleset-abhängig |
 | `hoehe` | `string \| null` | `"3–4 m"` | (Anzeige) | Ruleset-abhängig |
@@ -104,6 +104,14 @@ und inkrementell erweiterbar — nicht als vollständiges Schema vorab festgeleg
 Welches `PropertyRuleset` (Bauteil-Positionen) bzw. Nicht-Bauteil-Ruleset zuständig ist,
 entscheidet die `RulesetRegistry` im Klassifizierer — fehlt eine Zuordnung, liefert ein
 Fallback-Extraktor Basis-Attribute statt eines Fehlers (siehe [`pipeline.md`](pipeline.md)).
+
+**Basis-Attribute des Fallbacks** sind Maße (`dicke`, `hoehe`) und genormte
+Kurzbezeichnungen nach DIN EN 206 / DIN 1045-2 (`beton`, `expo`,
+`feuchtigkeitsklasse`). Letztere stehen wörtlich im Text und bedeuten in jedem Gewerk
+dasselbe — sie ohne LB-Treffer zu verwerfen, würde die Facetten „Druckfestigkeit" und
+„Exposition" für reale Dateien leer lassen. Alles **Interpretierende** — allen voran
+`tragend` — bleibt dem gewerkespezifischen Ruleset vorbehalten und fehlt im Fallback
+ganz (der Key wird nicht gesetzt, statt auf `null` zu stehen).
 
 Facetten-Filter im Frontend werden **dynamisch aus den vorkommenden Werten** erzeugt
 (wie im Design). Neue Klassifizierungs-Keys erscheinen automatisch, sobald ein
