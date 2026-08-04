@@ -231,8 +231,9 @@ Schritte:
    Menge/EP.
 2. `npm run build` erzeugt ein reines Static-Bundle, keine Server-abhängigen Pfade
    (keine `/api`-Referenzen, kein Proxy nötig).
-3. Prüfen: keine Netzwerk-Requests außer dem initialen Laden der App selbst
-   (Browser-Devtools-Netzwerk-Tab manuell verifizieren).
+3. Prüfen: kein Request, der Fachdaten irgendwohin schickt (Browser-Devtools-
+   Netzwerk-Tab manuell verifizieren). Erwartet werden das eigene Bundle und die
+   Webfonts von Google Fonts — sonst nichts.
 
 **Fertig, wenn:**
 - Panel zeigt klassifizierte Merkmale der gewählten Position.

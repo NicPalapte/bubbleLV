@@ -27,7 +27,8 @@ React State (Session-only)
 Es gibt keine Persistenzschicht. Jeder Schritt ist eine reine Funktion (oder eine
 Klasse ohne Seiteneffekte außerhalb des eigenen Rückgabewerts); der gesamte Ablauf
 läuft synchron oder — bei großen LVs — in einem Web Worker, damit die UI nicht
-blockiert. Keine Netzwerk-Requests außer dem initialen Laden der statischen App.
+blockiert. Kein eigener Server: die Datei wird nirgendwohin geschickt. Statische
+Fremd-Assets (Webfonts) sind davon unberührt — sie transportieren keine Nutzdaten.
 
 ### Wo der Worker ansetzt (und warum nicht früher)
 
