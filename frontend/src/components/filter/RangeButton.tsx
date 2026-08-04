@@ -2,7 +2,8 @@
 // design/claude-design/lv-main.jsx.
 
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Chip } from '../common/Chip';
+import { Chip } from '../ui/Chip';
+import { Popover, PopoverHead } from '../ui/Popover';
 import { useOutsideClose } from '../common/useOutsideClose';
 import { formatCount } from '../../lib/format';
 import type { Range } from '../../lib/matchPos';
@@ -53,16 +54,9 @@ export function RangeButton({ label, positions, getValue, active, onChange }: Ra
           ▾
         </span>
       </Chip>
-      {open && (
-        <div className="absolute left-0 top-[calc(100%+6px)] z-50 w-[260px] border border-line2 bg-white p-[14px] font-mono text-[10px] shadow-[0_8px_24px_rgba(26,37,51,0.10)]">
-          <div className="mb-[10px] flex items-center justify-between uppercase tracking-[0.5px] text-mute">
-            <span>{label}</span>
-            {isActive && (
-              <span className="cursor-pointer text-blue" onClick={() => onChange(null)}>
-                zurücksetzen
-              </span>
-            )}
-          </div>
+      <Popover open={open} width={260}>
+        <PopoverHead onReset={isActive ? () => onChange(null) : undefined}>{label}</PopoverHead>
+        <div className="p-[14px]">
           <div className="mb-[6px] flex justify-between text-ink">
             <span>{formatCount(low)}</span>
             <span>{formatCount(high)}</span>
@@ -100,7 +94,7 @@ export function RangeButton({ label, positions, getValue, active, onChange }: Ra
             <span>max {formatCount(max)}</span>
           </div>
         </div>
-      )}
+      </Popover>
     </div>
   );
 }

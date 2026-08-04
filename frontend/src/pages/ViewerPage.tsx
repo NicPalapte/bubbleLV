@@ -14,11 +14,16 @@ import { PositionsTable } from '../components/table/PositionsTable';
 import { FileDropzone } from '../components/upload/FileDropzone';
 import { useViewer, useViewerDispatch } from '../state/viewer';
 
+// Spiegelt --w-tree / --w-props aus src/index.css (tokens/spacing.css); die
+// Panels sind ziehbar, deshalb braucht der Startwert eine Zahl statt der Variable.
+const TREE_WIDTH = 236;
+const PROPS_WIDTH = 320;
+
 export function ViewerPage() {
   const { tree, selectedNode, centerMode } = useViewer();
   const dispatch = useViewerDispatch();
-  const [leftWidth, setLeftWidth] = useState(236);
-  const [rightWidth, setRightWidth] = useState(320);
+  const [leftWidth, setLeftWidth] = useState(TREE_WIDTH);
+  const [rightWidth, setRightWidth] = useState(PROPS_WIDTH);
   const [treeCollapsed, setTreeCollapsed] = useState(false);
 
   // ESC geht eine Ebene zurück — wie im Design.

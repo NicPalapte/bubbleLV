@@ -1,8 +1,10 @@
 // Positionstabelle des angewählten Knotens. Portiert aus `PositionsTable` in
-// design/claude-design/lv-main.jsx; Bearbeiter-Spalte entfällt (out of scope).
+// design/claude-design/lv-main.jsx; das Raster ist der Design-System-Baustein
+// `DataTable`, die Bearbeiter-Spalte entfällt (out of scope).
 
-import { useMemo, useState, type ReactNode } from 'react';
-import { Status } from '../common/Status';
+import { useMemo, useState } from 'react';
+import { DataTable, type Column } from '../ui/DataTable';
+import { StatusPill } from '../ui/StatusPill';
 import { attrString, attrStrings } from '../../lib/attributes';
 import { facetOptionLabel, FACETS_BY_ID } from '../../lib/facets';
 import { formatCount, formatEuro, formatNumber } from '../../lib/format';
@@ -13,33 +15,35 @@ import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { LVNode, PositionSummary } from '../../types/lvNode';
 
 type SortKey =
-  'oz' | 'shortText' | 'positionsart' | 'bauteiltyp' | 'beton' | 'unit' | 'quantity' | 'unitPrice';
+  | 'oz'
+  | 'shortText'
+  | 'positionsart'
+  | 'bauteiltyp'
+  | 'beton'
+  | 'unit'
+  | 'quantity'
+  | 'unitPrice';
 
-interface Column {
-  key: SortKey | 'status';
-  label: string;
-  width: string;
-  align?: 'right';
-  render: (position: PositionSummary) => ReactNode;
-  sortable: boolean;
+interface Row {
+  node: LVNode;
+  position: PositionSummary;
 }
 
-const COLUMNS: readonly Column[] = [
-  { key: 'oz', label: 'OZ', width: '14%', sortable: true, render: (p) => p.oz },
+const COLUMNS: ReadonlyArray<Column<Row>> = [
+  { key: 'oz', label: 'OZ', width: '14%', render: (r) => r.position.oz },
   {
     key: 'shortText',
     label: 'Bezeichnung',
-    width: '26%',
-    sortable: true,
-    render: (p) => p.shortText,
+    width: '24%',
+    primary: true,
+    render: (r) => r.position.shortText,
   },
   {
     key: 'positionsart',
     label: 'Positionsart',
     width: '11%',
-    sortable: true,
-    render: (p) => {
-      const value = attrString(p.attributes, 'positionsart');
+    render: (r) => {
+      const value = attrString(r.position.attributes, 'positionsart');
       const facet = FACETS_BY_ID.get('positionsart');
       if (value === null || facet === undefined) return '—';
       return facetOptionLabel(facet, value);
@@ -49,44 +53,40 @@ const COLUMNS: readonly Column[] = [
     key: 'bauteiltyp',
     label: 'Bauteiltyp',
     width: '10%',
-    sortable: true,
-    render: (p) => attrString(p.attributes, 'bauteiltyp') ?? '—',
+    render: (r) => attrString(r.position.attributes, 'bauteiltyp') ?? '—',
   },
   {
     key: 'beton',
     label: 'Druckfestigkeit',
     width: '10%',
-    sortable: true,
-    render: (p) => {
-      const beton = attrString(p.attributes, 'beton');
-      const expo = attrStrings(p.attributes, 'expo');
+    render: (r) => {
+      const beton = attrString(r.position.attributes, 'beton');
+      const expo = attrStrings(r.position.attributes, 'expo');
       if (beton === null) return expo.join(', ') || '—';
       return expo.length === 0 ? beton : `${beton} · ${expo.join(', ')}`;
     },
   },
-  { key: 'unit', label: 'Einheit', width: '6%', sortable: true, render: (p) => p.unit ?? '—' },
+  { key: 'unit', label: 'Einheit', width: '6%', render: (r) => r.position.unit ?? '—' },
   {
     key: 'quantity',
     label: 'Menge',
     width: '8%',
     align: 'right',
-    sortable: true,
-    render: (p) => formatNumber(p.quantity),
+    render: (r) => formatNumber(r.position.quantity),
   },
   {
     key: 'unitPrice',
     label: 'EP €',
     width: '8%',
     align: 'right',
-    sortable: true,
-    render: (p) => formatEuro(p.unitPrice),
+    render: (r) => formatEuro(r.position.unitPrice),
   },
   {
     key: 'status',
     label: 'Status',
-    width: '7%',
+    width: '9%',
     sortable: false,
-    render: () => <Status value={POSITION_STATUS} />,
+    render: () => <StatusPill status={POSITION_STATUS} />,
   },
 ];
 
@@ -111,11 +111,6 @@ function sortValue(position: PositionSummary, key: SortKey): string | number | n
     default:
       return null;
   }
-}
-
-interface Row {
-  node: LVNode;
-  position: PositionSummary;
 }
 
 export function PositionsTable({ root }: { root: LVNode }) {
@@ -154,11 +149,7 @@ export function PositionsTable({ root }: { root: LVNode }) {
   const parent = parents.get(root.id) ?? null;
 
   return (
-    <div
-      className="absolute inset-0 flex flex-col overflow-hidden bg-white"
-      role="table"
-      aria-label="Positionen"
-    >
+    <div className="absolute inset-0 flex flex-col overflow-hidden bg-white">
       <div className="flex min-w-0 flex-wrap items-center gap-x-[12px] gap-y-[6px] border-b border-line bg-panel px-[16px] py-[10px] font-mono text-[10px] text-dim">
         <span
           onClick={() => dispatch({ type: 'selectNode', id: parent === null ? null : parent.id })}
@@ -184,87 +175,31 @@ export function PositionsTable({ root }: { root: LVNode }) {
         </span>
       </div>
 
-      <div
-        className="flex min-w-0 overflow-hidden border-b border-line2 bg-white font-mono text-[9px] uppercase tracking-[0.6px] text-mute"
-        role="row"
-      >
-        {COLUMNS.map((column) => (
-          <div
-            key={column.key}
-            role="columnheader"
-            aria-sort={
-              sort.key === column.key ? (sort.dir > 0 ? 'ascending' : 'descending') : undefined
-            }
-            onClick={() => {
-              if (!column.sortable) return;
-              const key = column.key as SortKey;
-              setSort((current) => ({
-                key,
-                dir: current.key === key ? ((current.dir * -1) as 1 | -1) : 1,
-              }));
-            }}
-            className="select-none border-r border-line px-[12px] py-[10px]"
-            style={{
-              flex: `0 0 ${column.width}`,
-              textAlign: column.align ?? 'left',
-              cursor: column.sortable ? 'pointer' : 'default',
-              color: sort.key === column.key ? 'var(--blue)' : 'var(--mute)',
-            }}
-          >
-            {column.label} {sort.key === column.key ? (sort.dir > 0 ? '↑' : '↓') : ''}
-          </div>
-        ))}
-      </div>
-
-      <div className="flex-1 overflow-auto">
-        {rows.length === 0 && (
-          <div className="px-[16px] py-[40px] text-center text-[11px] text-mute">
-            Keine Positionen entsprechen den Filtern.
-          </div>
-        )}
-        {rows.map((row, rowIndex) => {
-          const selected = selectedPositionId === row.node.id;
-          return (
-            <div
-              key={row.node.id}
-              onClick={() =>
-                dispatch({
-                  type: 'selectPosition',
-                  nodeId: root.id,
-                  positionId: selected ? null : row.node.id,
-                })
-              }
-              className="flex cursor-pointer border-b border-grid font-mono text-[11px]"
-              role="row"
-              aria-selected={selected}
-              style={{
-                background: selected
-                  ? 'var(--blueS)'
-                  : rowIndex % 2 === 1
-                    ? 'var(--panel)'
-                    : 'var(--white)',
-              }}
-            >
-              {COLUMNS.map((column) => (
-                <div
-                  key={column.key}
-                  role="cell"
-                  className="overflow-hidden text-ellipsis whitespace-nowrap border-r border-grid px-[12px] py-[9px]"
-                  style={{
-                    flex: `0 0 ${column.width}`,
-                    textAlign: column.align ?? 'left',
-                    color: column.key === 'shortText' ? 'var(--ink)' : 'var(--dim)',
-                    fontWeight: column.key === 'shortText' ? 500 : 400,
-                  }}
-                  title={column.key === 'shortText' ? row.position.shortText : undefined}
-                >
-                  {column.render(row.position)}
-                </div>
-              ))}
-            </div>
-          );
-        })}
-      </div>
+      <DataTable
+        label="Positionen"
+        columns={COLUMNS}
+        rows={rows}
+        rowKey={(row) => row.node.id}
+        selectedKey={selectedPositionId}
+        onPick={(key) =>
+          dispatch({
+            type: 'selectPosition',
+            nodeId: root.id,
+            positionId: selectedPositionId === key ? null : key,
+          })
+        }
+        empty="Keine Positionen entsprechen den Filtern."
+        sort={sort}
+        onSort={(key) =>
+          setSort((current) => ({
+            key: key as SortKey,
+            dir: current.key === key ? ((current.dir * -1) as 1 | -1) : 1,
+          }))
+        }
+        cellTitle={(row, column) =>
+          column.key === 'shortText' ? row.position.shortText : undefined
+        }
+      />
     </div>
   );
 }

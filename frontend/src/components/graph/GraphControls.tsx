@@ -65,7 +65,10 @@ export function GraphControls({
         </button>
       </div>
 
-      <div className="inline-flex items-center gap-[8px] border border-grid bg-white/90 px-[10px] py-[4px] font-mono text-[9px] text-mute">
+      <div
+        className="inline-flex items-center gap-[8px] border border-grid px-[10px] py-[4px] font-mono text-[9px] text-mute"
+        style={{ background: 'var(--scrim)', boxShadow: 'var(--shadow-hairline)' }}
+      >
         <span className="text-ink">{formatCount(renderCount)}</span>
         <span>/ {formatCount(nodeCount)} Knoten gezeichnet</span>
       </div>

@@ -2,8 +2,8 @@
 // Die Datei verlässt den Browser nie: kein Upload, kein Fetch, keine Persistenz.
 
 import { useCallback, useRef, useState } from 'react';
-import { Chip } from '../common/Chip';
-import { Logo } from '../common/Logo';
+import { Chip } from '../ui/Chip';
+import { BubbleLogo } from '../ui/BubbleLogo';
 import { loadLv, LVLoadError } from '../../lib/pipeline/loadLv';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 
@@ -54,7 +54,7 @@ export function FileDropzone() {
           background: dragging ? 'var(--blueS)' : 'var(--white)',
         }}
       >
-        <Logo size={26} />
+        <BubbleLogo size={26} />
         <div className="font-sans text-[15px] font-semibold text-ink">
           GAEB-Datei hierher ziehen
         </div>
