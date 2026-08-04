@@ -68,6 +68,21 @@ nur das Format, aber keine echten LB-Zeilen enthält, bleibt die Zuordnung offen
 Klassifizierer fällt dann für jede Position auf die heuristische Positionsart-/
 Bauteiltyp-Erkennung zurück (kein Fehler, siehe `architecture/pipeline.md`).
 
+**Stand: LB-Zeilen vorhanden, `keywords` noch leer.** Solange die Spalte leer ist,
+leitet der Klassifizierer je LB ein Stichwort aus der **Katalog-Bezeichnung selbst**
+ab — bewusst eng: nur eigenständige Komposita auf `-arbeiten`/`-anlagen`
+(„Estricharbeiten", „Kälteanlagen"). Kürzere Wortstämme („Beton", „Fenster") sind in
+Positionstexten zu unspezifisch und werden **nicht** abgeleitet. Das erfindet keine
+Domäneninhalte, deckt aber nur einen Bruchteil realer Positionstexte ab: die
+gepflegte `keywords`-Spalte bleibt die eigentliche Quelle und ersetzt die Ableitung,
+sobald sie gefüllt ist.
+
+**Ausgeliefert wird die Datei als Build-Zeit-Asset** unter
+`frontend/src/lib/classify/data/stlb-bau-leistungsbereiche.csv` (kein `fetch` zur
+Laufzeit — die App darf außer ihrem eigenen Bundle nichts nachladen). Beide Dateien
+werden von `frontend/tests/classify/stlbCatalog.test.ts` deckungsgleich gehalten;
+gepflegt wird ausschließlich die Datei hier unter `reference/`.
+
 **Warum nicht nur Freitext:** LB-Nummern sind stabil und normbasiert; ein Ruleset-Key
 `(bauteiltyp, gewerk_lb)` bleibt gültig, auch wenn sich Bezeichnungen zwischen
 Katalogversionen ändern. Details/Grenzen der LB-Granularität (ein LB deckt meist mehrere

@@ -35,25 +35,37 @@ frontend/
     │   ├── lvDraft.ts                # LVDraft, LotDraft, SectionDraft, PositionDraft
     │   └── lvNode.ts                 # LVNode, PositionSummary, PositionDetail, Facets
     ├── lib/
-    │   ├── gaeb/
-    │   │   └── parser.ts             # GaebParser — einzige Stelle mit GAEB-Kenntnis
+    │   ├── gaeb/                     # GaebParser — einzige Stelle mit GAEB-Kenntnis
     │   ├── classify/                 # Klassifizierung (Regel-Pipeline, siehe pipeline.md)
+    │   │   ├── ruleBased.ts          # Orchestrierung Stufe 0–2 hinter Classifier
+    │   │   ├── stlbCatalog.ts        # Stufe 0: STLB-Bau-LB-Katalog (Build-Zeit-Asset)
+    │   │   ├── data/                 # ausgelieferte Kopie der Referenz-CSV
+    │   │   └── rulesets/             # Registry + je Ruleset ein Modul
     │   ├── tree/
-    │   │   └── buildTree.ts          # LVDraft → LVNode-Baum
+    │   │   ├── buildTree.ts          # LVDraft → LVNode-Baum
+    │   │   └── matchCounts.ts        # Trefferzahlen je Knoten (Tree + Graph)
+    │   ├── pipeline/                 # Datei → LoadedLV, inkl. Web Worker
     │   ├── matchPos.ts               # Filter/Suche — single source of truth
+    │   ├── facets.ts                 # Facetten-Definitionen (dynamische Werte)
     │   └── graph/                    # Graph-Engine (aus lv-graph.jsx)
-    │       ├── layoutRadial.ts       # radiales Tidy-Tree-Layout
-    │       └── lod.ts                # Zoom-Schwellen, Culling, Cluster
+    │       ├── constants.ts          # Radien, LOD-Schwellen, Größenmodi
+    │       ├── layoutRadial.ts       # radiales Tidy-Tree-Layout + Cluster
+    │       └── culling.ts            # Viewport-Culling
     ├── state/
-    │   └── viewer.ts                 # LVNode-Baum, Selektion, Filter, Suche (Context)
+    │   ├── viewer.ts                 # State, Reducer, Context, Hooks
+    │   └── ViewerProvider.tsx        # Provider + abgeleitete Sichten
     └── components/
-        ├── layout/{Tree,TopBar,PropertiesPanel}.tsx
+        ├── layout/{Tree,TopBar,PropertiesPanel,ResizeHandle}.tsx
         ├── upload/FileDropzone.tsx   # Drag&Drop/Datei-Dialog → Pipeline
-        ├── graph/{BubbleGraph,BubbleNode,GraphControls}.tsx
+        ├── graph/{BubbleGraph,BubbleNode,GraphControls,GraphHeader}.tsx
         ├── table/PositionsTable.tsx
         ├── filter/{FilterStrip,FacetButton,RangeButton}.tsx
-        └── common/{Status,Highlighted}.tsx
+        └── common/{Status,Highlighted,Chip,PropField,Logo}.tsx
 ```
+
+**Design-Tokens** (Farben, Fonts) stehen als CSS-Variablen in `src/index.css` und sind
+in `tailwind.config.js` als Theme-Erweiterung verfügbar. Bewusst **ohne** Webfont-
+Einbindung: Google Fonts wären ein Netzwerk-Request auf einen fremden Host.
 
 ## Datenfluss
 

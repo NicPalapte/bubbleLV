@@ -29,6 +29,23 @@ Klasse ohne Seiteneffekte außerhalb des eigenen Rückgabewerts); der gesamte Ab
 läuft synchron oder — bei großen LVs — in einem Web Worker, damit die UI nicht
 blockiert. Keine Netzwerk-Requests außer dem initialen Laden der statischen App.
 
+### Wo der Worker ansetzt (und warum nicht früher)
+
+`DOMParser` existiert laut HTML-Spezifikation nur im Window-Scope und ist in keinem
+Browser im Worker verfügbar — der Parser-Schritt kann deshalb **nicht** in den Worker
+wandern. Die Pipeline ist entsprechend geteilt (`frontend/src/lib/pipeline/`):
+
+| Schritt | Läuft in | Warum |
+|---|---|---|
+| `parseToDraft` (Parser + `mapToLvDraft`) | Haupt-Thread | braucht `DOMParser`; nativer XML-Parser, entsprechend schnell |
+| `classifyAndBuild` (Klassifizierung + `buildTree`) | Web Worker ab ~500 Positionen | rechenintensiv: eine Regelauswertung je Position |
+
+`LVDraft` ist reines Datenmodell und damit `structuredClone`-fähig — der Übergang
+über die Worker-Grenze braucht keine Serialisierungsschicht. Fehler werden auf einen
+Code (`parse | validation | version | unknown`) abgebildet, weil Exception-Klassen
+`structuredClone` nicht überleben. Ohne Worker (Tests, ältere Umgebungen) läuft
+derselbe Code synchron weiter.
+
 ## GAEB-Parser-Grenze
 
 ```
@@ -164,10 +181,20 @@ gepflegte Referenztabelle
 (Spalten: `lb_nummer`, `lb_bezeichnung`, `positionsart_default`, `keywords`,
 `quelle_version` — Format/Herkunft siehe
 [`domain/README.md`](../domain/README.md#stlb-bau-leistungsbereiche-als-primäre-klassifizierungsquelle-wp-2)).
-Die Datei wird als statisches Asset geladen (Build-Time-Import oder `fetch` auf ein
-öffentliches Asset), nicht in TS hartkodiert. Solange die CSV keine echten Zeilen
-enthält, matcht Stufe 0 nie und **jede** Position läuft über den Fallback-Pfad — kein
-Fehler, keine erfundenen LB-Nummern.
+Die Datei wird als Build-Time-Asset eingebunden (`?raw`-Import, kein `fetch` — die App
+löst zur Laufzeit keine Netzwerk-Requests aus), nicht in TS hartkodiert. Solange die
+CSV keine echten Zeilen enthält, matcht Stufe 0 nie und **jede** Position läuft über
+den Fallback-Pfad — kein Fehler, keine erfundenen LB-Nummern. Zur aktuell leeren
+`keywords`-Spalte und der daraus abgeleiteten Notlösung siehe
+[`domain/README.md`](../domain/README.md#stlb-bau-leistungsbereiche-als-primäre-klassifizierungsquelle-wp-2).
+
+**Identitäts- vs. Eigenschaftserkennung.** Positionsart (Fallback-Heuristik) und
+Bauteiltyp werden ausschließlich aus dem **Kurztext** bestimmt. Deutsche LV-Langtexte
+nennen regelmäßig Nachbarbauteile und Verweise („Ausführung mit geböschten Wänden" in
+einer Erdarbeiten-Position, „Bodenklassen gemäß Gutachten"), die eine Erkennung über
+den Langtext systematisch fehlleiten. **Eigenschaften** (Betongüte, Expositions-
+klassen, Maße, Besonderheiten) stehen dagegen im Langtext und werden weiterhin dort
+gesucht.
 
 ```ts
 // frontend/src/lib/classify/rulesets/types.ts
