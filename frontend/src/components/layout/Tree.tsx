@@ -1,9 +1,11 @@
 // Linke Hierarchie-Spalte — rekursiv über denselben LVNode-Baum wie der
 // Bubble-Graph, filter- und suchbewusst. Portiert aus `Tree` in
-// design/claude-design/lv-main.jsx (Analytik-Navigation entfällt, out of scope).
+// design/claude-design/lv-main.jsx (Analytik-Navigation entfällt, out of scope);
+// die Zeile selbst ist der Design-System-Baustein `TreeRow`.
 
 import { useMemo, useState } from 'react';
-import { Status } from '../common/Status';
+import { StatusPill } from '../ui/StatusPill';
+import { TreeRow } from '../ui/TreeRow';
 import { formatCount } from '../../lib/format';
 import { POSITION_STATUS } from '../../lib/status';
 import { isFiltering } from '../../lib/matchPos';
@@ -28,6 +30,12 @@ function nodeTitle(node: LVNode): string {
   return node.kind === 'section' ? 'Ohne Bezeichnung' : 'Ohne Titel';
 }
 
+function nodeCode(node: LVNode): string {
+  if (node.code === '') return '';
+  const prefix = KIND_PREFIX[node.kind];
+  return prefix === undefined ? node.code : `${prefix} ${node.code}`;
+}
+
 interface RowProps {
   node: LVNode;
   depth: number;
@@ -36,7 +44,7 @@ interface RowProps {
   onToggle: (id: string) => void;
 }
 
-function TreeRow({ node, depth, index, expanded, onToggle }: RowProps) {
+function TreeBranch({ node, depth, index, expanded, onToggle }: RowProps) {
   const { selectedNodeId, selectedPositionId, hideMode, parents } = useViewer();
   const dispatch = useViewerDispatch();
 
@@ -59,64 +67,34 @@ function TreeRow({ node, depth, index, expanded, onToggle }: RowProps) {
     }
   };
 
+  const count = isPosition ? undefined : index.filtering && hits !== node.positionCount ? (
+    <>
+      <span style={{ color: 'var(--blueD)' }}>{formatCount(hits)}</span>/
+      {formatCount(node.positionCount)}
+    </>
+  ) : (
+    formatCount(node.positionCount)
+  );
+
   return (
-    <div style={{ opacity: missed ? 0.4 : 1 }}>
-      <div
+    <div>
+      <TreeRow
+        code={nodeCode(node)}
+        label={nodeTitle(node)}
+        title={nodeTitle(node)}
+        depth={depth}
+        leaf={isPosition}
+        open={open}
+        selected={selected}
+        dimmed={missed}
+        status={isPosition ? <StatusPill status={POSITION_STATUS} dotOnly /> : undefined}
+        count={count}
         onClick={select}
-        role="treeitem"
-        aria-level={depth + 1}
-        aria-selected={selected}
-        aria-expanded={hasChildren ? open : undefined}
-        className="flex cursor-pointer items-center gap-[6px] py-[5px] pr-[12px] font-mono"
-        style={{
-          paddingLeft: 8 + depth * 10,
-          borderLeft: selected ? '2px solid var(--blue)' : '2px solid transparent',
-          background: selected ? 'var(--blueS)' : 'transparent',
-          color: selected ? 'var(--blueD)' : 'var(--ink)',
-          fontSize: isPosition ? 10.5 : 11,
-        }}
-      >
-        <span
-          className="w-[10px] shrink-0 text-[9px] text-mute"
-          onClick={(event) => {
-            if (!hasChildren) return;
-            event.stopPropagation();
-            onToggle(node.id);
-          }}
-        >
-          {hasChildren ? (open ? '▾' : '▸') : ''}
-        </span>
-        {node.code !== '' && (
-          <span className="shrink-0 text-[10px] text-mute">
-            {KIND_PREFIX[node.kind] === undefined ? '' : `${KIND_PREFIX[node.kind]} `}
-            {node.code}
-          </span>
-        )}
-        <span
-          className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap"
-          style={{ fontWeight: isPosition ? 400 : 500 }}
-          title={nodeTitle(node)}
-        >
-          {nodeTitle(node)}
-        </span>
-        {isPosition ? (
-          <Status value={POSITION_STATUS} dotOnly />
-        ) : (
-          <span className="min-w-[32px] shrink-0 text-right text-[9px] text-mute">
-            {index.filtering && hits !== node.positionCount ? (
-              <>
-                <span className="text-blueD">{formatCount(hits)}</span>/
-                {formatCount(node.positionCount)}
-              </>
-            ) : (
-              formatCount(node.positionCount)
-            )}
-          </span>
-        )}
-      </div>
+        onToggle={hasChildren ? () => onToggle(node.id) : undefined}
+      />
       {open &&
         node.children.map((child) => (
-          <TreeRow
+          <TreeBranch
             key={child.id}
             node={child}
             depth={depth + 1}
@@ -141,8 +119,7 @@ export function Tree({ width, collapsed, onToggleCollapsed }: TreeProps) {
 
   // Bei aktiver Suche/Filterung die Pfade zu den Treffern automatisch öffnen.
   const effectiveExpanded = useMemo<Set<string>>(() => {
-    if (tree === null) return expanded;
-    if (!index.filtering) return expanded;
+    if (tree === null || !index.filtering) return expanded;
     const open = new Set(expanded);
     const visit = (node: LVNode): void => {
       if (node.kind === 'position') return;
@@ -163,7 +140,10 @@ export function Tree({ width, collapsed, onToggleCollapsed }: TreeProps) {
 
   if (collapsed) {
     return (
-      <div className="flex w-[44px] shrink-0 flex-col overflow-hidden border-r border-line bg-white">
+      <div
+        className="flex shrink-0 flex-col overflow-hidden border-r border-line bg-white"
+        style={{ width: 'var(--w-tree-collapsed)' }}
+      >
         <div
           onClick={onToggleCollapsed}
           title="Baum ausklappen"
@@ -186,7 +166,9 @@ export function Tree({ width, collapsed, onToggleCollapsed }: TreeProps) {
     >
       <div className="border-b border-line bg-paper px-[12px] pb-[11px] pt-[10px]">
         <div className="mb-[5px] flex items-center justify-between">
-          <span className="font-mono text-[8.5px] uppercase tracking-[0.6px] text-mute">Projekt</span>
+          <span className="font-mono text-[8.5px] uppercase tracking-[0.6px] text-mute">
+            Projekt
+          </span>
           <span
             onClick={onToggleCollapsed}
             title="Einklappen"
@@ -222,7 +204,7 @@ export function Tree({ width, collapsed, onToggleCollapsed }: TreeProps) {
         )}
         {tree !== null &&
           tree.children.map((child) => (
-            <TreeRow
+            <TreeBranch
               key={child.id}
               node={child}
               depth={0}

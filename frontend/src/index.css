@@ -2,9 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Design-Tokens aus .claude/skills/bubble-design/tokens/.
-   Bewusst KEINE Webfont-Einbindung (Google Fonts): die App darf außer ihrem
-   eigenen Bundle keine Netzwerk-Requests auslösen (docs/mvp-scope.md). */
+/* Design-Tokens, 1:1 aus .claude/skills/bubble-design/tokens/ übernommen
+   (colors · typography · spacing · elevation). Die Schriftdateien selbst kommen
+   über den <link> in index.html. */
+
+/* ── Farben — kühle Blueprint-Palette, ein blauer Akzent, Amber = Achtung ── */
 :root {
   --paper: #f5f7fa;
   --panel: #fbfcfd;
@@ -30,11 +32,89 @@
   --greenS: #cdebd8;
   --red: #dc2626;
   --redD: #b91c1c;
-
-  --mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', 'Menlo', monospace;
-  --sans: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
 }
 
+/* ── Typografie — IBM Plex Mono ist die Interface-Schrift; Space Grotesk
+   trägt ausschließlich Namen von Dingen (Wortmarke, Titel, Langtext). ── */
+:root {
+  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --sans: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+
+  --fs-micro: 8px;
+  --fs-label: 9px;
+  --fs-meta: 10px;
+  --fs-body: 10.5px;
+  --fs-row: 11px;
+  --fs-cell: 12px;
+  --fs-prose: 12.5px;
+  --fs-title-sm: 14px;
+  --fs-title: 15px;
+  --fs-title-lg: 18px;
+
+  --lh-tight: 1.3;
+  --lh-prose: 1.55;
+
+  --ls-label: 0.6px;
+  --ls-caps: 0.5px;
+  --ls-title: -0.2px;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semi: 600;
+  --fw-bold: 700;
+}
+
+/* ── Maße — dicht: 4/6/8/12/16 ist die ganze Skala. Radius praktisch 0. ── */
+:root {
+  --sp-1: 2px;
+  --sp-2: 4px;
+  --sp-3: 6px;
+  --sp-4: 8px;
+  --sp-5: 10px;
+  --sp-6: 12px;
+  --sp-7: 14px;
+  --sp-8: 16px;
+  --sp-9: 18px;
+
+  --pad-chip: 4px 10px;
+  --pad-row: 9px 12px;
+  --pad-tree-row: 5px 12px;
+  --pad-panel-block: 12px 16px;
+  --pad-panel-head: 14px 16px;
+  --pad-popover-row: 6px 10px;
+
+  --h-topbar: 54px;
+  --w-tree: 236px;
+  --w-tree-collapsed: 44px;
+  --w-props: 320px;
+  --w-resize-handle: 5px;
+  --size-avatar: 22px;
+  --size-avatar-sm: 16px;
+  --size-checkbox: 14px;
+  --size-icon-tile: 18px;
+  --sel-bar: 2px;
+  --grid-cell: 24px;
+
+  --r-none: 0;
+  --r-hair: 2px;
+  --r-pill: 99px;
+}
+
+/* ── Elevation & Motion — fast flach: Rahmen leisten die Arbeit,
+   genau ein echter Schatten existiert. ── */
+:root {
+  --shadow-popover: 0 8px 24px rgba(26, 37, 51, 0.1);
+  --shadow-hairline: 0 1px 0 rgba(26, 37, 51, 0.02);
+  --scrim: rgba(255, 255, 255, 0.94);
+
+  --dur-fast: 0.1s;
+  --dur-base: 0.12s;
+  --ease: ease;
+  --dim-nonmatch: 0.32;
+  --dim-section: 0.4;
+}
+
+/* ── Element-Defaults, aus tokens/base.css ── */
 html,
 body,
 #root {
@@ -42,13 +122,50 @@ body,
 }
 
 body {
+  margin: 0;
+  padding: 0;
   background: var(--paper);
   color: var(--ink);
-  font-family: var(--sans);
+  font-family: var(--mono);
+  font-size: var(--fs-cell);
 }
 
-/* Schmale, unaufdringliche Scrollbalken passend zum Hairline-Look. */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--line2) transparent;
+button {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: var(--blueD);
+  text-decoration: none;
+  border-bottom: 1px solid var(--line2);
+}
+
+a:hover {
+  color: var(--blue);
+  border-bottom-color: var(--blue);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c9d4e0;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Blueprint-Raster hinter dem Bubble-Graph. */
+.bp-canvas {
+  background: var(--paper);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: var(--grid-cell) var(--grid-cell);
+  background-position: -1px -1px;
 }

@@ -3,8 +3,8 @@
 // es gibt genau ein geladenes LV je Session).
 
 import { useEffect, useMemo, useRef } from 'react';
-import { Chip } from '../common/Chip';
-import { Logo } from '../common/Logo';
+import { Chip } from '../ui/Chip';
+import { BubbleLogo } from '../ui/BubbleLogo';
 import { FacetButton } from '../filter/FacetButton';
 import { RangeButton } from '../filter/RangeButton';
 import { FACETS } from '../../lib/facets';
@@ -45,7 +45,7 @@ export function TopBar() {
   return (
     <div className="relative z-[5] flex h-[54px] shrink-0 items-stretch border-b border-line bg-white">
       <div className="flex items-center border-r border-line px-[18px]">
-        <Logo size={22} />
+        <BubbleLogo size={22} />
       </div>
       <div className="flex items-center gap-[8px] border-r border-line px-[16px] font-mono text-[10px] text-dim">
         {loaded ? (

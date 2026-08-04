@@ -26,8 +26,12 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
 - **Persistenz:** keine – alles im Browser-Speicher einer Session
 
 ## Architektur (nicht verhandelbar)
-- Kein Server, keine DB, kein Login. Jede Funktion muss ohne Netzwerk-Roundtrip
-  auskommen (Ausnahme: das initiale Laden der statischen App selbst).
+- **Kein eigenes Backend**, keine DB, kein Login. Jede Fachfunktion – Parsen,
+  Klassifizieren, Filtern, Rendern – läuft im Browser und darf keinen eigenen
+  Server voraussetzen. Fachdaten verlassen den Browser nie.
+- Statische Fremd-Assets (Webfonts, npm-Pakete, CDN-Ressourcen) sind **erlaubt**;
+  sie transportieren keine Nutzdaten. Ausgeliefert werden u. a. IBM Plex Mono und
+  Space Grotesk über Google Fonts (`frontend/index.html`).
 - **Kein `localStorage`/`sessionStorage`/Cookies für Fachdaten.** Reiner UI-Zustand
   (Auswahl, Zoom, aktive Filter) darf in React-State/Context leben, muss aber einen
   Reload nicht überleben.
@@ -89,8 +93,9 @@ Multi-Tenant, GAEB-Export, LLM-Klassifizierung. Details → @docs/mvp-scope.md #
 - Bubble-Graph muss Richtung ~10k Positionen skalieren (Aggregate im `LVNode`, LOD,
   Culling, Parsing/Klassifizierung im Web Worker)
 - Status ist Default `OPEN` aus dem Import und nur Filter-Facette, nicht editierbar
-- Keine Netzwerk-Requests außerhalb des initialen App-Ladens – bei Unsicherheit
-  nachfragen, bevor ein Feature einen Server voraussetzt
+- Kein Request, der Fachdaten irgendwohin schickt – bei Unsicherheit nachfragen,
+  bevor ein Feature einen eigenen Server voraussetzt. Statische Fremd-Assets
+  (Fonts, CDN-Pakete) sind davon nicht betroffen.
 
 ## Antwortformat
 Beginne jede neue Komponente mit einem kurzen Implementierungsplan (3–5 Punkte).

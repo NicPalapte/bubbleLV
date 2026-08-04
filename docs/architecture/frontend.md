@@ -60,12 +60,33 @@ frontend/
         ├── graph/{BubbleGraph,BubbleNode,GraphControls,GraphHeader}.tsx
         ├── table/PositionsTable.tsx
         ├── filter/{FilterStrip,FacetButton,RangeButton}.tsx
-        └── common/{Status,Highlighted,Chip,PropField,Logo}.tsx
+        ├── common/{Highlighted.tsx,useOutsideClose.ts}
+        └── ui/                           # Design-System-Bausteine (s. u.)
 ```
 
-**Design-Tokens** (Farben, Fonts) stehen als CSS-Variablen in `src/index.css` und sind
-in `tailwind.config.js` als Theme-Erweiterung verfügbar. Bewusst **ohne** Webfont-
-Einbindung: Google Fonts wären ein Netzwerk-Request auf einen fremden Host.
+## Design-System
+
+Die Bausteine unter `components/ui/` sind 1:1-Ports der Referenz-Komponenten aus
+`.claude/skills/bubble-design/components/core/` (JSX → TSX): `BubbleLogo`, `Chip`,
+`StatusPill`, `PropField`/`PropGrid`, `PanelHeader`/`BlockLabel`,
+`Popover`/`PopoverHead`/`PopoverRow`, `SegmentedControl`, `EmptyState`, `DataTable`,
+`TreeRow`. Sie arbeiten wie im Skill mit Inline-Styles auf CSS-Variablen — Tailwind
+bleibt für das Seiten-Layout zuständig.
+
+**Nicht portiert:** `MemberAvatar` und `PackageTag` (Zuständigkeit und Vergabepakete
+sind out of scope) sowie `Checkbox` (die Facetten-Zeile bringt ihre eigene mit).
+
+**Zwei bewusste Abweichungen vom Skill-Markup:** `DataTable` und `TreeRow` tragen
+ARIA-Rollen (`table`/`row`/`columnheader`/`cell` bzw. `treeitem`), weil beide aus
+Flex-Divs gebaut sind; und `TreeRow` bekommt ein separates `onToggle`, damit ein Klick
+auf die Zeile den Knoten auswählt und nur das Dreieck auf-/zuklappt.
+
+**Design-Tokens** (Farben, Typografie, Maße, Elevation) stehen vollständig als
+CSS-Variablen in `src/index.css`, übernommen aus `bubble-design/tokens/`; die Farben
+und Schriftfamilien sind zusätzlich in `tailwind.config.js` als Theme-Erweiterung
+verfügbar. Die Markenschriften IBM Plex Mono und Space Grotesk kommen über Google
+Fonts (`index.html`) — die Einbindung liegt an genau einer Stelle, damit ein Wechsel
+auf selbst gehostete Schriften (`@fontsource/*`) lokal bleibt.
 
 ## Datenfluss
 

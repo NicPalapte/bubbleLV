@@ -341,7 +341,8 @@ export function BubbleGraph({ root }: { root: LVNode }) {
     >
       <svg width={w} height={h} className="absolute inset-0 block">
         <defs>
-          <pattern id="bubble-grid" width="22" height="22" patternUnits="userSpaceOnUse">
+          {/* 14px-Punktraster hinter dem Graphen — Vorgabe des Design-Systems. */}
+          <pattern id="bubble-grid" width="14" height="14" patternUnits="userSpaceOnUse">
             <circle cx="1" cy="1" r="0.7" fill="var(--grid2)" />
           </pattern>
         </defs>

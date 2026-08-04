@@ -1,7 +1,8 @@
 // Leiste der aktiven Filter: entfernbare Chips, Umschalter Hervorheben/Ausblenden,
 // Zurücksetzen. Portiert aus `FilterStrip` in design/claude-design/lv-main.jsx.
 
-import { Chip } from '../common/Chip';
+import { Chip } from '../ui/Chip';
+import { SegmentedControl } from '../ui/SegmentedControl';
 import { FACETS, facetOptionLabel } from '../../lib/facets';
 import { formatCount } from '../../lib/format';
 import { useViewer, useViewerDispatch, type HideMode } from '../../state/viewer';
@@ -12,10 +13,10 @@ interface ActiveChip {
   remove: () => void;
 }
 
-const HIDE_MODES: ReadonlyArray<[HideMode, string]> = [
-  ['dim', 'Hervorheben'],
-  ['hide', 'Ausblenden'],
-];
+const HIDE_MODES = [
+  { value: 'dim', label: 'Hervorheben' },
+  { value: 'hide', label: 'Ausblenden' },
+] as const;
 
 export function FilterStrip() {
   const { filters, hideMode } = useViewer();
@@ -75,26 +76,11 @@ export function FilterStrip() {
       </div>
       <span className="flex-1" />
       <span className="shrink-0 font-mono text-[8px] tracking-[0.6px] text-mute">NICHT-TREFFER</span>
-      <div className="flex shrink-0 border border-line">
-        {HIDE_MODES.map(([mode, label], index) => {
-          const on = hideMode === mode;
-          return (
-            <span
-              key={mode}
-              onClick={() => dispatch({ type: 'hideMode', value: mode })}
-              className="cursor-pointer px-[10px] py-[4px] font-mono text-[9.5px]"
-              style={{
-                background: on ? 'var(--blueS)' : 'var(--white)',
-                color: on ? 'var(--blueD)' : 'var(--dim)',
-                borderLeft: index > 0 ? '1px solid var(--line)' : 'none',
-                fontWeight: on ? 500 : 400,
-              }}
-            >
-              {label}
-            </span>
-          );
-        })}
-      </div>
+      <SegmentedControl
+        options={HIDE_MODES}
+        value={hideMode}
+        onChange={(value) => dispatch({ type: 'hideMode', value: value as HideMode })}
+      />
       <Chip dashed onClick={() => dispatch({ type: 'resetFilters' })}>
         ✕ Zurücksetzen
       </Chip>

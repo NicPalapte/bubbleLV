@@ -1,8 +1,10 @@
 # MVP-Scope & Feature-Specs
 
-> **Status:** Ein einziges MVP-Release, **frontend-only** (kein Server, keine DB,
-> kein Login). Ziel: eine statische App, die frei im Internet erreichbar ist – eine
-> hochgeladene GAEB-Datei verlässt den Browser nie, es wird nichts gespeichert.
+> **Status:** Ein einziges MVP-Release, **frontend-only** (kein eigenes Backend,
+> keine DB, kein Login). Ziel: eine statische App, die frei im Internet erreichbar
+> ist – eine geladene GAEB-Datei verlässt den Browser nie, es wird nichts
+> gespeichert. Statische Fremd-Assets (Webfonts, CDN-Pakete) sind erlaubt; sie
+> transportieren keine Nutzdaten.
 > Umsetzungsreihenfolge und Abnahmekriterien: siehe [`implementation-plan.md`](implementation-plan.md).
 
 Das MVP ist ein **LV-Viewer** auf einer **quellen-agnostischen** Datenstruktur, die im
