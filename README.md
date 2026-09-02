@@ -112,6 +112,25 @@ docs/implementation-plan.md
 
 ---
 
+## Deployment (GitHub Pages)
+
+Die App ist ein statisches Bundle und wird als GitHub Project Page ausgeliefert:
+**https://nicpalapte.github.io/bubbleLV/**
+
+Der Workflow [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml)
+baut `frontend/` und deployt `frontend/dist` — bei jedem Push auf `main` und manuell
+über *Actions → Deploy to GitHub Pages → Run workflow* (damit lässt sich auch ein
+Feature-Branch testweise veröffentlichen).
+
+Einmalig im Repo einzustellen: *Settings → Pages → Source: **GitHub Actions***.
+
+Project Pages liegen unter `/<repo>/`, deshalb baut der Workflow mit
+`--base=/<repo-name>/`. Lokal (`npm run dev`, `npm run build`) bleibt die Base `/`.
+Die Fachdaten-Regel gilt unverändert: Pages liefert nur statische Dateien aus, die
+GAEB-Datei verlässt den Browser nicht.
+
+---
+
 ## Entwicklungsrichtlinien
 
 Die vollständigen Vorgaben für den Coding-Agenten stehen in
