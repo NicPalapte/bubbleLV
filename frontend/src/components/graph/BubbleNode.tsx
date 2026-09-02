@@ -42,7 +42,12 @@ const TIER_FILL: Record<string, { fill: string; stroke: string }> = {
  * Tabellensymbol an einer Sammel-Bubble. Der Klick auf die Bubble selbst öffnet
  * bzw. schließt sie; nur dieses Symbol wechselt in die Tabelle (Issue #10).
  */
-function TableBadge({ x, y, size, onOpen }: {
+function TableBadge({
+  x,
+  y,
+  size,
+  onOpen,
+}: {
   x: number;
   y: number;
   size: number;
@@ -296,7 +301,16 @@ interface DotProps extends CommonProps {
   node: LVNode;
 }
 
-export function DotNode({ placed, node, zoom, dimmed, hidden, hovered, onHover, onClick }: DotProps) {
+export function DotNode({
+  placed,
+  node,
+  zoom,
+  dimmed,
+  hidden,
+  hovered,
+  onHover,
+  onClick,
+}: DotProps) {
   const radius = 5;
   const showLabel = hovered || zoom >= 1.8;
   return (

@@ -90,7 +90,10 @@ describe('buildTree', () => {
             {
               number: '',
               label: null,
-              positions: [position('0010', { unitPrice: null }), position('0020', { quantity: null })],
+              positions: [
+                position('0010', { unitPrice: null }),
+                position('0020', { quantity: null }),
+              ],
               sections: [],
             },
           ],

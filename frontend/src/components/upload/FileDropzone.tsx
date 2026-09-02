@@ -59,9 +59,8 @@ export function FileDropzone() {
           GAEB-Datei hierher ziehen
         </div>
         <div className="max-w-[420px] font-mono text-[10.5px] leading-[1.6] text-mute">
-          GAEB DA XML (X81–X86), Versionen 2.0 bis 3.3. Die Datei wird ausschließlich im
-          Browser verarbeitet — nichts wird hochgeladen, nichts gespeichert. Ein Reload
-          verwirft den Stand.
+          GAEB DA XML (X81–X86), Versionen 2.0 bis 3.3. Die Datei wird ausschließlich im Browser
+          verarbeitet — nichts wird hochgeladen, nichts gespeichert. Ein Reload verwirft den Stand.
         </div>
         <Chip on onClick={() => inputRef.current?.click()}>
           {loading ? 'Wird gelesen…' : 'Datei auswählen'}

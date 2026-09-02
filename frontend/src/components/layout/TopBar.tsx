@@ -24,7 +24,8 @@ export function TopBar() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const positions = useMemo(
-    () => positionNodes.map((node) => node.position).filter((p): p is PositionSummary => p !== null),
+    () =>
+      positionNodes.map((node) => node.position).filter((p): p is PositionSummary => p !== null),
     [positionNodes],
   );
 

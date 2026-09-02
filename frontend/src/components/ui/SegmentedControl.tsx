@@ -38,12 +38,11 @@ export function SegmentedControl({ options, value, onChange }: SegmentedControlP
               fontFamily: 'var(--mono)',
               fontSize: 9.5,
               background: on ? 'var(--blueS)' : disabled ? 'var(--paper)' : 'var(--white)',
-              color:
-                on
-                  ? 'var(--blueD)'
-                  : disabled || option.muted === true
-                    ? 'var(--mute)'
-                    : 'var(--dim)',
+              color: on
+                ? 'var(--blueD)'
+                : disabled || option.muted === true
+                  ? 'var(--mute)'
+                  : 'var(--dim)',
               borderLeft: index > 0 ? '1px solid var(--line)' : 'none',
               fontWeight: on ? 500 : 400,
               whiteSpace: 'nowrap',

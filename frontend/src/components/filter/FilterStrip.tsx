@@ -55,7 +55,9 @@ export function FilterStrip() {
 
   return (
     <div className="relative z-[4] flex shrink-0 items-center gap-[8px] overflow-x-auto border-b border-line bg-white px-[16px] py-[7px]">
-      <span className="shrink-0 font-mono text-[8px] tracking-[0.6px] text-mute">AKTIVE FILTER</span>
+      <span className="shrink-0 font-mono text-[8px] tracking-[0.6px] text-mute">
+        AKTIVE FILTER
+      </span>
       <div className="flex flex-nowrap gap-[6px]">
         {chips.map((chip) => (
           <span
@@ -75,7 +77,9 @@ export function FilterStrip() {
         ))}
       </div>
       <span className="flex-1" />
-      <span className="shrink-0 font-mono text-[8px] tracking-[0.6px] text-mute">NICHT-TREFFER</span>
+      <span className="shrink-0 font-mono text-[8px] tracking-[0.6px] text-mute">
+        NICHT-TREFFER
+      </span>
       <SegmentedControl
         options={HIDE_MODES}
         value={hideMode}

@@ -14,8 +14,7 @@ export interface PipelineRequest {
 }
 
 export type PipelineResponse =
-  | { ok: true; result: LoadedLV }
-  | { ok: false; code: PipelineErrorCode; message: string };
+  { ok: true; result: LoadedLV } | { ok: false; code: PipelineErrorCode; message: string };
 
 export interface PipelineFailure {
   code: PipelineErrorCode;

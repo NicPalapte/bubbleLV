@@ -20,7 +20,11 @@ interface RangeButtonProps {
 export function RangeButton({ label, positions, getValue, active, onChange }: RangeButtonProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  useOutsideClose(ref, open, useCallback(() => setOpen(false), []));
+  useOutsideClose(
+    ref,
+    open,
+    useCallback(() => setOpen(false), []),
+  );
 
   const [min, max] = useMemo(() => {
     let low = Infinity;

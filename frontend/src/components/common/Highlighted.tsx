@@ -44,9 +44,7 @@ export function Highlighted({ text, query = '' }: HighlightedProps) {
         if (segment.startsWith('**') && segment.endsWith('**')) {
           return <Mark key={index}>{segment.slice(2, -2)}</Mark>;
         }
-        return (
-          <Fragment key={index}>{highlightQuery(segment, trimmed, String(index))}</Fragment>
-        );
+        return <Fragment key={index}>{highlightQuery(segment, trimmed, String(index))}</Fragment>;
       })}
     </span>
   );

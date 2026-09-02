@@ -75,10 +75,7 @@ export class RuleBasedClassifier implements Classifier {
     const bauteiltyp = detectBauteiltyp(text);
     const ruleset = this.registry.resolve(bauteiltyp, gewerkLb);
     const context: RulesetContext = { item, text, bauteiltyp, gewerkLb, positionsart };
-    return this.result(
-      { ...attributes, bauteiltyp, ...ruleset.extract(context) },
-      ruleset.id,
-    );
+    return this.result({ ...attributes, bauteiltyp, ...ruleset.extract(context) }, ruleset.id);
   }
 
   private result(attributes: Record<string, unknown>, rulesetId: string): ClassificationResult {

@@ -59,12 +59,12 @@ describe('matchPos', () => {
 
   it('filtert die GAEB-Positionsart (NORMAL/ALTERNATIV/BEDARF/ZULAGENPOSITION)', () => {
     expect(matchPos(pos(), filters({ positionstyp: ['NORMAL'] }), '')).toBe(true);
-    expect(matchPos(pos({ positionType: 'BEDARF' }), filters({ positionstyp: ['NORMAL'] }), '')).toBe(
-      false,
-    );
-    expect(matchPos(pos({ positionType: 'BEDARF' }), filters({ positionstyp: ['BEDARF'] }), '')).toBe(
-      true,
-    );
+    expect(
+      matchPos(pos({ positionType: 'BEDARF' }), filters({ positionstyp: ['NORMAL'] }), ''),
+    ).toBe(false);
+    expect(
+      matchPos(pos({ positionType: 'BEDARF' }), filters({ positionstyp: ['BEDARF'] }), ''),
+    ).toBe(true);
   });
 
   it('grenzt über den Mengenbereich ein', () => {

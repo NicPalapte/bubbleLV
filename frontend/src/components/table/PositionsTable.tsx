@@ -20,14 +20,7 @@ import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { LVNode, PositionSummary } from '../../types/lvNode';
 
 type SortKey =
-  | 'oz'
-  | 'shortText'
-  | 'positionsart'
-  | 'bauteiltyp'
-  | 'beton'
-  | 'unit'
-  | 'quantity'
-  | 'unitPrice';
+  'oz' | 'shortText' | 'positionsart' | 'bauteiltyp' | 'beton' | 'unit' | 'quantity' | 'unitPrice';
 
 type Scope = 'node' | 'lv';
 
@@ -193,7 +186,10 @@ export function PositionsTable({ root }: { root: LVNode }) {
   const lvRoot = tree ?? root;
 
   const nodeAll = useMemo(() => collectRows(root), [root]);
-  const lvAll = useMemo(() => (lvRoot === root ? nodeAll : collectRows(lvRoot)), [lvRoot, root, nodeAll]);
+  const lvAll = useMemo(
+    () => (lvRoot === root ? nodeAll : collectRows(lvRoot)),
+    [lvRoot, root, nodeAll],
+  );
 
   const nodeHits = useMemo(
     () => (filtering ? nodeAll.filter((row) => matchPos(row.position, filters, search)) : nodeAll),
@@ -319,9 +315,7 @@ export function PositionsTable({ root }: { root: LVNode }) {
             dir: current.key === key ? ((current.dir * -1) as 1 | -1) : 1,
           }))
         }
-        group={
-          groupCount > 1 ? (row) => ({ key: row.groupKey, label: row.groupLabel }) : undefined
-        }
+        group={groupCount > 1 ? (row) => ({ key: row.groupKey, label: row.groupLabel }) : undefined}
         cellTitle={(row, column) =>
           column.key === 'shortText' ? row.position.shortText : undefined
         }

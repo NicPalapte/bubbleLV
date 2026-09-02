@@ -22,7 +22,8 @@ export function computeMatchCounts(
 
   const visit = (node: LVNode): number => {
     if (node.kind === 'position') {
-      const hit = node.position !== null && (!filtering || matchPos(node.position, filters, search));
+      const hit =
+        node.position !== null && (!filtering || matchPos(node.position, filters, search));
       const value = hit ? 1 : 0;
       counts.set(node.id, value);
       return value;
