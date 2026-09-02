@@ -14,7 +14,9 @@ export function GraphHeader({ root }: { root: LVNode }) {
   const lots = root.children.length;
   const sections = root.children.reduce((total, lot) => total + lot.children.length, 0);
   // x83-Dateien führen keine Einheitspreise — der Größenmodus "Gesamtpreis"
-  // wäre dann für das ganze LV 0 (docs/implementation-plan.md, WP-D).
+  // wäre dann für das ganze LV 0 (docs/implementation-plan.md, WP-D). Die
+  // Option wird deshalb gesperrt statt still auf "Anzahl" zurückzufallen: sonst
+  // sieht der Knopf gewählt aus und im Graphen ändert sich nichts.
   const priceless = root.totalPrice === 0;
 
   return (
@@ -33,9 +35,9 @@ export function GraphHeader({ root }: { root: LVNode }) {
             return {
               value: mode.id,
               label: disabled ? `${mode.short} ·—` : mode.short,
-              muted: disabled,
+              disabled,
               title: disabled
-                ? 'Diese Datei führt keine Einheitspreise — Größe fällt auf „Anzahl" zurück.'
+                ? 'Diese Datei führt keine Einheitspreise — Größe nach Gesamtpreis ist hier ohne Aussage.'
                 : mode.label,
             };
           })}

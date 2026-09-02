@@ -105,6 +105,9 @@
   --pad-popover-row: 6px 10px;
 
   --h-topbar: 54px;
+  /* Kopfzeile über Baum-Rail und Positionstabelle — beide Trennlinien müssen
+     auf derselben Höhe liegen. */
+  --h-view-head: 44px;
   --w-tree: 236px;
   --w-tree-collapsed: 44px;
   --w-props: 320px;

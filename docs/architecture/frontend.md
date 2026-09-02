@@ -127,12 +127,19 @@ Kreisgrafik. Eigenschaften, die erhalten bleiben:
 - **Level-of-Detail:** Labels blenden bei sinkendem Zoom aus (Schwellen je `kind`).
 - **Viewport-Culling** (günstiger Bounding-Box-Test) für große LVs (~10k Positionen).
 - **Größenmodi:** `Anz. Positionen` · `Gesamtpreis €` · `Einheitlich`
-  (`SIZE_MODES`). Größe kommt aus den `LVNode`-Aggregaten `position_count` / `total_price`.
+  (`SIZE_MODES`). Größe kommt aus den `LVNode`-Aggregaten `position_count` /
+  `total_price`. Der Radius wächst mit der Wurzel des Werts, damit die *Fläche*
+  dem Wert folgt; verglichen wird je Ebene (`sizedRadius`). Haben alle Knoten
+  einer Ebene denselben Wert, bleibt es beim Basisradius. Führt die Datei keine
+  Einheitspreise, ist `Gesamtpreis €` **gesperrt** statt still auf `Anzahl`
+  zurückzufallen — sonst sieht der Knopf gewählt aus und nichts ändert sich.
 - **Drill-in:** Klick auf eine Sammel-Bubble klappt sie auf bzw. zu und wählt sie
   fürs Eigenschaften-Panel — die Mitte bleibt der Graph. In die Tabelle führt das
   Tabellensymbol an der Bubble; bei Positionen öffnet der Klick direkt die
   Tabelle. Welche Ansicht die Mitte zeigt, steht als `centerMode` im Viewer-State
-  und wird nicht aus der Auswahl abgeleitet.
+  und wird nicht aus der Auswahl abgeleitet. Zurück in den Graphen führen der
+  `Graph`-Knopf im Tabellenkopf und die Projektzeile im Baum — beide in einem
+  Schritt, unabhängig davon, wie tief man steht.
 
 **Beim Port entfernt** (out of scope): die Vergabepaket-Kanten / `nodeVpIds` /
 `positionPakete`-Hover-Overlays und das `genDemoLot`-Demo-Lot (nur als optionales

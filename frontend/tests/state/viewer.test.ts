@@ -42,6 +42,19 @@ describe('viewerReducer · centerMode', () => {
     expect(viewerReducer(back, { type: 'back' }).selectedNodeId).toBeNull();
   });
 
+  it('kehrt mit `showGraph` in einem Schritt zum Graphen zurück', () => {
+    const deep = viewerReducer(base, {
+      type: 'selectPosition',
+      nodeId: 'section:001.004',
+      positionId: 'position:001.004.0010',
+    });
+    const graph = viewerReducer(deep, { type: 'showGraph' });
+    expect(graph.centerMode).toBe('graph');
+    // Die Auswahl bleibt stehen — der Graph zeigt sie weiter hervorgehoben.
+    expect(graph.selectedNodeId).toBe('section:001.004');
+    expect(graph.selectedPositionId).toBe('position:001.004.0010');
+  });
+
   it('löst mit `back` zuerst die Position, dann die Ansicht', () => {
     const picked = viewerReducer(base, {
       type: 'selectPosition',

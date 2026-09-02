@@ -92,7 +92,7 @@ describe('Viewer', () => {
     fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'Kabel' } });
 
     await waitFor(() =>
-      expect(screen.getByText(/Ergebnisse aus dem ganzen LV/)).toBeInTheDocument(),
+      expect(screen.getByText(/LV-weite Treffer/)).toBeInTheDocument(),
     );
     expect(within(table).getAllByText('002.001.0010').length).toBeGreaterThan(0);
     expect(within(table).queryByText('001.001.0010')).not.toBeInTheDocument();
@@ -122,6 +122,24 @@ describe('Viewer', () => {
     expect(
       within(table).getByText(/Bauhauptgewerke.+§ 001\.003 · Maurerarbeiten/),
     ).toBeInTheDocument();
+  });
+
+  it('führt aus der Tabelle mit einem Klick zurück in den Graphen', async () => {
+    render(<App />);
+    await loadFixture('gaeb-xml-beispiel.x83');
+    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+
+    const tree = screen.getByRole('tree');
+    fireEvent.click(within(tree).getAllByRole('treeitem')[0]);
+    fireEvent.click(await within(tree).findByTitle('Bauhauptgewerke'));
+    fireEvent.click(await within(tree).findByTitle('Baustelleneinrichtung'));
+    await screen.findByRole('table', { name: 'Positionen' });
+
+    // Drei Ebenen tief — der Graph-Knopf muss trotzdem in einem Schritt zurück.
+    fireEvent.click(screen.getByRole('button', { name: /Graph/ }));
+    await waitFor(() =>
+      expect(screen.queryByRole('table', { name: 'Positionen' })).not.toBeInTheDocument(),
+    );
   });
 
   it('zeigt eine verständliche Fehlermeldung bei nicht unterstützter GAEB-Version', async () => {
