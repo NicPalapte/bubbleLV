@@ -14,6 +14,9 @@ export function FileDropzone() {
   const dispatch = useViewerDispatch();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
+  // Beim Überfahren von Kindelementen feuert dragleave, obwohl der Zeiger die
+  // Ablage nie verlassen hat — deshalb wird gezählt statt geschaltet.
+  const dragDepth = useRef(0);
 
   const handleFile = useCallback(
     async (file: File | undefined): Promise<void> => {
@@ -34,24 +37,40 @@ export function FileDropzone() {
     [dispatch],
   );
 
+  const openDialog = (): void => {
+    if (loading) return;
+    inputRef.current?.click();
+  };
+
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-paper p-[24px]">
       <div
-        onDragOver={(event) => {
+        onDragEnter={(event) => {
           event.preventDefault();
-          setDragging(true);
+          dragDepth.current += 1;
+          if (!loading) setDragging(true);
         }}
-        onDragLeave={() => setDragging(false)}
+        onDragOver={(event) => event.preventDefault()}
+        onDragLeave={() => {
+          dragDepth.current = Math.max(0, dragDepth.current - 1);
+          if (dragDepth.current === 0) setDragging(false);
+        }}
         onDrop={(event) => {
           event.preventDefault();
+          dragDepth.current = 0;
           setDragging(false);
+          // Während ein Import läuft, würde eine zweite Datei den ersten Lauf
+          // überholen und das Ergebnis wäre nicht mehr vorhersagbar.
+          if (loading) return;
           void handleFile(event.dataTransfer.files[0]);
         }}
-        onClick={() => inputRef.current?.click()}
-        className="flex w-full max-w-[540px] cursor-pointer flex-col items-center gap-[14px] bg-white px-[32px] py-[44px] text-center"
+        onClick={openDialog}
+        aria-busy={loading}
+        className="flex w-full max-w-[540px] flex-col items-center gap-[14px] bg-white px-[32px] py-[44px] text-center"
         style={{
           border: `1px dashed ${dragging ? 'var(--blue)' : 'var(--line2)'}`,
           background: dragging ? 'var(--blueS)' : 'var(--white)',
+          cursor: loading ? 'progress' : 'pointer',
         }}
       >
         <BubbleLogo size={26} />
@@ -62,9 +81,17 @@ export function FileDropzone() {
           GAEB DA XML (X81–X86), Versionen 2.0 bis 3.3. Die Datei wird ausschließlich im Browser
           verarbeitet — nichts wird hochgeladen, nichts gespeichert. Ein Reload verwirft den Stand.
         </div>
-        <Chip on onClick={() => inputRef.current?.click()}>
-          {loading ? 'Wird gelesen…' : 'Datei auswählen'}
-        </Chip>
+        {/*
+          Der Klick auf die Fläche ist eine Mausbequemlichkeit; die bedienbare
+          Schaltfläche ist dieser Chip (fokussierbar, Enter/Leertaste). Sein
+          Klick darf nicht zusätzlich auf der Fläche landen, sonst öffnet sich
+          der Dateidialog zweimal.
+        */}
+        <span onClick={(event) => event.stopPropagation()}>
+          <Chip on onClick={openDialog}>
+            {loading ? 'Wird gelesen…' : 'Datei auswählen'}
+          </Chip>
+        </span>
         <input
           ref={inputRef}
           type="file"
@@ -73,6 +100,7 @@ export function FileDropzone() {
           aria-label="GAEB-Datei auswählen"
           onChange={(event) => {
             void handleFile(event.target.files?.[0]);
+            // Zurücksetzen, damit dieselbe Datei erneut gewählt werden kann.
             event.target.value = '';
           }}
         />
