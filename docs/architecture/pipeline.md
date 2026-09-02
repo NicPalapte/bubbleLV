@@ -7,7 +7,7 @@
 
 ```
 Datei (Drag&Drop/Input)
-    │  FileReader
+    │  File.arrayBuffer()
     ▼
 GaebParser         ← einzige Stelle mit GAEB-XML-Kenntnis
     │  → ParsedLV (TS)
