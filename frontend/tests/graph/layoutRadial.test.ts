@@ -3,6 +3,7 @@
 // dazu das Auflösen einer Cluster-Bubble (Issue #10).
 
 import { describe, expect, it } from 'vitest';
+import { RADII, SIZE_MAX_FACTOR, sizedRadius } from '../../src/lib/graph/constants';
 import { layoutRadial } from '../../src/lib/graph/layoutRadial';
 import { buildTree } from '../../src/lib/tree/buildTree';
 import type { LVDraft, PositionDraft, SectionDraft } from '../../src/types/lvDraft';
@@ -110,5 +111,37 @@ describe('layoutRadial', () => {
     for (const child of section.children) {
       expect(nodes.get(child.id)?.dotted).toBe(true);
     }
+  });
+
+  it('trägt den größten Knoten einer Ebene innerhalb der Layout-Reserve', () => {
+    // `layoutRadial` rechnet mit SIZE_MAX_FACTOR; kein Größenmodus darf darüber
+    // hinaus wachsen, sonst überlappen die Bubbles nach dem Umschalten.
+    const range = { min: 1, max: 400 };
+    expect(sizedRadius('section', 400, range, false)).toBeCloseTo(
+      RADII.section * SIZE_MAX_FACTOR,
+      6,
+    );
+    expect(sizedRadius('section', 1, range, false)).toBeLessThan(RADII.section);
+  });
+});
+
+describe('sizedRadius', () => {
+  it('spreizt die Radien innerhalb einer Ebene sichtbar', () => {
+    const range = { min: 3, max: 15 };
+    const big = sizedRadius('section', 15, range, false);
+    const small = sizedRadius('section', 3, range, false);
+    // Ohne spürbare Spreizung wirkt der Größenmodus wie ein toter Knopf.
+    expect(big / small).toBeGreaterThan(1.5);
+  });
+
+  it('bleibt beim Basisradius, wenn es nichts zu vergleichen gibt', () => {
+    // Im Modus "Anz. Positionen" zählt jede Position 1 — alle gleich groß,
+    // aber eben nicht alle auf Maximalgröße aufgeblasen.
+    const range = { min: 1, max: 1 };
+    expect(sizedRadius('position', 1, range, false)).toBe(RADII.position);
+  });
+
+  it('ignoriert den Wert im Modus „Einheitlich"', () => {
+    expect(sizedRadius('lot', 999, { min: 1, max: 999 }, true)).toBe(RADII.lot);
   });
 });

@@ -36,6 +36,35 @@ export const LABEL_K: Record<Tier, number> = {
 export const MIN_ZOOM = 0.12;
 export const MAX_ZOOM = 4;
 
+/**
+ * Spanne, über die der wertabhängige Größenmodus den Basisradius streckt.
+ * `SIZE_MAX_FACTOR` ist zugleich die Obergrenze, mit der `layoutRadial` den
+ * Platzbedarf einer Bubble rechnet.
+ */
+export const SIZE_MIN_FACTOR = 0.45;
+export const SIZE_MAX_FACTOR = 1.7;
+
+/**
+ * Radius einer Bubble im gewählten Größenmodus. Der Radius wächst mit der
+ * Wurzel des Werts, damit die *Fläche* dem Wert folgt — so liest sich der
+ * Größenvergleich richtig.
+ *
+ * Haben alle Knoten einer Ebene denselben Wert (etwa jede Position zählt im
+ * Modus "Anz. Positionen" genau 1), gibt es nichts zu vergleichen: dann bleibt
+ * es beim Basisradius, statt jede Bubble auf das Maximum aufzublasen.
+ */
+export function sizedRadius(
+  tier: Tier,
+  value: number,
+  range: { min: number; max: number },
+  uniform: boolean,
+): number {
+  const base = RADII[tier];
+  if (uniform || range.max <= 0 || range.max === range.min) return base;
+  const share = Math.sqrt(Math.max(0, value) / range.max);
+  return base * (SIZE_MIN_FACTOR + share * (SIZE_MAX_FACTOR - SIZE_MIN_FACTOR));
+}
+
 export interface SizeMode {
   id: SizeModeId;
   label: string;

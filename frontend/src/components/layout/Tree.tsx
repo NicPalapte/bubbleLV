@@ -148,7 +148,8 @@ export function Tree({ width, collapsed, onToggleCollapsed }: TreeProps) {
         <div
           onClick={onToggleCollapsed}
           title="Baum ausklappen"
-          className="flex h-[42px] cursor-pointer items-center justify-center border-b border-line font-mono text-[15px] text-dim"
+          className="flex cursor-pointer items-center justify-center border-b border-line font-mono text-[15px] text-dim"
+          style={{ height: 'var(--h-view-head)' }}
         >
           ›
         </div>

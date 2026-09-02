@@ -48,6 +48,7 @@ export type ViewerAction =
   | { type: 'selectNode'; id: string | null; open?: boolean }
   | { type: 'selectPosition'; nodeId: string | null; positionId: string | null }
   | { type: 'hover'; id: string | null }
+  | { type: 'showGraph' }
   | { type: 'back' };
 
 export const INITIAL_VIEWER_STATE: ViewerState = {
@@ -114,6 +115,9 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
       };
     case 'hover':
       return { ...state, hoveredNodeId: action.id };
+    case 'showGraph':
+      // Auswahl bleibt stehen — der Graph zeigt sie weiter hervorgehoben.
+      return { ...state, centerMode: 'graph' };
     case 'back':
       if (state.selectedPositionId !== null) return { ...state, selectedPositionId: null };
       if (state.centerMode === 'table') return { ...state, centerMode: 'graph' };

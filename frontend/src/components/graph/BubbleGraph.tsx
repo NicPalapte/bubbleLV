@@ -13,7 +13,7 @@ import {
 } from 'react';
 import { BubbleNode, ClusterNode, DotNode } from './BubbleNode';
 import { GraphControls } from './GraphControls';
-import { MAX_ZOOM, MIN_ZOOM, RADII, sizeModeById } from '../../lib/graph/constants';
+import { MAX_ZOOM, MIN_ZOOM, RADII, sizeModeById, sizedRadius } from '../../lib/graph/constants';
 import { cullBounds, isInView } from '../../lib/graph/culling';
 import {
   collapseFrom,
@@ -104,24 +104,26 @@ export function BubbleGraph({ root }: { root: LVNode }) {
 
   const metrics = useMemo(() => {
     const map = new Map<string, Metric>();
-    const maxByTier = new Map<string, number>();
+    // Je Ebene eigene Spanne — ein Abschnitt wird gegen Abschnitte verglichen,
+    // nicht gegen das Projekt.
+    const rangeByTier = new Map<string, { min: number; max: number }>();
     for (const entry of placed.values()) {
       if (entry.node === null) continue;
       const value = mode.get(entry.node);
-      maxByTier.set(entry.tier, Math.max(maxByTier.get(entry.tier) ?? 1, value));
+      const range = rangeByTier.get(entry.tier);
+      if (range === undefined) rangeByTier.set(entry.tier, { min: value, max: value });
+      else {
+        range.min = Math.min(range.min, value);
+        range.max = Math.max(range.max, value);
+      }
     }
 
     for (const entry of placed.values()) {
       const node = entry.node;
       if (node === null) continue;
-      const base = RADII[entry.tier];
       const value = mode.get(node);
-      const max = maxByTier.get(entry.tier) ?? 1;
-      const scalable = entry.tier === 'lot' || entry.tier === 'section' || entry.tier === 'project';
-      const radius =
-        mode.uniform || !scalable
-          ? base
-          : base * 0.7 + Math.sqrt(Math.max(0, value) / max) * base * 0.75;
+      const range = rangeByTier.get(entry.tier) ?? { min: value, max: value };
+      const radius = sizedRadius(entry.tier, value, range, mode.uniform);
 
       const hits = matches.counts.get(node.id) ?? 0;
       const baseLabel = mode.uniform ? '' : mode.format(value);

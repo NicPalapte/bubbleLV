@@ -9,7 +9,7 @@
 // verteilt an seine Kinder disjunkte Winkelanteile, die genau diese Kreise
 // aufnehmen.
 
-import { CLUSTER_AT, DOT_AT, RADII, tierOf, type Tier } from './constants';
+import { CLUSTER_AT, DOT_AT, RADII, SIZE_MAX_FACTOR, tierOf, type Tier } from './constants';
 import type { LVNode } from '../../types/lvNode';
 
 export type Density = 'normal' | 'dots' | 'cluster';
@@ -76,14 +76,13 @@ export function walkParents(root: LVNode): Map<string, LVNode | null> {
 }
 
 /**
- * Radius der Bubble selbst. BubbleGraph skaliert Projekt, Los und Abschnitt mit
- * dem Größenmodus auf bis zum 1,45-fachen Basisradius — das Layout muss den
- * Maximalfall tragen, sonst überlappen große Bubbles.
+ * Radius der Bubble selbst. Der Größenmodus streckt sie auf bis zum
+ * `SIZE_MAX_FACTOR`-fachen Basisradius — das Layout muss den Maximalfall
+ * tragen, sonst überlappen große Bubbles nach dem Umschalten.
  */
 function bubbleRadius(tier: Tier, dotted: boolean): number {
   if (dotted) return DOT_RADIUS;
-  const scalable = tier === 'project' || tier === 'lot' || tier === 'section';
-  return RADII[tier] * (scalable ? 1.45 : 1);
+  return RADII[tier] * SIZE_MAX_FACTOR;
 }
 
 /** Was das Layout je Knoten aus dem Messdurchgang behält. */
