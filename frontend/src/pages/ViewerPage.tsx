@@ -25,6 +25,7 @@ export function ViewerPage() {
   const [leftWidth, setLeftWidth] = useState(TREE_WIDTH);
   const [rightWidth, setRightWidth] = useState(PROPS_WIDTH);
   const [treeCollapsed, setTreeCollapsed] = useState(false);
+  const showTable = centerMode === 'table' && selectedNode !== null;
 
   // ESC geht eine Ebene zurück — wie im Design.
   useEffect(() => {
@@ -52,23 +53,24 @@ export function ViewerPage() {
         <div className="relative min-w-0 flex-1 overflow-hidden bg-paper">
           {tree === null ? (
             <FileDropzone />
-          ) : centerMode === 'table' && selectedNode !== null ? (
-            <PositionsTable root={selectedNode} />
           ) : (
             <>
-              <BubbleGraph root={tree} />
-              <GraphHeader root={tree} />
+              {/*
+                Der Graph bleibt beim Abstecher in die Tabelle montiert und wird
+                nur verborgen — sonst ginge sein Ausschnitt (Pan/Zoom) verloren
+                und man käme auf den Startzustand zurück (Issue #19). `active`
+                legt ihn währenddessen schlafen.
+              */}
+              <div className="absolute inset-0" style={{ display: showTable ? 'none' : undefined }}>
+                <BubbleGraph root={tree} active={!showTable} />
+                <GraphHeader root={tree} />
+              </div>
+              {showTable && <PositionsTable root={selectedNode} />}
             </>
           )}
         </div>
 
-        <ResizeHandle
-          value={rightWidth}
-          onChange={setRightWidth}
-          min={260}
-          max={560}
-          sign={-1}
-        />
+        <ResizeHandle value={rightWidth} onChange={setRightWidth} min={260} max={560} sign={-1} />
         <PropertiesPanel width={rightWidth} />
       </div>
     </div>

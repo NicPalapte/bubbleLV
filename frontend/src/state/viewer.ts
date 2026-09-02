@@ -6,9 +6,15 @@
 // Nicht-Komponenten exportiert (React-Fast-Refresh-Regel).
 
 import { createContext, useContext, type Dispatch } from 'react';
+import { allExpanded, expandedToDepth } from '../lib/graph/layoutRadial';
 import { EMPTY_FILTERS, type Filters, type Range } from '../lib/matchPos';
 import type { LoadedLV } from '../lib/pipeline/runPipeline';
+import type { MatchIndex } from '../lib/tree/matchCounts';
 import type { LVNode } from '../types/lvNode';
+
+/** Ebenen, die ein frisch geladenes LV offen zeigt (Projekt + Lose). */
+const START_DEPTH = 2;
+const EMPTY_SET: ReadonlySet<string> = new Set();
 
 export type HideMode = 'dim' | 'hide';
 export type SizeModeId = 'count' | 'cost' | 'uniform';
@@ -26,6 +32,13 @@ export interface ViewerState {
   selectedNodeId: string | null;
   selectedPositionId: string | null;
   hoveredNodeId: string | null;
+  /**
+   * Knoten, deren Kinder gezeigt werden — **eine** Quelle für Baum und Graph,
+   * damit beide Ansichten nie auseinanderlaufen (Issue #18).
+   */
+  expanded: ReadonlySet<string>;
+  /** Aufgelöste Cluster-Bubbles — reine Graph-Darstellung (Issue #10). */
+  openClusters: ReadonlySet<string>;
   /**
    * Was in der Mitte steht. Bewusst eigener Zustand statt aus `selectedNodeId`
    * abgeleitet: eine Sammel-Bubble lässt sich anwählen, ohne dass der Graph
@@ -48,6 +61,11 @@ export type ViewerAction =
   | { type: 'selectNode'; id: string | null; open?: boolean }
   | { type: 'selectPosition'; nodeId: string | null; positionId: string | null }
   | { type: 'hover'; id: string | null }
+  /** Ohne `open` umschalten, mit `open` gezielt auf- bzw. zuklappen. */
+  | { type: 'toggleExpanded'; id: string; open?: boolean }
+  | { type: 'expandAll' }
+  | { type: 'collapseAll' }
+  | { type: 'toggleCluster'; id: string }
   | { type: 'showGraph' }
   | { type: 'back' };
 
@@ -62,6 +80,8 @@ export const INITIAL_VIEWER_STATE: ViewerState = {
   selectedNodeId: null,
   selectedPositionId: null,
   hoveredNodeId: null,
+  expanded: EMPTY_SET,
+  openClusters: EMPTY_SET,
   centerMode: 'graph',
 };
 
@@ -75,6 +95,7 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
       return {
         ...INITIAL_VIEWER_STATE,
         lv: action.lv,
+        expanded: expandedToDepth(action.lv.tree, START_DEPTH),
         sizeMode: state.sizeMode,
         hideMode: state.hideMode,
       };
@@ -115,6 +136,30 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
       };
     case 'hover':
       return { ...state, hoveredNodeId: action.id };
+    case 'toggleExpanded': {
+      const expanded = new Set(state.expanded);
+      const open = action.open ?? !expanded.has(action.id);
+      if (open) expanded.add(action.id);
+      else expanded.delete(action.id);
+      return { ...state, expanded };
+    }
+    case 'expandAll':
+      if (state.lv === null) return state;
+      return { ...state, expanded: allExpanded(state.lv.tree) };
+    case 'collapseAll':
+      if (state.lv === null) return state;
+      // Die Wurzel bleibt offen — sonst stünde der Graph auf einer einzigen
+      // Bubble und der Baum wäre leer.
+      return {
+        ...state,
+        expanded: expandedToDepth(state.lv.tree, 1),
+        openClusters: EMPTY_SET,
+      };
+    case 'toggleCluster': {
+      const openClusters = new Set(state.openClusters);
+      if (!openClusters.delete(action.id)) openClusters.add(action.id);
+      return { ...state, openClusters };
+    }
     case 'showGraph':
       // Auswahl bleibt stehen — der Graph zeigt sie weiter hervorgehoben.
       return { ...state, centerMode: 'graph' };
@@ -135,6 +180,14 @@ export interface ViewerDerived {
   positionNodes: readonly LVNode[];
   selectedNode: LVNode | null;
   selectedPosition: LVNode | null;
+  /** Trefferzahlen je Knoten — einmal berechnet für Baum, Graph und Tabelle. */
+  matches: MatchIndex;
+  /**
+   * Tatsächlich offene Knoten: der Aufklapp-Zustand plus die Pfade zu den
+   * Treffern, die Suche und Filter automatisch öffnen. Baum und Graph lesen
+   * dasselbe Set, damit sie auch beim Filtern gleich stehen (Issue #18).
+   */
+  openNodes: ReadonlySet<string>;
 }
 
 export type ViewerValue = ViewerState & ViewerDerived;

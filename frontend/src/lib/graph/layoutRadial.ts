@@ -38,9 +38,13 @@ export interface RadialLayout {
   extent: number;
 }
 
-export type CollapsedMap = Readonly<Record<string, boolean>>;
+/**
+ * Knoten, deren Kinder gezeigt werden. Baum und Graph teilen sich dieses Set
+ * (Issue #18) — deshalb steht hier das Offene und nicht das Eingeklappte.
+ */
+export type ExpandedSet = ReadonlySet<string>;
 /** Cluster-Bubbles, die der Nutzer aufgelöst hat — ihre Kinder werden gezeigt. */
-export type ClusterMap = Readonly<Record<string, boolean>>;
+export type ClusterSet = ReadonlySet<string>;
 
 const DOT_RADIUS = 7;
 /** Luft um den Teilbaum eines Kindes herum. */
@@ -110,8 +114,8 @@ function measure(
   node: LVNode,
   depth: number,
   dotted: boolean,
-  collapsed: CollapsedMap,
-  clusters: ClusterMap,
+  expanded: ExpandedSet,
+  clusters: ClusterSet,
   out: Map<string, Measure>,
 ): number {
   const tier = tierOf(node, depth);
@@ -128,9 +132,9 @@ function measure(
   out.set(node.id, entry);
 
   const children = node.children;
-  if (collapsed[node.id] === true || children.length === 0) return size;
+  if (!expanded.has(node.id) || children.length === 0) return size;
 
-  entry.density = classifyChildren(children, clusters[node.id] === true);
+  entry.density = classifyChildren(children, clusters.has(node.id));
 
   if (entry.density === 'cluster') {
     entry.ring = size + RADII.cluster + PARENT_PAD;
@@ -143,7 +147,7 @@ function measure(
   let sum = 0;
   let widest = 0;
   for (const child of children) {
-    const span = measure(child, depth + 1, childDotted, collapsed, clusters, out) + GAP;
+    const span = measure(child, depth + 1, childDotted, expanded, clusters, out) + GAP;
     entry.childSpans.push(span);
     sum += span;
     widest = Math.max(widest, span);
@@ -161,11 +165,11 @@ function measure(
 
 export function layoutRadial(
   root: LVNode,
-  collapsed: CollapsedMap,
-  clusters: ClusterMap = {},
+  expanded: ExpandedSet,
+  clusters: ClusterSet = new Set(),
 ): RadialLayout {
   const measures = new Map<string, Measure>();
-  const extent = measure(root, 0, false, collapsed, clusters, measures);
+  const extent = measure(root, 0, false, expanded, clusters, measures);
 
   const nodes = new Map<string, PlacedNode>();
 
@@ -189,7 +193,7 @@ export function layoutRadial(
       clusterCount: 0,
     });
 
-    if (collapsed[node.id] === true) return;
+    if (!expanded.has(node.id)) return;
     const children = node.children;
     if (children.length === 0) return;
 
@@ -235,13 +239,24 @@ export function layoutRadial(
   return { nodes, extent };
 }
 
-/** Alles ab Tiefe `fromDepth` mit Kindern einklappen. */
-export function collapseFrom(root: LVNode, fromDepth: number): Record<string, boolean> {
-  const collapsed: Record<string, boolean> = {};
-  const visit = (node: LVNode, depth: number): void => {
-    if (depth >= fromDepth && node.children.length > 0) collapsed[node.id] = true;
-    for (const child of node.children) visit(child, depth + 1);
+/** Alles bis unter Tiefe `depth` offen — der Rest bleibt eingeklappt. */
+export function expandedToDepth(root: LVNode, depth: number): Set<string> {
+  const expanded = new Set<string>();
+  const visit = (node: LVNode, level: number): void => {
+    if (level < depth && node.children.length > 0) expanded.add(node.id);
+    for (const child of node.children) visit(child, level + 1);
   };
   visit(root, 0);
-  return collapsed;
+  return expanded;
+}
+
+/** Jeder Knoten mit Kindern offen. */
+export function allExpanded(root: LVNode): Set<string> {
+  const expanded = new Set<string>();
+  const visit = (node: LVNode): void => {
+    if (node.children.length > 0) expanded.add(node.id);
+    for (const child of node.children) visit(child);
+  };
+  visit(root);
+  return expanded;
 }

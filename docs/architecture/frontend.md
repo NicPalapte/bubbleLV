@@ -53,7 +53,8 @@ frontend/
     │       └── culling.ts            # Viewport-Culling
     ├── state/
     │   ├── viewer.ts                 # State, Reducer, Context, Hooks
-    │   └── ViewerProvider.tsx        # Provider + abgeleitete Sichten
+    │   │                             #   inkl. Aufklapp-Zustand für Tree + Graph
+    │   └── ViewerProvider.tsx        # Provider + abgeleitete Sichten (Trefferindex)
     └── components/
         ├── layout/{Tree,TopBar,PropertiesPanel,ResizeHandle}.tsx
         ├── upload/FileDropzone.tsx   # Drag&Drop/Datei-Dialog → Pipeline
@@ -79,7 +80,9 @@ sind out of scope) sowie `Checkbox` (die Facetten-Zeile bringt ihre eigene mit).
 **Zwei bewusste Abweichungen vom Skill-Markup:** `DataTable` und `TreeRow` tragen
 ARIA-Rollen (`table`/`row`/`columnheader`/`cell` bzw. `treeitem`), weil beide aus
 Flex-Divs gebaut sind; und `TreeRow` bekommt ein separates `onToggle`, damit ein Klick
-auf die Zeile den Knoten auswählt und nur das Dreieck auf-/zuklappt.
+auf die Zeile den Knoten auswählt und nur das Dreieck auf-/zuklappt. Der
+Zeilenklick klappt zusätzlich **auf** (nie zu) — sonst verschwände beim Anklicken
+genau das, was man sehen will.
 
 **Design-Tokens** (Farben, Typografie, Maße, Elevation) stehen vollständig als
 CSS-Variablen in `src/index.css`, übernommen aus `bubble-design/tokens/`; die Farben
@@ -102,6 +105,33 @@ matchPos(position, filters, search)  ← überall identisch für Sichtbarkeit/Di
 
 Tree und Graph teilen sich **denselben** `LVNode`-Baum, der lokal aus der geladenen
 Datei aufgebaut wird — kein Fetch, kein Server, ein Contract für beide Ansichten.
+
+### Ein Zustand für beide Ansichten
+
+Baum und Graph zeigen dieselbe Struktur und laufen deshalb nie auseinander
+(Issue #18). Alles, was beide betrifft, steht **einmal** im Viewer-State bzw. im
+Provider:
+
+| Was | Wo | Bemerkung |
+|---|---|---|
+| Aufklapp-Zustand | `state.expanded` (`ReadonlySet<string>`) | offene Knoten; ein Klick im Baum wirkt im Graphen und umgekehrt |
+| aufgelöste Cluster | `state.openClusters` | reine Graph-Darstellung, gleiche Lebensdauer |
+| Trefferzahlen | `derived.matches` (`MatchIndex`) | einmal je Filter-/Suchwechsel, für Baum, Graph und Tabelle |
+| tatsächlich offene Knoten | `derived.openNodes` | `expanded` **plus** die Pfade zu den Treffern, die Suche/Filter automatisch öffnen |
+
+`openNodes` ist abgeleitet statt gespeichert: fällt der Filter weg, steht wieder
+genau der Aufklapp-Zustand da, den der Nutzer selbst gesetzt hat. Nach dem Import
+sind Projekt und Lose offen (`expandedToDepth(tree, 2)`), `Alles einklappen` fällt
+auf die Lose zurück — die Wurzel bleibt offen, sonst wäre der Baum leer.
+
+**Nicht** im gemeinsamen Zustand liegt der Ausschnitt des Graphen (Pan/Zoom): er
+ändert sich beim Ziehen pro Frame und würde als Context-State die ganze Seite neu
+rendern. Damit er den Abstecher in die Tabelle trotzdem überlebt (Issue #19),
+bleibt `BubbleGraph` dort **montiert** und wird von `ViewerPage` nur verborgen —
+der Rückweg zeigt exakt den Graphen, den man verlassen hat. Verborgen ruht sein
+Layout (`active={false}`), damit die Tabellensuche nicht bei jedem Tastendruck
+den ganzen Graphen im Hintergrund neu rechnet. Erst ein neuer Import
+setzt Ausschnitt und Aufklapp-Zustand auf den Startzustand zurück.
 
 Die `PositionsTable` zeigt wahlweise den gewählten Abschnitt oder das ganze LV
 (Umschalter im Tabellenkopf). Bei aktivem Filter fällt sie automatisch auf das
@@ -134,9 +164,9 @@ Kreisgrafik. Eigenschaften, die erhalten bleiben:
   Einheitspreise, ist `Gesamtpreis €` **gesperrt** statt still auf `Anzahl`
   zurückzufallen — sonst sieht der Knopf gewählt aus und nichts ändert sich.
 - **Drill-in:** Klick auf eine Sammel-Bubble klappt sie auf bzw. zu und wählt sie
-  fürs Eigenschaften-Panel — die Mitte bleibt der Graph. In die Tabelle führt das
-  Tabellensymbol an der Bubble; bei Positionen öffnet der Klick direkt die
-  Tabelle. Welche Ansicht die Mitte zeigt, steht als `centerMode` im Viewer-State
+  fürs Eigenschaften-Panel — die Mitte bleibt der Graph, und der Baum klappt
+  mit. In die Tabelle führt das Tabellensymbol an der Bubble; bei Positionen
+  öffnet der Klick direkt die Tabelle. Welche Ansicht die Mitte zeigt, steht als `centerMode` im Viewer-State
   und wird nicht aus der Auswahl abgeleitet. Zurück in den Graphen führen der
   `Graph`-Knopf im Tabellenkopf und die Projektzeile im Baum — beide in einem
   Schritt, unabhängig davon, wie tief man steht.
