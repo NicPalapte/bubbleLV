@@ -122,14 +122,16 @@ export function Tree({ width, collapsed, onToggleCollapsed }: TreeProps) {
         className="flex shrink-0 flex-col overflow-hidden border-r border-line bg-white"
         style={{ width: 'var(--w-tree-collapsed)' }}
       >
-        <div
+        <button
+          type="button"
           onClick={onToggleCollapsed}
           title="Baum ausklappen"
-          className="flex cursor-pointer items-center justify-center border-b border-line font-mono text-[15px] text-dim"
+          aria-label="Baum ausklappen"
+          className="flex w-full cursor-pointer items-center justify-center border-0 border-b border-line bg-transparent font-mono text-[15px] text-dim"
           style={{ height: 'var(--h-view-head)' }}
         >
           ›
-        </div>
+        </button>
         <div className="flex-1" />
         <div className="py-[8px] text-center font-mono text-[8px] tracking-[1.2px] text-mute [writing-mode:vertical-rl]">
           STRUKTUR
@@ -148,22 +150,25 @@ export function Tree({ width, collapsed, onToggleCollapsed }: TreeProps) {
           <span className="font-mono text-[8.5px] uppercase tracking-[0.6px] text-mute">
             Projekt
           </span>
-          <span
+          <button
+            type="button"
             onClick={onToggleCollapsed}
             title="Einklappen"
-            className="cursor-pointer px-[2px] font-mono text-[13px] leading-none text-dim"
+            aria-label="Baum einklappen"
+            className="cursor-pointer border-none bg-transparent px-[2px] font-mono text-[13px] leading-none text-dim"
           >
             ‹
-          </span>
+          </button>
         </div>
-        <div
+        <button
+          type="button"
           onClick={() => {
             dispatch({ type: 'selectNode', id: null });
             // Die Projektzeile trägt kein Dreieck — sie ist der Weg zurück,
             // wenn die Projekt-Bubble im Graphen zugeklappt wurde.
             if (tree !== null) dispatch({ type: 'toggleExpanded', id: tree.id, open: true });
           }}
-          className="-ml-[2px] cursor-pointer pl-[8px]"
+          className="-ml-[2px] block w-full cursor-pointer border-none bg-transparent pl-[8px] text-left"
         >
           <div className="overflow-hidden text-ellipsis whitespace-nowrap font-sans text-[15px] font-bold text-ink">
             {lv?.projectName ?? lv?.fileName ?? 'Kein LV geladen'}
@@ -173,7 +178,7 @@ export function Tree({ width, collapsed, onToggleCollapsed }: TreeProps) {
               ? 'Datei laden'
               : `Übersicht · ${formatCount(tree.positionCount)} Positionen`}
           </div>
-        </div>
+        </button>
       </div>
 
       <div className="px-[12px] pb-[2px] pt-[8px] font-mono text-[9px] uppercase tracking-[0.6px] text-mute">

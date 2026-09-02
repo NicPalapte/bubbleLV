@@ -30,6 +30,7 @@ export function GraphHeader({ root }: { root: LVNode }) {
           {formatCount(root.positionCount)} POS. · GRÖSSE
         </span>
         <SegmentedControl
+          label="Größe der Bubbles"
           options={SIZE_MODES.map((mode) => {
             const disabled = mode.id === 'cost' && priceless;
             return {

@@ -44,7 +44,7 @@ export function TreeRow({
   onToggle,
   title,
 }: TreeRowProps) {
-  const toggle = (event: ReactMouseEvent<HTMLSpanElement>): void => {
+  const toggle = (event: ReactMouseEvent<HTMLButtonElement>): void => {
     if (onToggle === undefined) return;
     event.stopPropagation();
     onToggle();
@@ -74,9 +74,26 @@ export function TreeRow({
       }}
     >
       {!leaf && (
-        <span onClick={toggle} style={{ width: 10, color: 'var(--mute)', fontSize: 9 }}>
+        // Auf-/Zuklappen ist eine eigene Schaltfläche neben der Zeile: die Zeile
+        // selbst navigiert. Als <span> war sie nur mit der Maus erreichbar.
+        <button
+          type="button"
+          onClick={toggle}
+          disabled={onToggle === undefined}
+          aria-label={open ? `${label} zuklappen` : `${label} aufklappen`}
+          style={{
+            width: 10,
+            padding: 0,
+            border: 'none',
+            background: 'transparent',
+            color: 'var(--mute)',
+            fontSize: 9,
+            lineHeight: 1,
+            cursor: onToggle === undefined ? 'default' : 'pointer',
+          }}
+        >
           {onToggle === undefined ? '' : open ? '▾' : '▸'}
-        </span>
+        </button>
       )}
       {code !== '' && (
         <span style={{ color: 'var(--mute)', fontSize: 10, flexShrink: 0 }}>{code}</span>

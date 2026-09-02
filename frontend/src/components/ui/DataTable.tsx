@@ -111,20 +111,41 @@ export function DataTable<T>({
               key={column.key}
               role="columnheader"
               aria-sort={active ? (sort.dir > 0 ? 'ascending' : 'descending') : undefined}
-              onClick={() => {
-                if (sortable) onSort(column.key);
-              }}
               style={{
                 flex: `0 0 ${column.width}`,
-                padding: '10px 12px',
                 borderRight: '1px solid var(--line)',
                 textAlign: column.align ?? 'left',
-                cursor: sortable ? 'pointer' : 'default',
                 userSelect: 'none',
                 color: active ? 'var(--blue)' : 'var(--mute)',
               }}
             >
-              {column.label} {active ? (sort.dir > 0 ? '↑' : '↓') : ''}
+              {/*
+                Sortierbare Köpfe sind Schaltflächen — sonst ist die Sortierung
+                nur mit der Maus erreichbar. Nicht sortierbare bleiben Text.
+              */}
+              {sortable ? (
+                <button
+                  type="button"
+                  onClick={() => onSort(column.key)}
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    padding: '10px 12px',
+                    border: 'none',
+                    background: 'transparent',
+                    font: 'inherit',
+                    letterSpacing: 'inherit',
+                    textTransform: 'inherit',
+                    textAlign: 'inherit',
+                    color: 'inherit',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {column.label} {active ? (sort.dir > 0 ? '↑' : '↓') : ''}
+                </button>
+              ) : (
+                <span style={{ display: 'block', padding: '10px 12px' }}>{column.label}</span>
+              )}
             </div>
           );
         })}

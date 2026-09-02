@@ -16,24 +16,36 @@ export interface SegmentedControlProps {
   options: readonly SegmentedOption[];
   value: string;
   onChange: (value: string) => void;
+  /** Bezeichnung der Gruppe für Screenreader, z. B. "Nicht-Treffer". */
+  label?: string;
 }
 
-export function SegmentedControl({ options, value, onChange }: SegmentedControlProps) {
+export function SegmentedControl({ options, value, onChange, label }: SegmentedControlProps) {
   return (
-    <div style={{ display: 'flex', border: '1px solid var(--line)', flexShrink: 0 }}>
+    <div
+      role="radiogroup"
+      aria-label={label}
+      style={{ display: 'flex', border: '1px solid var(--line)', flexShrink: 0 }}
+    >
       {options.map((option, index) => {
         const disabled = option.disabled === true;
         const on = option.value === value && !disabled;
         return (
-          <span
+          // Echte Schaltfläche statt <span>: die Gruppe ist sonst weder mit der
+          // Tastatur erreichbar noch für Screenreader als Auswahl erkennbar.
+          <button
             key={option.value}
+            type="button"
+            role="radio"
+            aria-checked={on}
             onClick={() => {
               if (!disabled) onChange(option.value);
             }}
             title={option.title}
-            aria-disabled={disabled}
+            disabled={disabled}
             style={{
               padding: '4px 10px',
+              border: 'none',
               cursor: disabled ? 'not-allowed' : 'pointer',
               fontFamily: 'var(--mono)',
               fontSize: 9.5,
@@ -49,7 +61,7 @@ export function SegmentedControl({ options, value, onChange }: SegmentedControlP
             }}
           >
             {option.label}
-          </span>
+          </button>
         );
       })}
     </div>

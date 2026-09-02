@@ -76,9 +76,22 @@ export function PopoverHead({ children, onReset }: { children: ReactNode; onRese
     >
       <span>{children}</span>
       {onReset !== undefined && (
-        <span onClick={onReset} style={{ cursor: 'pointer', color: 'var(--blue)' }}>
+        <button
+          type="button"
+          onClick={onReset}
+          style={{
+            border: 'none',
+            background: 'transparent',
+            padding: 0,
+            cursor: 'pointer',
+            color: 'var(--blue)',
+            font: 'inherit',
+            letterSpacing: 'inherit',
+            textTransform: 'inherit',
+          }}
+        >
           zurücksetzen
-        </span>
+        </button>
       )}
     </div>
   );
@@ -107,14 +120,22 @@ export function PopoverRow({
   title,
 }: PopoverRowProps) {
   return (
-    <div
+    // Echte Schaltfläche statt <div>: die Facettenwerte sind sonst weder mit der
+    // Tastatur wählbar noch als (Mehrfach-)Auswahl erkennbar.
+    <button
+      type="button"
       onClick={onClick}
       title={title}
+      aria-pressed={checkbox ? on : undefined}
       style={{
         display: 'flex',
+        width: '100%',
         alignItems: 'center',
         gap: 8,
         padding: 'var(--pad-popover-row)',
+        border: 'none',
+        textAlign: 'left',
+        font: 'inherit',
         cursor: 'pointer',
         background: on ? 'var(--blueS)' : 'transparent',
         color: on ? 'var(--blueD)' : 'var(--ink)',
@@ -146,6 +167,6 @@ export function PopoverRow({
       {trailing !== undefined && (
         <span style={{ color: 'var(--mute)', flexShrink: 0 }}>{trailing}</span>
       )}
-    </div>
+    </button>
   );
 }

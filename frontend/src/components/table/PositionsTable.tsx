@@ -245,18 +245,19 @@ export function PositionsTable({ root }: { root: LVNode }) {
           <GraphGlyph />
           <span className="font-mono text-[9.5px]">Graph</span>
         </button>
-        <span
+        <button
+          type="button"
           onClick={() =>
             parent === null
               ? dispatch({ type: 'showGraph' })
               : dispatch({ type: 'selectNode', id: parent.id, open: true })
           }
           title={parent === null ? 'Zurück zum Graphen' : 'Eine Ebene höher'}
-          className="shrink-0 cursor-pointer px-[4px] font-mono text-[13px] leading-none text-blue"
-          role="button"
+          aria-label={parent === null ? 'Zurück zum Graphen' : 'Eine Ebene höher'}
+          className="shrink-0 cursor-pointer border-none bg-transparent px-[4px] font-mono text-[13px] leading-none text-blue"
         >
           ←
-        </span>
+        </button>
         {scopeRoot.code !== '' && (
           <span className="shrink-0 tracking-[0.6px] text-mute">§ {scopeRoot.code}</span>
         )}
@@ -283,6 +284,7 @@ export function PositionsTable({ root }: { root: LVNode }) {
         {lvRoot !== root && (
           <span className="ml-auto shrink-0">
             <SegmentedControl
+              label="Umfang der Tabelle"
               options={[
                 { value: 'node', label: 'Abschnitt', title: 'Nur der gewählte Abschnitt' },
                 { value: 'lv', label: 'Ganzes LV', title: 'Alle Positionen des LV' },

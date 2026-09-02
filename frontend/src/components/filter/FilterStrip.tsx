@@ -65,14 +65,14 @@ export function FilterStrip() {
             className="inline-flex items-center gap-[6px] whitespace-nowrap border border-line2 bg-paper py-[3px] pl-[9px] pr-[6px] font-mono text-[10px] text-ink"
           >
             {chip.label}
-            <span
-              className="cursor-pointer text-[11px] leading-none text-mute"
+            <button
+              type="button"
+              className="cursor-pointer border-none bg-transparent p-0 text-[11px] leading-none text-mute"
               onClick={chip.remove}
-              role="button"
               aria-label={`${chip.label} entfernen`}
             >
               ✕
-            </span>
+            </button>
           </span>
         ))}
       </div>
@@ -81,6 +81,7 @@ export function FilterStrip() {
         NICHT-TREFFER
       </span>
       <SegmentedControl
+        label="Nicht-Treffer"
         options={HIDE_MODES}
         value={hideMode}
         onChange={(value) => dispatch({ type: 'hideMode', value: value as HideMode })}
