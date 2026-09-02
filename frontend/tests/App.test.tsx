@@ -73,6 +73,57 @@ describe('Viewer', () => {
     expect(screen.queryByText('001.001.0010')).not.toBeInTheDocument();
   });
 
+  it('zeigt Filtertreffer des ganzen LV, wenn der Abschnitt keinen hat', async () => {
+    render(<App />);
+    await loadFixture('gaeb-xml-beispiel.x83');
+    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+
+    // Bis in den Abschnitt „Baustelleneinrichtung" navigieren.
+    const tree = screen.getByRole('tree');
+    fireEvent.click(within(tree).getAllByRole('treeitem')[0]);
+    fireEvent.click(await within(tree).findByTitle('Bauhauptgewerke'));
+    fireEvent.click(await within(tree).findByTitle('Baustelleneinrichtung'));
+
+    const table = await screen.findByRole('table', { name: 'Positionen' });
+    expect(within(table).getAllByText('001.001.0010').length).toBeGreaterThan(0);
+
+    // „Kabel" kommt nur in den Elektroarbeiten vor — im gewählten Abschnitt
+    // gibt es keinen Treffer, die Tabelle darf trotzdem nicht leer bleiben.
+    fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'Kabel' } });
+
+    await waitFor(() =>
+      expect(screen.getByText(/Ergebnisse aus dem ganzen LV/)).toBeInTheDocument(),
+    );
+    expect(within(table).getAllByText('002.001.0010').length).toBeGreaterThan(0);
+    expect(within(table).queryByText('001.001.0010')).not.toBeInTheDocument();
+  });
+
+  it('gruppiert die Filtertreffer nach Überschriften', async () => {
+    render(<App />);
+    await loadFixture('gaeb-xml-beispiel.x83');
+    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+
+    const tree = screen.getByRole('tree');
+    fireEvent.click(within(tree).getAllByRole('treeitem')[0]);
+    fireEvent.click(await within(tree).findByTitle('Bauhauptgewerke'));
+    fireEvent.click(await within(tree).findByTitle('Baustelleneinrichtung'));
+    await screen.findByRole('table', { name: 'Positionen' });
+
+    fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'Beton' } });
+
+    // Die Treffer verteilen sich über mehrere Abschnitte und stehen jeweils
+    // unter ihrem Überschriftenpfad.
+    const table = await screen.findByRole('table', { name: 'Positionen' });
+    await waitFor(() =>
+      expect(
+        within(table).getByText(/Bauhauptgewerke.+§ 001\.004 · Betonarbeiten/),
+      ).toBeInTheDocument(),
+    );
+    expect(
+      within(table).getByText(/Bauhauptgewerke.+§ 001\.003 · Maurerarbeiten/),
+    ).toBeInTheDocument();
+  });
+
   it('zeigt eine verständliche Fehlermeldung bei nicht unterstützter GAEB-Version', async () => {
     render(<App />);
     await loadFixture('unsupported-version.x83');

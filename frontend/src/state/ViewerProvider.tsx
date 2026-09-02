@@ -43,7 +43,6 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
         state.selectedPositionId === null
           ? null
           : (structure.nodes.get(state.selectedPositionId) ?? null),
-      centerMode: state.selectedNodeId === null ? 'graph' : 'table',
     }),
     [tree, structure, state.selectedNodeId, state.selectedPositionId],
   );
