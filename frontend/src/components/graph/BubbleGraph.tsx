@@ -50,6 +50,8 @@ export function BubbleGraph({ root }: { root: LVNode }) {
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [view, setView] = useState<View>({ tx: 0, ty: 0, k: 0.7 });
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() => collapseFrom(root, 2));
+  // Cluster-Bubbles, die der Nutzer per Klick aufgelöst hat (Issue #10).
+  const [openClusters, setOpenClusters] = useState<Record<string, boolean>>({});
 
   // Neuer Baum → Standard-Einklappzustand. Anpassung während des Renderns statt
   // im Effekt, sonst rendert der Graph einmal mit dem alten Zustand.
@@ -57,6 +59,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
   if (collapsedFor !== root) {
     setCollapsedFor(root);
     setCollapsed(collapseFrom(root, 2));
+    setOpenClusters({});
   }
 
   useLayoutEffect(() => {
@@ -83,7 +86,10 @@ export function BubbleGraph({ root }: { root: LVNode }) {
   }, [w, h]);
 
   const parents = useMemo(() => walkParents(root), [root]);
-  const { nodes: placed } = useMemo(() => layoutRadial(root, collapsed), [root, collapsed]);
+  const { nodes: placed } = useMemo(
+    () => layoutRadial(root, collapsed, openClusters),
+    [root, collapsed, openClusters],
+  );
 
   const filtering = isFiltering(filters, search);
   const matches = useMemo(
@@ -220,8 +226,10 @@ export function BubbleGraph({ root }: { root: LVNode }) {
     return out;
   }, [placed, metrics, inView]);
 
+  // Kanten laufen leicht gebogen von der Eltern- zur Kind-Bubble — die kleine
+  // Auslenkung nimmt dem Fächer die Sternform (Issue #11).
   const edges = useMemo(() => {
-    const out: Array<{ a: PlacedNode; b: PlacedNode; key: string }> = [];
+    const out: Array<{ a: string; b: string; d: string; key: string }> = [];
     for (const entry of placed.values()) {
       const parentId = entry.clusterOf ?? parents.get(entry.id)?.id ?? null;
       if (parentId === null) continue;
@@ -229,9 +237,15 @@ export function BubbleGraph({ root }: { root: LVNode }) {
       if (from === undefined) continue;
       const midX = (entry.cx + from.cx) / 2;
       const midY = (entry.cy + from.cy) / 2;
-      const half = Math.hypot(entry.cx - from.cx, entry.cy - from.cy) / 2;
-      if (!inView(midX, midY, half + 40)) continue;
-      out.push({ a: from, b: entry, key: `${from.id}->${entry.id}` });
+      const dx = entry.cx - from.cx;
+      const dy = entry.cy - from.cy;
+      if (!inView(midX, midY, Math.hypot(dx, dy) / 2 + 40)) continue;
+      out.push({
+        a: from.id,
+        b: entry.id,
+        key: `${from.id}->${entry.id}`,
+        d: `M${from.cx},${from.cy} Q${midX - dy * 0.06},${midY + dx * 0.06} ${entry.cx},${entry.cy}`,
+      });
     }
     return out;
   }, [placed, parents, inView]);
@@ -261,6 +275,14 @@ export function BubbleGraph({ root }: { root: LVNode }) {
     setCollapsed((current) => ({ ...current, [id]: current[id] !== true }));
   }, []);
 
+  /** Sprung in die Tabelle — nur über das Tabellensymbol an der Bubble. */
+  const openTable = useCallback(
+    (node: LVNode): void => {
+      dispatch({ type: 'selectNode', id: node.id, open: true });
+    },
+    [dispatch],
+  );
+
   const openNode = useCallback(
     (node: LVNode): void => {
       if (node.kind === 'position') {
@@ -268,29 +290,33 @@ export function BubbleGraph({ root }: { root: LVNode }) {
         dispatch({ type: 'selectPosition', nodeId: parent?.id ?? null, positionId: node.id });
         return;
       }
-      if (node.kind === 'section') {
-        dispatch({ type: 'selectNode', id: node.id });
-        return;
-      }
-      toggleCollapse(node.id);
+      // Sammel-Bubbles öffnen bzw. schließen sich im Graphen und wandern ins
+      // Eigenschaften-Panel; die Mitte bleibt der Graph (Issue #10).
+      dispatch({ type: 'selectNode', id: node.id });
+      if (node.children.length > 0) toggleCollapse(node.id);
     },
     [dispatch, parents, toggleCollapse],
   );
 
-  const openCluster = useCallback(
+  /** Cluster-Bubble auflösen bzw. wieder zusammenfassen. */
+  const toggleCluster = useCallback((parentId: string): void => {
+    setOpenClusters((current) => ({ ...current, [parentId]: current[parentId] !== true }));
+  }, []);
+
+  /** Tabelle für einen Cluster: nächster Abschnitt bzw. Los oberhalb. */
+  const openClusterTable = useCallback(
     (entry: PlacedNode): void => {
-      const anchor = entry.clusterOf === null ? null : (placed.get(entry.clusterOf)?.node ?? null);
-      let current: LVNode | null = anchor;
+      let current: LVNode | null =
+        entry.clusterOf === null ? null : (placed.get(entry.clusterOf)?.node ?? null);
       while (current !== null) {
         if (current.kind === 'section' || current.kind === 'lot') {
-          dispatch({ type: 'selectNode', id: current.id });
+          dispatch({ type: 'selectNode', id: current.id, open: true });
           return;
         }
         current = parents.get(current.id) ?? null;
       }
-      if (entry.clusterOf !== null) toggleCollapse(entry.clusterOf);
     },
-    [placed, parents, dispatch, toggleCollapse],
+    [placed, parents, dispatch],
   );
 
   const fit = useCallback((): void => {
@@ -316,6 +342,15 @@ export function BubbleGraph({ root }: { root: LVNode }) {
       k,
     });
   }, [placed, metrics, w, h]);
+
+  // Die Ringradien hängen jetzt an der Größe des LV (Issue #11) — ein fixer
+  // Startzoom passt dafür nicht mehr. Deshalb einmal je Baum einpassen.
+  const fittedFor = useRef<LVNode | null>(null);
+  useEffect(() => {
+    if (w === 0 || h === 0 || fittedFor.current === root) return;
+    fittedFor.current = root;
+    fit();
+  }, [root, w, h, fit]);
 
   const zoomBy = useCallback(
     (factor: number): void =>
@@ -350,18 +385,15 @@ export function BubbleGraph({ root }: { root: LVNode }) {
 
         <g transform={`translate(${view.tx},${view.ty}) scale(${view.k})`}>
           {edges.map((edge) => {
-            const dim =
-              spotlight !== null && !spotlight.has(edge.a.id) && !spotlight.has(edge.b.id);
+            const dim = spotlight !== null && !spotlight.has(edge.a) && !spotlight.has(edge.b);
             return (
-              <line
+              <path
                 key={edge.key}
-                x1={edge.a.cx}
-                y1={edge.a.cy}
-                x2={edge.b.cx}
-                y2={edge.b.cy}
-                stroke="var(--line2)"
-                strokeWidth={1 / Math.max(0.4, view.k)}
-                opacity={dim ? 0.08 : 0.45}
+                d={edge.d}
+                fill="none"
+                stroke="var(--bub-edge)"
+                strokeWidth={1.2 / Math.max(0.4, view.k)}
+                opacity={dim ? 0.08 : 0.6}
               />
             );
           })}
@@ -379,8 +411,12 @@ export function BubbleGraph({ root }: { root: LVNode }) {
                   dimmed={spotlightDim}
                   hovered={hoveredNodeId === entry.id}
                   onHover={(id) => dispatch({ type: 'hover', id })}
-                  onClick={() => openCluster(entry)}
+                  onClick={() => {
+                    if (entry.clusterOf !== null) toggleCluster(entry.clusterOf);
+                  }}
                   sampleTier={sampleTier}
+                  expanded={entry.clusterOf !== null && openClusters[entry.clusterOf] === true}
+                  onOpenTable={() => openClusterTable(entry)}
                 />
               );
             }
@@ -425,6 +461,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
                 isCollapsed={collapsed[node.id] === true}
                 childCount={node.children.length}
                 onToggleCollapse={() => toggleCollapse(node.id)}
+                onOpenTable={() => openTable(node)}
               />
             );
           })}
@@ -438,7 +475,10 @@ export function BubbleGraph({ root }: { root: LVNode }) {
         onFit={fit}
         onReset={() => setView({ tx: w / 2, ty: h / 2, k: 0.7 })}
         onZoom={zoomBy}
-        onCollapseAll={() => setCollapsed(collapseFrom(root, 1))}
+        onCollapseAll={() => {
+          setCollapsed(collapseFrom(root, 1));
+          setOpenClusters({});
+        }}
         onExpandAll={() => setCollapsed({})}
       />
     </div>

@@ -22,10 +22,16 @@ export interface ViewerState {
   filters: Filters;
   hideMode: HideMode;
   sizeMode: SizeModeId;
-  /** Angewählter Abschnitt bzw. Los — schaltet die Mitte auf die Tabelle. */
+  /** Angewählter Abschnitt bzw. Los — steuert Eigenschaften-Panel und Tabelle. */
   selectedNodeId: string | null;
   selectedPositionId: string | null;
   hoveredNodeId: string | null;
+  /**
+   * Was in der Mitte steht. Bewusst eigener Zustand statt aus `selectedNodeId`
+   * abgeleitet: eine Sammel-Bubble lässt sich anwählen, ohne dass der Graph
+   * gegen die Tabelle getauscht wird (Issue #10).
+   */
+  centerMode: CenterMode;
 }
 
 export type ViewerAction =
@@ -39,7 +45,7 @@ export type ViewerAction =
   | { type: 'resetFilters' }
   | { type: 'hideMode'; value: HideMode }
   | { type: 'sizeMode'; value: SizeModeId }
-  | { type: 'selectNode'; id: string | null }
+  | { type: 'selectNode'; id: string | null; open?: boolean }
   | { type: 'selectPosition'; nodeId: string | null; positionId: string | null }
   | { type: 'hover'; id: string | null }
   | { type: 'back' };
@@ -55,6 +61,7 @@ export const INITIAL_VIEWER_STATE: ViewerState = {
   selectedNodeId: null,
   selectedPositionId: null,
   hoveredNodeId: null,
+  centerMode: 'graph',
 };
 
 export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerState {
@@ -91,13 +98,25 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     case 'sizeMode':
       return { ...state, sizeMode: action.value };
     case 'selectNode':
-      return { ...state, selectedNodeId: action.id, selectedPositionId: null };
+      return {
+        ...state,
+        selectedNodeId: action.id,
+        selectedPositionId: null,
+        centerMode:
+          action.id === null ? 'graph' : action.open === true ? 'table' : state.centerMode,
+      };
     case 'selectPosition':
-      return { ...state, selectedNodeId: action.nodeId, selectedPositionId: action.positionId };
+      return {
+        ...state,
+        selectedNodeId: action.nodeId,
+        selectedPositionId: action.positionId,
+        centerMode: action.positionId === null ? state.centerMode : 'table',
+      };
     case 'hover':
       return { ...state, hoveredNodeId: action.id };
     case 'back':
       if (state.selectedPositionId !== null) return { ...state, selectedPositionId: null };
+      if (state.centerMode === 'table') return { ...state, centerMode: 'graph' };
       return { ...state, selectedNodeId: null };
     default:
       return state;
@@ -112,7 +131,6 @@ export interface ViewerDerived {
   positionNodes: readonly LVNode[];
   selectedNode: LVNode | null;
   selectedPosition: LVNode | null;
-  centerMode: CenterMode;
 }
 
 export type ViewerValue = ViewerState & ViewerDerived;

@@ -75,7 +75,7 @@ describe('Graph-Engine bei ~10k Positionen', () => {
   });
 
   it('reduziert die Zeichenmenge durch Viewport-Culling deutlich', () => {
-    const { nodes } = layoutRadial(tree, {});
+    const { nodes, extent } = layoutRadial(tree, {});
     const count = (tx: number, ty: number, k: number): number => {
       const bounds = cullBounds({ tx, ty, k, width: 1200, height: 800 });
       let visible = 0;
@@ -83,14 +83,16 @@ describe('Graph-Engine bei ~10k Positionen', () => {
       return visible;
     };
 
-    const overview = count(600, 400, 1);
-    const zoomedIn = count(600, 400, 2);
+    // Zoomstufe relativ zur Ausdehnung: der Graph ragt knapp über den Rand.
+    const k = 1600 / (2 * extent);
+    const overview = count(600, 400, k);
+    const zoomedIn = count(600, 400, k * 4);
     expect(overview).toBeGreaterThan(0);
     expect(overview).toBeLessThan(nodes.size);
     // Weiter hineinzoomen zeigt weniger Knoten …
     expect(zoomedIn).toBeLessThan(overview);
     // … und ein weit weggeschobener Viewport gar keine.
-    expect(count(-100_000, -100_000, 1)).toBe(0);
+    expect(count(-100_000, -100_000, k)).toBe(0);
   });
 
   it('leitet die Anzeige-Ebene aus Knotenart und Tiefe ab', () => {

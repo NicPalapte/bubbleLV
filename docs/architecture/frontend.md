@@ -49,7 +49,7 @@ frontend/
     │   ├── facets.ts                 # Facetten-Definitionen (dynamische Werte)
     │   └── graph/                    # Graph-Engine (aus lv-graph.jsx)
     │       ├── constants.ts          # Radien, LOD-Schwellen, Größenmodi
-    │       ├── layoutRadial.ts       # radiales Tidy-Tree-Layout + Cluster
+    │       ├── layoutRadial.ts       # Ballon-Layout (Kreis je Elternknoten) + Cluster
     │       └── culling.ts            # Viewport-Culling
     ├── state/
     │   ├── viewer.ts                 # State, Reducer, Context, Hooks
@@ -103,6 +103,12 @@ matchPos(position, filters, search)  ← überall identisch für Sichtbarkeit/Di
 Tree und Graph teilen sich **denselben** `LVNode`-Baum, der lokal aus der geladenen
 Datei aufgebaut wird — kein Fetch, kein Server, ein Contract für beide Ansichten.
 
+Die `PositionsTable` zeigt wahlweise den gewählten Abschnitt oder das ganze LV
+(Umschalter im Tabellenkopf). Bei aktivem Filter fällt sie automatisch auf das
+ganze LV zurück, sobald der gewählte Abschnitt keinen Treffer hat — sonst stünde
+man vor einer leeren Tabelle, während der Baum daneben Treffer zeigt. Umfassen
+die Zeilen mehr als eine Überschrift, stehen sie unter deren Pfad gruppiert.
+
 ## Bubble-Graph (Kern des Produkts)
 
 Portiert aus `lv-graph.jsx` — eine skalierbare Knowledge-Graph-Engine, keine simple
@@ -110,15 +116,23 @@ Kreisgrafik. Eigenschaften, die erhalten bleiben:
 
 - **Rekursives Baummodell** beliebiger Tiefe (Projekt → Los → Abschnitt →
   ggf. Unterabschnitt/Gruppe → Position).
-- **Radiales Tidy-Tree-Layout** mit adaptiven Ring-Radien.
+- **Ballon-Layout:** jeder Knoten legt seine Kinder als Kreis um sich selbst.
+  Kreisradius und Winkelanteile folgen der Größe der Teilbäume, die Abstände
+  skalieren damit mit dem LV statt aus einer festen Ring-Tabelle zu kommen.
+  Kinder fächern nur in die Halbebene vom Elternknoten weg auf — dadurch bleibt
+  jeder Teilbaum überschneidungsfrei.
 - **Dichte-abhängiges Rendering** je Tier: Bubble / Punkt / Cluster.
-  **Cluster-Bubble** ab > 24 Geschwistern (`CLUSTER_AT`).
+  **Cluster-Bubble** ab > 24 Geschwistern (`CLUSTER_AT`); ein Klick darauf löst
+  sie in Punkte auf.
 - **Level-of-Detail:** Labels blenden bei sinkendem Zoom aus (Schwellen je `kind`).
 - **Viewport-Culling** (günstiger Bounding-Box-Test) für große LVs (~10k Positionen).
 - **Größenmodi:** `Anz. Positionen` · `Gesamtpreis €` · `Einheitlich`
   (`SIZE_MODES`). Größe kommt aus den `LVNode`-Aggregaten `position_count` / `total_price`.
-- **Drill-in:** Klick auf einen Abschnittsknoten öffnet dessen Tabelle;
-  Umschalter Graph ⇄ Tabelle in der Mitte.
+- **Drill-in:** Klick auf eine Sammel-Bubble klappt sie auf bzw. zu und wählt sie
+  fürs Eigenschaften-Panel — die Mitte bleibt der Graph. In die Tabelle führt das
+  Tabellensymbol an der Bubble; bei Positionen öffnet der Klick direkt die
+  Tabelle. Welche Ansicht die Mitte zeigt, steht als `centerMode` im Viewer-State
+  und wird nicht aus der Auswahl abgeleitet.
 
 **Beim Port entfernt** (out of scope): die Vergabepaket-Kanten / `nodeVpIds` /
 `positionPakete`-Hover-Overlays und das `genDemoLot`-Demo-Lot (nur als optionales

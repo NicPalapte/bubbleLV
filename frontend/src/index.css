@@ -34,6 +34,27 @@
   --redD: #b91c1c;
 }
 
+/* ── Bubble-Graph — kräftigere Töne als die Panel-Flächen, damit sich die
+   Ebene einer Bubble ablesen lässt: Blau (Los) → Cyan (Abschnitte) → Grau
+   (Gruppen), Amber bleibt die Position. ── */
+:root {
+  --bub-project: #ffffff;
+  --bub-project-line: #1a2533;
+  --bub-lot: #b3cdfb;
+  --bub-lot-line: #1d4ed8;
+  --bub-section: #b2e2f0;
+  --bub-section-line: #0e7490;
+  --bub-subsection: #cfe9f3;
+  --bub-subsection-line: #0891b2;
+  --bub-group: #d6e1ee;
+  --bub-group-line: #59708a;
+  --bub-position: #fbd49a;
+  --bub-position-line: #b45309;
+  --bub-cluster: #eaf0f7;
+  --bub-cluster-line: #4a5b70;
+  --bub-edge: #8ea5be;
+}
+
 /* ── Typografie — IBM Plex Mono ist die Interface-Schrift; Space Grotesk
    trägt ausschließlich Namen von Dingen (Wortmarke, Titel, Langtext). ── */
 :root {

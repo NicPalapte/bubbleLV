@@ -62,7 +62,8 @@ function TreeBranch({ node, depth, index, expanded, onToggle }: RowProps) {
       const parent = parents.get(node.id) ?? null;
       dispatch({ type: 'selectPosition', nodeId: parent?.id ?? null, positionId: node.id });
     } else {
-      dispatch({ type: 'selectNode', id: node.id });
+      // Die Baumzeile ist Navigation — sie führt weiter in die Tabelle.
+      dispatch({ type: 'selectNode', id: node.id, open: true });
       if (hasChildren) onToggle(node.id);
     }
   };

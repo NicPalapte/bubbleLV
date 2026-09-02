@@ -25,16 +25,55 @@ interface BubbleProps extends CommonProps {
   isCollapsed: boolean;
   childCount: number;
   onToggleCollapse: () => void;
+  /** Sprung in die Positionstabelle — nur über das Symbol, nicht per Bubble-Klick. */
+  onOpenTable: () => void;
 }
 
 const TIER_FILL: Record<string, { fill: string; stroke: string }> = {
-  project: { fill: 'var(--white)', stroke: 'var(--ink)' },
-  lot: { fill: 'var(--blueS)', stroke: 'var(--blue)' },
-  section: { fill: '#f1f4f8', stroke: 'var(--line2)' },
-  subsection: { fill: '#f1f4f8', stroke: 'var(--line2)' },
-  group: { fill: '#f1f4f8', stroke: 'var(--mute)' },
-  position: { fill: 'var(--amberS)', stroke: 'var(--amber)' },
+  project: { fill: 'var(--bub-project)', stroke: 'var(--bub-project-line)' },
+  lot: { fill: 'var(--bub-lot)', stroke: 'var(--bub-lot-line)' },
+  section: { fill: 'var(--bub-section)', stroke: 'var(--bub-section-line)' },
+  subsection: { fill: 'var(--bub-subsection)', stroke: 'var(--bub-subsection-line)' },
+  group: { fill: 'var(--bub-group)', stroke: 'var(--bub-group-line)' },
+  position: { fill: 'var(--bub-position)', stroke: 'var(--bub-position-line)' },
 };
+
+/**
+ * Tabellensymbol an einer Sammel-Bubble. Der Klick auf die Bubble selbst öffnet
+ * bzw. schließt sie; nur dieses Symbol wechselt in die Tabelle (Issue #10).
+ */
+function TableBadge({ x, y, size, onOpen }: {
+  x: number;
+  y: number;
+  size: number;
+  onOpen: () => void;
+}) {
+  return (
+    <g
+      transform={`translate(${x},${y})`}
+      style={{ cursor: 'pointer' }}
+      onMouseDown={(event) => event.stopPropagation()}
+      onClick={(event) => {
+        event.stopPropagation();
+        onOpen();
+      }}
+    >
+      <title>Positionstabelle öffnen</title>
+      <circle r={size} fill="var(--white)" stroke="var(--blue)" strokeWidth="1.2" />
+      <g
+        fill="none"
+        stroke="var(--blue)"
+        strokeWidth={Math.max(0.9, size * 0.14)}
+        strokeLinecap="round"
+      >
+        <rect x={-size * 0.46} y={-size * 0.4} width={size * 0.92} height={size * 0.8} />
+        <line x1={-size * 0.46} y1={-size * 0.12} x2={size * 0.46} y2={-size * 0.12} />
+        <line x1={-size * 0.46} y1={size * 0.16} x2={size * 0.46} y2={size * 0.16} />
+        <line x1={-size * 0.08} y1={-size * 0.4} x2={-size * 0.08} y2={size * 0.4} />
+      </g>
+    </g>
+  );
+}
 
 function topLabelFor(node: LVNode, tier: string): string {
   if (tier === 'project') return 'PROJEKT';
@@ -76,9 +115,14 @@ export function BubbleNode(props: BubbleProps) {
     isCollapsed,
     childCount,
     onToggleCollapse,
+    onOpenTable,
   } = props;
 
   const showLabel = zoom >= LABEL_K[placed.tier];
+  // Tabellensymbol und Einklapp-Knopf würden kleine Bubbles zudecken — sie
+  // erscheinen erst, wenn die Bubble auf dem Schirm groß genug ist, sonst beim
+  // Überfahren.
+  const showBadges = hovered || radius * zoom >= 30;
   const colors = TIER_FILL[placed.tier] ?? TIER_FILL.section;
   const opacity = hidden ? 0.05 : dimmed ? 0.16 : 1;
   const title = node.label ?? node.code;
@@ -197,9 +241,17 @@ export function BubbleNode(props: BubbleProps) {
           )}
         </>
       )}
-      {collapsible && (
+      {showBadges && (
+        <TableBadge
+          x={-radius * 0.55}
+          y={radius * 0.92}
+          size={Math.max(7, radius * 0.22)}
+          onOpen={onOpenTable}
+        />
+      )}
+      {collapsible && showBadges && (
         <g
-          transform={`translate(${radius * 0.72},${radius * 0.72})`}
+          transform={`translate(${radius * 0.55},${radius * 0.92})`}
           style={{ cursor: 'pointer' }}
           onMouseDown={(event) => event.stopPropagation()}
           onClick={(event) => {
@@ -209,7 +261,7 @@ export function BubbleNode(props: BubbleProps) {
         >
           <title>{isCollapsed ? `${formatCount(childCount)} einblenden` : 'Einklappen'}</title>
           <circle
-            r={Math.max(8, radius * 0.3)}
+            r={Math.max(7, radius * 0.22)}
             fill="var(--white)"
             stroke={isCollapsed ? 'var(--blue)' : 'var(--line2)'}
             strokeWidth="1.2"
@@ -265,7 +317,7 @@ export function DotNode({ placed, node, zoom, dimmed, hidden, hovered, onHover, 
     >
       <circle
         r={hovered ? radius + 1.5 : radius}
-        fill={placed.tier === 'position' ? 'var(--amber)' : 'var(--blue)'}
+        fill={placed.tier === 'position' ? 'var(--bub-position-line)' : 'var(--bub-lot-line)'}
         stroke="var(--white)"
         strokeWidth="1"
       />
@@ -287,6 +339,9 @@ export function DotNode({ placed, node, zoom, dimmed, hidden, hovered, onHover, 
 
 interface ClusterProps extends Omit<CommonProps, 'hidden'> {
   sampleTier: string;
+  /** Cluster ist aufgelöst — die Kinder liegen als Punkte auf dem Ring. */
+  expanded: boolean;
+  onOpenTable: () => void;
 }
 
 const CLUSTER_LABEL: Record<string, string> = {
@@ -304,6 +359,8 @@ export function ClusterNode({
   onHover,
   onClick,
   sampleTier,
+  expanded,
+  onOpenTable,
 }: ClusterProps) {
   const radius = RADII.cluster;
   const showLabel = zoom >= LABEL_K.cluster;
@@ -321,14 +378,14 @@ export function ClusterNode({
       <circle
         r={radius + 6}
         fill="none"
-        stroke="var(--line2)"
+        stroke="var(--bub-cluster-line)"
         strokeDasharray="2 3"
         opacity="0.55"
       />
       <circle
         r={radius}
-        fill="var(--paper)"
-        stroke="var(--dim)"
+        fill="var(--bub-cluster)"
+        stroke="var(--bub-cluster-line)"
         strokeWidth={hovered ? 2 : 1.2}
         style={{ transition: 'all .15s' }}
       />
@@ -356,9 +413,12 @@ export function ClusterNode({
           </text>
         </>
       )}
+      {(hovered || zoom >= 0.8) && (
+        <TableBadge x={-radius * 0.78} y={radius * 0.78} size={10} onOpen={onOpenTable} />
+      )}
       {hovered && (
-        <g transform="translate(0, 30)">
-          <rect x="-26" y="-8" width="52" height="16" fill="var(--blue)" rx="2" />
+        <g transform="translate(0, 34)">
+          <rect x="-34" y="-8" width="68" height="16" fill="var(--blue)" rx="2" />
           <text
             textAnchor="middle"
             y="3"
@@ -367,7 +427,7 @@ export function ClusterNode({
             fontWeight="600"
             fill="#fff"
           >
-            Tabelle ↗
+            {expanded ? 'Zuklappen' : 'Aufklappen'}
           </text>
         </g>
       )}

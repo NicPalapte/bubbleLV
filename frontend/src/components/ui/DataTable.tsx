@@ -5,8 +5,10 @@
 //  - `sortable` je Spalte: Status und Exposition lassen sich nicht sinnvoll sortieren.
 //  - ARIA-Rollen (table/row/columnheader/cell): das Markup ist aus Flex-Divs gebaut,
 //    ohne die Rollen ist es für Screenreader und Tests keine Tabelle.
+//  - `group`: eine Kopfzeile beim Gruppenwechsel — die Positionstabelle zeigt
+//    Filtertreffer nach Überschriften gruppiert (Issue #12).
 
-import type { ReactNode } from 'react';
+import { Fragment, type ReactNode } from 'react';
 
 export interface Column<T> {
   key: string;
@@ -33,6 +35,33 @@ export interface DataTableProps<T> {
   label?: string;
   /** Titel-Attribut je Zelle, z. B. für abgeschnittene Bezeichnungen. */
   cellTitle?: (row: T, column: Column<T>) => string | undefined;
+  /**
+   * Gruppenzuordnung einer Zeile. Wechselt der Schlüssel gegenüber der
+   * vorigen Zeile, steht darüber eine Kopfzeile. Die Zeilen müssen dafür
+   * bereits nach Gruppen sortiert ankommen.
+   */
+  group?: (row: T) => GroupHead;
+}
+
+type GroupHead = { key: string; label: ReactNode } | null;
+
+/**
+ * Zu jeder Zeile der Gruppenkopf, der über ihr stehen muss — also nur bei der
+ * ersten Zeile einer Gruppe. Bewusst außerhalb der Komponente, damit im Render
+ * nichts fortgeschrieben wird.
+ */
+function groupHeads<T>(
+  rows: readonly T[],
+  group: ((row: T) => GroupHead) | undefined,
+): readonly GroupHead[] {
+  if (group === undefined) return rows.map(() => null);
+  let open: string | null = null;
+  return rows.map((row) => {
+    const head = group(row);
+    if (head === null || head.key === open) return null;
+    open = head.key;
+    return head;
+  });
 }
 
 export function DataTable<T>({
@@ -46,7 +75,9 @@ export function DataTable<T>({
   onSort,
   label,
   cellTitle,
+  group,
 }: DataTableProps<T>) {
+  const heads = groupHeads(rows, group);
   return (
     <div
       role="table"
@@ -115,7 +146,8 @@ export function DataTable<T>({
         {rows.map((row, index) => {
           const key = rowKey(row);
           const selected = selectedKey === key;
-          return (
+          const head = heads[index];
+          const rowMarkup = (
             <div
               key={key}
               role="row"
@@ -155,6 +187,34 @@ export function DataTable<T>({
                 </div>
               ))}
             </div>
+          );
+
+          if (head === null || head === undefined) return rowMarkup;
+          return (
+            <Fragment key={`group:${head.key}`}>
+              <div
+                role="row"
+                style={{
+                  display: 'flex',
+                  padding: '7px 12px',
+                  background: 'var(--paper)',
+                  borderTop: '1px solid var(--line)',
+                  borderBottom: '1px solid var(--grid)',
+                  fontFamily: 'var(--mono)',
+                  fontSize: 'var(--fs-label)',
+                  letterSpacing: 'var(--ls-label)',
+                  color: 'var(--dim)',
+                  position: 'sticky',
+                  top: 0,
+                  zIndex: 1,
+                }}
+              >
+                <div role="cell" style={{ flex: 1, minWidth: 0 }}>
+                  {head.label}
+                </div>
+              </div>
+              {rowMarkup}
+            </Fragment>
           );
         })}
       </div>
