@@ -81,7 +81,7 @@ export function RangeButton({ label, positions, getValue, active, onChange }: Ra
               max={max}
               value={low}
               onChange={(event) => onChange([Math.min(Number(event.target.value), high), high])}
-              className="absolute inset-0 w-full appearance-none bg-transparent"
+              className="range-overlay absolute inset-0 w-full"
             />
             <input
               type="range"
@@ -90,7 +90,7 @@ export function RangeButton({ label, positions, getValue, active, onChange }: Ra
               max={max}
               value={high}
               onChange={(event) => onChange([low, Math.max(Number(event.target.value), low)])}
-              className="absolute inset-0 w-full appearance-none bg-transparent"
+              className="range-overlay absolute inset-0 w-full"
             />
           </div>
           <div className="mt-[6px] flex justify-between text-[9px] text-mute">

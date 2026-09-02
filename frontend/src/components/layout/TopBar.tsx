@@ -35,10 +35,17 @@ export function TopBar() {
   // Das Eingabefeld hängt am lokalen Wert, damit Tippen nie auf den Suchlauf
   // wartet; der Viewer-State folgt verzögert nach.
   const [draft, setDraft] = useState(search);
+  const [mirrored, setMirrored] = useState(search);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Änderungen von außen (Import, „LV schließen") übernehmen.
-  useEffect(() => setDraft(search), [search]);
+  // Änderungen von außen (Import, „LV schließen" setzen die Suche zurück)
+  // übernehmen — im Render statt im Effekt, sonst zeigt das Feld für einen
+  // Frame den alten Begriff (react.dev/learn/you-might-not-need-an-effect).
+  if (search !== mirrored) {
+    setMirrored(search);
+    setDraft(search);
+  }
+
   useEffect(() => () => clearTimeout(timer.current ?? undefined), []);
 
   const changeSearch = (value: string): void => {
