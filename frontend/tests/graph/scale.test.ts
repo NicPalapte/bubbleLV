@@ -4,7 +4,12 @@
 import { describe, expect, it } from 'vitest';
 import { sizeModeById, tierOf } from '../../src/lib/graph/constants';
 import { cullBounds, isInView } from '../../src/lib/graph/culling';
-import { classifyChildren, collapseFrom, layoutRadial } from '../../src/lib/graph/layoutRadial';
+import {
+  allExpanded,
+  classifyChildren,
+  expandedToDepth,
+  layoutRadial,
+} from '../../src/lib/graph/layoutRadial';
 import { buildTree } from '../../src/lib/tree/buildTree';
 import type { LVDraft, PositionDraft, SectionDraft } from '../../src/types/lvDraft';
 
@@ -52,14 +57,14 @@ describe('Graph-Engine bei ~10k Positionen', () => {
   });
 
   it('zeichnet im Standardzustand nur die oberen Ebenen', () => {
-    const { nodes } = layoutRadial(tree, collapseFrom(tree, 2));
+    const { nodes } = layoutRadial(tree, expandedToDepth(tree, 2));
     // Projekt + Los + 10 Abschnitte + je eine Cluster-Bubble ist die Obergrenze;
     // die 10 000 Positionen bleiben eingeklappt.
     expect(nodes.size).toBeLessThan(50);
   });
 
   it('fasst mehr als CLUSTER_AT Geschwister zu einer Cluster-Bubble zusammen', () => {
-    const { nodes } = layoutRadial(tree, {});
+    const { nodes } = layoutRadial(tree, allExpanded(tree));
     const subsection = tree.children[0].children[0].children[0];
     expect(classifyChildren(subsection.children)).toBe('cluster');
     expect(nodes.has(`cluster:${subsection.id}`)).toBe(true);
@@ -69,13 +74,13 @@ describe('Graph-Engine bei ~10k Positionen', () => {
 
   it('platziert bei aufgeklappten Ebenen in vertretbarer Zeit', () => {
     const started = performance.now();
-    const { nodes } = layoutRadial(tree, {});
+    const { nodes } = layoutRadial(tree, allExpanded(tree));
     expect(nodes.size).toBeGreaterThan(100);
     expect(performance.now() - started).toBeLessThan(1000);
   });
 
   it('reduziert die Zeichenmenge durch Viewport-Culling deutlich', () => {
-    const { nodes, extent } = layoutRadial(tree, {});
+    const { nodes, extent } = layoutRadial(tree, allExpanded(tree));
     const count = (tx: number, ty: number, k: number): number => {
       const bounds = cullBounds({ tx, ty, k, width: 1200, height: 800 });
       let visible = 0;

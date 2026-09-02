@@ -1,6 +1,14 @@
-// Bubble-Graph — Kern des Produkts. Konsumiert denselben LVNode-Baum wie die
-// Tree-Spalte. Portiert aus `Bubbles` in design/claude-design/lv-graph.jsx;
-// Vergabepaket-Kanten, Dokument-Knoten und das Demo-Los entfallen (out of scope).
+// Bubble-Graph — Kern des Produkts. Konsumiert denselben LVNode-Baum und
+// denselben Aufklapp-Zustand wie die Tree-Spalte (Issue #18). Portiert aus
+// `Bubbles` in design/claude-design/lv-graph.jsx; Vergabepaket-Kanten,
+// Dokument-Knoten und das Demo-Los entfallen (out of scope).
+//
+// Lokal bleibt nur der Ausschnitt (Pan/Zoom): er ändert sich beim Ziehen pro
+// Frame und würde als Context-State die ganze Seite neu rendern. Damit er den
+// Abstecher in die Tabelle überlebt, bleibt die Komponente dort montiert und
+// wird nur verborgen (Issue #19, siehe ViewerPage). Verborgen ruht das Layout
+// (`active`) — sonst würde jeder Tastendruck in der Tabellensuche den ganzen
+// Graphen im Hintergrund neu rechnen.
 
 import {
   useCallback,
@@ -15,14 +23,7 @@ import { BubbleNode, ClusterNode, DotNode } from './BubbleNode';
 import { GraphControls } from './GraphControls';
 import { MAX_ZOOM, MIN_ZOOM, RADII, sizeModeById, sizedRadius } from '../../lib/graph/constants';
 import { cullBounds, isInView } from '../../lib/graph/culling';
-import {
-  collapseFrom,
-  layoutRadial,
-  walkParents,
-  type PlacedNode,
-} from '../../lib/graph/layoutRadial';
-import { isFiltering } from '../../lib/matchPos';
-import { computeMatchCounts } from '../../lib/tree/matchCounts';
+import { layoutRadial, walkParents, type PlacedNode } from '../../lib/graph/layoutRadial';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { LVNode } from '../../types/lvNode';
 
@@ -42,25 +43,21 @@ function clampZoom(value: number): number {
   return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, value));
 }
 
-export function BubbleGraph({ root }: { root: LVNode }) {
-  const { filters, search, sizeMode, hideMode, hoveredNodeId } = useViewer();
+const EMPTY_PLACED: ReadonlyMap<string, PlacedNode> = new Map();
+
+interface BubbleGraphProps {
+  root: LVNode;
+  /** Verborgen (Tabelle in der Mitte): montiert bleiben, aber nicht rechnen. */
+  active?: boolean;
+}
+
+export function BubbleGraph({ root, active = true }: BubbleGraphProps) {
+  const { sizeMode, hideMode, hoveredNodeId, matches, openNodes, openClusters } = useViewer();
   const dispatch = useViewerDispatch();
 
   const wrapRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [view, setView] = useState<View>({ tx: 0, ty: 0, k: 0.7 });
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() => collapseFrom(root, 2));
-  // Cluster-Bubbles, die der Nutzer per Klick aufgelöst hat (Issue #10).
-  const [openClusters, setOpenClusters] = useState<Record<string, boolean>>({});
-
-  // Neuer Baum → Standard-Einklappzustand. Anpassung während des Renderns statt
-  // im Effekt, sonst rendert der Graph einmal mit dem alten Zustand.
-  const [collapsedFor, setCollapsedFor] = useState<LVNode>(root);
-  if (collapsedFor !== root) {
-    setCollapsedFor(root);
-    setCollapsed(collapseFrom(root, 2));
-    setOpenClusters({});
-  }
 
   useLayoutEffect(() => {
     const element = wrapRef.current;
@@ -86,16 +83,12 @@ export function BubbleGraph({ root }: { root: LVNode }) {
   }, [w, h]);
 
   const parents = useMemo(() => walkParents(root), [root]);
-  const { nodes: placed } = useMemo(
-    () => layoutRadial(root, collapsed, openClusters),
-    [root, collapsed, openClusters],
+  const placed = useMemo(
+    () => (active ? layoutRadial(root, openNodes, openClusters).nodes : EMPTY_PLACED),
+    [active, root, openNodes, openClusters],
   );
 
-  const filtering = isFiltering(filters, search);
-  const matches = useMemo(
-    () => computeMatchCounts(root, filters, search, filtering),
-    [root, filters, search, filtering],
-  );
+  const filtering = matches.filtering;
 
   // Größenmodus "Gesamtpreis" trägt nicht, wenn die Datei keine Einheitspreise
   // führt (x83) — dann würden alle Bubbles auf Radius 0 fallen.
@@ -154,7 +147,11 @@ export function BubbleGraph({ root }: { root: LVNode }) {
         setPanning(true);
       }
       if (drag.current.moved) {
-        setView((current) => ({ ...current, tx: drag.current.tx0 + dx, ty: drag.current.ty0 + dy }));
+        setView((current) => ({
+          ...current,
+          tx: drag.current.tx0 + dx,
+          ty: drag.current.ty0 + dy,
+        }));
       }
     };
     const up = (): void => {
@@ -266,16 +263,17 @@ export function BubbleGraph({ root }: { root: LVNode }) {
     }
     const descend = (node: LVNode): void => {
       connected.add(node.id);
-      if (collapsed[node.id] === true) return;
+      if (!openNodes.has(node.id)) return;
       for (const child of node.children) descend(child);
     };
     if (entry.node !== null) descend(entry.node);
     return connected;
-  }, [hoveredNodeId, placed, parents, collapsed]);
+  }, [hoveredNodeId, placed, parents, openNodes]);
 
-  const toggleCollapse = useCallback((id: string): void => {
-    setCollapsed((current) => ({ ...current, [id]: current[id] !== true }));
-  }, []);
+  const toggleCollapse = useCallback(
+    (id: string): void => dispatch({ type: 'toggleExpanded', id }),
+    [dispatch],
+  );
 
   /** Sprung in die Tabelle — nur über das Tabellensymbol an der Bubble. */
   const openTable = useCallback(
@@ -301,9 +299,10 @@ export function BubbleGraph({ root }: { root: LVNode }) {
   );
 
   /** Cluster-Bubble auflösen bzw. wieder zusammenfassen. */
-  const toggleCluster = useCallback((parentId: string): void => {
-    setOpenClusters((current) => ({ ...current, [parentId]: current[parentId] !== true }));
-  }, []);
+  const toggleCluster = useCallback(
+    (parentId: string): void => dispatch({ type: 'toggleCluster', id: parentId }),
+    [dispatch],
+  );
 
   /** Tabelle für einen Cluster: nächster Abschnitt bzw. Los oberhalb. */
   const openClusterTable = useCallback(
@@ -417,7 +416,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
                     if (entry.clusterOf !== null) toggleCluster(entry.clusterOf);
                   }}
                   sampleTier={sampleTier}
-                  expanded={entry.clusterOf !== null && openClusters[entry.clusterOf] === true}
+                  expanded={entry.clusterOf !== null && openClusters.has(entry.clusterOf)}
                   onOpenTable={() => openClusterTable(entry)}
                 />
               );
@@ -460,7 +459,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
                 radius={metric?.radius ?? RADII[entry.tier]}
                 subLabel={metric?.subLabel ?? ''}
                 collapsible={node.children.length > 0}
-                isCollapsed={collapsed[node.id] === true}
+                isCollapsed={!openNodes.has(node.id)}
                 childCount={node.children.length}
                 onToggleCollapse={() => toggleCollapse(node.id)}
                 onOpenTable={() => openTable(node)}
@@ -477,11 +476,8 @@ export function BubbleGraph({ root }: { root: LVNode }) {
         onFit={fit}
         onReset={() => setView({ tx: w / 2, ty: h / 2, k: 0.7 })}
         onZoom={zoomBy}
-        onCollapseAll={() => {
-          setCollapsed(collapseFrom(root, 1));
-          setOpenClusters({});
-        }}
-        onExpandAll={() => setCollapsed({})}
+        onCollapseAll={() => dispatch({ type: 'collapseAll' })}
+        onExpandAll={() => dispatch({ type: 'expandAll' })}
       />
     </div>
   );

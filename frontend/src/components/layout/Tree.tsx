@@ -1,15 +1,15 @@
 // Linke Hierarchie-Spalte — rekursiv über denselben LVNode-Baum wie der
-// Bubble-Graph, filter- und suchbewusst. Portiert aus `Tree` in
+// Bubble-Graph, filter- und suchbewusst. Aufklapp-Zustand und Trefferzahlen
+// kommen aus dem Viewer-State, damit Baum und Graph gleich stehen (Issue #18).
+// Portiert aus `Tree` in
 // design/claude-design/lv-main.jsx (Analytik-Navigation entfällt, out of scope);
 // die Zeile selbst ist der Design-System-Baustein `TreeRow`.
 
-import { useMemo, useState } from 'react';
 import { StatusPill } from '../ui/StatusPill';
 import { TreeRow } from '../ui/TreeRow';
 import { formatCount } from '../../lib/format';
 import { POSITION_STATUS } from '../../lib/status';
-import { isFiltering } from '../../lib/matchPos';
-import { computeMatchCounts, matchCount, type MatchIndex } from '../../lib/tree/matchCounts';
+import { matchCount, type MatchIndex } from '../../lib/tree/matchCounts';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { LVNode } from '../../types/lvNode';
 
@@ -40,7 +40,7 @@ interface RowProps {
   node: LVNode;
   depth: number;
   index: MatchIndex;
-  expanded: Set<string>;
+  expanded: ReadonlySet<string>;
   onToggle: (id: string) => void;
 }
 
@@ -62,9 +62,11 @@ function TreeBranch({ node, depth, index, expanded, onToggle }: RowProps) {
       const parent = parents.get(node.id) ?? null;
       dispatch({ type: 'selectPosition', nodeId: parent?.id ?? null, positionId: node.id });
     } else {
-      // Die Baumzeile ist Navigation — sie führt weiter in die Tabelle.
+      // Die Baumzeile ist Navigation — sie führt weiter in die Tabelle und
+      // klappt den Knoten auf. Zugeklappt wird nur über das Dreieck, sonst
+      // verschwände beim Anklicken genau das, was man sehen will.
       dispatch({ type: 'selectNode', id: node.id, open: true });
-      if (hasChildren) onToggle(node.id);
+      if (hasChildren) dispatch({ type: 'toggleExpanded', id: node.id, open: true });
     }
   };
 
@@ -109,35 +111,10 @@ function TreeBranch({ node, depth, index, expanded, onToggle }: RowProps) {
 }
 
 export function Tree({ width, collapsed, onToggleCollapsed }: TreeProps) {
-  const { tree, lv, filters, search, hideMode } = useViewer();
+  const { tree, lv, hideMode, matches: index, openNodes } = useViewer();
   const dispatch = useViewerDispatch();
-  const [expanded, setExpanded] = useState<Set<string>>(new Set(['project']));
 
-  const index = useMemo<MatchIndex>(() => {
-    if (tree === null) return { counts: new Map(), filtering: false };
-    return computeMatchCounts(tree, filters, search, isFiltering(filters, search));
-  }, [tree, filters, search]);
-
-  // Bei aktiver Suche/Filterung die Pfade zu den Treffern automatisch öffnen.
-  const effectiveExpanded = useMemo<Set<string>>(() => {
-    if (tree === null || !index.filtering) return expanded;
-    const open = new Set(expanded);
-    const visit = (node: LVNode): void => {
-      if (node.kind === 'position') return;
-      if ((index.counts.get(node.id) ?? 0) > 0) open.add(node.id);
-      for (const child of node.children) visit(child);
-    };
-    visit(tree);
-    return open;
-  }, [tree, expanded, index]);
-
-  const toggle = (id: string): void =>
-    setExpanded((current) => {
-      const next = new Set(current);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  const toggle = (id: string): void => dispatch({ type: 'toggleExpanded', id });
 
   if (collapsed) {
     return (
@@ -180,7 +157,12 @@ export function Tree({ width, collapsed, onToggleCollapsed }: TreeProps) {
           </span>
         </div>
         <div
-          onClick={() => dispatch({ type: 'selectNode', id: null })}
+          onClick={() => {
+            dispatch({ type: 'selectNode', id: null });
+            // Die Projektzeile trägt kein Dreieck — sie ist der Weg zurück,
+            // wenn die Projekt-Bubble im Graphen zugeklappt wurde.
+            if (tree !== null) dispatch({ type: 'toggleExpanded', id: tree.id, open: true });
+          }}
           className="-ml-[2px] cursor-pointer pl-[8px]"
         >
           <div className="overflow-hidden text-ellipsis whitespace-nowrap font-sans text-[15px] font-bold text-ink">
@@ -204,22 +186,31 @@ export function Tree({ width, collapsed, onToggleCollapsed }: TreeProps) {
             Noch keine Struktur — GAEB-Datei laden.
           </div>
         )}
+        {tree !== null && !openNodes.has(tree.id) && (
+          <div className="px-[12px] py-[10px] font-mono text-[10px] text-mute">
+            Projekt zugeklappt — Projektzeile oben öffnet die Struktur.
+          </div>
+        )}
         {tree !== null &&
+          openNodes.has(tree.id) &&
           tree.children.map((child) => (
             <TreeBranch
               key={child.id}
               node={child}
               depth={0}
               index={index}
-              expanded={effectiveExpanded}
+              expanded={openNodes}
               onToggle={toggle}
             />
           ))}
-        {tree !== null && index.filtering && matchCount(index, tree) === 0 && (
-          <div className="px-[12px] py-[10px] font-mono text-[10px] text-mute">
-            Keine Position entspricht {hideMode === 'hide' ? 'den Filtern' : 'Suche/Filter'}.
-          </div>
-        )}
+        {tree !== null &&
+          openNodes.has(tree.id) &&
+          index.filtering &&
+          matchCount(index, tree) === 0 && (
+            <div className="px-[12px] py-[10px] font-mono text-[10px] text-mute">
+              Keine Position entspricht {hideMode === 'hide' ? 'den Filtern' : 'Suche/Filter'}.
+            </div>
+          )}
       </div>
     </div>
   );

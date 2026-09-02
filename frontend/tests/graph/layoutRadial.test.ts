@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { RADII, SIZE_MAX_FACTOR, sizedRadius } from '../../src/lib/graph/constants';
-import { layoutRadial } from '../../src/lib/graph/layoutRadial';
+import { allExpanded, layoutRadial } from '../../src/lib/graph/layoutRadial';
 import { buildTree } from '../../src/lib/tree/buildTree';
 import type { LVDraft, PositionDraft, SectionDraft } from '../../src/types/lvDraft';
 
@@ -58,7 +58,7 @@ describe('layoutRadial', () => {
   it('legt die Kinder als Kreis um ihren Elternknoten', () => {
     const tree = buildTree(draftWith([4, 4, 4]));
     const lot = tree.children[0];
-    const { nodes } = layoutRadial(tree, {});
+    const { nodes } = layoutRadial(tree, allExpanded(tree));
 
     // Alle Abschnitte haben denselben Abstand zu ihrem Los — nicht zum Ursprung.
     const distances = lot.children.map((section) => distance(nodes, lot.id, section.id));
@@ -66,16 +66,27 @@ describe('layoutRadial', () => {
       expect(value).toBeCloseTo(distances[0], 6);
     }
     // Und sie liegen nicht alle in derselben Richtung.
-    expect(angleSpan(nodes, lot.children.map((section) => section.id))).toBeGreaterThan(0.5);
+    expect(
+      angleSpan(
+        nodes,
+        lot.children.map((section) => section.id),
+      ),
+    ).toBeGreaterThan(0.5);
   });
 
   it('gibt dem größeren Teilbaum den breiteren Winkel', () => {
     const tree = buildTree(draftWith([6, 2]));
     const [big, small] = tree.children[0].children;
-    const { nodes } = layoutRadial(tree, {});
+    const { nodes } = layoutRadial(tree, allExpanded(tree));
 
-    const spanBig = angleSpan(nodes, big.children.map((child) => child.id));
-    const spanSmall = angleSpan(nodes, small.children.map((child) => child.id));
+    const spanBig = angleSpan(
+      nodes,
+      big.children.map((child) => child.id),
+    );
+    const spanSmall = angleSpan(
+      nodes,
+      small.children.map((child) => child.id),
+    );
     expect(spanBig).toBeGreaterThan(spanSmall * 2);
   });
 
@@ -84,8 +95,8 @@ describe('layoutRadial', () => {
     // mitwachsen, sonst würden sich die Bubbles überlagern.
     const smallTree = buildTree(draftWith([3]));
     const largeTree = buildTree(draftWith([24]));
-    const small = layoutRadial(smallTree, {});
-    const large = layoutRadial(largeTree, {});
+    const small = layoutRadial(smallTree, allExpanded(smallTree));
+    const large = layoutRadial(largeTree, allExpanded(largeTree));
 
     const smallSection = smallTree.children[0].children[0];
     const largeSection = largeTree.children[0].children[0];
@@ -98,7 +109,7 @@ describe('layoutRadial', () => {
   it('fasst viele Geschwister zu einer Cluster-Bubble zusammen', () => {
     const tree = buildTree(draftWith([30]));
     const section = tree.children[0].children[0];
-    const { nodes } = layoutRadial(tree, {});
+    const { nodes } = layoutRadial(tree, allExpanded(tree));
     expect(nodes.has(`cluster:${section.id}`)).toBe(true);
     expect(nodes.has(section.children[0].id)).toBe(false);
   });
@@ -106,7 +117,7 @@ describe('layoutRadial', () => {
   it('löst eine aufgeklappte Cluster-Bubble in Punkte auf', () => {
     const tree = buildTree(draftWith([30]));
     const section = tree.children[0].children[0];
-    const { nodes } = layoutRadial(tree, {}, { [section.id]: true });
+    const { nodes } = layoutRadial(tree, allExpanded(tree), new Set([section.id]));
     expect(nodes.has(`cluster:${section.id}`)).toBe(false);
     for (const child of section.children) {
       expect(nodes.get(child.id)?.dotted).toBe(true);

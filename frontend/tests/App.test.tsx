@@ -6,6 +6,13 @@ import App from '../src/App';
 
 const FIXTURE_DIR = resolve(process.cwd(), 'tests/fixtures');
 
+/** Knotenzahl aus der Graph-Steuerung — zeigt, was das Layout angelegt hat. */
+function nodeCount(): number {
+  const label = screen.getByText(/Knoten gezeichnet/);
+  const text = label.parentElement?.textContent ?? '';
+  return Number(text.replace(/[^0-9/]/g, '').split('/')[1] ?? '0');
+}
+
 function fixtureFile(name: string): File {
   return new File([readFileSync(resolve(FIXTURE_DIR, name))], name);
 }
@@ -91,9 +98,7 @@ describe('Viewer', () => {
     // gibt es keinen Treffer, die Tabelle darf trotzdem nicht leer bleiben.
     fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'Kabel' } });
 
-    await waitFor(() =>
-      expect(screen.getByText(/LV-weite Treffer/)).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.getByText(/LV-weite Treffer/)).toBeInTheDocument());
     expect(within(table).getAllByText('002.001.0010').length).toBeGreaterThan(0);
     expect(within(table).queryByText('001.001.0010')).not.toBeInTheDocument();
   });
@@ -140,6 +145,71 @@ describe('Viewer', () => {
     await waitFor(() =>
       expect(screen.queryByRole('table', { name: 'Positionen' })).not.toBeInTheDocument(),
     );
+  });
+
+  it('klappt Baum und Graph gemeinsam auf (Issue #18)', async () => {
+    render(<App />);
+    await loadFixture('gaeb-xml-beispiel.x83');
+    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+
+    const tree = screen.getByRole('tree');
+    // Startzustand: Projekt und Lose offen — in beiden Ansichten dieselbe Tiefe.
+    const section = await within(tree).findByTitle('Bauhauptgewerke');
+    expect(section).toHaveAttribute('aria-expanded', 'false');
+
+    const before = nodeCount();
+    fireEvent.click(within(section).getByText('▸'));
+
+    // Der Baum zeigt den Abschnitt offen …
+    await waitFor(() =>
+      expect(within(tree).getByTitle('Bauhauptgewerke')).toHaveAttribute('aria-expanded', 'true'),
+    );
+    // … und der Graph legt dieselben Knoten an.
+    expect(nodeCount()).toBeGreaterThan(before);
+  });
+
+  it('klappt den Baum mit der Projekt-Bubble zu (Issue #18)', async () => {
+    render(<App />);
+    await loadFixture('gaeb-xml-beispiel.x83');
+    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+
+    const tree = screen.getByRole('tree');
+    expect(within(tree).getAllByRole('treeitem').length).toBeGreaterThan(0);
+
+    // Klick auf die Projekt-Bubble im Graphen — der Baum folgt.
+    fireEvent.click(screen.getByText('PROJEKT'));
+    await waitFor(() => expect(within(tree).queryAllByRole('treeitem')).toHaveLength(0));
+
+    // Die Projektzeile ist der Weg zurück.
+    fireEvent.click(screen.getByText(/Übersicht ·/));
+    await waitFor(() => expect(within(tree).getAllByRole('treeitem').length).toBeGreaterThan(0));
+  });
+
+  it('hält den Graphen über den Abstecher in die Tabelle (Issue #19)', async () => {
+    render(<App />);
+    await loadFixture('gaeb-xml-beispiel.x83');
+    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+
+    const tree = screen.getByRole('tree');
+    const section = await within(tree).findByTitle('Bauhauptgewerke');
+    fireEvent.click(within(section).getByText('▸'));
+    await waitFor(() =>
+      expect(within(tree).getByTitle('Bauhauptgewerke')).toHaveAttribute('aria-expanded', 'true'),
+    );
+    const beforeTable = nodeCount();
+
+    fireEvent.click(within(tree).getByTitle('Bauhauptgewerke'));
+    await screen.findByRole('table', { name: 'Positionen' });
+    // Der Graph bleibt montiert — nur so überleben Zoom und Ausschnitt.
+    expect(screen.getByText(/Knoten gezeichnet/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Graph/ }));
+    await waitFor(() =>
+      expect(screen.queryByRole('table', { name: 'Positionen' })).not.toBeInTheDocument(),
+    );
+    // Derselbe Graph wie vorher — kein Zurück auf den Startzustand.
+    expect(nodeCount()).toBe(beforeTable);
+    expect(within(tree).getByTitle('Bauhauptgewerke')).toHaveAttribute('aria-expanded', 'true');
   });
 
   it('zeigt eine verständliche Fehlermeldung bei nicht unterstützter GAEB-Version', async () => {
