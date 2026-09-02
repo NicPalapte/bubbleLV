@@ -4,7 +4,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Chip } from '../ui/Chip';
 import { Popover, PopoverHead } from '../ui/Popover';
-import { useOutsideClose } from '../common/useOutsideClose';
+import { useDismiss } from '../common/useDismiss';
 import { formatCount } from '../../lib/format';
 import type { Range } from '../../lib/matchPos';
 import type { PositionSummary } from '../../types/lvNode';
@@ -20,7 +20,7 @@ interface RangeButtonProps {
 export function RangeButton({ label, positions, getValue, active, onChange }: RangeButtonProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  useOutsideClose(
+  useDismiss(
     ref,
     open,
     useCallback(() => setOpen(false), []),
