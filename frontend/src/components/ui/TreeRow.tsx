@@ -7,12 +7,24 @@
 //  - `onToggle`: das Auf-/Zuklappen hängt am Dreieck, nicht an der ganzen Zeile,
 //    damit ein Klick auf die Zeile den Knoten auswählen kann.
 
-import type { MouseEvent as ReactMouseEvent, ReactNode } from 'react';
+import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode } from 'react';
 
 export interface TreeRowProps {
   code: string;
   label: string;
   depth?: number;
+  /** DOM-Id — die Baumspalte adressiert damit die aktive Zeile (aria-activedescendant). */
+  id?: string;
+  /**
+   * Zusätzliche Positionierung. Die Baumspalte zeichnet nur das sichtbare
+   * Fenster und setzt die Zeilen dafür absolut.
+   */
+  style?: CSSProperties;
+  /** Tastaturfokus liegt auf dieser Zeile (der echte Fokus bleibt am Baum). */
+  active?: boolean;
+  /** Stellung unter den sichtbaren Geschwistern (ARIA, flache Baumdarstellung). */
+  posInSet?: number;
+  setSize?: number;
   /** Positionszeile: kein Dreieck, eingerückt, leichteres Gewicht. */
   leaf?: boolean;
   open?: boolean;
@@ -33,6 +45,11 @@ export function TreeRow({
   code,
   label,
   depth = 0,
+  id,
+  style,
+  active = false,
+  posInSet,
+  setSize,
   leaf = false,
   open = false,
   selected = false,
@@ -52,11 +69,14 @@ export function TreeRow({
 
   return (
     <div
+      id={id}
       onClick={onClick}
       role="treeitem"
       aria-level={depth + 1}
       aria-selected={selected}
       aria-expanded={leaf || onToggle === undefined ? undefined : open}
+      aria-posinset={posInSet}
+      aria-setsize={setSize}
       title={title}
       style={{
         display: 'flex',
@@ -65,12 +85,17 @@ export function TreeRow({
         padding: leaf ? '4px 12px' : 'var(--pad-tree-row)',
         paddingLeft: 12 + depth * 6,
         borderLeft: selected ? '2px solid var(--blue)' : `2px solid ${accent ?? 'transparent'}`,
+        // Der Tastaturfokus liegt am Baum, nicht an der Zeile — die aktive Zeile
+        // braucht deshalb eine eigene sichtbare Markierung.
+        outline: active ? '2px solid var(--blueD)' : 'none',
+        outlineOffset: -2,
         background: selected ? 'var(--blueS)' : 'transparent',
         color: selected ? 'var(--blueD)' : 'var(--ink)',
         fontFamily: 'var(--mono)',
         fontSize: leaf ? 'var(--fs-body)' : 'var(--fs-row)',
         opacity: dimmed ? 'var(--dim-section)' : 1,
         cursor: 'pointer',
+        ...style,
       }}
     >
       {!leaf && (

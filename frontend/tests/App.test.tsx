@@ -271,6 +271,48 @@ describe('Viewer', () => {
     await waitFor(() => expect(option).toHaveAttribute('aria-pressed', 'true'));
   });
 
+  it('bedient den Baum mit der Tastatur (Issue #28)', async () => {
+    render(<App />);
+    await loadFixture('gaeb-xml-beispiel.x83');
+    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+
+    const tree = screen.getByRole('tree');
+    const activeRow = (): HTMLElement | null => {
+      const id = tree.getAttribute('aria-activedescendant');
+      return id === null ? null : document.getElementById(id);
+    };
+
+    // Der Fokus liegt am Baum, die aktive Zeile hängt an aria-activedescendant.
+    tree.focus();
+    expect(tree).toHaveFocus();
+    expect(activeRow()).toBeNull();
+
+    fireEvent.keyDown(tree, { key: 'ArrowDown' });
+    await waitFor(() => expect(activeRow()).not.toBeNull());
+    expect(activeRow()).toHaveAttribute('aria-level', '1');
+
+    fireEvent.keyDown(tree, { key: 'ArrowDown' });
+    await waitFor(() => expect(activeRow()).toHaveAttribute('aria-level', '2'));
+    expect(activeRow()).toHaveAttribute('aria-expanded', 'false');
+    const section = activeRow();
+
+    // Pfeil rechts klappt auf, Pfeil links wieder zu.
+    fireEvent.keyDown(tree, { key: 'ArrowRight' });
+    await waitFor(() => expect(activeRow()).toHaveAttribute('aria-expanded', 'true'));
+    expect(activeRow()).toBe(section);
+
+    fireEvent.keyDown(tree, { key: 'ArrowDown' });
+    await waitFor(() => expect(activeRow()).toHaveAttribute('aria-level', '3'));
+
+    // Pfeil links steigt aus einer zugeklappten Zeile zum Elternknoten auf.
+    fireEvent.keyDown(tree, { key: 'ArrowLeft' });
+    await waitFor(() => expect(activeRow()).toHaveAttribute('aria-level', '2'));
+
+    // Enter wählt wie ein Klick — die Positionstabelle geht auf.
+    fireEvent.keyDown(tree, { key: 'Enter' });
+    await screen.findByRole('table', { name: 'Positionen' });
+  });
+
   it('zeigt eine verständliche Fehlermeldung bei nicht unterstützter GAEB-Version', async () => {
     render(<App />);
     await loadFixture('unsupported-version.x83');
