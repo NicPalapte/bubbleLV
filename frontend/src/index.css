@@ -193,3 +193,59 @@ a:hover {
   background-size: var(--grid-cell) var(--grid-cell);
   background-position: -1px -1px;
 }
+
+/* Mengen-Bereichsfilter: zwei deckungsgleiche <input type="range"> bilden
+   Minimum und Maximum. Ohne diese Regeln liegt der obere Regler über der
+   gesamten Breite des unteren und fängt jeden Klick ab — der Minimum-Griff
+   wäre mit der Maus nicht erreichbar. Eingaben nehmen deshalb nur die Griffe
+   selbst entgegen, nicht die Spur. */
+.range-overlay {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 24px;
+  background: transparent;
+  pointer-events: none;
+}
+
+.range-overlay:focus {
+  outline: none;
+}
+
+.range-overlay::-webkit-slider-runnable-track,
+.range-overlay::-moz-range-track {
+  background: transparent;
+  border: none;
+}
+
+.range-overlay::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  pointer-events: auto;
+  width: 13px;
+  height: 13px;
+  margin-top: -5.5px;
+  border: 1px solid var(--blue);
+  border-radius: var(--r-pill);
+  background: var(--white);
+  cursor: pointer;
+}
+
+.range-overlay::-moz-range-thumb {
+  pointer-events: auto;
+  width: 13px;
+  height: 13px;
+  border: 1px solid var(--blue);
+  border-radius: var(--r-pill);
+  background: var(--white);
+  cursor: pointer;
+}
+
+.range-overlay:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--blueD);
+  outline-offset: 1px;
+}
+
+.range-overlay:focus-visible::-moz-range-thumb {
+  outline: 2px solid var(--blueD);
+  outline-offset: 1px;
+}

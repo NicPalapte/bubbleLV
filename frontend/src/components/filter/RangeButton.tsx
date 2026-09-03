@@ -4,7 +4,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Chip } from '../ui/Chip';
 import { Popover, PopoverHead } from '../ui/Popover';
-import { useOutsideClose } from '../common/useOutsideClose';
+import { useDismiss } from '../common/useDismiss';
 import { formatCount } from '../../lib/format';
 import type { Range } from '../../lib/matchPos';
 import type { PositionSummary } from '../../types/lvNode';
@@ -20,7 +20,11 @@ interface RangeButtonProps {
 export function RangeButton({ label, positions, getValue, active, onChange }: RangeButtonProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  useOutsideClose(ref, open, useCallback(() => setOpen(false), []));
+  useDismiss(
+    ref,
+    open,
+    useCallback(() => setOpen(false), []),
+  );
 
   const [min, max] = useMemo(() => {
     let low = Infinity;
@@ -77,7 +81,7 @@ export function RangeButton({ label, positions, getValue, active, onChange }: Ra
               max={max}
               value={low}
               onChange={(event) => onChange([Math.min(Number(event.target.value), high), high])}
-              className="absolute inset-0 w-full appearance-none bg-transparent"
+              className="range-overlay absolute inset-0 w-full"
             />
             <input
               type="range"
@@ -86,7 +90,7 @@ export function RangeButton({ label, positions, getValue, active, onChange }: Ra
               max={max}
               value={high}
               onChange={(event) => onChange([low, Math.max(Number(event.target.value), low)])}
-              className="absolute inset-0 w-full appearance-none bg-transparent"
+              className="range-overlay absolute inset-0 w-full"
             />
           </div>
           <div className="mt-[6px] flex justify-between text-[9px] text-mute">

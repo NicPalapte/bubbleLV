@@ -20,14 +20,7 @@ import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { LVNode, PositionSummary } from '../../types/lvNode';
 
 type SortKey =
-  | 'oz'
-  | 'shortText'
-  | 'positionsart'
-  | 'bauteiltyp'
-  | 'beton'
-  | 'unit'
-  | 'quantity'
-  | 'unitPrice';
+  'oz' | 'shortText' | 'positionsart' | 'bauteiltyp' | 'beton' | 'unit' | 'quantity' | 'unitPrice';
 
 type Scope = 'node' | 'lv';
 
@@ -193,7 +186,10 @@ export function PositionsTable({ root }: { root: LVNode }) {
   const lvRoot = tree ?? root;
 
   const nodeAll = useMemo(() => collectRows(root), [root]);
-  const lvAll = useMemo(() => (lvRoot === root ? nodeAll : collectRows(lvRoot)), [lvRoot, root, nodeAll]);
+  const lvAll = useMemo(
+    () => (lvRoot === root ? nodeAll : collectRows(lvRoot)),
+    [lvRoot, root, nodeAll],
+  );
 
   const nodeHits = useMemo(
     () => (filtering ? nodeAll.filter((row) => matchPos(row.position, filters, search)) : nodeAll),
@@ -249,18 +245,19 @@ export function PositionsTable({ root }: { root: LVNode }) {
           <GraphGlyph />
           <span className="font-mono text-[9.5px]">Graph</span>
         </button>
-        <span
+        <button
+          type="button"
           onClick={() =>
             parent === null
               ? dispatch({ type: 'showGraph' })
               : dispatch({ type: 'selectNode', id: parent.id, open: true })
           }
           title={parent === null ? 'Zurück zum Graphen' : 'Eine Ebene höher'}
-          className="shrink-0 cursor-pointer px-[4px] font-mono text-[13px] leading-none text-blue"
-          role="button"
+          aria-label={parent === null ? 'Zurück zum Graphen' : 'Eine Ebene höher'}
+          className="shrink-0 cursor-pointer border-none bg-transparent px-[4px] font-mono text-[13px] leading-none text-blue"
         >
           ←
-        </span>
+        </button>
         {scopeRoot.code !== '' && (
           <span className="shrink-0 tracking-[0.6px] text-mute">§ {scopeRoot.code}</span>
         )}
@@ -287,6 +284,7 @@ export function PositionsTable({ root }: { root: LVNode }) {
         {lvRoot !== root && (
           <span className="ml-auto shrink-0">
             <SegmentedControl
+              label="Umfang der Tabelle"
               options={[
                 { value: 'node', label: 'Abschnitt', title: 'Nur der gewählte Abschnitt' },
                 { value: 'lv', label: 'Ganzes LV', title: 'Alle Positionen des LV' },
@@ -319,9 +317,7 @@ export function PositionsTable({ root }: { root: LVNode }) {
             dir: current.key === key ? ((current.dir * -1) as 1 | -1) : 1,
           }))
         }
-        group={
-          groupCount > 1 ? (row) => ({ key: row.groupKey, label: row.groupLabel }) : undefined
-        }
+        group={groupCount > 1 ? (row) => ({ key: row.groupKey, label: row.groupLabel }) : undefined}
         cellTitle={(row, column) =>
           column.key === 'shortText' ? row.position.shortText : undefined
         }

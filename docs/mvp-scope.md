@@ -23,7 +23,7 @@ parsen und in ein neutrales Zwischenmodell (`LVDraft`) überführen, sodass dies
 Baum-Aufbau-Logik später auch aus Excel oder manueller Eingabe gespeist werden könnte
 (nicht Teil des MVP). Details: [`architecture/data-model.md`](architecture/data-model.md).
 
-- Alles passiert clientseitig via `FileReader`; kein Upload an einen Server.
+- Alles passiert clientseitig via `File.arrayBuffer()`; kein Upload an einen Server.
 - Erneutes Laden einer Datei ersetzt den aktuellen Session-Stand vollständig – es gibt
   keinen persistierten Vorzustand, den es zu erhalten gilt.
 - Kein `source_type`-Tracking über eine Session hinaus nötig (nur GAEB als Quelle im MVP).

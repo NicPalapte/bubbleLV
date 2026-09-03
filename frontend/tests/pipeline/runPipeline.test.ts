@@ -35,9 +35,9 @@ describe('runPipeline', () => {
   });
 
   it('wirft GAEBVersionError bei nicht unterstützter Version', () => {
-    expect(() => runPipeline(bytesOf('unsupported-version.x83'), 'unsupported-version.x83')).toThrow(
-      GAEBVersionError,
-    );
+    expect(() =>
+      runPipeline(bytesOf('unsupported-version.x83'), 'unsupported-version.x83'),
+    ).toThrow(GAEBVersionError);
   });
 
   it('bildet Parser-Fehler auf eine verständliche Meldung ab', () => {

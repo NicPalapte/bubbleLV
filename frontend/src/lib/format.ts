@@ -2,7 +2,8 @@
 
 export function formatNumber(value: number | null, fractionDigits?: number): string {
   if (value === null || !Number.isFinite(value)) return '—';
-  return value.toLocaleString('de-DE',
+  return value.toLocaleString(
+    'de-DE',
     fractionDigits === undefined
       ? { maximumFractionDigits: 3 }
       : { minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits },

@@ -187,8 +187,6 @@ describe('XmlGaebParser · Encoding', () => {
     const latin1 = new Uint8Array(Buffer.from(xml, 'latin1'));
 
     const lv = parser.parse(latin1, 'latin1.x83');
-    expect(byOz(lv, '01.02.0010').longText).toBe(
-      'Ortbeton C25/30 für Streifenfundament einbauen.',
-    );
+    expect(byOz(lv, '01.02.0010').longText).toBe('Ortbeton C25/30 für Streifenfundament einbauen.');
   });
 });

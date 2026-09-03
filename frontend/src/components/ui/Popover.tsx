@@ -2,7 +2,10 @@
 // Muss in einem `position: relative`-Elternelement hängen. Portiert aus
 // .claude/skills/bubble-design/components/core/Popover.jsx.
 
-import type { CSSProperties, ReactNode } from 'react';
+import { useLayoutEffect, useRef, type CSSProperties, type ReactNode } from 'react';
+
+/** Luft, die zwischen Popover und Fensterrand bleiben soll. */
+const VIEWPORT_MARGIN = 8;
 
 export interface PopoverProps {
   open: boolean;
@@ -13,10 +16,31 @@ export interface PopoverProps {
 }
 
 export function Popover({ open, children, width = 244, align = 'left' }: PopoverProps) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Die Filter-Chips reichen bis an den rechten Rand der Kopfleiste; das Popover
+  // des letzten Chips ("Menge") lief dort aus dem Fenster und war nicht mehr
+  // bedienbar. Es wird deshalb so weit nach links geschoben, dass es
+  // hineinpasst. Bewusst kein Wechsel auf rechtsbündig: der Chip wird breiter,
+  // sobald sein Filter aktiv ist, und würde ein rechtsbündiges Popover mitten
+  // im Ziehen mitverschieben. Die Verschiebung steht direkt am Knoten statt in
+  // React-State — sie ist eine Messung des Layouts, kein Zustand.
+  useLayoutEffect(() => {
+    const element = ref.current;
+    const host = element?.parentElement ?? null;
+    if (!open || align !== 'left' || element === null || host === null) return;
+    element.style.marginLeft = '0px';
+    const left = host.getBoundingClientRect().left;
+    const overflow = left + element.offsetWidth - (window.innerWidth - VIEWPORT_MARGIN);
+    if (overflow <= 0) return;
+    element.style.marginLeft = `${-Math.min(overflow, Math.max(0, left - VIEWPORT_MARGIN))}px`;
+  }, [open, align, width]);
+
   if (!open) return null;
   const anchor: CSSProperties = align === 'right' ? { right: 0 } : { left: 0 };
   return (
     <div
+      ref={ref}
       style={{
         position: 'absolute',
         top: 'calc(100% + 6px)',
@@ -52,9 +76,22 @@ export function PopoverHead({ children, onReset }: { children: ReactNode; onRese
     >
       <span>{children}</span>
       {onReset !== undefined && (
-        <span onClick={onReset} style={{ cursor: 'pointer', color: 'var(--blue)' }}>
+        <button
+          type="button"
+          onClick={onReset}
+          style={{
+            border: 'none',
+            background: 'transparent',
+            padding: 0,
+            cursor: 'pointer',
+            color: 'var(--blue)',
+            font: 'inherit',
+            letterSpacing: 'inherit',
+            textTransform: 'inherit',
+          }}
+        >
           zurücksetzen
-        </span>
+        </button>
       )}
     </div>
   );
@@ -83,14 +120,22 @@ export function PopoverRow({
   title,
 }: PopoverRowProps) {
   return (
-    <div
+    // Echte Schaltfläche statt <div>: die Facettenwerte sind sonst weder mit der
+    // Tastatur wählbar noch als (Mehrfach-)Auswahl erkennbar.
+    <button
+      type="button"
       onClick={onClick}
       title={title}
+      aria-pressed={checkbox ? on : undefined}
       style={{
         display: 'flex',
+        width: '100%',
         alignItems: 'center',
         gap: 8,
         padding: 'var(--pad-popover-row)',
+        border: 'none',
+        textAlign: 'left',
+        font: 'inherit',
         cursor: 'pointer',
         background: on ? 'var(--blueS)' : 'transparent',
         color: on ? 'var(--blueD)' : 'var(--ink)',
@@ -122,6 +167,6 @@ export function PopoverRow({
       {trailing !== undefined && (
         <span style={{ color: 'var(--mute)', flexShrink: 0 }}>{trailing}</span>
       )}
-    </div>
+    </button>
   );
 }

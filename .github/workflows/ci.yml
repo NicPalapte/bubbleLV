@@ -27,6 +27,16 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      - name: Lint
+        if: steps.check.outputs.exists == 'true'
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Format
+        if: steps.check.outputs.exists == 'true'
+        working-directory: frontend
+        run: npm run format:check
+
       - name: Test
         if: steps.check.outputs.exists == 'true'
         working-directory: frontend

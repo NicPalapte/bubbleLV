@@ -6,7 +6,7 @@
 export type StatusValue = 'geprüft' | 'offen' | 'entwurf';
 
 const STATUS: Record<StatusValue, { bg: string; fg: string; dot: string }> = {
-  'geprüft': { bg: 'var(--greenS)', fg: 'var(--greenD)', dot: 'var(--greenD)' },
+  geprüft: { bg: 'var(--greenS)', fg: 'var(--greenD)', dot: 'var(--greenD)' },
   offen: { bg: 'var(--amberS)', fg: 'var(--amber)', dot: 'var(--amber)' },
   entwurf: { bg: '#eef2f7', fg: 'var(--dim)', dot: 'var(--mute)' },
 };

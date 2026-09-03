@@ -31,16 +31,16 @@ Modell ist GAEB-spezifisch. Details: [`docs/architecture/data-model.md`](docs/ar
 | Testing       | Vitest                                                |
 | Linting       | ESLint + Prettier                                     |
 
-Es gibt kein Backend, keine Datenbank, keinen Login. Eine hochgeladene Datei wird per
-`FileReader` im Browser gelesen, geparst, klassifiziert und in React-State gehalten —
-nichts wird an einen Server geschickt oder in `localStorage` abgelegt. Ein Reload
-verwirft den Stand; das ist gewollt.
+Es gibt kein Backend, keine Datenbank, keinen Login. Eine geladene Datei wird per
+`File.arrayBuffer()` im Browser gelesen, geparst, klassifiziert und in React-State
+gehalten — nichts wird an einen Server geschickt oder in `localStorage` abgelegt.
+Ein Reload verwirft den Stand; das ist gewollt.
 
 ### Client-seitige Pipeline
 
 ```
 Datei (Drag&Drop/Input)
-    │  FileReader
+    │  File.arrayBuffer()
     ▼
 GaebParser          ← einzige Stelle mit GAEB-XML-Kenntnis
     │  → LVDraft (quellen-agnostisch, ohne GAEB-Begriffe)

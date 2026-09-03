@@ -55,7 +55,9 @@ export function FilterStrip() {
 
   return (
     <div className="relative z-[4] flex shrink-0 items-center gap-[8px] overflow-x-auto border-b border-line bg-white px-[16px] py-[7px]">
-      <span className="shrink-0 font-mono text-[8px] tracking-[0.6px] text-mute">AKTIVE FILTER</span>
+      <span className="shrink-0 font-mono text-[8px] tracking-[0.6px] text-mute">
+        AKTIVE FILTER
+      </span>
       <div className="flex flex-nowrap gap-[6px]">
         {chips.map((chip) => (
           <span
@@ -63,20 +65,23 @@ export function FilterStrip() {
             className="inline-flex items-center gap-[6px] whitespace-nowrap border border-line2 bg-paper py-[3px] pl-[9px] pr-[6px] font-mono text-[10px] text-ink"
           >
             {chip.label}
-            <span
-              className="cursor-pointer text-[11px] leading-none text-mute"
+            <button
+              type="button"
+              className="cursor-pointer border-none bg-transparent p-0 text-[11px] leading-none text-mute"
               onClick={chip.remove}
-              role="button"
               aria-label={`${chip.label} entfernen`}
             >
               ✕
-            </span>
+            </button>
           </span>
         ))}
       </div>
       <span className="flex-1" />
-      <span className="shrink-0 font-mono text-[8px] tracking-[0.6px] text-mute">NICHT-TREFFER</span>
+      <span className="shrink-0 font-mono text-[8px] tracking-[0.6px] text-mute">
+        NICHT-TREFFER
+      </span>
       <SegmentedControl
+        label="Nicht-Treffer"
         options={HIDE_MODES}
         value={hideMode}
         onChange={(value) => dispatch({ type: 'hideMode', value: value as HideMode })}

@@ -2,7 +2,7 @@
 // `TopBar` in design/claude-design/lv-main.jsx (Breadcrumb-Dropdowns entfallen —
 // es gibt genau ein geladenes LV je Session).
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Chip } from '../ui/Chip';
 import { BubbleLogo } from '../ui/BubbleLogo';
 import { FacetButton } from '../filter/FacetButton';
@@ -14,6 +14,15 @@ import type { PositionSummary } from '../../types/lvNode';
 
 const EMPTY_SELECTION: Set<string> = new Set();
 
+/**
+ * Wartezeit, bevor eine Eingabe zum Filter wird. Ein Suchlauf zieht Baum, Graph
+ * und Tabelle neu auf — bei großen LVs (Richtung ~10k Positionen) dauert das
+ * mehrere hundert Millisekunden bis Sekunden. Ohne Verzögerung passiert das je
+ * Tastendruck, und die Eingabe hakt. Der Wert ist kurz genug, dass die Suche
+ * beim Innehalten sofort greift.
+ */
+const SEARCH_DEBOUNCE_MS = 250;
+
 function quantityOf(position: PositionSummary): number | null {
   return position.quantity;
 }
@@ -23,8 +32,34 @@ export function TopBar() {
   const dispatch = useViewerDispatch();
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Das Eingabefeld hängt am lokalen Wert, damit Tippen nie auf den Suchlauf
+  // wartet; der Viewer-State folgt verzögert nach.
+  const [draft, setDraft] = useState(search);
+  const [mirrored, setMirrored] = useState(search);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Änderungen von außen (Import, „LV schließen" setzen die Suche zurück)
+  // übernehmen — im Render statt im Effekt, sonst zeigt das Feld für einen
+  // Frame den alten Begriff (react.dev/learn/you-might-not-need-an-effect).
+  if (search !== mirrored) {
+    setMirrored(search);
+    setDraft(search);
+  }
+
+  useEffect(() => () => clearTimeout(timer.current ?? undefined), []);
+
+  const changeSearch = (value: string): void => {
+    setDraft(value);
+    clearTimeout(timer.current ?? undefined);
+    timer.current = setTimeout(
+      () => dispatch({ type: 'search', value }),
+      value === '' ? 0 : SEARCH_DEBOUNCE_MS,
+    );
+  };
+
   const positions = useMemo(
-    () => positionNodes.map((node) => node.position).filter((p): p is PositionSummary => p !== null),
+    () =>
+      positionNodes.map((node) => node.position).filter((p): p is PositionSummary => p !== null),
     [positionNodes],
   );
 
@@ -70,9 +105,9 @@ export function TopBar() {
           <span className="text-[12px] text-mute">⌕</span>
           <input
             ref={inputRef}
-            value={search}
+            value={draft}
             disabled={!loaded}
-            onChange={(event) => dispatch({ type: 'search', value: event.target.value })}
+            onChange={(event) => changeSearch(event.target.value)}
             placeholder="Positionen, OZ, Langtext…"
             aria-label="Suche"
             className="flex-1 border-none bg-transparent font-mono text-[11px] text-ink outline-none"

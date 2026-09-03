@@ -6,7 +6,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { Chip } from '../ui/Chip';
 import { Popover, PopoverHead, PopoverRow } from '../ui/Popover';
 import { StatusPill } from '../ui/StatusPill';
-import { useOutsideClose } from '../common/useOutsideClose';
+import { useDismiss } from '../common/useDismiss';
 import { facetOptionLabel, type Facet } from '../../lib/facets';
 import { formatCount } from '../../lib/format';
 import type { PositionSummary } from '../../types/lvNode';
@@ -21,7 +21,7 @@ interface FacetButtonProps {
 export function FacetButton({ facet, positions, active, onChange }: FacetButtonProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  useOutsideClose(
+  useDismiss(
     ref,
     open,
     useCallback(() => setOpen(false), []),
