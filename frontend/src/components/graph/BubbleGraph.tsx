@@ -17,6 +17,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
 } from 'react';
 import { BubbleNode, ClusterNode, DotNode } from './BubbleNode';
@@ -24,6 +25,7 @@ import { GraphControls } from './GraphControls';
 import { MAX_ZOOM, MIN_ZOOM, RADII, sizeModeById, sizedRadius } from '../../lib/graph/constants';
 import { cullBounds, isInView } from '../../lib/graph/culling';
 import { layoutRadial, walkParents, type PlacedNode } from '../../lib/graph/layoutRadial';
+import { formatCount } from '../../lib/format';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { LVNode } from '../../types/lvNode';
 
@@ -169,6 +171,10 @@ export function BubbleGraph({ root, active = true }: BubbleGraphProps) {
 
   const onMouseDown = (event: ReactMouseEvent<HTMLDivElement>): void => {
     if (event.button !== 0) return;
+    // Ein Klick auf eine Bubble (SVG-<g>, nicht fokussierbar) holt sonst nie
+    // den Tastaturfokus auf den Canvas — Browser vererben Fokus nicht an
+    // fokussierbare Vorfahren eines geklickten Kindelements.
+    wrapRef.current?.focus();
     drag.current = {
       on: true,
       x0: event.clientX,
@@ -367,14 +373,194 @@ export function BubbleGraph({ root, active = true }: BubbleGraphProps) {
     [w, h],
   );
 
+  // ── Tastatur: der Graph war bislang ausschließlich mit der Maus bedienbar
+  // (Issue #25). Fokus ist ein einzelner Tab-Stopp am Canvas — wie im Baum
+  // (Tree.tsx, "aria-activedescendant"-Pattern) — statt jeder Bubble einzeln,
+  // sonst müsste man sich durch hunderte Knoten tabben.
+  const [focusedId, setFocusedId] = useState<string | null>(root.id);
+  const [graphFocused, setGraphFocused] = useState(false);
+
+  // Neue Datei geladen (anderer Baum) — Fokus zurück auf die Wurzel. Im
+  // Render statt im Effekt, sonst zeigte ein Frame lang den Fokus des
+  // vorigen LV (react.dev/learn/you-might-not-need-an-effect).
+  const [focusedRoot, setFocusedRoot] = useState(root);
+  if (focusedRoot !== root) {
+    setFocusedRoot(root);
+    setFocusedId(root.id);
+  }
+
+  /** Eltern-ID im Layout — Cluster-Bubbles kennen ihren Elternknoten direkt. */
+  const parentIdOf = useCallback(
+    (entry: PlacedNode): string | null =>
+      entry.tier === 'cluster' ? entry.clusterOf : (parents.get(entry.id)?.id ?? null),
+    [parents],
+  );
+
+  /** Geschwister eines Knotens, in der Reihenfolge, in der sie um den
+   *  Elternknoten aufgefächert sind (Winkel) — dieselbe Reihenfolge, in der
+   *  sie auf dem Bildschirm stehen. */
+  const siblingsOf = useCallback(
+    (entry: PlacedNode): PlacedNode[] => {
+      const parentId = parentIdOf(entry);
+      const list: PlacedNode[] = [];
+      for (const candidate of placed.values()) {
+        if (parentIdOf(candidate) === parentId) list.push(candidate);
+      }
+      list.sort((a, b) => a.angle - b.angle);
+      return list;
+    },
+    [placed, parentIdOf],
+  );
+
+  const childrenOf = useCallback(
+    (id: string): PlacedNode[] => {
+      const list: PlacedNode[] = [];
+      for (const candidate of placed.values()) {
+        if (parentIdOf(candidate) === id) list.push(candidate);
+      }
+      list.sort((a, b) => a.angle - b.angle);
+      return list;
+    },
+    [placed, parentIdOf],
+  );
+
+  const centerOn = useCallback(
+    (cx: number, cy: number): void => {
+      setView((current) => ({
+        ...current,
+        tx: w / 2 - cx * current.k,
+        ty: h / 2 - cy * current.k,
+      }));
+    },
+    [w, h],
+  );
+
+  /** Fokus setzen und die Bubble in die Mitte holen — wie `revealRow` im Baum. */
+  const focusEntry = useCallback(
+    (entry: PlacedNode): void => {
+      setFocusedId(entry.id);
+      centerOn(entry.cx, entry.cy);
+    },
+    [centerOn],
+  );
+
+  const activate = useCallback(
+    (entry: PlacedNode): void => {
+      if (entry.tier === 'cluster') {
+        if (entry.clusterOf !== null) toggleCluster(entry.clusterOf);
+        return;
+      }
+      if (entry.node !== null) openNode(entry.node);
+    },
+    [toggleCluster, openNode],
+  );
+
+  const onGraphKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLDivElement>): void => {
+      if (focusedId === null) return;
+      const entry = placed.get(focusedId);
+      if (entry === undefined) return;
+
+      switch (event.key) {
+        case 'ArrowUp':
+        case 'ArrowDown': {
+          event.preventDefault();
+          const siblings = siblingsOf(entry);
+          const index = siblings.findIndex((candidate) => candidate.id === entry.id);
+          if (index < 0) return;
+          const next = siblings[event.key === 'ArrowUp' ? index - 1 : index + 1];
+          if (next !== undefined) focusEntry(next);
+          return;
+        }
+        case 'ArrowRight': {
+          event.preventDefault();
+          if (entry.tier === 'cluster') {
+            if (entry.clusterOf !== null) toggleCluster(entry.clusterOf);
+            return;
+          }
+          const node = entry.node;
+          if (node === null || node.children.length === 0) return;
+          if (!openNodes.has(node.id)) {
+            toggleCollapse(node.id);
+            return;
+          }
+          const firstChild = childrenOf(entry.id)[0];
+          if (firstChild !== undefined) focusEntry(firstChild);
+          return;
+        }
+        case 'ArrowLeft': {
+          event.preventDefault();
+          const node = entry.node;
+          if (
+            entry.tier !== 'cluster' &&
+            node !== null &&
+            node.children.length > 0 &&
+            openNodes.has(node.id)
+          ) {
+            toggleCollapse(node.id);
+            return;
+          }
+          const parentId = parentIdOf(entry);
+          const parentEntry = parentId === null ? undefined : placed.get(parentId);
+          if (parentEntry !== undefined) focusEntry(parentEntry);
+          return;
+        }
+        case 'Enter':
+        case ' ':
+          event.preventDefault();
+          activate(entry);
+          return;
+        default:
+          return;
+      }
+    },
+    [
+      focusedId,
+      placed,
+      siblingsOf,
+      childrenOf,
+      parentIdOf,
+      openNodes,
+      toggleCollapse,
+      toggleCluster,
+      activate,
+      focusEntry,
+    ],
+  );
+
+  const focusedEntry = focusedId === null ? undefined : placed.get(focusedId);
+  const focusedLabel = useMemo(() => {
+    if (focusedEntry === undefined) return '';
+    if (focusedEntry.tier === 'cluster') {
+      return `${formatCount(focusedEntry.clusterCount)} weitere Knoten, eingeklappt`;
+    }
+    const node = focusedEntry.node;
+    if (node === null) return '';
+    const title = node.label ?? node.code;
+    return node.kind === 'position'
+      ? title
+      : `${title}, ${formatCount(node.positionCount)} Positionen`;
+  }, [focusedEntry]);
+
   return (
     <div
       ref={wrapRef}
       onMouseDown={onMouseDown}
       onClickCapture={onClickCapture}
-      className="absolute inset-0 select-none overflow-hidden"
+      onKeyDown={onGraphKeyDown}
+      onFocus={() => setGraphFocused(true)}
+      onBlur={() => setGraphFocused(false)}
+      tabIndex={0}
+      role="group"
+      aria-label="Bubble-Graph — mit den Pfeiltasten navigierbar, Eingabetaste öffnet den Knoten"
+      className="absolute inset-0 select-none overflow-hidden outline-none"
       style={{ cursor: panning ? 'grabbing' : 'grab' }}
     >
+      {/* Für Screenreader: der Graph ist rein grafisch, der fokussierte
+          Knoten wird stattdessen hier angesagt. */}
+      <div aria-live="polite" className="sr-only">
+        {graphFocused ? focusedLabel : ''}
+      </div>
       <svg width={w} height={h} className="absolute inset-0 block">
         <defs>
           {/* 14px-Punktraster hinter dem Graphen — Vorgabe des Design-Systems. */}
@@ -411,6 +597,7 @@ export function BubbleGraph({ root, active = true }: BubbleGraphProps) {
                   zoom={view.k}
                   dimmed={spotlightDim}
                   hovered={hoveredNodeId === entry.id}
+                  focused={graphFocused && focusedId === entry.id}
                   onHover={(id) => dispatch({ type: 'hover', id })}
                   onClick={() => {
                     if (entry.clusterOf !== null) toggleCluster(entry.clusterOf);
@@ -439,6 +626,7 @@ export function BubbleGraph({ root, active = true }: BubbleGraphProps) {
                   dimmed={dimmed}
                   hidden={hidden}
                   hovered={hoveredNodeId === entry.id}
+                  focused={graphFocused && focusedId === entry.id}
                   onHover={(id) => dispatch({ type: 'hover', id })}
                   onClick={() => openNode(node)}
                 />
@@ -454,6 +642,7 @@ export function BubbleGraph({ root, active = true }: BubbleGraphProps) {
                 dimmed={dimmed}
                 hidden={hidden}
                 hovered={hoveredNodeId === entry.id}
+                focused={graphFocused && focusedId === entry.id}
                 onHover={(id) => dispatch({ type: 'hover', id })}
                 onClick={() => openNode(node)}
                 radius={metric?.radius ?? RADII[entry.tier]}

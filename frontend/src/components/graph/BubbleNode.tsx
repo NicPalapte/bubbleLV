@@ -13,6 +13,8 @@ interface CommonProps {
   dimmed: boolean;
   hidden: boolean;
   hovered: boolean;
+  /** Aktueller Tastatur-Fokus (Issue #25) — wie `hovered`, aber von der Tastatur. */
+  focused: boolean;
   onHover: (id: string | null) => void;
   onClick: () => void;
 }
@@ -112,6 +114,7 @@ export function BubbleNode(props: BubbleProps) {
     dimmed,
     hidden,
     hovered,
+    focused,
     onHover,
     onClick,
     radius,
@@ -123,11 +126,14 @@ export function BubbleNode(props: BubbleProps) {
     onOpenTable,
   } = props;
 
+  // Tastatur-Fokus zählt überall dort wie Hover — sonst ließen sich Badges,
+  // Kurztext-Tooltip und Betonung nur mit der Maus erreichen (Issue #25).
+  const active = hovered || focused;
   const showLabel = zoom >= LABEL_K[placed.tier];
   // Tabellensymbol und Einklapp-Knopf würden kleine Bubbles zudecken — sie
   // erscheinen erst, wenn die Bubble auf dem Schirm groß genug ist, sonst beim
   // Überfahren.
-  const showBadges = hovered || radius * zoom >= 30;
+  const showBadges = active || radius * zoom >= 30;
   const colors = TIER_FILL[placed.tier] ?? TIER_FILL.section;
   const opacity = hidden ? 0.05 : dimmed ? 0.16 : 1;
   const title = node.label ?? node.code;
@@ -153,9 +159,18 @@ export function BubbleNode(props: BubbleProps) {
           r={radius}
           fill={colors.fill}
           stroke={colors.stroke}
-          strokeWidth={hovered ? 2 : 1.2}
+          strokeWidth={active ? 2 : 1.2}
           style={{ transition: 'all .15s' }}
         />
+        {focused && (
+          <circle
+            r={radius + 4}
+            fill="none"
+            stroke="var(--blue)"
+            strokeWidth="1.5"
+            strokeDasharray="2 2"
+          />
+        )}
         {showLabel && (
           <text
             textAnchor="middle"
@@ -168,7 +183,7 @@ export function BubbleNode(props: BubbleProps) {
             {truncate(node.code, 9)}
           </text>
         )}
-        {hovered && (
+        {active && (
           <g transform={`translate(${radius + 6},-11)`}>
             <rect
               x={0}
@@ -208,9 +223,18 @@ export function BubbleNode(props: BubbleProps) {
         r={radius}
         fill={colors.fill}
         stroke={colors.stroke}
-        strokeWidth={hovered ? 2 : placed.tier === 'project' ? 1.6 : 1.2}
+        strokeWidth={active ? 2 : placed.tier === 'project' ? 1.6 : 1.2}
         style={{ transition: 'all .15s' }}
       />
+      {focused && (
+        <circle
+          r={radius + 5}
+          fill="none"
+          stroke="var(--blue)"
+          strokeWidth="1.5"
+          strokeDasharray="3 3"
+        />
+      )}
       {showLabel && (
         <>
           <text
@@ -308,11 +332,13 @@ export function DotNode({
   dimmed,
   hidden,
   hovered,
+  focused,
   onHover,
   onClick,
 }: DotProps) {
   const radius = 5;
-  const showLabel = hovered || zoom >= 1.8;
+  const active = hovered || focused;
+  const showLabel = active || zoom >= 1.8;
   return (
     <g
       transform={`translate(${placed.cx},${placed.cy})`}
@@ -330,11 +356,20 @@ export function DotNode({
       }}
     >
       <circle
-        r={hovered ? radius + 1.5 : radius}
+        r={active ? radius + 1.5 : radius}
         fill={placed.tier === 'position' ? 'var(--bub-position-line)' : 'var(--bub-lot-line)'}
         stroke="var(--white)"
         strokeWidth="1"
       />
+      {focused && (
+        <circle
+          r={radius + 5}
+          fill="none"
+          stroke="var(--blue)"
+          strokeWidth="1.5"
+          strokeDasharray="2 2"
+        />
+      )}
       {showLabel && (
         <text
           textAnchor="middle"
@@ -370,6 +405,7 @@ export function ClusterNode({
   zoom,
   dimmed,
   hovered,
+  focused,
   onHover,
   onClick,
   sampleTier,
@@ -377,6 +413,7 @@ export function ClusterNode({
   onOpenTable,
 }: ClusterProps) {
   const radius = RADII.cluster;
+  const active = hovered || focused;
   const showLabel = zoom >= LABEL_K.cluster;
   return (
     <g
@@ -400,9 +437,18 @@ export function ClusterNode({
         r={radius}
         fill="var(--bub-cluster)"
         stroke="var(--bub-cluster-line)"
-        strokeWidth={hovered ? 2 : 1.2}
+        strokeWidth={active ? 2 : 1.2}
         style={{ transition: 'all .15s' }}
       />
+      {focused && (
+        <circle
+          r={radius + 11}
+          fill="none"
+          stroke="var(--blue)"
+          strokeWidth="1.5"
+          strokeDasharray="3 3"
+        />
+      )}
       {showLabel && (
         <>
           <text
@@ -427,10 +473,10 @@ export function ClusterNode({
           </text>
         </>
       )}
-      {(hovered || zoom >= 0.8) && (
+      {(active || zoom >= 0.8) && (
         <TableBadge x={-radius * 0.78} y={radius * 0.78} size={10} onOpen={onOpenTable} />
       )}
-      {hovered && (
+      {active && (
         <g transform="translate(0, 34)">
           <rect x="-34" y="-8" width="68" height="16" fill="var(--blue)" rx="2" />
           <text
