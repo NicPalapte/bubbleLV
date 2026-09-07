@@ -1,8 +1,21 @@
 // Bubble — Popover: die einzige erhobene Fläche im System (der einzige Schatten).
-// Muss in einem `position: relative`-Elternelement hängen. Portiert aus
+// Hängt per Portal an <body> und positioniert sich absolut zum Viewport, ausgehend
+// von `anchorRef` — nicht mehr `position: relative`+`absolute` im Elternelement.
+// Grund: die Filter-Chip-Reihe in der Kopfleiste muss bei schmalen Fenstern
+// scrollen bzw. Chips in ein Overflow-Menü verschieben können (Issue #24); ein
+// scrollender/verschachtelter Container hätte ein kind-positioniertes Popover
+// abgeschnitten. Portiert (Grundform) aus
 // .claude/skills/bubble-design/components/core/Popover.jsx.
 
-import { useLayoutEffect, useRef, type CSSProperties, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import {
+  forwardRef,
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+  type ReactNode,
+  type RefObject,
+} from 'react';
 
 /** Luft, die zwischen Popover und Fensterrand bleiben soll. */
 const VIEWPORT_MARGIN = 8;
@@ -13,38 +26,60 @@ export interface PopoverProps {
   /** min-width in px: 200 Picker, 244 Facetten, 260 Bereichsregler. */
   width?: number;
   align?: 'left' | 'right';
+  /** Element, an dem sich das Popover ausrichtet (i. d. R. der Chip-Wrapper). */
+  anchorRef: RefObject<HTMLElement | null>;
 }
 
-export function Popover({ open, children, width = 244, align = 'left' }: PopoverProps) {
+/**
+ * `ref` gibt den eigenen (portierten) DOM-Knoten nach außen — der Aufrufer
+ * braucht ihn für die Außerhalb-Klick-Erkennung (`useDismiss`), weil das
+ * Popover nicht mehr im Anker-Element steckt, sondern an <body> hängt.
+ */
+export const Popover = forwardRef<HTMLDivElement, PopoverProps>(function Popover(
+  { open, children, width = 244, align = 'left', anchorRef },
+  forwardedRef,
+) {
   const ref = useRef<HTMLDivElement>(null);
+  useImperativeHandle(forwardedRef, () => ref.current as HTMLDivElement);
 
-  // Die Filter-Chips reichen bis an den rechten Rand der Kopfleiste; das Popover
-  // des letzten Chips ("Menge") lief dort aus dem Fenster und war nicht mehr
-  // bedienbar. Es wird deshalb so weit nach links geschoben, dass es
-  // hineinpasst. Bewusst kein Wechsel auf rechtsbündig: der Chip wird breiter,
-  // sobald sein Filter aktiv ist, und würde ein rechtsbündiges Popover mitten
-  // im Ziehen mitverschieben. Die Verschiebung steht direkt am Knoten statt in
-  // React-State — sie ist eine Messung des Layouts, kein Zustand.
+  // Position folgt dem Anker im Viewport statt einem Elternelement — läuft bei
+  // jedem Öffnen sowie bei Resize/Scroll neu, weil ein per Portal gehängtes
+  // Popover sich sonst nicht mitbewegt.
   useLayoutEffect(() => {
+    if (!open) return;
     const element = ref.current;
-    const host = element?.parentElement ?? null;
-    if (!open || align !== 'left' || element === null || host === null) return;
-    element.style.marginLeft = '0px';
-    const left = host.getBoundingClientRect().left;
-    const overflow = left + element.offsetWidth - (window.innerWidth - VIEWPORT_MARGIN);
-    if (overflow <= 0) return;
-    element.style.marginLeft = `${-Math.min(overflow, Math.max(0, left - VIEWPORT_MARGIN))}px`;
-  }, [open, align, width]);
+    const anchor = anchorRef.current;
+    if (element === null || anchor === null) return;
+
+    const place = (): void => {
+      const rect = anchor.getBoundingClientRect();
+      const naturalLeft = align === 'right' ? rect.right - element.offsetWidth : rect.left;
+      const maxLeft = window.innerWidth - element.offsetWidth - VIEWPORT_MARGIN;
+      const left = Math.min(
+        Math.max(VIEWPORT_MARGIN, naturalLeft),
+        Math.max(VIEWPORT_MARGIN, maxLeft),
+      );
+      element.style.left = `${left}px`;
+      element.style.top = `${rect.bottom + 6}px`;
+    };
+
+    place();
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    return () => {
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
+    };
+  }, [open, align, anchorRef]);
 
   if (!open) return null;
-  const anchor: CSSProperties = align === 'right' ? { right: 0 } : { left: 0 };
-  return (
+  return createPortal(
     <div
       ref={ref}
       style={{
-        position: 'absolute',
-        top: 'calc(100% + 6px)',
-        ...anchor,
+        position: 'fixed',
+        top: 0,
+        left: 0,
         zIndex: 50,
         minWidth: width,
         background: 'var(--white)',
@@ -55,9 +90,10 @@ export function Popover({ open, children, width = 244, align = 'left' }: Popover
       }}
     >
       {children}
-    </div>
+    </div>,
+    document.body,
   );
-}
+});
 
 export function PopoverHead({ children, onReset }: { children: ReactNode; onReset?: () => void }) {
   return (
