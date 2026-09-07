@@ -38,9 +38,11 @@ export function ViewerPage() {
 
   return (
     <div className="flex h-full flex-col bg-paper">
-      <TopBar />
-      <FilterStrip />
-      <div className="flex flex-1 overflow-hidden">
+      <header>
+        <TopBar />
+        <FilterStrip />
+      </header>
+      <main aria-label="LV-Ansicht" className="flex flex-1 overflow-hidden">
         <Tree
           width={leftWidth}
           collapsed={treeCollapsed}
@@ -72,7 +74,7 @@ export function ViewerPage() {
 
         <ResizeHandle value={rightWidth} onChange={setRightWidth} min={260} max={560} sign={-1} />
         <PropertiesPanel width={rightWidth} />
-      </div>
+      </main>
     </div>
   );
 }
