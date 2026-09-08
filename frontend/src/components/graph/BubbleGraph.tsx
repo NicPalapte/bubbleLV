@@ -22,7 +22,7 @@ import {
 } from 'react';
 import { BubbleNode, ClusterNode, DotNode } from './BubbleNode';
 import { GraphControls } from './GraphControls';
-import { PositionCard } from './PositionCard';
+import { SelectionCard } from './SelectionCard';
 import { MAX_ZOOM, MIN_ZOOM, RADII, sizeModeById, sizedRadius } from '../../lib/graph/constants';
 import { cullBounds, isInView } from '../../lib/graph/culling';
 import { layoutRadial, walkParents, type PlacedNode } from '../../lib/graph/layoutRadial';
@@ -51,8 +51,16 @@ interface BubbleGraphProps {
 }
 
 export function BubbleGraph({ root }: BubbleGraphProps) {
-  const { sizeMode, hideMode, hoveredNodeId, selectedPosition, matches, openNodes, openClusters } =
-    useViewer();
+  const {
+    sizeMode,
+    hideMode,
+    hoveredNodeId,
+    selectedNode,
+    selectedPosition,
+    matches,
+    openNodes,
+    openClusters,
+  } = useViewer();
   const dispatch = useViewerDispatch();
 
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -561,6 +569,10 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
   const tooltipTop = tooltipEntry === undefined ? 0 : view.ty + tooltipEntry.cy * view.k - 14;
 
   const closeCard = useCallback(() => dispatch({ type: 'back' }), [dispatch]);
+  // Positionsauswahl hat Vorrang — sie kann neben einem gewählten Abschnitt
+  // stehen ('selectPosition' setzt beide IDs), die Karte zeigt aber immer nur
+  // eine Ebene.
+  const cardNode = selectedPosition ?? selectedNode;
 
   return (
     <div
@@ -693,13 +705,7 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
         </div>
       )}
 
-      {selectedPosition !== null && selectedPosition.position !== null && (
-        <PositionCard
-          node={selectedPosition}
-          position={selectedPosition.position}
-          onClose={closeCard}
-        />
-      )}
+      {cardNode !== null && <SelectionCard node={cardNode} onClose={closeCard} />}
 
       <GraphControls
         zoom={view.k}

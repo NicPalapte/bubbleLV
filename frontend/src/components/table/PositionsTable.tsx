@@ -34,19 +34,6 @@ interface Row {
 
 const KIND_PREFIX: Record<string, string> = { lot: 'LOS', section: '§' };
 
-/** Drei verbundene Knoten — dasselbe Motiv wie in der Wortmarke. */
-function GraphGlyph() {
-  return (
-    <svg width="17" height="12" viewBox="0 0 26 18" aria-hidden="true" className="block">
-      <line x1="5" y1="9" x2="14" y2="6" stroke="currentColor" strokeWidth="0.9" opacity="0.5" />
-      <line x1="14" y1="6" x2="21" y2="12" stroke="currentColor" strokeWidth="0.9" opacity="0.5" />
-      <circle cx="14" cy="6" r="2.4" fill="currentColor" />
-      <circle cx="5" cy="9" r="3.2" fill="none" stroke="currentColor" strokeWidth="1.4" />
-      <circle cx="21" cy="12" r="1.9" fill="none" stroke="currentColor" strokeWidth="1.4" />
-    </svg>
-  );
-}
-
 function headingOf(node: LVNode): string {
   const title = node.label !== null && node.label !== '' ? node.label : 'Ohne Bezeichnung';
   if (node.code === '') return title;
@@ -236,15 +223,6 @@ export function PositionsTable({ root }: { root: LVNode }) {
         className="flex min-w-0 shrink-0 items-center gap-[10px] overflow-hidden border-b border-line bg-panel px-[12px] font-mono text-[10px] text-dim"
         style={{ height: 'var(--h-view-head)' }}
       >
-        <button
-          type="button"
-          onClick={() => dispatch({ type: 'showGraph' })}
-          title="Zurück zum Bubble-Graph"
-          className="flex shrink-0 items-center gap-[6px] border border-line bg-white px-[8px] py-[4px] text-blue hover:bg-panel"
-        >
-          <GraphGlyph />
-          <span className="font-mono text-[9.5px]">Graph</span>
-        </button>
         <button
           type="button"
           onClick={() =>

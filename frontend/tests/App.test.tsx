@@ -167,8 +167,9 @@ describe('Viewer', () => {
     fireEvent.click(await within(tree).findByTitle('Baustelleneinrichtung'));
     await screen.findByRole('table', { name: 'Positionen' });
 
-    // Drei Ebenen tief — der Graph-Knopf muss trotzdem in einem Schritt zurück.
-    fireEvent.click(screen.getByRole('button', { name: /Graph/ }));
+    // Drei Ebenen tief — der Umschalter in der Kopfleiste geht trotzdem in
+    // einem Schritt zurück (die Tabelle hat keinen eigenen Graph-Knopf mehr).
+    switchToView('Graph');
     await waitFor(() =>
       expect(screen.queryByRole('table', { name: 'Positionen' })).not.toBeInTheDocument(),
     );
@@ -268,10 +269,43 @@ describe('Viewer', () => {
     expect(screen.queryByRole('table', { name: 'Positionen' })).not.toBeInTheDocument();
     expect(screen.getByRole('radio', { name: 'Graph' })).toHaveAttribute('aria-checked', 'true');
 
+    // Erster Escape nimmt nur die Positionsauswahl zurück — der Elternabschnitt
+    // bleibt gewählt und zeigt seinerseits eine Karte mit Abschnittsinfos.
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    await waitFor(() =>
+      expect(
+        screen.queryByText('Baustelleneinrichtung für sämtliche', { exact: false }),
+      ).not.toBeInTheDocument(),
+    );
+    expect(screen.getByRole('button', { name: 'Karte schließen' })).toBeInTheDocument();
+
+    // Zweiter Escape hebt auch die Abschnittsauswahl auf — keine Karte mehr.
     fireEvent.keyDown(document.body, { key: 'Escape' });
     await waitFor(() =>
       expect(screen.queryByRole('button', { name: 'Karte schließen' })).not.toBeInTheDocument(),
     );
+  });
+
+  it('zeigt einen gewählten Abschnitt im Graphen ebenfalls als schwebende Karte', async () => {
+    render(<App />);
+    await loadFixture('gaeb-xml-beispiel.x83');
+    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+
+    // Abschnitt (kein Positionsblatt) im Baum wählen — dieselbe Auswahl treibt
+    // im Graphen jetzt ebenfalls die schwebende Karte, mit Kennzahlen statt
+    // Positionsdetails.
+    switchToView('Tabelle');
+    const tree = screen.getByRole('tree');
+    fireEvent.click(within(tree).getAllByRole('treeitem')[0]);
+    fireEvent.click(await within(tree).findByTitle('Bauhauptgewerke'));
+
+    switchToView('Graph');
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Karte schließen' })).toBeInTheDocument(),
+    );
+    expect(screen.getByText('Kennzahlen')).toBeInTheDocument();
+    expect(screen.getByText('Direkte Positionen')).toBeInTheDocument();
   });
 
   it('schließt mit Escape zuerst das Popover, verlässt danach aber nicht mehr die Tabelle (Issue #30)', async () => {
