@@ -262,7 +262,9 @@ describe('Viewer', () => {
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Karte schließen' })).toBeInTheDocument(),
     );
-    expect(screen.getByText('Baustelleneinrichtung für sämtliche', { exact: false })).toBeInTheDocument();
+    expect(
+      screen.getByText('Baustelleneinrichtung für sämtliche', { exact: false }),
+    ).toBeInTheDocument();
     expect(screen.queryByRole('table', { name: 'Positionen' })).not.toBeInTheDocument();
     expect(screen.getByRole('radio', { name: 'Graph' })).toHaveAttribute('aria-checked', 'true');
 
