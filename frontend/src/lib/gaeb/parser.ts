@@ -20,7 +20,9 @@ export interface GaebParser {
   parse(input: GaebInput, filename?: string): ParsedLV;
 }
 
-const SUPPORTED_VERSIONS = new Set(['2.0', '2.1', '3.0', '3.1', '3.2', '3.3']);
+// 2.0/2.1 bewusst nicht unterstützt (Issue #27): kommen in der Praxis kaum noch vor,
+// der Parser kennt ohnehin nur 3.x-Strukturen (<Award><BoQ>...).
+const SUPPORTED_VERSIONS = new Set(['3.0', '3.1', '3.2', '3.3']);
 
 /** OZ-Segmente zur vollständigen Ordnungszahl verbinden ("001" + "0010" → "001.0010"). */
 function joinOz(segments: string[]): string {

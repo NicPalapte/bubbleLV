@@ -154,6 +154,19 @@ describe('XmlGaebParser · gaeb-xml-beispiel.x83 (BVBS-Musterdatei)', () => {
   });
 });
 
+describe('XmlGaebParser · sample-3.2.x83 (Version 3.2)', () => {
+  it('parst GAEB DA XML 3.2 wie 3.x (Issue #27)', () => {
+    const lv = parser.parse(fixture('sample-3.2.x83'), 'sample-3.2.x83');
+
+    expect(lv.gaebVersion).toBe('3.2');
+    expect(lv.dataPhase).toBe('83');
+    expect(lv.projectId).toBe('TEST-032');
+    expect(byOz(lv, '01.01.0010').longText).toBe(
+      'Oberboden abtragen und seitlich lagern, Schichtdicke ca. 30 cm.',
+    );
+  });
+});
+
 describe('XmlGaebParser · Fehlerfälle', () => {
   it('wirft GAEBVersionError bei nicht unterstützter Version', () => {
     const file = 'unsupported-version.x83';

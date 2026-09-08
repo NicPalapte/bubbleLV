@@ -18,7 +18,7 @@ Spalten: **Tree** (links) · **Viewer** mit den Modi **Bubble-Graph ⇄ Tabelle*
 
 ### 1 · GAEB-Import im Browser
 
-GAEB DA XML (Versionen 2.0–3.3) per Drag & Drop oder Datei-Dialog laden, im Browser
+GAEB DA XML (Versionen 3.0–3.3) per Drag & Drop oder Datei-Dialog laden, im Browser
 parsen und in ein neutrales Zwischenmodell (`LVDraft`) überführen, sodass dieselbe
 Baum-Aufbau-Logik später auch aus Excel oder manueller Eingabe gespeist werden könnte
 (nicht Teil des MVP). Details: [`architecture/data-model.md`](architecture/data-model.md).
