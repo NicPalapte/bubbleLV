@@ -18,7 +18,7 @@ const EMPTY_SET: ReadonlySet<string> = new Set();
 
 export type HideMode = 'dim' | 'hide';
 export type SizeModeId = 'count' | 'cost' | 'uniform';
-export type CenterMode = 'graph' | 'table';
+export type ViewMode = 'graph' | 'table';
 
 export interface ViewerState {
   lv: LoadedLV | null;
@@ -40,11 +40,13 @@ export interface ViewerState {
   /** Aufgelöste Cluster-Bubbles — reine Graph-Darstellung (Issue #10). */
   openClusters: ReadonlySet<string>;
   /**
-   * Was in der Mitte steht. Bewusst eigener Zustand statt aus `selectedNodeId`
-   * abgeleitet: eine Sammel-Bubble lässt sich anwählen, ohne dass der Graph
-   * gegen die Tabelle getauscht wird (Issue #10).
+   * Globaler Ansichtsmodus (Issue #30) — Graph oder Tabelle, umgeschaltet über
+   * die Kopfleiste. Bewusst unabhängig von `selectedNodeId`/`selectedPositionId`:
+   * eine Sammel-Bubble oder Position lässt sich im Graphen anwählen, ohne dass
+   * die Ansicht wechselt (Issue #10). Nur `openInTable` und `showGraph`
+   * wechseln den Modus gezielt.
    */
-  centerMode: CenterMode;
+  viewMode: ViewMode;
 }
 
 export type ViewerAction =
@@ -58,7 +60,7 @@ export type ViewerAction =
   | { type: 'resetFilters' }
   | { type: 'hideMode'; value: HideMode }
   | { type: 'sizeMode'; value: SizeModeId }
-  | { type: 'selectNode'; id: string | null; open?: boolean }
+  | { type: 'selectNode'; id: string | null }
   | { type: 'selectPosition'; nodeId: string | null; positionId: string | null }
   | { type: 'hover'; id: string | null }
   /** Ohne `open` umschalten, mit `open` gezielt auf- bzw. zuklappen. */
@@ -66,6 +68,9 @@ export type ViewerAction =
   | { type: 'expandAll' }
   | { type: 'collapseAll' }
   | { type: 'toggleCluster'; id: string }
+  | { type: 'setViewMode'; mode: ViewMode }
+  /** Knoten wählen und gezielt in die Tabelle wechseln (Tabellensymbol im Graphen). */
+  | { type: 'openInTable'; id: string | null }
   | { type: 'showGraph' }
   | { type: 'back' };
 
@@ -82,7 +87,7 @@ export const INITIAL_VIEWER_STATE: ViewerState = {
   hoveredNodeId: null,
   expanded: EMPTY_SET,
   openClusters: EMPTY_SET,
-  centerMode: 'graph',
+  viewMode: 'graph',
 };
 
 export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerState {
@@ -120,20 +125,9 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     case 'sizeMode':
       return { ...state, sizeMode: action.value };
     case 'selectNode':
-      return {
-        ...state,
-        selectedNodeId: action.id,
-        selectedPositionId: null,
-        centerMode:
-          action.id === null ? 'graph' : action.open === true ? 'table' : state.centerMode,
-      };
+      return { ...state, selectedNodeId: action.id, selectedPositionId: null };
     case 'selectPosition':
-      return {
-        ...state,
-        selectedNodeId: action.nodeId,
-        selectedPositionId: action.positionId,
-        centerMode: action.positionId === null ? state.centerMode : 'table',
-      };
+      return { ...state, selectedNodeId: action.nodeId, selectedPositionId: action.positionId };
     case 'hover':
       return { ...state, hoveredNodeId: action.id };
     case 'toggleExpanded': {
@@ -160,13 +154,25 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
       if (!openClusters.delete(action.id)) openClusters.add(action.id);
       return { ...state, openClusters };
     }
+    case 'setViewMode':
+      return { ...state, viewMode: action.mode };
+    case 'openInTable':
+      return {
+        ...state,
+        selectedNodeId: action.id,
+        selectedPositionId: null,
+        viewMode: 'table',
+      };
     case 'showGraph':
       // Auswahl bleibt stehen — der Graph zeigt sie weiter hervorgehoben.
-      return { ...state, centerMode: 'graph' };
+      return { ...state, viewMode: 'graph' };
     case 'back':
+      // Der Ansichtsmodus ist jetzt eine bewusste, dauerhafte Wahl (Issue #30)
+      // statt eines Abstechers von der Auswahl — Escape wechselt ihn nicht
+      // mehr, sondern nimmt nur die Auswahl schrittweise zurück.
       if (state.selectedPositionId !== null) return { ...state, selectedPositionId: null };
-      if (state.centerMode === 'table') return { ...state, centerMode: 'graph' };
-      return { ...state, selectedNodeId: null };
+      if (state.selectedNodeId !== null) return { ...state, selectedNodeId: null };
+      return state;
     default:
       return state;
   }

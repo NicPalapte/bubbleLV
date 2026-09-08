@@ -250,7 +250,7 @@ export function PositionsTable({ root }: { root: LVNode }) {
           onClick={() =>
             parent === null
               ? dispatch({ type: 'showGraph' })
-              : dispatch({ type: 'selectNode', id: parent.id, open: true })
+              : dispatch({ type: 'selectNode', id: parent.id })
           }
           title={parent === null ? 'Zurück zum Graphen' : 'Eine Ebene höher'}
           aria-label={parent === null ? 'Zurück zum Graphen' : 'Eine Ebene höher'}

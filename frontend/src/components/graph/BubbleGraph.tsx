@@ -4,11 +4,11 @@
 // Dokument-Knoten und das Demo-Los entfallen (out of scope).
 //
 // Lokal bleibt nur der Ausschnitt (Pan/Zoom): er ändert sich beim Ziehen pro
-// Frame und würde als Context-State die ganze Seite neu rendern. Damit er den
-// Abstecher in die Tabelle überlebt, bleibt die Komponente dort montiert und
-// wird nur verborgen (Issue #19, siehe ViewerPage). Verborgen ruht das Layout
-// (`active`) — sonst würde jeder Tastendruck in der Tabellensuche den ganzen
-// Graphen im Hintergrund neu rechnen.
+// Frame und würde als Context-State die ganze Seite neu rendern. Graph und
+// Tabelle sind seit Issue #30 zwei getrennte, sich gegenseitig ausschließende
+// Ansichtsmodi (statt eines Abstechers von der Auswahl) — die Komponente wird
+// beim Wechsel in die Tabelle ab- und beim Zurückwechseln neu gemountet; der
+// Ausschnitt geht dabei bewusst verloren, `fit()` passt beim Mounten neu ein.
 
 import {
   useCallback,
@@ -22,6 +22,7 @@ import {
 } from 'react';
 import { BubbleNode, ClusterNode, DotNode } from './BubbleNode';
 import { GraphControls } from './GraphControls';
+import { PositionCard } from './PositionCard';
 import { MAX_ZOOM, MIN_ZOOM, RADII, sizeModeById, sizedRadius } from '../../lib/graph/constants';
 import { cullBounds, isInView } from '../../lib/graph/culling';
 import { layoutRadial, walkParents, type PlacedNode } from '../../lib/graph/layoutRadial';
@@ -45,16 +46,13 @@ function clampZoom(value: number): number {
   return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, value));
 }
 
-const EMPTY_PLACED: ReadonlyMap<string, PlacedNode> = new Map();
-
 interface BubbleGraphProps {
   root: LVNode;
-  /** Verborgen (Tabelle in der Mitte): montiert bleiben, aber nicht rechnen. */
-  active?: boolean;
 }
 
-export function BubbleGraph({ root, active = true }: BubbleGraphProps) {
-  const { sizeMode, hideMode, hoveredNodeId, matches, openNodes, openClusters } = useViewer();
+export function BubbleGraph({ root }: BubbleGraphProps) {
+  const { sizeMode, hideMode, hoveredNodeId, selectedPosition, matches, openNodes, openClusters } =
+    useViewer();
   const dispatch = useViewerDispatch();
 
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -86,8 +84,8 @@ export function BubbleGraph({ root, active = true }: BubbleGraphProps) {
 
   const parents = useMemo(() => walkParents(root), [root]);
   const placed = useMemo(
-    () => (active ? layoutRadial(root, openNodes, openClusters).nodes : EMPTY_PLACED),
-    [active, root, openNodes, openClusters],
+    () => layoutRadial(root, openNodes, openClusters).nodes,
+    [root, openNodes, openClusters],
   );
 
   const filtering = matches.filtering;
@@ -284,7 +282,7 @@ export function BubbleGraph({ root, active = true }: BubbleGraphProps) {
   /** Sprung in die Tabelle — nur über das Tabellensymbol an der Bubble. */
   const openTable = useCallback(
     (node: LVNode): void => {
-      dispatch({ type: 'selectNode', id: node.id, open: true });
+      dispatch({ type: 'openInTable', id: node.id });
     },
     [dispatch],
   );
@@ -292,12 +290,15 @@ export function BubbleGraph({ root, active = true }: BubbleGraphProps) {
   const openNode = useCallback(
     (node: LVNode): void => {
       if (node.kind === 'position') {
+        // Öffnet die schwebende Positionskarte über dem Canvas statt in die
+        // Tabelle zu springen (Issue #30) — `selectedPosition` treibt die
+        // Karte in ViewerPage, solange der Graph der aktive Ansichtsmodus ist.
         const parent = parents.get(node.id) ?? null;
         dispatch({ type: 'selectPosition', nodeId: parent?.id ?? null, positionId: node.id });
         return;
       }
-      // Sammel-Bubbles öffnen bzw. schließen sich im Graphen und wandern ins
-      // Eigenschaften-Panel; die Mitte bleibt der Graph (Issue #10).
+      // Sammel-Bubbles öffnen bzw. schließen sich im Graphen; die Ansicht
+      // bleibt der Graph (Issue #10).
       dispatch({ type: 'selectNode', id: node.id });
       if (node.children.length > 0) toggleCollapse(node.id);
     },
@@ -317,7 +318,7 @@ export function BubbleGraph({ root, active = true }: BubbleGraphProps) {
         entry.clusterOf === null ? null : (placed.get(entry.clusterOf)?.node ?? null);
       while (current !== null) {
         if (current.kind === 'section' || current.kind === 'lot') {
-          dispatch({ type: 'selectNode', id: current.id, open: true });
+          dispatch({ type: 'openInTable', id: current.id });
           return;
         }
         current = parents.get(current.id) ?? null;
@@ -542,6 +543,25 @@ export function BubbleGraph({ root, active = true }: BubbleGraphProps) {
       : `${title}, ${formatCount(node.positionCount)} Positionen`;
   }, [focusedEntry]);
 
+  // ── Hover-Tooltip: HTML statt SVG-Text, damit der Kurztext vollständig und
+  // mit echtem Zeilenumbruch erscheint (Issue #30) — SVG-<text> kann das
+  // nicht. Tastatur-Fokus zeigt denselben Tooltip, wie schon der Fokusring.
+  const tooltipId = hoveredNodeId ?? (graphFocused ? focusedId : null);
+  const tooltipEntry = tooltipId === null ? undefined : placed.get(tooltipId);
+  const tooltipPosition =
+    tooltipEntry !== undefined && tooltipEntry.tier === 'position'
+      ? (tooltipEntry.node?.position ?? null)
+      : null;
+  const tooltipRadius =
+    tooltipEntry === undefined ? 0 : (metrics.get(tooltipEntry.id)?.radius ?? RADII.position);
+  const tooltipLeft =
+    tooltipEntry === undefined
+      ? 0
+      : view.tx + tooltipEntry.cx * view.k + tooltipRadius * view.k + 10;
+  const tooltipTop = tooltipEntry === undefined ? 0 : view.ty + tooltipEntry.cy * view.k - 14;
+
+  const closeCard = useCallback(() => dispatch({ type: 'back' }), [dispatch]);
+
   return (
     <div
       ref={wrapRef}
@@ -657,6 +677,29 @@ export function BubbleGraph({ root, active = true }: BubbleGraphProps) {
           })}
         </g>
       </svg>
+
+      {tooltipPosition !== null && (
+        <div
+          className="pointer-events-none absolute z-[6] max-w-[260px] border border-line2 bg-ink px-[8px] py-[6px] font-mono text-[10px] leading-[1.4] text-white"
+          style={{
+            left: Math.min(Math.max(0, tooltipLeft), Math.max(0, w - 268)),
+            top: Math.min(Math.max(0, tooltipTop), Math.max(0, h - 40)),
+            whiteSpace: 'normal',
+            wordBreak: 'break-word',
+            boxShadow: 'var(--shadow-popover)',
+          }}
+        >
+          {tooltipPosition.shortText}
+        </div>
+      )}
+
+      {selectedPosition !== null && selectedPosition.position !== null && (
+        <PositionCard
+          node={selectedPosition}
+          position={selectedPosition.position}
+          onClose={closeCard}
+        />
+      )}
 
       <GraphControls
         zoom={view.k}

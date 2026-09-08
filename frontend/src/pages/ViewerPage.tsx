@@ -1,6 +1,8 @@
-// 3-Spalten-Layout: Tree (links) · Graph/Tabelle (Mitte) · Eigenschaften (rechts).
-// Alle Daten stammen aus der lokalen Pipeline (Datei → Parser → Klassifizierung →
-// Baum); nichts wird geladen oder persistiert.
+// Zwei Ansichtsmodi (Issue #30): Graph im Vollbild oder die klassische
+// 3-Spalten-Tabellenansicht (Tree · Tabelle · Eigenschaften) — umgeschaltet
+// über den Schalter in der Kopfleiste. Alle Daten stammen aus der lokalen
+// Pipeline (Datei → Parser → Klassifizierung → Baum); nichts wird geladen
+// oder persistiert.
 
 import { useEffect, useState } from 'react';
 import { FilterStrip } from '../components/filter/FilterStrip';
@@ -20,12 +22,11 @@ const TREE_WIDTH = 236;
 const PROPS_WIDTH = 320;
 
 export function ViewerPage() {
-  const { tree, selectedNode, centerMode } = useViewer();
+  const { tree, selectedNode, viewMode } = useViewer();
   const dispatch = useViewerDispatch();
   const [leftWidth, setLeftWidth] = useState(TREE_WIDTH);
   const [rightWidth, setRightWidth] = useState(PROPS_WIDTH);
   const [treeCollapsed, setTreeCollapsed] = useState(false);
-  const showTable = centerMode === 'table' && selectedNode !== null;
 
   // ESC geht eine Ebene zurück — wie im Design.
   useEffect(() => {
@@ -42,39 +43,42 @@ export function ViewerPage() {
         <TopBar />
         <FilterStrip />
       </header>
-      <main aria-label="LV-Ansicht" className="flex flex-1 overflow-hidden">
-        <Tree
-          width={leftWidth}
-          collapsed={treeCollapsed}
-          onToggleCollapsed={() => setTreeCollapsed((value) => !value)}
-        />
-        {!treeCollapsed && (
-          <ResizeHandle value={leftWidth} onChange={setLeftWidth} min={180} max={460} />
-        )}
 
-        <div className="relative min-w-0 flex-1 overflow-hidden bg-paper">
-          {tree === null ? (
-            <FileDropzone />
-          ) : (
-            <>
-              {/*
-                Der Graph bleibt beim Abstecher in die Tabelle montiert und wird
-                nur verborgen — sonst ginge sein Ausschnitt (Pan/Zoom) verloren
-                und man käme auf den Startzustand zurück (Issue #19). `active`
-                legt ihn währenddessen schlafen.
-              */}
-              <div className="absolute inset-0" style={{ display: showTable ? 'none' : undefined }}>
-                <BubbleGraph root={tree} active={!showTable} />
-                <GraphHeader root={tree} />
-              </div>
-              {showTable && <PositionsTable root={selectedNode} />}
-            </>
+      {tree === null && (
+        <main aria-label="LV-Ansicht" className="relative flex-1 overflow-hidden bg-paper">
+          <FileDropzone />
+        </main>
+      )}
+
+      {tree !== null && viewMode === 'graph' && (
+        // Vollbild-Graph: die Baumspalte entfällt, die Eigenschaften wandern
+        // in die schwebende Positionskarte (PositionCard in BubbleGraph) —
+        // nur die Kopfleiste mit Suche/Filtern bleibt bestehen.
+        <main aria-label="Bubble-Graph" className="relative flex-1 overflow-hidden bg-paper">
+          <BubbleGraph root={tree} />
+          <GraphHeader root={tree} />
+        </main>
+      )}
+
+      {tree !== null && viewMode === 'table' && (
+        <main aria-label="LV-Tabelle" className="flex flex-1 overflow-hidden">
+          <Tree
+            width={leftWidth}
+            collapsed={treeCollapsed}
+            onToggleCollapsed={() => setTreeCollapsed((value) => !value)}
+          />
+          {!treeCollapsed && (
+            <ResizeHandle value={leftWidth} onChange={setLeftWidth} min={180} max={460} />
           )}
-        </div>
 
-        <ResizeHandle value={rightWidth} onChange={setRightWidth} min={260} max={560} sign={-1} />
-        <PropertiesPanel width={rightWidth} />
-      </main>
+          <div className="relative min-w-0 flex-1 overflow-hidden bg-paper">
+            <PositionsTable root={selectedNode ?? tree} />
+          </div>
+
+          <ResizeHandle value={rightWidth} onChange={setRightWidth} min={260} max={560} sign={-1} />
+          <PropertiesPanel width={rightWidth} />
+        </main>
+      )}
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { BubbleLogo } from '../ui/BubbleLogo';
 import { FacetButton } from '../filter/FacetButton';
 import { FilterOverflowRow, type OverflowItem } from '../filter/FilterOverflowRow';
 import { RangeButton } from '../filter/RangeButton';
+import { SegmentedControl } from '../ui/SegmentedControl';
 import { FACETS } from '../../lib/facets';
 import { countActiveFilters } from '../../lib/matchPos';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
@@ -28,8 +29,13 @@ function quantityOf(position: PositionSummary): number | null {
   return position.quantity;
 }
 
+const VIEW_MODES = [
+  { value: 'graph', label: 'Graph', title: 'Bubble-Graph, Vollbild' },
+  { value: 'table', label: 'Tabelle', title: 'Baum, Tabelle und Eigenschaften' },
+] as const;
+
 export function TopBar() {
-  const { lv, positionNodes, filters, search } = useViewer();
+  const { lv, positionNodes, filters, search, viewMode } = useViewer();
   const dispatch = useViewerDispatch();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -159,6 +165,16 @@ export function TopBar() {
           <span className="border border-line px-[5px] font-mono text-[9px] text-mute">/</span>
         </div>
       </div>
+      {loaded && (
+        <div className="flex items-center border-r border-line px-[12px]">
+          <SegmentedControl
+            label="Ansicht"
+            options={VIEW_MODES}
+            value={viewMode}
+            onChange={(value) => dispatch({ type: 'setViewMode', mode: value as typeof viewMode })}
+          />
+        </div>
+      )}
       {loaded && (
         <div className="flex min-w-0 flex-1 items-center gap-[6px] px-[8px]">
           <span className="mr-[2px] shrink-0 font-mono text-[8px] tracking-[0.6px] text-mute">

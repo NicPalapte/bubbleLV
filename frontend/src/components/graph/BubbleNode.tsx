@@ -183,22 +183,6 @@ export function BubbleNode(props: BubbleProps) {
             {truncate(node.code, 9)}
           </text>
         )}
-        {active && (
-          <g transform={`translate(${radius + 6},-11)`}>
-            <rect
-              x={0}
-              y={0}
-              width={Math.max(60, truncate(title, 36).length * 5.5 + 16)}
-              height={22}
-              fill="var(--ink)"
-              rx="2"
-              opacity="0.95"
-            />
-            <text x={8} y={14.5} fontFamily="var(--mono)" fontSize="10" fill="#fff">
-              {truncate(title, 36)}
-            </text>
-          </g>
-        )}
       </g>
     );
   }
