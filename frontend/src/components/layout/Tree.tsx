@@ -134,10 +134,11 @@ export function Tree({ width, collapsed, onToggleCollapsed }: TreeProps) {
         });
         return;
       }
-      // Die Baumzeile ist Navigation — sie führt weiter in die Tabelle und
-      // klappt den Knoten auf. Zugeklappt wird nur über das Dreieck, sonst
-      // verschwände beim Anklicken genau das, was man sehen will.
-      dispatch({ type: 'selectNode', id: row.node.id, open: true });
+      // Die Baumzeile navigiert innerhalb der Tabelle (der Baum steht nur in
+      // der Tabellenansicht, Issue #30) und klappt den Knoten auf. Zugeklappt
+      // wird nur über das Dreieck, sonst verschwände beim Anklicken genau
+      // das, was man sehen will.
+      dispatch({ type: 'selectNode', id: row.node.id });
       if (row.hasChildren) dispatch({ type: 'toggleExpanded', id: row.node.id, open: true });
     },
     [dispatch, parents],

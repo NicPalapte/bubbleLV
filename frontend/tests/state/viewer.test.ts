@@ -1,7 +1,9 @@
-// `centerMode` ist eigener Zustand: eine Sammel-Bubble lässt sich anwählen,
-// ohne dass der Graph gegen die Tabelle getauscht wird (Issue #10).
-// Der Aufklapp-Zustand liegt ebenfalls hier — Baum und Graph teilen ihn
-// (Issue #18) und er überlebt den Abstecher in die Tabelle (Issue #19).
+// `viewMode` ist eigener, bewusst gesetzter Zustand (Issue #30): eine
+// Sammel-Bubble oder Position lässt sich anwählen, ohne dass der Ansichts-
+// modus wechselt (Issue #10) — nur `openInTable`/`showGraph`/`setViewMode`
+// tun das gezielt. Der Aufklapp-Zustand liegt ebenfalls hier — Baum und
+// Graph teilen ihn (Issue #18) und er überlebt den Wechsel des Ansichtsmodus
+// (Issue #19).
 
 import { describe, expect, it } from 'vitest';
 import { buildTree } from '../../src/lib/tree/buildTree';
@@ -52,40 +54,47 @@ function loadedState(): ViewerState {
   return viewerReducer(base, { type: 'loaded', lv });
 }
 
-describe('viewerReducer · centerMode', () => {
-  it('wählt einen Knoten an, ohne die Mitte umzuschalten', () => {
+describe('viewerReducer · viewMode', () => {
+  it('wählt einen Knoten an, ohne den Ansichtsmodus zu wechseln', () => {
     const next = viewerReducer(base, { type: 'selectNode', id: 'section:001' });
     expect(next.selectedNodeId).toBe('section:001');
-    expect(next.centerMode).toBe('graph');
+    expect(next.viewMode).toBe('graph');
   });
 
-  it('schaltet nur mit `open` in die Tabelle', () => {
-    const next = viewerReducer(base, { type: 'selectNode', id: 'section:001', open: true });
-    expect(next.centerMode).toBe('table');
+  it('wechselt nur mit `openInTable` in die Tabelle', () => {
+    const next = viewerReducer(base, { type: 'openInTable', id: 'section:001' });
+    expect(next.viewMode).toBe('table');
+    expect(next.selectedNodeId).toBe('section:001');
   });
 
-  it('führt eine angewählte Position in die Tabelle', () => {
+  it('wählt eine Position an, ohne den Ansichtsmodus zu wechseln', () => {
     const next = viewerReducer(base, {
       type: 'selectPosition',
       nodeId: 'section:001',
       positionId: 'position:001.0010',
     });
-    expect(next.centerMode).toBe('table');
+    expect(next.viewMode).toBe('graph');
     expect(next.selectedPositionId).toBe('position:001.0010');
   });
 
-  it('kehrt beim Abwählen des Knotens in den Graphen zurück', () => {
-    const table = viewerReducer(base, { type: 'selectNode', id: 'section:001', open: true });
-    expect(viewerReducer(table, { type: 'selectNode', id: null }).centerMode).toBe('graph');
+  it('wechselt den Ansichtsmodus gezielt mit `setViewMode`', () => {
+    const next = viewerReducer(base, { type: 'setViewMode', mode: 'table' });
+    expect(next.viewMode).toBe('table');
+    expect(viewerReducer(next, { type: 'setViewMode', mode: 'graph' }).viewMode).toBe('graph');
   });
 
-  it('geht mit `back` von der Tabelle in den Graphen, ohne die Auswahl zu verlieren', () => {
-    const table = viewerReducer(base, { type: 'selectNode', id: 'section:001', open: true });
+  it('behält den Ansichtsmodus beim Abwählen des Knotens', () => {
+    const table = viewerReducer(base, { type: 'openInTable', id: 'section:001' });
+    expect(viewerReducer(table, { type: 'selectNode', id: null }).viewMode).toBe('table');
+  });
+
+  it('nimmt mit `back` nur die Auswahl zurück, nicht den Ansichtsmodus', () => {
+    const table = viewerReducer(base, { type: 'openInTable', id: 'section:001' });
     const back = viewerReducer(table, { type: 'back' });
-    expect(back.centerMode).toBe('graph');
-    expect(back.selectedNodeId).toBe('section:001');
-    // Ein zweites Mal hebt dann die Auswahl auf.
-    expect(viewerReducer(back, { type: 'back' }).selectedNodeId).toBeNull();
+    expect(back.viewMode).toBe('table');
+    expect(back.selectedNodeId).toBeNull();
+    // Ohne Auswahl tut ein weiteres `back` nichts mehr.
+    expect(viewerReducer(back, { type: 'back' })).toBe(back);
   });
 
   it('kehrt mit `showGraph` in einem Schritt zum Graphen zurück', () => {
@@ -95,13 +104,13 @@ describe('viewerReducer · centerMode', () => {
       positionId: 'position:001.004.0010',
     });
     const graph = viewerReducer(deep, { type: 'showGraph' });
-    expect(graph.centerMode).toBe('graph');
+    expect(graph.viewMode).toBe('graph');
     // Die Auswahl bleibt stehen — der Graph zeigt sie weiter hervorgehoben.
     expect(graph.selectedNodeId).toBe('section:001.004');
     expect(graph.selectedPositionId).toBe('position:001.004.0010');
   });
 
-  it('löst mit `back` zuerst die Position, dann die Ansicht', () => {
+  it('löst mit `back` zuerst die Position, dann den Knoten — der Ansichtsmodus bleibt', () => {
     const picked = viewerReducer(base, {
       type: 'selectPosition',
       nodeId: 'section:001',
@@ -109,8 +118,11 @@ describe('viewerReducer · centerMode', () => {
     });
     const first = viewerReducer(picked, { type: 'back' });
     expect(first.selectedPositionId).toBeNull();
-    expect(first.centerMode).toBe('table');
-    expect(viewerReducer(first, { type: 'back' }).centerMode).toBe('graph');
+    expect(first.selectedNodeId).toBe('section:001');
+    expect(first.viewMode).toBe('graph');
+    const second = viewerReducer(first, { type: 'back' });
+    expect(second.selectedNodeId).toBeNull();
+    expect(second.viewMode).toBe('graph');
   });
 });
 
@@ -162,7 +174,7 @@ describe('viewerReducer · Aufklapp-Zustand', () => {
       type: 'toggleCluster',
       id: section,
     });
-    const table = viewerReducer(opened, { type: 'selectNode', id: section, open: true });
+    const table = viewerReducer(opened, { type: 'openInTable', id: section });
     const back = viewerReducer(table, { type: 'showGraph' });
 
     expect(back.expanded).toBe(opened.expanded);
