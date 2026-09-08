@@ -20,9 +20,10 @@ interface FacetButtonProps {
 
 export function FacetButton({ facet, positions, active, onChange }: FacetButtonProps) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
   useDismiss(
-    ref,
+    [anchorRef, popoverRef],
     open,
     useCallback(() => setOpen(false), []),
   );
@@ -50,11 +51,11 @@ export function FacetButton({ facet, positions, active, onChange }: FacetButtonP
   };
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={anchorRef}>
       <Chip on={active.size > 0} count={active.size} onClick={() => setOpen((o) => !o)}>
         {facet.label} <span className="-ml-[2px] text-mute">▾</span>
       </Chip>
-      <Popover open={open} width={244}>
+      <Popover ref={popoverRef} open={open} width={244} anchorRef={anchorRef}>
         <PopoverHead onReset={active.size > 0 ? () => onChange(new Set()) : undefined}>
           {facet.label}
         </PopoverHead>

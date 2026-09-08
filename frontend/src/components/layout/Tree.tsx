@@ -279,7 +279,11 @@ export function Tree({ width, collapsed, onToggleCollapsed }: TreeProps) {
           }}
           className="-ml-[2px] block w-full cursor-pointer border-none bg-transparent pl-[8px] text-left"
         >
-          <div className="overflow-hidden text-ellipsis whitespace-nowrap font-sans text-[15px] font-bold text-ink">
+          <div
+            role="heading"
+            aria-level={1}
+            className="overflow-hidden text-ellipsis whitespace-nowrap font-sans text-[15px] font-bold text-ink"
+          >
             {lv?.projectName ?? lv?.fileName ?? 'Kein LV geladen'}
           </div>
           <div className="mt-[3px] font-mono text-[9px] text-mute">

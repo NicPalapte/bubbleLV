@@ -19,9 +19,10 @@ interface RangeButtonProps {
 
 export function RangeButton({ label, positions, getValue, active, onChange }: RangeButtonProps) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
   useDismiss(
-    ref,
+    [anchorRef, popoverRef],
     open,
     useCallback(() => setOpen(false), []),
   );
@@ -46,7 +47,7 @@ export function RangeButton({ label, positions, getValue, active, onChange }: Ra
   const span = Math.max(1, max - min);
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={anchorRef}>
       <Chip on={isActive} onClick={() => setOpen((o) => !o)}>
         {label}
         {isActive && (
@@ -58,7 +59,7 @@ export function RangeButton({ label, positions, getValue, active, onChange }: Ra
           ▾
         </span>
       </Chip>
-      <Popover open={open} width={260}>
+      <Popover ref={popoverRef} open={open} width={260} anchorRef={anchorRef}>
         <PopoverHead onReset={isActive ? () => onChange(null) : undefined}>{label}</PopoverHead>
         <div className="p-[14px]">
           <div className="mb-[6px] flex justify-between text-ink">

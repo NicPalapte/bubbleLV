@@ -19,7 +19,7 @@
 
   --ink: #1a2533;
   --dim: #6b7d92;
-  --mute: #97a6ba;
+  --mute: #5f7184; /* ≥4.5:1 auf --white und --paper (WCAG AA) */
 
   --blue: #2563eb;
   --blueS: #dbe7fd;

@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Chip } from '../ui/Chip';
 import { BubbleLogo } from '../ui/BubbleLogo';
 import { FacetButton } from '../filter/FacetButton';
+import { FilterOverflowRow, type OverflowItem } from '../filter/FilterOverflowRow';
 import { RangeButton } from '../filter/RangeButton';
 import { FACETS } from '../../lib/facets';
 import { countActiveFilters } from '../../lib/matchPos';
@@ -77,6 +78,49 @@ export function TopBar() {
   const activeCount = countActiveFilters(filters);
   const loaded = lv !== null;
 
+  const filterItems: OverflowItem[] = useMemo(() => {
+    if (!loaded) return [];
+    const facetItems: OverflowItem[] = FACETS.map((facet) => ({
+      key: facet.id,
+      active: (filters.facets[facet.id]?.size ?? 0) > 0,
+      node: (
+        <FacetButton
+          facet={facet}
+          positions={positions}
+          active={filters.facets[facet.id] ?? EMPTY_SELECTION}
+          onChange={(values) => dispatch({ type: 'setFacet', facetId: facet.id, values })}
+        />
+      ),
+    }));
+    const items: OverflowItem[] = [
+      ...facetItems,
+      {
+        key: 'menge',
+        active: filters.menge !== null,
+        node: (
+          <RangeButton
+            label="Menge"
+            positions={positions}
+            getValue={quantityOf}
+            active={filters.menge}
+            onChange={(range) => dispatch({ type: 'setMenge', range })}
+          />
+        ),
+      },
+    ];
+    if (activeCount > 0) {
+      items.push({
+        key: 'reset',
+        node: (
+          <Chip dashed onClick={() => dispatch({ type: 'resetFilters' })}>
+            ✕ {activeCount} zurücksetzen
+          </Chip>
+        ),
+      });
+    }
+    return items;
+  }, [loaded, positions, filters, activeCount, dispatch]);
+
   return (
     <div className="relative z-[5] flex h-[54px] shrink-0 items-stretch border-b border-line bg-white">
       <div className="flex items-center border-r border-line px-[18px]">
@@ -115,34 +159,14 @@ export function TopBar() {
           <span className="border border-line px-[5px] font-mono text-[9px] text-mute">/</span>
         </div>
       </div>
-      <div className="flex flex-1 items-center gap-[6px] overflow-visible px-[8px]">
-        {loaded && (
-          <>
-            <span className="mr-[2px] font-mono text-[8px] tracking-[0.6px] text-mute">FILTER</span>
-            {FACETS.map((facet) => (
-              <FacetButton
-                key={facet.id}
-                facet={facet}
-                positions={positions}
-                active={filters.facets[facet.id] ?? EMPTY_SELECTION}
-                onChange={(values) => dispatch({ type: 'setFacet', facetId: facet.id, values })}
-              />
-            ))}
-            <RangeButton
-              label="Menge"
-              positions={positions}
-              getValue={quantityOf}
-              active={filters.menge}
-              onChange={(range) => dispatch({ type: 'setMenge', range })}
-            />
-            {activeCount > 0 && (
-              <Chip dashed onClick={() => dispatch({ type: 'resetFilters' })}>
-                ✕ {activeCount} zurücksetzen
-              </Chip>
-            )}
-          </>
-        )}
-      </div>
+      {loaded && (
+        <div className="flex min-w-0 flex-1 items-center gap-[6px] px-[8px]">
+          <span className="mr-[2px] shrink-0 font-mono text-[8px] tracking-[0.6px] text-mute">
+            FILTER
+          </span>
+          <FilterOverflowRow items={filterItems} />
+        </div>
+      )}
       {loaded && (
         <div className="flex items-center border-l border-line px-[18px]">
           <Chip onClick={() => dispatch({ type: 'clear' })} title="LV schließen und neu laden">
