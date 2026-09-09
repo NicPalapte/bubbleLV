@@ -53,7 +53,8 @@ langen Fließtext. Gleichzeitig darf das weder endlos laufen noch unnötig Geld 
 ## Folgen
 
 - Einmalig durch den Repo-Owner: Secret `CLAUDE_CODE_OAUTH_TOKEN` anlegen
-  (Anleitung: `docs/setup/ci-und-agenten.md`). Ohne das Secret schlägt der Review-Schritt fehl.
+  (Anleitung: `docs/setup/ci-und-agenten.md`). Fehlt das Secret, überspringt der
+  Workflow das Review mit einem Hinweis – der Pull Request wird dadurch nicht rot.
 - Der Agent bewertet gegen `.claude/CLAUDE.md`. Ändern sich die Regeln dort, ändert sich
   automatisch der Maßstab des Reviews – die Datei ist damit die zentrale Stellschraube.
 - Formatierung und Stil meldet der Agent bewusst nicht; das erledigen ESLint und Prettier.

@@ -65,8 +65,23 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ steps.ctx.outputs.pr }}
+          HAS_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
         run: |
           set -euo pipefail
+
+          # Ohne Secret kein Review – der Pull Request soll deswegen aber nicht rot
+          # werden, sondern nur einen Hinweis bekommen.
+          if [ "$HAS_TOKEN" != "true" ]; then
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "### Review übersprungen"
+              echo
+              echo "Das Secret \`CLAUDE_CODE_OAUTH_TOKEN\` fehlt."
+              echo "Anleitung: \`docs/setup/ci-und-agenten.md\`, Schritt 1."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
           counter=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments?per_page=100" --paginate \
             | jq -s --arg marker "$COUNTER_MARKER" \
                 '[flatten[] | select(.body | contains($marker))] | first // {}')

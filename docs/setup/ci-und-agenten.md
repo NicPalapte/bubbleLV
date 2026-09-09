@@ -16,7 +16,8 @@ Was danach automatisch passiert:
 
 ## Schritt 1 – Zugang für den Review-Agenten anlegen
 
-Ohne diesen Schritt läuft alles außer dem Review.
+Ohne diesen Schritt läuft alles außer dem Review. Der Review-Workflow bricht dann nicht
+ab, sondern überspringt sich selbst mit einem Hinweis – Pull Requests bleiben grün.
 
 1. Im Terminal (dort, wo Claude Code installiert ist) ausführen:
    ```bash
@@ -104,7 +105,8 @@ Workflows auf dem starken Modell. Die getroffene Wahl steht im Log des Laufs unt
 
 | Symptom                                        | Wahrscheinliche Ursache                                             |
 |------------------------------------------------|---------------------------------------------------------------------|
-| Review-Schritt bricht mit Anmeldefehler ab      | Secret fehlt oder Token abgelaufen → Schritt 1                       |
+| Kein Review, im Lauf steht „Review übersprungen" | Secret `CLAUDE_CODE_OAUTH_TOKEN` fehlt → Schritt 1                   |
+| Review-Schritt bricht mit Anmeldefehler ab      | Token abgelaufen → Schritt 1 wiederholen                             |
 | Preview-Link führt auf eine leere weiße Seite   | Pages-Quelle noch nicht auf `gh-pages` umgestellt → Schritt 2         |
 | Preview-Workflow: „Permission denied“           | Schreibrechte für Workflows → Schritt 3                              |
 | Live-Seite bleibt auf altem Stand               | Pages-Quelle noch nicht umgestellt → Schritt 2                       |
