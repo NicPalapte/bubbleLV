@@ -1,6 +1,6 @@
-/* Bubble — Typography. Webfonts come from Google Fonts (no local binaries).
-   Add to <head>:
-   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet"> */
+/* Bubble — Typography. Webfonts are self-hosted via @fontsource/ibm-plex-mono
+   and @fontsource/space-grotesk (imported in frontend/src/main.tsx), not
+   loaded from Google Fonts. */
 :root{
   --mono:'IBM Plex Mono', ui-monospace, monospace;
   --sans:'Space Grotesk', ui-sans-serif, system-ui, sans-serif;

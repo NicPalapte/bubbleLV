@@ -30,8 +30,9 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
   Klassifizieren, Filtern, Rendern – läuft im Browser und darf keinen eigenen
   Server voraussetzen. Fachdaten verlassen den Browser nie.
 - Statische Fremd-Assets (Webfonts, npm-Pakete, CDN-Ressourcen) sind **erlaubt**;
-  sie transportieren keine Nutzdaten. Ausgeliefert werden u. a. IBM Plex Mono und
-  Space Grotesk über Google Fonts (`frontend/index.html`).
+  sie transportieren keine Nutzdaten. IBM Plex Mono und Space Grotesk werden über
+  `@fontsource/*` selbst gehostet und im Bundle ausgeliefert (`frontend/src/main.tsx`) –
+  kein Fremdaufruf an Google Fonts.
 - **Kein `localStorage`/`sessionStorage`/Cookies für Fachdaten.** Reiner UI-Zustand
   (Auswahl, Zoom, aktive Filter) darf in React-State/Context leben, muss aber einen
   Reload nicht überleben.
