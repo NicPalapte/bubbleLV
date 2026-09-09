@@ -1,0 +1,59 @@
+name: PR-Preview
+
+# Was macht dieser Workflow?
+# Jeder Pull Request bekommt eine eigene, klickbare Version der App unter
+#   https://<owner>.github.io/<repo>/pr-preview/pr-<nummer>/
+# Der Link wird automatisch als Kommentar in den PR geschrieben und beim Schließen
+# des PRs samt Dateien wieder entfernt.
+#
+# Die Previews liegen im Branch `gh-pages` im Ordner `pr-preview/`; der Live-Stand von
+# `main` liegt im Wurzelverzeichnis desselben Branches (siehe deploy-pages.yml).
+#
+# Einrichtung: docs/setup/ci-und-agenten.md · Begründung: docs/decisions/0002-pr-preview.md
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, closed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# Pro Branch nur eine Preview-Aktion gleichzeitig, sonst überschreiben sich Deployments.
+concurrency: preview-${{ github.ref }}
+
+jobs:
+  preview:
+    # Nur Branches aus diesem Repo: Fork-PRs dürfen nicht nach gh-pages schreiben.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        if: github.event.action != 'closed'
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Abhängigkeiten installieren
+        if: github.event.action != 'closed'
+        working-directory: frontend
+        run: npm ci
+
+      # Die Preview liegt in einem Unterordner, deshalb muss die Base-URL diesen Pfad
+      # enthalten – sonst suchen JS/CSS im Wurzelverzeichnis und die Seite bleibt leer.
+      - name: App bauen
+        if: github.event.action != 'closed'
+        working-directory: frontend
+        run: |
+          npm run build -- \
+            --base=/${{ github.event.repository.name }}/pr-preview/pr-${{ github.event.number }}/
+
+      - name: Preview veröffentlichen bzw. aufräumen
+        uses: rossjrw/pr-preview-action@v1
+        with:
+          source-dir: frontend/dist
+          preview-branch: gh-pages
+          umbrella-dir: pr-preview

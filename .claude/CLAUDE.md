@@ -11,6 +11,7 @@ gespeichert – die Datei verlässt den Browser nie, ein Reload verwirft den Sta
 Vollständige Projekt-/Ordnerbeschreibung: @README.md
 Scope: @docs/mvp-scope.md · Plan: @docs/implementation-plan.md
 Architektur: @docs/architecture/pipeline.md · @docs/architecture/frontend.md · @docs/architecture/data-model.md
+Entscheidungen: @docs/decisions/README.md · Einrichtung CI/Agenten: @docs/setup/ci-und-agenten.md
 
 ## Bash-Befehle
 - `cd frontend && npm run dev` – App lokal starten
@@ -97,6 +98,46 @@ Multi-Tenant, GAEB-Export, LLM-Klassifizierung. Details → @docs/mvp-scope.md #
 - Kein Request, der Fachdaten irgendwohin schickt – bei Unsicherheit nachfragen,
   bevor ein Feature einen eigenen Server voraussetzt. Statische Fremd-Assets
   (Fonts, CDN-Pakete) sind davon nicht betroffen.
+
+## Sprache & Zielgruppen
+Der Repo-Owner ist **kein Software-Experte**. Zwei Textsorten, zwei Stile – Begründung:
+@docs/decisions/0003-sprache-und-dokumentation.md
+
+**Texte für den Owner** (Chat-Antworten, Commit-Messages, PR-Beschreibungen, `README.md`,
+`docs/decisions/`, `docs/setup/`, Kommentare in `.github/workflows/`):
+- Einfache Sprache, kurze Sätze, Stichpunkte statt Absätze
+- Ergebnis zuerst, dann der Weg dorthin
+- Fachbegriff nur wenn nötig – dann beim ersten Vorkommen in einem Halbsatz erklären
+  (nicht erklären: GAEB, LV, Position, Los, iTwo – das ist sein Fachgebiet)
+- Manuelle Schritte des Owners explizit benennen, inkl. Folge, wenn er sie auslässt
+- Keine Statusfloskeln, keine Wiederholung der Aufgabenstellung
+
+**Texte für die KI** (`.claude/CLAUDE.md`, `.claude/commands/`, `.claude/skills/`,
+Prompts in Workflows):
+- Regeln als Aufzählung, knapp und eindeutig, keine Erzählform
+- Exakte Pfade und Symbolnamen statt Umschreibungen
+- Verbote als Verbot formulieren + erlaubte Alternative nennen
+- Keine Höflichkeitsfloskeln, keine Redundanz
+
+## Dokumentation
+- Weichenstellungen gehören nach `docs/decisions/` – eine nummerierte Datei je
+  Entscheidung, Vorlage und Kriterien in @docs/decisions/README.md
+- Vor Abschluss einer Aufgabe prüfen: neue Abhängigkeit, neuer Workflow, geänderte
+  Architekturregel oder verworfene Alternative? → Eintrag anlegen + Übersichtstabelle
+  ergänzen
+- Getroffene Entscheidungen nicht umschreiben: Status auf `ersetzt durch NNNN` setzen,
+  neue Datei anlegen
+- Kein Eintrag für Bugfixes, Tests, Umbenennungen, Formatierung
+- Anleitungen für manuelle Schritte des Owners nach `docs/setup/`
+
+## Automatik im Repo (nicht ohne Rückfrage ändern)
+- `.github/workflows/ci.yml` – Lint, Format, Test, Build bei jedem PR
+- `.github/workflows/claude-review.yml` – Review-Agent, max. 3 automatische Läufe je PR
+- `.github/workflows/pr-preview.yml` – Preview-App je PR unter `pr-preview/pr-<nr>/`
+- `.github/workflows/deploy-pages.yml` – `main` → Branch `gh-pages` (Wurzel)
+- `gh-pages` wird ausschließlich von Workflows geschrieben – niemals von Hand committen
+- Der Review-Agent misst am Inhalt dieser Datei; Regeländerungen hier ändern den
+  Review-Maßstab
 
 ## Antwortformat
 Beginne jede neue Komponente mit einem kurzen Implementierungsplan (3–5 Punkte).

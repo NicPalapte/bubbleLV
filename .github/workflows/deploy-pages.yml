@@ -1,5 +1,14 @@
 name: Deploy to GitHub Pages
 
+# Was macht dieser Workflow?
+# Baut die App und schreibt das fertige Bundle in den Branch `gh-pages`.
+# GitHub Pages liefert diesen Branch aus:
+#   https://<owner>.github.io/<repo>/
+#
+# Warum über einen Branch und nicht mehr über das Pages-Artefakt?
+# Nur so können die PR-Previews (pr-preview.yml) im selben Pages-Auftritt unter
+# `pr-preview/pr-<nummer>/` liegen. Siehe docs/decisions/0002-pr-preview.md.
+
 on:
   push:
     branches: [main]
@@ -7,9 +16,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 # Nur ein Deployment gleichzeitig; laufende nicht abbrechen.
 concurrency:
@@ -17,7 +24,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,32 +35,26 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Install dependencies
+      - name: Abhängigkeiten installieren
         working-directory: frontend
         run: npm ci
 
-      - name: Test
+      - name: Tests
         working-directory: frontend
         run: npm test
 
       # Project Pages liegen unter /<repo>/ – die Base kommt aus dem Repo-Namen,
       # damit ein Rename das Deployment nicht bricht. Lokal bleibt die Base "/".
-      - name: Build
+      - name: App bauen
         working-directory: frontend
         run: npm run build -- --base=/${{ github.event.repository.name }}/
 
-      - uses: actions/configure-pages@v5
-
-      - uses: actions/upload-pages-artifact@v3
+      # clean-exclude schützt die PR-Previews: ohne das würde jedes main-Deployment
+      # den Ordner pr-preview/ im gh-pages-Branch mitlöschen.
+      - name: Nach gh-pages veröffentlichen
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          path: frontend/dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          folder: frontend/dist
+          branch: gh-pages
+          clean-exclude: pr-preview/
+          force: false
