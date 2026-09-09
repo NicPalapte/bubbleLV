@@ -269,21 +269,15 @@ describe('Viewer', () => {
     expect(screen.queryByRole('table', { name: 'Positionen' })).not.toBeInTheDocument();
     expect(screen.getByRole('radio', { name: 'Graph' })).toHaveAttribute('aria-checked', 'true');
 
-    // Erster Escape nimmt nur die Positionsauswahl zurück — der Elternabschnitt
-    // bleibt gewählt und zeigt seinerseits eine Karte mit Abschnittsinfos.
-    fireEvent.keyDown(document.body, { key: 'Escape' });
-    await waitFor(() =>
-      expect(
-        screen.queryByText('Baustelleneinrichtung für sämtliche', { exact: false }),
-      ).not.toBeInTheDocument(),
-    );
-    expect(screen.getByRole('button', { name: 'Karte schließen' })).toBeInTheDocument();
-
-    // Zweiter Escape hebt auch die Abschnittsauswahl auf — keine Karte mehr.
+    // Escape schließt die Karte komplett — sie springt nicht auf den
+    // übergeordneten Abschnitt zurück, sondern verschwindet in einem Schritt.
     fireEvent.keyDown(document.body, { key: 'Escape' });
     await waitFor(() =>
       expect(screen.queryByRole('button', { name: 'Karte schließen' })).not.toBeInTheDocument(),
     );
+    expect(
+      screen.queryByText('Baustelleneinrichtung für sämtliche', { exact: false }),
+    ).not.toBeInTheDocument();
   });
 
   it('zeigt einen gewählten Abschnitt im Graphen ebenfalls als schwebende Karte', async () => {

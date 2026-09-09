@@ -568,7 +568,10 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
       : view.tx + tooltipEntry.cx * view.k + tooltipRadius * view.k + 10;
   const tooltipTop = tooltipEntry === undefined ? 0 : view.ty + tooltipEntry.cy * view.k - 14;
 
-  const closeCard = useCallback(() => dispatch({ type: 'back' }), [dispatch]);
+  // Schließt die Karte komplett (X, Klick daneben, Escape) statt nur eine
+  // Ebene zurückzugehen — sonst würde die Positionskarte beim Schließen kurz
+  // auf den übergeordneten Abschnitt zurückspringen, statt zu verschwinden.
+  const closeCard = useCallback(() => dispatch({ type: 'closeSelection' }), [dispatch]);
   // Positionsauswahl hat Vorrang — sie kann neben einem gewählten Abschnitt
   // stehen ('selectPosition' setzt beide IDs), die Karte zeigt aber immer nur
   // eine Ebene.

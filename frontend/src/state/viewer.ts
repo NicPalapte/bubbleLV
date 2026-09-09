@@ -72,7 +72,11 @@ export type ViewerAction =
   /** Knoten wählen und gezielt in die Tabelle wechseln (Tabellensymbol im Graphen). */
   | { type: 'openInTable'; id: string | null }
   | { type: 'showGraph' }
-  | { type: 'back' };
+  | { type: 'back' }
+  /** Schwebende Auswahlkarte im Graphen schließen (X, Klick daneben, Escape
+   *  auf der Karte) — anders als `back` immer komplett, nie nur eine Ebene
+   *  zurück auf den übergeordneten Knoten. */
+  | { type: 'closeSelection' };
 
 export const INITIAL_VIEWER_STATE: ViewerState = {
   lv: null,
@@ -173,6 +177,8 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
       if (state.selectedPositionId !== null) return { ...state, selectedPositionId: null };
       if (state.selectedNodeId !== null) return { ...state, selectedNodeId: null };
       return state;
+    case 'closeSelection':
+      return { ...state, selectedNodeId: null, selectedPositionId: null };
     default:
       return state;
   }
