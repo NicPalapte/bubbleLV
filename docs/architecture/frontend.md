@@ -74,6 +74,10 @@ Die Bausteine unter `components/ui/` sind 1:1-Ports der Referenz-Komponenten aus
 `TreeRow`. Sie arbeiten wie im Skill mit Inline-Styles auf CSS-Variablen — Tailwind
 bleibt für das Seiten-Layout zuständig.
 
+Die `.tsx` hier sind die gültige Fassung, die `.jsx` im Skill bleiben Prototyp-Vorlagen;
+Regeln dazu in `.claude/skills/bubble-design/components/USAGE.md` (§ Source of truth),
+Begründung in [`0004`](../decisions/0004-design-kit-und-frontend.md).
+
 **Nicht portiert:** `MemberAvatar` und `PackageTag` (Zuständigkeit und Vergabepakete
 sind out of scope) sowie `Checkbox` (die Facetten-Zeile bringt ihre eigene mit).
 

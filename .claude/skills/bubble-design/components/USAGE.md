@@ -29,19 +29,49 @@ The prototype in the parent project (`lv-main.jsx`, `lv-graph.jsx`, `lv-vergabe.
 `lv-analytics.jsx`) uses browser-Babel globals instead of imports — same markup, the
 components are just assigned to `window`. Either style works; keep one per file.
 
+## Source of truth
+
+Two copies of these components exist. They serve different purposes — do not merge them.
+
+- `.claude/skills/bubble-design/components/core/*.jsx` — **this kit**. Reference
+  implementations for throwaway prototypes that run on browser-Babel without a build
+  step. Not shipped, not type-checked (outside `frontend/tsconfig.app.json`
+  `include: ["src"]`), not linted (`frontend/eslint.config.js` covers `**/*.{ts,tsx}`).
+- `frontend/src/components/ui/*.tsx` — **the production version**. This is what the app
+  renders and what the Bubble MVP is judged on.
+
+Rules:
+
+- Changing app behavior or appearance → edit the `.tsx` under `frontend/src/components/ui/`.
+  Do not edit the `.jsx` here and expect the app to follow; nothing syncs them.
+- Changing this kit (new primitive, changed prototype markup) → port the change to the
+  `.tsx` twin in the same commit, or state in the commit body why it stays
+  prototype-only.
+- The `.tsx` versions already differ deliberately: ARIA roles on `DataTable`/`TreeRow`,
+  a separate `onToggle` on `TreeRow`, `type="button"` on `Chip`. Do not "fix" those back
+  to match the `.jsx`. Rationale: `docs/architecture/frontend.md` § Design-System and
+  `docs/decisions/0004-design-kit-und-frontend.md`.
+- Never delete a `.jsx` here because a `.tsx` twin exists — the prototypes in
+  `design/claude-design/` and this skill's own output depend on the Babel-compatible
+  form.
+
 ## Inventory
-| Component | File |
-| --- | --- |
-| Chip | `core/Chip.jsx` |
-| StatusPill | `core/StatusPill.jsx` |
-| MemberAvatar | `core/MemberAvatar.jsx` |
-| PanelHeader, BlockLabel | `core/PanelHeader.jsx` |
-| PropField, PropGrid | `core/PropField.jsx` |
-| TreeRow | `core/TreeRow.jsx` |
-| DataTable | `core/DataTable.jsx` |
-| Popover, PopoverHead, PopoverRow | `core/Popover.jsx` |
-| Checkbox | `core/Checkbox.jsx` |
-| SegmentedControl | `core/SegmentedControl.jsx` |
-| PackageTag, PackageDots, packageColors | `core/PackageTag.jsx` |
-| EmptyState | `core/EmptyState.jsx` |
-| BubbleLogo | `core/BubbleLogo.jsx` |
+
+Production paths are relative to `frontend/src/components/ui/`. `—` means deliberately
+not in the app; the reason is binding, see `docs/mvp-scope.md#out-of-scope`.
+
+| Component | Kit file (prototypes) | Production (the app) |
+| --- | --- | --- |
+| Chip | `core/Chip.jsx` | `Chip.tsx` |
+| StatusPill | `core/StatusPill.jsx` | `StatusPill.tsx` |
+| MemberAvatar | `core/MemberAvatar.jsx` | — Zuständigkeit is out of scope |
+| PanelHeader, BlockLabel | `core/PanelHeader.jsx` | `PanelHeader.tsx` |
+| PropField, PropGrid | `core/PropField.jsx` | `PropField.tsx` |
+| TreeRow | `core/TreeRow.jsx` | `TreeRow.tsx` |
+| DataTable | `core/DataTable.jsx` | `DataTable.tsx` |
+| Popover, PopoverHead, PopoverRow | `core/Popover.jsx` | `Popover.tsx` |
+| Checkbox | `core/Checkbox.jsx` | — the facet row brings its own |
+| SegmentedControl | `core/SegmentedControl.jsx` | `SegmentedControl.tsx` |
+| PackageTag, PackageDots, packageColors | `core/PackageTag.jsx` | — Vergabepakete are out of scope |
+| EmptyState | `core/EmptyState.jsx` | `EmptyState.tsx` |
+| BubbleLogo | `core/BubbleLogo.jsx` | `BubbleLogo.tsx` |

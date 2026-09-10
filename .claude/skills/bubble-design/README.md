@@ -20,6 +20,8 @@ No external Figma file or repo was provided; the code is the ground truth.
 - `styles.css` — the single entry point; `@import`s all tokens.
 - `tokens/` — `colors.css`, `typography.css`, `spacing.css`, `elevation.css`, `base.css`.
 - `components/core/` — 13 React primitives (`.jsx` + `.d.ts`), see `components/USAGE.md`.
+  Prototype copies. Ten of them ship as `.tsx` under `frontend/src/components/ui/` —
+  that is the version the app renders. Edit rules: `components/USAGE.md` § Source of truth.
 - `patterns.md` — layout, filtering, selection and panel patterns above component level.
 - `foundations.html` — visual specimen of colors, type, components. Open in a browser.
 - `SKILL.md` — entry point when used as a Claude Code skill.
