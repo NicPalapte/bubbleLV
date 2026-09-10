@@ -6,19 +6,33 @@
 // scrollender/verschachtelter Container hätte ein kind-positioniertes Popover
 // abgeschnitten. Portiert (Grundform) aus
 // .claude/skills/bubble-design/components/core/Popover.jsx.
+//
+// Verschachtelung: ein Popover, das aus einem anderen Popover heraus geöffnet
+// wird (Facetten-Chip im Menü „Weitere Filter“), hängt sich per Portal in das
+// umgebende Popover statt an <body>. Sonst läge es im DOM neben dem äußeren
+// Popover, dessen `useDismiss` würde jeden Klick darin als „außerhalb“ werten
+// und beim mousedown schließen — der Chip wäre weg, bevor der click ankommt,
+// der Filterwert liee sich nicht setzen.
 
 import { createPortal } from 'react-dom';
 import {
+  createContext,
   forwardRef,
+  useCallback,
+  useContext,
   useImperativeHandle,
   useLayoutEffect,
   useRef,
+  useState,
   type ReactNode,
   type RefObject,
 } from 'react';
 
 /** Luft, die zwischen Popover und Fensterrand bleiben soll. */
 const VIEWPORT_MARGIN = 8;
+
+/** Umgebendes Popover, in das ein verschachteltes Popover portiert wird. */
+const PopoverHostContext = createContext<HTMLElement | null>(null);
 
 export interface PopoverProps {
   open: boolean;
@@ -33,7 +47,8 @@ export interface PopoverProps {
 /**
  * `ref` gibt den eigenen (portierten) DOM-Knoten nach außen — der Aufrufer
  * braucht ihn für die Außerhalb-Klick-Erkennung (`useDismiss`), weil das
- * Popover nicht mehr im Anker-Element steckt, sondern an <body> hängt.
+ * Popover nicht mehr im Anker-Element steckt, sondern am Portal-Ziel
+ * (<body> oder dem umgebenden Popover) hängt.
  */
 export const Popover = forwardRef<HTMLDivElement, PopoverProps>(function Popover(
   { open, children, width = 244, align = 'left', anchorRef },
@@ -41,6 +56,15 @@ export const Popover = forwardRef<HTMLDivElement, PopoverProps>(function Popover
 ) {
   const ref = useRef<HTMLDivElement>(null);
   useImperativeHandle(forwardedRef, () => ref.current as HTMLDivElement);
+
+  // Der eigene Knoten als State (nicht nur als Ref): geschachtelte Popover
+  // brauchen ihn als Portal-Ziel, und ein Ref allein löst kein Rendern aus.
+  const [hostNode, setHostNode] = useState<HTMLDivElement | null>(null);
+  const setNode = useCallback((element: HTMLDivElement | null): void => {
+    ref.current = element;
+    setHostNode(element);
+  }, []);
+  const parentHost = useContext(PopoverHostContext);
 
   // Position folgt dem Anker im Viewport statt einem Elternelement — läuft bei
   // jedem Öffnen sowie bei Resize/Scroll neu, weil ein per Portal gehängtes
@@ -74,24 +98,26 @@ export const Popover = forwardRef<HTMLDivElement, PopoverProps>(function Popover
 
   if (!open) return null;
   return createPortal(
-    <div
-      ref={ref}
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        zIndex: 50,
-        minWidth: width,
-        background: 'var(--white)',
-        border: '1px solid var(--line2)',
-        boxShadow: 'var(--shadow-popover)',
-        fontFamily: 'var(--mono)',
-        fontSize: 'var(--fs-meta)',
-      }}
-    >
-      {children}
-    </div>,
-    document.body,
+    <PopoverHostContext.Provider value={hostNode}>
+      <div
+        ref={setNode}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          zIndex: 50,
+          minWidth: width,
+          background: 'var(--white)',
+          border: '1px solid var(--line2)',
+          boxShadow: 'var(--shadow-popover)',
+          fontFamily: 'var(--mono)',
+          fontSize: 'var(--fs-meta)',
+        }}
+      >
+        {children}
+      </div>
+    </PopoverHostContext.Provider>,
+    parentHost ?? document.body,
   );
 });
 
