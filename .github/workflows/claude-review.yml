@@ -24,11 +24,6 @@ permissions:
   issues: write
   id-token: write
 
-# Pro PR läuft nur ein Review; ein neuer Push bricht das alte ab.
-concurrency:
-  group: claude-review-${{ github.event.pull_request.number || github.event.issue.number }}
-  cancel-in-progress: true
-
 env:
   # Obergrenze für automatische Reviews pro Pull Request.
   MAX_AUTO_REVIEWS: 3
@@ -46,6 +41,16 @@ jobs:
        github.event.issue.pull_request != null &&
        contains(github.event.comment.body, '@claude review'))
     runs-on: ubuntu-latest
+    # Pro PR läuft nur ein Review; ein neuer Push bricht das alte ab.
+    # Wichtig: Diese Sperre steht am Job und nicht am ganzen Workflow. Jeder
+    # Kommentar im PR startet den Workflow ebenfalls – auch der Kommentar, den
+    # der Agent am Ende selbst schreibt. Am Workflow hätte dieser Start das noch
+    # laufende Review abgebrochen (Prüfung "review" endete als "cancelled", der
+    # PR blieb auf "unstable" stehen). Am Job greift die Sperre erst, wenn der
+    # Job wirklich läuft – übersprungene Kommentar-Läufe brechen nichts mehr ab.
+    concurrency:
+      group: claude-review-${{ github.event.pull_request.number || github.event.issue.number }}
+      cancel-in-progress: true
     steps:
       - name: Kontext bestimmen
         id: ctx
