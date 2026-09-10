@@ -14,6 +14,8 @@
 //    Offsets statt fester Schrittweite. Beide Höhen werden per unsichtbarer
 //    Messzeile ermittelt statt geraten, damit sie nicht von den CSS-Tokens
 //    abweichen können.
+//  - Pixelbreiten statt Prozent und ein Zieh-Griff je Spaltenkopf (`onResize`,
+//    Issue #41): die letzte Spalte füllt den Rest der Breite.
 
 import {
   Fragment,
@@ -22,14 +24,15 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from 'react';
 
 export interface Column<T> {
   key: string;
   label: string;
-  /** Prozentwert, z. B. '28%' — Spalten sind flex-basis, nie auto. */
-  width: string;
+  /** Breite in Pixeln — Spalten sind flex-basis, nie auto. */
+  width: number;
   align?: 'left' | 'right';
   /** Tinten-Farbe, Gewicht 500 — genau eine Spalte je Tabelle. */
   primary?: boolean;
@@ -56,6 +59,68 @@ export interface DataTableProps<T> {
    * bereits nach Gruppen sortiert ankommen.
    */
   group?: (row: T) => GroupHead;
+  /** Breite einer Spalte per Zieh-Griff ändern; ohne Callback gibt es keinen Griff. */
+  onResize?: (key: string, width: number) => void;
+}
+
+/** Größter Wert, den der Griff liefert — schmaler als die Mindestbreite geht nie. */
+const RESIZE_MAX = 900;
+const RESIZE_MIN = 48;
+
+/**
+ * Zieh-Griff am rechten Rand eines Spaltenkopfs. Gleiche Mechanik wie
+ * `ResizeHandle` der Seitenspalten, aber als schmaler Streifen über dem
+ * Spaltenrand statt als eigener Trenner im Layout.
+ */
+function ColumnGrip({
+  width,
+  label,
+  onResize,
+}: {
+  width: number;
+  label: string;
+  onResize: (width: number) => void;
+}) {
+  const start = (event: ReactMouseEvent<HTMLDivElement>): void => {
+    event.preventDefault();
+    event.stopPropagation();
+    const x0 = event.clientX;
+    const move = (moveEvent: MouseEvent): void => {
+      onResize(Math.min(RESIZE_MAX, Math.max(RESIZE_MIN, width + moveEvent.clientX - x0)));
+    };
+    const up = (): void => {
+      window.removeEventListener('mousemove', move);
+      window.removeEventListener('mouseup', up);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+  };
+  return (
+    <div
+      role="separator"
+      aria-orientation="vertical"
+      aria-label={`Breite der Spalte ${label} ändern`}
+      onMouseDown={start}
+      style={{
+        position: 'absolute',
+        top: 0,
+        right: -4,
+        width: 8,
+        height: '100%',
+        cursor: 'col-resize',
+        zIndex: 2,
+      }}
+    />
+  );
+}
+
+/** Die letzte sichtbare Spalte füllt den Rest, alle anderen sind fest. */
+function columnFlex(width: number, last: boolean): string {
+  return `${last ? '1 1' : '0 0'} ${width}px`;
 }
 
 type GroupHead = { key: string; label: ReactNode } | null;
@@ -122,6 +187,7 @@ export function DataTable<T>({
   label,
   cellTitle,
   group,
+  onResize,
 }: DataTableProps<T>) {
   const heads = useMemo(() => groupHeads(rows, group), [rows, group]);
 
@@ -220,7 +286,7 @@ export function DataTable<T>({
           textTransform: 'uppercase',
         }}
       >
-        {columns.map((column) => {
+        {columns.map((column, index) => {
           const sortable = onSort !== undefined && column.sortable !== false;
           const active = sort !== undefined && sort.key === column.key;
           return (
@@ -229,7 +295,9 @@ export function DataTable<T>({
               role="columnheader"
               aria-sort={active ? (sort.dir > 0 ? 'ascending' : 'descending') : undefined}
               style={{
-                flex: `0 0 ${column.width}`,
+                position: 'relative',
+                flex: columnFlex(column.width, index === columns.length - 1),
+                minWidth: 0,
                 borderRight: '1px solid var(--line)',
                 textAlign: column.align ?? 'left',
                 userSelect: 'none',
@@ -262,6 +330,13 @@ export function DataTable<T>({
                 </button>
               ) : (
                 <span style={{ display: 'block', padding: '10px 12px' }}>{column.label}</span>
+              )}
+              {onResize !== undefined && (
+                <ColumnGrip
+                  width={column.width}
+                  label={column.label}
+                  onResize={(width) => onResize(column.key, width)}
+                />
               )}
             </div>
           );
@@ -355,13 +430,14 @@ export function DataTable<T>({
                     : {}),
                 }}
               >
-                {columns.map((column) => (
+                {columns.map((column, columnIndex) => (
                   <div
                     key={column.key}
                     role="cell"
                     title={cellTitle?.(row, column)}
                     style={{
-                      flex: `0 0 ${column.width}`,
+                      flex: columnFlex(column.width, columnIndex === columns.length - 1),
+                      minWidth: 0,
                       padding: 'var(--pad-row)',
                       borderRight: '1px solid var(--grid)',
                       textAlign: column.align ?? 'left',

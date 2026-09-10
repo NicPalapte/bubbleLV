@@ -139,6 +139,8 @@ Fertig, wenn: kein Hand-Cursor über dem Badge, keine Legende ohne Bezug.
 
 ### WP-41-3 · Tabelle: Spalten und Baum · `feat(viewer)` · Aufwand M
 
+**Status: umgesetzt** (Verschieben per Pfeile im Popover, Owner-Entscheidung zu Frage 3: Vorschlag).
+
 Behebt A1–A4.
 
 1. **Standardreihenfolge** (A2): OZ · Bezeichnung · Einheit · Menge · EP · Positionsart ·

@@ -52,6 +52,9 @@ const KIND_PREFIX: Record<string, string> = {
   section: '§',
 };
 
+const TREE_TOOL_BUTTON =
+  'ml-[4px] inline-flex h-[18px] w-[18px] cursor-pointer items-center justify-center border border-line bg-white p-0 font-mono text-[11px] leading-none normal-case tracking-normal text-dim disabled:cursor-default disabled:opacity-30';
+
 function nodeTitle(node: LVNode): string {
   if (node.label !== null && node.label !== '') return node.label;
   if (node.code !== '') return node.code;
@@ -295,8 +298,30 @@ export function Tree({ width, collapsed, onToggleCollapsed }: TreeProps) {
         </button>
       </div>
 
-      <div className="px-[12px] pb-[2px] pt-[8px] font-mono text-[9px] uppercase tracking-[0.6px] text-mute">
-        Struktur
+      <div className="flex items-center px-[12px] pb-[2px] pt-[8px] font-mono text-[9px] uppercase tracking-[0.6px] text-mute">
+        <span className="flex-1">Struktur</span>
+        {/* Gleiche Aktionen wie im Graphen (GraphControls) — Baum und Graph teilen
+            den Aufklapp-Zustand, ein Knopf wirkt in beiden Ansichten (Issue #41). */}
+        <button
+          type="button"
+          title="Alle aufklappen"
+          aria-label="Alle aufklappen"
+          disabled={tree === null}
+          onClick={() => dispatch({ type: 'expandAll' })}
+          className={TREE_TOOL_BUTTON}
+        >
+          ⌃
+        </button>
+        <button
+          type="button"
+          title="Alle zuklappen"
+          aria-label="Alle zuklappen"
+          disabled={tree === null}
+          onClick={() => dispatch({ type: 'collapseAll' })}
+          className={TREE_TOOL_BUTTON}
+        >
+          ⌄
+        </button>
       </div>
 
       {tree === null && (

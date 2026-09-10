@@ -6,9 +6,16 @@
 // aktivem Filter fällt sie automatisch auf das ganze LV zurück, sobald der
 // gewählte Abschnitt keinen Treffer hat — sonst stünde man vor einer leeren
 // Tabelle, während der Baum daneben Treffer anzeigt (Issue #12).
+//
+// Spalten lassen sich ein-/ausblenden, verschieben und in der Breite ziehen
+// (Issue #41). Die Konfiguration ist reiner UI-Zustand dieser Komponente und
+// überlebt keinen Reload — gewollt, kein localStorage.
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { useDismiss } from '../common/useDismiss';
+import { Chip } from '../ui/Chip';
 import { DataTable, type Column } from '../ui/DataTable';
+import { Popover, PopoverHead } from '../ui/Popover';
 import { SegmentedControl } from '../ui/SegmentedControl';
 import { StatusPill } from '../ui/StatusPill';
 import { attrString, attrStrings } from '../../lib/attributes';
@@ -16,6 +23,14 @@ import { facetOptionLabel, FACETS_BY_ID } from '../../lib/facets';
 import { formatCount, formatEuro, formatNumber } from '../../lib/format';
 import { isFiltering, matchPos } from '../../lib/matchPos';
 import { POSITION_STATUS } from '../../lib/status';
+import {
+  defaultColumnConfig,
+  moveColumn,
+  resizeColumn,
+  toggleColumn,
+  visibleColumnKeys,
+  type ColumnConfig,
+} from '../../lib/table/columns';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { LVNode, PositionSummary } from '../../types/lvNode';
 
@@ -70,19 +85,38 @@ function collectRows(scopeRoot: LVNode): Row[] {
   return out;
 }
 
+/**
+ * Alle Spalten mit Pixelbreite. Die Anzeigereihenfolge steht in
+ * `DEFAULT_ORDER`: Kennung und Mengengerüst zuerst, dann die Klassifizierung.
+ */
 const COLUMNS: ReadonlyArray<Column<Row>> = [
-  { key: 'oz', label: 'OZ', width: '14%', render: (r) => r.position.oz },
+  { key: 'oz', label: 'OZ', width: 110, render: (r) => r.position.oz },
   {
     key: 'shortText',
     label: 'Bezeichnung',
-    width: '24%',
+    width: 260,
     primary: true,
     render: (r) => r.position.shortText,
+  },
+  { key: 'unit', label: 'Einheit', width: 70, render: (r) => r.position.unit ?? '—' },
+  {
+    key: 'quantity',
+    label: 'Menge',
+    width: 90,
+    align: 'right',
+    render: (r) => formatNumber(r.position.quantity),
+  },
+  {
+    key: 'unitPrice',
+    label: 'EP €',
+    width: 90,
+    align: 'right',
+    render: (r) => formatEuro(r.position.unitPrice),
   },
   {
     key: 'positionsart',
     label: 'Positionsart',
-    width: '11%',
+    width: 120,
     render: (r) => {
       const value = attrString(r.position.attributes, 'positionsart');
       const facet = FACETS_BY_ID.get('positionsart');
@@ -93,13 +127,13 @@ const COLUMNS: ReadonlyArray<Column<Row>> = [
   {
     key: 'bauteiltyp',
     label: 'Bauteiltyp',
-    width: '10%',
+    width: 110,
     render: (r) => attrString(r.position.attributes, 'bauteiltyp') ?? '—',
   },
   {
     key: 'beton',
     label: 'Druckfestigkeit',
-    width: '10%',
+    width: 130,
     render: (r) => {
       const beton = attrString(r.position.attributes, 'beton');
       const expo = attrStrings(r.position.attributes, 'expo');
@@ -107,29 +141,133 @@ const COLUMNS: ReadonlyArray<Column<Row>> = [
       return expo.length === 0 ? beton : `${beton} · ${expo.join(', ')}`;
     },
   },
-  { key: 'unit', label: 'Einheit', width: '6%', render: (r) => r.position.unit ?? '—' },
-  {
-    key: 'quantity',
-    label: 'Menge',
-    width: '8%',
-    align: 'right',
-    render: (r) => formatNumber(r.position.quantity),
-  },
-  {
-    key: 'unitPrice',
-    label: 'EP €',
-    width: '8%',
-    align: 'right',
-    render: (r) => formatEuro(r.position.unitPrice),
-  },
   {
     key: 'status',
     label: 'Status',
-    width: '9%',
+    width: 90,
     sortable: false,
     render: () => <StatusPill status={POSITION_STATUS} />,
   },
 ];
+
+const COLUMNS_BY_KEY = new Map(COLUMNS.map((column) => [column.key, column]));
+const DEFAULT_ORDER: readonly string[] = COLUMNS.map((column) => column.key);
+const DEFAULT_WIDTHS: Readonly<Record<string, number>> = Object.fromEntries(
+  COLUMNS.map((column) => [column.key, column.width]),
+);
+/** Ohne OZ und Bezeichnung wäre eine Zeile nicht mehr zuzuordnen. */
+const LOCKED_COLUMNS: ReadonlySet<string> = new Set(['oz', 'shortText']);
+
+function initialColumnConfig(): ColumnConfig {
+  return defaultColumnConfig(DEFAULT_ORDER, DEFAULT_WIDTHS);
+}
+
+const ICON_BUTTON =
+  'inline-flex h-[18px] w-[18px] cursor-pointer items-center justify-center border border-line bg-white p-0 font-mono text-[9px] leading-none text-dim disabled:cursor-default disabled:opacity-30';
+
+/** Popover „Spalten": ein-/ausblenden per Kästchen, verschieben per Pfeil. */
+function ColumnPicker({
+  config,
+  onChange,
+}: {
+  config: ColumnConfig;
+  onChange: (next: ColumnConfig) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  useDismiss([anchorRef, popoverRef], open, () => setOpen(false));
+
+  const hiddenCount = config.hidden.size;
+  const isDefault =
+    hiddenCount === 0 && config.order.every((key, index) => key === DEFAULT_ORDER[index]);
+
+  return (
+    <div ref={anchorRef}>
+      <Chip
+        on={open || hiddenCount > 0}
+        count={hiddenCount}
+        onClick={() => setOpen((o) => !o)}
+        title="Spalten ein-/ausblenden und anordnen"
+      >
+        Spalten <span className="-ml-[2px] text-mute">▾</span>
+      </Chip>
+      <Popover ref={popoverRef} open={open} width={230} align="right" anchorRef={anchorRef}>
+        <PopoverHead onReset={isDefault ? undefined : () => onChange(initialColumnConfig())}>
+          Spalten
+        </PopoverHead>
+        <div role="list" aria-label="Spalten" style={{ padding: '4px 0' }}>
+          {config.order.map((key, index) => {
+            const column = COLUMNS_BY_KEY.get(key);
+            if (column === undefined) return null;
+            const shown = !config.hidden.has(key);
+            const locked = LOCKED_COLUMNS.has(key);
+            return (
+              <div
+                key={key}
+                role="listitem"
+                className="flex items-center gap-[8px]"
+                style={{ padding: 'var(--pad-popover-row)' }}
+              >
+                <button
+                  type="button"
+                  role="checkbox"
+                  aria-checked={shown}
+                  aria-label={column.label}
+                  disabled={locked}
+                  title={locked ? 'Immer sichtbar' : shown ? 'Ausblenden' : 'Einblenden'}
+                  onClick={() => onChange(toggleColumn(config, key, LOCKED_COLUMNS))}
+                  className="flex min-w-0 flex-1 cursor-pointer items-center gap-[8px] border-none bg-transparent p-0 text-left font-mono text-[10px] text-ink disabled:cursor-default"
+                >
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      width: 12,
+                      height: 12,
+                      flexShrink: 0,
+                      border: `1px solid ${shown ? 'var(--blue)' : 'var(--line2)'}`,
+                      background: shown ? 'var(--blue)' : 'var(--white)',
+                      color: '#fff',
+                      fontSize: 9,
+                      lineHeight: 1,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      opacity: locked ? 0.5 : 1,
+                    }}
+                  >
+                    {shown ? '✓' : ''}
+                  </span>
+                  <span className="truncate">{column.label}</span>
+                </button>
+                <button
+                  type="button"
+                  className={ICON_BUTTON}
+                  aria-label={`${column.label} nach oben`}
+                  title="Nach vorn"
+                  disabled={index === 0}
+                  onClick={() => onChange(moveColumn(config, key, -1))}
+                >
+                  ▲
+                </button>
+                <button
+                  type="button"
+                  className={ICON_BUTTON}
+                  aria-label={`${column.label} nach unten`}
+                  title="Nach hinten"
+                  disabled={index === config.order.length - 1}
+                  onClick={() => onChange(moveColumn(config, key, 1))}
+                >
+                  ▼
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </Popover>
+    </div>
+  );
+}
 
 function sortValue(position: PositionSummary, key: SortKey): string | number | null {
   switch (key) {
@@ -168,6 +306,16 @@ export function PositionsTable({ root }: { root: LVNode }) {
   const dispatch = useViewerDispatch();
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: 'oz', dir: 1 });
   const [scope, setScope] = useState<Scope>('node');
+  const [columnConfig, setColumnConfig] = useState<ColumnConfig>(initialColumnConfig);
+
+  const columns = useMemo<Column<Row>[]>(
+    () =>
+      visibleColumnKeys(columnConfig).flatMap((key) => {
+        const column = COLUMNS_BY_KEY.get(key);
+        return column === undefined ? [] : [{ ...column, width: columnConfig.widths[key] }];
+      }),
+    [columnConfig],
+  );
 
   const filtering = isFiltering(filters, search);
   const lvRoot = tree ?? root;
@@ -259,8 +407,8 @@ export function PositionsTable({ root }: { root: LVNode }) {
             · LV-weite Treffer
           </span>
         )}
-        {lvRoot !== root && (
-          <span className="ml-auto shrink-0">
+        <span className="ml-auto flex shrink-0 items-center gap-[8px]">
+          {lvRoot !== root && (
             <SegmentedControl
               label="Umfang der Tabelle"
               options={[
@@ -270,13 +418,14 @@ export function PositionsTable({ root }: { root: LVNode }) {
               value={effectiveScope}
               onChange={(value) => setScope(value as Scope)}
             />
-          </span>
-        )}
+          )}
+          <ColumnPicker config={columnConfig} onChange={setColumnConfig} />
+        </span>
       </div>
 
       <DataTable
         label="Positionen"
-        columns={COLUMNS}
+        columns={columns}
         rows={rows}
         rowKey={(row) => row.node.id}
         selectedKey={selectedPositionId}
@@ -299,6 +448,7 @@ export function PositionsTable({ root }: { root: LVNode }) {
         cellTitle={(row, column) =>
           column.key === 'shortText' ? row.position.shortText : undefined
         }
+        onResize={(key, width) => setColumnConfig((current) => resizeColumn(current, key, width))}
       />
     </div>
   );
