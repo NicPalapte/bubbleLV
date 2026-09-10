@@ -24,8 +24,14 @@ const BLOCK_ELEMENTS = new Set(['p', 'div']);
  */
 const INLINE_PARTS = new Set(['ComplCaption', 'ComplBody', 'ComplTail']);
 
-/** Interner Marker für ein Absatzende — nie Teil des Ergebnisses. */
-const PARAGRAPH_END = ' ';
+/**
+ * Interner Marker für ein Absatzende: U+2029 (Paragraph Separator), als
+ * Escape geschrieben, weil das Zeichen unsichtbar ist und sonst wie ein
+ * Leerzeichen aussieht. Es kommt in GAEB-Texten praktisch nicht vor; falls
+ * doch, entfernt `walk()` es aus dem Eingabetext, damit es nie eine falsche
+ * Absatzgrenze erzeugt.
+ */
+const PARAGRAPH_END = '\u2029';
 
 function walk(node: Node, out: string[]): void {
   const children = node.childNodes;
@@ -36,7 +42,9 @@ function walk(node: Node, out: string[]): void {
       // Einrückung zwischen Elementen ist kein Text. Sie enthält einen
       // Zeilenumbruch und erzeugte so nach jedem <p> eine Leerzeile (Issue #41).
       // Als Leerzeichen bleibt sie Trenner zwischen zwei <span> in einem <p>.
-      out.push(value.includes('\n') && value.trim() === '' ? ' ' : value);
+      out.push(
+        value.includes('\n') && value.trim() === '' ? ' ' : value.replaceAll(PARAGRAPH_END, ' '),
+      );
       continue;
     }
     if (child.nodeType !== NODE_ELEMENT) continue;

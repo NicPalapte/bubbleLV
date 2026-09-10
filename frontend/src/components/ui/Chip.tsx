@@ -13,14 +13,29 @@ export interface ChipProps {
   count?: number;
   onClick?: () => void;
   title?: string;
+  /**
+   * Reine Anzeige (z. B. Klassifizierungs-Badge im Eigenschaften-Panel):
+   * rendert ein <span> ohne Hand-Cursor. Ein <button> ohne Wirkung würde
+   * Klickbarkeit vortäuschen (Issue #41).
+   */
+  static?: boolean;
 }
 
-export function Chip({ children, on = false, dashed = false, count, onClick, title }: ChipProps) {
+export function Chip({
+  children,
+  on = false,
+  dashed = false,
+  count,
+  onClick,
+  title,
+  static: isStatic = false,
+}: ChipProps) {
+  const Tag = isStatic ? 'span' : 'button';
   return (
-    <button
-      type="button"
+    <Tag
+      type={isStatic ? undefined : 'button'}
       title={title}
-      onClick={onClick}
+      onClick={isStatic ? undefined : onClick}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -34,7 +49,7 @@ export function Chip({ children, on = false, dashed = false, count, onClick, tit
         fontFamily: 'var(--mono)',
         fontSize: 'var(--fs-meta)',
         lineHeight: '14px',
-        cursor: 'pointer',
+        cursor: isStatic ? 'default' : 'pointer',
         whiteSpace: 'nowrap',
         borderRadius: 0,
         transition: 'all var(--dur-base) var(--ease)',
@@ -61,6 +76,6 @@ export function Chip({ children, on = false, dashed = false, count, onClick, tit
           {count}
         </span>
       )}
-    </button>
+    </Tag>
   );
 }

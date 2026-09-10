@@ -125,6 +125,16 @@ describe('extractText', () => {
     );
   });
 
+  it('lässt sich nicht von U+2029 im Eingabetext täuschen', () => {
+    // Das interne Absatzende-Zeichen darf aus der Datei keine falsche
+    // Absatzgrenze erzeugen (Review zu PR #42).
+    const el = element(
+      '<Text><p><span>Nachweise aufstellen.\u2029Lastannahmen nach</span></p>' +
+        '<p><span>Vorgabe des AG.</span></p></Text>',
+    );
+    expect(extractText(el)).toBe('Nachweise aufstellen. Lastannahmen nach Vorgabe des AG.');
+  });
+
   it('behält <br> als Umbruch', () => {
     const el = element('<Text><p><span>Hersteller:</span><br/><span>Typ:</span></p></Text>');
     expect(extractText(el)).toBe('Hersteller:\nTyp:');
