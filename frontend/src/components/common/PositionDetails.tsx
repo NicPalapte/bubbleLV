@@ -110,12 +110,14 @@ export function PositionDetails({
           >
             {positionsart !== undefined &&
               positionsart.get(position).map((value) => (
-                <Chip key={value} on>
+                <Chip key={value} on static>
                   {facetOptionLabel(positionsart, value)}
                 </Chip>
               ))}
             {expo.map((value) => (
-              <Chip key={value}>{value}</Chip>
+              <Chip key={value} static>
+                {value}
+              </Chip>
             ))}
           </div>
         )}
@@ -125,7 +127,7 @@ export function PositionDetails({
             style={{ padding: 'var(--pad-panel-head)', borderBottom: '1px solid var(--grid)' }}
             className="bg-panel"
           >
-            <BlockLabel right="** = wichtig">Langtext</BlockLabel>
+            <BlockLabel>Langtext</BlockLabel>
             <div
               style={{
                 fontFamily: 'var(--sans)',

@@ -125,6 +125,8 @@ Fertig, wenn:
 
 ### WP-41-2 · Eigenschaften-Panel · `fix(viewer)` · Aufwand S
 
+**Status: umgesetzt** (Badge nicht klickbar, Owner-Entscheidung zu Frage 2: Vorschlag).
+
 Behebt A5, A6.
 
 1. `PositionDetails.tsx`: Legende „** = wichtig" entfernen. `Highlighted.tsx` behält
