@@ -24,6 +24,10 @@ der passende Branch aktiv ist; auf `main` nur hinweisen, keinen Branch selbst an
 | WP-F · Bubble-Graph | ✅ umgesetzt (`src/lib/graph/`, `src/components/graph/`) |
 | WP-G · Eigenschaften-Panel + Static-Deploy | ✅ umgesetzt |
 
+Nach dem MVP: Der Lösungsplan zum Nutzungs-Review des Owners (Issue #41 – Texte,
+Tabelle, Graph-Layout) steht in
+[`plans/issue-41-app-usage-review.md`](plans/issue-41-app-usage-review.md).
+
 Offen bleibt bewusst die inhaltliche Pflege der `keywords`-Spalte in
 [`domain/reference/stlb-bau-leistungsbereiche.csv`](domain/reference/stlb-bau-leistungsbereiche.csv)
 — ohne sie greift Stufe 0 nur selten und die Positionen laufen über den
