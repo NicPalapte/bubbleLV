@@ -122,3 +122,49 @@ describe('PositionsTable · Spalten', () => {
     ).toBeTruthy();
   });
 });
+
+function headerFlex(label: string): string {
+  return screen.getByRole('columnheader', { name: new RegExp(`^${label}`) }).style.flex;
+}
+
+function grip(label: string): HTMLElement {
+  return screen.getByRole('separator', { name: `Breite der Spalte ${label} ändern` });
+}
+
+describe('PositionsTable · Spaltenbreite (Review zu PR #43)', () => {
+  it('ändert die Breite per Ziehen und bietet danach „zurücksetzen" an', () => {
+    renderTable();
+    expect(headerFlex('Einheit')).toBe('0 0 70px');
+
+    fireEvent.mouseDown(grip('Einheit'), { clientX: 100 });
+    fireEvent.mouseMove(window, { clientX: 130 });
+    fireEvent.mouseUp(window, { clientX: 130 });
+    expect(headerFlex('Einheit')).toBe('0 0 100px');
+
+    click(screen.getByRole('button', { name: /Spalten/ }));
+    click(screen.getByRole('button', { name: 'zurücksetzen' }));
+    expect(headerFlex('Einheit')).toBe('0 0 70px');
+  });
+
+  it('wirkt auch an der letzten Spalte', () => {
+    renderTable();
+    fireEvent.mouseDown(grip('Status'), { clientX: 0 });
+    fireEvent.mouseMove(window, { clientX: 40 });
+    fireEvent.mouseUp(window, { clientX: 40 });
+    expect(headerFlex('Status')).toBe('0 0 130px');
+  });
+
+  it('passt die Breite per Doppelklick an den Inhalt an', () => {
+    renderTable();
+    // jsdom misst keine Textbreite (scrollWidth 0) — es bleibt die Mindestbreite.
+    fireEvent.doubleClick(grip('Bezeichnung'));
+    expect(headerFlex('Bezeichnung')).toBe('0 0 48px');
+  });
+
+  it('reserviert die Summe der Spaltenbreiten, damit waagerecht gescrollt wird', () => {
+    renderTable();
+    const total = 110 + 260 + 70 + 90 + 90 + 120 + 110 + 130 + 90;
+    const header = screen.getAllByRole('row')[0];
+    expect(header.style.minWidth).toBe(`${total}px`);
+  });
+});

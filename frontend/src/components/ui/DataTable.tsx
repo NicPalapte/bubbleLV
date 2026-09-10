@@ -15,7 +15,11 @@
 //    Messzeile ermittelt statt geraten, damit sie nicht von den CSS-Tokens
 //    abweichen können.
 //  - Pixelbreiten statt Prozent und ein Zieh-Griff je Spaltenkopf (`onResize`,
-//    Issue #41): die letzte Spalte füllt den Rest der Breite.
+//    Issue #41). Alle Spalten sind fest, ein Füllelement deckt den Rest ab —
+//    so wirkt jeder Griff, auch der an der letzten Spalte. Ist die Summe
+//    breiter als der Platz, scrollt die Tabelle waagerecht; der Kopf läuft
+//    dabei mit. Doppelklick auf einen Griff passt die Spalte an den breitesten
+//    gerade gezeichneten Inhalt an (bei Virtualisierung: das sichtbare Fenster).
 
 import {
   Fragment,
@@ -27,6 +31,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from 'react';
+import { MAX_COLUMN_WIDTH, MIN_COLUMN_WIDTH } from '../../lib/table/columns';
 
 export interface Column<T> {
   key: string;
@@ -59,13 +64,18 @@ export interface DataTableProps<T> {
    * bereits nach Gruppen sortiert ankommen.
    */
   group?: (row: T) => GroupHead;
-  /** Breite einer Spalte per Zieh-Griff ändern; ohne Callback gibt es keinen Griff. */
+  /**
+   * Breite einer Spalte per Zieh-Griff ändern; ohne Callback gibt es keinen
+   * Griff. Doppelklick auf den Griff liefert die Breite des breitesten
+   * gezeichneten Inhalts.
+   */
   onResize?: (key: string, width: number) => void;
 }
 
-/** Größter Wert, den der Griff liefert — schmaler als die Mindestbreite geht nie. */
-const RESIZE_MAX = 900;
-const RESIZE_MIN = 48;
+/** Waagerechter Innenabstand einer Zelle (var(--pad-row)) plus rechter Rand. */
+const CELL_CHROME = 12 * 2 + 1;
+/** Platz für den Sortierpfeil im Spaltenkopf. */
+const SORT_ARROW_ROOM = 14;
 
 /**
  * Zieh-Griff am rechten Rand eines Spaltenkopfs. Gleiche Mechanik wie
@@ -76,17 +86,21 @@ function ColumnGrip({
   width,
   label,
   onResize,
+  onFit,
 }: {
   width: number;
   label: string;
   onResize: (width: number) => void;
+  onFit: () => void;
 }) {
   const start = (event: ReactMouseEvent<HTMLDivElement>): void => {
     event.preventDefault();
     event.stopPropagation();
     const x0 = event.clientX;
     const move = (moveEvent: MouseEvent): void => {
-      onResize(Math.min(RESIZE_MAX, Math.max(RESIZE_MIN, width + moveEvent.clientX - x0)));
+      onResize(
+        Math.min(MAX_COLUMN_WIDTH, Math.max(MIN_COLUMN_WIDTH, width + moveEvent.clientX - x0)),
+      );
     };
     const up = (): void => {
       window.removeEventListener('mousemove', move);
@@ -104,7 +118,12 @@ function ColumnGrip({
       role="separator"
       aria-orientation="vertical"
       aria-label={`Breite der Spalte ${label} ändern`}
+      title="Ziehen: Breite ändern · Doppelklick: an Inhalt anpassen"
       onMouseDown={start}
+      onDoubleClick={(event) => {
+        event.stopPropagation();
+        onFit();
+      }}
       style={{
         position: 'absolute',
         top: 0,
@@ -118,9 +137,17 @@ function ColumnGrip({
   );
 }
 
-/** Die letzte sichtbare Spalte füllt den Rest, alle anderen sind fest. */
-function columnFlex(width: number, last: boolean): string {
-  return `${last ? '1 1' : '0 0'} ${width}px`;
+/** Zelleninhalt einzeilig mit Auslassungspunkten — auch im Spaltenkopf. */
+const CLIPPED: CSSProperties = {
+  display: 'block',
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+};
+
+/** Rest rechts der letzten Spalte — trägt Zebra und Rahmen, aber keinen Inhalt. */
+function Filler() {
+  return <div aria-hidden="true" style={{ flex: '1 1 0', minWidth: 0 }} />;
 }
 
 type GroupHead = { key: string; label: ReactNode } | null;
@@ -192,6 +219,7 @@ export function DataTable<T>({
   const heads = useMemo(() => groupHeads(rows, group), [rows, group]);
 
   const bodyRef = useRef<HTMLDivElement>(null);
+  const headRef = useRef<HTMLDivElement>(null);
   const rowProbeRef = useRef<HTMLDivElement>(null);
   const headProbeRef = useRef<HTMLDivElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
@@ -232,6 +260,26 @@ export function DataTable<T>({
 
   const totalHeight = rowTop[rows.length] ?? 0;
   const measured = viewport > UNMEASURED && rowHeight > UNMEASURED;
+  const totalWidth = columns.reduce((sum, column) => sum + column.width, 0);
+
+  /**
+   * Breite, mit der der breiteste gezeichnete Inhalt einer Spalte ohne
+   * Auslassung passt. `scrollWidth` liefert die volle Inhaltsbreite auch bei
+   * `overflow: hidden`. Virtualisiert werden nur die Zeilen im Fenster
+   * gemessen — für 10k Zeilen wäre alles andere nicht bezahlbar.
+   */
+  const fitWidth = (key: string): number => {
+    let widest = 0;
+    for (const scope of [headRef.current, bodyRef.current]) {
+      if (scope === null) continue;
+      for (const element of scope.querySelectorAll<HTMLElement>('[data-column]')) {
+        if (element.dataset.column !== key) continue;
+        const room = element.dataset.head === '1' ? SORT_ARROW_ROOM : 0;
+        widest = Math.max(widest, element.scrollWidth + CELL_CHROME + room);
+      }
+    }
+    return widest;
+  };
 
   // Ohne gemessenes Layout (jsdom in Tests, erster Frame) wird alles gezeichnet
   // — wie in Tree.tsx (Issue #23).
@@ -273,74 +321,89 @@ export function DataTable<T>({
         background: 'var(--white)',
       }}
     >
-      <div
-        role="row"
-        style={{
-          display: 'flex',
-          borderBottom: '1px solid var(--line2)',
-          background: 'var(--white)',
-          fontFamily: 'var(--mono)',
-          fontSize: 'var(--fs-label)',
-          letterSpacing: 'var(--ls-label)',
-          color: 'var(--mute)',
-          textTransform: 'uppercase',
-        }}
-      >
-        {columns.map((column, index) => {
-          const sortable = onSort !== undefined && column.sortable !== false;
-          const active = sort !== undefined && sort.key === column.key;
-          return (
-            <div
-              key={column.key}
-              role="columnheader"
-              aria-sort={active ? (sort.dir > 0 ? 'ascending' : 'descending') : undefined}
-              style={{
-                position: 'relative',
-                flex: columnFlex(column.width, index === columns.length - 1),
-                minWidth: 0,
-                borderRight: '1px solid var(--line)',
-                textAlign: column.align ?? 'left',
-                userSelect: 'none',
-                color: active ? 'var(--blue)' : 'var(--mute)',
-              }}
-            >
-              {/*
+      {/* Der Kopf scrollt waagerecht mit dem Körper mit (scrollLeft-Abgleich in
+          onScroll), hat aber keinen eigenen Rollbalken. */}
+      <div ref={headRef} style={{ overflow: 'hidden', flexShrink: 0 }}>
+        <div
+          role="row"
+          style={{
+            display: 'flex',
+            minWidth: totalWidth,
+            borderBottom: '1px solid var(--line2)',
+            background: 'var(--white)',
+            fontFamily: 'var(--mono)',
+            fontSize: 'var(--fs-label)',
+            letterSpacing: 'var(--ls-label)',
+            color: 'var(--mute)',
+            textTransform: 'uppercase',
+          }}
+        >
+          {columns.map((column) => {
+            const sortable = onSort !== undefined && column.sortable !== false;
+            const active = sort !== undefined && sort.key === column.key;
+            return (
+              <div
+                key={column.key}
+                role="columnheader"
+                aria-sort={active ? (sort.dir > 0 ? 'ascending' : 'descending') : undefined}
+                style={{
+                  position: 'relative',
+                  flex: `0 0 ${column.width}px`,
+                  minWidth: 0,
+                  borderRight: '1px solid var(--line)',
+                  textAlign: column.align ?? 'left',
+                  userSelect: 'none',
+                  color: active ? 'var(--blue)' : 'var(--mute)',
+                }}
+              >
+                {/*
                 Sortierbare Köpfe sind Schaltflächen — sonst ist die Sortierung
                 nur mit der Maus erreichbar. Nicht sortierbare bleiben Text.
               */}
-              {sortable ? (
-                <button
-                  type="button"
-                  onClick={() => onSort(column.key)}
-                  style={{
-                    display: 'block',
-                    width: '100%',
-                    padding: '10px 12px',
-                    border: 'none',
-                    background: 'transparent',
-                    font: 'inherit',
-                    letterSpacing: 'inherit',
-                    textTransform: 'inherit',
-                    textAlign: 'inherit',
-                    color: 'inherit',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {column.label} {active ? (sort.dir > 0 ? '↑' : '↓') : ''}
-                </button>
-              ) : (
-                <span style={{ display: 'block', padding: '10px 12px' }}>{column.label}</span>
-              )}
-              {onResize !== undefined && (
-                <ColumnGrip
-                  width={column.width}
-                  label={column.label}
-                  onResize={(width) => onResize(column.key, width)}
-                />
-              )}
-            </div>
-          );
-        })}
+                {sortable ? (
+                  <button
+                    type="button"
+                    onClick={() => onSort(column.key)}
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: 'none',
+                      background: 'transparent',
+                      font: 'inherit',
+                      letterSpacing: 'inherit',
+                      textTransform: 'inherit',
+                      textAlign: 'inherit',
+                      color: 'inherit',
+                      cursor: 'pointer',
+                      ...CLIPPED,
+                    }}
+                  >
+                    <span data-column={column.key} data-head="1">
+                      {column.label}
+                    </span>{' '}
+                    {active ? (sort.dir > 0 ? '↑' : '↓') : ''}
+                  </button>
+                ) : (
+                  <span style={{ padding: '10px 12px', ...CLIPPED }}>
+                    <span data-column={column.key} data-head="1">
+                      {column.label}
+                    </span>
+                  </span>
+                )}
+                {onResize !== undefined && (
+                  <ColumnGrip
+                    width={column.width}
+                    label={column.label}
+                    onResize={(width) => onResize(column.key, width)}
+                    onFit={() => onResize(column.key, fitWidth(column.key))}
+                  />
+                )}
+              </div>
+            );
+          })}
+          <Filler />
+        </div>
       </div>
 
       {/*
@@ -353,7 +416,10 @@ export function DataTable<T>({
 
       <div
         ref={bodyRef}
-        onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
+        onScroll={(event) => {
+          setScrollTop(event.currentTarget.scrollTop);
+          if (headRef.current !== null) headRef.current.scrollLeft = event.currentTarget.scrollLeft;
+        }}
         style={{ flex: 1, overflow: 'auto', position: 'relative' }}
       >
         {/* Unsichtbare Messzeilen: liefern die reale Höhe einer Daten- bzw.
@@ -401,7 +467,13 @@ export function DataTable<T>({
           </div>
         )}
 
-        <div style={{ height: measured ? totalHeight : undefined, position: 'relative' }}>
+        <div
+          style={{
+            height: measured ? totalHeight : undefined,
+            minWidth: totalWidth,
+            position: 'relative',
+          }}
+        >
           {rows.slice(first, last).map((row, offset) => {
             const index = first + offset;
             const key = rowKey(row);
@@ -430,27 +502,30 @@ export function DataTable<T>({
                     : {}),
                 }}
               >
-                {columns.map((column, columnIndex) => (
+                {columns.map((column) => (
                   <div
                     key={column.key}
                     role="cell"
                     title={cellTitle?.(row, column)}
                     style={{
-                      flex: columnFlex(column.width, columnIndex === columns.length - 1),
+                      flex: `0 0 ${column.width}px`,
                       minWidth: 0,
                       padding: 'var(--pad-row)',
                       borderRight: '1px solid var(--grid)',
                       textAlign: column.align ?? 'left',
                       color: column.primary === true ? 'var(--ink)' : 'var(--dim)',
                       fontWeight: column.primary === true ? 500 : 400,
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
+                      ...CLIPPED,
                     }}
                   >
-                    {column.render === undefined ? '—' : column.render(row)}
+                    {/* Innerer Messknoten: sein scrollWidth ist die Inhaltsbreite
+                        ohne Zellenabstand — Grundlage für „an Inhalt anpassen". */}
+                    <span data-column={column.key} style={CLIPPED}>
+                      {column.render === undefined ? '—' : column.render(row)}
+                    </span>
                   </div>
                 ))}
+                <Filler />
               </div>
             );
 

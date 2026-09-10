@@ -179,8 +179,12 @@ function ColumnPicker({
   useDismiss([anchorRef, popoverRef], open, () => setOpen(false));
 
   const hiddenCount = config.hidden.size;
+  // Auch eine geänderte Breite zählt — sonst gäbe es nach dem Ziehen keinen
+  // Weg zurück (Review zu PR #43).
   const isDefault =
-    hiddenCount === 0 && config.order.every((key, index) => key === DEFAULT_ORDER[index]);
+    hiddenCount === 0 &&
+    config.order.every((key, index) => key === DEFAULT_ORDER[index]) &&
+    config.order.every((key) => config.widths[key] === DEFAULT_WIDTHS[key]);
 
   return (
     <div ref={anchorRef}>
