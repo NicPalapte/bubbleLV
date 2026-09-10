@@ -89,6 +89,8 @@ Bildschirm, dann ist nichts mehr lesbar.
 
 ### WP-41-1 · Langtext-Aufbereitung · `fix(gaeb)` · Aufwand S
 
+**Status: umgesetzt** (Reflow aktiviert, Owner-Entscheidung zu Frage 1: ja).
+
 Behebt T1, T2, T3. Nur `frontend/src/lib/gaeb/text.ts` plus Tests.
 
 Schritte:
