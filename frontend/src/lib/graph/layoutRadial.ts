@@ -46,7 +46,8 @@ export type ExpandedSet = ReadonlySet<string>;
 /** Cluster-Bubbles, die der Nutzer aufgelöst hat — ihre Kinder werden gezeigt. */
 export type ClusterSet = ReadonlySet<string>;
 
-const DOT_RADIUS = 7;
+/** Radius eines Knotens in Punkt-Darstellung — auch fürs Zeichnen. */
+export const DOT_RADIUS = 7;
 /** Luft um den Teilbaum eines Kindes herum. */
 const GAP = 18;
 /** Luft zwischen der Bubble eines Knotens und dem Kreis seiner Kinder. */
@@ -85,6 +86,8 @@ export function walkParents(root: LVNode): Map<string, LVNode | null> {
  * tragen, sonst überlappen große Bubbles nach dem Umschalten.
  */
 function bubbleRadius(tier: Tier, dotted: boolean): number {
+  // Positionen skalieren nicht mit dem Größenmodus — ihr Platz ist fest.
+  if (tier === 'position') return RADII.position;
   if (dotted) return DOT_RADIUS;
   return RADII[tier] * SIZE_MAX_FACTOR;
 }
@@ -248,6 +251,20 @@ export function expandedToDepth(root: LVNode, depth: number): Set<string> {
   };
   visit(root, 0);
   return expanded;
+}
+
+/**
+ * Knoten, deren Kinder zu einer Cluster-Bubble zusammengefasst würden —
+ * „Alles ausklappen" löst auch diese auf (Issue #41).
+ */
+export function allClusterParents(root: LVNode): Set<string> {
+  const parents = new Set<string>();
+  const visit = (node: LVNode): void => {
+    if (node.children.length > CLUSTER_AT) parents.add(node.id);
+    for (const child of node.children) visit(child);
+  };
+  visit(root);
+  return parents;
 }
 
 /** Jeder Knoten mit Kindern offen. */

@@ -54,6 +54,40 @@ function loadedState(): ViewerState {
   return viewerReducer(base, { type: 'loaded', lv });
 }
 
+describe('viewerReducer · expandAll', () => {
+  it('öffnet auch Sammel-Bubbles, damit wirklich alles sichtbar ist (Issue #41)', () => {
+    const many: LVDraft = {
+      ...DRAFT,
+      lots: [
+        {
+          number: '001',
+          label: 'Los 1',
+          sections: [
+            {
+              number: '001.001',
+              label: 'Viele',
+              sections: [],
+              positions: Array.from({ length: 30 }, (_, index) => ({
+                ...DRAFT.lots[0].sections[0].positions[0],
+                oz: `001.001.${String(index + 1).padStart(4, '0')}`,
+              })),
+            },
+          ],
+        },
+      ],
+    };
+    const tree = buildTree(many);
+    const state = viewerReducer(base, {
+      type: 'loaded',
+      lv: { fileName: 't.x83', projectName: null, client: null, tree },
+    });
+    const next = viewerReducer(state, { type: 'expandAll' });
+    expect(next.openClusters.has('section:001.001')).toBe(true);
+    // „Alles zuklappen" nimmt sie wieder zurück.
+    expect(viewerReducer(next, { type: 'collapseAll' }).openClusters.size).toBe(0);
+  });
+});
+
 describe('viewerReducer · viewMode', () => {
   it('wählt einen Knoten an, ohne den Ansichtsmodus zu wechseln', () => {
     const next = viewerReducer(base, { type: 'selectNode', id: 'section:001' });

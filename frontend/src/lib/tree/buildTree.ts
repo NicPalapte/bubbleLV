@@ -27,16 +27,33 @@ class IdFactory {
   }
 }
 
+/**
+ * Nummer der eigenen Ebene: der Präfix des Elternknotens fällt weg
+ * („01.07.0010" unter „01.07" → „0010"). Trägt ein namenloser Wrapper-Abschnitt
+ * dieselbe Nummer wie sein Los, bleibt nichts Eigenes übrig.
+ */
+export function ownCodeOf(code: string, parentCode: string): string {
+  if (code === '' || parentCode === '') return code;
+  if (code === parentCode) return '';
+  return code.startsWith(`${parentCode}.`) ? code.slice(parentCode.length + 1) : code;
+}
+
 /** `null` als 0 werten: x83-Dateien führen meist keine Einheitspreise. */
 function lineTotal(position: PositionDraft): number {
   return (position.quantity ?? 0) * (position.unitPrice ?? 0);
 }
 
-function buildPosition(position: PositionDraft, ids: IdFactory, index: number): LVNode {
+function buildPosition(
+  position: PositionDraft,
+  ids: IdFactory,
+  index: number,
+  parentCode: string,
+): LVNode {
   return {
     id: ids.next('position', position.oz, `${index}`),
     kind: 'position',
     code: position.oz,
+    ownCode: ownCodeOf(position.oz, parentCode),
     label: position.shortText === '' ? null : position.shortText,
     positionCount: 1,
     totalPrice: lineTotal(position),
@@ -64,16 +81,22 @@ function aggregate(children: LVNode[]): { positionCount: number; totalPrice: num
   return { positionCount, totalPrice };
 }
 
-function buildSection(section: SectionDraft, ids: IdFactory, index: number): LVNode {
+function buildSection(
+  section: SectionDraft,
+  ids: IdFactory,
+  index: number,
+  parentCode: string,
+): LVNode {
   const id = ids.next('section', section.number, `${index}`);
   const children = [
-    ...section.sections.map((child, i) => buildSection(child, ids, i)),
-    ...section.positions.map((position, i) => buildPosition(position, ids, i)),
+    ...section.sections.map((child, i) => buildSection(child, ids, i, section.number)),
+    ...section.positions.map((position, i) => buildPosition(position, ids, i, section.number)),
   ];
   return {
     id,
     kind: 'section',
     code: section.number,
+    ownCode: ownCodeOf(section.number, parentCode),
     label: section.label,
     ...aggregate(children),
     children,
@@ -83,11 +106,12 @@ function buildSection(section: SectionDraft, ids: IdFactory, index: number): LVN
 
 function buildLot(lot: LotDraft, ids: IdFactory, index: number): LVNode {
   const id = ids.next('lot', lot.number, `${index}`);
-  const children = lot.sections.map((section, i) => buildSection(section, ids, i));
+  const children = lot.sections.map((section, i) => buildSection(section, ids, i, lot.number));
   return {
     id,
     kind: 'lot',
     code: lot.number,
+    ownCode: lot.number,
     label: lot.label,
     ...aggregate(children),
     children,
@@ -102,6 +126,7 @@ export function buildTree(draft: LVDraft): LVNode {
     id: 'project',
     kind: 'project',
     code: '',
+    ownCode: '',
     label: draft.projectName,
     ...aggregate(children),
     children,

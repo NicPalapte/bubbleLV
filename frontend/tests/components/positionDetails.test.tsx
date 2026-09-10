@@ -23,6 +23,7 @@ const node: LVNode = {
   id: 'position:01.0010',
   kind: 'position',
   code: '01.0010',
+  ownCode: '0010',
   label: position.shortText,
   positionCount: 1,
   totalPrice: 0,

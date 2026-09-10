@@ -6,7 +6,7 @@
 // Nicht-Komponenten exportiert (React-Fast-Refresh-Regel).
 
 import { createContext, useContext, type Dispatch } from 'react';
-import { allExpanded, expandedToDepth } from '../lib/graph/layoutRadial';
+import { allClusterParents, allExpanded, expandedToDepth } from '../lib/graph/layoutRadial';
 import { EMPTY_FILTERS, type Filters, type Range } from '../lib/matchPos';
 import type { LoadedLV } from '../lib/pipeline/runPipeline';
 import type { MatchIndex } from '../lib/tree/matchCounts';
@@ -143,7 +143,13 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     }
     case 'expandAll':
       if (state.lv === null) return state;
-      return { ...state, expanded: allExpanded(state.lv.tree) };
+      // Auch die Sammel-Bubbles gehen auf — sonst zeigte „Alles ausklappen"
+      // bei vielen Geschwistern nur eine Handvoll Knoten (Issue #41).
+      return {
+        ...state,
+        expanded: allExpanded(state.lv.tree),
+        openClusters: allClusterParents(state.lv.tree),
+      };
     case 'collapseAll':
       if (state.lv === null) return state;
       // Die Wurzel bleibt offen — sonst stünde der Graph auf einer einzigen

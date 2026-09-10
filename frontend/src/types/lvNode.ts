@@ -20,7 +20,14 @@ export interface PositionSummary {
 export interface LVNode {
   id: string;
   kind: LVNodeKind;
+  /** Vollständige Nummer, z. B. die OZ „01.07.0010". */
   code: string;
+  /**
+   * Nummer der eigenen Ebene ohne den Präfix des Elternknotens („0010").
+   * Der Graph beschriftet damit, weil dort die Hierarchie schon aus der Lage
+   * hervorgeht (Issue #41); Baum und Tabelle zeigen weiter `code`.
+   */
+  ownCode: string;
   label: string | null;
   positionCount: number;
   totalPrice: number;

@@ -18,9 +18,22 @@ export const RADII: Record<Tier, number> = {
   section: 32,
   subsection: 22,
   group: 16,
-  position: 17,
+  /**
+   * Positionen sind immer gleich groß und klein (Issue #41): ein gefüllter
+   * Kreis ohne Rand, unabhängig von Geschwisterzahl und Größenmodus.
+   */
+  position: 8,
   cluster: 30,
 };
+
+/**
+ * Unterhalb dieser Bildschirmgröße (Radius × Zoom, in px) passt keine Schrift
+ * mehr in eine Bubble — Nummer und Titel wandern dann unter die Bubble, in
+ * bildschirmfester Schriftgröße, damit sie beim Rauszoomen lesbar bleiben.
+ */
+export const COMPACT_AT = 28;
+/** Schriftgröße der Außenbeschriftung auf dem Schirm, in px. */
+export const OUTSIDE_LABEL_PX = 10;
 
 /** Kleinster Zoom k, ab dem eine Ebene ihr Label zeigt. */
 export const LABEL_K: Record<Tier, number> = {
