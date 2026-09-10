@@ -12,6 +12,10 @@ Was danach automatisch passiert:
 | Pull Request geschlossen  | Preview wird gelöscht                                            |
 | Merge nach `main`         | Live-Seite wird neu veröffentlicht                                |
 
+**Preview nur bei Code-Änderungen:** Gebaut wird nur, wenn der Pull Request etwas unter
+`frontend/` ändert. Ein PR, der ausschließlich Doku anfasst, bekommt keinen Preview-Link –
+das ist kein Fehler. Der Review-Agent und die übrige CI laufen weiterhin bei jedem PR.
+
 ---
 
 ## Schritt 1 – Zugang für den Review-Agenten anlegen
@@ -68,7 +72,8 @@ Nur nötig, falls der Preview-Workflow mit „Permission denied“ abbricht:
 
 ## Schritt 4 – Einmal ausprobieren
 
-1. Kleinen Test-Pull-Request öffnen (z. B. Tippfehler in der `README.md`).
+1. Kleinen Test-Pull-Request öffnen. Er muss etwas unter `frontend/` ändern, sonst
+   entsteht keine Preview – z. B. eine Zeile in `frontend/src/App.tsx`.
 2. Erwartung im PR:
    - Kommentar mit dem Preview-Link (`.../pr-preview/pr-<nummer>/`)
    - Kommentare des Review-Agenten, falls er etwas findet
@@ -103,13 +108,14 @@ Workflows auf dem starken Modell. Die getroffene Wahl steht im Log des Laufs unt
 
 ## Wenn etwas nicht klappt
 
-| Symptom                                        | Wahrscheinliche Ursache                                             |
-|------------------------------------------------|---------------------------------------------------------------------|
-| Kein Review, im Lauf steht „Review übersprungen" | Secret `CLAUDE_CODE_OAUTH_TOKEN` fehlt → Schritt 1                   |
-| Review-Schritt bricht mit Anmeldefehler ab      | Token abgelaufen → Schritt 1 wiederholen                             |
-| Preview-Link führt auf eine leere weiße Seite   | Pages-Quelle noch nicht auf `gh-pages` umgestellt → Schritt 2         |
-| Preview-Workflow: „Permission denied“           | Schreibrechte für Workflows → Schritt 3                              |
-| Live-Seite bleibt auf altem Stand               | Pages-Quelle noch nicht umgestellt → Schritt 2                       |
-| Kein Review bei einem PR aus einem fremden Fork | So gewollt: Fork-PRs bekommen weder Review noch Preview              |
+| Symptom                                          | Wahrscheinliche Ursache                                       |
+|--------------------------------------------------|---------------------------------------------------------------|
+| Kein Review, im Lauf steht „Review übersprungen" | Secret `CLAUDE_CODE_OAUTH_TOKEN` fehlt → Schritt 1            |
+| Review-Schritt bricht mit Anmeldefehler ab       | Token abgelaufen → Schritt 1 wiederholen                      |
+| Preview-Link führt auf eine leere weiße Seite    | Pages-Quelle noch nicht auf `gh-pages` umgestellt → Schritt 2 |
+| Preview-Workflow: „Permission denied“            | Schreibrechte für Workflows → Schritt 3                       |
+| Live-Seite bleibt auf altem Stand                | Pages-Quelle noch nicht umgestellt → Schritt 2                |
+| Kein Review bei einem PR aus einem fremden Fork  | So gewollt: Fork-PRs bekommen weder Review noch Preview       |
+| Kein Preview-Link am Pull Request                | So gewollt, wenn der PR nur Doku ändert – siehe Tabelle oben  |
 
 Hintergrund und Begründungen: [`docs/decisions/`](../decisions/README.md).

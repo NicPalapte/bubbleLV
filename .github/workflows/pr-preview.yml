@@ -9,11 +9,23 @@ name: PR-Preview
 # Die Previews liegen im Branch `gh-pages` im Ordner `pr-preview/`; der Live-Stand von
 # `main` liegt im Wurzelverzeichnis desselben Branches (siehe deploy-pages.yml).
 #
+# Gebaut wird nur, wenn der Pull Request tatsächlich Code der App anfasst (`paths`
+# unten). Reine Doku-PRs bekommen keine Preview – es gäbe nichts zu sehen, und der
+# Build dauert länger als der ganze Rest des PRs.
+#
 # Einrichtung: docs/setup/ci-und-agenten.md · Begründung: docs/decisions/0002-pr-preview.md
+# und docs/decisions/0005-preview-nur-bei-code.md
 
 on:
   pull_request:
     types: [opened, reopened, synchronize, closed]
+    # `paths` prüft alle Änderungen des Pull Requests, nicht nur den letzten Push.
+    # Ein PR mit Code-Änderungen bleibt also auch beim Schließen erfasst und wird
+    # ordentlich aufgeräumt.
+    paths:
+      - 'frontend/**'
+      # Änderungen am Workflow selbst sollen sich testen lassen.
+      - '.github/workflows/pr-preview.yml'
 
 permissions:
   contents: write
