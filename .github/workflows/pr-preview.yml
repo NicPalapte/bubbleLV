@@ -1,37 +1,40 @@
 name: PR-Preview
 
 # Was macht dieser Workflow?
-# Jeder Pull Request bekommt eine eigene, klickbare Version der App unter
-#   https://<owner>.github.io/<repo>/pr-preview/pr-<nummer>/
-# Der Link wird automatisch als Kommentar in den PR geschrieben und beim Schließen
-# des PRs samt Dateien wieder entfernt.
+# Jeder Pull Request, der Code der App anfasst, bekommt eine eigene, klickbare Version
+# unter https://<owner>.github.io/<repo>/pr-preview/pr-<nummer>/
+# Der Link wird automatisch als Kommentar in den PR geschrieben.
 #
 # Die Previews liegen im Branch `gh-pages` im Ordner `pr-preview/`; der Live-Stand von
 # `main` liegt im Wurzelverzeichnis desselben Branches (siehe deploy-pages.yml).
 #
-# Gebaut wird nur, wenn der Pull Request tatsächlich Code der App anfasst (`paths`
-# unten). Reine Doku-PRs bekommen keine Preview – es gäbe nichts zu sehen, und der
-# Build dauert länger als der ganze Rest des PRs.
+# Gebaut wird nur, wenn der Pull Request tatsächlich etwas unter `frontend/` ändert
+# (`paths` unten). Reine Doku-PRs bekommen keine Preview – es gäbe nichts zu sehen,
+# und der Build dauert länger als der ganze Rest des PRs.
+#
+# Das Aufräumen beim Schließen des PRs steht bewusst in einer eigenen Datei
+# (pr-preview-cleanup.yml) und läuft ohne `paths`-Filter. Grund: Ein Filter am Trigger
+# könnte den Aufräum-Lauf verhindern, und dann blieben Dateien in `gh-pages` liegen.
 #
 # Einrichtung: docs/setup/ci-und-agenten.md · Begründung: docs/decisions/0002-pr-preview.md
 # und docs/decisions/0005-preview-nur-bei-code.md
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize, closed]
-    # `paths` prüft alle Änderungen des Pull Requests, nicht nur den letzten Push.
-    # Ein PR mit Code-Änderungen bleibt also auch beim Schließen erfasst und wird
-    # ordentlich aufgeräumt.
+    types: [opened, reopened, synchronize]
     paths:
       - 'frontend/**'
-      # Änderungen am Workflow selbst sollen sich testen lassen.
+      # Änderungen an den Preview-Workflows sollen sich testen lassen.
       - '.github/workflows/pr-preview.yml'
+      - '.github/workflows/pr-preview-cleanup.yml'
 
 permissions:
   contents: write
   pull-requests: write
 
 # Pro Branch nur eine Preview-Aktion gleichzeitig, sonst überschreiben sich Deployments.
+# Dieselbe Gruppe nutzt pr-preview-cleanup.yml, damit Aufräumen und Veröffentlichen
+# sich nicht überholen.
 concurrency: preview-${{ github.ref }}
 
 jobs:
@@ -43,29 +46,27 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
-        if: github.event.action != 'closed'
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
       - name: Abhängigkeiten installieren
-        if: github.event.action != 'closed'
         working-directory: frontend
         run: npm ci
 
       # Die Preview liegt in einem Unterordner, deshalb muss die Base-URL diesen Pfad
       # enthalten – sonst suchen JS/CSS im Wurzelverzeichnis und die Seite bleibt leer.
       - name: App bauen
-        if: github.event.action != 'closed'
         working-directory: frontend
         run: |
           npm run build -- \
             --base=/${{ github.event.repository.name }}/pr-preview/pr-${{ github.event.number }}/
 
-      - name: Preview veröffentlichen bzw. aufräumen
+      - name: Preview veröffentlichen
         uses: rossjrw/pr-preview-action@v1
         with:
           source-dir: frontend/dist
           preview-branch: gh-pages
           umbrella-dir: pr-preview
+          action: deploy

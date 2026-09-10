@@ -84,7 +84,8 @@ bubble/
 ├── .github/workflows/
 │   ├── ci.yml                    # Lint, Format, Test, Build bei jedem PR
 │   ├── claude-review.yml         # KI-Review je PR, gedeckelt auf 3 automatische Läufe
-│   ├── pr-preview.yml            # Preview-App je PR
+│   ├── pr-preview.yml            # Preview-App je PR (nur bei frontend/-Änderungen)
+│   ├── pr-preview-cleanup.yml    # löscht die Preview beim Schließen des PRs
 │   └── deploy-pages.yml          # main → Branch gh-pages → Live-Seite
 ├── .claude/
 │   ├── CLAUDE.md                 # Coding-Agent-Instruktionen
@@ -133,9 +134,12 @@ Die App ist ein statisches Bundle und wird als GitHub Project Page ausgeliefert:
   das Ergebnis in den Branch `gh-pages` (Wurzelverzeichnis). Manuell auslösbar über
   *Actions → Deploy to GitHub Pages → Run workflow*, damit lässt sich auch ein
   Feature-Branch testweise veröffentlichen.
-- [`pr-preview.yml`](.github/workflows/pr-preview.yml) legt zu jedem Pull Request eine
-  eigene Version unter `pr-preview/pr-<nummer>/` ab, postet den Link als Kommentar und
-  räumt beim Schließen des PRs wieder auf.
+- [`pr-preview.yml`](.github/workflows/pr-preview.yml) legt eine eigene Version unter
+  `pr-preview/pr-<nummer>/` ab und postet den Link als Kommentar. Nur für Pull Requests,
+  die etwas unter `frontend/` ändern – reine Doku-PRs bekommen keine Preview.
+- [`pr-preview-cleanup.yml`](.github/workflows/pr-preview-cleanup.yml) löscht diese
+  Dateien beim Schließen des PRs. Eigene Datei, damit das Aufräumen nie am Pfad-Filter
+  des Preview-Workflows scheitert.
 - Der Branch `gh-pages` wird ausschließlich von diesen Workflows verwaltet — dort nie
   von Hand committen.
 

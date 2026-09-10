@@ -28,8 +28,13 @@ Wer die falsche Datei änderte, sah keine Wirkung – und merkte es nicht.
 
 - Die Prototypen in `design/claude-design/` brauchen die JavaScript-Form. Sie laufen
   über Babel im Browser, ohne Bundler – TypeScript würde dort nie übersetzt.
-- Die Vorlagen sind keine Altlast: 16 Dateien in `frontend/src/` nennen sie im
-  Kopfkommentar als Quelle, dazu `docs/mvp-scope.md` und die Skills `wp4`/`wp6`.
+- Beide Vorlagen-Sätze sind keine Altlast, sondern aktiv verlinkt (Stand 2026-09-10):
+  - 16 Dateien unter `frontend/src/` nennen `design/claude-design/…` im Kopfkommentar
+    als Quelle, dazu `docs/mvp-scope.md` und `docs/implementation-plan.md`.
+  - 10 Dateien unter `frontend/src/components/ui/` nennen
+    `.claude/skills/bubble-design/components/core/…`; `main.tsx` und `index.css`
+    nennen zusätzlich `bubble-design/tokens/`. Dazu die Skills `wp4`/`wp6`.
+  - Die beiden Mengen überschneiden sich nicht.
 - Die Vorlagen kosten nichts. Sie liegen außerhalb von `tsconfig` und ESLint und
   landen nicht im ausgelieferten Bundle.
 - Die App selbst ist damit weiterhin vollständig TypeScript – die Regel „strikte Types

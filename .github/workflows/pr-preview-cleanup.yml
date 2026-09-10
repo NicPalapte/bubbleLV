@@ -1,0 +1,43 @@
+name: PR-Preview aufräumen
+
+# Was macht dieser Workflow?
+# Beim Schließen eines Pull Requests löscht er dessen Preview-Ordner
+# `pr-preview/pr-<nummer>/` im Branch `gh-pages`.
+#
+# Warum eine eigene Datei?
+# pr-preview.yml baut nur noch bei Änderungen unter `frontend/` (`paths`-Filter).
+# Stünde das Aufräumen dort, würde es denselben Filter erben – und ein Pull Request,
+# der seine Code-Änderung vor dem Schließen wieder zurücknimmt, käme durch den Filter
+# nicht mehr durch. Seine bereits veröffentlichte Preview bliebe für immer in
+# `gh-pages` liegen. Deshalb läuft dieser Workflow ungefiltert bei jedem geschlossenen
+# Pull Request; gibt es nichts zu löschen, endet er ohne Wirkung.
+#
+# Einrichtung: docs/setup/ci-und-agenten.md
+# Begründung: docs/decisions/0005-preview-nur-bei-code.md
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# Dieselbe Gruppe wie pr-preview.yml: Aufräumen darf ein laufendes Veröffentlichen
+# nicht überholen.
+concurrency: preview-${{ github.ref }}
+
+jobs:
+  cleanup:
+    # Nur Branches aus diesem Repo: Fork-PRs schreiben nicht nach gh-pages.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preview-Ordner entfernen
+        uses: rossjrw/pr-preview-action@v1
+        with:
+          preview-branch: gh-pages
+          umbrella-dir: pr-preview
+          action: remove

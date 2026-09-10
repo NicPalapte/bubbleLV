@@ -15,6 +15,8 @@ Was danach automatisch passiert:
 **Preview nur bei Code-Änderungen:** Gebaut wird nur, wenn der Pull Request etwas unter
 `frontend/` ändert. Ein PR, der ausschließlich Doku anfasst, bekommt keinen Preview-Link –
 das ist kein Fehler. Der Review-Agent und die übrige CI laufen weiterhin bei jedem PR.
+Das Löschen der Preview beim Schließen läuft dagegen immer; es steckt in einem eigenen
+Workflow („PR-Preview aufräumen"), damit keine Dateien in `gh-pages` liegen bleiben.
 
 ---
 
