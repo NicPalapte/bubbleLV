@@ -5,11 +5,13 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das *Was*, diese Dateien da
 
 ## Übersicht
 
-| Nr.  | Entscheidung                                                          | Status     | Datum      |
-|------|-----------------------------------------------------------------------|------------|------------|
-| 0001 | [Review-Agent für Pull Requests](0001-pr-review-agent.md)              | akzeptiert | 2026-09-09 |
-| 0002 | [Preview-App pro Pull Request](0002-pr-preview.md)                     | akzeptiert | 2026-09-09 |
-| 0003 | [Sprach- und Dokumentationsregeln](0003-sprache-und-dokumentation.md)  | akzeptiert | 2026-09-09 |
+| Nr.  | Entscheidung                                                             | Status     | Datum      |
+|------|--------------------------------------------------------------------------|------------|------------|
+| 0001 | [Review-Agent für Pull Requests](0001-pr-review-agent.md)                | akzeptiert | 2026-09-09 |
+| 0002 | [Preview-App pro Pull Request](0002-pr-preview.md)                       | akzeptiert | 2026-09-09 |
+| 0003 | [Sprach- und Dokumentationsregeln](0003-sprache-und-dokumentation.md)    | akzeptiert | 2026-09-09 |
+| 0004 | [Design-Kit bleibt JSX, App bleibt TSX](0004-design-kit-und-frontend.md) | akzeptiert | 2026-09-10 |
+| 0005 | [Preview nur bei Code-Änderungen](0005-preview-nur-bei-code.md)          | akzeptiert | 2026-09-10 |
 
 ## Wann schreibe ich eine neue Datei?
 
