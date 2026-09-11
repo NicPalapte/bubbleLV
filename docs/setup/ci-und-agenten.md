@@ -9,12 +9,17 @@ Was danach automatisch passiert:
 |--------------------------|------------------------------------------------------------------|
 | Pull Request geöffnet     | App wird gebaut, Preview-Link als Kommentar, Code-Review kommentiert |
 | Push in den Pull Request  | Preview aktualisiert, Review erneut (max. 3× automatisch)          |
-| Pull Request geschlossen  | Preview wird gelöscht                                            |
+| Pull Request geschlossen  | nichts – Preview fällt beim nächsten Merge weg                    |
 | Merge nach `main`         | Live-Seite wird neu veröffentlicht                                |
 
 **Preview nur bei Code-Änderungen:** Gebaut wird nur, wenn der Pull Request etwas unter
 `frontend/` ändert. Ein PR, der ausschließlich Doku anfasst, bekommt keinen Preview-Link –
 das ist kein Fehler. Der Review-Agent und die übrige CI laufen weiterhin bei jedem PR.
+
+**Previews werden beim Deploy aufgeräumt:** Schließt man einen PR, bleibt seine Preview
+zunächst erreichbar. Sie verschwindet beim nächsten Merge nach `main` – dann übernimmt das
+Deployment nur noch die Previews der offenen Pull Requests. Grund:
+[Entscheidung 0007](../decisions/0007-previews-im-deploy-aufraeumen.md).
 
 ---
 
@@ -78,7 +83,8 @@ Nur nötig, falls der Preview-Workflow mit „Permission denied“ abbricht:
    - Kommentar mit dem Preview-Link (`.../pr-preview/pr-<nummer>/`)
    - Kommentare des Review-Agenten, falls er etwas findet
    - Kommentar mit dem Zählerstand „Automatische Code-Reviews: 1 von 3 verbraucht“
-3. PR schließen → Preview verschwindet wieder.
+3. PR schließen. Die Preview bleibt vorerst erreichbar und verschwindet beim nächsten
+   Merge nach `main` – siehe Hinweis oben.
 
 ---
 
@@ -117,5 +123,6 @@ Workflows auf dem starken Modell. Die getroffene Wahl steht im Log des Laufs unt
 | Live-Seite bleibt auf altem Stand                | Pages-Quelle noch nicht umgestellt → Schritt 2                |
 | Kein Review bei einem PR aus einem fremden Fork  | So gewollt: Fork-PRs bekommen weder Review noch Preview       |
 | Kein Preview-Link am Pull Request                | So gewollt, wenn der PR nur Doku ändert – siehe Tabelle oben  |
+| Preview eines geschlossenen PRs noch erreichbar  | So gewollt: sie fällt beim nächsten Merge nach `main` weg     |
 
 Hintergrund und Begründungen: [`docs/decisions/`](../decisions/README.md).

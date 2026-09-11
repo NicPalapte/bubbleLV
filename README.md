@@ -150,8 +150,11 @@ Die App ist ein statisches Bundle und wird als GitHub Project Page ausgeliefert:
   *Actions → Deploy to GitHub Pages → Run workflow*, damit lässt sich auch ein
   Feature-Branch testweise veröffentlichen.
 - [`pr-preview.yml`](.github/workflows/pr-preview.yml) legt zu jedem Pull Request eine
-  eigene Version unter `pr-preview/pr-<nummer>/` ab, postet den Link als Kommentar und
-  räumt beim Schließen des PRs wieder auf.
+  eigene Version unter `pr-preview/pr-<nummer>/` ab und postet den Link als Kommentar.
+  Aufgeräumt wird hier nicht: Die Preview eines geschlossenen PRs entfernt
+  `deploy-pages.yml` beim nächsten Merge nach `main` — er übernimmt dann nur noch die
+  Previews der offenen Pull Requests
+  ([Entscheidung 0007](docs/decisions/0007-previews-im-deploy-aufraeumen.md)).
 - Der Branch `gh-pages` wird ausschließlich von diesen Workflows verwaltet — dort nie
   von Hand committen.
 

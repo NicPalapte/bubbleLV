@@ -3,6 +3,11 @@
 - **Status:** akzeptiert
 - **Datum:** 2026-09-09
 - **Betrifft:** CI, Deployment
+- **Teilweise überholt durch:**
+  [0007 – Previews werden beim Deploy aufgeräumt](0007-previews-im-deploy-aufraeumen.md).
+  Zwei Punkte unter „Entscheidung" gelten nicht mehr: Die Preview wird **nicht** mehr
+  beim Schließen des PRs entfernt, und `deploy-pages.yml` schützt `pr-preview/` nicht
+  mehr pauschal per `clean-exclude`. Der Rest gilt unverändert.
 
 ## Worum geht's
 

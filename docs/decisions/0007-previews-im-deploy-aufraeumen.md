@@ -1,0 +1,126 @@
+# 0007 – Previews werden beim Deploy aufgeräumt
+
+- **Status:** akzeptiert
+- **Datum:** 2026-09-11
+- **Betrifft:** CI, Deployment
+- **Ergänzt:** [0002 – Preview-App pro Pull Request](0002-pr-preview.md)
+
+## Worum geht's
+
+Beim Mergen eines Pull Requests tauchte in *Actions* regelmäßig ein abgebrochener Lauf
+auf: **„pages build and deployment"** zum Commit *„Remove preview for PR ＜Nr＞"*,
+Ergebnis `cancelled`. Betroffen waren die PRs 37, 38, 39, 42, 43 und 44 – also fast jeder
+Merge.
+
+Ursache: Ein Merge löste **zwei** Schreibvorgänge auf `gh-pages` fast gleichzeitig aus.
+
+1. `pr-preview.yml` reagierte auf „PR geschlossen" und löschte den Preview-Ordner.
+2. `deploy-pages.yml` reagierte auf den Push nach `main` und veröffentlichte die App.
+
+Beide hatten getrennte Sperren und wussten nichts voneinander. GitHub baut die Seite nach
+jedem Push auf `gh-pages`, lässt aber nur einen Build gleichzeitig zu – der erste wurde
+vom zweiten abgebrochen.
+
+## Entscheidung
+
+- `pr-preview.yml` hört **nicht mehr** auf „PR geschlossen" und räumt nicht mehr auf.
+  Der Schritt läuft mit `action: deploy` statt dem Standard `auto`.
+- `deploy-pages.yml` räumt mit auf: Vor dem Veröffentlichen kopiert er die Previews der
+  **offenen** Pull Requests aus `gh-pages` in den Build-Ordner.
+- Damit entfällt `clean-exclude` im Normalfall. Der Veröffentlichungsschritt spiegelt den
+  Build-Ordner und löscht alles, was darin fehlt – also genau die Previews geschlossener
+  PRs.
+- **Das Live-Deployment hängt nicht am Aufräumen.** Der Übernahme-Schritt meldet nur im
+  Erfolgsfall `aufraeumen=ja`. Jeder andere Ausgang – abgefangener Fehler (Netzwerk,
+  Rate-Limit, Limit erreicht), unerwarteter Abbruch des Skripts, oder gar kein Wert –
+  setzt `clean-exclude` auf `pr-preview/` und schützt damit alle Previews. Der Schritt
+  läuft zusätzlich mit `continue-on-error`, damit auch ein Abbruch mit Fehlercode den
+  Deploy nicht überspringt. Die Seite geht in jedem Fall online, der Lauf meldet eine
+  Warnung.
+- Zusätzlich liegt `.nojekyll` in `frontend/public/`. Vite kopiert die Datei beim
+  Bauen nach `dist/`, von dort wandert sie mit dem übrigen Build in den Branch.
+
+## Warum
+
+- **Ein Merge = ein Schreibvorgang.** Ohne zweiten Push gibt es nichts mehr abzubrechen.
+- Die Preview-Ordner werden nicht mehr einzeln gelöscht, sondern ergeben sich aus der
+  Liste der offenen PRs. Ein Ordner, der beim Aufräumen übersehen wurde, verschwindet
+  beim nächsten Deploy von selbst.
+- `.nojekyll`: Ohne diese Datei schiebt GitHub den Branch durch Jekyll. Jekyll überspringt
+  Dateien, die mit `_` beginnen. Erzeugt der Build so eine Datei, fehlt sie kommentarlos
+  auf der Live-Seite – ohne Fehlermeldung irgendwo.
+- Die Bedingung für `clean-exclude` ist bewusst als „alles außer einem sauberen *ja*
+  schützt" formuliert, nicht als „bei Fehler schützen". Nur so deckt sie auch Fehler ab,
+  die niemand vorhergesehen hat – etwa einen Tippfehler in einer künftigen Änderung.
+- Ein verhindertes Live-Deployment wiegt schwerer als eine Preview, die eine Runde zu
+  spät verschwindet. Ein blindes Weiterlaufen wäre aber die schlechtere Antwort darauf:
+  ohne die übernommenen Previews im Build-Ordner würde der Spiegelschritt die Previews
+  **aller** offenen PRs löschen. Deshalb der Mittelweg – Deployment ja, Aufräumen nein.
+- Das Limit für die PR-Liste ist bewusst als sichtbare Grenze gebaut: Wird es erreicht,
+  ist die Liste womöglich abgeschnitten, und der Lauf räumt lieber gar nicht auf, statt
+  eine Preview still zu löschen.
+- Der Weg über `frontend/public/` kommt ohne zusätzlichen Schreibvorgang aus: Die Datei
+  reist mit dem normalen Build mit, statt hinterher per API in den Branch geschrieben zu
+  werden. Sie steht damit auch sichtbar im Repo statt nur im Deployment-Branch.
+
+## Was offen bleibt
+
+Diese Entscheidung beseitigt den **systematischen** Auslöser: das Paar aus Aufräumen und
+Deployment, das jeder Merge eines Code-PRs gemeinsam ausgelöst hat. Sie beseitigt nicht
+jede denkbare Überschneidung.
+
+Offen bleibt der **zufällige** Fall: Jemand pusst in einen offenen Pull Request, während
+gerade ein anderer nach `main` gemergt wird. Dann schreiben Preview-Workflow und
+Deploy-Workflow innerhalb weniger Sekunden nacheinander auf `gh-pages`, und GitHub
+bricht den älteren Seiten-Build wieder ab.
+
+Warum das so stehen bleibt:
+
+- **Es ist nie vorgekommen.** In allen bisherigen Seiten-Builds ging kein einziger
+  Abbruch auf einen Push in einen Pull Request zurück – alle sechs entstanden durch das
+  Paar „PR geschlossen + Merge".
+- **Eine gemeinsame Sperre für beide Workflows würde es nicht lösen.** Sie würde die
+  beiden Läufe zwar nacheinander ausführen, aber GitHub baut die Seite in einer eigenen
+  Warteschlange, auf die das Repo keinen Einfluss hat. Der Deploy-Job braucht rund 35 s,
+  ein Seiten-Build rund 40 s – der zweite Push käme also weiterhin an, während der erste
+  Build noch läuft.
+- **Der Schaden wäre derselbe wie bisher: keiner.** Beide Builds veröffentlichen denselben
+  Branch-Stand; der abgebrochene ist nur der ältere von zweien. Die Live-Seite bleibt
+  korrekt.
+
+Sollten solche Abbrüche doch auftreten, ist die nächste Stufe nicht eine Sperre, sondern
+ein Zusammenlegen der Schreibvorgänge – etwa Previews nur noch beim Deployment von `main`
+bauen. Das kostet die sofortige Preview je PR-Push und lohnt sich nur, wenn das Problem
+real wird.
+
+## Verworfene Alternativen
+
+- **Beiden Workflows dieselbe Sperre geben** – kleinerer Eingriff, aber unsicher: Der
+  Deploy-Job läuft rund 35 s, ein Seiten-Build rund 40 s. Der zweite Push käme weiterhin,
+  nur etwas später – die Abbrüche könnten vereinzelt zurückkommen.
+- **Nur `clean-exclude` je offenem PR setzen** statt die Previews zu kopieren – hängt
+  davon ab, wie `rsync` geschützte Unterordner beim Löschen des Elternordners behandelt.
+  Der Kopierweg kommt ohne diese Annahme aus.
+- **`.nojekyll` per API in den Branch schreiben** statt über `frontend/public/` – war der
+  erste Entwurf dieses PRs. Funktioniert ebenfalls: Liegt die Datei *nicht* im Build-
+  Ordner, schützt die Deploy-Action sie mit `--exclude` vor dem Löschen. Sie braucht
+  aber einen zusätzlichen Schritt und beim ersten Lauf einen zweiten Schreibvorgang auf
+  `gh-pages` – genau die Sorte Extra-Push, die dieser PR loswerden will.
+- **So lassen und dokumentieren** – die Abbrüche sind kosmetisch, aber sie stehen in
+  jedem Merge im Dashboard. Ein rotes Feld, das man wegsehen muss, macht echte Fehler
+  unsichtbar.
+- **Pages-Quelle zurück auf „GitHub Actions"** – dort gibt es keinen Jekyll-Schritt und
+  keinen Branch-Wettlauf, aber auch keine parallelen Previews. Würde 0002 aufheben.
+
+## Folgen
+
+- Für den Repo-Owner ist kein Handgriff nötig.
+- **Neu im Alltag:** Die Preview eines geschlossenen PRs verschwindet nicht mehr sofort,
+  sondern beim nächsten Merge nach `main`. Der Link zeigt bis dahin den letzten Stand
+  des PRs. Das ist kein Fehler.
+- Der Workflow liest jetzt die Liste der offenen Pull Requests (`pull-requests: read`).
+- Taucht im Deploy-Lauf die Warnung „Previews werden diesmal nicht aufgeräumt" auf, ist
+  die Live-Seite trotzdem aktuell. Übrig gebliebene Previews verschwinden beim nächsten
+  Merge von selbst – es ist kein Handgriff nötig.
+- `.nojekyll` erzeugt keinen eigenen Schreibvorgang: Sie ist Teil des Build-Ordners und
+  wird wie jede andere Datei mitgespiegelt.

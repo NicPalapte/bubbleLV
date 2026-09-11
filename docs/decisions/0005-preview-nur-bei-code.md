@@ -4,6 +4,10 @@
 - **Datum:** 2026-09-10
 - **Betrifft:** CI, Deployment
 - **Ergänzt:** [0002 – Preview-App pro Pull Request](0002-pr-preview.md)
+- **Teilweise überholt durch:**
+  [0007 – Previews werden beim Deploy aufgeräumt](0007-previews-im-deploy-aufraeumen.md).
+  Der Preview-Workflow räumt nicht mehr beim Schließen auf; der `paths`-Filter
+  selbst gilt unverändert.
 
 ## Worum geht's
 
