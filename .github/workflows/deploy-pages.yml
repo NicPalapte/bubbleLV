@@ -90,28 +90,12 @@ jobs:
             fi
           done
 
+      # frontend/public/.nojekyll wandert beim Bauen nach dist und damit in den
+      # Branch. Ohne diese Datei schiebt GitHub Pages den Branch durch Jekyll;
+      # Dateien mit führendem "_" fehlten dann wortlos auf der Live-Seite.
       - name: Nach gh-pages veröffentlichen
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: frontend/dist
           branch: gh-pages
           force: false
-
-      # Ohne diese Datei schiebt GitHub Pages den Branch durch Jekyll; Dateien, die
-      # mit "_" beginnen, fehlen dann wortlos auf der Live-Seite. Der Kopierschritt
-      # der Deploy-Action lässt .nojekyll bewusst unangetastet, deshalb wird sie hier
-      # einmalig direkt im Branch angelegt.
-      - name: .nojekyll in gh-pages sicherstellen
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          if gh api "repos/$GITHUB_REPOSITORY/contents/.nojekyll?ref=gh-pages" >/dev/null 2>&1; then
-            echo ".nojekyll ist vorhanden."
-            exit 0
-          fi
-          gh api --method PUT "repos/$GITHUB_REPOSITORY/contents/.nojekyll" \
-            -f message="chore(pages): .nojekyll anlegen" \
-            -f content="" \
-            -f branch=gh-pages
-          echo ".nojekyll angelegt."

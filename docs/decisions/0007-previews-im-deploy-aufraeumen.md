@@ -29,7 +29,8 @@ vom zweiten abgebrochen.
   **offenen** Pull Requests aus `gh-pages` in den Build-Ordner.
 - Damit entfällt `clean-exclude`. Der Veröffentlichungsschritt spiegelt den Build-Ordner
   und löscht alles, was darin fehlt – also genau die Previews geschlossener PRs.
-- Zusätzlich legt der Workflow einmalig `.nojekyll` im Branch `gh-pages` an.
+- Zusätzlich liegt `.nojekyll` in `frontend/public/`. Vite kopiert die Datei beim
+  Bauen nach `dist/`, von dort wandert sie mit dem übrigen Build in den Branch.
 
 ## Warum
 
@@ -39,9 +40,10 @@ vom zweiten abgebrochen.
   beim nächsten Deploy von selbst.
 - `.nojekyll`: Ohne diese Datei schiebt GitHub den Branch durch Jekyll. Jekyll überspringt
   Dateien, die mit `_` beginnen. Erzeugt der Build so eine Datei, fehlt sie kommentarlos
-  auf der Live-Seite – ohne Fehlermeldung irgendwo. Die Datei gehört in den Branch, nicht
-  in `frontend/public/`: der Kopierschritt der Deploy-Action lässt `.nojekyll` bewusst
-  unangetastet, sie käme von dort also nie an.
+  auf der Live-Seite – ohne Fehlermeldung irgendwo.
+- Der Weg über `frontend/public/` kommt ohne zusätzlichen Schreibvorgang aus: Die Datei
+  reist mit dem normalen Build mit, statt hinterher per API in den Branch geschrieben zu
+  werden. Sie steht damit auch sichtbar im Repo statt nur im Deployment-Branch.
 
 ## Verworfene Alternativen
 
@@ -51,6 +53,11 @@ vom zweiten abgebrochen.
 - **Nur `clean-exclude` je offenem PR setzen** statt die Previews zu kopieren – hängt
   davon ab, wie `rsync` geschützte Unterordner beim Löschen des Elternordners behandelt.
   Der Kopierweg kommt ohne diese Annahme aus.
+- **`.nojekyll` per API in den Branch schreiben** statt über `frontend/public/` – war der
+  erste Entwurf dieses PRs. Funktioniert ebenfalls: Liegt die Datei *nicht* im Build-
+  Ordner, schützt die Deploy-Action sie mit `--exclude` vor dem Löschen. Sie braucht
+  aber einen zusätzlichen Schritt und beim ersten Lauf einen zweiten Schreibvorgang auf
+  `gh-pages` – genau die Sorte Extra-Push, die dieser PR loswerden will.
 - **So lassen und dokumentieren** – die Abbrüche sind kosmetisch, aber sie stehen in
   jedem Merge im Dashboard. Ein rotes Feld, das man wegsehen muss, macht echte Fehler
   unsichtbar.
@@ -64,5 +71,5 @@ vom zweiten abgebrochen.
   sondern beim nächsten Merge nach `main`. Der Link zeigt bis dahin den letzten Stand
   des PRs. Das ist kein Fehler.
 - Der Workflow liest jetzt die Liste der offenen Pull Requests (`pull-requests: read`).
-- Der Lauf, der `.nojekyll` anlegt, erzeugt einmalig einen zusätzlichen Seiten-Build.
-  Danach bleibt die Datei liegen und der Schritt meldet nur noch „ist vorhanden".
+- `.nojekyll` erzeugt keinen eigenen Schreibvorgang: Sie ist Teil des Build-Ordners und
+  wird wie jede andere Datei mitgespiegelt.
