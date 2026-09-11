@@ -197,11 +197,11 @@ Skalierungs-Testwerkzeug hinter einem Flag denkbar, nicht im Default-Pfad).
 **Nicht portiert:** `TasksBlock`, `lv-notes.jsx`, `lv-analytics.jsx`, `lv-vergabe.jsx`,
 `wf-*.jsx`, `design-canvas.jsx` (Design-/Wireframe-Gerüst → nur Referenz in `design/`),
 sowie `Member`/`AssigneePicker`/`useAssignees` — Zuständigkeit ist ohne Server/Persistenz
-bewusst nicht Teil des MVP (siehe [`mvp-scope.md`](../mvp-scope.md#out-of-scope)).
+bewusst nicht Teil des MVP (siehe [`scope.md`](../scope.md#out-of-scope)).
 
 ## Dev-Betrieb
 
 `npm run dev` im DevContainer, Node ist dort vorhanden. Kein Proxy nötig — es gibt
 keine API. `npm run build` erzeugt ein Static-Bundle, das ohne Backend von einem
 beliebigen statischen Host ausgeliefert werden kann (Ziel: frei im Internet
-erreichbar, siehe [`mvp-scope.md`](../mvp-scope.md)).
+erreichbar, siehe [`scope.md`](../scope.md)).

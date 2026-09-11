@@ -18,9 +18,9 @@
 
 | Norm/Standard | Zweck |
 |---|---|
-| VOB/A | Vergabeverfahren für Bauleistungen |
+| VOB/A | Vergabeverfahren für Bauleistungen — Prüfregeln: [`vob-pruefungen.md`](vob-pruefungen.md) |
 | VOB/B | Vertragsbedingungen für die Ausführung von Bauleistungen |
-| VOB/C (ATV DIN 18299 ff.) | Allgemeine Technische Vertragsbedingungen je Gewerk |
+| VOB/C (ATV DIN 18299 ff.) | Allgemeine Technische Vertragsbedingungen je Gewerk — Nebenleistungen (4.1) und Besondere Leistungen (4.2) speisen den VOB-Check |
 | HOAI (LPH 1–9) | Honorarordnung für Architekten und Ingenieure, Leistungsphasen-Gliederung |
 
 ## Technik / Klassifizierung

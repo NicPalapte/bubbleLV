@@ -1,6 +1,6 @@
 Setze **WP-2 · Klassifizierung hinter austauschbarer Schnittstelle** um.
 
-Kontext lesen: @docs/implementation-plan.md @docs/architecture/backend.md @docs/architecture/data-model.md @docs/mvp-scope.md @docs/domain/README.md @.claude/CLAUDE.md
+Kontext lesen: @docs/implementation-plan.md @docs/architecture/backend.md @docs/architecture/data-model.md @docs/scope.md @docs/domain/README.md @.claude/CLAUDE.md
 
 **Ziel:** Merkmale aus Kurz-/Langtext **mehrstufig** in `Position.attributes` ablegen —
 hinter `ClassifierProtocol` (Signatur bleibt stabil, WP-7/LLM bleibt ohne Umbau

@@ -7,7 +7,7 @@
 >
 > **Aktueller Stand:** Das MVP ist zu einer **reinen Frontend-Anwendung** ohne Server
 > geworden (kein Login, nichts wird gespeichert) — siehe
-> [`mvp-scope.md`](mvp-scope.md), [`architecture/pipeline.md`](architecture/pipeline.md).
+> [`scope.md`](scope.md), [`architecture/pipeline.md`](architecture/pipeline.md).
 > Schritte 2–6 unten setzen alle eine Server-Komponente mit Persistenz voraus (Notizen,
 > Aufgaben, Termine hängen an einem `WBSNode`, der eine Session überlebt) und sind
 > damit **pausiert**, solange das MVP frontend-only bleibt. Die frühere

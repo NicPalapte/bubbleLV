@@ -193,3 +193,65 @@ self-referenzieller Baum, unabhängig von der LV-Struktur:
 an einem stabilen Knoten hängen, der eine Session überlebt — das setzt Persistenz
 voraus, die das aktuelle MVP bewusst nicht hat. Details zur langfristigen Vision:
 [`vision.md`](../vision.md).
+
+---
+
+## Geplante Erweiterungen (Release 2 — „LV verstehen")
+
+> Noch **nicht umgesetzt**. Hier steht, wohin das Modell wächst, damit neue Arbeit nicht
+> daneben baut. Umsetzung: [`../implementation-plan.md`](../implementation-plan.md)
+> (WP-I, WP-J, WP-K, WP-M) · Scope: [`../scope.md`](../scope.md).
+
+### `spans` — Textstellen zu jedem Merkmal (WP-J)
+
+Heute liefert die Klassifizierung nur Werte. Damit im Langtext markiert werden kann,
+**woher** ein Merkmal stammt, kommt je Merkmal die Fundstelle dazu:
+
+```ts
+interface Span {
+  key: string;     // z. B. "beton", "normen"
+  start: number;   // Zeichen-Index im Langtext
+  end: number;
+  label: string;   // Anzeigetext, z. B. "DIN EN 206"
+}
+```
+
+Abgelegt unter `attributes._spans`. Wie `_meta` ist der Key reserviert und taucht nie
+als Facette auf.
+
+### `Flag` — Hinweise aus Prüfregeln (WP-K)
+
+Prüf-Ergebnisse gehören **nicht** in `attributes` — sie sind keine Eigenschaft der
+Position, sondern eine Bewertung. Eigene Liste, je Eintrag ein Verweis auf die Position:
+
+```ts
+interface Flag {
+  id: string;                                        // Regel-ID, z. B. "V1"
+  category: 'geld' | 'risiko' | 'norm' | 'frist' | 'vob';
+  severity: 'hinweis' | 'beachten';
+  ruleRef: string;                                   // z. B. "VOB/A § 7 Abs. 1 Nr. 4"
+  positionId: string;
+  span?: Span;
+}
+```
+
+### `PositionIndex` — flache Rechenbasis (WP-I)
+
+Der `LVNode`-Baum bleibt die Struktur. Für Filter, Summen und Beziehungen kommt ein
+flacher Index über alle Positionen dazu, einmal nach `buildTree` erzeugt: numerische
+Spalten als typisierte Arrays, dazu ein Verweis auf den Baumknoten. Ansichten rechnen
+gegen den Index, nicht gegen den Baum.
+
+### `Cluster` — Beziehungen (WP-M)
+
+```ts
+interface Cluster {
+  id: string;
+  positionIds: string[];
+  gemeinsameMerkmale: Record<string, unknown>;
+  unterscheidendeMerkmale: string[];  // Keys, in denen sich die Mitglieder unterscheiden
+  ausreisser: string[];               // positionIds mit auffälligem EP oder auffälliger Menge
+}
+```
+
+Einmal beim Laden im Worker berechnet, danach unverändert im State — nicht im Render.

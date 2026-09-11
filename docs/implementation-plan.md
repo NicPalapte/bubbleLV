@@ -1,40 +1,283 @@
-# Implementierungsplan — MVP (Frontend-only)
+# Implementierungsplan
 
-> Der verbindliche, sequenzierte Plan für die Umsetzung. Jedes Arbeitspaket (WP)
-> hat einen Branch-Namen, konkrete Schritte und **Abnahmekriterien** („Fertig, wenn …").
-> Reihenfolge einhalten: WP-A → WP-G. Scope-Definition: [`mvp-scope.md`](mvp-scope.md).
+> Der verbindliche, sequenzierte Plan. Jedes Arbeitspaket (WP) hat einen Commit-Scope,
+> konkrete Schritte und **Abnahmekriterien** („Fertig, wenn …").
+> Scope-Definition: [`scope.md`](scope.md) · Kursänderung:
+> [`decisions/0006-fokus-lv-verstehen.md`](decisions/0006-fokus-lv-verstehen.md).
 
 **Konventionen:** Conventional Commits mit Scopes `gaeb · classify · tree · viewer ·
-graph · frontend`. Trunk-based, kurzlebige Feature-Branches. Vor jedem WP prüfen, ob
-der passende Branch aktiv ist; auf `main` nur hinweisen, keinen Branch selbst anlegen.
-
-> **Hinweis:** Die frühere Backend-Planung (WP-1…6, WBSNode, LLM-Klassifizierer) ist
-> auf dem Branch `archive/backend-mvp` gesichert. Dieser Plan ersetzt sie vollständig
-> für das frontend-only MVP.
+graph · relate · check · frontend`. Trunk-based, kurzlebige Feature-Branches. Vor jedem
+WP prüfen, ob der passende Branch aktiv ist; auf `main` nur hinweisen, keinen Branch
+selbst anlegen.
 
 ## Stand
 
-| WP | Status |
-|---|---|
-| WP-A · Frontend-Gerüst | ✅ umgesetzt |
-| WP-B · GAEB-Parser | ✅ umgesetzt |
-| WP-C · Klassifizierung | ✅ umgesetzt (`src/lib/classify/`) |
-| WP-D · In-Memory-Baum | ✅ umgesetzt (`src/lib/tree/`, `src/state/`) |
-| WP-E · Viewer: Tree + Tabelle + Suche + Filter | ✅ umgesetzt (`src/components/`, `src/lib/matchPos.ts`) |
-| WP-F · Bubble-Graph | ✅ umgesetzt (`src/lib/graph/`, `src/components/graph/`) |
-| WP-G · Eigenschaften-Panel + Static-Deploy | ✅ umgesetzt |
+| WP | Was | Status |
+|---|---|---|
+| WP-A…G | MVP: Import, Klassifizierung, Baum, Tree/Tabelle/Filter, Graph, Panel | ✅ umgesetzt (Details unten) |
+| WP-41-1…3 | Langtexte, Eigenschaften-Panel, Tabellen-Spalten (Issue #41) | ✅ umgesetzt |
+| WP-H | Graph fertigstellen (= WP-41-4 + WP-41-5) | offen |
+| WP-I | Performance-Fundament für 10k Positionen | offen |
+| WP-J | Klassifizierung v2: generische Extraktoren + Textstellen | offen |
+| WP-K | Flags und VOB-Check, Ansicht „Prüfung" | offen |
+| WP-L | Ansichts-Gerüst + Ansicht „Überblick" | offen |
+| WP-M | Beziehungen: Ähnlichkeit, Unterschiede, Ausreißer | offen |
+| WP-N | Ansicht „Vergleich" | offen |
+| WP-O | Ansicht „Matrix" | offen |
+| WP-P | Feinschliff: Kommandopalette, URL-Zustand, Export, Druck | offen |
 
-Nach dem MVP: Der Lösungsplan zum Nutzungs-Review des Owners (Issue #41 – Texte,
-Tabelle, Graph-Layout) steht in
-[`plans/issue-41-app-usage-review.md`](plans/issue-41-app-usage-review.md).
-
-Offen bleibt bewusst die inhaltliche Pflege der `keywords`-Spalte in
+Offen bleibt weiterhin die inhaltliche Pflege der `keywords`-Spalte in
 [`domain/reference/stlb-bau-leistungsbereiche.csv`](domain/reference/stlb-bau-leistungsbereiche.csv)
-— ohne sie greift Stufe 0 nur selten und die Positionen laufen über den
-Heuristik-Fallback (kein Fehler, siehe
-[`domain/README.md`](domain/README.md#stlb-bau-leistungsbereiche-als-primäre-klassifizierungsquelle-wp-2)).
+sowie die neuen Referenzdateien aus [`domain/vob-pruefungen.md`](domain/vob-pruefungen.md).
+Ohne sie greifen die jeweiligen Regeln nicht — das ist kein Fehler.
 
 ---
+
+# Release 2 · „LV verstehen"
+
+## Reihenfolge
+
+```
+WP-H ──► WP-I ──┬──► WP-J ──► WP-K ──────────────┐
+                │                                 ├──► WP-P
+                └──► WP-L ──► WP-M ──► WP-N ──► WP-O
+```
+
+- **WP-H und WP-I zuerst.** Ohne tragfähigen Graphen und ohne Performance-Fundament
+  bringt jede neue Ansicht nur mehr Ruckeln.
+- WP-J ist die Datengrundlage für WP-K, WP-M, WP-N und WP-O. Ohne die neuen Merkmale
+  haben Prüfung, Ähnlichkeit, Vergleich und Matrix nichts zu zeigen.
+- Ein WP = ein Pull Request.
+
+---
+
+## WP-H · Graph fertigstellen · `feat(graph)`
+
+**Ziel:** Der Graph verträgt reale Dateien. Umfang und Abnahme stehen bereits in
+[`plans/issue-41-app-usage-review.md`](plans/issue-41-app-usage-review.md) — WP-41-4
+(Darstellung, Beschriftung, Zoom auf Auswahl) und WP-41-5 (Positionswolke statt Ring,
+voller Kreis, Detailstufe). Dieses WP übernimmt sie unverändert.
+
+**Zusatz gegenüber dem alten Plan:** Der Graph ist ab jetzt eine Ansicht unter
+mehreren, kein Sonderfall. Sein Zustand (Zoom, offene Knoten) lebt im gemeinsamen
+Viewer-State, damit WP-L ihn beim Ansichtswechsel erhalten kann.
+
+**Fertig, wenn:** die Abnahmekriterien von WP-41-4 und WP-41-5 erfüllt sind und der
+Graph-Zustand einen Ansichtswechsel übersteht.
+
+---
+
+## WP-I · Performance-Fundament · `perf(frontend)`
+
+**Ziel:** 10.000 Positionen ohne Ruckeln. Heute traversiert jede Ansicht den
+`LVNode`-Baum bei jedem Render — das trägt nicht.
+
+Schritte:
+1. `src/lib/index/positionIndex.ts`: flacher Index über alle Positionen, einmal nach
+   `buildTree` erzeugt. Je Position ein Eintrag mit OZ, Verweis auf den Baumknoten,
+   Menge, Einheit, EP, GP und den klassifizierten Merkmalen. Numerische Spalten als
+   typisierte Arrays, damit Filter und Summen ohne Objekt-Traversierung laufen.
+2. Aggregate (Summe, Anzahl, Min/Max je Facette) im Worker berechnen und als
+   fertiges Ergebnis in den State geben, nicht im Render.
+3. `matchPos` arbeitet gegen den Index statt gegen den Baum; die Filterlogik selbst
+   bleibt unverändert die einzige Quelle.
+4. Tabelle virtualisieren (nur sichtbare Zeilen im DOM).
+5. Messpunkte einbauen: Ladezeit, Filterzeit, Renderzeit — in der Konsole, nicht im UI.
+6. Test-Fixture mit 10.000 synthetischen Positionen erzeugen (Generator im Testcode,
+   keine große Datei im Repo).
+
+**Fertig, wenn:**
+- 10k Positionen: erste Ansicht < 5 s, Filterwechsel < 100 ms, Ansichtswechsel < 200 ms.
+- Die Tabelle mit 10k Zeilen scrollt flüssig.
+- `npm test` enthält einen Performance-Test, der die Filterzeit misst und bei
+  Überschreitung fehlschlägt.
+
+---
+
+## WP-J · Klassifizierung v2 · `feat(classify)`
+
+**Ziel:** Merkmale, die in **jedem** Gewerk greifen, plus die Textstellen dazu.
+
+Schritte:
+1. `ClassificationResult` um `spans` erweitern: je Merkmal Anfang und Ende im Langtext
+   (`{ key, start, end, label }`). Schema-Erweiterung in
+   [`architecture/data-model.md`](architecture/data-model.md) nachziehen.
+2. Gewerkeunabhängige Extraktoren in `src/lib/classify/extractors/`:
+   - `normen.ts` — DIN, DIN EN, ISO, ZTV, ATV-Verweise
+   - `masse.ts` — Zahl + Einheit mit Kontext (Dicke, Höhe, Länge, Gewicht)
+   - `material.ts` — Materialstichworte, gespeist aus dem STLB-Katalog
+   - `platzhalter.ts` — offene Textergänzungen aus dem Parser
+   - `verweise.ts` — „siehe Pos.", „gemäß …", „laut Anlage"
+   - `fristen.ts` — Datum, Bauzeit, Winterbau, Vorleistung, Arbeiten unter Verkehr
+3. Die Extraktoren laufen **vor** den gewerkespezifischen Rulesets und werden von
+   ihnen nur überschrieben, nie gelöscht.
+4. `Highlighted.tsx` kann Spans aus mehreren Kategorien gleichzeitig zeichnen, je
+   Kategorie eine Farbe, einzeln abschaltbar.
+5. Unit-Tests je Extraktor, inklusive Negativfall (kein Treffer → kein Key).
+
+**Fertig, wenn:**
+- Eine Position mit „C30/37 nach DIN EN 206, d = 30 cm" liefert `normen`, `masse`,
+  `beton` — jeweils mit korrekter Textstelle.
+- Im Eigenschaften-Panel sind die Fundstellen im Langtext farbig markiert.
+- Eine Position ohne erkennbare Merkmale liefert keine leeren Keys.
+
+---
+
+## WP-K · Flags und VOB-Check · `feat(check)`
+
+**Ziel:** Die vier „wichtig"-Kategorien und der VOB-Check als auswertbare Hinweise.
+
+Schritte:
+1. `src/lib/check/types.ts`: `Flag { id, category, severity, ruleRef, positionId, span }`.
+   Kategorien: `geld | risiko | norm | frist | vob`.
+2. Regel-Registry `src/lib/check/rules/` — ein Modul je Regel, Registrierung wie bei den
+   Rulesets. Jede Regel liefert Titel, Norm-Verweis und Fundstelle.
+3. Regeln V1, V2, V4, V5, V6, V7 aus [`domain/vob-pruefungen.md`](domain/vob-pruefungen.md)
+   umsetzen. V3, V8, V9, V10 bleiben inaktiv, bis die Referenzdateien da sind.
+4. Geld-/Mengentreiber: Anteil an der Gesamtsumme, Mengen-Rang, EP-Ausreißer (Letzteres
+   erst nach WP-M, vorher ohne Vergleichsgruppe nicht berechenbar).
+5. Ansicht **Prüfung**: Liste aller Hinweise, gruppiert nach Regel, mit Anzahl, Sprung
+   zur Position und Schalter je Regel.
+6. Formulierungen: Hinweis, kein Urteil. Norm-Verweis immer sichtbar.
+
+**Fertig, wenn:**
+- Eine reale Datei mit Bedarfspositionen und Platzhaltern erzeugt Hinweise mit
+  korrekter Anzahl und korrektem Sprungziel.
+- Jede Regel ist einzeln abschaltbar; abgeschaltet verschwindet sie aus allen Ansichten.
+- Fehlende Referenzdatei ⇒ Regel inaktiv, kein Fehler, sichtbarer Hinweis „inaktiv".
+- Je Regel mindestens ein Test mit Treffer und einer ohne.
+
+---
+
+## WP-L · Ansichts-Gerüst und Überblick · `feat(viewer)`
+
+**Ziel:** Acht gleichrangige Ansichten auf einem Filterzustand — und die erste neue.
+
+Schritte:
+1. `src/state/viewer.ts` trennen: `filterState` (Suche, Facetten, Modus),
+   `selectionState` (Auswahl, Mehrfachauswahl), `viewState` (aktive Ansicht, je Ansicht
+   eigener Zustand wie Zoom oder Sortierung).
+2. Ansichtsumschalter in der `TopBar`. Wechsel ändert **nie** Filter oder Auswahl.
+3. Ansicht **Überblick** (`src/components/overview/`):
+   - Kennzahlen: Positionen, Summe, Anzahl Gewerke, Anteil ohne Preis, Anzahl Hinweise
+   - Treemap nach Gewerk und Abschnitt, Klick filtert
+   - Pareto: welcher Anteil der Positionen trägt 80 % der Summe
+   - Mengen je Einheit, absteigend
+4. Ohne Preise in der Datei: Geld-Kacheln zeigen ausdrücklich „keine Preise in dieser
+   Datei" statt Nullwerten, Mengen übernehmen die Hauptrolle.
+5. Eine Gewerk-Farbskala in `src/lib/colors.ts`, gültig für **alle** Ansichten.
+
+**Fertig, wenn:**
+- Filter setzen, Ansicht wechseln, zurückwechseln: Filter, Auswahl und Scrollposition
+  sind unverändert.
+- Der Überblick einer realen Datei stimmt gegen die Tabellensummen (Stichprobe).
+- Eine x83-Datei ohne Preise zeigt keine Null-Euro-Kacheln.
+
+---
+
+## WP-M · Beziehungen · `feat(relate)`
+
+**Ziel:** Ähnliche Positionen finden, Unterschiede benennen, Ausreißer zeigen.
+
+Schritte:
+1. `src/lib/relate/similarity.ts`:
+   - Text normalisieren (Kleinschreibung, Zahlen und Einheiten maskieren, Stoppwörter).
+   - Kandidaten vorgruppieren nach Gewerk, Einheit und Bauteiltyp — nur innerhalb einer
+     Gruppe wird verglichen. Alle Paare zu vergleichen ist bei 10k Positionen
+     (~50 Mio. Paare) nicht bezahlbar.
+   - Innerhalb der Gruppe Ähnlichkeit über Wort-Schindeln und Jaccard-Maß; zusätzlich
+     Merkmals-Übereinstimmung. Schwellwert einstellbar, Standard konservativ.
+2. Ergebnis: `Cluster { id, positionIds, gemeinsameMerkmale, unterscheidendeMerkmale }`.
+3. Läuft **einmal beim Laden im Worker**, Ergebnis liegt im State.
+4. Ausreißer je Cluster: Einheitspreis oder Menge außerhalb des Erwartungsbereichs
+   (Median und Quartilsabstand, nicht Mittelwert — einzelne Extremwerte verzerren sonst).
+5. Ansicht **Ähnlichkeit**: Cluster als Liste, Größe und Streuung sichtbar, Klick öffnet
+   den Vergleich (WP-N). Filter „nur Positionen in Clustern ab n Mitgliedern".
+6. Tests: bekannte Dublette wird gefunden, bewusst unterschiedliche Positionen landen
+   nicht im selben Cluster, 10k Positionen clustern in < 3 s.
+
+**Fertig, wenn:**
+- Eine reale Datei mit wiederkehrenden Leistungen zeigt diese als Cluster.
+- Ein Cluster benennt, welche Merkmale gemeinsam und welche unterschiedlich sind.
+- Die Laufzeit bleibt im Worker und blockiert die UI nicht.
+
+---
+
+## WP-N · Vergleich · `feat(viewer)`
+
+**Ziel:** 2–5 Positionen nebeneinander, Unterschiede sichtbar.
+
+Schritte:
+1. Mehrfachauswahl: Strg-Klick in Tabelle, Baum, Graph und Cluster-Liste.
+2. Ansicht **Vergleich**: Spalte je Position, Zeile je Merkmal. Abweichende Werte
+   farbig, gleiche Werte gedämpft.
+3. Langtext-Diff wortweise (eigene, kleine Implementierung oder Bibliothek — Auswahl in
+   einer Entscheidung festhalten, falls eine Abhängigkeit dazukommt).
+4. Sprung von jeder Spalte zurück in die Tabelle oder den Graphen.
+
+**Fertig, wenn:**
+- Zwei fast gleiche Positionen zeigen genau die abweichenden Zeilen.
+- Fünf Positionen passen lesbar nebeneinander; ab sechs wird die Auswahl begrenzt.
+
+---
+
+## WP-O · Matrix · `feat(viewer)`
+
+**Ziel:** Heatmap über zwei Merkmale, Lücken und Häufungen auf einen Blick.
+
+Schritte:
+1. Zwei Achsen frei wählbar aus allen Facetten (Standard: Gewerk × Bauteiltyp).
+2. Zellwert umschaltbar: Anzahl, Menge, Summe.
+3. Klick auf eine Zelle setzt den passenden Filter und wechselt in die Tabelle.
+4. Leere Zellen bleiben sichtbar leer — die Lücke ist die Information.
+
+**Fertig, wenn:**
+- Achsen und Zellwert lassen sich umschalten, ohne den Filter zu verlieren.
+- Klick auf eine Zelle führt zur passenden gefilterten Menge.
+
+---
+
+## WP-P · Feinschliff · `feat(frontend)`
+
+**Ziel:** Das Werkzeug wird schnell bedienbar und teilbar.
+
+Schritte:
+1. **Kommandopalette** (Strg/Cmd + K): zu OZ springen, Filter setzen, Ansicht wechseln.
+2. **Zustand im URL-Fragment** (`#...`): aktive Ansicht, Filter, Auswahl. Ein Fragment
+   wird von Browsern **nie** an einen Server gesendet — die Regel „keine Fachdaten nach
+   draußen" bleibt gewahrt. Kurz in der Entscheidung festhalten.
+3. **Lokaler Export**: gefilterte Positionsliste und Prüf-Hinweise als CSV oder
+   Markdown, erzeugt als Blob im Browser.
+4. **Druckansicht** über Print-CSS für die gefilterte Menge.
+5. Tastaturbedienung in allen Ansichten (Auswahl mit Pfeiltasten, Enter öffnet).
+
+**Fertig, wenn:**
+- Ein geteilter Link stellt Ansicht und Filter wieder her, sobald dieselbe Datei geladen
+  ist — ohne Fachdaten im Link außer der OZ der Auswahl.
+- Der Export enthält genau die gefilterte Menge.
+- Im Netzwerk-Tab ist bei Export und Druck kein Request zu sehen.
+
+---
+
+## Offene Fragen an den Owner
+
+1. **Anwendungsfälle UC-1…UC-6** in [`scope.md`](scope.md#anwendungsfälle): stimmen sie,
+   fehlt einer, ist einer überflüssig?
+2. **VOB-Paragraphen** aus [`domain/vob-pruefungen.md`](domain/vob-pruefungen.md):
+   bitte die als `zu bestätigen` markierten Verweise prüfen.
+3. **Referenzdaten:** Wer liefert Herstellerliste (V3) und Nebenleistungen je ATV (V8)?
+4. **Kennzahlen-Plausibilität** (Schalung m² je m³ Beton, Bewehrung kg je m³): Richtwerte
+   müssen aus der Praxis kommen, nicht aus dem Modell. Willst du sie beisteuern? Dann
+   wird daraus ein eigenes WP.
+5. **Beispieldateien mit Preisen** (x84/x86) für Tests — gibt es welche, die im Repo
+   liegen dürfen?
+
+---
+
+# Abgeschlossen · MVP (WP-A … WP-G)
+
+> Historie. Diese Pakete sind umgesetzt und werden nicht mehr geändert — sie
+> dokumentieren, wie der heutige Stand entstanden ist.
 
 ## WP-A · Frontend-Gerüst  · `feat(frontend)`
 
@@ -202,7 +445,7 @@ Schritte:
 
 ---
 
-## WP-F · Bubble-Graph  · `feat(graph)`  · **Kern**
+## WP-F · Bubble-Graph  · `feat(graph)`
 
 **Ziel:** Die Graph-Engine aus `lv-graph.jsx` als Mitte-Modus, gespeist aus demselben
 `LVNode`-Baum. Vergabepaket-Kanten entfallen (out of scope).
@@ -245,7 +488,7 @@ Schritte:
 
 ---
 
-## Abhängigkeiten
+## Abhängigkeiten (MVP)
 
 ```
 WP-A ─► WP-B ─► WP-C ─► WP-D ─► WP-E ─► WP-F ─► WP-G

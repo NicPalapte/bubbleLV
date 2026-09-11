@@ -58,7 +58,7 @@ Rules:
 ## Inventory
 
 Production paths are relative to `frontend/src/components/ui/`. `—` means deliberately
-not in the app; the reason is binding, see `docs/mvp-scope.md#out-of-scope`.
+not in the app; the reason is binding, see `docs/scope.md#out-of-scope`.
 
 | Component | Kit file (prototypes) | Production (the app) |
 | --- | --- | --- |

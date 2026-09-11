@@ -29,7 +29,7 @@ Wer die falsche Datei änderte, sah keine Wirkung – und merkte es nicht.
 - Die Prototypen in `design/claude-design/` brauchen die JavaScript-Form. Sie laufen
   über Babel im Browser, ohne Bundler – TypeScript würde dort nie übersetzt.
 - Die Vorlagen sind keine Altlast: 16 Dateien in `frontend/src/` nennen sie im
-  Kopfkommentar als Quelle, dazu `docs/mvp-scope.md` und die Skills `wp4`/`wp6`.
+  Kopfkommentar als Quelle, dazu `docs/scope.md` und die Skills `wp4`/`wp6`.
 - Die Vorlagen kosten nichts. Sie liegen außerhalb von `tsconfig` und ESLint und
   landen nicht im ausgelieferten Bundle.
 - Die App selbst ist damit weiterhin vollständig TypeScript – die Regel „strikte Types
