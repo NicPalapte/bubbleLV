@@ -58,6 +58,36 @@ vom zweiten abgebrochen.
   reist mit dem normalen Build mit, statt hinterher per API in den Branch geschrieben zu
   werden. Sie steht damit auch sichtbar im Repo statt nur im Deployment-Branch.
 
+## Was offen bleibt
+
+Diese Entscheidung beseitigt den **systematischen** Auslöser: das Paar aus Aufräumen und
+Deployment, das jeder Merge eines Code-PRs gemeinsam ausgelöst hat. Sie beseitigt nicht
+jede denkbare Überschneidung.
+
+Offen bleibt der **zufällige** Fall: Jemand pusst in einen offenen Pull Request, während
+gerade ein anderer nach `main` gemergt wird. Dann schreiben Preview-Workflow und
+Deploy-Workflow innerhalb weniger Sekunden nacheinander auf `gh-pages`, und GitHub
+bricht den älteren Seiten-Build wieder ab.
+
+Warum das so stehen bleibt:
+
+- **Es ist nie vorgekommen.** In allen bisherigen Seiten-Builds ging kein einziger
+  Abbruch auf einen Push in einen Pull Request zurück – alle sechs entstanden durch das
+  Paar „PR geschlossen + Merge".
+- **Eine gemeinsame Sperre für beide Workflows würde es nicht lösen.** Sie würde die
+  beiden Läufe zwar nacheinander ausführen, aber GitHub baut die Seite in einer eigenen
+  Warteschlange, auf die das Repo keinen Einfluss hat. Der Deploy-Job braucht rund 35 s,
+  ein Seiten-Build rund 40 s – der zweite Push käme also weiterhin an, während der erste
+  Build noch läuft.
+- **Der Schaden wäre derselbe wie bisher: keiner.** Beide Builds veröffentlichen denselben
+  Branch-Stand; der abgebrochene ist nur der ältere von zweien. Die Live-Seite bleibt
+  korrekt.
+
+Sollten solche Abbrüche doch auftreten, ist die nächste Stufe nicht eine Sperre, sondern
+ein Zusammenlegen der Schreibvorgänge – etwa Previews nur noch beim Deployment von `main`
+bauen. Das kostet die sofortige Preview je PR-Push und lohnt sich nur, wenn das Problem
+real wird.
+
 ## Verworfene Alternativen
 
 - **Beiden Workflows dieselbe Sperre geben** – kleinerer Eingriff, aber unsicher: Der
