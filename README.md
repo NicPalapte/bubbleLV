@@ -15,6 +15,9 @@ Das ist die einzige Aufgabe. Konkret:
 - **VOB-Check** — Hinweise mit Norm-Verweis, kein Rechtsrat
   ([Regelkatalog](docs/domain/vob-pruefungen.md))
 
+Zum Ausprobieren ohne eigene Datei liegt die frei verfügbare **BVBS-Musterdatei** bei —
+„Demo-LV laden" auf der Startseite.
+
 Acht gleichrangige Ansichten teilen sich **einen** Filterzustand: Überblick · Graph ·
 Tabelle · Matrix · Ähnlichkeit · Vergleich · Prüfung · Eigenschaften. Ansicht wechseln
 heißt: anderer Blick auf dasselbe, nie Neuanfang.

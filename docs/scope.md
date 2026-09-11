@@ -50,6 +50,9 @@ UC-6 liefert **nur die Liste**. Fragen verwalten, zuweisen oder versenden bleibt
 - **Neu: Hinweistexte und Textergänzungen** werden mit eingelesen statt verworfen
   (in realen Dateien hunderte Stück, siehe [`plans/issue-41-app-usage-review.md`](plans/issue-41-app-usage-review.md)).
 - Eine Datei zur Zeit. Erneutes Laden ersetzt den Stand vollständig.
+- **Demo-LV:** Der Startbildschirm bietet die mitgelieferte BVBS-Musterdatei zum
+  Ausprobieren ohne eigene Datei an
+  ([`decisions/0009-demo-lv.md`](decisions/0009-demo-lv.md)).
 
 ### 2 · Große Dateien
 

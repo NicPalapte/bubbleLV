@@ -1,11 +1,14 @@
-// Datei laden → lokale Pipeline anstoßen. Drag & Drop + Datei-Dialog.
-// Die Datei verlässt den Browser nie: kein Upload, kein Fetch, keine Persistenz.
+// Datei laden → lokale Pipeline anstoßen. Drag & Drop + Datei-Dialog, dazu das
+// mitgelieferte Demo-LV zum Ausprobieren ohne eigene Datei.
+// Die Datei verlässt den Browser nie: kein Upload, keine Persistenz.
 
 import { useCallback, useRef, useState } from 'react';
 import { Chip } from '../ui/Chip';
 import { BubbleLogo } from '../ui/BubbleLogo';
+import { DEMO_LV_LABEL, loadDemoLv } from '../../lib/pipeline/loadDemoLv';
 import { loadLv, LVLoadError } from '../../lib/pipeline/loadLv';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
+import type { LoadedLV } from '../../lib/pipeline/runPipeline';
 
 const ACCEPT = '.x81,.x82,.x83,.x84,.x85,.x86,.xml,.X81,.X82,.X83,.X84,.X85,.X86,.XML';
 
@@ -18,12 +21,12 @@ export function FileDropzone() {
   // Ablage nie verlassen hat — deshalb wird gezählt statt geschaltet.
   const dragDepth = useRef(0);
 
-  const handleFile = useCallback(
-    async (file: File | undefined): Promise<void> => {
-      if (file === undefined) return;
+  /** Ein Ladeweg, eine Fehlerbehandlung — Datei wie Demo-LV. */
+  const run = useCallback(
+    async (load: () => Promise<LoadedLV>): Promise<void> => {
       dispatch({ type: 'loading' });
       try {
-        dispatch({ type: 'loaded', lv: await loadLv(file) });
+        dispatch({ type: 'loaded', lv: await load() });
       } catch (cause) {
         const message =
           cause instanceof LVLoadError
@@ -36,6 +39,19 @@ export function FileDropzone() {
     },
     [dispatch],
   );
+
+  const handleFile = useCallback(
+    async (file: File | undefined): Promise<void> => {
+      if (file === undefined) return;
+      await run(() => loadLv(file));
+    },
+    [run],
+  );
+
+  const openDemo = (): void => {
+    if (loading) return;
+    void run(loadDemoLv);
+  };
 
   const openDialog = (): void => {
     if (loading) return;
@@ -87,11 +103,20 @@ export function FileDropzone() {
           Klick darf nicht zusätzlich auf der Fläche landen, sonst öffnet sich
           der Dateidialog zweimal.
         */}
-        <span onClick={(event) => event.stopPropagation()}>
+        <span
+          className="flex flex-wrap items-center justify-center gap-[8px]"
+          onClick={(event) => event.stopPropagation()}
+        >
           <Chip on onClick={openDialog}>
             {loading ? 'Wird gelesen…' : 'Datei auswählen'}
           </Chip>
+          <Chip onClick={openDemo} title={`${DEMO_LV_LABEL} — zum Ausprobieren`}>
+            Demo-LV laden
+          </Chip>
         </span>
+        <div className="max-w-[420px] font-mono text-[10px] leading-[1.6] text-mute">
+          Keine eigene Datei zur Hand? „Demo-LV laden" öffnet die frei verfügbare {DEMO_LV_LABEL}.
+        </div>
         <input
           ref={inputRef}
           type="file"

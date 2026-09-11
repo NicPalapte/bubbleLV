@@ -69,15 +69,17 @@ function classifyInWorker(draft: LVDraft, fileName: string): Promise<LoadedLV> |
 }
 
 /**
- * Lädt eine GAEB-Datei vollständig im Browser.
+ * Rohbytes einer GAEB-Datei vollständig im Browser verarbeiten. Gemeinsamer
+ * Weg für die gewählte Datei und das mitgelieferte Demo-LV — beide sollen
+ * dieselbe Worker-Schwelle und dieselben Fehlermeldungen bekommen.
  *
  * @throws {LVLoadError} mit verständlicher Meldung für die UI.
  */
-export async function loadLv(file: File): Promise<LoadedLV> {
+export async function loadLvFromBytes(bytes: ArrayBuffer, fileName: string): Promise<LoadedLV> {
   let draft: LVDraft;
   try {
     // Bytes, nicht Text — das Encoding steht in der XML-Deklaration.
-    draft = parseToDraft(await file.arrayBuffer(), file.name);
+    draft = parseToDraft(bytes, fileName);
   } catch (error) {
     const failure = toPipelineError(error);
     throw new LVLoadError(failure.code, describeFailure(failure));
@@ -85,13 +87,22 @@ export async function loadLv(file: File): Promise<LoadedLV> {
 
   try {
     if (countPositions(draft) >= WORKER_THRESHOLD_POSITIONS) {
-      const viaWorker = classifyInWorker(draft, file.name);
+      const viaWorker = classifyInWorker(draft, fileName);
       if (viaWorker !== null) return await viaWorker;
     }
-    return classifyAndBuild(draft, file.name);
+    return classifyAndBuild(draft, fileName);
   } catch (error) {
     if (error instanceof LVLoadError) throw error;
     const failure = toPipelineError(error);
     throw new LVLoadError(failure.code, describeFailure(failure));
   }
+}
+
+/**
+ * Lädt eine GAEB-Datei vollständig im Browser.
+ *
+ * @throws {LVLoadError} mit verständlicher Meldung für die UI.
+ */
+export async function loadLv(file: File): Promise<LoadedLV> {
+  return loadLvFromBytes(await file.arrayBuffer(), file.name);
 }
