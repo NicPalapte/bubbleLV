@@ -61,12 +61,15 @@ jobs:
       # das überleben, werden sie vorher aus gh-pages in den Build-Ordner kopiert.
       # Previews geschlossener PRs fehlen dann – und verschwinden genau dadurch.
       #
-      # Klappt das nicht (Netzwerk, Rate-Limit, mehr offene PRs als LIMIT), wird nicht
-      # aufgeräumt, statt das Live-Deployment zu verlieren: der Schritt meldet dann über
-      # "schutz" den ganzen Ordner pr-preview/ als geschützt. Die Seite geht online, nur
-      # die Previews geschlossener PRs bleiben eine Runde länger liegen.
+      # Klappt das nicht, wird nicht aufgeräumt, statt das Live-Deployment zu verlieren.
+      # Der Schritt meldet nur im Erfolgsfall "aufraeumen=ja"; jeder andere Ausgang —
+      # abgefangener Fehler, unerwarteter Abbruch des Skripts, gar kein Output — lässt den
+      # Wert auf etwas anderem stehen und schützt damit sämtliche Previews.
+      # continue-on-error, damit auch ein Abbruch mit Exit-Code den Deploy nicht
+      # überspringt: die Seite muss in jedem Fall online gehen.
       - name: Previews offener Pull Requests übernehmen
         id: previews
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
           # Wird diese Zahl erreicht, ist die Liste womöglich abgeschnitten. Dann lieber
@@ -78,14 +81,14 @@ jobs:
           # Aufräumen für diesen Lauf abschalten und den Schritt trotzdem grün beenden.
           schutz() {
             echo "::warning::$1 – Previews werden diesmal nicht aufgeräumt."
-            echo "schutz=pr-preview/" >> "$GITHUB_OUTPUT"
+            echo "aufraeumen=nein" >> "$GITHUB_OUTPUT"
             exit 0
           }
 
           # Beim allerersten Lauf gibt es den Branch noch nicht.
           if ! git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
             echo "Branch gh-pages existiert noch nicht – nichts zu übernehmen."
-            echo "schutz=" >> "$GITHUB_OUTPUT"
+            echo "aufraeumen=ja" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -112,7 +115,7 @@ jobs:
           done
 
           echo "$anzahl offene Pull Request(s) geprüft, Aufräumen aktiv."
-          echo "schutz=" >> "$GITHUB_OUTPUT"
+          echo "aufraeumen=ja" >> "$GITHUB_OUTPUT"
 
       # frontend/public/.nojekyll wandert beim Bauen nach dist und damit in den
       # Branch. Ohne diese Datei schiebt GitHub Pages den Branch durch Jekyll;
@@ -122,7 +125,11 @@ jobs:
         with:
           folder: frontend/dist
           branch: gh-pages
-          # Leer = aufräumen. Nur wenn der Schritt oben nicht durchkam, steht hier
-          # pr-preview/ und schützt sämtliche Previews vor dem Löschen.
-          clean-exclude: ${{ steps.previews.outputs.schutz }}
+          # Leer = aufräumen; pr-preview/ = alle Previews schützen. Die Bedingung steht
+          # bewusst andersherum ("!= ja" statt "== ja"): In GitHub-Ausdrücken ist der
+          # leere String falsy, deshalb liefert `bedingung && '' || 'pr-preview/'` immer
+          # pr-preview/. Der nicht-leere Wert muss im true-Zweig stehen.
+          # Alles außer einem sauberen "ja" führt so zum Schutz — auch ein Abbruch des
+          # Skripts, der überhaupt keinen Wert hinterlässt.
+          clean-exclude: ${{ steps.previews.outputs.aufraeumen != 'ja' && 'pr-preview/' || '' }}
           force: false

@@ -30,11 +30,13 @@ vom zweiten abgebrochen.
 - Damit entfällt `clean-exclude` im Normalfall. Der Veröffentlichungsschritt spiegelt den
   Build-Ordner und löscht alles, was darin fehlt – also genau die Previews geschlossener
   PRs.
-- **Das Live-Deployment hängt nicht am Aufräumen.** Kommt der Übernahme-Schritt nicht
-  durch – Netzwerkfehler, Rate-Limit, oder mehr offene Pull Requests als sein Limit –,
-  schaltet er das Aufräumen für diesen Lauf ab: `clean-exclude` steht dann wieder auf
-  `pr-preview/` und schützt alle Previews. Die Seite geht trotzdem online, der Lauf
-  meldet eine Warnung.
+- **Das Live-Deployment hängt nicht am Aufräumen.** Der Übernahme-Schritt meldet nur im
+  Erfolgsfall `aufraeumen=ja`. Jeder andere Ausgang – abgefangener Fehler (Netzwerk,
+  Rate-Limit, Limit erreicht), unerwarteter Abbruch des Skripts, oder gar kein Wert –
+  setzt `clean-exclude` auf `pr-preview/` und schützt damit alle Previews. Der Schritt
+  läuft zusätzlich mit `continue-on-error`, damit auch ein Abbruch mit Fehlercode den
+  Deploy nicht überspringt. Die Seite geht in jedem Fall online, der Lauf meldet eine
+  Warnung.
 - Zusätzlich liegt `.nojekyll` in `frontend/public/`. Vite kopiert die Datei beim
   Bauen nach `dist/`, von dort wandert sie mit dem übrigen Build in den Branch.
 
@@ -47,6 +49,9 @@ vom zweiten abgebrochen.
 - `.nojekyll`: Ohne diese Datei schiebt GitHub den Branch durch Jekyll. Jekyll überspringt
   Dateien, die mit `_` beginnen. Erzeugt der Build so eine Datei, fehlt sie kommentarlos
   auf der Live-Seite – ohne Fehlermeldung irgendwo.
+- Die Bedingung für `clean-exclude` ist bewusst als „alles außer einem sauberen *ja*
+  schützt" formuliert, nicht als „bei Fehler schützen". Nur so deckt sie auch Fehler ab,
+  die niemand vorhergesehen hat – etwa einen Tippfehler in einer künftigen Änderung.
 - Ein verhindertes Live-Deployment wiegt schwerer als eine Preview, die eine Runde zu
   spät verschwindet. Ein blindes Weiterlaufen wäre aber die schlechtere Antwort darauf:
   ohne die übernommenen Previews im Build-Ordner würde der Spiegelschritt die Previews
