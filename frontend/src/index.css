@@ -52,7 +52,7 @@
   --bub-position-line: #b45309;
   --bub-cluster: #eaf0f7;
   --bub-cluster-line: #4a5b70;
-  --bub-edge: #8ea5be;
+  --bub-edge: #6b7d92; /* kräftiger als vorher, damit Kanten vom Raster abheben */
 }
 
 /* ── Typografie — IBM Plex Mono ist die Interface-Schrift; Space Grotesk

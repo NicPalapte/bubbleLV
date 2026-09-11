@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { getClassifier, classifyDraft } from '../../src/lib/classify';
 import { getGaebParser, mapToLvDraft } from '../../src/lib/gaeb';
-import { buildTree, collectPositions, indexParents } from '../../src/lib/tree/buildTree';
+import { buildTree, collectPositions, indexParents, ownCodeOf } from '../../src/lib/tree/buildTree';
 import type { LVDraft, PositionDraft, SectionDraft } from '../../src/types/lvDraft';
 import type { LVNode } from '../../src/types/lvNode';
 
@@ -76,6 +76,46 @@ describe('buildTree', () => {
     expect(section.positionCount).toBe(3);
     expect(section.children.filter((child) => child.kind === 'position')).toHaveLength(2);
     expect(section.children.filter((child) => child.kind === 'section')).toHaveLength(1);
+  });
+
+  it('trägt je Ebene die eigene Nummer ohne Eltern-Präfix ein (Issue #41)', () => {
+    const draft: LVDraft = {
+      projectName: null,
+      client: null,
+      lots: [
+        {
+          number: '001',
+          label: 'Los',
+          sections: [
+            { number: '001', label: null, positions: [position('001.0010')], sections: [] },
+            {
+              number: '001.007',
+              label: 'Abschnitt',
+              positions: [position('001.007.0010'), position('001.007.0010.A')],
+              sections: [],
+            },
+          ],
+        },
+      ],
+    };
+    const tree = buildTree(draft);
+    const lot = tree.children[0];
+    const [wrapper, section] = lot.children;
+    expect(tree.ownCode).toBe('');
+    expect(lot.ownCode).toBe('001');
+    // Namenloser Wrapper mit derselben Nummer wie das Los: nichts Eigenes.
+    expect(wrapper.ownCode).toBe('');
+    expect(wrapper.children[0].ownCode).toBe('0010');
+    expect(section.ownCode).toBe('007');
+    expect(section.children.map((child) => child.ownCode)).toEqual(['0010', '0010.A']);
+    // Die volle OZ bleibt für Baum und Tabelle erhalten.
+    expect(section.children[0].code).toBe('001.007.0010');
+  });
+
+  it('ownCodeOf lässt Nummern ohne Präfix-Bezug unverändert', () => {
+    expect(ownCodeOf('0010', '')).toBe('0010');
+    expect(ownCodeOf('B.0010', 'A')).toBe('B.0010');
+    expect(ownCodeOf('', 'A')).toBe('');
   });
 
   it('behandelt fehlende Einheitspreise als 0', () => {

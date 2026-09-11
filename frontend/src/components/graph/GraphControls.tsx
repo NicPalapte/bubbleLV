@@ -9,6 +9,8 @@ interface GraphControlsProps {
   nodeCount: number;
   renderCount: number;
   onFit: () => void;
+  /** Auf die aktuelle Auswahl einpassen; ohne Auswahl ist der Knopf gesperrt. */
+  onFitSelection?: () => void;
   onReset: () => void;
   onZoom: (factor: number) => void;
   onCollapseAll: () => void;
@@ -23,6 +25,7 @@ export function GraphControls({
   nodeCount,
   renderCount,
   onFit,
+  onFitSelection,
   onReset,
   onZoom,
   onCollapseAll,
@@ -45,6 +48,16 @@ export function GraphControls({
         </button>
         <button type="button" title="Alles einpassen" className={BUTTON} onClick={onFit}>
           ⛶
+        </button>
+        <button
+          type="button"
+          title="Auf Auswahl zoomen (F, oder Doppelklick auf eine Bubble)"
+          aria-label="Auf Auswahl zoomen"
+          className={`${BUTTON} disabled:cursor-default disabled:opacity-40`}
+          disabled={onFitSelection === undefined}
+          onClick={onFitSelection}
+        >
+          ⌖
         </button>
         <button type="button" title="Auszoomen" className={BUTTON} onClick={() => onZoom(1 / 1.25)}>
           −

@@ -20,12 +20,17 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
 } from 'react';
-import { BubbleNode, ClusterNode, DotNode } from './BubbleNode';
+import { BubbleNode, ClusterNode } from './BubbleNode';
 import { GraphControls } from './GraphControls';
 import { SelectionCard } from './SelectionCard';
 import { MAX_ZOOM, MIN_ZOOM, RADII, sizeModeById, sizedRadius } from '../../lib/graph/constants';
 import { cullBounds, isInView } from '../../lib/graph/culling';
-import { layoutRadial, walkParents, type PlacedNode } from '../../lib/graph/layoutRadial';
+import {
+  DOT_RADIUS,
+  layoutRadial,
+  walkParents,
+  type PlacedNode,
+} from '../../lib/graph/layoutRadial';
 import { formatCount } from '../../lib/format';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { LVNode } from '../../types/lvNode';
@@ -45,6 +50,9 @@ interface Metric {
 function clampZoom(value: number): number {
   return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, value));
 }
+
+/** Obergrenze beim Einpassen auf eine Auswahl — eine Position bleibt lesbar, nicht riesig. */
+const FIT_SELECTION_MAX_ZOOM = 2;
 
 interface BubbleGraphProps {
   root: LVNode;
@@ -82,13 +90,9 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
 
   const { w, h } = size;
 
-  // Ursprung in die Canvas-Mitte legen, sobald die echte Größe bekannt ist.
-  const centered = useRef(false);
-  useEffect(() => {
-    if (w === 0 || h === 0 || centered.current) return;
-    centered.current = true;
-    setView((current) => ({ ...current, tx: w / 2, ty: h / 2 }));
-  }, [w, h]);
+  // Kein eigenes Zentrieren mehr: sobald die Canvas ihre Größe kennt, passt das
+  // Einpassen weiter unten den Ausschnitt ein — ein Effekt, der danach noch
+  // den Ursprung zentrierte, überschrieb genau diesen Ausschnitt.
 
   const parents = useMemo(() => walkParents(root), [root]);
   const placed = useMemo(
@@ -124,7 +128,12 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
       if (node === null) continue;
       const value = mode.get(node);
       const range = rangeByTier.get(entry.tier) ?? { min: value, max: value };
-      const radius = sizedRadius(entry.tier, value, range, mode.uniform);
+      // Positionen sind immer gleich groß (Issue #41) — der Größenmodus
+      // vergleicht nur Lose und Abschnitte.
+      const radius =
+        entry.tier === 'position'
+          ? RADII.position
+          : sizedRadius(entry.tier, value, range, mode.uniform);
 
       const hits = matches.counts.get(node.id) ?? 0;
       const baseLabel = mode.uniform ? '' : mode.format(value);
@@ -335,38 +344,105 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
     [placed, parents, dispatch],
   );
 
+  /**
+   * Ausschnitt, der die gegebenen Knoten mit Rand einschließt — reine
+   * Berechnung ohne State, damit sie auch im Render nutzbar ist.
+   */
+  const viewAround = useCallback(
+    (entries: Iterable<PlacedNode>, maxZoom: number): View | null => {
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+      for (const entry of entries) {
+        const r = (metrics.get(entry.id)?.radius ?? RADII[entry.tier]) + 24;
+        minX = Math.min(minX, entry.cx - r);
+        maxX = Math.max(maxX, entry.cx + r);
+        minY = Math.min(minY, entry.cy - r);
+        maxY = Math.max(maxY, entry.cy + r);
+      }
+      if (!Number.isFinite(minX) || w === 0 || h === 0) return null;
+      const boxW = Math.max(1, maxX - minX);
+      const boxH = Math.max(1, maxY - minY);
+      const pad = 50;
+      const k = clampZoom(Math.min(maxZoom, (w - 2 * pad) / boxW, (h - 2 * pad) / boxH));
+      return {
+        tx: w / 2 - ((minX + maxX) / 2) * k,
+        ty: h / 2 - ((minY + maxY) / 2) * k,
+        k,
+      };
+    },
+    [metrics, w, h],
+  );
+
+  const fitView = useCallback(
+    (): View | null => viewAround(placed.values(), MAX_ZOOM),
+    [viewAround, placed],
+  );
   const fit = useCallback((): void => {
-    let minX = Infinity;
-    let minY = Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
-    for (const entry of placed.values()) {
-      const r = (metrics.get(entry.id)?.radius ?? RADII[entry.tier]) + 24;
-      minX = Math.min(minX, entry.cx - r);
-      maxX = Math.max(maxX, entry.cx + r);
-      minY = Math.min(minY, entry.cy - r);
-      maxY = Math.max(maxY, entry.cy + r);
-    }
-    if (!Number.isFinite(minX) || w === 0 || h === 0) return;
-    const boxW = Math.max(1, maxX - minX);
-    const boxH = Math.max(1, maxY - minY);
-    const pad = 50;
-    const k = clampZoom(Math.min((w - 2 * pad) / boxW, (h - 2 * pad) / boxH));
-    setView({
-      tx: w / 2 - ((minX + maxX) / 2) * k,
-      ty: h / 2 - ((minY + maxY) / 2) * k,
-      k,
-    });
-  }, [placed, metrics, w, h]);
+    const next = fitView();
+    if (next !== null) setView(next);
+  }, [fitView]);
+
+  /**
+   * Ausschnitt auf einen Knoten und seinen gezeichneten Teilbaum einpassen
+   * (Issue #41). Ein einzelner kleiner Knoten würde sonst bis zum Maximalzoom
+   * aufgeblasen — deshalb die Obergrenze.
+   */
+  const fitToView = useCallback(
+    (requestedId: string): View | null => {
+      // Steckt die Auswahl in einem zugeklappten Abschnitt oder einer
+      // Sammel-Bubble, zählt der nächste gezeichnete Vorfahre.
+      let id = requestedId;
+      while (!placed.has(id)) {
+        const parent = parents.get(id);
+        if (parent === undefined || parent === null) return null;
+        id = parent.id;
+      }
+      const start = placed.get(id);
+      if (start === undefined) return null;
+      const entries: PlacedNode[] = [start];
+      const descend = (node: LVNode): void => {
+        for (const child of node.children) {
+          const entry = placed.get(child.id);
+          if (entry === undefined) continue;
+          entries.push(entry);
+          descend(child);
+        }
+        const cluster = placed.get(`cluster:${node.id}`);
+        if (cluster !== undefined) entries.push(cluster);
+      };
+      if (start.node !== null) descend(start.node);
+      return viewAround(entries, FIT_SELECTION_MAX_ZOOM);
+    },
+    [placed, parents, viewAround],
+  );
+  const fitTo = useCallback(
+    (id: string): void => {
+      const next = fitToView(id);
+      if (next !== null) setView(next);
+    },
+    [fitToView],
+  );
 
   // Die Ringradien hängen jetzt an der Größe des LV (Issue #11) — ein fixer
-  // Startzoom passt dafür nicht mehr. Deshalb einmal je Baum einpassen.
-  const fittedFor = useRef<LVNode | null>(null);
-  useEffect(() => {
-    if (w === 0 || h === 0 || fittedFor.current === root) return;
-    fittedFor.current = root;
-    fit();
-  }, [root, w, h, fit]);
+  // Startzoom passt dafür nicht mehr. Deshalb einmal je Baum einpassen. Steht
+  // beim Mounten schon eine Auswahl (Wechsel Tabelle → Graph), wird auf sie
+  // eingepasst statt auf alles (Issue #41).
+  // Im Render statt im Effekt, wie der Fokus weiter unten
+  // (react.dev/learn/you-might-not-need-an-effect): erst wenn die Canvas
+  // ihre Größe kennt, sonst würde auf 0×0 eingepasst.
+  const selectionId = selectedPosition?.id ?? selectedNode?.id ?? null;
+  const [fittedRoot, setFittedRoot] = useState<LVNode | null>(null);
+  if (fittedRoot !== root && w > 0 && h > 0) {
+    setFittedRoot(root);
+    const next = (selectionId === null ? null : fitToView(selectionId)) ?? fitView();
+    if (next !== null) setView(next);
+  }
+
+  const fitSelection = useCallback((): void => {
+    if (selectionId !== null) fitTo(selectionId);
+  }, [selectionId, fitTo]);
 
   const zoomBy = useCallback(
     (factor: number): void =>
@@ -519,6 +595,12 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
           event.preventDefault();
           activate(entry);
           return;
+        case 'f':
+        case 'F':
+          // Auf die Auswahl einpassen, sonst auf den fokussierten Knoten.
+          event.preventDefault();
+          fitTo(selectionId !== null && placed.has(selectionId) ? selectionId : entry.id);
+          return;
         default:
           return;
       }
@@ -534,6 +616,8 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
       toggleCluster,
       activate,
       focusEntry,
+      selectionId,
+      fitTo,
     ],
   );
 
@@ -614,8 +698,10 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
                 d={edge.d}
                 fill="none"
                 stroke="var(--bub-edge)"
-                strokeWidth={1.2 / Math.max(0.4, view.k)}
-                opacity={dim ? 0.08 : 0.6}
+                // Auf dem Schirm immer gleich breit — beim Rauszoomen wurden
+                // die Kanten sonst zu Haarlinien (Issue #41).
+                strokeWidth={1.4 / view.k}
+                opacity={dim ? 0.1 : 0.85}
               />
             );
           })}
@@ -637,6 +723,7 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
                   onClick={() => {
                     if (entry.clusterOf !== null) toggleCluster(entry.clusterOf);
                   }}
+                  onDoubleClick={() => fitTo(entry.id)}
                   sampleTier={sampleTier}
                   expanded={entry.clusterOf !== null && openClusters.has(entry.clusterOf)}
                   onOpenTable={() => openClusterTable(entry)}
@@ -651,22 +738,9 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
             const hidden = missed && hideMode === 'hide';
             const dimmed = spotlightDim || missed;
 
-            if (entry.dotted) {
-              return (
-                <DotNode
-                  key={entry.id}
-                  placed={entry}
-                  node={node}
-                  zoom={view.k}
-                  dimmed={dimmed}
-                  hidden={hidden}
-                  hovered={hoveredNodeId === entry.id}
-                  focused={graphFocused && focusedId === entry.id}
-                  onHover={(id) => dispatch({ type: 'hover', id })}
-                  onClick={() => openNode(node)}
-                />
-              );
-            }
+            // Punkt-Darstellung (viele Geschwister): dieselbe Bubble, nur mit
+            // dem kleinen Radius, den das Layout dafür reserviert hat.
+            const radius = entry.dotted ? DOT_RADIUS : (metric?.radius ?? RADII[entry.tier]);
 
             return (
               <BubbleNode
@@ -680,7 +754,8 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
                 focused={graphFocused && focusedId === entry.id}
                 onHover={(id) => dispatch({ type: 'hover', id })}
                 onClick={() => openNode(node)}
-                radius={metric?.radius ?? RADII[entry.tier]}
+                onDoubleClick={() => fitTo(entry.id)}
+                radius={radius}
                 subLabel={metric?.subLabel ?? ''}
                 collapsible={node.children.length > 0}
                 isCollapsed={!openNodes.has(node.id)}
@@ -715,6 +790,7 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
         nodeCount={placed.size}
         renderCount={visibleNodes.length}
         onFit={fit}
+        onFitSelection={selectionId === null ? undefined : fitSelection}
         onReset={() => setView({ tx: w / 2, ty: h / 2, k: 0.7 })}
         onZoom={zoomBy}
         onCollapseAll={() => dispatch({ type: 'collapseAll' })}

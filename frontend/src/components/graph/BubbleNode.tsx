@@ -1,9 +1,15 @@
-// Knoten-Darstellungen des Bubble-Graphen: Bubble, Punkt, Cluster.
-// Portiert aus `BubbleNode`/`DotNode`/`ClusterNode` in
-// design/claude-design/lv-graph.jsx; Vergabepaket-/Aufgaben-Overlays entfallen.
+// Knoten-Darstellungen des Bubble-Graphen: Bubble und Cluster.
+// Portiert aus `BubbleNode`/`ClusterNode` in design/claude-design/lv-graph.jsx;
+// Vergabepaket-/Aufgaben-Overlays entfallen.
+//
+// Issue #41: Positionen sind immer derselbe kleine, gefüllte Kreis ohne Rand
+// (der frühere `DotNode` ist darin aufgegangen). Los und Abschnitte tragen ihre
+// Nummer immer — ist die Bubble auf dem Schirm zu klein für Schrift, steht die
+// Beschriftung darunter, in bildschirmfester Größe mit weißem Halo.
 
-import { LABEL_K, RADII } from '../../lib/graph/constants';
+import { COMPACT_AT, LABEL_K, OUTSIDE_LABEL_PX, RADII } from '../../lib/graph/constants';
 import { formatCount, truncate } from '../../lib/format';
+import { codeLabelFor } from '../../lib/graph/labels';
 import type { PlacedNode } from '../../lib/graph/layoutRadial';
 import type { LVNode } from '../../types/lvNode';
 
@@ -17,6 +23,8 @@ interface CommonProps {
   focused: boolean;
   onHover: (id: string | null) => void;
   onClick: () => void;
+  /** Doppelklick: Ausschnitt auf diesen Knoten und seinen Teilbaum einpassen. */
+  onDoubleClick?: () => void;
 }
 
 interface BubbleProps extends CommonProps {
@@ -37,7 +45,13 @@ const TIER_FILL: Record<string, { fill: string; stroke: string }> = {
   section: { fill: 'var(--bub-section)', stroke: 'var(--bub-section-line)' },
   subsection: { fill: 'var(--bub-subsection)', stroke: 'var(--bub-subsection-line)' },
   group: { fill: 'var(--bub-group)', stroke: 'var(--bub-group-line)' },
-  position: { fill: 'var(--bub-position)', stroke: 'var(--bub-position-line)' },
+};
+
+/** Weißer Halo hinter Schrift, die über dem Raster oder über Kanten steht. */
+const HALO = {
+  paintOrder: 'stroke' as const,
+  stroke: 'var(--white)',
+  strokeLinejoin: 'round' as const,
 };
 
 /**
@@ -82,13 +96,6 @@ function TableBadge({
   );
 }
 
-function topLabelFor(node: LVNode, tier: string): string {
-  if (tier === 'project') return 'PROJEKT';
-  if (tier === 'lot') return node.code === '' ? 'LOS' : `LOS ${node.code}`;
-  if (tier === 'position') return '';
-  return node.code === '' ? '' : `§ ${node.code}`;
-}
-
 function mainFontSize(tier: string): number {
   switch (tier) {
     case 'project':
@@ -106,6 +113,62 @@ function mainFontSize(tier: string): number {
   }
 }
 
+/** Schriftgröße in Weltkoordinaten, die auf dem Schirm `px` groß erscheint. */
+function screenFont(px: number, zoom: number): number {
+  return px / zoom;
+}
+
+interface OutsideLabelProps {
+  code: string;
+  title: string | null;
+  /** Abstand der ersten Zeile zum Mittelpunkt (Radius plus Luft). */
+  offset: number;
+  zoom: number;
+  dimmed: boolean;
+}
+
+/**
+ * Beschriftung unter einer Bubble, die auf dem Schirm zu klein für Schrift ist:
+ * Nummer immer, Titel nur wenn der Zoom Platz dafür lässt. Beide bildschirmfest,
+ * damit sie beim Rauszoomen nicht mitschrumpfen (Issue #41).
+ */
+function OutsideLabel({ code, title, offset, zoom, dimmed }: OutsideLabelProps) {
+  if (code === '' && title === null) return null;
+  const size = screenFont(OUTSIDE_LABEL_PX, zoom);
+  const line = size * 1.2;
+  return (
+    <g style={{ pointerEvents: 'none', opacity: dimmed ? 0.5 : 1 }}>
+      {code !== '' && (
+        <text
+          textAnchor="middle"
+          y={offset + size}
+          fontFamily="var(--mono)"
+          fontSize={size}
+          fontWeight="600"
+          fill="var(--ink)"
+          strokeWidth={size * 0.35}
+          style={HALO}
+        >
+          {code}
+        </text>
+      )}
+      {title !== null && (
+        <text
+          textAnchor="middle"
+          y={offset + size + (code === '' ? 0 : line)}
+          fontFamily="var(--sans)"
+          fontSize={size * 0.9}
+          fill="var(--dim)"
+          strokeWidth={size * 0.35}
+          style={HALO}
+        >
+          {truncate(title, 36)}
+        </text>
+      )}
+    </g>
+  );
+}
+
 export function BubbleNode(props: BubbleProps) {
   const {
     placed,
@@ -117,6 +180,7 @@ export function BubbleNode(props: BubbleProps) {
     focused,
     onHover,
     onClick,
+    onDoubleClick,
     radius,
     subLabel,
     collapsible,
@@ -129,80 +193,85 @@ export function BubbleNode(props: BubbleProps) {
   // Tastatur-Fokus zählt überall dort wie Hover — sonst ließen sich Badges,
   // Kurztext-Tooltip und Betonung nur mit der Maus erreichen (Issue #25).
   const active = hovered || focused;
-  const showLabel = zoom >= LABEL_K[placed.tier];
-  // Tabellensymbol und Einklapp-Knopf würden kleine Bubbles zudecken — sie
-  // erscheinen erst, wenn die Bubble auf dem Schirm groß genug ist, sonst beim
-  // Überfahren.
-  const showBadges = active || radius * zoom >= 30;
-  const colors = TIER_FILL[placed.tier] ?? TIER_FILL.section;
   const opacity = hidden ? 0.05 : dimmed ? 0.16 : 1;
-  const title = node.label ?? node.code;
+  const groupStyle = {
+    cursor: 'pointer',
+    opacity,
+    transition: 'opacity .15s',
+    pointerEvents: hidden ? ('none' as const) : ('auto' as const),
+  };
+  const handlers = {
+    onMouseEnter: () => onHover(placed.id),
+    onMouseLeave: () => onHover(null),
+    onClick: (event: { stopPropagation: () => void; detail: number }) => {
+      event.stopPropagation();
+      // Der zweite Klick eines Doppelklicks löst nur das Einpassen aus —
+      // sonst klappte die Bubble auf und gleich wieder zu.
+      if (event.detail > 1) return;
+      onClick();
+    },
+    onDoubleClick: (event: { stopPropagation: () => void }) => {
+      event.stopPropagation();
+      onDoubleClick?.();
+    },
+  };
 
   if (placed.tier === 'position') {
+    // Ein Kreis, eine Farbe, kein Rand — Hover und Fokus heben nur den Rand an.
+    const showCode = active || zoom >= LABEL_K.position;
     return (
       <g
         transform={`translate(${placed.cx},${placed.cy})`}
-        style={{
-          cursor: 'pointer',
-          opacity,
-          transition: 'opacity .15s',
-          pointerEvents: hidden ? 'none' : 'auto',
-        }}
-        onMouseEnter={() => onHover(placed.id)}
-        onMouseLeave={() => onHover(null)}
-        onClick={(event) => {
-          event.stopPropagation();
-          onClick();
-        }}
+        style={groupStyle}
+        {...handlers}
+        data-tier="position"
       >
         <circle
-          r={radius}
-          fill={colors.fill}
-          stroke={colors.stroke}
-          strokeWidth={active ? 2 : 1.2}
+          r={active ? radius + 1.5 : radius}
+          fill="var(--bub-position-line)"
+          stroke={active ? 'var(--ink)' : 'none'}
+          strokeWidth={active ? 1.5 : 0}
           style={{ transition: 'all .15s' }}
         />
         {focused && (
           <circle
-            r={radius + 4}
+            r={radius + 5}
             fill="none"
             stroke="var(--blue)"
             strokeWidth="1.5"
             strokeDasharray="2 2"
           />
         )}
-        {showLabel && (
+        {showCode && node.ownCode !== '' && (
           <text
             textAnchor="middle"
-            y={3.5}
+            y={-radius - 4}
             fontFamily="var(--mono)"
-            fontSize="9"
-            fontWeight="600"
+            fontSize="8"
             fill="var(--ink)"
+            strokeWidth={2.5}
+            style={HALO}
           >
-            {truncate(node.code, 9)}
+            {truncate(node.ownCode, 14)}
           </text>
         )}
       </g>
     );
   }
 
+  const colors = TIER_FILL[placed.tier] ?? TIER_FILL.section;
+  const title = node.label ?? node.code;
+  const code = codeLabelFor(node, placed.tier);
+  // Auf dem Schirm zu klein für Schrift → Beschriftung unter die Bubble.
+  const compact = radius * zoom < COMPACT_AT;
+  const showTitle = zoom >= LABEL_K[placed.tier];
+  // Tabellensymbol und Einklapp-Knopf würden kleine Bubbles zudecken — sie
+  // erscheinen erst, wenn die Bubble auf dem Schirm groß genug ist, sonst beim
+  // Überfahren.
+  const showBadges = active || radius * zoom >= 30;
+
   return (
-    <g
-      transform={`translate(${placed.cx},${placed.cy})`}
-      style={{
-        cursor: 'pointer',
-        opacity,
-        transition: 'opacity .15s',
-        pointerEvents: hidden ? 'none' : 'auto',
-      }}
-      onMouseEnter={() => onHover(placed.id)}
-      onMouseLeave={() => onHover(null)}
-      onClick={(event) => {
-        event.stopPropagation();
-        onClick();
-      }}
-    >
+    <g transform={`translate(${placed.cx},${placed.cy})`} style={groupStyle} {...handlers}>
       <circle
         r={radius}
         fill={colors.fill}
@@ -219,38 +288,55 @@ export function BubbleNode(props: BubbleProps) {
           strokeDasharray="3 3"
         />
       )}
-      {showLabel && (
+      {compact ? (
+        <OutsideLabel
+          code={code}
+          // Ab halbem Beschriftungs-Zoom lohnt der Titel; darunter stünden die
+          // Titel benachbarter Bubbles übereinander.
+          title={zoom >= LABEL_K[placed.tier] * 0.5 ? title : null}
+          offset={radius + 3 / zoom}
+          zoom={zoom}
+          dimmed={dimmed}
+        />
+      ) : (
         <>
-          <text
-            textAnchor="middle"
-            y={-radius * 0.32 - 2}
-            fontFamily="var(--mono)"
-            fontSize={Math.max(7, radius * 0.2)}
-            fill="var(--mute)"
-            letterSpacing="0.5"
-          >
-            {topLabelFor(node, placed.tier)}
-          </text>
-          <text
-            textAnchor="middle"
-            y={radius * 0.05 + 3}
-            fontFamily="var(--sans)"
-            fontSize={mainFontSize(placed.tier)}
-            fontWeight={placed.tier === 'project' ? 700 : 600}
-            fill="var(--ink)"
-          >
-            {truncate(title, 22)}
-          </text>
-          {subLabel !== '' && (
+          {code !== '' && (
             <text
               textAnchor="middle"
-              y={radius * 0.32 + 11}
+              y={showTitle ? -radius * 0.32 - 2 : 4}
               fontFamily="var(--mono)"
-              fontSize={Math.max(7, radius * 0.2)}
-              fill="var(--dim)"
+              fontSize={showTitle ? Math.max(7, radius * 0.2) : Math.max(8, radius * 0.3)}
+              fontWeight={showTitle ? 400 : 600}
+              fill={showTitle ? 'var(--mute)' : 'var(--ink)'}
+              letterSpacing="0.5"
             >
-              {subLabel}
+              {code}
             </text>
+          )}
+          {showTitle && (
+            <>
+              <text
+                textAnchor="middle"
+                y={radius * 0.05 + 3}
+                fontFamily="var(--sans)"
+                fontSize={mainFontSize(placed.tier)}
+                fontWeight={placed.tier === 'project' ? 700 : 600}
+                fill="var(--ink)"
+              >
+                {truncate(title, 22)}
+              </text>
+              {subLabel !== '' && (
+                <text
+                  textAnchor="middle"
+                  y={radius * 0.32 + 11}
+                  fontFamily="var(--mono)"
+                  fontSize={Math.max(7, radius * 0.2)}
+                  fill="var(--dim)"
+                >
+                  {subLabel}
+                </text>
+              )}
+            </>
           )}
         </>
       )}
@@ -305,71 +391,6 @@ export function BubbleNode(props: BubbleProps) {
   );
 }
 
-interface DotProps extends CommonProps {
-  node: LVNode;
-}
-
-export function DotNode({
-  placed,
-  node,
-  zoom,
-  dimmed,
-  hidden,
-  hovered,
-  focused,
-  onHover,
-  onClick,
-}: DotProps) {
-  const radius = 5;
-  const active = hovered || focused;
-  const showLabel = active || zoom >= 1.8;
-  return (
-    <g
-      transform={`translate(${placed.cx},${placed.cy})`}
-      style={{
-        cursor: 'pointer',
-        opacity: hidden ? 0.05 : dimmed ? 0.16 : 1,
-        transition: 'opacity .15s',
-        pointerEvents: hidden ? 'none' : 'auto',
-      }}
-      onMouseEnter={() => onHover(placed.id)}
-      onMouseLeave={() => onHover(null)}
-      onClick={(event) => {
-        event.stopPropagation();
-        onClick();
-      }}
-    >
-      <circle
-        r={active ? radius + 1.5 : radius}
-        fill={placed.tier === 'position' ? 'var(--bub-position-line)' : 'var(--bub-lot-line)'}
-        stroke="var(--white)"
-        strokeWidth="1"
-      />
-      {focused && (
-        <circle
-          r={radius + 5}
-          fill="none"
-          stroke="var(--blue)"
-          strokeWidth="1.5"
-          strokeDasharray="2 2"
-        />
-      )}
-      {showLabel && (
-        <text
-          textAnchor="middle"
-          y={-radius - 4}
-          fontFamily="var(--mono)"
-          fontSize="8"
-          fill="var(--ink)"
-          style={{ paintOrder: 'stroke', stroke: 'var(--white)', strokeWidth: 2.5 }}
-        >
-          {node.code === '' ? truncate(node.label, 14) : truncate(node.code, 14)}
-        </text>
-      )}
-    </g>
-  );
-}
-
 interface ClusterProps extends Omit<CommonProps, 'hidden'> {
   sampleTier: string;
   /** Cluster ist aufgelöst — die Kinder liegen als Punkte auf dem Ring. */
@@ -392,6 +413,7 @@ export function ClusterNode({
   focused,
   onHover,
   onClick,
+  onDoubleClick,
   sampleTier,
   expanded,
   onOpenTable,
@@ -408,6 +430,10 @@ export function ClusterNode({
       onClick={(event) => {
         event.stopPropagation();
         onClick();
+      }}
+      onDoubleClick={(event) => {
+        event.stopPropagation();
+        onDoubleClick?.();
       }}
     >
       <circle
@@ -433,7 +459,7 @@ export function ClusterNode({
           strokeDasharray="3 3"
         />
       )}
-      {showLabel && (
+      {showLabel ? (
         <>
           <text
             textAnchor="middle"
@@ -456,6 +482,14 @@ export function ClusterNode({
             {CLUSTER_LABEL[sampleTier] ?? 'KIND.'}
           </text>
         </>
+      ) : (
+        <OutsideLabel
+          code={`${formatCount(placed.clusterCount)} ${CLUSTER_LABEL[sampleTier] ?? 'KIND.'}`}
+          title={null}
+          offset={radius + 8 / zoom}
+          zoom={zoom}
+          dimmed={dimmed}
+        />
       )}
       {(active || zoom >= 0.8) && (
         <TableBadge x={-radius * 0.78} y={radius * 0.78} size={10} onOpen={onOpenTable} />

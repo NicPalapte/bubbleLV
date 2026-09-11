@@ -169,6 +169,8 @@ Fertig, wenn:
 
 ### WP-41-4 · Graph: Darstellung und Beschriftung · `feat(graph)` · Aufwand M
 
+**Status: umgesetzt** (Positionen immer einheitlich groß, auch im Preis-Modus – Frage 4).
+
 Behebt G2, G3, G5, G6, G7, G8, G9 und den Label-Teil von G1. Kein Layout-Umbau.
 
 1. **Eigene Nummer je Ebene** (G2): `LVNode` bekommt `ownCode` (in `buildTree.ts`:
