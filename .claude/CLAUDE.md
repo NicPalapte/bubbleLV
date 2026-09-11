@@ -1,15 +1,18 @@
 # Bubble – Coding Agent
 
 ## Projektbeschreibung
-Kostenloser, frei zugänglicher LV-Viewer als **reine Frontend-Anwendung** – kein
-Server, keine Datenbank, kein Login. Bubble ergänzt **iTwo** als Kalkulationssoftware –
-er ersetzt iTwo nicht, sondern übernimmt die Angebotskoordination drum herum. Das MVP:
-GAEB-Datei im Browser laden, klassifizieren und das Leistungsverzeichnis als
-**Bubble-Graph** und Tabelle einsehen, durchsuchen und filtern. Nichts wird
-gespeichert – die Datei verlässt den Browser nie, ein Reload verwirft den Stand.
+Bubble macht **ein Leistungsverzeichnis lesbar**: es zeigt jede Information, die in der
+Datei steckt, hebt das Wichtige hervor und macht die Beziehungen zwischen Positionen
+sichtbar. Das ist die einzige Aufgabe — alles, was nicht dem Verstehen einer geladenen
+Datei dient, gehört nicht in dieses Produkt.
+
+**Reine Frontend-Anwendung** – kein Server, keine Datenbank, kein Login. GAEB-Datei im
+Browser laden, klassifizieren, prüfen und in mehreren gleichrangigen Ansichten
+durchsuchen, filtern und vergleichen. Nichts wird gespeichert – die Datei verlässt den
+Browser nie, ein Reload verwirft den Stand.
 
 Vollständige Projekt-/Ordnerbeschreibung: @README.md
-Scope: @docs/mvp-scope.md · Plan: @docs/implementation-plan.md
+Scope: @docs/scope.md · Plan: @docs/implementation-plan.md · Prüfregeln: @docs/domain/vob-pruefungen.md
 Architektur: @docs/architecture/pipeline.md · @docs/architecture/frontend.md · @docs/architecture/data-model.md
 Entscheidungen: @docs/decisions/README.md · Einrichtung CI/Agenten: @docs/setup/ci-und-agenten.md
 
@@ -50,7 +53,10 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
   (`frontend/src/lib/classify/`). MVP: regelbasiert; LLM ist Post-MVP und nicht Teil
   dieses Repos, solange es keinen Server gibt.
 - `buildTree(draft): LVNode` erzeugt den rekursiven Baum für Tree, Graph und Tabelle –
-  reine Funktion, kein Fetch.
+  reine Funktion, kein Fetch. Für Filter, Summen und Beziehungen kommt ein **flacher
+  Positions-Index** dazu (WP-I) – der Baum bleibt die Struktur, der Index die Rechenbasis.
+- Prüfregeln liegen in `frontend/src/lib/check/` hinter einer Registry, ein Modul je
+  Regel; Katalog und Norm-Verweise: @docs/domain/vob-pruefungen.md
 - Große LVs (Richtung ~10k Positionen): Parsing + Klassifizierung laufen in einem
   Web Worker, damit die UI nicht blockiert.
 
@@ -59,6 +65,8 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
   **keine** Fixture-Daten, **kein** `localStorage` für Fachdaten
 - `matchPos` ist die einzige Quelle für Filter-/Suchlogik
 - Tree und Bubble-Graph konsumieren **denselben** rekursiven `LVNode`-Baum
+- Alle Ansichten arbeiten auf derselben gefilterten Menge und derselben Auswahl;
+  Zustand getrennt in `filterState` / `selectionState` / `viewState`
 
 ## Code-Style
 - Strikte TS-Types überall – kein `any` ohne Kommentar
@@ -75,29 +83,46 @@ Vor jeder neuen Aufgabe prüfen, ob ein passender Branch aktiv ist. Falls `main`
 ist, darauf hinweisen – keinen Branch selbst erstellen.
 
 `feat|fix|refactor|test|chore|docs|perf(<scope>): <beschreibung>`
-Scopes: `gaeb · classify · tree · viewer · graph · frontend`
+Scopes: `gaeb · classify · tree · viewer · graph · relate · check · frontend`
 
 ## Tests
 - Unit: `GaebParser`, Klassifizierer, `buildTree`, `matchPos` – mit Vitest
 - Parser-Tests laufen gegen echte GAEB-Fixtures unter `frontend/tests/fixtures/`
 - Jede eigene Exception hat mindestens einen Test, der den Fehlerfall auslöst
 
-## MVP-Scope (ein Release, keine Phasen)
-**In Scope:** GAEB-Import im Browser · Klassifizierung Kurz-/Langtext ·
-LV-Viewer (Tree + **Bubble-Graph** + Tabelle) · Suche · Facetten-Filter.
+## Produkt-Scope
+**In Scope:** GAEB-Import im Browser (x83 **und** preisführende x84/x86) ·
+Klassifizierung Kurz-/Langtext inkl. Textstellen · Hervorhebung der vier
+Wichtig-Kategorien (Geld/Menge · Risiko · Norm · Frist) · VOB-Check als Hinweis ·
+fachliche Filter · **acht gleichrangige Ansichten** auf einem Filterzustand (Überblick ·
+Graph · Tabelle · Matrix · Ähnlichkeit · Vergleich · Prüfung · Eigenschaften) ·
+Beziehungen zwischen Positionen (Ähnlichkeit, Unterschiede, Ausreißer) · lokaler
+Export/Druck.
 
-**Out of Scope** (ablehnen / vertrösten): Analytik, Aufgaben, Notizen, Vergabepakete,
-NU-Anfragen, Bieterfragen, Zuständigkeit/Zuweisung, Status-**Änderung**, Auth/SSO,
-Server jeglicher Art, Persistenz über die Session hinaus, Excel-/Manuell-Import,
-Multi-Tenant, GAEB-Export, LLM-Klassifizierung. Details → @docs/mvp-scope.md #out-of-scope
+**Out of Scope** (ablehnen / vertrösten): Server jeglicher Art, Persistenz über die
+Session hinaus, Auth/SSO, **mehrere Dateien gleichzeitig** (Versionsvergleich,
+x83+x84-Merge — perspektivisch gewollt, jetzt draußen), Aufgaben, Notizen,
+Vergabepakete, NU-Anfragen, Bieterfragen **verwalten**, Zuständigkeit/Zuweisung,
+Status-**Änderung**, EP-Kalkulation, Excel-/Manuell-Import, Multi-Tenant, GAEB-Export,
+LLM-Klassifizierung. Details → @docs/scope.md #out-of-scope
 
 ## Kritische Constraints
-- Bubble-Graph muss Richtung ~10k Positionen skalieren (Aggregate im `LVNode`, LOD,
-  Culling, Parsing/Klassifizierung im Web Worker)
+- **~10k Positionen** müssen flüssig laufen — in *jeder* Ansicht. Messbare Zielwerte:
+  erste Ansicht < 5 s, Filterwechsel < 100 ms, Ansichtswechsel < 200 ms
+  (siehe @docs/scope.md). Mittel: flacher Positions-Index statt Baum-Traversierung
+  je Render, Aggregation im Web Worker, Virtualisierung, LOD + Culling im Graphen.
+- **Ein Filterzustand, alle Ansichten.** Ein Ansichtswechsel ändert nie Filter, Suche
+  oder Auswahl. Der Graph ist eine Ansicht unter mehreren, kein Sonderfall.
+- **Beziehungen werden einmal beim Laden im Worker berechnet**, nie im Render. Kein
+  All-Paare-Vergleich — erst nach Gewerk/Einheit/Bauteiltyp vorgruppieren.
+- **Prüfregeln sind Hinweise, keine Urteile.** Jede Regel nennt ihren Norm-Verweis,
+  zeigt die Fundstelle und ist einzeln abschaltbar. Fehlende Referenzdaten ⇒ Regel
+  inaktiv, kein Fehler. Formulierungen nie als Rechtsrat.
 - Status ist Default `OPEN` aus dem Import und nur Filter-Facette, nicht editierbar
 - Kein Request, der Fachdaten irgendwohin schickt – bei Unsicherheit nachfragen,
   bevor ein Feature einen eigenen Server voraussetzt. Statische Fremd-Assets
-  (Fonts, CDN-Pakete) sind davon nicht betroffen.
+  (Fonts, CDN-Pakete) sind davon nicht betroffen. Lokale Downloads (CSV/Markdown als
+  Blob) und Browser-Druck sind erlaubt – sie erzeugen keinen Request.
 
 ## Sprache & Zielgruppen
 Der Repo-Owner ist **kein Software-Experte**. Zwei Textsorten, zwei Stile – Begründung:

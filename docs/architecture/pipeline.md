@@ -270,4 +270,4 @@ unterstützt). Keine `console.log`-Debugging-Ausgaben im produktiven Pfad.
 Zuständigkeit/Bearbeiter-Zuweisung — ohne Server/Persistenz kein sinnvoller Mehrwert
 über einen Reload hinaus. LLM-Klassifizierung — setzt einen Server voraus. Jede Form
 von Server-Volltext — Suche/Filter sind immer clientseitig. Details:
-[`mvp-scope.md`](../mvp-scope.md#out-of-scope).
+[`scope.md`](../scope.md#out-of-scope).

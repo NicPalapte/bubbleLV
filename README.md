@@ -1,15 +1,25 @@
 # Bubble
 
-Ein kostenloser LV-Viewer: GAEB-Leistungsverzeichnis laden, automatisch klassifizieren
-und als interaktiven Graph im Browser durchsuchen und filtern — **komplett
-client-seitig**. Keine Installation, kein Login, kein Server: die Datei verlässt den
-Browser nie, es wird nichts gespeichert.
+**Bubble macht ein Leistungsverzeichnis lesbar.** Es zeigt jede Information, die in der
+GAEB-Datei steckt, hebt das Wichtige hervor und macht die Beziehungen zwischen den
+Positionen sichtbar — **komplett client-seitig**. Keine Installation, kein Login, kein
+Server: die Datei verlässt den Browser nie, es wird nichts gespeichert.
 
-Die Besonderheit ist, dass sich das Leistungsverzeichnis interaktiv als Nodes in einem Browser anschauenlässt. 
-Die Nodes lassen sich nach verschiedenen Attributen, Beziehungen und Größen anschauen, filtern und sortieren. 
+Das ist die einzige Aufgabe. Konkret:
 
-Bubble ergänzt dabei **iTwo** als Kalkulationssoftware – er ersetzt iTwo nicht,
-sondern übernimmt die Angebotskoordination drum herum.
+- **Große LVs** — Richtung 10.000 Positionen, ohne zu ruckeln
+- **Klassifizieren und hervorheben** — Gewerk, Bauteil, Normen, Maße, Material; dazu
+  vier Kategorien von „wichtig": Geld- und Mengentreiber, Risiko, Normen, Fristen
+- **Fachliche Filter** — Facetten aus den Daten, Wertebereiche, Prüf-Hinweise
+- **Beziehungen** — ähnliche Positionen, ihre Unterschiede und ihre Ausreißer
+- **VOB-Check** — Hinweise mit Norm-Verweis, kein Rechtsrat
+  ([Regelkatalog](docs/domain/vob-pruefungen.md))
+
+Acht gleichrangige Ansichten teilen sich **einen** Filterzustand: Überblick · Graph ·
+Tabelle · Matrix · Ähnlichkeit · Vergleich · Prüfung · Eigenschaften. Ansicht wechseln
+heißt: anderer Blick auf dasselbe, nie Neuanfang.
+
+Bubble kalkuliert nicht und schreibt nichts zurück — das bleibt **iTwo**.
 
 ## Datenmodell
 
@@ -76,8 +86,8 @@ bubble/
 ├── tests/
 │   └── fixtures/                 # GAEB DA XML-Testdateien (Quelle, siehe oben)
 ├── docs/
-│   ├── mvp-scope.md              # Feature-Specs und Out-of-Scope-Liste
-│   ├── implementation-plan.md    # Arbeitspakete WP-A…G
+│   ├── scope.md                  # Feature-Specs und Out-of-Scope-Liste
+│   ├── implementation-plan.md    # Arbeitspakete (Release 2: WP-H…P)
 │   ├── architecture/
 │   ├── decisions/                # Warum das Projekt so gebaut ist (eine Datei je Entscheidung)
 │   └── setup/                    # Einmalige Handgriffe für den Repo-Owner
@@ -110,12 +120,18 @@ einen Stelle.
 
 ---
 
-## MVP-Scope (ein Release)
+## Scope
 
-Ein einziges MVP, frontend-only: GAEB laden → klassifizieren → als Bubble-Graph und
-Tabelle einsehen, mit Suche und Facetten-Filter. Kein Server, kein Login, keine
-Persistenz über die Session hinaus. Details → docs/mvp-scope.md · Umsetzungsplan →
-docs/implementation-plan.md
+Frontend-only: GAEB laden → klassifizieren → prüfen → in acht gleichrangigen Ansichten
+verstehen. Kein Server, kein Login, keine Persistenz über die Session hinaus.
+
+**Bewusst draußen:** mehrere Dateien gleichzeitig (Versionsvergleich, x83+x84
+zusammenführen — perspektivisch gewollt), Aufgaben/Notizen/Vergabe, Status ändern,
+GAEB-Export, LLM-Klassifizierung, jede Server-Komponente.
+
+Details → [docs/scope.md](docs/scope.md) · Umsetzungsplan →
+[docs/implementation-plan.md](docs/implementation-plan.md) · Kursänderung →
+[docs/decisions/0006-fokus-lv-verstehen.md](docs/decisions/0006-fokus-lv-verstehen.md)
 
 ---
 
