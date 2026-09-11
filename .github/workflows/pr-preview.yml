@@ -3,8 +3,13 @@ name: PR-Preview
 # Was macht dieser Workflow?
 # Jeder Pull Request bekommt eine eigene, klickbare Version der App unter
 #   https://<owner>.github.io/<repo>/pr-preview/pr-<nummer>/
-# Der Link wird automatisch als Kommentar in den PR geschrieben und beim Schließen
-# des PRs samt Dateien wieder entfernt.
+# Der Link wird automatisch als Kommentar in den PR geschrieben.
+#
+# Aufgeräumt wird hier NICHT. Die Preview eines geschlossenen PRs entfernt der
+# Deploy-Workflow beim nächsten Veröffentlichen von `main` – er übernimmt nur noch
+# die Previews der offenen Pull Requests. Grund: Merge löste früher zwei Schreib-
+# vorgänge auf `gh-pages` gleichzeitig aus (Aufräumen + Deploy), wodurch GitHub den
+# Seiten-Build abbrach. Siehe docs/decisions/0007-previews-im-deploy-aufraeumen.md.
 #
 # Die Previews liegen im Branch `gh-pages` im Ordner `pr-preview/`; der Live-Stand von
 # `main` liegt im Wurzelverzeichnis desselben Branches (siehe deploy-pages.yml).
@@ -18,10 +23,8 @@ name: PR-Preview
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize, closed]
+    types: [opened, reopened, synchronize]
     # `paths` prüft alle Änderungen des Pull Requests, nicht nur den letzten Push.
-    # Ein PR mit Code-Änderungen bleibt also auch beim Schließen erfasst und wird
-    # ordentlich aufgeräumt.
     paths:
       - 'frontend/**'
       # Änderungen am Workflow selbst sollen sich testen lassen.
@@ -43,29 +46,29 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
-        if: github.event.action != 'closed'
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
       - name: Abhängigkeiten installieren
-        if: github.event.action != 'closed'
         working-directory: frontend
         run: npm ci
 
       # Die Preview liegt in einem Unterordner, deshalb muss die Base-URL diesen Pfad
       # enthalten – sonst suchen JS/CSS im Wurzelverzeichnis und die Seite bleibt leer.
       - name: App bauen
-        if: github.event.action != 'closed'
         working-directory: frontend
         run: |
           npm run build -- \
             --base=/${{ github.event.repository.name }}/pr-preview/pr-${{ github.event.number }}/
 
-      - name: Preview veröffentlichen bzw. aufräumen
+      # action: deploy statt des Standards "auto" – der Workflow soll unter keinen
+      # Umständen aufräumen, auch nicht, wenn er künftig auf weitere Events hört.
+      - name: Preview veröffentlichen
         uses: rossjrw/pr-preview-action@v1
         with:
           source-dir: frontend/dist
           preview-branch: gh-pages
           umbrella-dir: pr-preview
+          action: deploy

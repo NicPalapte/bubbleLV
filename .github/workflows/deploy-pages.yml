@@ -8,6 +8,11 @@ name: Deploy to GitHub Pages
 # Warum über einen Branch und nicht mehr über das Pages-Artefakt?
 # Nur so können die PR-Previews (pr-preview.yml) im selben Pages-Auftritt unter
 # `pr-preview/pr-<nummer>/` liegen. Siehe docs/decisions/0002-pr-preview.md.
+#
+# Dieser Workflow räumt auch die Previews auf: er übernimmt vor dem Veröffentlichen
+# genau die Previews der offenen Pull Requests, alle übrigen fallen weg. Damit gibt
+# es beim Merge nur noch einen einzigen Schreibvorgang auf `gh-pages`.
+# Siehe docs/decisions/0007-previews-im-deploy-aufraeumen.md.
 
 on:
   push:
@@ -17,6 +22,8 @@ on:
 
 permissions:
   contents: write
+  # Zum Nachschlagen, welche Pull Requests noch offen sind.
+  pull-requests: read
 
 # Nur ein Deployment gleichzeitig; laufende nicht abbrechen.
 concurrency:
@@ -49,12 +56,62 @@ jobs:
         working-directory: frontend
         run: npm run build -- --base=/${{ github.event.repository.name }}/
 
-      # clean-exclude schützt die PR-Previews: ohne das würde jedes main-Deployment
-      # den Ordner pr-preview/ im gh-pages-Branch mitlöschen.
+      # Der Veröffentlichungsschritt spiegelt frontend/dist nach gh-pages und löscht
+      # dort alles, was im Ordner fehlt. Damit die Previews noch offener Pull Requests
+      # das überleben, werden sie vorher aus gh-pages in den Build-Ordner kopiert.
+      # Previews geschlossener PRs fehlen dann – und verschwinden genau dadurch.
+      - name: Previews offener Pull Requests übernehmen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          # Beim allerersten Lauf gibt es den Branch noch nicht.
+          if ! git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            echo "Branch gh-pages existiert noch nicht – nichts zu übernehmen."
+            exit 0
+          fi
+
+          git fetch --no-recurse-submodules --depth=1 origin gh-pages
+
+          offene=$(gh pr list --state open --limit 200 --json number --jq '.[].number')
+          if [ -z "$offene" ]; then
+            echo "Kein offener Pull Request – alle Previews fallen weg."
+            exit 0
+          fi
+
+          for nummer in $offene; do
+            pfad="pr-preview/pr-$nummer"
+            if git cat-file -e "FETCH_HEAD:$pfad" 2>/dev/null; then
+              git archive FETCH_HEAD "$pfad" | tar -x -C frontend/dist
+              echo "übernommen: $pfad"
+            else
+              echo "keine Preview vorhanden: $pfad"
+            fi
+          done
+
       - name: Nach gh-pages veröffentlichen
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: frontend/dist
           branch: gh-pages
-          clean-exclude: pr-preview/
           force: false
+
+      # Ohne diese Datei schiebt GitHub Pages den Branch durch Jekyll; Dateien, die
+      # mit "_" beginnen, fehlen dann wortlos auf der Live-Seite. Der Kopierschritt
+      # der Deploy-Action lässt .nojekyll bewusst unangetastet, deshalb wird sie hier
+      # einmalig direkt im Branch angelegt.
+      - name: .nojekyll in gh-pages sicherstellen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh api "repos/$GITHUB_REPOSITORY/contents/.nojekyll?ref=gh-pages" >/dev/null 2>&1; then
+            echo ".nojekyll ist vorhanden."
+            exit 0
+          fi
+          gh api --method PUT "repos/$GITHUB_REPOSITORY/contents/.nojekyll" \
+            -f message="chore(pages): .nojekyll anlegen" \
+            -f content="" \
+            -f branch=gh-pages
+          echo ".nojekyll angelegt."
