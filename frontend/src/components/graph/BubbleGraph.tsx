@@ -788,6 +788,7 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
                 onDoubleClick={() => fitTo(entry.id)}
                 radius={radius}
                 subLabel={metric?.subLabel ?? ''}
+                cloudRadius={clouds.get(entry.id)?.radius}
               />
             );
           })}

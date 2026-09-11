@@ -37,6 +37,11 @@ interface BubbleProps extends CommonProps {
   node: LVNode;
   radius: number;
   subLabel: string;
+  /**
+   * Radius der eigenen Positionswolke, falls vorhanden. Die Beschriftung unter
+   * der Bubble rückt dann nach außen — sonst stünde sie zwischen den Punkten.
+   */
+  cloudRadius?: number;
 }
 
 const TIER_FILL: Record<string, { fill: string; stroke: string }> = {
@@ -192,6 +197,7 @@ export function BubbleNode(props: BubbleProps) {
     onDoubleClick,
     radius,
     subLabel,
+    cloudRadius,
   } = props;
 
   // Tastatur-Fokus zählt überall dort wie Hover — sonst ließen sich Badges,
@@ -294,7 +300,7 @@ export function BubbleNode(props: BubbleProps) {
           // Ab halbem Beschriftungs-Zoom lohnt der Titel; darunter stünden die
           // Titel benachbarter Bubbles übereinander.
           title={zoom >= LABEL_K[placed.tier] * 0.5 ? title : null}
-          offset={radius + 3 / zoom}
+          offset={Math.max(radius, cloudRadius ?? 0) + 3 / zoom}
           zoom={zoom}
           dimmed={dimmed}
         />
