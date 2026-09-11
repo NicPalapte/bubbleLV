@@ -27,8 +27,14 @@ vom zweiten abgebrochen.
   Der Schritt läuft mit `action: deploy` statt dem Standard `auto`.
 - `deploy-pages.yml` räumt mit auf: Vor dem Veröffentlichen kopiert er die Previews der
   **offenen** Pull Requests aus `gh-pages` in den Build-Ordner.
-- Damit entfällt `clean-exclude`. Der Veröffentlichungsschritt spiegelt den Build-Ordner
-  und löscht alles, was darin fehlt – also genau die Previews geschlossener PRs.
+- Damit entfällt `clean-exclude` im Normalfall. Der Veröffentlichungsschritt spiegelt den
+  Build-Ordner und löscht alles, was darin fehlt – also genau die Previews geschlossener
+  PRs.
+- **Das Live-Deployment hängt nicht am Aufräumen.** Kommt der Übernahme-Schritt nicht
+  durch – Netzwerkfehler, Rate-Limit, oder mehr offene Pull Requests als sein Limit –,
+  schaltet er das Aufräumen für diesen Lauf ab: `clean-exclude` steht dann wieder auf
+  `pr-preview/` und schützt alle Previews. Die Seite geht trotzdem online, der Lauf
+  meldet eine Warnung.
 - Zusätzlich liegt `.nojekyll` in `frontend/public/`. Vite kopiert die Datei beim
   Bauen nach `dist/`, von dort wandert sie mit dem übrigen Build in den Branch.
 
@@ -41,6 +47,13 @@ vom zweiten abgebrochen.
 - `.nojekyll`: Ohne diese Datei schiebt GitHub den Branch durch Jekyll. Jekyll überspringt
   Dateien, die mit `_` beginnen. Erzeugt der Build so eine Datei, fehlt sie kommentarlos
   auf der Live-Seite – ohne Fehlermeldung irgendwo.
+- Ein verhindertes Live-Deployment wiegt schwerer als eine Preview, die eine Runde zu
+  spät verschwindet. Ein blindes Weiterlaufen wäre aber die schlechtere Antwort darauf:
+  ohne die übernommenen Previews im Build-Ordner würde der Spiegelschritt die Previews
+  **aller** offenen PRs löschen. Deshalb der Mittelweg – Deployment ja, Aufräumen nein.
+- Das Limit für die PR-Liste ist bewusst als sichtbare Grenze gebaut: Wird es erreicht,
+  ist die Liste womöglich abgeschnitten, und der Lauf räumt lieber gar nicht auf, statt
+  eine Preview still zu löschen.
 - Der Weg über `frontend/public/` kommt ohne zusätzlichen Schreibvorgang aus: Die Datei
   reist mit dem normalen Build mit, statt hinterher per API in den Branch geschrieben zu
   werden. Sie steht damit auch sichtbar im Repo statt nur im Deployment-Branch.
@@ -71,5 +84,8 @@ vom zweiten abgebrochen.
   sondern beim nächsten Merge nach `main`. Der Link zeigt bis dahin den letzten Stand
   des PRs. Das ist kein Fehler.
 - Der Workflow liest jetzt die Liste der offenen Pull Requests (`pull-requests: read`).
+- Taucht im Deploy-Lauf die Warnung „Previews werden diesmal nicht aufgeräumt" auf, ist
+  die Live-Seite trotzdem aktuell. Übrig gebliebene Previews verschwinden beim nächsten
+  Merge von selbst – es ist kein Handgriff nötig.
 - `.nojekyll` erzeugt keinen eigenen Schreibvorgang: Sie ist Teil des Build-Ordners und
   wird wie jede andere Datei mitgespiegelt.

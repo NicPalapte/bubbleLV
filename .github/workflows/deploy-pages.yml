@@ -60,35 +60,59 @@ jobs:
       # dort alles, was im Ordner fehlt. Damit die Previews noch offener Pull Requests
       # das überleben, werden sie vorher aus gh-pages in den Build-Ordner kopiert.
       # Previews geschlossener PRs fehlen dann – und verschwinden genau dadurch.
+      #
+      # Klappt das nicht (Netzwerk, Rate-Limit, mehr offene PRs als LIMIT), wird nicht
+      # aufgeräumt, statt das Live-Deployment zu verlieren: der Schritt meldet dann über
+      # "schutz" den ganzen Ordner pr-preview/ als geschützt. Die Seite geht online, nur
+      # die Previews geschlossener PRs bleiben eine Runde länger liegen.
       - name: Previews offener Pull Requests übernehmen
+        id: previews
         env:
           GH_TOKEN: ${{ github.token }}
+          # Wird diese Zahl erreicht, ist die Liste womöglich abgeschnitten. Dann lieber
+          # gar nicht aufräumen, als eine Preview still zu löschen.
+          LIMIT: '200'
         run: |
-          set -euo pipefail
+          set -uo pipefail
+
+          # Aufräumen für diesen Lauf abschalten und den Schritt trotzdem grün beenden.
+          schutz() {
+            echo "::warning::$1 – Previews werden diesmal nicht aufgeräumt."
+            echo "schutz=pr-preview/" >> "$GITHUB_OUTPUT"
+            exit 0
+          }
 
           # Beim allerersten Lauf gibt es den Branch noch nicht.
           if ! git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
             echo "Branch gh-pages existiert noch nicht – nichts zu übernehmen."
+            echo "schutz=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          git fetch --no-recurse-submodules --depth=1 origin gh-pages
+          git fetch --no-recurse-submodules --depth=1 origin gh-pages \
+            || schutz "Branch gh-pages nicht erreichbar"
 
-          offene=$(gh pr list --state open --limit 200 --json number --jq '.[].number')
-          if [ -z "$offene" ]; then
-            echo "Kein offener Pull Request – alle Previews fallen weg."
-            exit 0
+          offene=$(gh pr list --state open --limit "$LIMIT" --json number --jq '.[].number') \
+            || schutz "Liste der offenen Pull Requests nicht abrufbar"
+
+          anzahl=$(printf '%s\n' "$offene" | grep -c . || true)
+          if [ "$anzahl" -ge "$LIMIT" ]; then
+            schutz "$anzahl offene Pull Requests, Limit $LIMIT erreicht"
           fi
 
           for nummer in $offene; do
             pfad="pr-preview/pr-$nummer"
             if git cat-file -e "FETCH_HEAD:$pfad" 2>/dev/null; then
-              git archive FETCH_HEAD "$pfad" | tar -x -C frontend/dist
+              git archive FETCH_HEAD "$pfad" | tar -x -C frontend/dist \
+                || schutz "Preview $pfad nicht lesbar"
               echo "übernommen: $pfad"
             else
               echo "keine Preview vorhanden: $pfad"
             fi
           done
+
+          echo "$anzahl offene Pull Request(s) geprüft, Aufräumen aktiv."
+          echo "schutz=" >> "$GITHUB_OUTPUT"
 
       # frontend/public/.nojekyll wandert beim Bauen nach dist und damit in den
       # Branch. Ohne diese Datei schiebt GitHub Pages den Branch durch Jekyll;
@@ -98,4 +122,7 @@ jobs:
         with:
           folder: frontend/dist
           branch: gh-pages
+          # Leer = aufräumen. Nur wenn der Schritt oben nicht durchkam, steht hier
+          # pr-preview/ und schützt sämtliche Previews vor dem Löschen.
+          clean-exclude: ${{ steps.previews.outputs.schutz }}
           force: false
