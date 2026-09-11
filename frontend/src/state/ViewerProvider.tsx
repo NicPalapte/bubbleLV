@@ -60,6 +60,20 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
     return open;
   }, [tree, matches, state.expanded]);
 
+  // Sammel-Bubbles mit Treffern gehen bei aktiver Suche von selbst auf —
+  // dieselbe Ableitung wie `openNodes`, damit der Filter nichts versteckt.
+  const openClusters = useMemo<ReadonlySet<string>>(() => {
+    if (tree === null || !matches.filtering) return state.openClusters;
+    const open = new Set(state.openClusters);
+    const visit = (node: LVNode): void => {
+      if (node.kind === 'position') return;
+      if ((matches.counts.get(node.id) ?? 0) > 0) open.add(node.id);
+      for (const child of node.children) visit(child);
+    };
+    visit(tree);
+    return open;
+  }, [tree, matches, state.openClusters]);
+
   const derived = useMemo<ViewerDerived>(
     () => ({
       tree,
@@ -74,8 +88,17 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
           : (structure.nodes.get(state.selectedPositionId) ?? null),
       matches,
       openNodes,
+      openClusters,
     }),
-    [tree, structure, state.selectedNodeId, state.selectedPositionId, matches, openNodes],
+    [
+      tree,
+      structure,
+      state.selectedNodeId,
+      state.selectedPositionId,
+      matches,
+      openNodes,
+      openClusters,
+    ],
   );
 
   const value = useMemo(() => ({ ...state, ...derived }), [state, derived]);

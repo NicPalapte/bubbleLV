@@ -206,6 +206,12 @@ export interface ViewerDerived {
    * dasselbe Set, damit sie auch beim Filtern gleich stehen (Issue #18).
    */
   openNodes: ReadonlySet<string>;
+  /**
+   * Tatsächlich aufgelöste Sammel-Bubbles: die vom Nutzer geöffneten plus die,
+   * in denen ein Treffer steckt. Sonst bliebe ein Treffer bei aktiver Suche in
+   * einer zugeklappten Sammel-Bubble unsichtbar (Issue #41, G4).
+   */
+  openClusters: ReadonlySet<string>;
 }
 
 export type ViewerValue = ViewerState & ViewerDerived;

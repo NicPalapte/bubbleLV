@@ -16,7 +16,7 @@ selbst anlegen.
 |---|---|---|
 | WP-A…G | MVP: Import, Klassifizierung, Baum, Tree/Tabelle/Filter, Graph, Panel | ✅ umgesetzt (Details unten) |
 | WP-41-1…3 | Langtexte, Eigenschaften-Panel, Tabellen-Spalten (Issue #41) | ✅ umgesetzt |
-| WP-H | Graph fertigstellen (= WP-41-4 + WP-41-5) | offen |
+| WP-H | Graph fertigstellen (= WP-41-4 + WP-41-5) | ✅ umgesetzt |
 | WP-I | Performance-Fundament für 10k Positionen | offen |
 | WP-J | Klassifizierung v2: generische Extraktoren + Textstellen | offen |
 | WP-K | Flags und VOB-Check, Ansicht „Prüfung" | offen |
@@ -56,7 +56,11 @@ WP-H ──► WP-I ──┬──► WP-J ──► WP-K ───────
 **Ziel:** Der Graph verträgt reale Dateien. Umfang und Abnahme stehen bereits in
 [`plans/issue-41-app-usage-review.md`](plans/issue-41-app-usage-review.md) — WP-41-4
 (Darstellung, Beschriftung, Zoom auf Auswahl) und WP-41-5 (Positionswolke statt Ring,
-voller Kreis, Detailstufe). Dieses WP übernimmt sie unverändert.
+weiter Fächer, Detailstufe). Dieses WP übernimmt sie unverändert.
+
+**Beide Pakete sind umgesetzt** — WP-41-4 (Beschriftung, `ownCode`, Zoom auf die
+Auswahl) und WP-41-5 (Positionswolke, Entscheidung
+[`decisions/0008-graph-layout-positionswolke.md`](decisions/0008-graph-layout-positionswolke.md)).
 
 **Zusatz gegenüber dem alten Plan:** Der Graph ist ab jetzt eine Ansicht unter
 mehreren, kein Sonderfall. Sein Zustand (Zoom, offene Knoten) lebt im gemeinsamen

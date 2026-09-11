@@ -1,6 +1,7 @@
-// Layout-Regeln des Bubble-Graphen: Kinder sitzen als Kreis um ihren
+// Layout-Regeln des Bubble-Graphen: Abschnitte sitzen als Kreis um ihren
 // Elternknoten, der Kreisradius folgt der Größe der Teilbäume (Issue #11);
-// dazu das Auflösen einer Cluster-Bubble (Issue #10).
+// Positionen sitzen als Wolke um ihren Abschnitt (WP-41-5, Issue #46); dazu
+// das Auflösen einer Cluster-Bubble (Issue #10).
 
 import { describe, expect, it } from 'vitest';
 import { RADII, SIZE_MAX_FACTOR, sizedRadius } from '../../src/lib/graph/constants';
@@ -19,6 +20,30 @@ function positions(prefix: string, count: number): PositionDraft[] {
     positionType: 'NORMAL' as const,
     attributes: {},
   }));
+}
+
+/** Abschnitt mit Unterabschnitten statt Positionen — Kinder für den Ring. */
+function nested(sizes: readonly number[]): SectionDraft {
+  return {
+    number: '001.001',
+    label: 'Hauptabschnitt',
+    positions: [],
+    sections: sizes.map((size, index) => ({
+      number: `001.001.${String(index + 1).padStart(3, '0')}`,
+      label: `Unterabschnitt ${index + 1}`,
+      positions: positions(`001.001.${String(index + 1).padStart(3, '0')}`, size),
+      sections: [],
+    })),
+  };
+}
+
+/** Ein Los mit genau einem Hauptabschnitt, der `sizes` Unterabschnitte trägt. */
+function draftNested(sizes: readonly number[]): LVDraft {
+  return {
+    projectName: 'Layout-Test',
+    client: null,
+    lots: [{ number: '001', label: 'Los 1', sections: [nested(sizes)] }],
+  };
 }
 
 /** Ein Los mit je einem Abschnitt pro Eintrag in `sizes`. */
@@ -75,24 +100,19 @@ describe('layoutRadial', () => {
   });
 
   it('gibt dem größeren Teilbaum den breiteren Winkel', () => {
-    const tree = buildTree(draftWith([6, 2]));
-    const [big, small] = tree.children[0].children;
+    // Zwei Unterabschnitte am selben Hauptabschnitt: der mit mehr Positionen
+    // ist breiter und bekommt den größeren Winkelanteil.
+    const tree = buildTree(draftNested([200, 2, 2, 2]));
+    const main = tree.children[0].children[0];
     const { nodes } = layoutRadial(tree, allExpanded(tree));
 
-    const spanBig = angleSpan(
-      nodes,
-      big.children.map((child) => child.id),
-    );
-    const spanSmall = angleSpan(
-      nodes,
-      small.children.map((child) => child.id),
-    );
-    expect(spanBig).toBeGreaterThan(spanSmall * 2);
+    const angles = main.children.map((child) => nodes.get(child.id)?.angle ?? 0);
+    const gapBig = Math.abs(angles[1] - angles[0]);
+    const gapSmall = Math.abs(angles[3] - angles[2]);
+    expect(gapBig).toBeGreaterThan(gapSmall * 1.5);
   });
 
-  it('vergrößert die Abstände mit der Menge der Positionen', () => {
-    // 3 gegen 24 Positionen im Abschnitt: der Kreis der Positionen muss
-    // mitwachsen, sonst würden sich die Bubbles überlagern.
+  it('vergrößert die Wolke mit der Menge der Positionen', () => {
     const smallTree = buildTree(draftWith([3]));
     const largeTree = buildTree(draftWith([24]));
     const small = layoutRadial(smallTree, allExpanded(smallTree));
@@ -100,27 +120,42 @@ describe('layoutRadial', () => {
 
     const smallSection = smallTree.children[0].children[0];
     const largeSection = largeTree.children[0].children[0];
-    expect(distance(large.nodes, largeSection.id, largeSection.children[0].id)).toBeGreaterThan(
-      distance(small.nodes, smallSection.id, smallSection.children[0].id),
+    expect(large.clouds.get(largeSection.id)?.radius ?? 0).toBeGreaterThan(
+      small.clouds.get(smallSection.id)?.radius ?? 0,
     );
     expect(large.extent).toBeGreaterThan(small.extent);
   });
 
-  it('fasst viele Geschwister zu einer Cluster-Bubble zusammen', () => {
-    const tree = buildTree(draftWith([30]));
-    const section = tree.children[0].children[0];
+  it('fasst viele Geschwister-Abschnitte zu einer Cluster-Bubble zusammen', () => {
+    // Mehr als CLUSTER_AT (40) Unterabschnitte — Positionen werden dagegen nie
+    // geclustert, sie liegen in der Wolke.
+    const tree = buildTree(draftNested(Array.from({ length: 45 }, () => 1)));
+    const main = tree.children[0].children[0];
     const { nodes } = layoutRadial(tree, allExpanded(tree));
-    expect(nodes.has(`cluster:${section.id}`)).toBe(true);
-    expect(nodes.has(section.children[0].id)).toBe(false);
+    expect(nodes.has(`cluster:${main.id}`)).toBe(true);
+    expect(nodes.has(main.children[0].id)).toBe(false);
   });
 
-  it('löst eine aufgeklappte Cluster-Bubble in Punkte auf', () => {
-    const tree = buildTree(draftWith([30]));
+  it('löst eine aufgeklappte Cluster-Bubble in einzelne Bubbles auf', () => {
+    const tree = buildTree(draftNested(Array.from({ length: 45 }, () => 1)));
+    const main = tree.children[0].children[0];
+    const { nodes } = layoutRadial(tree, allExpanded(tree), new Set([main.id]));
+    expect(nodes.has(`cluster:${main.id}`)).toBe(false);
+    for (const child of main.children) {
+      expect(nodes.has(child.id)).toBe(true);
+    }
+  });
+
+  it('clustert Positionen nie, sondern legt sie als Wolke um den Abschnitt', () => {
+    // Der Befund aus Issue #46: Abschnitts-Bubble plus Sammelknoten waren zwei
+    // Knoten für eine Sache.
+    const tree = buildTree(draftWith([92]));
     const section = tree.children[0].children[0];
-    const { nodes } = layoutRadial(tree, allExpanded(tree), new Set([section.id]));
+    const { nodes, clouds } = layoutRadial(tree, allExpanded(tree));
     expect(nodes.has(`cluster:${section.id}`)).toBe(false);
+    expect(clouds.get(section.id)?.count).toBe(92);
     for (const child of section.children) {
-      expect(nodes.get(child.id)?.dotted).toBe(true);
+      expect(nodes.get(child.id)?.cloudOf).toBe(section.id);
     }
   });
 
@@ -154,5 +189,95 @@ describe('sizedRadius', () => {
 
   it('ignoriert den Wert im Modus „Einheitlich"', () => {
     expect(sizedRadius('lot', 999, { min: 1, max: 999 }, true)).toBe(RADII.lot);
+  });
+});
+
+describe('Positionswolke (WP-41-5)', () => {
+  it('wächst mit der Wurzel der Positionszahl statt linear', () => {
+    // Der alte Ring wuchs linear: 92 Positionen ergaben Radius ~1.460. Die
+    // Wolke füllt eine Fläche, viermal so viele Positionen kosten deshalb nur
+    // den doppelten Radius.
+    const hundred = buildTree(draftWith([100]));
+    const fourHundred = buildTree(draftWith([400]));
+    const small = layoutRadial(hundred, allExpanded(hundred));
+    const large = layoutRadial(fourHundred, allExpanded(fourHundred));
+
+    const r1 = small.clouds.get(hundred.children[0].children[0].id)?.radius ?? 0;
+    const r2 = large.clouds.get(fourHundred.children[0].children[0].id)?.radius ?? 0;
+    expect(r2 / r1).toBeGreaterThan(1.7);
+    expect(r2 / r1).toBeLessThan(2.2);
+  });
+
+  it('hält die Wolken von Geschwister-Abschnitten auseinander', () => {
+    const tree = buildTree(draftWith([40, 40, 40]));
+    const { nodes, clouds } = layoutRadial(tree, allExpanded(tree));
+    const sections = tree.children[0].children;
+
+    for (let a = 0; a < sections.length; a++) {
+      for (let b = a + 1; b < sections.length; b++) {
+        const ra = clouds.get(sections[a].id)?.radius ?? 0;
+        const rb = clouds.get(sections[b].id)?.radius ?? 0;
+        expect(distance(nodes, sections[a].id, sections[b].id)).toBeGreaterThanOrEqual(ra + rb);
+      }
+    }
+  });
+
+  it('legt die Positionen ohne Überlappung in die Wolke', () => {
+    const tree = buildTree(draftWith([200]));
+    const section = tree.children[0].children[0];
+    const { nodes } = layoutRadial(tree, allExpanded(tree));
+    const points = section.children.map((child) => nodes.get(child.id));
+
+    // Der Punkt-Slot des Layouts: zwei Positionen dürfen sich nicht berühren.
+    // Positionen skalieren nicht mit dem Größenmodus (Issue #41), deshalb ist
+    // ihr Radius fest.
+    const slot = RADII.position;
+    let closest = Infinity;
+    for (let i = 0; i < points.length; i++) {
+      for (let j = i + 1; j < points.length; j++) {
+        const a = points[i];
+        const b = points[j];
+        if (a === undefined || b === undefined) continue;
+        closest = Math.min(closest, Math.hypot(a.cx - b.cx, a.cy - b.cy));
+      }
+    }
+    expect(closest).toBeGreaterThanOrEqual(2 * slot);
+  });
+
+  it('hält die Beispieldatei aus Issue #41 im lesbaren Rahmen', () => {
+    // 29 Unterabschnitte à 23 Positionen — der alte Ring kam auf rund 40.000
+    // Einheiten Durchmesser.
+    const tree = buildTree(draftNested(Array.from({ length: 29 }, () => 23)));
+    const { extent } = layoutRadial(tree, allExpanded(tree));
+    expect(2 * extent).toBeLessThan(6000);
+  });
+
+  it('layoutet 10.000 Positionen in einem Abschnitt schnell genug', () => {
+    const tree = buildTree(draftWith([10_000]));
+    const started = performance.now();
+    const { nodes, clouds } = layoutRadial(tree, allExpanded(tree));
+    const elapsed = performance.now() - started;
+    expect(nodes.size).toBeGreaterThan(10_000);
+    expect(clouds.get(tree.children[0].children[0].id)?.count).toBe(10_000);
+    expect(elapsed).toBeLessThan(100);
+  });
+
+  it('schrumpft im Modus „Ausblenden" auf die Treffer zusammen', () => {
+    const tree = buildTree(draftWith([100]));
+    const section = tree.children[0].children[0];
+    const keep = new Set(section.children.slice(0, 5).map((child) => child.id));
+    const full = layoutRadial(tree, allExpanded(tree));
+    const filtered = layoutRadial(
+      tree,
+      allExpanded(tree),
+      new Set(),
+      (node) => node.kind === 'position' && !keep.has(node.id),
+    );
+
+    expect(filtered.clouds.get(section.id)?.count).toBe(5);
+    expect(filtered.clouds.get(section.id)?.radius ?? 0).toBeLessThan(
+      full.clouds.get(section.id)?.radius ?? 0,
+    );
+    expect(filtered.nodes.has(section.children[50].id)).toBe(false);
   });
 });

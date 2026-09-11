@@ -1,4 +1,4 @@
-// Knoten-Darstellungen des Bubble-Graphen: Bubble und Cluster.
+// Knoten-Darstellungen des Bubble-Graphen: Bubble, Positionswolke und Cluster.
 // Portiert aus `BubbleNode`/`ClusterNode` in design/claude-design/lv-graph.jsx;
 // Vergabepaket-/Aufgaben-Overlays entfallen.
 //
@@ -6,11 +6,17 @@
 // (der frühere `DotNode` ist darin aufgegangen). Los und Abschnitte tragen ihre
 // Nummer immer — ist die Bubble auf dem Schirm zu klein für Schrift, steht die
 // Beschriftung darunter, in bildschirmfester Größe mit weißem Halo.
+//
+// WP-41-5: Die Positionen eines Abschnitts liegen als Wolke um ihn herum
+// (Issue #46). `CloudHalo` zeigt die Zugehörigkeit als Fläche statt als Kante je
+// Position, `CloudDisc` ersetzt die Wolke beim Rauszoomen durch eine Fläche mit
+// Zähler. Die Knöpfe an den Bubbles sind entfallen: Klick auf die Bubble klappt
+// ohnehin auf, die Tabelle sitzt in der Kopfleiste (Issue #49).
 
 import { COMPACT_AT, LABEL_K, OUTSIDE_LABEL_PX, RADII } from '../../lib/graph/constants';
 import { formatCount, truncate } from '../../lib/format';
 import { codeLabelFor } from '../../lib/graph/labels';
-import type { PlacedNode } from '../../lib/graph/layoutRadial';
+import type { PlacedCloud, PlacedNode } from '../../lib/graph/layoutRadial';
 import type { LVNode } from '../../types/lvNode';
 
 interface CommonProps {
@@ -31,12 +37,6 @@ interface BubbleProps extends CommonProps {
   node: LVNode;
   radius: number;
   subLabel: string;
-  collapsible: boolean;
-  isCollapsed: boolean;
-  childCount: number;
-  onToggleCollapse: () => void;
-  /** Sprung in die Positionstabelle — nur über das Symbol, nicht per Bubble-Klick. */
-  onOpenTable: () => void;
 }
 
 const TIER_FILL: Record<string, { fill: string; stroke: string }> = {
@@ -53,48 +53,6 @@ const HALO = {
   stroke: 'var(--white)',
   strokeLinejoin: 'round' as const,
 };
-
-/**
- * Tabellensymbol an einer Sammel-Bubble. Der Klick auf die Bubble selbst öffnet
- * bzw. schließt sie; nur dieses Symbol wechselt in die Tabelle (Issue #10).
- */
-function TableBadge({
-  x,
-  y,
-  size,
-  onOpen,
-}: {
-  x: number;
-  y: number;
-  size: number;
-  onOpen: () => void;
-}) {
-  return (
-    <g
-      transform={`translate(${x},${y})`}
-      style={{ cursor: 'pointer' }}
-      onMouseDown={(event) => event.stopPropagation()}
-      onClick={(event) => {
-        event.stopPropagation();
-        onOpen();
-      }}
-    >
-      <title>Positionstabelle öffnen</title>
-      <circle r={size} fill="var(--white)" stroke="var(--blue)" strokeWidth="1.2" />
-      <g
-        fill="none"
-        stroke="var(--blue)"
-        strokeWidth={Math.max(0.9, size * 0.14)}
-        strokeLinecap="round"
-      >
-        <rect x={-size * 0.46} y={-size * 0.4} width={size * 0.92} height={size * 0.8} />
-        <line x1={-size * 0.46} y1={-size * 0.12} x2={size * 0.46} y2={-size * 0.12} />
-        <line x1={-size * 0.46} y1={size * 0.16} x2={size * 0.46} y2={size * 0.16} />
-        <line x1={-size * 0.08} y1={-size * 0.4} x2={-size * 0.08} y2={size * 0.4} />
-      </g>
-    </g>
-  );
-}
 
 function mainFontSize(tier: string): number {
   switch (tier) {
@@ -169,6 +127,57 @@ function OutsideLabel({ code, title, offset, zoom, dimmed }: OutsideLabelProps) 
   );
 }
 
+/**
+ * Fläche hinter einer Positionswolke. Sie ersetzt die Kante je Position —
+ * hunderte Linien auf einen Abschnitt waren der Hauptgrund für das
+ * Linien-Gestrüpp im Graphen (Issue #41, G7).
+ */
+export function CloudHalo({ cloud, dimmed }: { cloud: PlacedCloud; dimmed: boolean }) {
+  return (
+    <g transform={`translate(${cloud.cx},${cloud.cy})`} style={{ pointerEvents: 'none' }}>
+      <circle
+        r={cloud.radius}
+        fill="var(--bub-position)"
+        opacity={dimmed ? 0.06 : 0.22}
+        stroke="var(--bub-position-line)"
+        strokeWidth="1"
+        strokeDasharray="3 4"
+        strokeOpacity={dimmed ? 0.1 : 0.35}
+      />
+    </g>
+  );
+}
+
+/**
+ * Detailstufe: die ganze Wolke als eine Fläche mit Zähler. Greift, sobald die
+ * Wolke auf dem Schirm zu klein ist, um einzelne Positionen zu unterscheiden.
+ */
+export function CloudDisc({ cloud, zoom }: { cloud: PlacedCloud; zoom: number }) {
+  const size = screenFont(OUTSIDE_LABEL_PX * 0.9, zoom);
+  return (
+    <g transform={`translate(${cloud.cx},${cloud.cy})`} style={{ pointerEvents: 'none' }}>
+      <circle
+        r={cloud.radius}
+        fill="var(--bub-position-line)"
+        opacity="0.45"
+        stroke="var(--bub-position-line)"
+        strokeWidth={1 / Math.max(0.3, zoom)}
+      />
+      <text
+        textAnchor="middle"
+        y={cloud.radius + size * 1.2}
+        fontFamily="var(--mono)"
+        fontSize={size}
+        fill="var(--dim)"
+        strokeWidth={size * 0.35}
+        style={HALO}
+      >
+        {formatCount(cloud.count)} POS.
+      </text>
+    </g>
+  );
+}
+
 export function BubbleNode(props: BubbleProps) {
   const {
     placed,
@@ -183,11 +192,6 @@ export function BubbleNode(props: BubbleProps) {
     onDoubleClick,
     radius,
     subLabel,
-    collapsible,
-    isCollapsed,
-    childCount,
-    onToggleCollapse,
-    onOpenTable,
   } = props;
 
   // Tastatur-Fokus zählt überall dort wie Hover — sonst ließen sich Badges,
@@ -265,10 +269,6 @@ export function BubbleNode(props: BubbleProps) {
   // Auf dem Schirm zu klein für Schrift → Beschriftung unter die Bubble.
   const compact = radius * zoom < COMPACT_AT;
   const showTitle = zoom >= LABEL_K[placed.tier];
-  // Tabellensymbol und Einklapp-Knopf würden kleine Bubbles zudecken — sie
-  // erscheinen erst, wenn die Bubble auf dem Schirm groß genug ist, sonst beim
-  // Überfahren.
-  const showBadges = active || radius * zoom >= 30;
 
   return (
     <g transform={`translate(${placed.cx},${placed.cy})`} style={groupStyle} {...handlers}>
@@ -340,62 +340,14 @@ export function BubbleNode(props: BubbleProps) {
           )}
         </>
       )}
-      {showBadges && (
-        <TableBadge
-          x={-radius * 0.55}
-          y={radius * 0.92}
-          size={Math.max(7, radius * 0.22)}
-          onOpen={onOpenTable}
-        />
-      )}
-      {collapsible && showBadges && (
-        <g
-          transform={`translate(${radius * 0.55},${radius * 0.92})`}
-          style={{ cursor: 'pointer' }}
-          onMouseDown={(event) => event.stopPropagation()}
-          onClick={(event) => {
-            event.stopPropagation();
-            onToggleCollapse();
-          }}
-        >
-          <title>{isCollapsed ? `${formatCount(childCount)} einblenden` : 'Einklappen'}</title>
-          <circle
-            r={Math.max(7, radius * 0.22)}
-            fill="var(--white)"
-            stroke={isCollapsed ? 'var(--blue)' : 'var(--line2)'}
-            strokeWidth="1.2"
-          />
-          <line
-            x1={-4}
-            y1={0}
-            x2={4}
-            y2={0}
-            stroke={isCollapsed ? 'var(--blue)' : 'var(--dim)'}
-            strokeWidth="1.4"
-            strokeLinecap="round"
-          />
-          {isCollapsed && (
-            <line
-              x1={0}
-              y1={-4}
-              x2={0}
-              y2={4}
-              stroke="var(--blue)"
-              strokeWidth="1.4"
-              strokeLinecap="round"
-            />
-          )}
-        </g>
-      )}
     </g>
   );
 }
 
 interface ClusterProps extends Omit<CommonProps, 'hidden'> {
   sampleTier: string;
-  /** Cluster ist aufgelöst — die Kinder liegen als Punkte auf dem Ring. */
+  /** Cluster ist aufgelöst — die Kinder liegen einzeln auf dem Ring. */
   expanded: boolean;
-  onOpenTable: () => void;
 }
 
 const CLUSTER_LABEL: Record<string, string> = {
@@ -416,7 +368,6 @@ export function ClusterNode({
   onDoubleClick,
   sampleTier,
   expanded,
-  onOpenTable,
 }: ClusterProps) {
   const radius = RADII.cluster;
   const active = hovered || focused;
@@ -490,9 +441,6 @@ export function ClusterNode({
           zoom={zoom}
           dimmed={dimmed}
         />
-      )}
-      {(active || zoom >= 0.8) && (
-        <TableBadge x={-radius * 0.78} y={radius * 0.78} size={10} onOpen={onOpenTable} />
       )}
       {active && (
         <g transform="translate(0, 34)">

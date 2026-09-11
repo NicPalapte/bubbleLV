@@ -20,15 +20,23 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
 } from 'react';
-import { BubbleNode, ClusterNode } from './BubbleNode';
+import { BubbleNode, CloudDisc, CloudHalo, ClusterNode } from './BubbleNode';
 import { GraphControls } from './GraphControls';
 import { SelectionCard } from './SelectionCard';
-import { MAX_ZOOM, MIN_ZOOM, RADII, sizeModeById, sizedRadius } from '../../lib/graph/constants';
+import {
+  CLOUD_LOD_MIN,
+  CLOUD_LOD_PX,
+  MAX_ZOOM,
+  MIN_ZOOM,
+  RADII,
+  sizeModeById,
+  sizedRadius,
+} from '../../lib/graph/constants';
 import { cullBounds, isInView } from '../../lib/graph/culling';
 import {
-  DOT_RADIUS,
   layoutRadial,
   walkParents,
+  type PlacedCloud,
   type PlacedNode,
 } from '../../lib/graph/layoutRadial';
 import { formatCount } from '../../lib/format';
@@ -95,12 +103,22 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
   // den Ursprung zentrierte, überschrieb genau diesen Ausschnitt.
 
   const parents = useMemo(() => walkParents(root), [root]);
-  const placed = useMemo(
-    () => layoutRadial(root, openNodes, openClusters).nodes,
-    [root, openNodes, openClusters],
-  );
 
   const filtering = matches.filtering;
+
+  // Im Modus "Ausblenden" fallen Nicht-Treffer ganz aus dem Layout: die
+  // Positionswolke schrumpft dann auf die Treffer, statt Löcher zu lassen.
+  // Im Modus "Dämpfen" bleibt das Layout bewusst stabil, damit der Graph beim
+  // Tippen nicht unter der Maus wegspringt.
+  const skip = useMemo(() => {
+    if (!filtering || hideMode !== 'hide') return undefined;
+    return (node: LVNode): boolean => (matches.counts.get(node.id) ?? 0) === 0;
+  }, [filtering, hideMode, matches]);
+
+  const { nodes: placed, clouds } = useMemo(
+    () => layoutRadial(root, openNodes, openClusters, skip),
+    [root, openNodes, openClusters, skip],
+  );
 
   // Größenmodus "Gesamtpreis" trägt nicht, wenn die Datei keine Einheitspreise
   // führt (x83) — dann würden alle Bubbles auf Radius 0 fallen.
@@ -236,21 +254,46 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
     [cull],
   );
 
+  // Detailstufe: zu kleine Wolken werden als eine Fläche gezeichnet. Ohne das
+  // hingen bei 10k Positionen zehntausende Kreise im DOM.
+  const lodClouds = useMemo(() => {
+    const out = new Set<string>();
+    for (const cloud of clouds.values()) {
+      if (cloud.count > CLOUD_LOD_MIN && cloud.radius * view.k < CLOUD_LOD_PX) {
+        out.add(cloud.parentId);
+      }
+    }
+    return out;
+  }, [clouds, view.k]);
+
+  const visibleClouds = useMemo(() => {
+    const out: PlacedCloud[] = [];
+    for (const cloud of clouds.values()) {
+      if (!inView(cloud.cx, cloud.cy, cloud.radius)) continue;
+      out.push(cloud);
+    }
+    return out;
+  }, [clouds, inView]);
+
   const visibleNodes = useMemo(() => {
     const out: PlacedNode[] = [];
     for (const entry of placed.values()) {
+      if (entry.cloudOf !== null && lodClouds.has(entry.cloudOf)) continue;
       const radius = metrics.get(entry.id)?.radius ?? RADII[entry.tier];
       if (!inView(entry.cx, entry.cy, radius + 24)) continue;
       out.push(entry);
     }
     return out;
-  }, [placed, metrics, inView]);
+  }, [placed, metrics, inView, lodClouds]);
 
   // Kanten laufen leicht gebogen von der Eltern- zur Kind-Bubble — die kleine
   // Auslenkung nimmt dem Fächer die Sternform (Issue #11).
   const edges = useMemo(() => {
     const out: Array<{ a: string; b: string; d: string; key: string }> = [];
     for (const entry of placed.values()) {
+      // Positionen hängen an keiner eigenen Kante — ihre Zugehörigkeit zeigt
+      // der Halo ihrer Wolke (Issue #41, G7).
+      if (entry.cloudOf !== null) continue;
       const parentId = entry.clusterOf ?? parents.get(entry.id)?.id ?? null;
       if (parentId === null) continue;
       const from = placed.get(parentId);
@@ -296,14 +339,6 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
     [dispatch],
   );
 
-  /** Sprung in die Tabelle — nur über das Tabellensymbol an der Bubble. */
-  const openTable = useCallback(
-    (node: LVNode): void => {
-      dispatch({ type: 'openInTable', id: node.id });
-    },
-    [dispatch],
-  );
-
   const openNode = useCallback(
     (node: LVNode): void => {
       if (node.kind === 'position') {
@@ -326,22 +361,6 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
   const toggleCluster = useCallback(
     (parentId: string): void => dispatch({ type: 'toggleCluster', id: parentId }),
     [dispatch],
-  );
-
-  /** Tabelle für einen Cluster: nächster Abschnitt bzw. Los oberhalb. */
-  const openClusterTable = useCallback(
-    (entry: PlacedNode): void => {
-      let current: LVNode | null =
-        entry.clusterOf === null ? null : (placed.get(entry.clusterOf)?.node ?? null);
-      while (current !== null) {
-        if (current.kind === 'section' || current.kind === 'lot') {
-          dispatch({ type: 'openInTable', id: current.id });
-          return;
-        }
-        current = parents.get(current.id) ?? null;
-      }
-    },
-    [placed, parents, dispatch],
   );
 
   /**
@@ -690,6 +709,21 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
         <rect width={w} height={h} fill="url(#bubble-grid)" />
 
         <g transform={`translate(${view.tx},${view.ty}) scale(${view.k})`}>
+          {visibleClouds.map((cloud) =>
+            lodClouds.has(cloud.parentId) ? (
+              <CloudDisc key={cloud.id} cloud={cloud} zoom={view.k} />
+            ) : (
+              <CloudHalo
+                key={cloud.id}
+                cloud={cloud}
+                dimmed={
+                  (spotlight !== null && !spotlight.has(cloud.parentId)) ||
+                  metrics.get(cloud.parentId)?.missed === true
+                }
+              />
+            ),
+          )}
+
           {edges.map((edge) => {
             const dim = spotlight !== null && !spotlight.has(edge.a) && !spotlight.has(edge.b);
             return (
@@ -726,7 +760,6 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
                   onDoubleClick={() => fitTo(entry.id)}
                   sampleTier={sampleTier}
                   expanded={entry.clusterOf !== null && openClusters.has(entry.clusterOf)}
-                  onOpenTable={() => openClusterTable(entry)}
                 />
               );
             }
@@ -738,9 +771,7 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
             const hidden = missed && hideMode === 'hide';
             const dimmed = spotlightDim || missed;
 
-            // Punkt-Darstellung (viele Geschwister): dieselbe Bubble, nur mit
-            // dem kleinen Radius, den das Layout dafür reserviert hat.
-            const radius = entry.dotted ? DOT_RADIUS : (metric?.radius ?? RADII[entry.tier]);
+            const radius = metric?.radius ?? RADII[entry.tier];
 
             return (
               <BubbleNode
@@ -757,11 +788,6 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
                 onDoubleClick={() => fitTo(entry.id)}
                 radius={radius}
                 subLabel={metric?.subLabel ?? ''}
-                collapsible={node.children.length > 0}
-                isCollapsed={!openNodes.has(node.id)}
-                childCount={node.children.length}
-                onToggleCollapse={() => toggleCollapse(node.id)}
-                onOpenTable={() => openTable(node)}
               />
             );
           })}

@@ -7,10 +7,14 @@ import type { SizeModeId } from '../../state/viewer';
 /** Anzeige-Ebene eines Knotens — steuert Radius und Label-Schwelle. */
 export type Tier = 'project' | 'lot' | 'section' | 'subsection' | 'group' | 'position' | 'cluster';
 
-/** > so viele Geschwister → eine einzelne Cluster-Bubble. */
-export const CLUSTER_AT = 24;
-/** > so viele Geschwister (und ≤ CLUSTER_AT) → Punkt-Darstellung. */
-export const DOT_AT = 8;
+/**
+ * > so viele Geschwister-**Abschnitte** → eine einzelne Cluster-Bubble.
+ * Positionen werden nie geclustert: sie liegen als Wolke um ihren Abschnitt
+ * (WP-41-5, Issue #46). Der Schwellwert liegt bewusst hoch — die reale
+ * Beispieldatei hat 29 Unterabschnitte, die einzeln lesbar bleiben sollen;
+ * die Außenbeschriftung (Issue #41) trägt sie auch klein noch.
+ */
+export const CLUSTER_AT = 40;
 
 export const RADII: Record<Tier, number> = {
   project: 70,
@@ -35,6 +39,20 @@ export const COMPACT_AT = 28;
 /** Schriftgröße der Außenbeschriftung auf dem Schirm, in px. */
 export const OUTSIDE_LABEL_PX = 10;
 
+/**
+ * Ist eine Positionswolke auf dem Schirm kleiner als so viele Pixel, wird sie
+ * als **eine** Fläche mit Zähler gezeichnet statt als einzelne Kreise. Ohne
+ * diese Detailstufe hingen bei 10k Positionen zehntausende Kreise im DOM.
+ */
+export const CLOUD_LOD_PX = 44;
+
+/**
+ * Erst ab so vielen Positionen lohnt die Detailstufe. Kleine Wolken bleiben
+ * auch weit draußen als Punkte stehen — sie kosten kaum Zeichenzeit, und die
+ * Anzahl ist auf einen Blick ablesbar.
+ */
+export const CLOUD_LOD_MIN = 8;
+
 /** Kleinster Zoom k, ab dem eine Ebene ihr Label zeigt. */
 export const LABEL_K: Record<Tier, number> = {
   project: 0.18,
@@ -42,7 +60,9 @@ export const LABEL_K: Record<Tier, number> = {
   section: 0.45,
   subsection: 0.7,
   group: 0.95,
-  position: 0.85,
+  // Die OZ einer Position passt erst in den Punkt, wenn man weit hineinzoomt;
+  // in einer Wolke aus hunderten Punkten stünde sie sonst übereinander.
+  position: 1.8,
   cluster: 0.35,
 };
 
