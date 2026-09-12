@@ -58,18 +58,20 @@ describe('Graph-Engine bei ~10k Positionen', () => {
 
   it('zeichnet im Standardzustand nur die oberen Ebenen', () => {
     const { nodes } = layoutRadial(tree, expandedToDepth(tree, 2));
-    // Projekt + Los + 10 Abschnitte + je eine Cluster-Bubble ist die Obergrenze;
-    // die 10 000 Positionen bleiben eingeklappt.
+    // Projekt + Los + 10 Abschnitte ist die Obergrenze; die 10 000 Positionen
+    // bleiben eingeklappt.
     expect(nodes.size).toBeLessThan(50);
   });
 
-  it('fasst mehr als CLUSTER_AT Geschwister zu einer Cluster-Bubble zusammen', () => {
-    const { nodes } = layoutRadial(tree, allExpanded(tree));
+  it('legt die Positionen eines Unterabschnitts als Wolke statt als Sammelknoten', () => {
+    const { nodes, clouds } = layoutRadial(tree, allExpanded(tree));
     const subsection = tree.children[0].children[0].children[0];
-    expect(classifyChildren(subsection.children)).toBe('cluster');
-    expect(nodes.has(`cluster:${subsection.id}`)).toBe(true);
-    // Die 100 Positionen darunter werden nicht einzeln platziert.
-    expect(nodes.has(subsection.children[0].id)).toBe(false);
+    expect(classifyChildren(subsection.children)).toBe('cloud');
+    // Kein zweiter Knoten neben dem Abschnitt (Issue #46) …
+    expect(nodes.has(`cluster:${subsection.id}`)).toBe(false);
+    // … stattdessen liegen alle 100 Positionen in seiner Wolke.
+    expect(clouds.get(subsection.id)?.count).toBe(100);
+    expect(nodes.get(subsection.children[0].id)?.cloudOf).toBe(subsection.id);
   });
 
   it('platziert bei aufgeklappten Ebenen in vertretbarer Zeit', () => {

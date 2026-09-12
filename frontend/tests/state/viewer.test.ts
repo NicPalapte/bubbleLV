@@ -66,11 +66,21 @@ describe('viewerReducer · expandAll', () => {
             {
               number: '001.001',
               label: 'Viele',
-              sections: [],
-              positions: Array.from({ length: 30 }, (_, index) => ({
-                ...DRAFT.lots[0].sections[0].positions[0],
-                oz: `001.001.${String(index + 1).padStart(4, '0')}`,
+              // Mehr als CLUSTER_AT (40) Unterabschnitte. Positionen taugen
+              // dafür nicht mehr: sie werden nie geclustert, sondern liegen als
+              // Wolke um ihren Abschnitt (WP-41-5, Issue #46).
+              sections: Array.from({ length: 45 }, (_, index) => ({
+                number: `001.001.${String(index + 1).padStart(3, '0')}`,
+                label: `Unter ${index + 1}`,
+                sections: [],
+                positions: [
+                  {
+                    ...DRAFT.lots[0].sections[0].positions[0],
+                    oz: `001.001.${String(index + 1).padStart(3, '0')}.0010`,
+                  },
+                ],
               })),
+              positions: [],
             },
           ],
         },

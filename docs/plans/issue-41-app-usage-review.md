@@ -202,7 +202,22 @@ Fertig, wenn:
 - „Alles ausklappen" zeigt 654 Positionen, nicht 4 Knoten.
 - Doppelklick auf eine Bubble füllt den Bildschirm mit ihrem Teilbaum.
 
-### WP-41-5 · Graph: Layout · `feat(graph)` · Aufwand L
+### WP-41-5 · Graph: Layout · `feat(graph)` · Aufwand L · ✅ umgesetzt
+
+> **Stand:** umgesetzt. Entscheidung dazu:
+> [`../decisions/0008-graph-layout-positionswolke.md`](../decisions/0008-graph-layout-positionswolke.md).
+> Abweichungen vom Entwurf unten:
+> - Punkt 4 (Sammel-Bubbles mit Treffern öffnen sich) betrifft nur noch
+>   Geschwister-**Abschnitte** — Positionen werden gar nicht mehr geclustert. Die
+>   Ableitung sitzt in `ViewerProvider.tsx` neben `openNodes`.
+> - Punkt 5 (Detailstufe) greift erst ab 9 Positionen je Wolke; kleinere Wolken
+>   kosten als Punkte nichts.
+> - Zusätzlich behoben: Ketten (Projekt → Los → Hauptabschnitt) wurden über die
+>   Breite ihres gesamten Teilbaums auseinandergezogen. Bei genau einem Kind zählt
+>   jetzt nur noch der Abstand zur eigenen Bubble.
+> - Die Punkt-Darstellung (`DOT_AT`) entfällt ganz: mit der Außenbeschriftung aus
+>   WP-41-4 bleiben auch viele Geschwister-Abschnitte als echte Bubbles lesbar.
+>   `CLUSTER_AT` steigt deshalb von 24 auf 40 und gilt nur noch für Abschnitte.
 
 Behebt G1, G4, G10 an der Wurzel. Betrifft `frontend/src/lib/graph/layoutRadial.ts`,
 `constants.ts`, `BubbleGraph.tsx`, `BubbleNode.tsx`, `state/viewer.ts`.
@@ -251,8 +266,11 @@ Fertig, wenn:
 WP-41-1 (Texte)  ──┐
 WP-41-2 (Panel)  ──┼── unabhängig, klein, zuerst
 WP-41-3 (Tabelle)──┘
-WP-41-4 (Graph-Darstellung) ── vor ──▶ WP-41-5 (Graph-Layout)
+WP-41-4 (Graph-Darstellung) ✅ ── vor ──▶ WP-41-5 (Graph-Layout) ✅
 ```
+
+**Alle fünf Pakete sind umgesetzt.** Damit ist Issue #41 abgearbeitet; die
+Positionswolke aus WP-41-5 baut auf der Beschriftung aus WP-41-4 auf.
 
 - WP-41-1 bis WP-41-3 berühren sich nicht und können parallel laufen.
 - WP-41-4 vor WP-41-5: `ownCode`, einheitliche Positionen und `fitTo` braucht das

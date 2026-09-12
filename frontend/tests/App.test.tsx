@@ -38,6 +38,14 @@ describe('Viewer', () => {
     expect(screen.getAllByText('Kein LV geladen').length).toBeGreaterThan(0);
   });
 
+  it('bietet ein Demo-LV zum Ausprobieren an', () => {
+    render(<App />);
+    // Zweiter Weg neben der eigenen Datei — das Laden selbst deckt
+    // tests/pipeline/loadDemoLv.test.ts ab.
+    expect(screen.getByRole('button', { name: 'Demo-LV laden' })).toBeInTheDocument();
+    expect(screen.getByText(/Keine eigene Datei zur Hand/)).toBeInTheDocument();
+  });
+
   it('lädt eine echte GAEB-Datei und zeigt Baum und Filter', async () => {
     render(<App />);
     await loadFixture('gaeb-xml-beispiel.x83');
