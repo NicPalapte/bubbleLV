@@ -73,6 +73,19 @@ describe('Highlighted mit Fundstellen', () => {
     expect(mitStern.container.textContent).toBe('Vorher wichtig nachher');
   });
 
+  it('hebt den Suchbegriff auch **innerhalb** einer Fundstelle hervor', () => {
+    // Regression: der Inhalt einer Fundstelle wurde roh eingefügt. Wer nach
+    // "din" suchte, sah den Treffer in "DIN EN 206" als einzigen im Text nicht.
+    const { container } = render(<Highlighted text={TEXT} spans={SPANS} query="din" />);
+    expect(container.textContent).toBe(TEXT);
+    const treffer = [...container.querySelectorAll('mark')].filter(
+      (mark) => mark.textContent?.toLowerCase() === 'din',
+    );
+    expect(treffer).toHaveLength(1);
+    // Die Markierung liegt in der Fundstelle, nicht daneben.
+    expect(treffer[0].closest('[data-span-key]')?.getAttribute('data-span-key')).toBe('normen');
+  });
+
   it('überspringt Fundstellen außerhalb des Textes, statt ihn abzuschneiden', () => {
     const kaputt: Span[] = [{ key: 'normen', start: 500, end: 520, label: 'weit weg' }];
     const { container } = render(<Highlighted text={TEXT} spans={kaputt} />);

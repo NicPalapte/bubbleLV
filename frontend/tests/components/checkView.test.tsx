@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 import { CheckView } from '../../src/components/check/CheckView';
 import { ViewerProvider } from '../../src/state/ViewerProvider';
 import { useViewerDispatch } from '../../src/state/viewer';
+import type { ViewerAction } from '../../src/state/viewer';
 import { runPipeline } from '../../src/lib/pipeline/runPipeline';
 import { readFileSync } from 'node:fs';
 import type { ReactNode } from 'react';
@@ -31,10 +32,16 @@ function WithLv({ children }: { children: ReactNode }) {
       <button type="button" onClick={() => dispatch({ type: 'loaded', lv })}>
         laden
       </button>
+      <button type="button" onClick={() => dispatch(SUCHE_OHNE_TREFFER)}>
+        filtern
+      </button>
       {children}
     </>
   );
 }
+
+/** Eine Suche, die in der Musterdatei keine Position trifft. */
+const SUCHE_OHNE_TREFFER: ViewerAction = { type: 'search', value: 'zzz-kein-treffer-zzz' };
 
 function renderView() {
   const result = render(
@@ -46,6 +53,12 @@ function renderView() {
   );
   fireEvent.click(screen.getByRole('button', { name: 'laden' }));
   return result;
+}
+
+/** Die Zahl aus der Kopfzeile („11 Hinweise aus 9 aktiven Regeln"). */
+function gesamtzahl(): number {
+  const text = screen.getByText(/Hinweise aus|Hinweis aus/).textContent ?? '';
+  return Number((text.match(/^([\d.]+)/)?.[1] ?? '0').replace(/\./g, ''));
 }
 
 /** Der Abschnitt einer Regel — erkennbar an ihrer ID im Kopf. */
@@ -93,6 +106,17 @@ describe('CheckView', () => {
     const nachher = screen.getByText(/Hinweise aus/).textContent ?? '';
     expect(nachher).not.toBe(vorher);
     expect(within(sectionOf('V7')).getByRole('button', { name: 'aus' })).toBeTruthy();
+  });
+
+  it('zeigt nur Hinweise zu Positionen, die der Filter durchlässt', () => {
+    // .claude/CLAUDE.md: „Alle Ansichten arbeiten auf derselben gefilterten
+    // Menge." Vorher rechnete die Prüfansicht immer über das ganze LV.
+    renderView();
+    expect(gesamtzahl()).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByRole('button', { name: 'filtern' }));
+    expect(gesamtzahl()).toBe(0);
+    expect(screen.getByText(/im aktuellen Filter/)).toBeTruthy();
   });
 
   it('formuliert die Kopfzeile als Hinweis, nicht als Urteil', () => {

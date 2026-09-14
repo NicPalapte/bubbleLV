@@ -9,11 +9,18 @@
 //
 // Inaktive Regeln verschwinden nicht, sondern stehen mit ihrem Grund da: sonst
 // hielte man eine fehlende Referenzdatei für „nichts gefunden".
+//
+// **Ein Filterzustand, alle Ansichten** (.claude/CLAUDE.md): die Hinweise sind
+// beim Laden für das ganze LV berechnet, gezeigt werden aber nur die zu
+// Positionen, die der aktive Filter durchlässt. Sonst stünde hier eine Zahl für
+// das ganze LV, während Tabelle und Graph daneben eine Teilmenge zeigen. Die
+// Kopfzeile sagt darum auch, dass gefiltert wird.
 
 import { useMemo, useState } from 'react';
 import { BlockLabel } from '../ui/PanelHeader';
 import { Chip } from '../ui/Chip';
 import { formatCount } from '../../lib/format';
+import { matchCount } from '../../lib/tree/matchCounts';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { Flag, FlagCategory, RuleStatus } from '../../lib/check';
 import type { LVNode } from '../../types/lvNode';
@@ -35,12 +42,15 @@ const SEVERITY_COLOR: Record<string, string> = {
 
 function RuleHeader({
   rule,
+  count,
   muted,
   onToggle,
   open,
   onOpen,
 }: {
   rule: RuleStatus;
+  /** Funde **im aktuellen Filterzustand**, nicht `rule.count` über das ganze LV. */
+  count: number;
   muted: boolean;
   onToggle: () => void;
   open: boolean;
@@ -51,12 +61,12 @@ function RuleHeader({
       <button
         type="button"
         onClick={onOpen}
-        disabled={!rule.active || rule.count === 0}
+        disabled={!rule.active || count === 0}
         className="cursor-pointer border-none bg-transparent p-0 text-left font-sans text-[13px] font-semibold text-ink disabled:cursor-default"
       >
         <span className="mr-[6px] font-mono text-[10px] text-mute">{rule.id}</span>
         {rule.label}
-        {rule.active && rule.count > 0 && (
+        {rule.active && count > 0 && (
           <span aria-hidden="true" className="ml-[6px] font-mono text-[10px] text-mute">
             {open ? '▾' : '▸'}
           </span>
@@ -67,7 +77,7 @@ function RuleHeader({
       </Chip>
       {rule.active ? (
         <span className="font-mono text-[10px]" style={{ color: SEVERITY_COLOR[rule.severity] }}>
-          {formatCount(rule.count)} {rule.count === 1 ? 'Hinweis' : 'Hinweise'}
+          {formatCount(count)} {count === 1 ? 'Hinweis' : 'Hinweise'}
         </span>
       ) : (
         <span className="font-mono text-[10px] text-mute">inaktiv</span>
@@ -132,7 +142,7 @@ function FlagRow({ flag, node, onJump }: { flag: Flag; node: LVNode | null; onJu
 }
 
 export function CheckView() {
-  const { lv, nodes, parents, mutedRules } = useViewer();
+  const { lv, nodes, parents, mutedRules, matches } = useViewer();
   const dispatch = useViewerDispatch();
   const [openRules, setOpenRules] = useState<ReadonlySet<string>>(new Set());
 
@@ -141,17 +151,25 @@ export function CheckView() {
   const byRule = useMemo(() => {
     const map = new Map<string, Flag[]>();
     for (const flag of check?.flags ?? []) {
+      // Dieselbe gefilterte Menge wie Baum, Graph und Tabelle: `matches` kommt
+      // aus dem Provider und ist bereits gegen den aktiven Filter gerechnet.
+      if (matches.filtering) {
+        const node = nodes.get(flag.positionId);
+        if (node === undefined || matchCount(matches, node) === 0) continue;
+      }
       const list = map.get(flag.id) ?? [];
       list.push(flag);
       map.set(flag.id, list);
     }
     return map;
-  }, [check]);
+  }, [check, matches, nodes]);
 
   if (check === null) return null;
 
+  const countOf = (rule: RuleStatus): number =>
+    rule.active ? (byRule.get(rule.id)?.length ?? 0) : 0;
   const sichtbar = check.rules.filter((rule) => rule.active && !mutedRules.has(rule.id));
-  const gesamt = sichtbar.reduce((sum, rule) => sum + rule.count, 0);
+  const gesamt = sichtbar.reduce((sum, rule) => sum + countOf(rule), 0);
 
   const jumpTo = (positionId: string): void => {
     const parent = parents.get(positionId) ?? null;
@@ -174,6 +192,7 @@ export function CheckView() {
           <p className="mt-[2px] font-sans text-[13px] text-ink">
             <span className="font-semibold">{formatCount(gesamt)}</span>{' '}
             {gesamt === 1 ? 'Hinweis' : 'Hinweise'} aus {sichtbar.length} aktiven Regeln
+            {matches.filtering && <span className="text-dim"> · im aktuellen Filter</span>}
           </p>
           <p className="mt-[4px] font-sans text-[11.5px] leading-[1.5] text-dim">
             Bubble zeigt Stellen, an denen ein Blick lohnt — keine Bewertung und kein Rechtsrat.
@@ -193,6 +212,7 @@ export function CheckView() {
             >
               <RuleHeader
                 rule={rule}
+                count={countOf(rule)}
                 muted={muted}
                 onToggle={() => dispatch({ type: 'toggleRule', id: rule.id })}
                 open={open}

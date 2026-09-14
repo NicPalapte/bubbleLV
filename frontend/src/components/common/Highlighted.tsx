@@ -36,7 +36,12 @@ function Mark({ children }: { children: ReactNode }) {
   );
 }
 
-/** Fundstelle: getönte Fläche in der Farbe ihrer Kategorie, mit Erklärung im Titel. */
+/**
+ * Fundstelle: getönte Fläche in der Farbe ihrer Kategorie, mit Erklärung im
+ * Titel. Der Inhalt läuft weiter durch `plain()` — ein Suchbegriff, der zufällig
+ * **in** einer Fundstelle liegt („din" in „DIN EN 206"), bliebe sonst als
+ * einziger im Text unmarkiert.
+ */
 function SpanMark({ span, children }: { span: Span; children: ReactNode }) {
   const category = categoryOf(span.key);
   const style: CSSProperties = {
@@ -109,7 +114,7 @@ export function Highlighted({ text, query = '', spans, activeKeys }: Highlighted
       parts.push(...plain(source.slice(cursor, span.start), trimmed, `t${index}`));
     parts.push(
       <SpanMark key={`span-${index}`} span={span}>
-        {source.slice(span.start, span.end)}
+        {plain(source.slice(span.start, span.end), trimmed, `m${index}`)}
       </SpanMark>,
     );
     cursor = span.end;
