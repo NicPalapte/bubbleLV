@@ -21,7 +21,13 @@ classify(draft)
 buildTree(draft)
     │  → LVNode-Baum
     ▼
+summarize(buildPositionIndex(tree))
+    │  → LVSummary (Facetten-Zähler, Wertebereiche) im LoadedLV
+    ▼
 React State (Session-only)
+    │  buildPositionIndex(tree) im Haupt-Thread
+    ▼
+PositionIndex (flache Rechenbasis für Filter, Summen, Beziehungen)
 ```
 
 Es gibt keine Persistenzschicht. Jeder Schritt ist eine reine Funktion (oder eine
@@ -39,10 +45,14 @@ wandern. Die Pipeline ist entsprechend geteilt (`frontend/src/lib/pipeline/`):
 | Schritt | Läuft in | Warum |
 |---|---|---|
 | `parseToDraft` (Parser + `mapToLvDraft`) | Haupt-Thread | braucht `DOMParser`; nativer XML-Parser, entsprechend schnell |
-| `classifyAndBuild` (Klassifizierung + `buildTree`) | Web Worker ab ~500 Positionen | rechenintensiv: eine Regelauswertung je Position |
+| `classifyAndBuild` (Klassifizierung + `buildTree` + Aggregate) | Web Worker ab ~500 Positionen | rechenintensiv: eine Regelauswertung je Position, danach ein Durchlauf für die Aggregate |
+| `buildPositionIndex` (flacher Positions-Index) | Haupt-Thread, nach dem Empfang | verweist auf die Baumknoten; Objektidentität überlebt `structuredClone` nicht |
 
 `LVDraft` ist reines Datenmodell und damit `structuredClone`-fähig — der Übergang
-über die Worker-Grenze braucht keine Serialisierungsschicht. Fehler werden auf einen
+über die Worker-Grenze braucht keine Serialisierungsschicht. Dasselbe gilt für die
+Aggregate (`LVSummary`): reine Zahlen und Namen. Der Positions-Index geht bewusst
+**nicht** über die Grenze, weil er Knotenverweise hält — siehe
+[`decisions/0010`](../decisions/0010-positions-index-und-aggregate.md). Fehler werden auf einen
 Code (`parse | validation | version | unknown`) abgebildet, weil Exception-Klassen
 `structuredClone` nicht überleben. Ohne Worker (Tests, ältere Umgebungen) läuft
 derselbe Code synchron weiter.

@@ -1,10 +1,17 @@
 // Provider für den Viewer-Session-State. Berechnet die abgeleiteten Sichten
-// (Knoten-Index, Elternzuordnung, Positionsliste, Trefferzahlen) an genau einer
-// Stelle — Baum, Graph und Tabelle bekommen dasselbe Ergebnis (Issue #18).
+// (Knoten-Index, Elternzuordnung, flacher Positions-Index, Trefferzahlen) an
+// genau einer Stelle — Baum, Graph und Tabelle bekommen dasselbe Ergebnis
+// (Issue #18).
 
 import { useMemo, useReducer, type ReactNode } from 'react';
-import { isFiltering } from '../lib/matchPos';
-import { collectPositions, indexNodes, indexParents } from '../lib/tree/buildTree';
+import {
+  buildPositionIndex,
+  EMPTY_POSITION_INDEX,
+  type PositionIndex,
+} from '../lib/index/positionIndex';
+import { prepareFilters } from '../lib/matchPos';
+import { measure } from '../lib/perf';
+import { indexNodes, indexParents } from '../lib/tree/buildTree';
 import { computeMatchCounts, type MatchIndex } from '../lib/tree/matchCounts';
 import {
   INITIAL_VIEWER_STATE,
@@ -25,25 +32,23 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
   const tree = state.lv?.tree ?? null;
 
   const structure = useMemo(() => {
-    if (tree === null) {
-      return { nodes: EMPTY_NODES, parents: EMPTY_PARENTS, positionNodes: [] as LVNode[] };
-    }
-    return {
-      nodes: indexNodes(tree),
-      parents: indexParents(tree),
-      positionNodes: collectPositions(tree),
-    };
+    if (tree === null) return { nodes: EMPTY_NODES, parents: EMPTY_PARENTS };
+    return { nodes: indexNodes(tree), parents: indexParents(tree) };
+  }, [tree]);
+
+  // Der flache Positions-Index entsteht einmal je geladenem LV. Er muss hier
+  // gebaut werden und nicht im Worker: er verweist auf die Baumknoten, und
+  // Objektidentität überlebt den structuredClone der Worker-Grenze nicht.
+  const index = useMemo<PositionIndex>(() => {
+    if (tree === null) return EMPTY_POSITION_INDEX;
+    return measure('Positions-Index', () => buildPositionIndex(tree));
   }, [tree]);
 
   const matches = useMemo<MatchIndex>(() => {
     if (tree === null) return EMPTY_MATCHES;
-    return computeMatchCounts(
-      tree,
-      state.filters,
-      state.search,
-      isFiltering(state.filters, state.search),
-    );
-  }, [tree, state.filters, state.search]);
+    const active = prepareFilters(state.filters, state.search);
+    return measure('Filter', () => computeMatchCounts(tree, index, active));
+  }, [tree, index, state.filters, state.search]);
 
   // Bei aktiver Suche/Filterung gehen die Pfade zu den Treffern automatisch auf.
   // Abgeleitet statt gespeichert: fällt der Filter weg, steht wieder genau der
@@ -79,7 +84,7 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
       tree,
       nodes: structure.nodes,
       parents: structure.parents,
-      positionNodes: structure.positionNodes,
+      index,
       selectedNode:
         state.selectedNodeId === null ? null : (structure.nodes.get(state.selectedNodeId) ?? null),
       selectedPosition:
@@ -93,6 +98,7 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
     [
       tree,
       structure,
+      index,
       state.selectedNodeId,
       state.selectedPositionId,
       matches,

@@ -1,8 +1,14 @@
 // Trefferzahlen je Knoten — einmal berechnet, von Tree, Tabelle und Graph
 // gemeinsam genutzt. Grundlage ist ausschließlich `matchPos`
 // (docs/architecture/frontend.md).
+//
+// Seit WP-I läuft die Positionsprüfung über den flachen Positions-Index
+// (lib/index/positionIndex.ts): ein Durchlauf über vorberechnete Fakten statt
+// einer Ableitung je Position und Render. Die Entscheidung selbst bleibt
+// `matchFacts` in lib/matchPos.ts.
 
-import { matchPos, type Filters } from '../matchPos';
+import { createPositionFilter, type PositionIndex } from '../index/positionIndex';
+import type { ActiveFilters } from '../matchPos';
 import type { LVNode } from '../../types/lvNode';
 
 export interface MatchIndex {
@@ -14,17 +20,15 @@ export interface MatchIndex {
 
 export function computeMatchCounts(
   root: LVNode,
-  filters: Filters,
-  search: string,
-  filtering: boolean,
+  index: PositionIndex,
+  active: ActiveFilters,
 ): MatchIndex {
   const counts = new Map<string, number>();
+  const matches = createPositionFilter(index, active);
 
   const visit = (node: LVNode): number => {
     if (node.kind === 'position') {
-      const hit =
-        node.position !== null && (!filtering || matchPos(node.position, filters, search));
-      const value = hit ? 1 : 0;
+      const value = matches(node) ? 1 : 0;
       counts.set(node.id, value);
       return value;
     }
@@ -35,7 +39,7 @@ export function computeMatchCounts(
   };
 
   visit(root);
-  return { counts, filtering };
+  return { counts, filtering: active.filtering };
 }
 
 export function matchCount(index: MatchIndex, node: LVNode): number {

@@ -1,24 +1,28 @@
 // Facetten-Dropdown mit Werten + Trefferzahlen, dynamisch aus den geladenen
 // Positionen erzeugt. Portiert aus `FacetButton` in design/claude-design/lv-main.jsx;
 // die Dropdown-Fläche ist der Design-System-Baustein `Popover`.
+//
+// Die Zähler kommen fertig aus dem Aggregat des geladenen LV
+// (lib/index/summary.ts) — seit WP-I zählt kein Knopf mehr selbst über alle
+// Positionen, und zwar auch dann nicht, wenn er nie geöffnet wird.
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Chip } from '../ui/Chip';
 import { Popover, PopoverHead, PopoverRow } from '../ui/Popover';
 import { StatusPill } from '../ui/StatusPill';
 import { useDismiss } from '../common/useDismiss';
 import { facetOptionLabel, type Facet } from '../../lib/facets';
 import { formatCount } from '../../lib/format';
-import type { PositionSummary } from '../../types/lvNode';
 
 interface FacetButtonProps {
   facet: Facet;
-  positions: readonly PositionSummary[];
+  /** Wert → Anzahl Positionen, bereits in Anzeigereihenfolge. */
+  counts: ReadonlyMap<string, number>;
   active: Set<string>;
   onChange: (values: Set<string>) => void;
 }
 
-export function FacetButton({ facet, positions, active, onChange }: FacetButtonProps) {
+export function FacetButton({ facet, counts, active, onChange }: FacetButtonProps) {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -27,21 +31,6 @@ export function FacetButton({ facet, positions, active, onChange }: FacetButtonP
     open,
     useCallback(() => setOpen(false), []),
   );
-
-  const counts = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const position of positions) {
-      for (const value of facet.get(position)) map.set(value, (map.get(value) ?? 0) + 1);
-    }
-    return map;
-  }, [positions, facet]);
-
-  const values = useMemo(() => {
-    const keys = [...counts.keys()];
-    return facet.sortValues === undefined
-      ? keys.sort((a, b) => a.localeCompare(b, 'de'))
-      : facet.sortValues(keys);
-  }, [counts, facet]);
 
   const toggle = (value: string): void => {
     const next = new Set(active);
@@ -60,10 +49,10 @@ export function FacetButton({ facet, positions, active, onChange }: FacetButtonP
           {facet.label}
         </PopoverHead>
         <div style={{ maxHeight: 260, overflow: 'auto' }}>
-          {values.length === 0 && (
+          {counts.size === 0 && (
             <div style={{ padding: '10px 12px', color: 'var(--mute)' }}>Keine Werte</div>
           )}
-          {values.map((value) => {
+          {[...counts].map(([value, count]) => {
             const label = facetOptionLabel(facet, value);
             return (
               <PopoverRow
@@ -73,7 +62,7 @@ export function FacetButton({ facet, positions, active, onChange }: FacetButtonP
                 checkbox
                 title={label}
                 leading={facet.id === 'status' ? <StatusPill status={value} dotOnly /> : undefined}
-                trailing={formatCount(counts.get(value) ?? 0)}
+                trailing={formatCount(count)}
               >
                 {label}
               </PopoverRow>

@@ -21,7 +21,8 @@ import { StatusPill } from '../ui/StatusPill';
 import { attrString, attrStrings } from '../../lib/attributes';
 import { facetOptionLabel, FACETS_BY_ID } from '../../lib/facets';
 import { formatCount, formatEuro, formatNumber } from '../../lib/format';
-import { isFiltering, matchPos } from '../../lib/matchPos';
+import { createPositionFilter } from '../../lib/index/positionIndex';
+import { prepareFilters } from '../../lib/matchPos';
 import { POSITION_STATUS } from '../../lib/status';
 import {
   defaultColumnConfig,
@@ -306,7 +307,7 @@ function compare(a: Row, b: Row, key: SortKey, dir: 1 | -1): number {
 }
 
 export function PositionsTable({ root }: { root: LVNode }) {
-  const { tree, filters, search, selectedPositionId, parents } = useViewer();
+  const { tree, index, filters, search, selectedPositionId, parents } = useViewer();
   const dispatch = useViewerDispatch();
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: 'oz', dir: 1 });
   const [scope, setScope] = useState<Scope>('node');
@@ -321,7 +322,11 @@ export function PositionsTable({ root }: { root: LVNode }) {
     [columnConfig],
   );
 
-  const filtering = isFiltering(filters, search);
+  // Eine Prüffunktion je Filterwechsel statt einer Ableitung je Zeile: sie
+  // schlägt den Treffer im flachen Positions-Index nach (WP-I, Schritt 3).
+  const active = useMemo(() => prepareFilters(filters, search), [filters, search]);
+  const matchesPosition = useMemo(() => createPositionFilter(index, active), [index, active]);
+  const filtering = active.filtering;
   const lvRoot = tree ?? root;
 
   const nodeAll = useMemo(() => collectRows(root), [root]);
@@ -331,17 +336,17 @@ export function PositionsTable({ root }: { root: LVNode }) {
   );
 
   const nodeHits = useMemo(
-    () => (filtering ? nodeAll.filter((row) => matchPos(row.position, filters, search)) : nodeAll),
-    [nodeAll, filters, search, filtering],
+    () => (filtering ? nodeAll.filter((row) => matchesPosition(row.node)) : nodeAll),
+    [nodeAll, matchesPosition, filtering],
   );
   const lvHits = useMemo(
     () =>
       lvAll === nodeAll
         ? nodeHits
         : filtering
-          ? lvAll.filter((row) => matchPos(row.position, filters, search))
+          ? lvAll.filter((row) => matchesPosition(row.node))
           : lvAll,
-    [lvAll, nodeAll, nodeHits, filters, search, filtering],
+    [lvAll, nodeAll, nodeHits, matchesPosition, filtering],
   );
 
   // Automatischer Rückfall: gefiltert, im Abschnitt kein Treffer, im LV schon.

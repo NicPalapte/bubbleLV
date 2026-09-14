@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { allExpanded, expandedToDepth } from '../../src/lib/graph/layoutRadial';
-import { EMPTY_FILTERS } from '../../src/lib/matchPos';
+import { buildPositionIndex } from '../../src/lib/index/positionIndex';
+import { EMPTY_FILTERS, prepareFilters } from '../../src/lib/matchPos';
 import { buildTree } from '../../src/lib/tree/buildTree';
 import { flattenVisible, indexRows, parentRowIndex } from '../../src/lib/tree/flattenVisible';
 import { computeMatchCounts } from '../../src/lib/tree/matchCounts';
@@ -86,7 +87,11 @@ describe('flattenVisible', () => {
   it('zählt Geschwister für ARIA — nur die tatsächlich sichtbaren', () => {
     const root = tree();
     const open = allExpanded(root);
-    const matches = computeMatchCounts(root, EMPTY_FILTERS, 'beton', true);
+    const matches = computeMatchCounts(
+      root,
+      buildPositionIndex(root),
+      prepareFilters(EMPTY_FILTERS, 'beton'),
+    );
 
     const shown = flattenVisible(root, open, matches, false);
     const abschnitte = shown.filter((row) => row.node.kind === 'section');
@@ -108,7 +113,11 @@ describe('flattenVisible', () => {
 
   it('markiert Nicht-Treffer, ohne sie zu entfernen', () => {
     const root = tree();
-    const matches = computeMatchCounts(root, EMPTY_FILTERS, 'mauerwerk', true);
+    const matches = computeMatchCounts(
+      root,
+      buildPositionIndex(root),
+      prepareFilters(EMPTY_FILTERS, 'mauerwerk'),
+    );
     const rows = flattenVisible(root, allExpanded(root), matches, false);
 
     const missed = rows.filter((row) => row.missed).map((row) => row.node.code);

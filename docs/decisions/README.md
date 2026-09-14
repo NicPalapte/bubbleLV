@@ -16,6 +16,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das *Was*, diese Dateien da
 | 0007 | [Previews werden beim Deploy aufgeräumt](0007-previews-im-deploy-aufraeumen.md) | akzeptiert | 2026-09-11 |
 | 0008 | [Positionen als Wolke statt als Ring](0008-graph-layout-positionswolke.md) | akzeptiert | 2026-09-11 |
 | 0009 | [Demo-LV in der App](0009-demo-lv.md)                                   | akzeptiert | 2026-09-11 |
+| 0010 | [Positions-Index und vorberechnete Aggregate](0010-positions-index-und-aggregate.md) | akzeptiert | 2026-09-14 |
 
 ## Wann schreibe ich eine neue Datei?
 

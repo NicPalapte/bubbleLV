@@ -6,6 +6,8 @@
 // (Issue #19).
 
 import { describe, expect, it } from 'vitest';
+import { buildPositionIndex } from '../../src/lib/index/positionIndex';
+import { summarize } from '../../src/lib/index/summary';
 import { buildTree } from '../../src/lib/tree/buildTree';
 import { INITIAL_VIEWER_STATE, viewerReducer, type ViewerState } from '../../src/state/viewer';
 import type { LoadedLV } from '../../src/lib/pipeline/runPipeline';
@@ -50,6 +52,7 @@ function loadedState(): ViewerState {
     projectName: DRAFT.projectName,
     client: null,
     tree,
+    summary: summarize(buildPositionIndex(tree)),
   };
   return viewerReducer(base, { type: 'loaded', lv });
 }

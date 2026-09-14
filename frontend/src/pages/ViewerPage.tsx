@@ -4,7 +4,7 @@
 // Pipeline (Datei → Parser → Klassifizierung → Baum); nichts wird geladen
 // oder persistiert.
 
-import { useEffect, useState } from 'react';
+import { Profiler, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { FilterStrip } from '../components/filter/FilterStrip';
 import { BubbleGraph } from '../components/graph/BubbleGraph';
 import { GraphHeader } from '../components/graph/GraphHeader';
@@ -14,12 +14,32 @@ import { TopBar } from '../components/layout/TopBar';
 import { Tree } from '../components/layout/Tree';
 import { PositionsTable } from '../components/table/PositionsTable';
 import { FileDropzone } from '../components/upload/FileDropzone';
+import { PERF_ENABLED, reportViewSwitch } from '../lib/perf';
 import { useViewer, useViewerDispatch } from '../state/viewer';
 
 // Spiegelt --w-tree / --w-props aus src/index.css (tokens/spacing.css); die
 // Panels sind ziehbar, deshalb braucht der Startwert eine Zahl statt der Variable.
 const TREE_WIDTH = 236;
 const PROPS_WIDTH = 320;
+
+/**
+ * Messpunkt „Ansichtswechsel" (docs/scope.md, Ziel < 200 ms): `Profiler` liefert
+ * die tatsächliche Commit-Dauer des Wechsels — genauer als eine selbst gestoppte
+ * Zeit, und ohne Ref-Schreiberei im Render. Außerhalb des Entwicklungsmodus
+ * entfällt die Hülle ganz.
+ */
+function ViewTiming({ view, children }: { view: string; children: ReactNode }) {
+  const onRender = useCallback(
+    (_id: string, _phase: string, actualDuration: number) => reportViewSwitch(view, actualDuration),
+    [view],
+  );
+  if (!PERF_ENABLED) return <>{children}</>;
+  return (
+    <Profiler id="viewer" onRender={onRender}>
+      {children}
+    </Profiler>
+  );
+}
 
 export function ViewerPage() {
   const { tree, selectedNode, viewMode } = useViewer();
@@ -38,47 +58,55 @@ export function ViewerPage() {
   }, [dispatch]);
 
   return (
-    <div className="flex h-full flex-col bg-paper">
-      <header>
-        <TopBar />
-        <FilterStrip />
-      </header>
+    <ViewTiming view={tree === null ? 'leer' : viewMode}>
+      <div className="flex h-full flex-col bg-paper">
+        <header>
+          <TopBar />
+          <FilterStrip />
+        </header>
 
-      {tree === null && (
-        <main aria-label="LV-Ansicht" className="relative flex-1 overflow-hidden bg-paper">
-          <FileDropzone />
-        </main>
-      )}
+        {tree === null && (
+          <main aria-label="LV-Ansicht" className="relative flex-1 overflow-hidden bg-paper">
+            <FileDropzone />
+          </main>
+        )}
 
-      {tree !== null && viewMode === 'graph' && (
-        // Vollbild-Graph: die Baumspalte entfällt, die Eigenschaften wandern
-        // in die schwebende Positionskarte (PositionCard in BubbleGraph) —
-        // nur die Kopfleiste mit Suche/Filtern bleibt bestehen.
-        <main aria-label="Bubble-Graph" className="relative flex-1 overflow-hidden bg-paper">
-          <BubbleGraph root={tree} />
-          <GraphHeader root={tree} />
-        </main>
-      )}
+        {tree !== null && viewMode === 'graph' && (
+          // Vollbild-Graph: die Baumspalte entfällt, die Eigenschaften wandern
+          // in die schwebende Positionskarte (PositionCard in BubbleGraph) —
+          // nur die Kopfleiste mit Suche/Filtern bleibt bestehen.
+          <main aria-label="Bubble-Graph" className="relative flex-1 overflow-hidden bg-paper">
+            <BubbleGraph root={tree} />
+            <GraphHeader root={tree} />
+          </main>
+        )}
 
-      {tree !== null && viewMode === 'table' && (
-        <main aria-label="LV-Tabelle" className="flex flex-1 overflow-hidden">
-          <Tree
-            width={leftWidth}
-            collapsed={treeCollapsed}
-            onToggleCollapsed={() => setTreeCollapsed((value) => !value)}
-          />
-          {!treeCollapsed && (
-            <ResizeHandle value={leftWidth} onChange={setLeftWidth} min={180} max={460} />
-          )}
+        {tree !== null && viewMode === 'table' && (
+          <main aria-label="LV-Tabelle" className="flex flex-1 overflow-hidden">
+            <Tree
+              width={leftWidth}
+              collapsed={treeCollapsed}
+              onToggleCollapsed={() => setTreeCollapsed((value) => !value)}
+            />
+            {!treeCollapsed && (
+              <ResizeHandle value={leftWidth} onChange={setLeftWidth} min={180} max={460} />
+            )}
 
-          <div className="relative min-w-0 flex-1 overflow-hidden bg-paper">
-            <PositionsTable root={selectedNode ?? tree} />
-          </div>
+            <div className="relative min-w-0 flex-1 overflow-hidden bg-paper">
+              <PositionsTable root={selectedNode ?? tree} />
+            </div>
 
-          <ResizeHandle value={rightWidth} onChange={setRightWidth} min={260} max={560} sign={-1} />
-          <PropertiesPanel width={rightWidth} />
-        </main>
-      )}
-    </div>
+            <ResizeHandle
+              value={rightWidth}
+              onChange={setRightWidth}
+              min={260}
+              max={560}
+              sign={-1}
+            />
+            <PropertiesPanel width={rightWidth} />
+          </main>
+        )}
+      </div>
+    </ViewTiming>
   );
 }
