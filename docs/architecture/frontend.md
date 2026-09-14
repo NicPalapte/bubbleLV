@@ -44,8 +44,12 @@ frontend/
     │   ├── tree/
     │   │   ├── buildTree.ts          # LVDraft → LVNode-Baum
     │   │   └── matchCounts.ts        # Trefferzahlen je Knoten (Tree + Graph)
+    │   ├── index/
+    │   │   ├── positionIndex.ts      # flacher Positions-Index (Rechenbasis, WP-I)
+    │   │   └── summary.ts            # Facetten-Zähler + Wertebereiche, einmal berechnet
     │   ├── pipeline/                 # Datei → LoadedLV, inkl. Web Worker
     │   ├── matchPos.ts               # Filter/Suche — single source of truth
+    │   ├── perf.ts                   # Messpunkte (nur Konsole, nur Entwicklung)
     │   ├── facets.ts                 # Facetten-Definitionen (dynamische Werte)
     │   └── graph/                    # Graph-Engine (aus lv-graph.jsx)
     │       ├── constants.ts          # Radien, LOD-Schwellen, Größenmodi
@@ -110,6 +114,27 @@ matchPos(position, filters, search)  ← überall identisch für Sichtbarkeit/Di
 Tree und Graph teilen sich **denselben** `LVNode`-Baum, der lokal aus der geladenen
 Datei aufgebaut wird — kein Fetch, kein Server, ein Contract für beide Ansichten.
 
+### Baum ist die Struktur, Index ist die Rechenbasis (WP-I)
+
+Neben dem Baum steht ein **flacher Positions-Index** (`lib/index/positionIndex.ts`).
+Er entsteht einmal je geladenem LV und hält je Position den Verweis auf den
+Baumknoten, die fertigen Facettenwerte, den fertigen (kleingeschriebenen) Suchtext
+sowie Menge, EP und GP als `Float64Array`. Filter, Summen und ab WP-M die
+Beziehungen rechnen gegen ihn, nie gegen den Baum.
+
+- Die Filterentscheidung bleibt **eine** Funktion: `matchFacts` in `lib/matchPos.ts`.
+  Neu ist nur, dass die Ableitung je Position vorher passiert statt bei jeder Prüfung.
+  `matchPos(position, filters, search)` bleibt die Hülle für Aufrufer ohne Index.
+- Der Index wird im **Haupt-Thread** gebaut, nicht im Worker: er zeigt auf die
+  Baumknoten, und Objektidentität überlebt den `structuredClone` der Worker-Grenze
+  nicht.
+- Die **Aggregate** (`lib/index/summary.ts`: Facetten-Zähler, Wertebereiche,
+  Gesamtsumme) entstehen dagegen in `classifyAndBuild` — also im Worker, sobald
+  dessen Schwelle greift — und liegen fertig im `LoadedLV`. Sie sind reine Zahlen
+  und Namen und überstehen den Transport unbeschadet.
+- Begründung und verworfene Wege:
+  [`decisions/0010`](../decisions/0010-positions-index-und-aggregate.md).
+
 ### Ein Zustand für beide Ansichten
 
 Baum und Graph zeigen dieselbe Struktur und laufen deshalb nie auseinander
@@ -120,6 +145,7 @@ Provider:
 |---|---|---|
 | Aufklapp-Zustand | `state.expanded` (`ReadonlySet<string>`) | offene Knoten; ein Klick im Baum wirkt im Graphen und umgekehrt |
 | aufgelöste Cluster | `state.openClusters` | reine Graph-Darstellung, gleiche Lebensdauer |
+| Positions-Index | `derived.index` (`PositionIndex`) | flache Rechenbasis, einmal je geladenem LV |
 | Trefferzahlen | `derived.matches` (`MatchIndex`) | einmal je Filter-/Suchwechsel, für Baum, Graph und Tabelle |
 | tatsächlich offene Knoten | `derived.openNodes` | `expanded` **plus** die Pfade zu den Treffern, die Suche/Filter automatisch öffnen |
 

@@ -10,11 +10,12 @@ import { FilterOverflowRow, type OverflowItem } from '../filter/FilterOverflowRo
 import { RangeButton } from '../filter/RangeButton';
 import { SegmentedControl } from '../ui/SegmentedControl';
 import { FACETS } from '../../lib/facets';
+import { EMPTY_SUMMARY } from '../../lib/index/summary';
 import { countActiveFilters } from '../../lib/matchPos';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
-import type { PositionSummary } from '../../types/lvNode';
 
 const EMPTY_SELECTION: Set<string> = new Set();
+const EMPTY_COUNTS: ReadonlyMap<string, number> = new Map();
 
 /**
  * Wartezeit, bevor eine Eingabe zum Filter wird. Ein Suchlauf zieht Baum, Graph
@@ -25,17 +26,13 @@ const EMPTY_SELECTION: Set<string> = new Set();
  */
 const SEARCH_DEBOUNCE_MS = 250;
 
-function quantityOf(position: PositionSummary): number | null {
-  return position.quantity;
-}
-
 const VIEW_MODES = [
   { value: 'graph', label: 'Graph', title: 'Bubble-Graph, Vollbild' },
   { value: 'table', label: 'Tabelle', title: 'Baum, Tabelle und Eigenschaften' },
 ] as const;
 
 export function TopBar() {
-  const { lv, positionNodes, filters, search, viewMode } = useViewer();
+  const { lv, filters, search, viewMode } = useViewer();
   const dispatch = useViewerDispatch();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -64,12 +61,6 @@ export function TopBar() {
     );
   };
 
-  const positions = useMemo(
-    () =>
-      positionNodes.map((node) => node.position).filter((p): p is PositionSummary => p !== null),
-    [positionNodes],
-  );
-
   // "/" fokussiert die Suche — wie im Design.
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
@@ -83,6 +74,9 @@ export function TopBar() {
 
   const activeCount = countActiveFilters(filters);
   const loaded = lv !== null;
+  // Facetten-Zähler und Wertebereiche liegen fertig im geladenen LV (WP-I) —
+  // die Knöpfe rechnen nichts mehr im Render.
+  const summary = lv?.summary ?? EMPTY_SUMMARY;
 
   const filterItems: OverflowItem[] = useMemo(() => {
     if (!loaded) return [];
@@ -92,7 +86,7 @@ export function TopBar() {
       node: (
         <FacetButton
           facet={facet}
-          positions={positions}
+          counts={summary.facets.get(facet.id) ?? EMPTY_COUNTS}
           active={filters.facets[facet.id] ?? EMPTY_SELECTION}
           onChange={(values) => dispatch({ type: 'setFacet', facetId: facet.id, values })}
         />
@@ -106,8 +100,7 @@ export function TopBar() {
         node: (
           <RangeButton
             label="Menge"
-            positions={positions}
-            getValue={quantityOf}
+            bounds={summary.quantity}
             active={filters.menge}
             onChange={(range) => dispatch({ type: 'setMenge', range })}
           />
@@ -125,7 +118,7 @@ export function TopBar() {
       });
     }
     return items;
-  }, [loaded, positions, filters, activeCount, dispatch]);
+  }, [loaded, summary, filters, activeCount, dispatch]);
 
   return (
     <div className="relative z-[5] flex h-[54px] shrink-0 items-stretch border-b border-line bg-white">

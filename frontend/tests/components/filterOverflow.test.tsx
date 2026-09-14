@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FacetButton } from '../../src/components/filter/FacetButton';
 import { FilterOverflowRow } from '../../src/components/filter/FilterOverflowRow';
 import { FACETS } from '../../src/lib/facets';
+import type { Facet } from '../../src/lib/facets';
 import type { PositionSummary } from '../../src/types/lvNode';
 
 /** Breiten, die jsdom nicht kennt: Chip (100) passt nicht in die Reihe (150). */
@@ -25,6 +26,15 @@ function position(gewerk: string): PositionSummary {
     positionType: 'NORMAL',
     attributes: { gewerk },
   };
+}
+
+/** Facetten-Zähler, wie sie sonst aus dem LV-Aggregat kommen. */
+function countsOf(facet: Facet, positions: readonly PositionSummary[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const entry of positions) {
+    for (const value of facet.get(entry)) counts.set(value, (counts.get(value) ?? 0) + 1);
+  }
+  return counts;
 }
 
 /** Echter Mausklick: erst mousedown (schließt Popover), dann click. */
@@ -65,7 +75,7 @@ describe('FilterOverflowRow', () => {
           node: (
             <FacetButton
               facet={facet}
-              positions={positions}
+              counts={countsOf(facet, positions)}
               active={new Set()}
               onChange={facet.id === 'gewerk' ? onChange : () => {}}
             />

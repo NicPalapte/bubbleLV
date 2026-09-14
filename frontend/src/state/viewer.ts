@@ -7,6 +7,7 @@
 
 import { createContext, useContext, type Dispatch } from 'react';
 import { allClusterParents, allExpanded, expandedToDepth } from '../lib/graph/layoutRadial';
+import type { PositionIndex } from '../lib/index/positionIndex';
 import { EMPTY_FILTERS, type Filters, type Range } from '../lib/matchPos';
 import type { LoadedLV } from '../lib/pipeline/runPipeline';
 import type { MatchIndex } from '../lib/tree/matchCounts';
@@ -194,8 +195,11 @@ export interface ViewerDerived {
   tree: LVNode | null;
   nodes: ReadonlyMap<string, LVNode>;
   parents: ReadonlyMap<string, LVNode | null>;
-  /** Alle Positionsknoten — Grundlage für Facettenwerte und Tabellen. */
-  positionNodes: readonly LVNode[];
+  /**
+   * Flacher Positions-Index — Rechenbasis für Filter, Summen und Beziehungen
+   * (WP-I). Der Baum bleibt die Struktur, dieser Index die Rechenbasis.
+   */
+  index: PositionIndex;
   selectedNode: LVNode | null;
   selectedPosition: LVNode | null;
   /** Trefferzahlen je Knoten — einmal berechnet für Baum, Graph und Tabelle. */

@@ -9,6 +9,8 @@
 
 import { classifyDraft, getClassifier } from '../classify';
 import { getGaebParser, mapToLvDraft } from '../gaeb';
+import { buildPositionIndex } from '../index/positionIndex';
+import { summarize, type LVSummary } from '../index/summary';
 import { buildTree } from '../tree/buildTree';
 import type { LVDraft } from '../../types/lvDraft';
 import type { LVNode } from '../../types/lvNode';
@@ -18,6 +20,8 @@ export interface LoadedLV {
   projectName: string | null;
   client: string | null;
   fileName: string;
+  /** Facetten-Zähler und Wertebereiche, fertig berechnet (WP-I, Schritt 2). */
+  summary: LVSummary;
 }
 
 /**
@@ -33,11 +37,17 @@ export function parseToDraft(bytes: ArrayBuffer, fileName: string): LVDraft {
 
 export function classifyAndBuild(draft: LVDraft, fileName: string): LoadedLV {
   const classified = classifyDraft(draft, getClassifier());
+  const tree = buildTree(classified);
+  // Der Index dient hier nur als Rechenbasis der Aggregate und wird danach
+  // verworfen: er verweist auf die Baumknoten, und diese Verweise überleben den
+  // structuredClone aus dem Worker nicht. Die Ansichten bauen ihn auf dem
+  // Haupt-Thread über dem empfangenen Baum neu auf (state/ViewerProvider.tsx).
   return {
-    tree: buildTree(classified),
+    tree,
     projectName: classified.projectName,
     client: classified.client,
     fileName,
+    summary: summarize(buildPositionIndex(tree)),
   };
 }
 

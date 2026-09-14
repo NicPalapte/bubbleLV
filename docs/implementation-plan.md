@@ -17,7 +17,7 @@ selbst anlegen.
 | WP-A…G | MVP: Import, Klassifizierung, Baum, Tree/Tabelle/Filter, Graph, Panel | ✅ umgesetzt (Details unten) |
 | WP-41-1…3 | Langtexte, Eigenschaften-Panel, Tabellen-Spalten (Issue #41) | ✅ umgesetzt |
 | WP-H | Graph fertigstellen (= WP-41-4 + WP-41-5) | ✅ umgesetzt |
-| WP-I | Performance-Fundament für 10k Positionen | offen |
+| WP-I | Performance-Fundament für 10k Positionen | ✅ umgesetzt |
 | WP-J | Klassifizierung v2: generische Extraktoren + Textstellen | offen |
 | WP-K | Flags und VOB-Check, Ansicht „Prüfung" | offen |
 | WP-L | Ansichts-Gerüst + Ansicht „Überblick" | offen |
@@ -43,8 +43,8 @@ WP-H ──► WP-I ──┬──► WP-J ──► WP-K ───────
                 └──► WP-L ──► WP-M ──► WP-N ──► WP-O
 ```
 
-- **WP-H und WP-I zuerst.** Ohne tragfähigen Graphen und ohne Performance-Fundament
-  bringt jede neue Ansicht nur mehr Ruckeln.
+- **WP-H und WP-I zuerst** — beide stehen. Ohne tragfähigen Graphen und ohne
+  Performance-Fundament bringt jede neue Ansicht nur mehr Ruckeln.
 - WP-J ist die Datengrundlage für WP-K, WP-M, WP-N und WP-O. Ohne die neuen Merkmale
   haben Prüfung, Ähnlichkeit, Vergleich und Matrix nichts zu zeigen.
 - Ein WP = ein Pull Request.
@@ -73,28 +73,49 @@ Graph-Zustand einen Ansichtswechsel übersteht.
 
 ## WP-I · Performance-Fundament · `perf(frontend)`
 
-**Ziel:** 10.000 Positionen ohne Ruckeln. Heute traversiert jede Ansicht den
-`LVNode`-Baum bei jedem Render — das trägt nicht.
+**Ziel:** 10.000 Positionen ohne Ruckeln. Vorher traversierte jede Ansicht den
+`LVNode`-Baum bei jedem Render und leitete je Position die Merkmale neu ab — das
+trug nicht.
+
+**Umgesetzt.** Begründung und verworfene Wege:
+[`decisions/0010-positions-index-und-aggregate.md`](decisions/0010-positions-index-und-aggregate.md).
 
 Schritte:
-1. `src/lib/index/positionIndex.ts`: flacher Index über alle Positionen, einmal nach
-   `buildTree` erzeugt. Je Position ein Eintrag mit OZ, Verweis auf den Baumknoten,
-   Menge, Einheit, EP, GP und den klassifizierten Merkmalen. Numerische Spalten als
-   typisierte Arrays, damit Filter und Summen ohne Objekt-Traversierung laufen.
-2. Aggregate (Summe, Anzahl, Min/Max je Facette) im Worker berechnen und als
-   fertiges Ergebnis in den State geben, nicht im Render.
-3. `matchPos` arbeitet gegen den Index statt gegen den Baum; die Filterlogik selbst
-   bleibt unverändert die einzige Quelle.
-4. Tabelle virtualisieren (nur sichtbare Zeilen im DOM).
-5. Messpunkte einbauen: Ladezeit, Filterzeit, Renderzeit — in der Konsole, nicht im UI.
-6. Test-Fixture mit 10.000 synthetischen Positionen erzeugen (Generator im Testcode,
-   keine große Datei im Repo).
+1. ✅ `src/lib/index/positionIndex.ts`: flacher Index über alle Positionen, einmal nach
+   `buildTree` erzeugt. Je Position ein Eintrag mit Verweis auf den Baumknoten, den
+   vorberechneten Facettenwerten und dem fertigen Suchtext; Menge, EP und GP als
+   `Float64Array`, damit Summen und Wertebereiche ohne Objekt-Traversierung laufen.
+2. ✅ Aggregate (`src/lib/index/summary.ts`: Facetten-Zähler, Wertebereiche,
+   Gesamtsumme) entstehen in `classifyAndBuild` — also im Worker, sobald dessen
+   Schwelle greift — und liegen fertig im `LoadedLV`. `FacetButton` und `RangeButton`
+   rechnen nichts mehr im Render.
+3. ✅ Die Filterentscheidung bleibt eine einzige Funktion (`matchFacts` in
+   `src/lib/matchPos.ts`); sie arbeitet gegen die vorberechneten Fakten des Index.
+   `matchPos` bleibt die Hülle für Aufrufer ohne Index.
+4. ✅ Tabelle und Baumspalte waren bereits virtualisiert (Issues #22 und #23) — am
+   10k-Fixture nachgeprüft, kein weiterer Umbau nötig.
+5. ✅ Messpunkte in `src/lib/perf.ts`: Ladezeit, Index-Aufbau, Filterzeit,
+   Ansichtswechsel — Ausgabe in der Konsole, nur im Entwicklungsmodus, nie im UI.
+6. ✅ Generator für 10.000 synthetische Positionen in `tests/support/syntheticLv.ts`
+   (Testcode, keine große Datei im Repo).
 
-**Fertig, wenn:**
+**Gemessen bei 10.000 Positionen** (Node 22, CI-Container):
+
+| Schritt | Zeit |
+|---|---|
+| Klassifizierung + Baum + Index + Aggregate (im Worker) | ~360 ms |
+| Index-Aufbau allein (Haupt-Thread, einmal je LV) | ~35 ms |
+| Filterlauf (Facette, Mengenbereich oder Volltextsuche) | ~2 ms |
+| Trefferzahlen für Baum und Graph | ~7 ms |
+
+Vorher kostete allein die Positionsprüfung ~30 ms je Durchlauf — und sie lief
+mehrfach je Filterwechsel.
+
+**Fertig, wenn:** ✅ alle drei Kriterien erfüllt.
 - 10k Positionen: erste Ansicht < 5 s, Filterwechsel < 100 ms, Ansichtswechsel < 200 ms.
 - Die Tabelle mit 10k Zeilen scrollt flüssig.
-- `npm test` enthält einen Performance-Test, der die Filterzeit misst und bei
-  Überschreitung fehlschlägt.
+- `npm test` enthält einen Performance-Test (`tests/perf/filter.test.ts`), der die
+  Filterzeit misst und bei Überschreitung fehlschlägt.
 
 ---
 

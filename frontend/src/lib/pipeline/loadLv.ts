@@ -9,6 +9,7 @@ import {
   type PipelineResponse,
 } from './messages';
 import { classifyAndBuild, parseToDraft, type LoadedLV } from './runPipeline';
+import { measureAsync } from '../perf';
 import type { LVDraft } from '../../types/lvDraft';
 
 export class LVLoadError extends Error {
@@ -76,6 +77,12 @@ function classifyInWorker(draft: LVDraft, fileName: string): Promise<LoadedLV> |
  * @throws {LVLoadError} mit verständlicher Meldung für die UI.
  */
 export async function loadLvFromBytes(bytes: ArrayBuffer, fileName: string): Promise<LoadedLV> {
+  // Messpunkt „erste Ansicht": alles von den Rohbytes bis zum fertigen Baum
+  // (docs/scope.md, Ziel < 5 s bei ~10k Positionen).
+  return measureAsync('LV laden', () => parseClassifyBuild(bytes, fileName));
+}
+
+async function parseClassifyBuild(bytes: ArrayBuffer, fileName: string): Promise<LoadedLV> {
   let draft: LVDraft;
   try {
     // Bytes, nicht Text — das Encoding steht in der XML-Deklaration.

@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { FACETS_BY_ID } from '../../src/lib/facets';
-import { countActiveFilters, EMPTY_FILTERS, matchPos, type Filters } from '../../src/lib/matchPos';
+import {
+  countActiveFilters,
+  EMPTY_FILTERS,
+  matchFacts,
+  matchPos,
+  positionFacts,
+  prepareFilters,
+  type Filters,
+} from '../../src/lib/matchPos';
 import type { PositionSummary } from '../../src/types/lvNode';
 
 function pos(overrides: Partial<PositionSummary> = {}): PositionSummary {
@@ -90,5 +98,43 @@ describe('matchPos', () => {
     const facet = FACETS_BY_ID.get('gewerk');
     expect(facet?.get(pos())).toEqual(['Beton- und Stahlbetonarbeiten']);
     expect(FACETS_BY_ID.get('status')?.get(pos())).toEqual(['offen']);
+  });
+});
+
+describe('prepareFilters', () => {
+  it('erkennt, ob überhaupt gefiltert wird', () => {
+    expect(prepareFilters(EMPTY_FILTERS, '').filtering).toBe(false);
+    expect(prepareFilters(EMPTY_FILTERS, '   ').filtering).toBe(false);
+    expect(prepareFilters(EMPTY_FILTERS, 'wand').filtering).toBe(true);
+    expect(prepareFilters(filters({ bauteiltyp: ['Wand'] }), '').filtering).toBe(true);
+    expect(prepareFilters(filters({}, [1, 2]), '').filtering).toBe(true);
+  });
+
+  it('lässt leere Facetten-Auswahlen weg', () => {
+    expect(prepareFilters(filters({ bauteiltyp: [] }), '').facets).toEqual([]);
+    expect(prepareFilters(filters({ bauteiltyp: ['Wand'] }), '').facets).toHaveLength(1);
+  });
+
+  it('normalisiert die Suchanfrage einmal je Lauf', () => {
+    expect(prepareFilters(EMPTY_FILTERS, '  STAHLbeton ').query).toBe('stahlbeton');
+  });
+});
+
+describe('matchFacts', () => {
+  it('entscheidet wie matchPos — nur ohne die Ableitung je Aufruf', () => {
+    const position = pos();
+    const cases: Array<[Filters, string]> = [
+      [EMPTY_FILTERS, ''],
+      [filters({ bauteiltyp: ['Wand'] }), ''],
+      [filters({ bauteiltyp: ['Decke'] }), ''],
+      [filters({}, [0, 50]), ''],
+      [EMPTY_FILTERS, 'estrich'],
+      [EMPTY_FILTERS, 'stahlbeton'],
+    ];
+    for (const [active, search] of cases) {
+      expect(matchFacts(positionFacts(position), prepareFilters(active, search))).toBe(
+        matchPos(position, active, search),
+      );
+    }
   });
 });

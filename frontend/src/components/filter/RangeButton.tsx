@@ -1,23 +1,27 @@
 // Zahlenbereich-Filter (Menge) mit zwei Reglern. Portiert aus `RangeButton` in
 // design/claude-design/lv-main.jsx.
+//
+// Der Wertebereich kommt fertig aus dem Aggregat des geladenen LV
+// (lib/index/summary.ts); hier bleibt nur das Runden auf ganze Schrittweiten
+// für die Regler (WP-I, Schritt 2).
 
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Chip } from '../ui/Chip';
 import { Popover, PopoverHead } from '../ui/Popover';
 import { useDismiss } from '../common/useDismiss';
 import { formatCount } from '../../lib/format';
+import type { ValueRange } from '../../lib/index/summary';
 import type { Range } from '../../lib/matchPos';
-import type { PositionSummary } from '../../types/lvNode';
 
 interface RangeButtonProps {
   label: string;
-  positions: readonly PositionSummary[];
-  getValue: (position: PositionSummary) => number | null;
+  /** Vorkommender Wertebereich; `null`, wenn die Datei keine Werte führt. */
+  bounds: ValueRange | null;
   active: Range | null;
   onChange: (range: Range | null) => void;
 }
 
-export function RangeButton({ label, positions, getValue, active, onChange }: RangeButtonProps) {
+export function RangeButton({ label, bounds, active, onChange }: RangeButtonProps) {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -27,20 +31,14 @@ export function RangeButton({ label, positions, getValue, active, onChange }: Ra
     useCallback(() => setOpen(false), []),
   );
 
+  // Regler laufen in ganzen Schritten; ein Bereich ohne Spanne bekommt einen
+  // künstlichen Schritt, sonst stünden beide Griffe aufeinander.
   const [min, max] = useMemo(() => {
-    let low = Infinity;
-    let high = -Infinity;
-    for (const position of positions) {
-      const value = getValue(position);
-      if (value === null || !Number.isFinite(value)) continue;
-      low = Math.min(low, value);
-      high = Math.max(high, value);
-    }
-    if (!Number.isFinite(low)) return [0, 100];
-    const flooredLow = Math.floor(low);
-    const ceiledHigh = Math.ceil(high);
-    return [flooredLow, ceiledHigh === flooredLow ? flooredLow + 1 : ceiledHigh];
-  }, [positions, getValue]);
+    if (bounds === null) return [0, 100];
+    const low = Math.floor(bounds.min);
+    const high = Math.ceil(bounds.max);
+    return [low, high === low ? low + 1 : high];
+  }, [bounds]);
 
   const [low, high] = active ?? [min, max];
   const isActive = active !== null && (active[0] > min || active[1] < max);
