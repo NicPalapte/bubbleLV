@@ -19,9 +19,27 @@ export interface ClassificationMeta {
   confidence: number;
 }
 
+/**
+ * Fundstelle eines Merkmals im **Langtext** (docs/architecture/data-model.md#spans).
+ * Die Indizes zeigen auf den Rohtext der Position, nicht auf die normalisierte
+ * Fassung aus text.ts — sonst ließe sich im Panel nichts markieren.
+ */
+export interface Span {
+  /** Attribut-Key, zu dem die Stelle gehört, z. B. "beton" oder "normen". */
+  key: string;
+  /** Zeichen-Index im Langtext, inklusiv. */
+  start: number;
+  /** Zeichen-Index im Langtext, exklusiv. */
+  end: number;
+  /** Anzeigetext der Stelle, z. B. "DIN EN 206". */
+  label: string;
+}
+
 export interface ClassificationResult {
   attributes: Record<string, unknown>;
   meta: ClassificationMeta;
+  /** Fundstellen im Langtext, aufsteigend nach `start`. Leer, wenn keine. */
+  spans: Span[];
 }
 
 export interface Classifier {

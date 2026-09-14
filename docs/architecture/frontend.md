@@ -37,9 +37,10 @@ frontend/
     ├── lib/
     │   ├── gaeb/                     # GaebParser — einzige Stelle mit GAEB-Kenntnis
     │   ├── classify/                 # Klassifizierung (Regel-Pipeline, siehe pipeline.md)
-    │   │   ├── ruleBased.ts          # Orchestrierung Stufe 0–2 hinter Classifier
+    │   │   ├── ruleBased.ts          # Orchestrierung der Stufen hinter Classifier
     │   │   ├── stlbCatalog.ts        # Stufe 0: STLB-Bau-LB-Katalog (Build-Zeit-Asset)
     │   │   ├── data/                 # ausgelieferte Kopie der Referenz-CSV
+    │   │   ├── extractors/           # gewerkeunabhängige Merkmale + Fundstellen (WP-J)
     │   │   └── rulesets/             # Registry + je Ruleset ein Modul
     │   ├── tree/
     │   │   ├── buildTree.ts          # LVDraft → LVNode-Baum
@@ -50,6 +51,7 @@ frontend/
     │   ├── pipeline/                 # Datei → LoadedLV, inkl. Web Worker
     │   ├── matchPos.ts               # Filter/Suche — single source of truth
     │   ├── perf.ts                   # Messpunkte (nur Konsole, nur Entwicklung)
+    │   ├── spanCategories.ts         # Farbe und Name je Fundstellen-Kategorie
     │   ├── facets.ts                 # Facetten-Definitionen (dynamische Werte)
     │   └── graph/                    # Graph-Engine (aus lv-graph.jsx)
     │       ├── constants.ts          # Radien, LOD-Schwellen, Größenmodi

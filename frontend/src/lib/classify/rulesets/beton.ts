@@ -4,7 +4,6 @@
 // leere Liste), damit die Facetten für dieses Gewerk ein stabiles Schema haben.
 
 import { TRAGENDE_BAUTEILTYPEN } from '../bauteiltyp';
-import { extractMasse } from './fallback';
 import { extractBetonklassen } from './normklassen';
 import type { BauteilRuleset, RulesetContext, RulesetKey } from './types';
 
@@ -42,8 +41,9 @@ export const betonRuleset: BauteilRuleset = {
     const text = context.text.all;
     const klassen = extractBetonklassen(text);
 
+    // Maße kommen aus dem gewerkeunabhängigen Extraktor (WP-J) und stehen
+    // bereits in den Attributen, bevor dieses Ruleset läuft.
     return {
-      ...extractMasse(context),
       beton: klassen.beton,
       expo: klassen.expo,
       ...(klassen.feuchtigkeitsklasse.length > 0

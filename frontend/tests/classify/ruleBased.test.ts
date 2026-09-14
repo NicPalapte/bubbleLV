@@ -110,7 +110,10 @@ describe('RuleBasedClassifier — Stufe 0 mit Referenzkatalog', () => {
     );
     expect(attributes.keywords).toContain('WU-Beton');
     expect(attributes.keywords).toContain('CEM III/A');
-    expect(attributes.keywords).toContain('DIN EN 206');
+    // Normverweise stehen seit WP-J im eigenen Key, nicht mehr unter
+    // „Besonderheiten" — sonst stünde "DIN EN 206" zweimal im Panel.
+    expect(attributes.keywords).not.toContain('DIN EN 206');
+    expect(attributes.normen).toContain('DIN EN 206');
   });
 });
 

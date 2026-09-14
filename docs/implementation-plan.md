@@ -18,7 +18,7 @@ selbst anlegen.
 | WP-41-1…3 | Langtexte, Eigenschaften-Panel, Tabellen-Spalten (Issue #41) | ✅ umgesetzt |
 | WP-H | Graph fertigstellen (= WP-41-4 + WP-41-5) | ✅ umgesetzt |
 | WP-I | Performance-Fundament für 10k Positionen | ✅ umgesetzt |
-| WP-J | Klassifizierung v2: generische Extraktoren + Textstellen | offen |
+| WP-J | Klassifizierung v2: generische Extraktoren + Textstellen | ✅ umgesetzt |
 | WP-K | Flags und VOB-Check, Ansicht „Prüfung" | offen |
 | WP-L | Ansichts-Gerüst + Ansicht „Überblick" | offen |
 | WP-M | Beziehungen: Ähnlichkeit, Unterschiede, Ausreißer | offen |
@@ -123,28 +123,53 @@ mehrfach je Filterwechsel.
 
 **Ziel:** Merkmale, die in **jedem** Gewerk greifen, plus die Textstellen dazu.
 
-Schritte:
-1. `ClassificationResult` um `spans` erweitern: je Merkmal Anfang und Ende im Langtext
-   (`{ key, start, end, label }`). Schema-Erweiterung in
-   [`architecture/data-model.md`](architecture/data-model.md) nachziehen.
-2. Gewerkeunabhängige Extraktoren in `src/lib/classify/extractors/`:
-   - `normen.ts` — DIN, DIN EN, ISO, ZTV, ATV-Verweise
-   - `masse.ts` — Zahl + Einheit mit Kontext (Dicke, Höhe, Länge, Gewicht)
-   - `material.ts` — Materialstichworte, gespeist aus dem STLB-Katalog
-   - `platzhalter.ts` — offene Textergänzungen aus dem Parser
-   - `verweise.ts` — „siehe Pos.", „gemäß …", „laut Anlage"
-   - `fristen.ts` — Datum, Bauzeit, Winterbau, Vorleistung, Arbeiten unter Verkehr
-3. Die Extraktoren laufen **vor** den gewerkespezifischen Rulesets und werden von
-   ihnen nur überschrieben, nie gelöscht.
-4. `Highlighted.tsx` kann Spans aus mehreren Kategorien gleichzeitig zeichnen, je
-   Kategorie eine Farbe, einzeln abschaltbar.
-5. Unit-Tests je Extraktor, inklusive Negativfall (kein Treffer → kein Key).
+**Umgesetzt.** Begründung und verworfene Wege:
+[`decisions/0011-extraktoren-und-fundstellen.md`](decisions/0011-extraktoren-und-fundstellen.md).
 
-**Fertig, wenn:**
-- Eine Position mit „C30/37 nach DIN EN 206, d = 30 cm" liefert `normen`, `masse`,
-  `beton` — jeweils mit korrekter Textstelle.
+Schritte:
+1. ✅ `ClassificationResult` um `spans` erweitert (`{ key, start, end, label }`),
+   abgelegt unter dem reservierten `attributes._spans`. Die Indizes zeigen auf den
+   **Rohtext** des Langtexts — auf der normalisierten Fassung ließe sich nichts
+   markieren. Schema:
+   [`architecture/data-model.md`](architecture/data-model.md#spans).
+2. ✅ Gewerkeunabhängige Extraktoren in `src/lib/classify/extractors/`:
+   - `normen.ts` — DIN, DIN EN, DIN EN ISO, VOB/C, ATV, ZTV; Ausgabestand gehört
+     zur Fundstelle, nicht zum Wert
+   - `masse.ts` — Zahl + Einheit mit Kontext (Dicke, Höhe, Länge, Gewicht);
+     kompositumfest („Wandstärke 24 cm"), Formelzeichen nur mit `=`
+   - `material.ts` — Materialstichworte **ausschließlich** aus der
+     `keywords`-Spalte des STLB-Katalogs; leer, solange die gepflegt werden muss
+   - `platzhalter.ts` — offene Textergänzungen (Punktreihen aus
+     `<TextComplement Kind="Bidder">`, ausformulierte Bieterangaben) samt Anzahl
+   - `verweise.ts` — „siehe Pos.", „laut Anlage", Vorbemerkung, Plan, Gutachten
+   - `fristen.ts` — Termin, Bauzeit, Winterbau, Vorleistung, Arbeiten unter
+     Verkehr, Nacht-/Wochenendarbeit, Bauablauf
+3. ✅ Sie laufen **vor** den Rulesets; die Rulesets überschreiben nur. Die Maße
+   sind dabei aus `fallback.ts`/`beton.ts`/`mauerwerk.ts` hierher gewandert statt
+   dreimal zu existieren.
+4. ✅ `Highlighted.tsx` zeichnet Spans mehrerer Kategorien gleichzeitig, je
+   Kategorie eine Farbe (`lib/spanCategories.ts`), einzeln abschaltbar über die
+   Schalterreihe über dem Langtext.
+5. ✅ Unit-Tests je Extraktor mit Treffer **und** Negativfall
+   (`tests/classify/extractors.test.ts`), Weg der Fundstelle bis in die Attribute
+   (`tests/classify/spans.test.ts`), Zeichnen und Abschalten
+   (`tests/components/highlighted.test.tsx`).
+
+**Zusatz gegenüber dem alten Plan:** Normverweise stehen nicht mehr unter
+`keywords` („Besonderheiten"), sondern im eigenen Key `normen` — sonst stünde
+„DIN EN 206" zweimal im Eigenschaften-Panel. Neue Facetten: Normen · Material ·
+Zeitbezug · Offene Stellen.
+
+**Fertig, wenn:** ✅ alle drei Kriterien erfüllt.
+- Eine Position mit „C30/37 nach DIN EN 206, d = 30 cm" liefert `normen`, `dicke`
+  und `beton` — jeweils mit korrekter Textstelle (Test in
+  `tests/classify/extractors.test.ts`).
 - Im Eigenschaften-Panel sind die Fundstellen im Langtext farbig markiert.
 - Eine Position ohne erkennbare Merkmale liefert keine leeren Keys.
+
+Gegenprobe an der echten Beispieldatei (`tests/fixtures/gaeb-xml-beispiel.x83`):
+13 von 28 Positionen tragen Fundstellen, darunter `DIN 18300`, `DIN 18915`,
+„gemäß Gutachten" und zwei offene Textergänzungen („Breite von …").
 
 ---
 

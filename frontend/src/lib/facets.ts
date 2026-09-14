@@ -83,6 +83,29 @@ export const FACETS: readonly Facet[] = [
     label: 'Besonderheiten',
     get: (p) => attrStrings(p.attributes, 'keywords'),
   },
+  // Merkmale der gewerkeunabhängigen Extraktoren (WP-J). Ihre Werte kommen aus
+  // einem geschlossenen Vokabular, damit die Filterliste kurz bleibt; der
+  // Wortlaut der Fundstelle steht im Span, nicht im Filterwert.
+  {
+    id: 'normen',
+    label: 'Normen',
+    get: (p) => attrStrings(p.attributes, 'normen'),
+  },
+  {
+    id: 'material',
+    label: 'Material',
+    get: (p) => attrStrings(p.attributes, 'material'),
+  },
+  {
+    id: 'fristen',
+    label: 'Zeitbezug',
+    get: (p) => attrStrings(p.attributes, 'fristen'),
+  },
+  {
+    id: 'platzhalter',
+    label: 'Offene Stellen',
+    get: (p) => attrStrings(p.attributes, 'platzhalter'),
+  },
   {
     id: 'positionstyp',
     label: 'Positionstyp',

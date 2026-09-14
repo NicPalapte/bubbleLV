@@ -87,35 +87,88 @@ Kein LB-Treffer (Referenzkatalog noch leer oder Text passt zu keinem LB) ⇒ bei
 | `beton` | `string \| null` | `"C30/37"` | Betongüte | LB `Beton-/Stahlbetonarbeiten`; genormte Schreibweise auch im Fallback (s. u.) |
 | `expo` | `string[]` | `["XC2","XD1"]` | Expositionsklasse | wie `beton` |
 | `tragend` | `boolean \| null` | `true` | tragend/nichttragend | tragfähige Bauteiltypen |
-| `dicke` | `string \| null` | `"30 cm"` | (Anzeige) | Ruleset-abhängig |
-| `hoehe` | `string \| null` | `"3–4 m"` | (Anzeige) | Ruleset-abhängig |
+
+Maße (`dicke`, `hoehe`, `laenge`, `gewicht`) standen bis WP-J hier; sie kommen
+jetzt aus dem gewerkeunabhängigen Extraktor (s. u.) und gelten für jede Position.
 
 **Nur wenn `positionsart !== "bauteil"`** — eigenes, kleineres Schema, **kein**
 `bauteiltyp`/`gewerk`/`beton`/`tragend`; Keys kommen aus dem jeweiligen
 Nicht-Bauteil-Ruleset (z. B. `PersonalRuleset`, `PlanungRuleset`), initial minimal
 und inkrementell erweiterbar — nicht als vollständiges Schema vorab festgelegt.
 
-**Für alle Positionen:**
+**Für alle Positionen — gewerkeunabhängige Extraktoren** (`lib/classify/extractors/`,
+laufen **vor** den Rulesets und werden von ihnen nur überschrieben, nie gelöscht):
 
 | Key | Typ | Beispiel | Facette |
 |---|---|---|---|
-| `keywords` | `string[]` | `["WA-Beton","CEM III/A"]` | Besonderheiten |
+| `keywords` | `string[]` | `["WU-Beton","CEM III/A"]` | Besonderheiten |
+| `normen` | `string[]` | `["DIN EN 206","VOB/C"]` | Normen |
+| `material` | `string[]` | `["Stahlbeton"]` | Material |
+| `fristen` | `string[]` | `["Winterbau","Termin"]` | Zeitbezug |
+| `platzhalter` | `string[]` | `["Textergänzung"]` | Offene Stellen |
+| `platzhalterAnzahl` | `number` | `2` | (Anzeige) |
+| `verweise` | `string[]` | `["Positionsverweis","Anlage"]` | (Anzeige) |
+| `dicke` · `hoehe` · `laenge` · `gewicht` | `string` | `"30 cm"` | (Anzeige) |
+
+Zwei Regeln gelten für alle Extraktoren:
+
+- **Geschlossenes Vokabular als Wert, Fundstelle als Beleg.** `fristen` enthält
+  `"Winterbau"`, nicht den Satz, in dem es steht — sonst wäre jeder Wortlaut ein
+  eigener Filterwert. Der Wortlaut steht im zugehörigen `Span`.
+- **Kein Treffer ⇒ kein Key.** Ein leeres Array würde im Panel als Merkmal
+  erscheinen, das es nicht gibt.
+
+`material` wird **ausschließlich** aus der `keywords`-Spalte des
+STLB-Bau-Katalogs gespeist. Solange die Spalte leer ist, liefert der Extraktor
+nichts — der dokumentierte Zustand „Referenzdaten fehlen ⇒ Regel inaktiv, kein
+Fehler". Eine hier erfundene Baustoffliste wäre eine ungeprüfte Aussage über die
+Domäne.
+
+Normverweise standen bis WP-J unter `keywords`; sie liegen jetzt in `normen`,
+damit „DIN EN 206" nicht zweimal im Eigenschaften-Panel steht.
 
 Welches `PropertyRuleset` (Bauteil-Positionen) bzw. Nicht-Bauteil-Ruleset zuständig ist,
 entscheidet die `RulesetRegistry` im Klassifizierer — fehlt eine Zuordnung, liefert ein
 Fallback-Extraktor Basis-Attribute statt eines Fehlers (siehe [`pipeline.md`](pipeline.md)).
 
-**Basis-Attribute des Fallbacks** sind Maße (`dicke`, `hoehe`) und genormte
-Kurzbezeichnungen nach DIN EN 206 / DIN 1045-2 (`beton`, `expo`,
-`feuchtigkeitsklasse`). Letztere stehen wörtlich im Text und bedeuten in jedem Gewerk
+**Basis-Attribute des Fallbacks** sind die genormten Kurzbezeichnungen nach
+DIN EN 206 / DIN 1045-2 (`beton`, `expo`, `feuchtigkeitsklasse`). Letztere stehen wörtlich im Text und bedeuten in jedem Gewerk
 dasselbe — sie ohne LB-Treffer zu verwerfen, würde die Facetten „Druckfestigkeit" und
 „Exposition" für reale Dateien leer lassen. Alles **Interpretierende** — allen voran
 `tragend` — bleibt dem gewerkespezifischen Ruleset vorbehalten und fehlt im Fallback
 ganz (der Key wird nicht gesetzt, statt auf `null` zu stehen).
 
-Facetten-Filter im Frontend werden **dynamisch aus den vorkommenden Werten** erzeugt
-(wie im Design). Neue Klassifizierungs-Keys erscheinen automatisch, sobald ein
-(neues) Ruleset sie liefert.
+### `spans` — Textstellen zu jedem Merkmal
+
+Zu jedem gefundenen Merkmal kommt die Fundstelle im Langtext:
+
+```ts
+interface Span {
+  key: string;     // z. B. "beton", "normen"
+  start: number;   // Zeichen-Index im Langtext
+  end: number;
+  label: string;   // Anzeigetext, z. B. "DIN EN 206"
+}
+```
+
+Abgelegt unter `attributes._spans`. Wie `_meta` ist der Key **reserviert** und
+taucht nie als Facette oder als Zeile im Eigenschaften-Panel auf. Ohne
+Fundstelle fehlt der Key ganz.
+
+**Die Indizes zeigen auf den Rohtext**, nicht auf die normalisierte Fassung aus
+`lib/classify/text.ts`: die zieht Leerraum zusammen und verschiebt damit jeden
+Index. Die Extraktoren arbeiten deshalb direkt auf `longText`, mit
+groß-/kleinschreibungsunabhängigen Mustern.
+
+Spans sind **überschneidungsfrei** (`extractors/spans.ts#mergeSpans`) — beim
+Zeichnen darf jedes Zeichen nur einmal markiert werden. Ein Merkmal, das nur im
+Kurztext steht, liefert seinen Wert, aber keinen Span.
+
+Die **Werte** eines Facetten-Filters entstehen dynamisch aus dem geladenen LV
+(wie im Design) — einen neuen Wert muss niemand eintragen. Welche Keys überhaupt
+als Facette erscheinen, steht dagegen in `frontend/src/lib/facets.ts`: ein neuer
+Key braucht dort eine Zeile, sonst bleibt er reine Anzeige im
+Eigenschaften-Panel.
 
 ### Provenance
 
@@ -200,24 +253,8 @@ voraus, die das aktuelle MVP bewusst nicht hat. Details zur langfristigen Vision
 
 > Noch **nicht umgesetzt**. Hier steht, wohin das Modell wächst, damit neue Arbeit nicht
 > daneben baut. Umsetzung: [`../implementation-plan.md`](../implementation-plan.md)
-> (WP-I, WP-J, WP-K, WP-M) · Scope: [`../scope.md`](../scope.md).
-
-### `spans` — Textstellen zu jedem Merkmal (WP-J)
-
-Heute liefert die Klassifizierung nur Werte. Damit im Langtext markiert werden kann,
-**woher** ein Merkmal stammt, kommt je Merkmal die Fundstelle dazu:
-
-```ts
-interface Span {
-  key: string;     // z. B. "beton", "normen"
-  start: number;   // Zeichen-Index im Langtext
-  end: number;
-  label: string;   // Anzeigetext, z. B. "DIN EN 206"
-}
-```
-
-Abgelegt unter `attributes._spans`. Wie `_meta` ist der Key reserviert und taucht nie
-als Facette auf.
+> (WP-K, WP-M) · Scope: [`../scope.md`](../scope.md). Umgesetzt und darum oben
+> beschrieben: `PositionIndex` (WP-I) und `spans` (WP-J).
 
 ### `Flag` — Hinweise aus Prüfregeln (WP-K)
 
@@ -234,13 +271,6 @@ interface Flag {
   span?: Span;
 }
 ```
-
-### `PositionIndex` — flache Rechenbasis (WP-I)
-
-Der `LVNode`-Baum bleibt die Struktur. Für Filter, Summen und Beziehungen kommt ein
-flacher Index über alle Positionen dazu, einmal nach `buildTree` erzeugt: numerische
-Spalten als typisierte Arrays, dazu ein Verweis auf den Baumknoten. Ansichten rechnen
-gegen den Index, nicht gegen den Baum.
 
 ### `Cluster` — Beziehungen (WP-M)
 
