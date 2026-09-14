@@ -186,9 +186,16 @@ Schritte:
    umsetzen. V3, V8, V9, V10 bleiben inaktiv, bis die Referenzdateien da sind.
 4. Geld-/Mengentreiber: Anteil an der Gesamtsumme, Mengen-Rang, EP-Ausreißer (Letzteres
    erst nach WP-M, vorher ohne Vergleichsgruppe nicht berechenbar).
-5. Ansicht **Prüfung**: Liste aller Hinweise, gruppiert nach Regel, mit Anzahl, Sprung
+5. **Einheiten-Gruppen und Hinweis „mehrere Schreibweisen".** Groß-/Kleinschreibung
+   und `m³`/`m3` führt der Filter bereits zusammen (`lib/units.ts`, WP-J). Offen
+   bleiben die inhaltlichen Gruppen — `Stk`/`Stck`/`St`/`Stück`, `to`/`t`,
+   `h`/`Std`/`Stunde` — als gepflegte Referenzliste unter `docs/domain/reference/`.
+   `lfm` und `m` bleiben getrennt (Abrechnungsart, keine Schreibweise). Dazu die
+   Regel: ein LV, das eine Einheit verschieden schreibt, bekommt einen Hinweis —
+   meist ein Zeichen für zusammengeführte Teil-LVs.
+6. Ansicht **Prüfung**: Liste aller Hinweise, gruppiert nach Regel, mit Anzahl, Sprung
    zur Position und Schalter je Regel.
-6. Formulierungen: Hinweis, kein Urteil. Norm-Verweis immer sichtbar.
+7. Formulierungen: Hinweis, kein Urteil. Norm-Verweis immer sichtbar.
 
 **Fertig, wenn:**
 - Eine reale Datei mit Bedarfspositionen und Platzhaltern erzeugt Hinweise mit

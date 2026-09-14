@@ -164,6 +164,21 @@ Spans sind **überschneidungsfrei** (`extractors/spans.ts#mergeSpans`) — beim
 Zeichnen darf jedes Zeichen nur einmal markiert werden. Ein Merkmal, das nur im
 Kurztext steht, liefert seinen Wert, aber keinen Span.
 
+### Einheiten im Filter
+
+GAEB liefert die Einheit als freien Text (`<QU>`). Ein LV aus mehreren Teil-LVs
+schreibt dieselbe Einheit deshalb oft verschieden. Der Filter führt zusammen,
+was nur anders **geschrieben** ist — Groß-/Kleinschreibung, Leerraum,
+hochgestellte Ziffern (`lib/units.ts`): `PSCH` = `psch`, `m³` = `m3`.
+
+Inhaltliche Gruppen bleiben getrennt, bis sie jemand gepflegt hat: `Stk` und
+`Stück`, `to` und `t`, `h` und `Std` sind Fachaussagen, keine Schreibweisen —
+sie kommen mit WP-K aus einer Referenzliste. `lfm` und `m` bleiben dauerhaft
+getrennt: das ist eine Abrechnungsart, keine Schreibweise.
+
+**Nur der Filter führt zusammen.** Tabelle und Eigenschaften-Panel zeigen
+weiter den Wortlaut aus der Datei.
+
 Die **Werte** eines Facetten-Filters entstehen dynamisch aus dem geladenen LV
 (wie im Design) — einen neuen Wert muss niemand eintragen. Welche Keys überhaupt
 als Facette erscheinen, steht dagegen in `frontend/src/lib/facets.ts`: ein neuer

@@ -4,6 +4,7 @@
 
 import { attrString, attrStrings } from './attributes';
 import { POSITION_STATUS } from './status';
+import { canonicalUnit, unitLabel } from './units';
 import type { PositionSummary } from '../types/lvNode';
 
 export interface Facet {
@@ -114,9 +115,13 @@ export const FACETS: readonly Facet[] = [
     sortValues: byOrder(POSITIONSTYP_ORDER),
   },
   {
+    // Der Filterwert ist der Vergleichsschlüssel, nicht der Wortlaut: "psch" und
+    // "PSCH" sind eine Einheit und gehören unter einen Knopf (lib/units.ts).
+    // Tabelle und Panel zeigen weiter, was in der Datei steht.
     id: 'einheit',
     label: 'Einheit',
-    get: (p) => single(p.unit),
+    get: (p) => single(canonicalUnit(p.unit)),
+    optionLabel: unitLabel,
   },
   {
     id: 'status',
