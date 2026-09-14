@@ -15,6 +15,24 @@
   - Formulierung im UI: „hier lohnt ein Blick", nicht „das ist unzulässig".
 - Fehlen Referenzdaten für eine Regel, greift sie einfach nicht. Kein Fehler.
 
+## Stand der Umsetzung (WP-K)
+
+| Regel | Zustand |
+|---|---|
+| V1, V2, V4, V5, V6, V7 | **umgesetzt und aktiv** |
+| V3, V8, V9, V10 | angemeldet, **inaktiv** — die Referenzdateien sind noch leer |
+| G1, G2, G3 | Kennzahlen ohne Norm-Bezug, aktiv (Kostentreiber, Mengentreiber, uneinheitliche Einheiten) |
+
+Status und Norm-Verweis je Regel stehen in
+[`reference/pruefregeln.csv`](reference/pruefregeln.csv) — nicht im Code. Eine
+Regel mit Status `zu_bestaetigen` läuft, ihr Verweis erscheint aber sichtbar als
+**„Verweis zu bestätigen"**: Bubble zeigt den Fund (eine Tatsache über die Datei),
+behauptet aber keine Fundstelle in der Norm, die niemand geprüft hat. Mit
+`status = aus` verschwindet eine Regel vollständig, ohne Code-Änderung.
+
+Umgesetzt in `frontend/src/lib/check/`, ein Modul je Regelgruppe; die Ansicht
+„Prüfung" ist der dritte Ansichtsmodus.
+
 ## Regeln
 
 Spalte **Konfidenz**: `sicher` = Inhalt und Fundstelle in der Norm geprüft.
@@ -57,8 +75,16 @@ Spalte `quelle_version`. Nicht im Code hartkodieren, nicht erfinden.
 
 | Datei | Inhalt | Für |
 |---|---|---|
-| `reference/vob-nebenleistungen.csv` | ATV-Nummer, Abschnitt, Leistungstext, Stichworte | V8 |
-| `reference/hersteller-produktnamen.csv` | Hersteller-/Produktname, Gewerk, Stichworte | V3 |
-| `reference/risiko-formulierungen.csv` | Formulierung, Regel-ID, Schweregrad | V4, V6 |
+| [`reference/pruefregeln.csv`](reference/pruefregeln.csv) | Regel-ID, Status, Norm-Verweis | alle |
+| [`reference/vob-nebenleistungen.csv`](reference/vob-nebenleistungen.csv) | ATV-Nummer, Abschnitt, Leistungstext, Stichworte | V8, V9 |
+| [`reference/hersteller-produktnamen.csv`](reference/hersteller-produktnamen.csv) | Hersteller-/Produktname, Gewerk, Stichworte | V3 |
+| [`reference/risiko-formulierungen.csv`](reference/risiko-formulierungen.csv) | Formulierung, Regel-ID, Schweregrad | V4 |
+| [`reference/einheiten-gruppen.csv`](reference/einheiten-gruppen.csv) | Einheiten, die dasselbe bedeuten | G3, V2 |
 
-Solange eine Datei nur die Kopfzeile enthält, ist die zugehörige Regel inaktiv.
+Solange eine Datei nur die Kopfzeile enthält, ist die zugehörige Regel inaktiv — sie
+verschwindet aber nicht aus der Ansicht, sondern steht dort mit ihrem Grund. Sonst
+hielte man eine fehlende Referenzdatei für „nichts gefunden".
+
+`risiko-formulierungen.csv` startet mit genau den zwei Formulierungen, die oben in
+der Tabelle zu V4 stehen — übernommen aus diesem Dokument, nicht erfunden. Die Liste
+lebt davon, dass der Owner sie erweitert.

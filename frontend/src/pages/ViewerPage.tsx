@@ -5,6 +5,7 @@
 // oder persistiert.
 
 import { Profiler, useCallback, useEffect, useState, type ReactNode } from 'react';
+import { CheckView } from '../components/check/CheckView';
 import { FilterStrip } from '../components/filter/FilterStrip';
 import { BubbleGraph } from '../components/graph/BubbleGraph';
 import { GraphHeader } from '../components/graph/GraphHeader';
@@ -78,6 +79,12 @@ export function ViewerPage() {
           <main aria-label="Bubble-Graph" className="relative flex-1 overflow-hidden bg-paper">
             <BubbleGraph root={tree} />
             <GraphHeader root={tree} />
+          </main>
+        )}
+
+        {tree !== null && viewMode === 'check' && (
+          <main aria-label="Prüfung" className="relative flex-1 overflow-hidden bg-white">
+            <CheckView />
           </main>
         )}
 

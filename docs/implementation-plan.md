@@ -19,7 +19,7 @@ selbst anlegen.
 | WP-H | Graph fertigstellen (= WP-41-4 + WP-41-5) | ✅ umgesetzt |
 | WP-I | Performance-Fundament für 10k Positionen | ✅ umgesetzt |
 | WP-J | Klassifizierung v2: generische Extraktoren + Textstellen | ✅ umgesetzt |
-| WP-K | Flags und VOB-Check, Ansicht „Prüfung" | offen |
+| WP-K | Flags und VOB-Check, Ansicht „Prüfung" | ✅ umgesetzt |
 | WP-L | Ansichts-Gerüst + Ansicht „Überblick" | offen |
 | WP-M | Beziehungen: Ähnlichkeit, Unterschiede, Ausreißer | offen |
 | WP-N | Ansicht „Vergleich" | offen |
@@ -177,32 +177,51 @@ Gegenprobe an der echten Beispieldatei (`tests/fixtures/gaeb-xml-beispiel.x83`):
 
 **Ziel:** Die vier „wichtig"-Kategorien und der VOB-Check als auswertbare Hinweise.
 
-Schritte:
-1. `src/lib/check/types.ts`: `Flag { id, category, severity, ruleRef, positionId, span }`.
-   Kategorien: `geld | risiko | norm | frist | vob`.
-2. Regel-Registry `src/lib/check/rules/` — ein Modul je Regel, Registrierung wie bei den
-   Rulesets. Jede Regel liefert Titel, Norm-Verweis und Fundstelle.
-3. Regeln V1, V2, V4, V5, V6, V7 aus [`domain/vob-pruefungen.md`](domain/vob-pruefungen.md)
-   umsetzen. V3, V8, V9, V10 bleiben inaktiv, bis die Referenzdateien da sind.
-4. Geld-/Mengentreiber: Anteil an der Gesamtsumme, Mengen-Rang, EP-Ausreißer (Letzteres
-   erst nach WP-M, vorher ohne Vergleichsgruppe nicht berechenbar).
-5. **Einheiten-Gruppen und Hinweis „mehrere Schreibweisen".** Groß-/Kleinschreibung
-   und `m³`/`m3` führt der Filter bereits zusammen (`lib/units.ts`, WP-J). Offen
-   bleiben die inhaltlichen Gruppen — `Stk`/`Stck`/`St`/`Stück`, `to`/`t`,
-   `h`/`Std`/`Stunde` — als gepflegte Referenzliste unter `docs/domain/reference/`.
-   `lfm` und `m` bleiben getrennt (Abrechnungsart, keine Schreibweise). Dazu die
-   Regel: ein LV, das eine Einheit verschieden schreibt, bekommt einen Hinweis —
-   meist ein Zeichen für zusammengeführte Teil-LVs.
-6. Ansicht **Prüfung**: Liste aller Hinweise, gruppiert nach Regel, mit Anzahl, Sprung
-   zur Position und Schalter je Regel.
-7. Formulierungen: Hinweis, kein Urteil. Norm-Verweis immer sichtbar.
+**Umgesetzt.** Begründung und verworfene Wege:
+[`decisions/0012-pruefregeln-und-norm-verweise.md`](decisions/0012-pruefregeln-und-norm-verweise.md).
 
-**Fertig, wenn:**
+Schritte:
+1. ✅ `src/lib/check/types.ts`: `Flag { id, category, severity, positionId, title, span }`.
+   Kategorien: `geld | menge | risiko | norm | frist | vob`. Dazu `RuleStatus` — eine
+   Regel, die nicht läuft, verschwindet nicht, sondern nennt ihren Grund.
+2. ✅ Regel-Registry `src/lib/check/` — ein Modul je Regelgruppe, Registrierung wie bei
+   den Rulesets. Der **Norm-Verweis steht nicht im Code**, sondern in
+   [`domain/reference/pruefregeln.csv`](domain/reference/pruefregeln.csv).
+3. ✅ V1, V2, V4, V5, V6, V7 umgesetzt und aktiv. V3, V8, V9, V10 angemeldet und
+   inaktiv, bis ihre Referenzdateien Einträge haben — mit sichtbarem Grund.
+4. ✅ Geld-/Mengentreiber: G1 (Anteil an der Gesamtsumme), G2 (Mengen-Rang **je
+   Einheit**), G3 (dieselbe Einheit uneinheitlich geschrieben). Bewusst **Rang statt
+   Schwellwert**, und eine Rangliste erscheint erst, wenn sie auch jemanden auslässt
+   — „Rang 3 von 4" ist Rauschen. Der EP-Ausreißer bleibt bei WP-M: ohne
+   Vergleichsgruppe nicht berechenbar.
+5. ✅ **Einheiten-Gruppen** aus
+   [`domain/reference/einheiten-gruppen.csv`](domain/reference/einheiten-gruppen.csv):
+   `Stk`/`Stck`/`St`/`Stück`, `to`/`t`, `h`/`Std`/`Stunde`. Groß-/Kleinschreibung und
+   `m³`/`m3` führt der Code selbst zusammen (WP-J). `lfm` und `m` bleiben getrennt —
+   Abrechnungsart, keine Schreibweise. Dazu Regel G3 als Hinweis.
+6. ✅ Ansicht **Prüfung** als dritter Ansichtsmodus: Hinweise nach Regel gruppiert,
+   mit Anzahl, aufklappbarer Fundliste, Sprung zur Position und Schalter je Regel.
+7. ✅ Formulierungen: Hinweis, kein Urteil. Ein Test hält das fest — keine Regel darf
+   „unzulässig", „Verstoß", „verboten", „fehlerhaft" oder „falsch" sagen.
+
+**Fertig, wenn:** ✅ alle vier Kriterien erfüllt.
 - Eine reale Datei mit Bedarfspositionen und Platzhaltern erzeugt Hinweise mit
   korrekter Anzahl und korrektem Sprungziel.
 - Jede Regel ist einzeln abschaltbar; abgeschaltet verschwindet sie aus allen Ansichten.
 - Fehlende Referenzdatei ⇒ Regel inaktiv, kein Fehler, sichtbarer Hinweis „inaktiv".
 - Je Regel mindestens ein Test mit Treffer und einer ohne.
+
+**Gegenprobe an der Beispieldatei** (`tests/fixtures/gaeb-xml-beispiel.x83`, 28
+Positionen): 11 Hinweise — 2× Bedarfsposition (V1), 3× Abrechnung nach Zeit (V2),
+1× fehlende Menge und Einheit (V5), 1× Verweis auf ein Gutachten (V6), 1× zwei offene
+Textergänzungen (V7), 3× dieselbe Einheit als „psch", „Psch" und „PSCH" (G3). Vier
+Regeln stehen als inaktiv mit ihrem Grund da. Ein Test prüft, dass jedes Sprungziel
+eine Position im Baum ist.
+
+**Offen für den Owner:** Die Norm-Verweise von V1, V2, V4, V5 und V6 tragen den Status
+`zu_bestaetigen` und erscheinen im UI mit dem Zusatz „Verweis zu bestätigen"
+(Fragenliste in [`domain/vob-pruefungen.md`](domain/vob-pruefungen.md)).
+Ebenso leer: Herstellerliste (V3) und Nebenleistungs-Listen (V8, V9).
 
 ---
 

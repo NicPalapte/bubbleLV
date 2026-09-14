@@ -1,10 +1,14 @@
-// Einheiten im Filter zusammenführen. Zusammengeführt wird nur, was dieselbe
-// Einheit anders **schreibt** — inhaltliche Gruppen ("Stk" = "Stück") sind eine
-// Fachaussage und kommen mit WP-K aus einer gepflegten Liste, nicht von hier.
+// Einheiten im Filter zusammenführen — in zwei Stufen:
+//  1. Schreibweise (Groß-/Kleinschreibung, Leerraum, hochgestellte Ziffern) —
+//     objektiv, steht im Code.
+//  2. Inhaltliche Gruppen ("Stk" = "Stück") — Fachaussage, steht in
+//     docs/domain/reference/einheiten-gruppen.csv.
+// "lfm" und "m" bleiben in beiden Stufen getrennt: eine Abrechnungsart ist
+// keine Schreibweise.
 
 import { describe, expect, it } from 'vitest';
 import { FACETS_BY_ID, facetOptionLabel } from '../../src/lib/facets';
-import { canonicalUnit, unitLabel } from '../../src/lib/units';
+import { canonicalUnit, unitGroups, unitLabel, unitSpelling } from '../../src/lib/units';
 import type { PositionSummary } from '../../src/types/lvNode';
 
 function pos(unit: string | null): PositionSummary {
@@ -45,10 +49,25 @@ describe('canonicalUnit', () => {
     expect(canonicalUnit('lfm')).not.toBe(canonicalUnit('m'));
   });
 
-  it('rät keine inhaltlichen Gruppen (bleibt WP-K vorbehalten)', () => {
-    expect(canonicalUnit('Stk')).not.toBe(canonicalUnit('Stück'));
-    expect(canonicalUnit('to')).not.toBe(canonicalUnit('t'));
-    expect(canonicalUnit('h')).not.toBe(canonicalUnit('Std'));
+  it('führt die gepflegten Gruppen zusammen', () => {
+    expect(canonicalUnit('Stk')).toBe(canonicalUnit('Stück'));
+    expect(canonicalUnit('stck')).toBe(canonicalUnit('St'));
+    expect(canonicalUnit('to')).toBe(canonicalUnit('t'));
+    expect(canonicalUnit('h')).toBe(canonicalUnit('Std'));
+    expect(canonicalUnit('Stunden')).toBe(canonicalUnit('h'));
+  });
+
+  it('nimmt die Gruppen aus der Referenzdatei, nicht aus dem Code', () => {
+    const namen = unitGroups().map((gruppe) => gruppe.name);
+    expect(namen).toEqual(expect.arrayContaining(['Stück', 'Tonne', 'Stunde']));
+  });
+
+  it('trennt Schreibweise und Gruppe sauber', () => {
+    // Stufe 1 kennt keine Gruppen — "stk" bleibt "stk".
+    expect(unitSpelling('Stk')).toBe('stk');
+    expect(unitSpelling('Stück')).toBe('stück');
+    // Erst Stufe 2 legt beide zusammen.
+    expect(canonicalUnit('Stk')).toBe('Stück');
   });
 
   it('behandelt fehlende und leere Angaben als keine Einheit', () => {

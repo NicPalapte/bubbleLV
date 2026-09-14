@@ -19,7 +19,7 @@ const EMPTY_SET: ReadonlySet<string> = new Set();
 
 export type HideMode = 'dim' | 'hide';
 export type SizeModeId = 'count' | 'cost' | 'uniform';
-export type ViewMode = 'graph' | 'table';
+export type ViewMode = 'graph' | 'table' | 'check';
 
 export interface ViewerState {
   lv: LoadedLV | null;
@@ -40,6 +40,12 @@ export interface ViewerState {
   expanded: ReadonlySet<string>;
   /** Aufgelöste Cluster-Bubbles — reine Graph-Darstellung (Issue #10). */
   openClusters: ReadonlySet<string>;
+  /**
+   * Abgeschaltete Prüfregeln (WP-K). Jede Regel ist einzeln abschaltbar;
+   * abgeschaltet verschwindet sie aus allen Ansichten
+   * (docs/domain/vob-pruefungen.md). Reiner Sitzungszustand.
+   */
+  mutedRules: ReadonlySet<string>;
   /**
    * Globaler Ansichtsmodus (Issue #30) — Graph oder Tabelle, umgeschaltet über
    * die Kopfleiste. Bewusst unabhängig von `selectedNodeId`/`selectedPositionId`:
@@ -69,6 +75,8 @@ export type ViewerAction =
   | { type: 'expandAll' }
   | { type: 'collapseAll' }
   | { type: 'toggleCluster'; id: string }
+  /** Prüfregel stummschalten bzw. wieder zulassen. */
+  | { type: 'toggleRule'; id: string }
   | { type: 'setViewMode'; mode: ViewMode }
   /** Knoten wählen und gezielt in die Tabelle wechseln (Tabellensymbol im Graphen). */
   | { type: 'openInTable'; id: string | null }
@@ -92,6 +100,7 @@ export const INITIAL_VIEWER_STATE: ViewerState = {
   hoveredNodeId: null,
   expanded: EMPTY_SET,
   openClusters: EMPTY_SET,
+  mutedRules: EMPTY_SET,
   viewMode: 'graph',
 };
 
@@ -164,6 +173,11 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
       const openClusters = new Set(state.openClusters);
       if (!openClusters.delete(action.id)) openClusters.add(action.id);
       return { ...state, openClusters };
+    }
+    case 'toggleRule': {
+      const mutedRules = new Set(state.mutedRules);
+      if (!mutedRules.delete(action.id)) mutedRules.add(action.id);
+      return { ...state, mutedRules };
     }
     case 'setViewMode':
       return { ...state, viewMode: action.mode };

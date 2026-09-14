@@ -48,8 +48,14 @@ frontend/
     │   ├── index/
     │   │   ├── positionIndex.ts      # flacher Positions-Index (Rechenbasis, WP-I)
     │   │   └── summary.ts            # Facetten-Zähler + Wertebereiche, einmal berechnet
+    │   ├── check/                    # Prüfregeln + Hinweise (WP-K)
+    │   │   ├── rules/                # ein Modul je Regelgruppe
+    │   │   ├── referenz.ts           # Regel-Status und Listen aus den CSV
+    │   │   └── data/                 # ausgelieferte Kopien der Referenz-CSV
     │   ├── pipeline/                 # Datei → LoadedLV, inkl. Web Worker
     │   ├── matchPos.ts               # Filter/Suche — single source of truth
+    │   ├── csv.ts                    # gemeinsamer Leser der Referenzdateien
+    │   ├── units.ts                  # Einheiten zusammenführen (Filter, nicht Anzeige)
     │   ├── perf.ts                   # Messpunkte (nur Konsole, nur Entwicklung)
     │   ├── spanCategories.ts         # Farbe und Name je Fundstellen-Kategorie
     │   ├── facets.ts                 # Facetten-Definitionen (dynamische Werte)
@@ -65,6 +71,7 @@ frontend/
         ├── layout/{Tree,TopBar,PropertiesPanel,ResizeHandle}.tsx
         ├── upload/FileDropzone.tsx   # Drag&Drop/Datei-Dialog → Pipeline
         ├── graph/{BubbleGraph,BubbleNode,GraphControls,GraphHeader}.tsx
+        ├── check/CheckView.tsx           # Ansicht „Prüfung" (WP-K)
         ├── table/PositionsTable.tsx
         ├── filter/{FilterStrip,FacetButton,RangeButton}.tsx
         ├── common/{Highlighted.tsx,useOutsideClose.ts}

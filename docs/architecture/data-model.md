@@ -164,6 +164,35 @@ Spans sind **überschneidungsfrei** (`extractors/spans.ts#mergeSpans`) — beim
 Zeichnen darf jedes Zeichen nur einmal markiert werden. Ein Merkmal, das nur im
 Kurztext steht, liefert seinen Wert, aber keinen Span.
 
+### `Flag` — Hinweise aus Prüfregeln (WP-K)
+
+Prüf-Ergebnisse gehören **nicht** in `attributes` — sie sind keine Eigenschaft der
+Position, sondern eine Bewertung. Sie liegen deshalb in einer eigenen Liste am
+geladenen LV (`LoadedLV.check`), je Eintrag mit Verweis auf die Position:
+
+```ts
+interface Flag {
+  id: string;                                                   // Regel-ID, z. B. "V1"
+  category: 'geld' | 'menge' | 'risiko' | 'norm' | 'frist' | 'vob';
+  severity: 'hinweis' | 'beachten';
+  positionId: string;                                           // Sprungziel
+  title: string;                                                // was gefunden wurde
+  span?: Span;                                                  // Fundstelle, wo es eine gibt
+}
+```
+
+Dazu kommt je Regel ein `RuleStatus` — auch für Regeln, die gerade **nicht**
+laufen. Eine Regel ohne Referenzdaten verschwindet nicht, sondern steht mit ihrem
+Grund in der Liste; sonst hielte man eine fehlende Datei für „nichts gefunden".
+Der Norm-Verweis kommt aus
+[`domain/reference/pruefregeln.csv`](../domain/reference/pruefregeln.csv), nicht
+aus dem Code, und trägt ein Kennzeichen, ob der Owner ihn bestätigt hat.
+
+Flags entstehen **einmal beim Laden** im Worker: eine Regel wie „Anteil an der
+Gesamtsumme" sieht das ganze LV und wäre je Render zu teuer. Sie bestehen nur aus
+Zeichenketten und Zahlen und überstehen den `structuredClone` der Worker-Grenze
+unbeschadet — anders als der Positions-Index.
+
 ### Einheiten im Filter
 
 GAEB liefert die Einheit als freien Text (`<QU>`). Ein LV aus mehreren Teil-LVs
@@ -171,10 +200,14 @@ schreibt dieselbe Einheit deshalb oft verschieden. Der Filter führt zusammen,
 was nur anders **geschrieben** ist — Groß-/Kleinschreibung, Leerraum,
 hochgestellte Ziffern (`lib/units.ts`): `PSCH` = `psch`, `m³` = `m3`.
 
-Inhaltliche Gruppen bleiben getrennt, bis sie jemand gepflegt hat: `Stk` und
-`Stück`, `to` und `t`, `h` und `Std` sind Fachaussagen, keine Schreibweisen —
-sie kommen mit WP-K aus einer Referenzliste. `lfm` und `m` bleiben dauerhaft
-getrennt: das ist eine Abrechnungsart, keine Schreibweise.
+Die **inhaltlichen** Gruppen — `Stk` = `Stück`, `to` = `t`, `h` = `Std` — sind
+Fachaussagen und stehen deshalb nicht im Code, sondern in
+[`domain/reference/einheiten-gruppen.csv`](../domain/reference/einheiten-gruppen.csv)
+(WP-K). Ist die Datei leer, greift nur die Schreibweise. `lfm` und `m` bleiben
+dauerhaft getrennt: das ist eine Abrechnungsart, keine Schreibweise.
+
+Schreibt dieselbe Datei eine Einheit verschieden, ist das ein Hinweis wert —
+Prüfregel G3 (siehe [`domain/vob-pruefungen.md`](../domain/vob-pruefungen.md)).
 
 **Nur der Filter führt zusammen.** Tabelle und Eigenschaften-Panel zeigen
 weiter den Wortlaut aus der Datei.
@@ -268,24 +301,8 @@ voraus, die das aktuelle MVP bewusst nicht hat. Details zur langfristigen Vision
 
 > Noch **nicht umgesetzt**. Hier steht, wohin das Modell wächst, damit neue Arbeit nicht
 > daneben baut. Umsetzung: [`../implementation-plan.md`](../implementation-plan.md)
-> (WP-K, WP-M) · Scope: [`../scope.md`](../scope.md). Umgesetzt und darum oben
-> beschrieben: `PositionIndex` (WP-I) und `spans` (WP-J).
-
-### `Flag` — Hinweise aus Prüfregeln (WP-K)
-
-Prüf-Ergebnisse gehören **nicht** in `attributes` — sie sind keine Eigenschaft der
-Position, sondern eine Bewertung. Eigene Liste, je Eintrag ein Verweis auf die Position:
-
-```ts
-interface Flag {
-  id: string;                                        // Regel-ID, z. B. "V1"
-  category: 'geld' | 'risiko' | 'norm' | 'frist' | 'vob';
-  severity: 'hinweis' | 'beachten';
-  ruleRef: string;                                   // z. B. "VOB/A § 7 Abs. 1 Nr. 4"
-  positionId: string;
-  span?: Span;
-}
-```
+> (WP-M) · Scope: [`../scope.md`](../scope.md). Umgesetzt und darum oben
+> beschrieben: `PositionIndex` (WP-I), `spans` (WP-J) und `Flag` (WP-K).
 
 ### `Cluster` — Beziehungen (WP-M)
 
