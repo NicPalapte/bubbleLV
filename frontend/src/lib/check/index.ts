@@ -59,14 +59,20 @@ function inactiveReason(rule: CheckRule): string | null {
  *
  * Reine Funktion: gleiche Eingabe, gleiches Ergebnis. Wirft nie — eine Regel,
  * die stolpert, darf den Import nicht anhalten; sie erscheint dann als inaktiv
- * mit der Fehlermeldung als Grund.
+ * mit der Fehlermeldung als Grund (Test: tests/check/rules.test.ts).
+ *
+ * `ruleSet` weicht nur in Tests vom ausgelieferten Katalog ab.
  */
-export function runChecks(index: PositionIndex, summary: LVSummary): CheckResult {
+export function runChecks(
+  index: PositionIndex,
+  summary: LVSummary,
+  ruleSet: readonly CheckRule[] = CHECK_RULES,
+): CheckResult {
   const context: CheckContext = { index, summary };
   const flags: Flag[] = [];
   const rules: RuleStatus[] = [];
 
-  for (const rule of CHECK_RULES) {
+  for (const rule of ruleSet) {
     const eintrag = regelEintrag(rule.id);
     let grund = inactiveReason(rule);
     let found: Flag[] = [];

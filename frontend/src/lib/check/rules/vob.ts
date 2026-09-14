@@ -8,7 +8,7 @@
 // erscheinen deshalb in der Prüfliste als inaktiv — statt still zu fehlen.
 
 import { attrSpans, attrStrings } from '../../attributes';
-import { canonicalUnit } from '../../units';
+import { canonicalUnit, unitGroups } from '../../units';
 import { herstellerNamen, nebenleistungen, risikoFormulierungen } from '../referenz';
 import type { CheckContext, CheckRule, Flag } from '../types';
 import type { Span } from '../../classify';
@@ -44,8 +44,19 @@ export const v1Bedarfsposition: CheckRule = {
 
 // ── V2 · Angehängte Stundenlohnarbeiten ─────────────────────────────────────
 
-/** Einheiten, die eine Zeitleistung abrechnen — über die gepflegte Gruppe. */
+/**
+ * Name der Zeiteinheiten-Gruppe in
+ * docs/domain/reference/einheiten-gruppen.csv. Der Code kennt hier einen
+ * **Datenwert** — fehlt die Zeile, fände die Regel Zeiteinheiten still nicht
+ * mehr, während sie weiter als aktiv dastünde. Deshalb steht die Gruppe unten
+ * als `requires`: fehlt sie, ist die Regel sichtbar inaktiv statt lautlos halb
+ * blind.
+ */
 const STUNDE = 'Stunde';
+
+function hatZeitgruppe(): boolean {
+  return unitGroups().some((gruppe) => gruppe.name === STUNDE);
+}
 
 const STUNDENLOHN_WORTE = ['stundenlohn', 'regiearbeit', 'regiestunde'];
 
@@ -55,6 +66,10 @@ export const v2Stundenlohn: CheckRule = {
   category: 'vob',
   severity: 'hinweis',
   hint: 'Die Position wird nach Zeit abgerechnet. Bei größerem Umfang lohnt der Blick auf Anteil und Abgrenzung zur Hauptleistung.',
+  requires: {
+    file: `docs/domain/reference/einheiten-gruppen.csv (Gruppe „${STUNDE}")`,
+    available: hatZeitgruppe,
+  },
   check(context: CheckContext): Flag[] {
     const flags: Flag[] = [];
     for (let i = 0; i < context.index.size; i++) {

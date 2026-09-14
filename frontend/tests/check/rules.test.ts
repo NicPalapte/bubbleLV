@@ -7,6 +7,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { CHECK_RULES, runChecks } from '../../src/lib/check';
+import type { CheckRule } from '../../src/lib/check';
 import { classifyDraft, getClassifier } from '../../src/lib/classify';
 import { parseStlbCsv } from '../../src/lib/classify/stlbCatalog';
 import { buildPositionIndex } from '../../src/lib/index/positionIndex';
@@ -266,6 +267,47 @@ describe('Regelzustand', () => {
         expect(text, `Regel ${entry.id} urteilt: "${wort}"`).not.toContain(wort);
       }
     }
+  });
+});
+
+describe('Eine stolpernde Regel hält den Import nicht an', () => {
+  const kaputt: CheckRule = {
+    id: 'V1', // vorhandene ID, damit der Eintrag in pruefregeln.csv greift
+    label: 'Absichtlich fehlerhaft',
+    category: 'vob',
+    severity: 'hinweis',
+    hint: 'Nur für den Test.',
+    check() {
+      throw new TypeError('absichtlich');
+    },
+  };
+
+  it('meldet sie als inaktiv mit Grund, statt selbst zu werfen', () => {
+    const tree = buildTree(
+      classifyDraft(
+        {
+          projectName: null,
+          client: null,
+          lots: [
+            {
+              number: '01',
+              label: null,
+              sections: [
+                { number: '01.001', label: null, sections: [], positions: [position({})] },
+              ],
+            },
+          ],
+        },
+        classifier,
+      ),
+    );
+    const index = buildPositionIndex(tree);
+
+    const result = runChecks(index, summarize(index), [kaputt]);
+    expect(result.flags).toEqual([]);
+    const [status] = result.rules;
+    expect(status.active).toBe(false);
+    expect(status.inactiveReason).toContain('absichtlich');
   });
 });
 
