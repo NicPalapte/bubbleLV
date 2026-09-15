@@ -349,6 +349,41 @@ describe('Viewer', () => {
     fireEvent.mouseUp(document);
   });
 
+  it('lässt die Auswahlkarte am Griff unten links größer ziehen', async () => {
+    render(<App />);
+    await loadFixture('gaeb-xml-beispiel.x83');
+    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+
+    switchToView('Tabelle');
+    const tree = screen.getByRole('tree');
+    fireEvent.click(within(tree).getAllByRole('treeitem')[0]);
+    fireEvent.click(await within(tree).findByTitle('Bauhauptgewerke'));
+
+    switchToView('Graph');
+    const closeButton = await screen.findByRole('button', { name: 'Karte schließen' });
+    const card = closeButton.closest('[data-graph-overlay]') as HTMLElement;
+    expect(card.style.width).toBe('360px');
+    expect(card.style.height).toBe('');
+
+    // Die Karte hängt rechts oben: nach links zieht sie breiter, nach unten höher.
+    const handle = screen.getByRole('separator', { name: 'Karte in der Größe ändern' });
+    fireEvent.mouseDown(handle, { clientX: 400, clientY: 300 });
+    fireEvent.mouseMove(document, { clientX: 260, clientY: 480 });
+    expect(card.style.width).toBe('500px');
+    expect(card.style.height).toBe('180px');
+    fireEvent.mouseUp(document);
+
+    // Unter die Mindestgröße geht es nicht — sonst bliebe nichts Lesbares übrig.
+    fireEvent.mouseDown(handle, { clientX: 260, clientY: 480 });
+    fireEvent.mouseMove(document, { clientX: 900, clientY: 0 });
+    expect(card.style.width).toBe('280px');
+    expect(card.style.height).toBe('160px');
+    fireEvent.mouseUp(document);
+
+    // Der Griff zieht nur die Karte auf, nicht den Graphen darunter.
+    expect(screen.getByRole('group', { name: /Bubble-Graph/ })).toHaveStyle({ cursor: 'grab' });
+  });
+
   it('schließt mit Escape zuerst das Popover, verlässt danach aber nicht mehr die Tabelle (Issue #30)', async () => {
     render(<App />);
     await loadFixture('gaeb-xml-beispiel.x83');
