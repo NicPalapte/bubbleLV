@@ -9,6 +9,10 @@
 // beißen kann, sobald sie groß genug wird — die Karte lässt sich dann selbst
 // aus dem Weg schieben, statt fest an der Ecke zu kleben.
 //
+// `data-graph-overlay` (lib/graph/overlay.ts): der Canvas darunter fängt Rad
+// und Maustaste global für Zoom und Pan ab. Ohne die Markierung zoomt das Rad
+// über der Karte den Graphen, statt ihren Inhalt zu scrollen (Issue #47).
+//
 // `ignoreDrag` an `useDismiss`: ein Pan auf dem Canvas endet fast immer
 // außerhalb der Karte und darf sie trotzdem nicht schließen — nur ein
 // tatsächlicher Klick daneben (oder Escape) hebt die Auswahl auf.
@@ -23,6 +27,7 @@ import {
 import { NodeDetails } from '../common/NodeDetails';
 import { PositionDetails } from '../common/PositionDetails';
 import { useDismiss } from '../common/useDismiss';
+import { graphOverlayProps } from '../../lib/graph/overlay';
 import type { LVNode } from '../../types/lvNode';
 
 interface SelectionCardProps {
@@ -83,6 +88,7 @@ export function SelectionCard({ node, onClose }: SelectionCardProps) {
   return (
     <div
       ref={ref}
+      {...graphOverlayProps}
       className="absolute z-[10] flex flex-col overflow-hidden border border-line2 bg-white"
       style={{
         right: pos.right,
