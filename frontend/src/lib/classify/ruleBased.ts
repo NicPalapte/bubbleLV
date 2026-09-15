@@ -1,16 +1,28 @@
 // Regelbasierter Klassifizierer — einzige Implementierung des Classifier-Interfaces
-// im MVP. Orchestriert die drei Stufen aus docs/architecture/pipeline.md:
-//   Stufe 0 StlbMatch → Stufe 1 Bauteiltyp → Stufe 2 RulesetRegistry.
+// im MVP. Orchestriert die Stufen aus docs/architecture/pipeline.md:
+//   Stufe 0 StlbMatch → Extraktoren → Stufe 1 Bauteiltyp → Stufe 2 RulesetRegistry.
 // Nach außen bleibt das ein einziger, synchroner, deterministischer Aufruf.
+//
+// Die gewerkeunabhängigen Extraktoren (WP-J) laufen **vor** den Rulesets: ein
+// Normverweis oder ein Maß bedeutet in jedem Gewerk dasselbe. Ein Ruleset darf
+// ihr Ergebnis überschreiben (es weiß mehr über sein Gewerk), aber nie löschen —
+// deshalb stehen die Extraktor-Attribute links vom Spread des Rulesets.
 
 import { detectBauteiltyp } from './bauteiltyp';
+import { runExtractors, type ExtractorContext } from './extractors';
 import { extractKeywords } from './keywords';
 import { detectPositionsart } from './positionsart';
 import { createDefaultRegistry, RulesetRegistry } from './rulesets/registry';
 import type { RulesetContext } from './rulesets/types';
 import { getStlbCatalog, matchStlb, type StlbLeistungsbereich } from './stlbCatalog';
 import { normalizeItem, type NormalizedItem } from './text';
-import type { Classifier, ClassificationResult, ClassifierInput, Positionsart } from './types';
+import type {
+  Classifier,
+  ClassificationResult,
+  ClassifierInput,
+  Positionsart,
+  Span,
+} from './types';
 
 const CLASSIFIER_ID = 'rule';
 const VERSION = 1;
@@ -51,11 +63,23 @@ export class RuleBasedClassifier implements Classifier {
       match?.lb.positionsartDefault ??
       (match === null ? detectPositionsart(text) : refineWithLbHit(text));
 
+    // ── Gewerkeunabhängige Extraktoren: Normen, Maße, Material, Platzhalter,
+    //    Verweise, Fristen — samt Fundstelle im Langtext.
+    const extractorContext: ExtractorContext = {
+      shortText: item.shortText,
+      longText: item.longText,
+      unit: item.unit,
+      text,
+      catalog: this.catalog,
+    };
+    const generic = runExtractors(extractorContext);
+
     const attributes: Record<string, unknown> = {
       positionsart,
       gewerkLb,
       gewerk,
       keywords: extractKeywords(text),
+      ...generic.attributes,
     };
 
     // ── Nicht-Bauteil: eigenes, kleineres Schema — kein bauteiltyp/beton/tragend.
@@ -68,17 +92,25 @@ export class RuleBasedClassifier implements Classifier {
         gewerkLb,
         positionsart,
       };
-      return this.result({ ...attributes, ...ruleset.extract(context) }, ruleset.id);
+      return this.result({ ...attributes, ...ruleset.extract(context) }, ruleset.id, generic.spans);
     }
 
     // ── Stufe 1 + 2: Bauteiltyp bestimmen, passendes Ruleset auflösen.
     const bauteiltyp = detectBauteiltyp(text);
     const ruleset = this.registry.resolve(bauteiltyp, gewerkLb);
     const context: RulesetContext = { item, text, bauteiltyp, gewerkLb, positionsart };
-    return this.result({ ...attributes, bauteiltyp, ...ruleset.extract(context) }, ruleset.id);
+    return this.result(
+      { ...attributes, bauteiltyp, ...ruleset.extract(context) },
+      ruleset.id,
+      generic.spans,
+    );
   }
 
-  private result(attributes: Record<string, unknown>, rulesetId: string): ClassificationResult {
+  private result(
+    attributes: Record<string, unknown>,
+    rulesetId: string,
+    spans: Span[],
+  ): ClassificationResult {
     return {
       attributes,
       meta: {
@@ -87,6 +119,7 @@ export class RuleBasedClassifier implements Classifier {
         version: VERSION,
         confidence: 1.0,
       },
+      spans,
     };
   }
 }

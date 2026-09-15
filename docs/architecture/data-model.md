@@ -87,35 +87,136 @@ Kein LB-Treffer (Referenzkatalog noch leer oder Text passt zu keinem LB) ⇒ bei
 | `beton` | `string \| null` | `"C30/37"` | Betongüte | LB `Beton-/Stahlbetonarbeiten`; genormte Schreibweise auch im Fallback (s. u.) |
 | `expo` | `string[]` | `["XC2","XD1"]` | Expositionsklasse | wie `beton` |
 | `tragend` | `boolean \| null` | `true` | tragend/nichttragend | tragfähige Bauteiltypen |
-| `dicke` | `string \| null` | `"30 cm"` | (Anzeige) | Ruleset-abhängig |
-| `hoehe` | `string \| null` | `"3–4 m"` | (Anzeige) | Ruleset-abhängig |
+
+Maße (`dicke`, `hoehe`, `laenge`, `gewicht`) standen bis WP-J hier; sie kommen
+jetzt aus dem gewerkeunabhängigen Extraktor (s. u.) und gelten für jede Position.
 
 **Nur wenn `positionsart !== "bauteil"`** — eigenes, kleineres Schema, **kein**
 `bauteiltyp`/`gewerk`/`beton`/`tragend`; Keys kommen aus dem jeweiligen
 Nicht-Bauteil-Ruleset (z. B. `PersonalRuleset`, `PlanungRuleset`), initial minimal
 und inkrementell erweiterbar — nicht als vollständiges Schema vorab festgelegt.
 
-**Für alle Positionen:**
+**Für alle Positionen — gewerkeunabhängige Extraktoren** (`lib/classify/extractors/`,
+laufen **vor** den Rulesets und werden von ihnen nur überschrieben, nie gelöscht):
 
 | Key | Typ | Beispiel | Facette |
 |---|---|---|---|
-| `keywords` | `string[]` | `["WA-Beton","CEM III/A"]` | Besonderheiten |
+| `keywords` | `string[]` | `["WU-Beton","CEM III/A"]` | Besonderheiten |
+| `normen` | `string[]` | `["DIN EN 206","VOB/C"]` | Normen |
+| `material` | `string[]` | `["Stahlbeton"]` | Material |
+| `fristen` | `string[]` | `["Winterbau","Termin"]` | Zeitbezug |
+| `platzhalter` | `string[]` | `["Textergänzung"]` | Offene Stellen |
+| `platzhalterAnzahl` | `number` | `2` | (Anzeige) |
+| `verweise` | `string[]` | `["Positionsverweis","Anlage"]` | (Anzeige) |
+| `dicke` · `hoehe` · `laenge` · `gewicht` | `string` | `"30 cm"` | (Anzeige) |
+
+Zwei Regeln gelten für alle Extraktoren:
+
+- **Geschlossenes Vokabular als Wert, Fundstelle als Beleg.** `fristen` enthält
+  `"Winterbau"`, nicht den Satz, in dem es steht — sonst wäre jeder Wortlaut ein
+  eigener Filterwert. Der Wortlaut steht im zugehörigen `Span`.
+- **Kein Treffer ⇒ kein Key.** Ein leeres Array würde im Panel als Merkmal
+  erscheinen, das es nicht gibt.
+
+`material` wird **ausschließlich** aus der `keywords`-Spalte des
+STLB-Bau-Katalogs gespeist. Solange die Spalte leer ist, liefert der Extraktor
+nichts — der dokumentierte Zustand „Referenzdaten fehlen ⇒ Regel inaktiv, kein
+Fehler". Eine hier erfundene Baustoffliste wäre eine ungeprüfte Aussage über die
+Domäne.
+
+Normverweise standen bis WP-J unter `keywords`; sie liegen jetzt in `normen`,
+damit „DIN EN 206" nicht zweimal im Eigenschaften-Panel steht.
 
 Welches `PropertyRuleset` (Bauteil-Positionen) bzw. Nicht-Bauteil-Ruleset zuständig ist,
 entscheidet die `RulesetRegistry` im Klassifizierer — fehlt eine Zuordnung, liefert ein
 Fallback-Extraktor Basis-Attribute statt eines Fehlers (siehe [`pipeline.md`](pipeline.md)).
 
-**Basis-Attribute des Fallbacks** sind Maße (`dicke`, `hoehe`) und genormte
-Kurzbezeichnungen nach DIN EN 206 / DIN 1045-2 (`beton`, `expo`,
-`feuchtigkeitsklasse`). Letztere stehen wörtlich im Text und bedeuten in jedem Gewerk
+**Basis-Attribute des Fallbacks** sind die genormten Kurzbezeichnungen nach
+DIN EN 206 / DIN 1045-2 (`beton`, `expo`, `feuchtigkeitsklasse`). Letztere stehen wörtlich im Text und bedeuten in jedem Gewerk
 dasselbe — sie ohne LB-Treffer zu verwerfen, würde die Facetten „Druckfestigkeit" und
 „Exposition" für reale Dateien leer lassen. Alles **Interpretierende** — allen voran
 `tragend` — bleibt dem gewerkespezifischen Ruleset vorbehalten und fehlt im Fallback
 ganz (der Key wird nicht gesetzt, statt auf `null` zu stehen).
 
-Facetten-Filter im Frontend werden **dynamisch aus den vorkommenden Werten** erzeugt
-(wie im Design). Neue Klassifizierungs-Keys erscheinen automatisch, sobald ein
-(neues) Ruleset sie liefert.
+### `spans` — Textstellen zu jedem Merkmal
+
+Zu jedem gefundenen Merkmal kommt die Fundstelle im Langtext:
+
+```ts
+interface Span {
+  key: string;     // z. B. "beton", "normen"
+  start: number;   // Zeichen-Index im Langtext
+  end: number;
+  label: string;   // Anzeigetext, z. B. "DIN EN 206"
+}
+```
+
+Abgelegt unter `attributes._spans`. Wie `_meta` ist der Key **reserviert** und
+taucht nie als Facette oder als Zeile im Eigenschaften-Panel auf. Ohne
+Fundstelle fehlt der Key ganz.
+
+**Die Indizes zeigen auf den Rohtext**, nicht auf die normalisierte Fassung aus
+`lib/classify/text.ts`: die zieht Leerraum zusammen und verschiebt damit jeden
+Index. Die Extraktoren arbeiten deshalb direkt auf `longText`, mit
+groß-/kleinschreibungsunabhängigen Mustern.
+
+Spans sind **überschneidungsfrei** (`extractors/spans.ts#mergeSpans`) — beim
+Zeichnen darf jedes Zeichen nur einmal markiert werden. Ein Merkmal, das nur im
+Kurztext steht, liefert seinen Wert, aber keinen Span.
+
+### `Flag` — Hinweise aus Prüfregeln (WP-K)
+
+Prüf-Ergebnisse gehören **nicht** in `attributes` — sie sind keine Eigenschaft der
+Position, sondern eine Bewertung. Sie liegen deshalb in einer eigenen Liste am
+geladenen LV (`LoadedLV.check`), je Eintrag mit Verweis auf die Position:
+
+```ts
+interface Flag {
+  id: string;                                                   // Regel-ID, z. B. "V1"
+  category: 'geld' | 'menge' | 'risiko' | 'norm' | 'frist' | 'vob';
+  severity: 'hinweis' | 'beachten';
+  positionId: string;                                           // Sprungziel
+  title: string;                                                // was gefunden wurde
+  span?: Span;                                                  // Fundstelle, wo es eine gibt
+}
+```
+
+Dazu kommt je Regel ein `RuleStatus` — auch für Regeln, die gerade **nicht**
+laufen. Eine Regel ohne Referenzdaten verschwindet nicht, sondern steht mit ihrem
+Grund in der Liste; sonst hielte man eine fehlende Datei für „nichts gefunden".
+Der Norm-Verweis kommt aus
+[`domain/reference/pruefregeln.csv`](../domain/reference/pruefregeln.csv), nicht
+aus dem Code, und trägt ein Kennzeichen, ob der Owner ihn bestätigt hat.
+
+Flags entstehen **einmal beim Laden** im Worker: eine Regel wie „Anteil an der
+Gesamtsumme" sieht das ganze LV und wäre je Render zu teuer. Sie bestehen nur aus
+Zeichenketten und Zahlen und überstehen den `structuredClone` der Worker-Grenze
+unbeschadet — anders als der Positions-Index.
+
+### Einheiten im Filter
+
+GAEB liefert die Einheit als freien Text (`<QU>`). Ein LV aus mehreren Teil-LVs
+schreibt dieselbe Einheit deshalb oft verschieden. Der Filter führt zusammen,
+was nur anders **geschrieben** ist — Groß-/Kleinschreibung, Leerraum,
+hochgestellte Ziffern (`lib/units.ts`): `PSCH` = `psch`, `m³` = `m3`.
+
+Die **inhaltlichen** Gruppen — `Stk` = `Stück`, `to` = `t`, `h` = `Std` — sind
+Fachaussagen und stehen deshalb nicht im Code, sondern in
+[`domain/reference/einheiten-gruppen.csv`](../domain/reference/einheiten-gruppen.csv)
+(WP-K). Ist die Datei leer, greift nur die Schreibweise. `lfm` und `m` bleiben
+dauerhaft getrennt: das ist eine Abrechnungsart, keine Schreibweise.
+
+Schreibt dieselbe Datei eine Einheit verschieden, ist das ein Hinweis wert —
+Prüfregel G3 (siehe [`domain/vob-pruefungen.md`](../domain/vob-pruefungen.md)).
+
+**Nur der Filter führt zusammen.** Tabelle und Eigenschaften-Panel zeigen
+weiter den Wortlaut aus der Datei.
+
+Die **Werte** eines Facetten-Filters entstehen dynamisch aus dem geladenen LV
+(wie im Design) — einen neuen Wert muss niemand eintragen. Welche Keys überhaupt
+als Facette erscheinen, steht dagegen in `frontend/src/lib/facets.ts`: ein neuer
+Key braucht dort eine Zeile, sonst bleibt er reine Anzeige im
+Eigenschaften-Panel.
 
 ### Provenance
 
@@ -200,47 +301,8 @@ voraus, die das aktuelle MVP bewusst nicht hat. Details zur langfristigen Vision
 
 > Noch **nicht umgesetzt**. Hier steht, wohin das Modell wächst, damit neue Arbeit nicht
 > daneben baut. Umsetzung: [`../implementation-plan.md`](../implementation-plan.md)
-> (WP-I, WP-J, WP-K, WP-M) · Scope: [`../scope.md`](../scope.md).
-
-### `spans` — Textstellen zu jedem Merkmal (WP-J)
-
-Heute liefert die Klassifizierung nur Werte. Damit im Langtext markiert werden kann,
-**woher** ein Merkmal stammt, kommt je Merkmal die Fundstelle dazu:
-
-```ts
-interface Span {
-  key: string;     // z. B. "beton", "normen"
-  start: number;   // Zeichen-Index im Langtext
-  end: number;
-  label: string;   // Anzeigetext, z. B. "DIN EN 206"
-}
-```
-
-Abgelegt unter `attributes._spans`. Wie `_meta` ist der Key reserviert und taucht nie
-als Facette auf.
-
-### `Flag` — Hinweise aus Prüfregeln (WP-K)
-
-Prüf-Ergebnisse gehören **nicht** in `attributes` — sie sind keine Eigenschaft der
-Position, sondern eine Bewertung. Eigene Liste, je Eintrag ein Verweis auf die Position:
-
-```ts
-interface Flag {
-  id: string;                                        // Regel-ID, z. B. "V1"
-  category: 'geld' | 'risiko' | 'norm' | 'frist' | 'vob';
-  severity: 'hinweis' | 'beachten';
-  ruleRef: string;                                   // z. B. "VOB/A § 7 Abs. 1 Nr. 4"
-  positionId: string;
-  span?: Span;
-}
-```
-
-### `PositionIndex` — flache Rechenbasis (WP-I)
-
-Der `LVNode`-Baum bleibt die Struktur. Für Filter, Summen und Beziehungen kommt ein
-flacher Index über alle Positionen dazu, einmal nach `buildTree` erzeugt: numerische
-Spalten als typisierte Arrays, dazu ein Verweis auf den Baumknoten. Ansichten rechnen
-gegen den Index, nicht gegen den Baum.
+> (WP-M) · Scope: [`../scope.md`](../scope.md). Umgesetzt und darum oben
+> beschrieben: `PositionIndex` (WP-I), `spans` (WP-J) und `Flag` (WP-K).
 
 ### `Cluster` — Beziehungen (WP-M)
 

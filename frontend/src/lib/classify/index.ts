@@ -12,6 +12,7 @@ export type {
   ClassificationResult,
   ClassifierInput,
   Positionsart,
+  Span,
 } from './types';
 export { getStlbCatalog, parseStlbCsv } from './stlbCatalog';
 export type { StlbLeistungsbereich } from './stlbCatalog';

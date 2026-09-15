@@ -18,8 +18,8 @@ selbst anlegen.
 | WP-41-1…3 | Langtexte, Eigenschaften-Panel, Tabellen-Spalten (Issue #41) | ✅ umgesetzt |
 | WP-H | Graph fertigstellen (= WP-41-4 + WP-41-5) | ✅ umgesetzt |
 | WP-I | Performance-Fundament für 10k Positionen | ✅ umgesetzt |
-| WP-J | Klassifizierung v2: generische Extraktoren + Textstellen | offen |
-| WP-K | Flags und VOB-Check, Ansicht „Prüfung" | offen |
+| WP-J | Klassifizierung v2: generische Extraktoren + Textstellen | ✅ umgesetzt |
+| WP-K | Flags und VOB-Check, Ansicht „Prüfung" | ✅ umgesetzt |
 | WP-L | Ansichts-Gerüst + Ansicht „Überblick" | offen |
 | WP-M | Beziehungen: Ähnlichkeit, Unterschiede, Ausreißer | offen |
 | WP-N | Ansicht „Vergleich" | offen |
@@ -123,28 +123,53 @@ mehrfach je Filterwechsel.
 
 **Ziel:** Merkmale, die in **jedem** Gewerk greifen, plus die Textstellen dazu.
 
-Schritte:
-1. `ClassificationResult` um `spans` erweitern: je Merkmal Anfang und Ende im Langtext
-   (`{ key, start, end, label }`). Schema-Erweiterung in
-   [`architecture/data-model.md`](architecture/data-model.md) nachziehen.
-2. Gewerkeunabhängige Extraktoren in `src/lib/classify/extractors/`:
-   - `normen.ts` — DIN, DIN EN, ISO, ZTV, ATV-Verweise
-   - `masse.ts` — Zahl + Einheit mit Kontext (Dicke, Höhe, Länge, Gewicht)
-   - `material.ts` — Materialstichworte, gespeist aus dem STLB-Katalog
-   - `platzhalter.ts` — offene Textergänzungen aus dem Parser
-   - `verweise.ts` — „siehe Pos.", „gemäß …", „laut Anlage"
-   - `fristen.ts` — Datum, Bauzeit, Winterbau, Vorleistung, Arbeiten unter Verkehr
-3. Die Extraktoren laufen **vor** den gewerkespezifischen Rulesets und werden von
-   ihnen nur überschrieben, nie gelöscht.
-4. `Highlighted.tsx` kann Spans aus mehreren Kategorien gleichzeitig zeichnen, je
-   Kategorie eine Farbe, einzeln abschaltbar.
-5. Unit-Tests je Extraktor, inklusive Negativfall (kein Treffer → kein Key).
+**Umgesetzt.** Begründung und verworfene Wege:
+[`decisions/0011-extraktoren-und-fundstellen.md`](decisions/0011-extraktoren-und-fundstellen.md).
 
-**Fertig, wenn:**
-- Eine Position mit „C30/37 nach DIN EN 206, d = 30 cm" liefert `normen`, `masse`,
-  `beton` — jeweils mit korrekter Textstelle.
+Schritte:
+1. ✅ `ClassificationResult` um `spans` erweitert (`{ key, start, end, label }`),
+   abgelegt unter dem reservierten `attributes._spans`. Die Indizes zeigen auf den
+   **Rohtext** des Langtexts — auf der normalisierten Fassung ließe sich nichts
+   markieren. Schema:
+   [`architecture/data-model.md`](architecture/data-model.md#spans).
+2. ✅ Gewerkeunabhängige Extraktoren in `src/lib/classify/extractors/`:
+   - `normen.ts` — DIN, DIN EN, DIN EN ISO, VOB/C, ATV, ZTV; Ausgabestand gehört
+     zur Fundstelle, nicht zum Wert
+   - `masse.ts` — Zahl + Einheit mit Kontext (Dicke, Höhe, Länge, Gewicht);
+     kompositumfest („Wandstärke 24 cm"), Formelzeichen nur mit `=`
+   - `material.ts` — Materialstichworte **ausschließlich** aus der
+     `keywords`-Spalte des STLB-Katalogs; leer, solange die gepflegt werden muss
+   - `platzhalter.ts` — offene Textergänzungen (Punktreihen aus
+     `<TextComplement Kind="Bidder">`, ausformulierte Bieterangaben) samt Anzahl
+   - `verweise.ts` — „siehe Pos.", „laut Anlage", Vorbemerkung, Plan, Gutachten
+   - `fristen.ts` — Termin, Bauzeit, Winterbau, Vorleistung, Arbeiten unter
+     Verkehr, Nacht-/Wochenendarbeit, Bauablauf
+3. ✅ Sie laufen **vor** den Rulesets; die Rulesets überschreiben nur. Die Maße
+   sind dabei aus `fallback.ts`/`beton.ts`/`mauerwerk.ts` hierher gewandert statt
+   dreimal zu existieren.
+4. ✅ `Highlighted.tsx` zeichnet Spans mehrerer Kategorien gleichzeitig, je
+   Kategorie eine Farbe (`lib/spanCategories.ts`), einzeln abschaltbar über die
+   Schalterreihe über dem Langtext.
+5. ✅ Unit-Tests je Extraktor mit Treffer **und** Negativfall
+   (`tests/classify/extractors.test.ts`), Weg der Fundstelle bis in die Attribute
+   (`tests/classify/spans.test.ts`), Zeichnen und Abschalten
+   (`tests/components/highlighted.test.tsx`).
+
+**Zusatz gegenüber dem alten Plan:** Normverweise stehen nicht mehr unter
+`keywords` („Besonderheiten"), sondern im eigenen Key `normen` — sonst stünde
+„DIN EN 206" zweimal im Eigenschaften-Panel. Neue Facetten: Normen · Material ·
+Zeitbezug · Offene Stellen.
+
+**Fertig, wenn:** ✅ alle drei Kriterien erfüllt.
+- Eine Position mit „C30/37 nach DIN EN 206, d = 30 cm" liefert `normen`, `dicke`
+  und `beton` — jeweils mit korrekter Textstelle (Test in
+  `tests/classify/extractors.test.ts`).
 - Im Eigenschaften-Panel sind die Fundstellen im Langtext farbig markiert.
 - Eine Position ohne erkennbare Merkmale liefert keine leeren Keys.
+
+Gegenprobe an der echten Beispieldatei (`tests/fixtures/gaeb-xml-beispiel.x83`):
+13 von 28 Positionen tragen Fundstellen, darunter `DIN 18300`, `DIN 18915`,
+„gemäß Gutachten" und zwei offene Textergänzungen („Breite von …").
 
 ---
 
@@ -152,25 +177,51 @@ Schritte:
 
 **Ziel:** Die vier „wichtig"-Kategorien und der VOB-Check als auswertbare Hinweise.
 
-Schritte:
-1. `src/lib/check/types.ts`: `Flag { id, category, severity, ruleRef, positionId, span }`.
-   Kategorien: `geld | risiko | norm | frist | vob`.
-2. Regel-Registry `src/lib/check/rules/` — ein Modul je Regel, Registrierung wie bei den
-   Rulesets. Jede Regel liefert Titel, Norm-Verweis und Fundstelle.
-3. Regeln V1, V2, V4, V5, V6, V7 aus [`domain/vob-pruefungen.md`](domain/vob-pruefungen.md)
-   umsetzen. V3, V8, V9, V10 bleiben inaktiv, bis die Referenzdateien da sind.
-4. Geld-/Mengentreiber: Anteil an der Gesamtsumme, Mengen-Rang, EP-Ausreißer (Letzteres
-   erst nach WP-M, vorher ohne Vergleichsgruppe nicht berechenbar).
-5. Ansicht **Prüfung**: Liste aller Hinweise, gruppiert nach Regel, mit Anzahl, Sprung
-   zur Position und Schalter je Regel.
-6. Formulierungen: Hinweis, kein Urteil. Norm-Verweis immer sichtbar.
+**Umgesetzt.** Begründung und verworfene Wege:
+[`decisions/0012-pruefregeln-und-norm-verweise.md`](decisions/0012-pruefregeln-und-norm-verweise.md).
 
-**Fertig, wenn:**
+Schritte:
+1. ✅ `src/lib/check/types.ts`: `Flag { id, category, severity, positionId, title, span }`.
+   Kategorien: `geld | menge | risiko | norm | frist | vob`. Dazu `RuleStatus` — eine
+   Regel, die nicht läuft, verschwindet nicht, sondern nennt ihren Grund.
+2. ✅ Regel-Registry `src/lib/check/` — ein Modul je Regelgruppe, Registrierung wie bei
+   den Rulesets. Der **Norm-Verweis steht nicht im Code**, sondern in
+   [`domain/reference/pruefregeln.csv`](domain/reference/pruefregeln.csv).
+3. ✅ V1, V2, V4, V5, V6, V7 umgesetzt und aktiv. V3, V8, V9, V10 angemeldet und
+   inaktiv, bis ihre Referenzdateien Einträge haben — mit sichtbarem Grund.
+4. ✅ Geld-/Mengentreiber: G1 (Anteil an der Gesamtsumme), G2 (Mengen-Rang **je
+   Einheit**), G3 (dieselbe Einheit uneinheitlich geschrieben). Bewusst **Rang statt
+   Schwellwert**, und eine Rangliste erscheint erst, wenn sie auch jemanden auslässt
+   — „Rang 3 von 4" ist Rauschen. Der EP-Ausreißer bleibt bei WP-M: ohne
+   Vergleichsgruppe nicht berechenbar.
+5. ✅ **Einheiten-Gruppen** aus
+   [`domain/reference/einheiten-gruppen.csv`](domain/reference/einheiten-gruppen.csv):
+   `Stk`/`Stck`/`St`/`Stück`, `to`/`t`, `h`/`Std`/`Stunde`. Groß-/Kleinschreibung und
+   `m³`/`m3` führt der Code selbst zusammen (WP-J). `lfm` und `m` bleiben getrennt —
+   Abrechnungsart, keine Schreibweise. Dazu Regel G3 als Hinweis.
+6. ✅ Ansicht **Prüfung** als dritter Ansichtsmodus: Hinweise nach Regel gruppiert,
+   mit Anzahl, aufklappbarer Fundliste, Sprung zur Position und Schalter je Regel.
+7. ✅ Formulierungen: Hinweis, kein Urteil. Ein Test hält das fest — keine Regel darf
+   „unzulässig", „Verstoß", „verboten", „fehlerhaft" oder „falsch" sagen.
+
+**Fertig, wenn:** ✅ alle vier Kriterien erfüllt.
 - Eine reale Datei mit Bedarfspositionen und Platzhaltern erzeugt Hinweise mit
   korrekter Anzahl und korrektem Sprungziel.
 - Jede Regel ist einzeln abschaltbar; abgeschaltet verschwindet sie aus allen Ansichten.
 - Fehlende Referenzdatei ⇒ Regel inaktiv, kein Fehler, sichtbarer Hinweis „inaktiv".
 - Je Regel mindestens ein Test mit Treffer und einer ohne.
+
+**Gegenprobe an der Beispieldatei** (`tests/fixtures/gaeb-xml-beispiel.x83`, 28
+Positionen): 11 Hinweise — 2× Bedarfsposition (V1), 3× Abrechnung nach Zeit (V2),
+1× fehlende Menge und Einheit (V5), 1× Verweis auf ein Gutachten (V6), 1× zwei offene
+Textergänzungen (V7), 3× dieselbe Einheit als „psch", „Psch" und „PSCH" (G3). Vier
+Regeln stehen als inaktiv mit ihrem Grund da. Ein Test prüft, dass jedes Sprungziel
+eine Position im Baum ist.
+
+**Offen für den Owner:** Die Norm-Verweise von V1, V2, V4, V5 und V6 tragen den Status
+`zu_bestaetigen` und erscheinen im UI mit dem Zusatz „Verweis zu bestätigen"
+(Fragenliste in [`domain/vob-pruefungen.md`](domain/vob-pruefungen.md)).
+Ebenso leer: Herstellerliste (V3) und Nebenleistungs-Listen (V8, V9).
 
 ---
 

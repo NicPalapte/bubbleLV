@@ -2,7 +2,6 @@
 // bauteiltyp/beton/tragend (docs/architecture/data-model.md). Bewusst minimal und
 // inkrementell erweiterbar.
 
-import { extractMasse } from './fallback';
 import type { NonBauteilRuleset, RulesetContext } from './types';
 
 const QUALIFIKATIONEN: ReadonlyArray<{ label: string; keywords: readonly string[] }> = [
@@ -61,7 +60,7 @@ export const baustelleneinrichtungRuleset: NonBauteilRuleset = {
     const einrichtungsart =
       EINRICHTUNGSARTEN.find((entry) => entry.keywords.some((keyword) => text.includes(keyword)))
         ?.label ?? null;
-    return { einrichtungsart, ...extractMasse(context) };
+    return { einrichtungsart };
   },
 };
 

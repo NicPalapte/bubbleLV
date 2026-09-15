@@ -4,15 +4,16 @@
 // (Issue #30) dieselbe Darstellung nutzen, statt sie zu duplizieren.
 // Ursprünglich Teil von `PropertiesPanel.tsx`.
 
-import type { ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Highlighted } from './Highlighted';
 import { BlockLabel, PanelHeader } from '../ui/PanelHeader';
 import { Chip } from '../ui/Chip';
 import { PropField, PropGrid } from '../ui/PropField';
 import { StatusPill } from '../ui/StatusPill';
-import { attrMeta, attrStrings, displayAttributes } from '../../lib/attributes';
+import { attrMeta, attrSpans, attrStrings, displayAttributes } from '../../lib/attributes';
 import { facetOptionLabel, FACETS_BY_ID } from '../../lib/facets';
 import { formatEuro, formatNumber } from '../../lib/format';
+import { keysOfLabel, presentCategories } from '../../lib/spanCategories';
 import { POSITION_STATUS } from '../../lib/status';
 import { useViewer } from '../../state/viewer';
 import type { LVNode, PositionSummary } from '../../types/lvNode';
@@ -28,8 +29,16 @@ const ATTRIBUTE_LABELS: Record<string, string> = {
   tragend: 'Tragend',
   dicke: 'Dicke',
   hoehe: 'Höhe',
+  laenge: 'Länge',
+  gewicht: 'Gewicht',
   steinart: 'Steinart',
   keywords: 'Besonderheiten',
+  normen: 'Normen',
+  material: 'Material',
+  verweise: 'Verweise',
+  fristen: 'Zeitbezug',
+  platzhalter: 'Offene Stellen',
+  platzhalterAnzahl: 'Anzahl offener Stellen',
   qualifikation: 'Qualifikation',
   zeiteinheit: 'Zeiteinheit',
   planungsart: 'Planungsart',
@@ -38,6 +47,48 @@ const ATTRIBUTE_LABELS: Record<string, string> = {
 
 function attributeLabel(key: string): string {
   return ATTRIBUTE_LABELS[key] ?? key;
+}
+
+/**
+ * Schalterreihe über dem Langtext: je gefundener Kategorie ein Knopf, der ihre
+ * Markierungen ein- und ausblendet. Reiner Anzeigezustand dieser Komponente —
+ * er überlebt weder einen Positionswechsel noch einen Reload, und das ist
+ * gewollt (docs/architecture/frontend.md).
+ */
+function SpanLegend({
+  labels,
+  hidden,
+  onToggle,
+}: {
+  labels: ReadonlyArray<{ label: string; color: string; background: string }>;
+  hidden: ReadonlySet<string>;
+  onToggle: (label: string) => void;
+}) {
+  return (
+    <div className="mb-[8px] flex flex-wrap items-center gap-[5px]">
+      <span className="font-mono text-[8px] tracking-[0.6px] text-mute">FUNDSTELLEN</span>
+      {labels.map((category) => {
+        const on = !hidden.has(category.label);
+        return (
+          <button
+            key={category.label}
+            type="button"
+            aria-pressed={on}
+            onClick={() => onToggle(category.label)}
+            title={on ? `${category.label} ausblenden` : `${category.label} einblenden`}
+            className="cursor-pointer border px-[6px] py-[1px] font-mono text-[9px] leading-[15px]"
+            style={{
+              borderColor: on ? category.color : 'var(--line2)',
+              background: on ? category.background : 'transparent',
+              color: on ? category.color : 'var(--mute)',
+            }}
+          >
+            {category.label}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 export function Block({
@@ -78,6 +129,22 @@ export function PositionDetails({
   const expo = attrStrings(position.attributes, 'expo');
   const keywords = attrStrings(position.attributes, 'keywords');
   const attributes = displayAttributes(position);
+
+  const spans = useMemo(() => attrSpans(position.attributes), [position.attributes]);
+  const categories = useMemo(() => presentCategories(spans), [spans]);
+  const [hiddenLabels, setHiddenLabels] = useState<ReadonlySet<string>>(new Set());
+  const activeKeys = useMemo(() => {
+    const keys = new Set(spans.map((span) => span.key));
+    for (const label of hiddenLabels) for (const key of keysOfLabel(label)) keys.delete(key);
+    return keys;
+  }, [spans, hiddenLabels]);
+
+  const toggleCategory = (label: string): void =>
+    setHiddenLabels((current) => {
+      const next = new Set(current);
+      if (!next.delete(label)) next.add(label);
+      return next;
+    });
 
   return (
     <>
@@ -128,6 +195,9 @@ export function PositionDetails({
             className="bg-panel"
           >
             <BlockLabel>Langtext</BlockLabel>
+            {categories.length > 0 && (
+              <SpanLegend labels={categories} hidden={hiddenLabels} onToggle={toggleCategory} />
+            )}
             <div
               style={{
                 fontFamily: 'var(--sans)',
@@ -137,7 +207,12 @@ export function PositionDetails({
                 whiteSpace: 'pre-wrap',
               }}
             >
-              <Highlighted text={position.longText} query={search} />
+              <Highlighted
+                text={position.longText}
+                query={search}
+                spans={spans}
+                activeKeys={activeKeys}
+              />
             </div>
             {keywords.length > 0 && (
               <div className="mt-[10px] flex flex-wrap gap-[4px]">

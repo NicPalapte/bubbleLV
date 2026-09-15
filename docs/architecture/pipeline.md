@@ -16,7 +16,8 @@ mapToLvDraft()
     │  → LVDraft (neutral, ohne GAEB-Vokabular)
     ▼
 classify(draft)
-    │  → LVDraft mit befüllten position.attributes
+    │  Extraktoren (gewerkeunabhängig) → Bauteiltyp → Ruleset
+    │  → LVDraft mit befüllten position.attributes und _spans
     ▼
 buildTree(draft)
     │  → LVNode-Baum
@@ -132,6 +133,7 @@ außerhalb dieses Repos, da ein LLM-Aufruf einen Server voraussetzt):
 interface ClassificationResult {
   attributes: Record<string, unknown>;
   meta: ClassificationMeta; // classifier-id, ruleset-id, version, confidence
+  spans: Span[];            // Fundstellen im Langtext (data-model.md#spans)
 }
 
 interface Classifier {
@@ -151,12 +153,12 @@ interface ClassifierInput {
   konkrete Klasse.
 - **Läuft über `ClassifierInput`, nicht über die GAEB-Struktur** — entkoppelt vom
   Parser, damit später auch andere Quellen denselben Klassifizierer nutzen könnten.
-- Ergebnis (`attributes` + `meta`) landet in `PositionDraft.attributes`; Provenance-
-  Konvention siehe [`data-model.md`](data-model.md).
+- Ergebnis (`attributes` + `meta` + `spans`) landet in `PositionDraft.attributes`;
+  Provenance- und Span-Konvention siehe [`data-model.md`](data-model.md).
 
-### `RuleBasedClassifier` — dreistufige Pipeline hinter dem Interface
+### `RuleBasedClassifier` — Stufen hinter dem Interface
 
-Nach außen bleibt `classify()` ein einziger Aufruf. Intern orchestriert er drei
+Nach außen bleibt `classify()` ein einziger Aufruf. Intern orchestriert er die
 Stufen; ab Stufe 2 ist die eigentliche Eigenschafts-Extraktion **pluggable**, damit
 neue Bauteiltypen/Gewerke inkrementell hinzukommen, ohne den Klassifizierer selbst zu
 ändern:
@@ -174,6 +176,13 @@ Stufe 0 — StlbMatch          → attributes.gewerk_lb    (LB-Nummer, z. B. "01
     ├── kein LB-Treffer ──► Fallback: heuristische Positionsart-Erkennung (Stichworte/
     │                       Einheit) ──► attributes.positionsart, gewerk*=null
     │
+    ▼
+Extraktoren (gewerkeunabhängig, WP-J)
+    │   normen · masse · material · platzhalter · verweise · fristen
+    │   → attributes + spans (Fundstellen im Langtext)
+    │   Laufen **vor** jedem Ruleset; ein Ruleset darf ihre Werte überschreiben,
+    │   aber keinen löschen.
+    │
     ├── positionsart != "bauteil" ──► Nicht-Bauteil-Ruleset (per positionsart) ──► attributes
     │
     ▼ ("bauteil")
@@ -183,8 +192,16 @@ Stufe 1 — ObjectType         → attributes.bauteiltyp   ("Wand" | "Decke" | "
 Stufe 2 — RulesetRegistry.resolve(bauteiltyp, gewerk_lb)
     │
     ├── Ruleset gefunden ──► Ruleset.extract(item)   ──► spezifische Attribute (z. B. beton, expo, tragend)
-    └── kein Ruleset       ──► FallbackRuleset.extract(item) ──► Basis-Attribute (Maße, Stichworte)
+    └── kein Ruleset       ──► FallbackRuleset.extract(item) ──► genormte Kurzbezeichnungen
 ```
+
+**Die Extraktoren** (`src/lib/classify/extractors/`) liegen hinter demselben
+Registry-Muster wie die Rulesets: ein Modul je Extraktor, eingetragen in
+`extractors/index.ts`. Sie arbeiten auf dem **Rohtext** des Langtexts, weil ihre
+Fundstellen Zeichen-Indizes darin sind; die normalisierte Fassung aus `text.ts`
+dient nur dem Stichwortvergleich. Jeder liefert einen geschlossenen
+Vokabularwert als Attribut und den Wortlaut als Span
+([`data-model.md`](data-model.md#spans)).
 
 **Stufe 0 (`StlbMatch`)** matcht `shortText`/`longText` gegen die vom Maintainer
 gepflegte Referenztabelle

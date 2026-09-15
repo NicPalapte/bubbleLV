@@ -7,14 +7,19 @@ import type { LotDraft, LVDraft, PositionDraft, SectionDraft } from '../../types
 import type { Classifier } from './types';
 
 function classifyPosition(position: PositionDraft, classifier: Classifier): PositionDraft {
-  const { attributes, meta } = classifier.classify({
+  const { attributes, meta, spans } = classifier.classify({
     oz: position.oz,
     shortText: position.shortText,
     longText: position.longText,
     unit: position.unit,
   });
-  // `_meta` ist reserviert und wird von den Facetten ignoriert (data-model.md).
-  return { ...position, attributes: { ...attributes, _meta: meta } };
+  // `_meta` und `_spans` sind reserviert und werden von den Facetten ignoriert
+  // (data-model.md). `_spans` bleibt weg, wenn nichts gefunden wurde — ein
+  // leeres Array je Position kostet bei ~10k Positionen nur Speicher.
+  return {
+    ...position,
+    attributes: { ...attributes, _meta: meta, ...(spans.length > 0 ? { _spans: spans } : {}) },
+  };
 }
 
 function classifySection(section: SectionDraft, classifier: Classifier): SectionDraft {

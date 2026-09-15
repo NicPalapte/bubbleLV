@@ -7,6 +7,7 @@
 // `classifyAndBuild` — der rechenintensive Teil mit einer Regelauswertung je
 // Position — in den Worker ausgelagert wird (siehe pipeline.worker.ts).
 
+import { runChecks, type CheckResult } from '../check';
 import { classifyDraft, getClassifier } from '../classify';
 import { getGaebParser, mapToLvDraft } from '../gaeb';
 import { buildPositionIndex } from '../index/positionIndex';
@@ -22,6 +23,8 @@ export interface LoadedLV {
   fileName: string;
   /** Facetten-Zähler und Wertebereiche, fertig berechnet (WP-I, Schritt 2). */
   summary: LVSummary;
+  /** Hinweise der Prüfregeln, fertig berechnet (WP-K). */
+  check: CheckResult;
 }
 
 /**
@@ -42,12 +45,17 @@ export function classifyAndBuild(draft: LVDraft, fileName: string): LoadedLV {
   // verworfen: er verweist auf die Baumknoten, und diese Verweise überleben den
   // structuredClone aus dem Worker nicht. Die Ansichten bauen ihn auf dem
   // Haupt-Thread über dem empfangenen Baum neu auf (state/ViewerProvider.tsx).
+  const index = buildPositionIndex(tree);
+  const summary = summarize(index);
   return {
     tree,
     projectName: classified.projectName,
     client: classified.client,
     fileName,
-    summary: summarize(buildPositionIndex(tree)),
+    summary,
+    // Prüfregeln sehen das ganze LV (Anteil an der Gesamtsumme, Mengen-Rang) und
+    // laufen deshalb hier — einmal, nie im Render.
+    check: runChecks(index, summary),
   };
 }
 

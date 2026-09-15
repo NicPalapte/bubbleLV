@@ -25,6 +25,9 @@
   --blueS: #dbe7fd;
   --blueD: #1d4ed8;
   --cyan: #0891b2;
+  /* Weiche Tönung zu --cyan, gleiche Helligkeit wie --blueS/--greenS;
+     Fundstellen-Markierung „Verweise" (WP-J). */
+  --cyanS: #cfeaf2;
 
   --amber: #d97706;
   --amberS: #fde8c4;
@@ -32,6 +35,8 @@
   --greenS: #cdebd8;
   --red: #dc2626;
   --redD: #b91c1c;
+  /* Weiche Tönung zu --red; Fundstellen-Markierung „Offene Stellen" (WP-J). */
+  --redS: #fbdada;
 }
 
 /* ── Bubble-Graph — kräftigere Töne als die Panel-Flächen, damit sich die

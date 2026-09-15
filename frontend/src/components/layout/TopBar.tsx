@@ -29,6 +29,7 @@ const SEARCH_DEBOUNCE_MS = 250;
 const VIEW_MODES = [
   { value: 'graph', label: 'Graph', title: 'Bubble-Graph, Vollbild' },
   { value: 'table', label: 'Tabelle', title: 'Baum, Tabelle und Eigenschaften' },
+  { value: 'check', label: 'Prüfung', title: 'Hinweise der Prüfregeln' },
 ] as const;
 
 export function TopBar() {

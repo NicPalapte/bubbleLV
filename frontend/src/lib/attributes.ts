@@ -2,8 +2,11 @@
 // liefert bewusst ein offenes Record (neue Rulesets bringen neue Keys mit), die UI
 // braucht daraus aber verlässliche Strings.
 
-import type { ClassificationMeta } from './classify';
+import type { ClassificationMeta, Span } from './classify';
 import type { PositionSummary } from '../types/lvNode';
+
+/** Reservierte Keys: Provenance und Fundstellen, nie eine Facette. */
+const RESERVED_KEYS: ReadonlySet<string> = new Set(['_meta', '_spans']);
 
 export function attrString(attributes: Record<string, unknown>, key: string): string | null {
   const value = attributes[key];
@@ -38,11 +41,32 @@ export function attrMeta(attributes: Record<string, unknown>): ClassificationMet
   };
 }
 
-/** Fachliche Attribute in Anzeigereihenfolge, ohne `_meta` und ohne Leerwerte. */
+/**
+ * Fundstellen im Langtext (docs/architecture/data-model.md#spans). Fremde oder
+ * unvollständige Einträge werden verworfen statt geraten — `attributes` ist ein
+ * offenes Record und kann alles enthalten.
+ */
+export function attrSpans(attributes: Record<string, unknown>): Span[] {
+  const value = attributes._spans;
+  if (!Array.isArray(value)) return [];
+  return value.filter((entry): entry is Span => {
+    if (entry === null || typeof entry !== 'object') return false;
+    const span = entry as Record<string, unknown>;
+    return (
+      typeof span.key === 'string' &&
+      typeof span.label === 'string' &&
+      typeof span.start === 'number' &&
+      typeof span.end === 'number' &&
+      span.end > span.start
+    );
+  });
+}
+
+/** Fachliche Attribute in Anzeigereihenfolge, ohne reservierte Keys und Leerwerte. */
 export function displayAttributes(position: PositionSummary): Array<[string, string]> {
   const out: Array<[string, string]> = [];
   for (const [key, value] of Object.entries(position.attributes)) {
-    if (key === '_meta') continue;
+    if (RESERVED_KEYS.has(key)) continue;
     if (Array.isArray(value)) {
       const list = value.filter((entry): entry is string => typeof entry === 'string');
       if (list.length > 0) out.push([key, list.join(' · ')]);

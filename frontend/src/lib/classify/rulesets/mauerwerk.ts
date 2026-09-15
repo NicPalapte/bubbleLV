@@ -2,7 +2,6 @@
 // beiden Bauteiltypen, die in Mauerwerks-LVs praktisch vorkommen.
 
 import { detectTragend } from './beton';
-import { extractMasse } from './fallback';
 import type { BauteilRuleset, RulesetContext, RulesetKey } from './types';
 
 const GEWERK_LB = '012';
@@ -27,8 +26,8 @@ export const mauerwerkRuleset: BauteilRuleset = {
       STEINARTEN.find((entry) => entry.keywords.some((keyword) => text.includes(keyword)))?.label ??
       null;
 
+    // Maße kommen aus dem gewerkeunabhängigen Extraktor (WP-J).
     return {
-      ...extractMasse(context),
       steinart,
       tragend: detectTragend(text, context.bauteiltyp),
     };

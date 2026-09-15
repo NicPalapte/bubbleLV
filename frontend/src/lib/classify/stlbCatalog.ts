@@ -1,11 +1,13 @@
 // Stufe 0 — STLB-Bau-Leistungsbereiche (LB) als Referenzkatalog.
 // Der Katalog wird zur Build-Zeit als Rohtext eingebunden (kein fetch, kein
-// Netzwerk-Request zur Laufzeit). Inhaltlich gepflegt wird er unter
+// Netzwerk-Request zur Laufzeit); gelesen wird er mit dem gemeinsamen
+// CSV-Leser aus lib/csv.ts. Inhaltlich gepflegt wird er unter
 // docs/domain/reference/stlb-bau-leistungsbereiche.csv; tests/classify/stlbCatalog.test.ts
 // hält beide Dateien deckungsgleich.
 
 import catalogCsv from './data/stlb-bau-leistungsbereiche.csv?raw';
 import { isPositionsart, type Positionsart } from './types';
+import { parseCsv, splitList } from '../csv';
 
 export interface StlbLeistungsbereich {
   /** LB-Nummer, z. B. "013" — stabiler Ruleset-Key (nicht die Bezeichnung). */
@@ -16,33 +18,6 @@ export interface StlbLeistungsbereich {
   /** Stichworte für den Textabgleich, kleingeschrieben. */
   keywords: string[];
   quelleVersion: string | null;
-}
-
-/**
- * Eine CSV-Zeile in Felder zerlegen. Bewusst minimal: Trennzeichen `,`,
- * doppelte Anführungszeichen für Felder mit Komma, `""` als escaptes Zitat.
- */
-function splitCsvLine(line: string): string[] {
-  const fields: string[] = [];
-  let current = '';
-  let quoted = false;
-
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    if (quoted) {
-      if (char !== '"') current += char;
-      else if (line[i + 1] === '"') {
-        current += '"';
-        i++;
-      } else quoted = false;
-    } else if (char === '"') quoted = true;
-    else if (char === ',') {
-      fields.push(current);
-      current = '';
-    } else current += char;
-  }
-  fields.push(current);
-  return fields.map((field) => field.trim());
 }
 
 /**
@@ -60,32 +35,15 @@ function derivedKeywords(bezeichnung: string): string[] {
 }
 
 export function parseStlbCsv(csv: string): StlbLeistungsbereich[] {
-  const lines = csv.split(/\r?\n/).filter((line) => line.trim() !== '');
-  if (lines.length === 0) return [];
-
-  const header = splitCsvLine(lines[0]).map((field) => field.toLowerCase());
-  const column = (name: string): number => header.indexOf(name);
-  const idxNummer = column('lb_nummer');
-  const idxBezeichnung = column('lb_bezeichnung');
-  const idxDefault = column('positionsart_default');
-  const idxKeywords = column('keywords');
-  const idxVersion = column('quelle_version');
-  if (idxNummer < 0 || idxBezeichnung < 0) return [];
-
   const entries: StlbLeistungsbereich[] = [];
-  for (const line of lines.slice(1)) {
-    const fields = splitCsvLine(line);
-    const lbNummer = fields[idxNummer] ?? '';
-    const lbBezeichnung = fields[idxBezeichnung] ?? '';
+  for (const row of parseCsv(csv)) {
+    const lbNummer = row.get('lb_nummer');
+    const lbBezeichnung = row.get('lb_bezeichnung');
     if (lbNummer === '' || lbBezeichnung === '') continue;
 
-    const rawDefault = idxDefault < 0 ? '' : (fields[idxDefault] ?? '');
-    const rawKeywords = idxKeywords < 0 ? '' : (fields[idxKeywords] ?? '');
-    const explicit = rawKeywords
-      .split('|')
-      .map((keyword) => keyword.trim().toLowerCase())
-      .filter((keyword) => keyword !== '');
-    const rawVersion = idxVersion < 0 ? '' : (fields[idxVersion] ?? '');
+    const rawDefault = row.get('positionsart_default');
+    const explicit = splitList(row.get('keywords'));
+    const rawVersion = row.get('quelle_version');
 
     entries.push({
       lbNummer,
