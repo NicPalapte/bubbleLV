@@ -310,6 +310,45 @@ describe('Viewer', () => {
     expect(screen.getByText('Direkte Positionen')).toBeInTheDocument();
   });
 
+  it('scrollt in der Auswahlkarte, statt den Graphen zu zoomen oder zu ziehen (Issue #47)', async () => {
+    render(<App />);
+    await loadFixture('gaeb-xml-beispiel.x83');
+    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+
+    switchToView('Tabelle');
+    const tree = screen.getByRole('tree');
+    fireEvent.click(within(tree).getAllByRole('treeitem')[0]);
+    fireEvent.click(await within(tree).findByTitle('Bauhauptgewerke'));
+
+    switchToView('Graph');
+    const closeButton = await screen.findByRole('button', { name: 'Karte schließen' });
+    const card = closeButton.closest('[data-graph-overlay]');
+    expect(card).not.toBeNull();
+
+    // Der Canvas hängt seinen Rad-Listener auf den gesamten Wrapper. Über der
+    // Karte darf er nicht greifen — sonst scrollt ihr Inhalt nie.
+    const wheel = (target: Element): boolean =>
+      target.dispatchEvent(
+        new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: 90 }),
+      );
+    expect(wheel(closeButton)).toBe(true);
+
+    const canvas = screen.getByRole('group', { name: /Bubble-Graph/ });
+    expect(wheel(canvas)).toBe(false);
+
+    // Ein Zug in der Karte (Scrollbalken, Textauswahl) verschiebt den Graphen nicht.
+    fireEvent.mouseDown(closeButton, { button: 0, clientX: 10, clientY: 10 });
+    fireEvent.mouseMove(document, { clientX: 140, clientY: 90 });
+    expect(canvas).toHaveStyle({ cursor: 'grab' });
+    fireEvent.mouseUp(document);
+
+    // Auf dem Canvas selbst bleibt das Ziehen erhalten.
+    fireEvent.mouseDown(canvas, { button: 0, clientX: 10, clientY: 10 });
+    fireEvent.mouseMove(document, { clientX: 140, clientY: 90 });
+    expect(canvas).toHaveStyle({ cursor: 'grabbing' });
+    fireEvent.mouseUp(document);
+  });
+
   it('schließt mit Escape zuerst das Popover, verlässt danach aber nicht mehr die Tabelle (Issue #30)', async () => {
     render(<App />);
     await loadFixture('gaeb-xml-beispiel.x83');

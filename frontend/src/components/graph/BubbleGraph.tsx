@@ -33,6 +33,7 @@ import {
   sizedRadius,
 } from '../../lib/graph/constants';
 import { cullBounds, isInView } from '../../lib/graph/culling';
+import { isOverlayEvent } from '../../lib/graph/overlay';
 import {
   layoutRadial,
   walkParents,
@@ -204,6 +205,9 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
 
   const onMouseDown = (event: ReactMouseEvent<HTMLDivElement>): void => {
     if (event.button !== 0) return;
+    // Zug am Scrollbalken oder Text in der Auswahlkarte darf den Graphen
+    // nicht mitziehen (Issue #47).
+    if (isOverlayEvent(event.target)) return;
     // Ein Klick auf eine Bubble (SVG-<g>, nicht fokussierbar) holt sonst nie
     // den Tastaturfokus auf den Canvas — Browser vererben Fokus nicht an
     // fokussierbare Vorfahren eines geklickten Kindelements.
@@ -229,6 +233,9 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
     const element = wrapRef.current;
     if (element === null) return;
     const onWheel = (event: WheelEvent): void => {
+      // Über einer Überlagerung gehört das Rad ihr: nicht abfangen, damit der
+      // Browser dort normal scrollt (Issue #47).
+      if (isOverlayEvent(event.target)) return;
       event.preventDefault();
       const rect = element.getBoundingClientRect();
       const mx = event.clientX - rect.left;
