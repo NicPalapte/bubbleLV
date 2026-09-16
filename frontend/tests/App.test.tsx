@@ -349,6 +349,87 @@ describe('Viewer', () => {
     fireEvent.mouseUp(document);
   });
 
+  it('zieht die Info-Panels am Knopf unten links auf — eine Größe für alle Ansichten', async () => {
+    render(<App />);
+    await loadFixture('gaeb-xml-beispiel.x83');
+    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+
+    switchToView('Tabelle');
+    const tree = screen.getByRole('tree');
+    fireEvent.click(within(tree).getAllByRole('treeitem')[0]);
+    fireEvent.click(await within(tree).findByTitle('Bauhauptgewerke'));
+    // Startbreite gilt schon hier — dasselbe Maß wie später im Graphen.
+    expect(screen.getByRole('complementary', { name: 'Eigenschaften' })).toHaveStyle({
+      width: '320px',
+    });
+
+    switchToView('Graph');
+    const closeButton = await screen.findByRole('button', { name: 'Karte schließen' });
+    const card = closeButton.closest('[data-graph-overlay]') as HTMLElement;
+    expect(card.style.width).toBe('320px');
+    expect(card.style.height).toBe('');
+
+    // Die Karte hängt rechts oben: nach links zieht sie breiter, nach unten höher.
+    const handle = screen.getByRole('button', { name: 'Info-Panel in der Größe ändern' });
+    fireEvent.mouseDown(handle, { clientX: 400, clientY: 300 });
+    fireEvent.mouseMove(document, { clientX: 260, clientY: 480 });
+    expect(card.style.width).toBe('460px');
+    expect(card.style.height).toBe('180px');
+    fireEvent.mouseUp(document);
+
+    // Unter die Mindestgröße geht es nicht — sonst bliebe nichts Lesbares übrig.
+    fireEvent.mouseDown(handle, { clientX: 260, clientY: 480 });
+    fireEvent.mouseMove(document, { clientX: 900, clientY: 0 });
+    expect(card.style.width).toBe('280px');
+    expect(card.style.height).toBe('160px');
+    fireEvent.mouseUp(document);
+
+    // Der Knopf zieht nur die Karte auf, nicht den Graphen darunter.
+    expect(screen.getByRole('group', { name: /Bubble-Graph/ })).toHaveStyle({ cursor: 'grab' });
+
+    // Pfeiltasten am Knopf ändern die Größe ebenfalls — links vergrößert.
+    fireEvent.keyDown(handle, { key: 'ArrowLeft' });
+    expect(card.style.width).toBe('296px');
+
+    // Und die Breite gilt anschließend auch im Eigenschaften-Panel der Tabelle.
+    switchToView('Tabelle');
+    expect(screen.getByRole('complementary', { name: 'Eigenschaften' })).toHaveStyle({
+      width: '296px',
+    });
+  });
+
+  it('merkt sich den Ort der Auswahlkarte über den Ansichtswechsel', async () => {
+    render(<App />);
+    await loadFixture('gaeb-xml-beispiel.x83');
+    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+
+    switchToView('Tabelle');
+    const tree = screen.getByRole('tree');
+    fireEvent.click(within(tree).getAllByRole('treeitem')[0]);
+    fireEvent.click(await within(tree).findByTitle('Bauhauptgewerke'));
+
+    switchToView('Graph');
+    const closeButton = await screen.findByRole('button', { name: 'Karte schließen' });
+    const card = closeButton.closest('[data-graph-overlay]') as HTMLElement;
+    expect(card.style.right).toBe('16px');
+
+    // Karte am Ziehgriff beiseiteschieben.
+    fireEvent.mouseDown(screen.getByLabelText('Karte verschieben'), { clientX: 500, clientY: 300 });
+    fireEvent.mouseMove(document, { clientX: 400, clientY: 350 });
+    fireEvent.mouseUp(document);
+    expect(card.style.right).toBe('116px');
+    expect(card.style.top).toBe('66px');
+
+    // Nach dem Ausflug in die Tabelle steht sie wieder dort, nicht in der Ecke.
+    switchToView('Tabelle');
+    switchToView('Graph');
+    const wieder = (await screen.findByRole('button', { name: 'Karte schließen' })).closest(
+      '[data-graph-overlay]',
+    ) as HTMLElement;
+    expect(wieder.style.right).toBe('116px');
+    expect(wieder.style.top).toBe('66px');
+  });
+
   it('schließt mit Escape zuerst das Popover, verlässt danach aber nicht mehr die Tabelle (Issue #30)', async () => {
     render(<App />);
     await loadFixture('gaeb-xml-beispiel.x83');

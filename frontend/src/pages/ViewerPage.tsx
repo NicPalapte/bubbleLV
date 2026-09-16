@@ -16,12 +16,13 @@ import { Tree } from '../components/layout/Tree';
 import { PositionsTable } from '../components/table/PositionsTable';
 import { FileDropzone } from '../components/upload/FileDropzone';
 import { PERF_ENABLED, reportViewSwitch } from '../lib/perf';
-import { useViewer, useViewerDispatch } from '../state/viewer';
+import { PANEL_MAX_WIDTH, PANEL_MIN_WIDTH, useViewer, useViewerDispatch } from '../state/viewer';
 
-// Spiegelt --w-tree / --w-props aus src/index.css (tokens/spacing.css); die
-// Panels sind ziehbar, deshalb braucht der Startwert eine Zahl statt der Variable.
+// Spiegelt --w-tree aus src/index.css (tokens/spacing.css); die Baumspalte ist
+// ziehbar, deshalb braucht der Startwert eine Zahl statt der Variable. Die
+// Breite der Info-Panels steht dagegen im Viewer-Zustand (`panelSize`) — sie
+// gilt gemeinsam für dieses Panel und die Auswahlkarte im Graphen.
 const TREE_WIDTH = 236;
-const PROPS_WIDTH = 320;
 
 /**
  * Messpunkt „Ansichtswechsel" (docs/scope.md, Ziel < 200 ms): `Profiler` liefert
@@ -43,10 +44,9 @@ function ViewTiming({ view, children }: { view: string; children: ReactNode }) {
 }
 
 export function ViewerPage() {
-  const { tree, selectedNode, viewMode } = useViewer();
+  const { tree, selectedNode, viewMode, panelSize } = useViewer();
   const dispatch = useViewerDispatch();
   const [leftWidth, setLeftWidth] = useState(TREE_WIDTH);
-  const [rightWidth, setRightWidth] = useState(PROPS_WIDTH);
   const [treeCollapsed, setTreeCollapsed] = useState(false);
 
   // ESC geht eine Ebene zurück — wie im Design.
@@ -104,13 +104,13 @@ export function ViewerPage() {
             </div>
 
             <ResizeHandle
-              value={rightWidth}
-              onChange={setRightWidth}
-              min={260}
-              max={560}
+              value={panelSize.width}
+              onChange={(width) => dispatch({ type: 'panelSize', size: { ...panelSize, width } })}
+              min={PANEL_MIN_WIDTH}
+              max={PANEL_MAX_WIDTH}
               sign={-1}
             />
-            <PropertiesPanel width={rightWidth} />
+            <PropertiesPanel width={panelSize.width} />
           </main>
         )}
       </div>
