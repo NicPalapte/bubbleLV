@@ -2,6 +2,9 @@
 // design/claude-design/lv-main.jsx; Kopf, Blocklabels und Feldraster sind die
 // Design-System-Bausteine. Bearbeiter/Aufgaben/Notizen/Vergabe entfallen
 // (out of scope, docs/mvp-scope.md#out-of-scope).
+//
+// Die Breite kommt aus `panelSize` im Viewer-Zustand und gilt gemeinsam mit der
+// schwebenden Auswahlkarte im Graphen — eine Größe für alle Info-Panels.
 
 import { NodeDetails } from '../common/NodeDetails';
 import { PositionDetails } from '../common/PositionDetails';
@@ -16,7 +19,8 @@ export function PropertiesPanel({ width }: { width: number }) {
   const target = selectedPosition ?? (selectedNode === null ? hovered : selectedNode) ?? tree;
 
   return (
-    <div
+    <aside
+      aria-label="Eigenschaften"
       className="flex shrink-0 flex-col overflow-hidden border-l border-line bg-white"
       style={{ width }}
     >
@@ -32,6 +36,6 @@ export function PropertiesPanel({ width }: { width: number }) {
       ) : (
         <NodeDetails node={target} />
       )}
-    </div>
+    </aside>
   );
 }

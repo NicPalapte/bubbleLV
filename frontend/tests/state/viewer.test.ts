@@ -9,7 +9,14 @@ import { describe, expect, it } from 'vitest';
 import { buildPositionIndex } from '../../src/lib/index/positionIndex';
 import { summarize } from '../../src/lib/index/summary';
 import { buildTree } from '../../src/lib/tree/buildTree';
-import { INITIAL_VIEWER_STATE, viewerReducer, type ViewerState } from '../../src/state/viewer';
+import {
+  INITIAL_VIEWER_STATE,
+  PANEL_MAX_WIDTH,
+  PANEL_MIN_HEIGHT,
+  PANEL_MIN_WIDTH,
+  viewerReducer,
+  type ViewerState,
+} from '../../src/state/viewer';
 import type { LoadedLV } from '../../src/lib/pipeline/runPipeline';
 import type { LVDraft } from '../../src/types/lvDraft';
 
@@ -236,5 +243,41 @@ describe('viewerReducer · Aufklapp-Zustand', () => {
     const reloaded = loadedState();
     expect(opened.expanded.has(section)).toBe(true);
     expect(reloaded.expanded.has(section)).toBe(false);
+  });
+});
+
+// Die Größe der Info-Panels ist eine Layout-Vorliebe, kein Fachdatum: sie gilt
+// für alle Panels, überlebt Ansichtswechsel und einen neuen Import — und mit
+// dem Reload verschwindet sie, wie jeder Sitzungszustand.
+describe('viewerReducer · Größe der Info-Panels', () => {
+  it('hält die Breite in den gemeinsamen Grenzen', () => {
+    const zuBreit = viewerReducer(base, {
+      type: 'panelSize',
+      size: { width: 2000, height: null },
+    });
+    expect(zuBreit.panelSize.width).toBe(PANEL_MAX_WIDTH);
+
+    const zuSchmal = viewerReducer(base, { type: 'panelSize', size: { width: 10, height: 10 } });
+    expect(zuSchmal.panelSize.width).toBe(PANEL_MIN_WIDTH);
+    expect(zuSchmal.panelSize.height).toBe(PANEL_MIN_HEIGHT);
+  });
+
+  it('überlebt einen neuen Import und das Leeren', () => {
+    const breit = viewerReducer(base, { type: 'panelSize', size: { width: 500, height: 400 } });
+    const tree = buildTree(DRAFT);
+    const lv: LoadedLV = {
+      fileName: 'test.x83',
+      projectName: DRAFT.projectName,
+      client: null,
+      tree,
+      summary: summarize(buildPositionIndex(tree)),
+    };
+
+    const geladen = viewerReducer(breit, { type: 'loaded', lv });
+    expect(geladen.panelSize).toEqual({ width: 500, height: 400 });
+    expect(viewerReducer(geladen, { type: 'clear' }).panelSize).toEqual({
+      width: 500,
+      height: 400,
+    });
   });
 });
