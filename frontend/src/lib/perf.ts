@@ -13,6 +13,8 @@ export const PERF_ENABLED = import.meta.env.DEV && import.meta.env.MODE !== 'tes
 const BUDGETS_MS: Readonly<Record<string, number>> = {
   'LV laden': 5000,
   'Positions-Index': 500,
+  // Zusage aus WP-M: 10k Positionen clustern in unter 3 s, im Worker.
+  Beziehungen: 3000,
   Filter: 100,
   Ansichtswechsel: 200,
 };

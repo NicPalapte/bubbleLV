@@ -25,6 +25,9 @@ buildTree(draft)
 summarize(buildPositionIndex(tree))
     │  → LVSummary (Facetten-Zähler, Wertebereiche) im LoadedLV
     ▼
+buildRelations(index) · runChecks(index, summary, relations)
+    │  → Cluster (Ähnlichkeit, Unterschiede, Ausreißer) und Hinweise im LoadedLV
+    ▼
 React State (Session-only)
     │  buildPositionIndex(tree) im Haupt-Thread
     ▼
@@ -46,12 +49,13 @@ wandern. Die Pipeline ist entsprechend geteilt (`frontend/src/lib/pipeline/`):
 | Schritt | Läuft in | Warum |
 |---|---|---|
 | `parseToDraft` (Parser + `mapToLvDraft`) | Haupt-Thread | braucht `DOMParser`; nativer XML-Parser, entsprechend schnell |
-| `classifyAndBuild` (Klassifizierung + `buildTree` + Aggregate) | Web Worker ab ~500 Positionen | rechenintensiv: eine Regelauswertung je Position, danach ein Durchlauf für die Aggregate |
+| `classifyAndBuild` (Klassifizierung + `buildTree` + Aggregate + Beziehungen + Prüfregeln) | Web Worker ab ~500 Positionen | rechenintensiv: eine Regelauswertung je Position, danach je ein Durchlauf für Aggregate, Cluster und Hinweise |
 | `buildPositionIndex` (flacher Positions-Index) | Haupt-Thread, nach dem Empfang | verweist auf die Baumknoten; Objektidentität überlebt `structuredClone` nicht |
 
 `LVDraft` ist reines Datenmodell und damit `structuredClone`-fähig — der Übergang
 über die Worker-Grenze braucht keine Serialisierungsschicht. Dasselbe gilt für die
-Aggregate (`LVSummary`): reine Zahlen und Namen. Der Positions-Index geht bewusst
+Aggregate (`LVSummary`), die Cluster (`RelationResult`) und die Hinweise
+(`CheckResult`): reine Zahlen, Namen und Knoten-IDs. Der Positions-Index geht bewusst
 **nicht** über die Grenze, weil er Knotenverweise hält — siehe
 [`decisions/0010`](../decisions/0010-positions-index-und-aggregate.md). Fehler werden auf einen
 Code (`parse | validation | version | unknown`) abgebildet, weil Exception-Klassen

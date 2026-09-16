@@ -12,7 +12,7 @@
 
 import type { ColumnConfig } from '../lib/table/columns';
 
-export type ViewMode = 'overview' | 'graph' | 'table' | 'check';
+export type ViewMode = 'overview' | 'graph' | 'table' | 'check' | 'similar';
 export type SizeModeId = 'count' | 'cost' | 'uniform';
 export type TableScope = 'node' | 'lv';
 
@@ -76,11 +76,31 @@ export interface CheckViewState {
   openRules: ReadonlySet<string>;
 }
 
+/** Wonach die Ansicht „Ähnlichkeit" ihre Gruppen ordnet. */
+export type ClusterSort = 'groesse' | 'streuung' | 'aehnlichkeit';
+
+/** Auswahl des Reglers „ab n Mitgliedern" (WP-M, Schritt 5). */
+export const CLUSTER_MIN_MEMBERS = [2, 3, 5, 10] as const;
+
+export interface SimilarViewState {
+  /**
+   * Nur Gruppen ab dieser Mitgliederzahl anzeigen. Der Regler sitzt bewusst in
+   * der Ansicht und nicht im globalen Filter: `matchPos` entscheidet je
+   * Position aus der Position selbst, die Cluster-Zugehörigkeit entsteht erst
+   * danach (docs/decisions/0016-aehnlichkeit-und-cluster.md).
+   */
+  minMembers: number;
+  sort: ClusterSort;
+  /** Aufgeklappte Gruppen — welche Mitgliederlisten offen stehen. */
+  openClusters: ReadonlySet<string>;
+}
+
 export interface ViewState {
   mode: ViewMode;
   graph: GraphViewState;
   table: TableViewState;
   check: CheckViewState;
+  similar: SimilarViewState;
   /** Scrollposition je Ansicht — sie überlebt den Wechsel (WP-L, Abnahme). */
   scroll: Readonly<Record<ViewMode, number>>;
   panelSize: PanelSize;
@@ -96,6 +116,9 @@ export type ViewAction =
   | { type: 'tableScope'; scope: TableScope }
   | { type: 'tableColumns'; columns: ColumnConfig | null }
   | { type: 'toggleRuleOpen'; id: string }
+  | { type: 'clusterMinMembers'; value: number }
+  | { type: 'clusterSort'; value: ClusterSort }
+  | { type: 'toggleClusterOpen'; id: string }
   | { type: 'viewScroll'; view: ViewMode; top: number }
   /** Info-Panels vergrößern/verkleinern; `height` nur von der Karte genutzt. */
   | { type: 'panelSize'; size: PanelSize }
@@ -107,6 +130,7 @@ const NO_SCROLL: Readonly<Record<ViewMode, number>> = {
   graph: 0,
   table: 0,
   check: 0,
+  similar: 0,
 };
 
 export const INITIAL_VIEW_STATE: ViewState = {
@@ -116,6 +140,7 @@ export const INITIAL_VIEW_STATE: ViewState = {
   graph: { sizeMode: 'count', viewport: null },
   table: { sort: { key: 'oz', dir: 1 }, scope: 'node', columns: null },
   check: { openRules: new Set() },
+  similar: { minMembers: 2, sort: 'groesse', openClusters: new Set() },
   scroll: NO_SCROLL,
   panelSize: DEFAULT_PANEL_SIZE,
   cardPos: DEFAULT_CARD_POS,
@@ -131,6 +156,13 @@ export function viewStateForNewLv(state: ViewState): ViewState {
   return {
     ...INITIAL_VIEW_STATE,
     graph: { sizeMode: state.graph.sizeMode, viewport: null },
+    // Regler und Sortierung der Ähnlichkeit sind eine Vorliebe, kein Fachdatum
+    // — die aufgeklappten Gruppen der alten Datei fallen dagegen weg.
+    similar: {
+      minMembers: state.similar.minMembers,
+      sort: state.similar.sort,
+      openClusters: new Set(),
+    },
     panelSize: state.panelSize,
     cardPos: state.cardPos,
   };
@@ -164,6 +196,15 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
       const openRules = new Set(state.check.openRules);
       if (!openRules.delete(action.id)) openRules.add(action.id);
       return { ...state, check: { openRules } };
+    }
+    case 'clusterMinMembers':
+      return { ...state, similar: { ...state.similar, minMembers: action.value } };
+    case 'clusterSort':
+      return { ...state, similar: { ...state.similar, sort: action.value } };
+    case 'toggleClusterOpen': {
+      const openClusters = new Set(state.similar.openClusters);
+      if (!openClusters.delete(action.id)) openClusters.add(action.id);
+      return { ...state, similar: { ...state.similar, openClusters } };
     }
     case 'viewScroll':
       if (state.scroll[action.view] === action.top) return state;

@@ -21,7 +21,7 @@ selbst anlegen.
 | WP-J | Klassifizierung v2: generische Extraktoren + Textstellen | ✅ umgesetzt |
 | WP-K | Flags und VOB-Check, Ansicht „Prüfung" | ✅ umgesetzt |
 | WP-L | Ansichts-Gerüst + Ansicht „Überblick" | ✅ umgesetzt |
-| WP-M | Beziehungen: Ähnlichkeit, Unterschiede, Ausreißer | offen |
+| WP-M | Beziehungen: Ähnlichkeit, Unterschiede, Ausreißer | umgesetzt |
 | WP-N | Ansicht „Vergleich" | offen |
 | WP-O | Ansicht „Matrix" | offen |
 | WP-P | Feinschliff: Kommandopalette, URL-Zustand, Export, Druck | offen |
@@ -195,8 +195,8 @@ Schritte:
 4. ✅ Geld-/Mengentreiber: G1 (Anteil an der Gesamtsumme), G2 (Mengen-Rang **je
    Einheit**), G3 (dieselbe Einheit uneinheitlich geschrieben). Bewusst **Rang statt
    Schwellwert**, und eine Rangliste erscheint erst, wenn sie auch jemanden auslässt
-   — „Rang 3 von 4" ist Rauschen. Der EP-Ausreißer bleibt bei WP-M: ohne
-   Vergleichsgruppe nicht berechenbar.
+   — „Rang 3 von 4" ist Rauschen. Der EP-Ausreißer kam mit WP-M nach (G4): ohne
+   Vergleichsgruppe war er nicht berechenbar.
 5. ✅ **Einheiten-Gruppen** aus
    [`domain/reference/einheiten-gruppen.csv`](domain/reference/einheiten-gruppen.csv):
    `Stk`/`Stck`/`St`/`Stück`, `to`/`t`, `h`/`Std`/`Stunde`. Groß-/Kleinschreibung und
@@ -274,27 +274,51 @@ der Graph. Er ordnet die Datei ein, bevor man tiefer geht.
 
 **Ziel:** Ähnliche Positionen finden, Unterschiede benennen, Ausreißer zeigen.
 
-Schritte:
-1. `src/lib/relate/similarity.ts`:
-   - Text normalisieren (Kleinschreibung, Zahlen und Einheiten maskieren, Stoppwörter).
-   - Kandidaten vorgruppieren nach Gewerk, Einheit und Bauteiltyp — nur innerhalb einer
-     Gruppe wird verglichen. Alle Paare zu vergleichen ist bei 10k Positionen
-     (~50 Mio. Paare) nicht bezahlbar.
-   - Innerhalb der Gruppe Ähnlichkeit über Wort-Schindeln und Jaccard-Maß; zusätzlich
-     Merkmals-Übereinstimmung. Schwellwert einstellbar, Standard konservativ.
-2. Ergebnis: `Cluster { id, positionIds, gemeinsameMerkmale, unterscheidendeMerkmale }`.
-3. Läuft **einmal beim Laden im Worker**, Ergebnis liegt im State.
-4. Ausreißer je Cluster: Einheitspreis oder Menge außerhalb des Erwartungsbereichs
-   (Median und Quartilsabstand, nicht Mittelwert — einzelne Extremwerte verzerren sonst).
-5. Ansicht **Ähnlichkeit**: Cluster als Liste, Größe und Streuung sichtbar, Klick öffnet
-   den Vergleich (WP-N). Filter „nur Positionen in Clustern ab n Mitgliedern".
-6. Tests: bekannte Dublette wird gefunden, bewusst unterschiedliche Positionen landen
-   nicht im selben Cluster, 10k Positionen clustern in < 3 s.
+**Umgesetzt.** Begründung und verworfene Wege:
+[`decisions/0016`](decisions/0016-aehnlichkeit-und-cluster.md).
 
-**Fertig, wenn:**
-- Eine reale Datei mit wiederkehrenden Leistungen zeigt diese als Cluster.
-- Ein Cluster benennt, welche Merkmale gemeinsam und welche unterschiedlich sind.
-- Die Laufzeit bleibt im Worker und blockiert die UI nicht.
+Schritte:
+1. ✅ `src/lib/relate/` — `text.ts` (Kleinschreibung, Zahlen und Einheiten maskiert,
+   Stoppwörter, Wort-Schindeln), `stats.ts` (Median, Quartile), `similarity.ts`
+   (Vorgruppierung, Ähnlichkeitsmaß, Cluster), `types.ts`. Vorgruppiert wird nach
+   Gewerk, Einheit und Bauteiltyp; verglichen wird nur innerhalb einer Gruppe.
+   Ähnlichkeit = Jaccard über Wort-Schindeln (Kurztext vor Langtext) plus
+   Merkmals-Übereinstimmung. Schwellwert einstellbar, Standard 0,62.
+2. ✅ Ergebnis `Cluster { id, positionIds, label, gemeinsameMerkmale,
+   unterscheidendeMerkmale, ausreisser, unitPrice, quantity, similarity }` —
+   beschrieben in [`architecture/data-model.md`](architecture/data-model.md#cluster).
+3. ✅ Läuft in `classifyAndBuild` — also im Worker, sobald dessen Schwelle greift —
+   und liegt fertig als `LoadedLV.relations` im State. Kein Render rechnet nach.
+4. ✅ Ausreißer je Cluster über Median und Quartilsabstand (Tukey-Zaun 1,5 × IQR),
+   für Einheitspreis und Menge getrennt. Unter vier Werten oder bei
+   Quartilsabstand 0 meldet die Gruppe nichts — das wäre Rauschen.
+5. ✅ Ansicht **Ähnlichkeit** (`src/components/relate/`) als fünfter Ansichtsmodus:
+   Gruppen mit Größe, Streuung, gemeinsamen und unterscheidenden Merkmalen,
+   aufklappbarer Mitgliederliste und Sprung zur Position. Regler „ab n Mitgliedern"
+   und Sortierung nach Größe, Streuung oder Ähnlichkeit.
+6. ✅ Tests in `tests/relate/` und `tests/components/similarView.test.tsx`.
+
+**Zusatz gegenüber dem alten Plan:** Prüfregel **G4 · Einheitspreis fällt aus der
+Gruppe**. WP-K hatte sie ausdrücklich an dieses Paket abgegeben („ohne
+Vergleichsgruppe nicht berechenbar"); mit den Clustern ist sie berechenbar.
+
+**Abweichung:** Der Regler „nur Positionen in Clustern ab n Mitgliedern" begrenzt die
+Liste **in der Ansicht** und ist kein globaler Filter. `matchPos` entscheidet je
+Position aus der Position selbst; die Cluster-Zugehörigkeit entsteht erst danach.
+
+**Offen für WP-N:** Ein Klick auf eine Position führt in die Tabelle mit
+Eigenschaften-Panel. Sobald der Vergleich steht, führt er dorthin.
+
+**Fertig, wenn:** ✅ alle drei Kriterien erfüllt.
+- Eine reale Datei mit wiederkehrenden Leistungen zeigt diese als Cluster: die
+  Beispieldatei (`tests/fixtures/gaeb-xml-beispiel.x83`, 28 Positionen) ergibt
+  4 Gruppen mit 8 Positionen — unter anderem zwei Kalksandstein-Innenwände, die sich
+  nur in der Dicke unterscheiden (`tests/relate/similarity.test.ts`).
+- Ein Cluster benennt, welche Merkmale gemeinsam und welche unterschiedlich sind
+  (`tests/components/similarView.test.tsx`).
+- Die Laufzeit bleibt im Worker und blockiert die UI nicht: 10.000 Positionen
+  clustern in ~0,4 s, auch wenn alle in derselben Vorgruppe landen (Budget 3 s,
+  `tests/relate/similarity.test.ts`).
 
 ---
 

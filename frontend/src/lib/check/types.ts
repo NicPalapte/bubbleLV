@@ -11,6 +11,7 @@
 import type { Span } from '../classify';
 import type { PositionIndex } from '../index/positionIndex';
 import type { LVSummary } from '../index/summary';
+import type { RelationResult } from '../relate';
 
 export type FlagCategory = 'geld' | 'menge' | 'risiko' | 'norm' | 'frist' | 'vob';
 export type FlagSeverity = 'hinweis' | 'beachten';
@@ -35,6 +36,8 @@ export type InactiveReason = string | null;
 export interface CheckContext {
   index: PositionIndex;
   summary: LVSummary;
+  /** Ähnlichkeits-Cluster (WP-M) — Vergleichsgruppe für Regel G4. */
+  relations: RelationResult;
 }
 
 export interface CheckRule {

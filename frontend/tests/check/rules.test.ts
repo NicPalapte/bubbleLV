@@ -12,6 +12,7 @@ import { classifyDraft, getClassifier } from '../../src/lib/classify';
 import { parseStlbCsv } from '../../src/lib/classify/stlbCatalog';
 import { buildPositionIndex } from '../../src/lib/index/positionIndex';
 import { summarize } from '../../src/lib/index/summary';
+import { buildRelations } from '../../src/lib/relate';
 import { buildTree, collectPositions } from '../../src/lib/tree/buildTree';
 import type { CheckResult, RuleStatus } from '../../src/lib/check';
 import type { LVDraft, PositionDraft } from '../../src/types/lvDraft';
@@ -55,7 +56,8 @@ function check(...positions: PositionDraft[]): CheckResult {
   };
   const tree = buildTree(classifyDraft(draft, classifier));
   const index = buildPositionIndex(tree);
-  return runChecks(index, summarize(index));
+  // G4 vergleicht gegen die Cluster aus WP-M — die gehören zum Kontext.
+  return runChecks(index, summarize(index), buildRelations(index));
 }
 
 function rule(result: CheckResult, id: string): RuleStatus {
@@ -229,6 +231,47 @@ describe('G3 · Einheit uneinheitlich geschrieben', () => {
   });
 });
 
+describe('G4 · Einheitspreis fällt aus der Gruppe', () => {
+  /** Fünf gleichlautende Positionen; nur der letzte Preis ist der Prüfling. */
+  function gruppe(...preise: number[]) {
+    return check(
+      ...preise.map((unitPrice, i) =>
+        position({
+          oz: `01.001.00${i + 1}0`,
+          shortText: 'Innenwand herstellen',
+          longText: 'Herstellen einer tragenden Innenwand aus Beton, Abrechnung nach Aufmaß.',
+          unitPrice,
+        }),
+      ),
+    );
+  }
+
+  it('meldet den Preis, der aus dem Rahmen seiner Gruppe fällt', () => {
+    const flags = flagsOf(gruppe(100, 105, 110, 115, 900), 'G4');
+    expect(flags).toHaveLength(1);
+    expect(flags[0].positionId).toContain('01.001.0050');
+    expect(flags[0].title).toContain('Median');
+  });
+
+  it('schweigt, solange die Preise der Gruppe beieinanderliegen', () => {
+    expect(flagsOf(gruppe(100, 105, 110, 115, 120), 'G4')).toHaveLength(0);
+  });
+
+  it('schweigt in einer Datei ohne Preise', () => {
+    const result = check(
+      ...[100, 105, 110, 115, 900].map((_, i) =>
+        position({ oz: `01.001.00${i + 1}0`, unitPrice: null }),
+      ),
+    );
+    expect(flagsOf(result, 'G4')).toHaveLength(0);
+  });
+
+  it('bleibt ein Hinweis und wird nie zum Urteil', () => {
+    const [flag] = flagsOf(gruppe(100, 105, 110, 115, 900), 'G4');
+    expect(flag.title).not.toMatch(/unzulässig|Verstoß|verboten|fehlerhaft|falsch/i);
+  });
+});
+
 describe('Regelzustand', () => {
   const result = check(position({}));
 
@@ -303,7 +346,7 @@ describe('Eine stolpernde Regel hält den Import nicht an', () => {
     );
     const index = buildPositionIndex(tree);
 
-    const result = runChecks(index, summarize(index), [kaputt]);
+    const result = runChecks(index, summarize(index), buildRelations(index), [kaputt]);
     expect(result.flags).toEqual([]);
     const [status] = result.rules;
     expect(status.active).toBe(false);
