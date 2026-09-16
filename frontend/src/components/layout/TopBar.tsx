@@ -136,14 +136,20 @@ export function TopBar() {
       <div className="flex items-center border-r border-line px-[18px]">
         <BubbleLogo size={22} />
       </div>
-      <div className="flex items-center gap-[8px] border-r border-line px-[16px] font-mono text-[10px] text-dim">
+      {/* Projektkontext: begrenzt und abgeschnitten — reale Projektnamen sind
+          lang, und die Filterzeile rechts darf darunter nicht verschwinden. */}
+      <div className="flex max-w-[320px] shrink items-center gap-[8px] overflow-hidden border-r border-line px-[16px] font-mono text-[10px] text-dim">
         {loaded ? (
           <>
-            <span className="text-ink">{lv.projectName ?? lv.fileName}</span>
+            <span className="truncate text-ink" title={lv.projectName ?? lv.fileName}>
+              {lv.projectName ?? lv.fileName}
+            </span>
             {lv.client !== null && (
               <>
                 <span className="text-line2">/</span>
-                <span>{lv.client}</span>
+                <span className="truncate" title={lv.client}>
+                  {lv.client}
+                </span>
               </>
             )}
           </>

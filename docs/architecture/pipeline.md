@@ -173,8 +173,12 @@ Stufe 0 — StlbMatch          → attributes.gewerk_lb    (LB-Nummer, z. B. "01
     │                                                     falls der LB eindeutig nicht-physisch ist,
     │                                                     sonst vorläufig "bauteil")
     │
-    ├── kein LB-Treffer ──► Fallback: heuristische Positionsart-Erkennung (Stichworte/
-    │                       Einheit) ──► attributes.positionsart, gewerk*=null
+    ├── kein LB-Treffer im Positionstext ──► Überschriften der übergeordneten
+    │                       Abschnitte/Lose gegen denselben Katalog prüfen, nächstgelegene
+    │                       zuerst ──► gewerk*, _meta.gewerkQuelle="abschnitt"
+    │
+    ├── auch dort kein Treffer ──► Fallback: heuristische Positionsart-Erkennung
+    │                       (Stichworte/Einheit) ──► attributes.positionsart, gewerk*=null
     │
     ▼
 Extraktoren (gewerkeunabhängig, WP-J)
@@ -215,6 +219,16 @@ CSV keine echten Zeilen enthält, matcht Stufe 0 nie und **jede** Position läuf
 den Fallback-Pfad — kein Fehler, keine erfundenen LB-Nummern. Zur aktuell leeren
 `keywords`-Spalte und der daraus abgeleiteten Notlösung siehe
 [`domain/README.md`](../domain/README.md#stlb-bau-leistungsbereiche-als-primäre-klassifizierungsquelle-wp-2).
+
+**Gewerk aus der Abschnittsüberschrift** ([`decisions/0015`](../decisions/0015-gewerk-aus-der-abschnittsueberschrift.md)).
+In realen LVs steht das Gewerk in der Titel-Überschrift und nicht in jeder
+Positionszeile. Findet Stufe 0 im Positionstext keinen Leistungsbereich, prüft sie
+deshalb die Überschriften der übergeordneten Abschnitte und Lose — mit demselben
+Katalog, die nächstgelegene zuerst. `ClassifierInput.headings` transportiert sie
+(`classifyDraft` füllt das Feld), `_meta.gewerkQuelle` hält fest, ob das Gewerk aus
+der Position oder aus einer Überschrift stammt, und das Eigenschaften-Panel weist ein
+geerbtes Gewerk als solches aus. Ein geerbter Treffer verfeinert die **Positionsart**
+bewusst nicht: unter „Betonarbeiten" stehen auch Vorhaltung und Stundenlohn.
 
 **Identitäts- vs. Eigenschaftserkennung.** Positionsart (Fallback-Heuristik) und
 Bauteiltyp werden ausschließlich aus dem **Kurztext** bestimmt. Deutsche LV-Langtexte

@@ -74,7 +74,7 @@ unabhängig von `positionsart`, da z. B. auch `baustelleneinrichtung` ein eigene
 | Key | Typ | Beispiel | Facette |
 |---|---|---|---|
 | `gewerkLb` | `string \| null` | `"012"` | STLB-Bau-LB-Nummer (Ruleset-Key, normbasiert) |
-| `gewerk` | `string \| null` | `"Beton- und Stahlbetonarbeiten"` | Gewerk (LB-Bezeichnung, Anzeigewert) |
+| `gewerk` | `string \| null` | `"Beton- und Stahlbetonarbeiten"` | Gewerk (LB-Bezeichnung, Anzeigewert); kann aus der Abschnittsüberschrift stammen — dann steht `_meta.gewerkQuelle` auf `"abschnitt"` ([`decisions/0015`](../decisions/0015-gewerk-aus-der-abschnittsueberschrift.md)) |
 
 Kein LB-Treffer (Referenzkatalog noch leer oder Text passt zu keinem LB) ⇒ beide Keys
 `null`, `positionsart` kommt dann aus dem heuristischen Fallback statt aus dem LB.

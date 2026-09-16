@@ -196,3 +196,87 @@ describe('RuleBasedClassifier — Fallback ohne Referenzkatalog', () => {
     expect(attributes.bauteiltyp).toBeUndefined();
   });
 });
+
+// In realen LVs steht das Gewerk regelmäßig nur in der Titel-Überschrift und
+// nicht in jeder Positionszeile. Stufe 0 greift deshalb auf die Überschriften
+// der übergeordneten Abschnitte zurück — mit demselben Katalog, und sichtbar
+// als geerbt (`meta.gewerkQuelle`).
+describe('RuleBasedClassifier — Gewerk aus der Abschnittsüberschrift', () => {
+  const classifier = getClassifier({ catalog: CATALOG });
+
+  it('erbt den Leistungsbereich, wenn der Positionstext keinen nennt', () => {
+    const { attributes, meta } = classifier.classify(
+      input({
+        shortText: 'Wand herstellen, d = 24 cm',
+        longText: 'Wand aus Ortbeton C25/30 herstellen.',
+        unit: 'm3',
+        headings: ['Titel 02 Betonarbeiten', 'Los 1 Rohbau'],
+      }),
+    );
+
+    expect(attributes.gewerkLb).toBe('013');
+    expect(attributes.gewerk).toBe('Beton- und Stahlbetonarbeiten');
+    expect(meta.gewerkQuelle).toBe('abschnitt');
+  });
+
+  it('lässt den Positionstext gewinnen — er ist genauer als die Überschrift', () => {
+    const { attributes, meta } = classifier.classify(
+      input({
+        shortText: 'Mauerwerk herstellen',
+        longText: 'Mauerarbeiten: Innenwand aus Kalksandstein.',
+        unit: 'm2',
+        headings: ['Titel 02 Betonarbeiten'],
+      }),
+    );
+
+    expect(attributes.gewerkLb).toBe('012');
+    expect(meta.gewerkQuelle).toBe('position');
+  });
+
+  it('nimmt die nächstgelegene Überschrift, nicht die oberste', () => {
+    const { attributes } = classifier.classify(
+      input({
+        shortText: 'Wand herstellen',
+        headings: ['Abschnitt 2.1 Mauerarbeiten', 'Titel 02 Betonarbeiten'],
+      }),
+    );
+
+    expect(attributes.gewerkLb).toBe('012');
+  });
+
+  it('erfindet nichts: eine Überschrift ohne Leistungsbereich bleibt folgenlos', () => {
+    const { attributes, meta } = classifier.classify(
+      input({
+        shortText: 'Vorhaltung Bauzaun',
+        headings: ['Titel 09 Allgemeines', 'Los 1'],
+      }),
+    );
+
+    expect(attributes.gewerk).toBeNull();
+    expect(attributes.gewerkLb).toBeNull();
+    expect(meta.gewerkQuelle).toBeNull();
+  });
+
+  it('macht aus einem geerbten Gewerk kein Bauteil', () => {
+    // Unter „Betonarbeiten" stehen auch Stundenlohn- und Vorhalteleistungen.
+    const { attributes } = classifier.classify(
+      input({
+        shortText: 'Stundenlohnarbeiten Facharbeiter',
+        longText: 'Abrechnung nach Aufwand.',
+        unit: 'Std',
+        headings: ['Titel 02 Betonarbeiten'],
+      }),
+    );
+
+    expect(attributes.positionsart).toBe('personal');
+  });
+
+  it('erbt auch ohne eigene Abschnitts-Überschrift aus dem Los', () => {
+    const { attributes, meta } = classifier.classify(
+      input({ shortText: 'Wand herstellen', headings: ['Los 3 Mauerarbeiten'] }),
+    );
+
+    expect(attributes.gewerkLb).toBe('012');
+    expect(meta.gewerkQuelle).toBe('abschnitt');
+  });
+});

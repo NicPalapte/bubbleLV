@@ -11,6 +11,7 @@ export type {
   ClassificationMeta,
   ClassificationResult,
   ClassifierInput,
+  GewerkQuelle,
   Positionsart,
   Span,
 } from './types';

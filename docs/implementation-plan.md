@@ -26,7 +26,10 @@ selbst anlegen.
 | WP-O | Ansicht „Matrix" | offen |
 | WP-P | Feinschliff: Kommandopalette, URL-Zustand, Export, Druck | offen |
 
-Offen bleibt weiterhin die inhaltliche Pflege der `keywords`-Spalte in
+Seit [`decisions/0015`](decisions/0015-gewerk-aus-der-abschnittsueberschrift.md) erbt
+eine Position das Gewerk aus der Überschrift ihres Abschnitts, wenn ihr eigener Text
+keinen Leistungsbereich nennt — das deckt den Normalfall ab. Offen bleibt trotzdem die
+inhaltliche Pflege der `keywords`-Spalte in
 [`domain/reference/stlb-bau-leistungsbereiche.csv`](domain/reference/stlb-bau-leistungsbereiche.csv)
 sowie die neuen Referenzdateien aus [`domain/vob-pruefungen.md`](domain/vob-pruefungen.md).
 Ohne sie greifen die jeweiligen Regeln nicht — das ist kein Fehler.

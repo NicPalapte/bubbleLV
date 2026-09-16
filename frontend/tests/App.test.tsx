@@ -39,11 +39,12 @@ describe('Viewer', () => {
     expect(screen.getAllByText('Kein LV geladen').length).toBeGreaterThan(0);
   });
 
-  it('bietet ein Demo-LV zum Ausprobieren an', () => {
+  it('bietet zwei Demo-LVs zum Ausprobieren an — mit und ohne Preise', () => {
     render(<App />);
     // Zweiter Weg neben der eigenen Datei — das Laden selbst deckt
     // tests/pipeline/loadDemoLv.test.ts ab.
-    expect(screen.getByRole('button', { name: 'Demo-LV laden' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Demo mit Preisen' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Demo ohne Preise' })).toBeInTheDocument();
     expect(screen.getByText(/Keine eigene Datei zur Hand/)).toBeInTheDocument();
   });
 
@@ -89,7 +90,8 @@ describe('Viewer', () => {
     await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
 
     fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'Beton' } });
-    await waitFor(() => expect(screen.getByText(/AKTIVE FILTER|Beton/)).toBeInTheDocument());
+    // Die Suche ist entprellt — der Überblick zeigt an, sobald sie greift.
+    await waitFor(() => expect(screen.getByText(/im aktuellen Filter/)).toBeInTheDocument());
 
     // In der Prüfung ein Stück scrollen …
     switchToView('Prüfung');

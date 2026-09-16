@@ -2,7 +2,7 @@
 // liefert bewusst ein offenes Record (neue Rulesets bringen neue Keys mit), die UI
 // braucht daraus aber verlässliche Strings.
 
-import type { ClassificationMeta, Span } from './classify';
+import type { ClassificationMeta, GewerkQuelle, Span } from './classify';
 import type { PositionSummary } from '../types/lvNode';
 
 /** Reservierte Keys: Provenance und Fundstellen, nie eine Facette. */
@@ -33,11 +33,13 @@ export function attrMeta(attributes: Record<string, unknown>): ClassificationMet
   if (meta === null || typeof meta !== 'object') return null;
   const record = meta as Record<string, unknown>;
   if (typeof record.classifier !== 'string' || typeof record.ruleset !== 'string') return null;
+  const quelle = record.gewerkQuelle;
   return {
     classifier: record.classifier,
     ruleset: record.ruleset,
     version: typeof record.version === 'number' ? record.version : 0,
     confidence: typeof record.confidence === 'number' ? record.confidence : 0,
+    gewerkQuelle: quelle === 'position' || quelle === 'abschnitt' ? (quelle as GewerkQuelle) : null,
   };
 }
 
