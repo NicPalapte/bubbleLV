@@ -16,11 +16,12 @@
 // das ganze LV, während Tabelle und Graph daneben eine Teilmenge zeigen. Die
 // Kopfzeile sagt darum auch, dass gefiltert wird.
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { BlockLabel } from '../ui/PanelHeader';
 import { Chip } from '../ui/Chip';
 import { formatCount } from '../../lib/format';
 import { matchCount } from '../../lib/tree/matchCounts';
+import { useScrollMemory } from '../common/useScrollMemory';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { Flag, FlagCategory, RuleStatus } from '../../lib/check';
 import type { LVNode } from '../../types/lvNode';
@@ -142,9 +143,18 @@ function FlagRow({ flag, node, onJump }: { flag: Flag; node: LVNode | null; onJu
 }
 
 export function CheckView() {
-  const { lv, nodes, parents, mutedRules, matches } = useViewer();
+  const {
+    lv,
+    nodes,
+    parents,
+    filter: { mutedRules },
+    view: {
+      check: { openRules },
+    },
+    matches,
+  } = useViewer();
   const dispatch = useViewerDispatch();
-  const [openRules, setOpenRules] = useState<ReadonlySet<string>>(new Set());
+  const [attachScroll, onScroll] = useScrollMemory('check');
 
   const check = lv?.check ?? null;
 
@@ -177,15 +187,10 @@ export function CheckView() {
     dispatch({ type: 'setViewMode', mode: 'table' });
   };
 
-  const toggleOpen = (id: string): void =>
-    setOpenRules((current) => {
-      const next = new Set(current);
-      if (!next.delete(id)) next.add(id);
-      return next;
-    });
+  const toggleOpen = (id: string): void => dispatch({ type: 'toggleRuleOpen', id });
 
   return (
-    <div className="absolute inset-0 overflow-auto bg-white">
+    <div ref={attachScroll} onScroll={onScroll} className="absolute inset-0 overflow-auto bg-white">
       <div className="mx-auto max-w-[900px] px-[20px] py-[16px]">
         <div className="border-b border-line pb-[10px]">
           <BlockLabel>Prüfung</BlockLabel>

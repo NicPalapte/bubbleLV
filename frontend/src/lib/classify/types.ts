@@ -8,7 +8,17 @@ export interface ClassifierInput {
   shortText: string;
   longText: string;
   unit: string | null;
+  /**
+   * Überschriften der übergeordneten Abschnitte und Lose, die nächstgelegene
+   * zuerst. In realen LVs steht das Gewerk regelmäßig nur dort ("Titel 02
+   * Erdarbeiten") und nicht im Positionstext; findet der Positionstext keinen
+   * Leistungsbereich, prüft Stufe 0 diese Überschriften.
+   */
+  headings?: readonly string[];
 }
+
+/** Woher der Leistungsbereich stammt (Stufe 0). */
+export type GewerkQuelle = 'position' | 'abschnitt';
 
 /** Provenance-Block, landet als `attributes._meta` (docs/architecture/data-model.md). */
 export interface ClassificationMeta {
@@ -17,6 +27,13 @@ export interface ClassificationMeta {
   ruleset: string;
   version: number;
   confidence: number;
+  /**
+   * `position` = der Leistungsbereich steht im Positionstext, `abschnitt` = er
+   * stammt aus einer übergeordneten Überschrift, `null` = kein Treffer. Die
+   * Herkunft ist sichtbar, weil ein geerbtes Gewerk eine Ableitung ist und
+   * keine Angabe der Position selbst.
+   */
+  gewerkQuelle: GewerkQuelle | null;
 }
 
 /**

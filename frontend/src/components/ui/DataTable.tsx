@@ -23,6 +23,7 @@
 
 import {
   Fragment,
+  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -70,6 +71,17 @@ export interface DataTableProps<T> {
    * gezeichneten Inhalts.
    */
   onResize?: (key: string, width: number) => void;
+  /**
+   * Scrollposition, mit der die Tabelle aufgeht — sie überlebt damit einen
+   * Ansichtswechsel (WP-L). Nur der Wert beim Einhängen zählt.
+   */
+  initialScrollTop?: number;
+  /**
+   * Beim Abbau einmal die erreichte Scrollposition. Bewusst nicht bei jedem
+   * Scroll-Ereignis: das feuert dutzendfach je Sekunde und zöge über den
+   * Viewer-Zustand die ganze Seite neu auf.
+   */
+  onLeave?: (scrollTop: number) => void;
 }
 
 /** Waagerechter Innenabstand einer Zelle (var(--pad-row)) plus rechter Rand. */
@@ -215,6 +227,8 @@ export function DataTable<T>({
   cellTitle,
   group,
   onResize,
+  initialScrollTop = 0,
+  onLeave,
 }: DataTableProps<T>) {
   const heads = useMemo(() => groupHeads(rows, group), [rows, group]);
 
@@ -222,7 +236,9 @@ export function DataTable<T>({
   const headRef = useRef<HTMLDivElement>(null);
   const rowProbeRef = useRef<HTMLDivElement>(null);
   const headProbeRef = useRef<HTMLDivElement>(null);
-  const [scrollTop, setScrollTop] = useState(0);
+  const [scrollTop, setScrollTop] = useState(initialScrollTop);
+  // Laufende Position ohne Zustandswechsel — sie wird beim Abbau gemeldet.
+  const scrollRef = useRef(initialScrollTop);
   const [viewport, setViewport] = useState(UNMEASURED);
   const [rowHeight, setRowHeight] = useState(UNMEASURED);
   const [headHeight, setHeadHeight] = useState(UNMEASURED);
@@ -235,6 +251,16 @@ export function DataTable<T>({
     const observer = new ResizeObserver(measure);
     observer.observe(element);
     return () => observer.disconnect();
+  }, []);
+
+  // Gemerkte Position wiederherstellen und beim Abbau zurückmelden.
+  const leaveRef = useRef(onLeave);
+  useEffect(() => {
+    leaveRef.current = onLeave;
+  }, [onLeave]);
+  useLayoutEffect(() => {
+    if (bodyRef.current !== null) bodyRef.current.scrollTop = scrollRef.current;
+    return () => leaveRef.current?.(scrollRef.current);
   }, []);
 
   // Zeilenhöhe per unsichtbarer Messzeile statt Annahme — bleibt korrekt, auch
@@ -417,6 +443,7 @@ export function DataTable<T>({
       <div
         ref={bodyRef}
         onScroll={(event) => {
+          scrollRef.current = event.currentTarget.scrollTop;
           setScrollTop(event.currentTarget.scrollTop);
           if (headRef.current !== null) headRef.current.scrollLeft = event.currentTarget.scrollLeft;
         }}

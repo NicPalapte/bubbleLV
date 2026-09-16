@@ -8,8 +8,11 @@
 // Tabelle, während der Baum daneben Treffer anzeigt (Issue #12).
 //
 // Spalten lassen sich ein-/ausblenden, verschieben und in der Breite ziehen
-// (Issue #41). Die Konfiguration ist reiner UI-Zustand dieser Komponente und
-// überlebt keinen Reload — gewollt, kein localStorage.
+// (Issue #41). Sortierung, Umfang, Spalten und Scrollposition liegen seit WP-L
+// im Ansichts-Zustand (`view.table`) statt als lokaler `useState`: die
+// Komponente wird beim Ansichtswechsel abgebaut, der Zustand soll ihn aber
+// überleben. Persistenz über die Sitzung hinaus gibt es weiterhin nicht —
+// kein localStorage.
 
 import { useMemo, useRef, useState } from 'react';
 import { useDismiss } from '../common/useDismiss';
@@ -22,8 +25,8 @@ import { attrString, attrStrings } from '../../lib/attributes';
 import { facetOptionLabel, FACETS_BY_ID } from '../../lib/facets';
 import { formatCount, formatEuro, formatNumber } from '../../lib/format';
 import { createPositionFilter } from '../../lib/index/positionIndex';
-import { prepareFilters } from '../../lib/matchPos';
 import { POSITION_STATUS } from '../../lib/status';
+import { headingOf } from '../../lib/tree/heading';
 import {
   defaultColumnConfig,
   moveColumn,
@@ -46,15 +49,6 @@ interface Row {
   /** Überschrift, unter der die Zeile in der Tabelle steht. */
   groupKey: string;
   groupLabel: string;
-}
-
-const KIND_PREFIX: Record<string, string> = { lot: 'LOS', section: '§' };
-
-function headingOf(node: LVNode): string {
-  const title = node.label !== null && node.label !== '' ? node.label : 'Ohne Bezeichnung';
-  if (node.code === '') return title;
-  const prefix = KIND_PREFIX[node.kind];
-  return `${prefix === undefined ? node.code : `${prefix} ${node.code}`} · ${title}`;
 }
 
 /**
@@ -159,9 +153,7 @@ const DEFAULT_WIDTHS: Readonly<Record<string, number>> = Object.fromEntries(
 /** Ohne OZ und Bezeichnung wäre eine Zeile nicht mehr zuzuordnen. */
 const LOCKED_COLUMNS: ReadonlySet<string> = new Set(['oz', 'shortText']);
 
-function initialColumnConfig(): ColumnConfig {
-  return defaultColumnConfig(DEFAULT_ORDER, DEFAULT_WIDTHS);
-}
+const DEFAULT_COLUMN_CONFIG: ColumnConfig = defaultColumnConfig(DEFAULT_ORDER, DEFAULT_WIDTHS);
 
 const ICON_BUTTON =
   'inline-flex h-[18px] w-[18px] cursor-pointer items-center justify-center border border-line bg-white p-0 font-mono text-[9px] leading-none text-dim disabled:cursor-default disabled:opacity-30';
@@ -198,7 +190,7 @@ function ColumnPicker({
         Spalten <span className="-ml-[2px] text-mute">▾</span>
       </Chip>
       <Popover ref={popoverRef} open={open} width={230} align="right" anchorRef={anchorRef}>
-        <PopoverHead onReset={isDefault ? undefined : () => onChange(initialColumnConfig())}>
+        <PopoverHead onReset={isDefault ? undefined : () => onChange(DEFAULT_COLUMN_CONFIG)}>
           Spalten
         </PopoverHead>
         <div role="list" aria-label="Spalten" style={{ padding: '4px 0' }}>
@@ -307,11 +299,24 @@ function compare(a: Row, b: Row, key: SortKey, dir: 1 | -1): number {
 }
 
 export function PositionsTable({ root }: { root: LVNode }) {
-  const { tree, index, filters, search, selectedPositionId, parents } = useViewer();
+  const {
+    tree,
+    index,
+    active,
+    selection: { positionId: selectedPositionId },
+    view: { table, scroll },
+    parents,
+  } = useViewer();
   const dispatch = useViewerDispatch();
-  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: 'oz', dir: 1 });
-  const [scope, setScope] = useState<Scope>('node');
-  const [columnConfig, setColumnConfig] = useState<ColumnConfig>(initialColumnConfig);
+  // Der Ansichts-Zustand führt den Sortierschlüssel als Zeichenkette: die
+  // Spaltenschlüssel kennt nur diese Komponente. Unbekannte Schlüssel fallen
+  // unten in `sortValue` auf „kein Wert" zurück, sortieren also stabil.
+  const { sort, scope } = table;
+  // `null` heißt „unverändert": die Vorgabe kennt nur diese Komponente, weil
+  // nur sie die Spaltendefinitionen hat.
+  const columnConfig = table.columns ?? DEFAULT_COLUMN_CONFIG;
+  const setColumnConfig = (columns: ColumnConfig): void =>
+    dispatch({ type: 'tableColumns', columns });
 
   const columns = useMemo<Column<Row>[]>(
     () =>
@@ -324,7 +329,7 @@ export function PositionsTable({ root }: { root: LVNode }) {
 
   // Eine Prüffunktion je Filterwechsel statt einer Ableitung je Zeile: sie
   // schlägt den Treffer im flachen Positions-Index nach (WP-I, Schritt 3).
-  const active = useMemo(() => prepareFilters(filters, search), [filters, search]);
+  // `active` kommt aus dem Provider — eine Aufbereitung für alle Ansichten.
   const matchesPosition = useMemo(() => createPositionFilter(index, active), [index, active]);
   const filtering = active.filtering;
   const lvRoot = tree ?? root;
@@ -363,7 +368,7 @@ export function PositionsTable({ root }: { root: LVNode }) {
     return [...hits].sort((a, b) => {
       const ga = order.get(a.groupKey) ?? 0;
       const gb = order.get(b.groupKey) ?? 0;
-      return ga === gb ? compare(a, b, sort.key, sort.dir) : ga - gb;
+      return ga === gb ? compare(a, b, sort.key as SortKey, sort.dir) : ga - gb;
     });
   }, [hits, sort]);
 
@@ -425,7 +430,7 @@ export function PositionsTable({ root }: { root: LVNode }) {
                 { value: 'lv', label: 'Ganzes LV', title: 'Alle Positionen des LV' },
               ]}
               value={effectiveScope}
-              onChange={(value) => setScope(value as Scope)}
+              onChange={(value) => dispatch({ type: 'tableScope', scope: value as Scope })}
             />
           )}
           <ColumnPicker config={columnConfig} onChange={setColumnConfig} />
@@ -445,19 +450,16 @@ export function PositionsTable({ root }: { root: LVNode }) {
             positionId: selectedPositionId === key ? null : key,
           })
         }
+        initialScrollTop={scroll.table}
+        onLeave={(top) => dispatch({ type: 'viewScroll', view: 'table', top })}
         empty="Keine Positionen entsprechen den Filtern."
         sort={sort}
-        onSort={(key) =>
-          setSort((current) => ({
-            key: key as SortKey,
-            dir: current.key === key ? ((current.dir * -1) as 1 | -1) : 1,
-          }))
-        }
+        onSort={(key) => dispatch({ type: 'tableSort', key })}
         group={groupCount > 1 ? (row) => ({ key: row.groupKey, label: row.groupLabel }) : undefined}
         cellTitle={(row, column) =>
           column.key === 'shortText' ? row.position.shortText : undefined
         }
-        onResize={(key, width) => setColumnConfig((current) => resizeColumn(current, key, width))}
+        onResize={(key, width) => setColumnConfig(resizeColumn(columnConfig, key, width))}
       />
     </div>
   );

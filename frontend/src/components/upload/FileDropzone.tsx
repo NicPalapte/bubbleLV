@@ -1,11 +1,13 @@
-// Datei laden → lokale Pipeline anstoßen. Drag & Drop + Datei-Dialog, dazu das
-// mitgelieferte Demo-LV zum Ausprobieren ohne eigene Datei.
+// Datei laden → lokale Pipeline anstoßen. Drag & Drop + Datei-Dialog, dazu die
+// mitgelieferten Demo-LVs zum Ausprobieren ohne eigene Datei — eines mit und
+// eines ohne Preise, weil beides in der Praxis vorkommt und die App beides
+// unterschiedlich zeigt (lib/pipeline/loadDemoLv.ts).
 // Die Datei verlässt den Browser nie: kein Upload, keine Persistenz.
 
 import { useCallback, useRef, useState } from 'react';
 import { Chip } from '../ui/Chip';
 import { BubbleLogo } from '../ui/BubbleLogo';
-import { DEMO_LV_LABEL, loadDemoLv } from '../../lib/pipeline/loadDemoLv';
+import { DEMO_LVS, loadDemoLv, type DemoLv } from '../../lib/pipeline/loadDemoLv';
 import { loadLv, LVLoadError } from '../../lib/pipeline/loadLv';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { LoadedLV } from '../../lib/pipeline/runPipeline';
@@ -48,9 +50,9 @@ export function FileDropzone() {
     [run],
   );
 
-  const openDemo = (): void => {
+  const openDemo = (demo: DemoLv): void => {
     if (loading) return;
-    void run(loadDemoLv);
+    void run(() => loadDemoLv(demo));
   };
 
   const openDialog = (): void => {
@@ -110,12 +112,23 @@ export function FileDropzone() {
           <Chip on onClick={openDialog}>
             {loading ? 'Wird gelesen…' : 'Datei auswählen'}
           </Chip>
-          <Chip onClick={openDemo} title={`${DEMO_LV_LABEL} — zum Ausprobieren`}>
-            Demo-LV laden
-          </Chip>
+          {DEMO_LVS.map((demo) => (
+            <Chip
+              key={demo.id}
+              onClick={() => openDemo(demo)}
+              title={`${demo.title} — ${demo.hint}`}
+            >
+              {demo.label}
+            </Chip>
+          ))}
         </span>
-        <div className="max-w-[420px] font-mono text-[10px] leading-[1.6] text-mute">
-          Keine eigene Datei zur Hand? „Demo-LV laden" öffnet die frei verfügbare {DEMO_LV_LABEL}.
+        <div className="max-w-[460px] font-mono text-[10px] leading-[1.6] text-mute">
+          Keine eigene Datei zur Hand? Zwei Demo-LVs stehen bereit:
+          {DEMO_LVS.map((demo) => (
+            <span key={demo.id} className="block">
+              <span className="text-dim">{demo.label}</span> — {demo.hint}
+            </span>
+          ))}
         </div>
         <input
           ref={inputRef}

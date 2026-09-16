@@ -16,6 +16,7 @@ import { formatEuro, formatNumber } from '../../lib/format';
 import { keysOfLabel, presentCategories } from '../../lib/spanCategories';
 import { POSITION_STATUS } from '../../lib/status';
 import { useViewer } from '../../state/viewer';
+import type { ClassificationMeta } from '../../lib/classify';
 import type { LVNode, PositionSummary } from '../../types/lvNode';
 
 const ATTRIBUTE_LABELS: Record<string, string> = {
@@ -47,6 +48,16 @@ const ATTRIBUTE_LABELS: Record<string, string> = {
 
 function attributeLabel(key: string): string {
   return ATTRIBUTE_LABELS[key] ?? key;
+}
+
+/**
+ * Ein Gewerk, das aus der Abschnittsüberschrift stammt, wird als solches
+ * ausgewiesen. Es steht so in der Datei, aber nicht in dieser Position — und
+ * Bubble behauptet nichts, was die Position nicht selbst sagt.
+ */
+function attributeValue(key: string, value: string, meta: ClassificationMeta | null): string {
+  const inherited = meta?.gewerkQuelle === 'abschnitt';
+  return inherited && (key === 'gewerk' || key === 'gewerkLb') ? `${value} (aus Abschnitt)` : value;
 }
 
 /**
@@ -118,7 +129,10 @@ export function PositionDetails({
   /** Nur die schwebende Karte im Graphen (Issue #30) braucht eine Schließen-Schaltfläche. */
   onClose?: () => void;
 }) {
-  const { search, parents } = useViewer();
+  const {
+    filter: { search },
+    parents,
+  } = useViewer();
   const parent = parents.get(node.id) ?? null;
   const total = node.totalPrice;
   const share =
@@ -254,7 +268,11 @@ export function PositionDetails({
           {attributes.length === 0 && <div className="font-mono text-[10px] text-mute">—</div>}
           <PropGrid>
             {attributes.map(([key, value]) => (
-              <PropField key={key} label={attributeLabel(key)} value={value} />
+              <PropField
+                key={key}
+                label={attributeLabel(key)}
+                value={attributeValue(key, value, meta)}
+              />
             ))}
           </PropGrid>
           {meta !== null && (

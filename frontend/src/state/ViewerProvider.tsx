@@ -1,15 +1,16 @@
 // Provider für den Viewer-Session-State. Berechnet die abgeleiteten Sichten
-// (Knoten-Index, Elternzuordnung, flacher Positions-Index, Trefferzahlen) an
-// genau einer Stelle — Baum, Graph und Tabelle bekommen dasselbe Ergebnis
-// (Issue #18).
+// (Knoten-Index, Elternzuordnung, flacher Positions-Index, Trefferzahlen,
+// Gewerk-Farbskala) an genau einer Stelle — Baum, Graph, Tabelle und Überblick
+// bekommen dasselbe Ergebnis (Issue #18, WP-L).
 
 import { useMemo, useReducer, type ReactNode } from 'react';
+import { buildColorScale, EMPTY_COLOR_SCALE, type ColorScale } from '../lib/colors';
 import {
   buildPositionIndex,
   EMPTY_POSITION_INDEX,
   type PositionIndex,
 } from '../lib/index/positionIndex';
-import { prepareFilters } from '../lib/matchPos';
+import { prepareFilters, type ActiveFilters } from '../lib/matchPos';
 import { measure } from '../lib/perf';
 import { indexNodes, indexParents } from '../lib/tree/buildTree';
 import { computeMatchCounts, type MatchIndex } from '../lib/tree/matchCounts';
@@ -30,6 +31,7 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(viewerReducer, INITIAL_VIEWER_STATE);
 
   const tree = state.lv?.tree ?? null;
+  const { search, filters } = state.filter;
 
   const structure = useMemo(() => {
     if (tree === null) return { nodes: EMPTY_NODES, parents: EMPTY_PARENTS };
@@ -44,40 +46,37 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
     return measure('Positions-Index', () => buildPositionIndex(tree));
   }, [tree]);
 
+  // Eine Aufbereitung je Filterwechsel — Trefferzahlen, Tabelle und Überblick
+  // rechnen gegen dieselbe.
+  const active = useMemo<ActiveFilters>(() => prepareFilters(filters, search), [filters, search]);
+
   const matches = useMemo<MatchIndex>(() => {
     if (tree === null) return EMPTY_MATCHES;
-    const active = prepareFilters(state.filters, state.search);
     return measure('Filter', () => computeMatchCounts(tree, index, active));
-  }, [tree, index, state.filters, state.search]);
+  }, [tree, index, active]);
+
+  // Eine Farbskala je geladenem LV, gültig für alle Ansichten (WP-L). Die
+  // Gewerk-Namen stehen in den vorberechneten Facetten-Zählern bereits sortiert
+  // — damit bekommt dasselbe LV immer dieselben Farben.
+  const gewerkColors = useMemo<ColorScale>(() => {
+    const values = state.lv?.summary.facets.get('gewerk');
+    return values === undefined ? EMPTY_COLOR_SCALE : buildColorScale(values.keys());
+  }, [state.lv]);
 
   // Bei aktiver Suche/Filterung gehen die Pfade zu den Treffern automatisch auf.
   // Abgeleitet statt gespeichert: fällt der Filter weg, steht wieder genau der
   // Aufklapp-Zustand da, den der Nutzer selbst gesetzt hat.
   const openNodes = useMemo<ReadonlySet<string>>(() => {
-    if (tree === null || !matches.filtering) return state.expanded;
-    const open = new Set(state.expanded);
-    const visit = (node: LVNode): void => {
-      if (node.kind === 'position') return;
-      if ((matches.counts.get(node.id) ?? 0) > 0) open.add(node.id);
-      for (const child of node.children) visit(child);
-    };
-    visit(tree);
-    return open;
-  }, [tree, matches, state.expanded]);
+    if (tree === null || !matches.filtering) return state.selection.expanded;
+    return withHits(tree, matches, state.selection.expanded);
+  }, [tree, matches, state.selection.expanded]);
 
   // Sammel-Bubbles mit Treffern gehen bei aktiver Suche von selbst auf —
   // dieselbe Ableitung wie `openNodes`, damit der Filter nichts versteckt.
   const openClusters = useMemo<ReadonlySet<string>>(() => {
-    if (tree === null || !matches.filtering) return state.openClusters;
-    const open = new Set(state.openClusters);
-    const visit = (node: LVNode): void => {
-      if (node.kind === 'position') return;
-      if ((matches.counts.get(node.id) ?? 0) > 0) open.add(node.id);
-      for (const child of node.children) visit(child);
-    };
-    visit(tree);
-    return open;
-  }, [tree, matches, state.openClusters]);
+    if (tree === null || !matches.filtering) return state.selection.openClusters;
+    return withHits(tree, matches, state.selection.openClusters);
+  }, [tree, matches, state.selection.openClusters]);
 
   const derived = useMemo<ViewerDerived>(
     () => ({
@@ -85,25 +84,31 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
       nodes: structure.nodes,
       parents: structure.parents,
       index,
+      active,
       selectedNode:
-        state.selectedNodeId === null ? null : (structure.nodes.get(state.selectedNodeId) ?? null),
-      selectedPosition:
-        state.selectedPositionId === null
+        state.selection.nodeId === null
           ? null
-          : (structure.nodes.get(state.selectedPositionId) ?? null),
+          : (structure.nodes.get(state.selection.nodeId) ?? null),
+      selectedPosition:
+        state.selection.positionId === null
+          ? null
+          : (structure.nodes.get(state.selection.positionId) ?? null),
       matches,
       openNodes,
       openClusters,
+      gewerkColors,
     }),
     [
       tree,
       structure,
       index,
-      state.selectedNodeId,
-      state.selectedPositionId,
+      active,
+      state.selection.nodeId,
+      state.selection.positionId,
       matches,
       openNodes,
       openClusters,
+      gewerkColors,
     ],
   );
 
@@ -114,4 +119,20 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
       <ViewerDispatchContext.Provider value={dispatch}>{children}</ViewerDispatchContext.Provider>
     </ViewerStateContext.Provider>
   );
+}
+
+/** Basis-Set plus alle Knoten, unter denen ein Treffer liegt. */
+function withHits(
+  tree: LVNode,
+  matches: MatchIndex,
+  base: ReadonlySet<string>,
+): ReadonlySet<string> {
+  const open = new Set(base);
+  const visit = (node: LVNode): void => {
+    if (node.kind === 'position') return;
+    if ((matches.counts.get(node.id) ?? 0) > 0) open.add(node.id);
+    for (const child of node.children) visit(child);
+  };
+  visit(tree);
+  return open;
 }

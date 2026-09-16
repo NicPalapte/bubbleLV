@@ -19,6 +19,9 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das *Was*, diese Dateien da
 | 0010 | [Positions-Index und vorberechnete Aggregate](0010-positions-index-und-aggregate.md) | akzeptiert | 2026-09-14 |
 | 0011 | [Extraktoren und Fundstellen im Langtext](0011-extraktoren-und-fundstellen.md) | akzeptiert | 2026-09-14 |
 | 0012 | [Prüfregeln: Norm-Verweise aus der Referenzdatei](0012-pruefregeln-und-norm-verweise.md) | akzeptiert | 2026-09-14 |
+| 0013 | [Eine Gewerk-Farbskala für alle Ansichten](0013-gewerk-farbskala.md) | akzeptiert | 2026-09-16 |
+| 0014 | [Zweites Demo-LV: Angebot mit Preisen](0014-demo-lv-mit-preisen.md) | akzeptiert | 2026-09-16 |
+| 0015 | [Gewerk aus der Abschnittsüberschrift erben](0015-gewerk-aus-der-abschnittsueberschrift.md) | akzeptiert | 2026-09-16 |
 
 ## Wann schreibe ich eine neue Datei?
 

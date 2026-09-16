@@ -15,8 +15,10 @@ Das ist die einzige Aufgabe. Konkret:
 - **VOB-Check** — Hinweise mit Norm-Verweis, kein Rechtsrat
   ([Regelkatalog](docs/domain/vob-pruefungen.md))
 
-Zum Ausprobieren ohne eigene Datei liegt die frei verfügbare **BVBS-Musterdatei** bei —
-„Demo-LV laden" auf der Startseite.
+Zum Ausprobieren ohne eigene Datei liegen **zwei Demo-LVs** bei (Startseite):
+„Demo ohne Preise" ist die frei verfügbare BVBS-Musterdatei (x83), „Demo mit Preisen"
+ein daraus aufgebautes Angebot (x84) mit erfundenen Preisen
+([Details](docs/decisions/0014-demo-lv-mit-preisen.md)).
 
 Acht gleichrangige Ansichten teilen sich **einen** Filterzustand: Überblick · Graph ·
 Tabelle · Matrix · Ähnlichkeit · Vergleich · Prüfung · Eigenschaften. Ansicht wechseln

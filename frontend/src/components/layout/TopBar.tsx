@@ -26,14 +26,24 @@ const EMPTY_COUNTS: ReadonlyMap<string, number> = new Map();
  */
 const SEARCH_DEBOUNCE_MS = 250;
 
+/**
+ * Acht gleichrangige Ansichten auf einem Filterzustand sind das Ziel (WP-L);
+ * vier stehen. Der Umschalter ändert **nur** die Ansicht — Filter, Suche und
+ * Auswahl bleiben, wo sie sind.
+ */
 const VIEW_MODES = [
+  { value: 'overview', label: 'Überblick', title: 'Kennzahlen, Treemap, Pareto' },
   { value: 'graph', label: 'Graph', title: 'Bubble-Graph, Vollbild' },
   { value: 'table', label: 'Tabelle', title: 'Baum, Tabelle und Eigenschaften' },
   { value: 'check', label: 'Prüfung', title: 'Hinweise der Prüfregeln' },
 ] as const;
 
 export function TopBar() {
-  const { lv, filters, search, viewMode } = useViewer();
+  const {
+    lv,
+    filter: { filters, search },
+    view,
+  } = useViewer();
   const dispatch = useViewerDispatch();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -126,14 +136,20 @@ export function TopBar() {
       <div className="flex items-center border-r border-line px-[18px]">
         <BubbleLogo size={22} />
       </div>
-      <div className="flex items-center gap-[8px] border-r border-line px-[16px] font-mono text-[10px] text-dim">
+      {/* Projektkontext: begrenzt und abgeschnitten — reale Projektnamen sind
+          lang, und die Filterzeile rechts darf darunter nicht verschwinden. */}
+      <div className="flex max-w-[320px] shrink items-center gap-[8px] overflow-hidden border-r border-line px-[16px] font-mono text-[10px] text-dim">
         {loaded ? (
           <>
-            <span className="text-ink">{lv.projectName ?? lv.fileName}</span>
+            <span className="truncate text-ink" title={lv.projectName ?? lv.fileName}>
+              {lv.projectName ?? lv.fileName}
+            </span>
             {lv.client !== null && (
               <>
                 <span className="text-line2">/</span>
-                <span>{lv.client}</span>
+                <span className="truncate" title={lv.client}>
+                  {lv.client}
+                </span>
               </>
             )}
           </>
@@ -164,8 +180,8 @@ export function TopBar() {
           <SegmentedControl
             label="Ansicht"
             options={VIEW_MODES}
-            value={viewMode}
-            onChange={(value) => dispatch({ type: 'setViewMode', mode: value as typeof viewMode })}
+            value={view.mode}
+            onChange={(value) => dispatch({ type: 'setViewMode', mode: value as typeof view.mode })}
           />
         </div>
       )}

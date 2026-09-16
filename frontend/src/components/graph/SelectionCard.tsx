@@ -85,7 +85,9 @@ export function SelectionCard({ node, onClose }: SelectionCardProps) {
   const ref = useRef<HTMLDivElement>(null);
   useDismiss(ref, true, onClose, { ignoreDrag: true });
 
-  const { panelSize, cardPos } = useViewer();
+  const {
+    view: { panelSize, cardPos },
+  } = useViewer();
   const dispatch = useViewerDispatch();
   const drag = useRef({ on: false, x0: 0, y0: 0, right0: 0, top0: 0, width0: panelSize.width });
   const resize = useRef({ on: false, x0: 0, y0: 0, width0: 0, height0: 0, maxW: 0, maxH: 0 });

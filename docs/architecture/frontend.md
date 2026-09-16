@@ -48,6 +48,9 @@ frontend/
     │   ├── index/
     │   │   ├── positionIndex.ts      # flacher Positions-Index (Rechenbasis, WP-I)
     │   │   └── summary.ts            # Facetten-Zähler + Wertebereiche, einmal berechnet
+    │   ├── overview/                 # Kennzahlen, Treemap-Layout (WP-L)
+    │   │   ├── model.ts              # buildOverview: Kennzahlen, Gruppen, Pareto, Mengen
+    │   │   └── treemap.ts            # squarified Treemap, reine Funktion
     │   ├── check/                    # Prüfregeln + Hinweise (WP-K)
     │   │   ├── rules/                # ein Modul je Regelgruppe
     │   │   ├── referenz.ts           # Regel-Status und Listen aus den CSV
@@ -59,19 +62,24 @@ frontend/
     │   ├── perf.ts                   # Messpunkte (nur Konsole, nur Entwicklung)
     │   ├── spanCategories.ts         # Farbe und Name je Fundstellen-Kategorie
     │   ├── facets.ts                 # Facetten-Definitionen (dynamische Werte)
+    │   ├── colors.ts                 # Gewerk-Farbskala für alle Ansichten (WP-L)
     │   └── graph/                    # Graph-Engine (aus lv-graph.jsx)
     │       ├── constants.ts          # Radien, LOD-Schwellen, Größenmodi
     │       ├── layoutRadial.ts       # Ballon-Layout (Kreis je Elternknoten) + Cluster
     │       └── culling.ts            # Viewport-Culling
-    ├── state/
-    │   ├── viewer.ts                 # State, Reducer, Context, Hooks
-    │   │                             #   inkl. Aufklapp-Zustand für Tree + Graph
+    ├── state/                        # drei getrennte Bereiche, eine Klammer (WP-L)
+    │   ├── filterState.ts            # Suche, Facetten, Nicht-Treffer, stumme Regeln
+    │   ├── selectionState.ts         # Auswahl + Aufklapp-Zustand (Tree und Graph)
+    │   ├── viewState.ts              # aktive Ansicht + Zustand je Ansicht
+    │   ├── viewer.ts                 # Klammer: State, Reducer, Context, Hooks
     │   └── ViewerProvider.tsx        # Provider + abgeleitete Sichten (Trefferindex)
     └── components/
         ├── layout/{Tree,TopBar,PropertiesPanel,ResizeHandle}.tsx
         ├── upload/FileDropzone.tsx   # Drag&Drop/Datei-Dialog → Pipeline
         ├── graph/{BubbleGraph,BubbleNode,GraphControls,GraphHeader}.tsx
         ├── check/CheckView.tsx           # Ansicht „Prüfung" (WP-K)
+        ├── overview/                     # Ansicht „Überblick" (WP-L)
+        │   └── {OverviewView,MetricTiles,Treemap,ParetoCard,UnitTotals}.tsx
         ├── table/PositionsTable.tsx
         ├── filter/{FilterStrip,FacetButton,RangeButton}.tsx
         ├── common/{Highlighted.tsx,useOutsideClose.ts}
@@ -152,8 +160,8 @@ Provider:
 
 | Was | Wo | Bemerkung |
 |---|---|---|
-| Aufklapp-Zustand | `state.expanded` (`ReadonlySet<string>`) | offene Knoten; ein Klick im Baum wirkt im Graphen und umgekehrt |
-| aufgelöste Cluster | `state.openClusters` | reine Graph-Darstellung, gleiche Lebensdauer |
+| Aufklapp-Zustand | `state.selection.expanded` (`ReadonlySet<string>`) | offene Knoten; ein Klick im Baum wirkt im Graphen und umgekehrt |
+| aufgelöste Cluster | `state.selection.openClusters` | reine Graph-Darstellung, gleiche Lebensdauer |
 | Positions-Index | `derived.index` (`PositionIndex`) | flache Rechenbasis, einmal je geladenem LV |
 | Trefferzahlen | `derived.matches` (`MatchIndex`) | einmal je Filter-/Suchwechsel, für Baum, Graph und Tabelle |
 | tatsächlich offene Knoten | `derived.openNodes` | `expanded` **plus** die Pfade zu den Treffern, die Suche/Filter automatisch öffnen |
@@ -163,14 +171,52 @@ genau der Aufklapp-Zustand da, den der Nutzer selbst gesetzt hat. Nach dem Impor
 sind Projekt und Lose offen (`expandedToDepth(tree, 2)`), `Alles einklappen` fällt
 auf die Lose zurück — die Wurzel bleibt offen, sonst wäre der Baum leer.
 
-**Nicht** im gemeinsamen Zustand liegt der Ausschnitt des Graphen (Pan/Zoom): er
-ändert sich beim Ziehen pro Frame und würde als Context-State die ganze Seite neu
-rendern. Damit er den Abstecher in die Tabelle trotzdem überlebt (Issue #19),
-bleibt `BubbleGraph` dort **montiert** und wird von `ViewerPage` nur verborgen —
-der Rückweg zeigt exakt den Graphen, den man verlassen hat. Verborgen ruht sein
-Layout (`active={false}`), damit die Tabellensuche nicht bei jedem Tastendruck
-den ganzen Graphen im Hintergrund neu rechnet. Erst ein neuer Import
-setzt Ausschnitt und Aufklapp-Zustand auf den Startzustand zurück.
+### Drei getrennte Bereiche, eine Klammer (WP-L)
+
+`ViewerState` besteht aus `lv` plus drei Bereichen mit je eigenem Modul und
+eigenem Reducer. Die Trennung ist keine Ordnungsfrage: sie macht es unmöglich,
+dass ein Ansichtswechsel Filter oder Auswahl anfasst.
+
+| Bereich | Datei | Inhalt |
+|---|---|---|
+| `filter` | `state/filterState.ts` | Suche, Facetten, Mengenbereich, Nicht-Treffer-Modus, stummgeschaltete Prüfregeln |
+| `selection` | `state/selectionState.ts` | angewählter Knoten/Position, Mauszeiger, Aufklapp-Zustand, offene Sammel-Bubbles |
+| `view` | `state/viewState.ts` | aktive Ansicht plus Zustand **je** Ansicht: Graph-Ausschnitt und Größenmodus, Sortierung/Umfang/Spalten der Tabelle, offene Regeln der Prüfung, Scrollposition je Ansicht, Maße der Info-Panels |
+
+`state/viewer.ts` klammert die drei und behandelt selbst nur, was mehr als einen
+Bereich betrifft: `loaded`, `clear`, `openInTable` und `showGraph`. Ändert ein
+Bereich sich nicht, gibt sein Reducer dieselbe Referenz zurück — dann bleibt auch
+der Gesamtzustand identisch und kein Render läuft umsonst.
+
+Der **Ansichtsumschalter** (`setViewMode`) fasst ausschließlich `view.mode` an.
+Weil jede Ansicht ihren Zustand in `view` ablegt statt in lokalem `useState`,
+steht sie nach dem Rückwechsel wieder so da, wie man sie verlassen hat — obwohl
+die Komponente zwischendurch abgebaut war.
+
+**Ausnahme Graph-Ausschnitt:** Pan/Zoom bleibt während der Bedienung lokal in
+`BubbleGraph` — es ändert sich pro Frame und würde als Context-State die ganze
+Seite neu rendern. Beim Abbau der Ansicht wandert der Ausschnitt **einmal** nach
+`view.graph.viewport` und wird beim nächsten Öffnen als Startwert übernommen;
+dann entfällt das automatische Einpassen. Ein neuer Import verwirft ihn.
+
+**Scrollpositionen** laufen nach demselben Muster
+(`components/common/useScrollMemory.ts`, in der Tabelle über die `DataTable`-Props
+`initialScrollTop`/`onLeave`): laufend in einem Ref, einmal beim Abbau in den
+Zustand.
+
+### Ansicht „Überblick" (WP-L)
+
+Die Eingangsansicht nach dem Import. Sie rechnet nichts im Render: `buildOverview`
+(`lib/overview/model.ts`) läuft einmal je Filterwechsel über dem flachen
+Positions-Index und liefert Kennzahlen, die Treemap-Gruppen (Gewerk → Abschnitt),
+die Pareto-Kurve und die Mengen je Einheit. Das Kachel-Layout ist eine reine
+Funktion (`lib/overview/treemap.ts`, squarified). Gefiltert wird über dieselbe
+`ActiveFilters`-Aufbereitung wie überall (`derived.active`), gezählt wird also
+dieselbe Menge, die Tabelle und Graph zeigen.
+
+Führt die Datei **keine Preise** (x83), misst die Treemap die Anzahl statt der
+Summe, die Geld-Kachel sagt das ausdrücklich, und die Pareto-Auswertung entfällt
+mit Begründung — Nullwerte wären eine Aussage, die die Datei nicht macht.
 
 Die `PositionsTable` zeigt wahlweise den gewählten Abschnitt oder das ganze LV
 (Umschalter im Tabellenkopf). Bei aktivem Filter fällt sie automatisch auf das
@@ -205,8 +251,8 @@ Kreisgrafik. Eigenschaften, die erhalten bleiben:
 - **Drill-in:** Klick auf eine Sammel-Bubble klappt sie auf bzw. zu und wählt sie
   fürs Eigenschaften-Panel — die Mitte bleibt der Graph, und der Baum klappt
   mit. In die Tabelle führt das Tabellensymbol an der Bubble; bei Positionen
-  öffnet der Klick direkt die Tabelle. Welche Ansicht die Mitte zeigt, steht als `centerMode` im Viewer-State
-  und wird nicht aus der Auswahl abgeleitet. Zurück in den Graphen führen der
+  öffnet der Klick direkt die Tabelle. Welche Ansicht vorn steht, ist eigener
+  Zustand (`view.mode`) und wird nicht aus der Auswahl abgeleitet. Zurück in den Graphen führen der
   `Graph`-Knopf im Tabellenkopf und die Projektzeile im Baum — beide in einem
   Schritt, unabhängig davon, wie tief man steht.
 

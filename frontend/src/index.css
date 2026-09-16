@@ -39,6 +39,26 @@
   --redS: #fbdada;
 }
 
+/* ── Gewerk-Skala — zehn gleichrangige, gedämpfte Töne für Treemap, Legenden
+   und Diagramme. Kein Rangsignal: die Reihenfolge trennt nur benachbarte
+   Flächen, sie bewertet nicht. Alle Töne tragen --ink lesbar (Kontrast ≥ 7:1),
+   damit Beschriftungen ohne zweite Textfarbe auskommen.
+   Zuordnung und Begründung: docs/decisions/0013-gewerk-farbskala.md ── */
+:root {
+  --cat-1: #a9c8f5;
+  --cat-2: #a5dded;
+  --cat-3: #9fd6cb;
+  --cat-4: #a9ddb4;
+  --cat-5: #d7e3a1;
+  --cat-6: #f6d79a;
+  --cat-7: #eeb6a2;
+  --cat-8: #edb7c9;
+  --cat-9: #c9bdee;
+  --cat-10: #bdc9d6;
+  /* Positionen ohne Gewerk — bewusst farblos, nicht "elfte Farbe". */
+  --cat-none: #e4ecf4;
+}
+
 /* ── Bubble-Graph — kräftigere Töne als die Panel-Flächen, damit sich die
    Ebene einer Bubble ablesen lässt: Blau (Los) → Cyan (Abschnitte) → Grau
    (Gruppen), Amber bleibt die Position. ── */

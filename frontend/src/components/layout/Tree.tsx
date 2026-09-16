@@ -75,12 +75,11 @@ export function Tree({ width, collapsed, onToggleCollapsed }: TreeProps) {
   const {
     tree,
     lv,
-    hideMode,
+    filter: { hideMode },
+    selection: { nodeId: selectedNodeId, positionId: selectedPositionId },
     matches,
     openNodes,
     parents,
-    selectedNodeId,
-    selectedPositionId,
     selectedPosition,
   } = useViewer();
   const dispatch = useViewerDispatch();

@@ -4,7 +4,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { useEffect } from 'react';
 import { describe, expect, it } from 'vitest';
 import { Tree } from '../../src/components/layout/Tree';
-import { buildTree } from '../../src/lib/tree/buildTree';
+import { classifyAndBuild } from '../../src/lib/pipeline/runPipeline';
 import { ViewerProvider } from '../../src/state/ViewerProvider';
 import { useViewerDispatch } from '../../src/state/viewer';
 import type { LVDraft } from '../../src/types/lvDraft';
@@ -45,7 +45,7 @@ function Loader() {
   useEffect(() => {
     dispatch({
       type: 'loaded',
-      lv: { tree: buildTree(draft), projectName: 'Testprojekt', client: null, fileName: 't.x83' },
+      lv: classifyAndBuild(draft, 't.x83'),
     });
   }, [dispatch]);
   return null;
