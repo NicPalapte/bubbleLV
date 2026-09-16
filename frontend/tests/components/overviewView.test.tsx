@@ -130,3 +130,35 @@ describe('Überblick · Datei mit Preisen', () => {
     expect(screen.getByText('Ohne Preis')).toBeInTheDocument();
   });
 });
+
+// „Ohne Gewerk" und „Weitere n Gewerke" sind Sammelkacheln, keine Gewerke. Ein
+// Klick dort darf keinen Filterwert setzen, den keine Position trägt — sonst
+// stünde die Tabelle danach ohne erkennbaren Grund leer da.
+describe('Überblick · Sammelkacheln filtern nicht', () => {
+  it('wählt einen Abschnitt ohne Gewerk nur an, ohne zu filtern', () => {
+    renderOverview();
+    fireEvent.click(screen.getByTitle(/^§ 002\.001 · Elektroarbeiten ·/));
+
+    expect(screen.getByTestId('facets')).toHaveTextContent('');
+    expect(screen.getByTestId('node')).toHaveTextContent('section:002.001');
+  });
+
+  it('sagt in der Kurzinfo, dass hier nur angewählt und nicht gefiltert wird', () => {
+    renderOverview();
+    expect(screen.getByTitle(/^§ 002\.001 · Elektroarbeiten ·/).getAttribute('title')).toMatch(
+      /klicken wählt den Abschnitt an/,
+    );
+  });
+
+  it('nimmt den Gewerk-Filter beim Abschnittsklick nicht wieder weg', () => {
+    renderOverview();
+    // Erst das Gewerk filtern …
+    fireEvent.click(screen.getByTitle(/^Betonarbeiten ·/));
+    expect(screen.getByTestId('facets')).toHaveTextContent('gewerk=Betonarbeiten');
+
+    // … dann einen Abschnitt darin anklicken: der Filter bleibt stehen.
+    fireEvent.click(screen.getByTitle(/^§ 001\.004 · Betonarbeiten ·/));
+    expect(screen.getByTestId('facets')).toHaveTextContent('gewerk=Betonarbeiten');
+    expect(screen.getByTestId('node')).toHaveTextContent('section:001.004');
+  });
+});

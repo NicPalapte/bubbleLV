@@ -70,6 +70,7 @@ export function OverviewView() {
   const activeGewerke = filter.filters.facets.gewerk ?? EMPTY_ACTIVE;
   const activeUnits = filter.filters.facets.einheit ?? EMPTY_ACTIVE;
 
+  /** Gewerk-Kopf: an- und abwählen — der Knopf ist ein Schalter. */
   const pickGewerk = (gewerk: string): void =>
     dispatch({
       type: 'setFacet',
@@ -77,10 +78,16 @@ export function OverviewView() {
       values: toggleFacetValue(filter.filters, 'gewerk', gewerk),
     });
 
-  const pickSection = (gewerk: string, sectionId: string): void => {
-    // Filtern **und** den Abschnitt anwählen: der Klick sagt „dieser Block" —
-    // die Ansicht bleibt, wo sie ist.
-    pickGewerk(gewerk);
+  const pickSection = (gewerk: string | null, sectionId: string): void => {
+    // Auf das Gewerk **setzen** statt umzuschalten: der Klick sagt „dieser
+    // Block". Stünde hier ein Umschalter, nähme derselbe Klick den Filter
+    // wieder weg, sobald das Gewerk schon gewählt war.
+    //
+    // Sammelkacheln („Ohne Gewerk", „Weitere n Gewerke") tragen kein echtes
+    // Gewerk — dort wird nur der Abschnitt angewählt, nie gefiltert.
+    if (gewerk !== null) {
+      dispatch({ type: 'setFacet', facetId: 'gewerk', values: new Set([gewerk]) });
+    }
     dispatch({ type: 'selectNode', id: sectionId });
   };
 
@@ -115,7 +122,8 @@ export function OverviewView() {
             onPickSection={pickSection}
           />
           <p className="mt-[6px] font-mono text-[9.5px] text-mute">
-            Klick auf ein Gewerk filtert; Klick auf einen Abschnitt filtert und wählt ihn an.
+            Klick auf ein Gewerk filtert; Klick auf einen Abschnitt filtert sein Gewerk und wählt
+            ihn an. „Ohne Gewerk" und „Weitere Gewerke" wählen nur an — sie stehen für kein Gewerk.
           </p>
         </Card>
 

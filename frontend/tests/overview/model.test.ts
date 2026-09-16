@@ -7,7 +7,13 @@ import { describe, expect, it } from 'vitest';
 import { buildPositionIndex, filterMask } from '../../src/lib/index/positionIndex';
 import { summarize } from '../../src/lib/index/summary';
 import { prepareFilters } from '../../src/lib/matchPos';
-import { buildOverview, MAX_GROUPS, NO_GEWERK } from '../../src/lib/overview/model';
+import {
+  buildOverview,
+  MAX_CELLS_PER_GROUP,
+  MAX_GROUPS,
+  NO_GEWERK,
+  REST_GROUP,
+} from '../../src/lib/overview/model';
 import { runPipeline } from '../../src/lib/pipeline/runPipeline';
 import { buildTree } from '../../src/lib/tree/buildTree';
 import { indexParents } from '../../src/lib/tree/buildTree';
@@ -162,5 +168,82 @@ describe('buildOverview · viele Gewerke', () => {
       6,
     );
     expect(model.groups.reduce((sum, group) => sum + group.count, 0)).toBe(model.metrics.positions);
+  });
+});
+
+// Beim Kürzen dürfen weder Kacheln doppelt auftauchen noch zwei Kacheln
+// denselben Schlüssel bekommen: die Ansicht zeichnet sie je Gruppe als Liste,
+// ein doppelter Schlüssel ordnet sie falsch zu oder lässt sie verschwinden.
+describe('buildOverview · Sammelgruppe „Weitere Gewerke"', () => {
+  /**
+   * Viele Gewerke, jedes mit mehr Abschnitten als eine Gruppe zeigt — und ein
+   * Abschnitt, der in mehreren Gewerken Positionen hat.
+   */
+  function vieleGewerke(): LVDraft {
+    const gewerke = MAX_GROUPS + 4;
+    const abschnitte = MAX_CELLS_PER_GROUP + 3;
+    return {
+      projectName: 'Kürzung',
+      client: null,
+      lots: [
+        {
+          number: '001',
+          label: 'Los 1',
+          sections: Array.from({ length: abschnitte }, (_, a) => ({
+            number: `001.${String(a + 1).padStart(3, '0')}`,
+            label: `Abschnitt ${a + 1}`,
+            sections: [],
+            // Jeder Abschnitt enthält Positionen mehrerer Gewerke.
+            positions: Array.from({ length: gewerke }, (_, g) => ({
+              oz: `001.${String(a + 1).padStart(3, '0')}.${String((g + 1) * 10).padStart(4, '0')}`,
+              shortText: `Position ${a}-${g}`,
+              longText: '',
+              unit: 'm2',
+              quantity: 10,
+              unitPrice: (g + 1) * 10,
+              positionType: 'NORMAL' as const,
+              attributes: { gewerk: `Gewerk ${String(g).padStart(2, '0')}` },
+            })),
+          })),
+        },
+      ],
+    };
+  }
+
+  const { model } = overviewOf(vieleGewerke());
+
+  it('vergibt je Gruppe eindeutige Kachel-Schlüssel', () => {
+    for (const group of model.groups) {
+      const keys = group.cells.map((cell) => cell.key);
+      expect(new Set(keys).size).toBe(keys.length);
+    }
+  });
+
+  it('führt denselben Abschnitt in der Sammelgruppe zusammen, statt ihn zu doppeln', () => {
+    const rest = model.groups.find((group) => group.key === REST_GROUP);
+    expect(rest).toBeDefined();
+    if (rest === undefined) return;
+    expect(rest.filterable).toBe(false);
+    // Auch die Sammelgruppe zeigt höchstens so viele Kacheln wie jede andere.
+    expect(rest.cells.length).toBeLessThanOrEqual(MAX_CELLS_PER_GROUP);
+    expect(rest.cells.reduce((sum, cell) => sum + cell.count, 0)).toBe(rest.count);
+    expect(rest.cells.reduce((sum, cell) => sum + cell.value, 0)).toBeCloseTo(rest.value, 6);
+  });
+
+  it('verliert beim Kürzen weder Summe noch Positionen', () => {
+    expect(model.groups.reduce((sum, group) => sum + group.count, 0)).toBe(model.metrics.positions);
+    expect(model.groups.reduce((sum, group) => sum + group.value, 0)).toBeCloseTo(
+      model.metrics.totalPrice,
+      6,
+    );
+  });
+
+  it('unterscheidet die Sammelkacheln zweier Gruppen am Schlüssel', () => {
+    const sammel = model.groups
+      .flatMap((group) => group.cells)
+      .filter((cell) => cell.collected)
+      .map((cell) => cell.key);
+    expect(sammel.length).toBeGreaterThan(1);
+    expect(new Set(sammel).size).toBe(sammel.length);
   });
 });

@@ -22,6 +22,9 @@ export const NO_GEWERK = 'Ohne Gewerk';
 /** Womit die Treemap misst. */
 export type Measure = 'preis' | 'anzahl';
 
+/** Schlüssel der Sammelgruppe — kein Gewerk-Name, deshalb nicht filterbar. */
+export const REST_GROUP = 'rest';
+
 /** Mehr Kacheln liest niemand mehr ab; der Rest wird zusammengefasst. */
 export const MAX_GROUPS = 10;
 export const MAX_CELLS_PER_GROUP = 12;
@@ -134,14 +137,21 @@ function bucketOf(buckets: Map<string, Bucket>, key: string, label: string): Buc
   return created;
 }
 
-/** Kacheln kürzen: die größten einzeln, der Rest als eine Sammelkachel. */
-function trimCells(cells: Iterable<TreemapCell>): TreemapCell[] {
+/**
+ * Kacheln kürzen: die größten einzeln, der Rest als **eine** Sammelkachel.
+ *
+ * Der Schlüssel der Sammelkachel trägt den Gruppenschlüssel. Ohne ihn hießen
+ * die Sammelkacheln zweier Gewerke gleich, und beim Zusammenfassen mehrerer
+ * Gewerke ständen zwei Kacheln mit demselben Schlüssel nebeneinander — React
+ * ordnet sie dann falsch zu oder zeichnet sie gar nicht.
+ */
+function trimCells(cells: Iterable<TreemapCell>, groupKey: string): TreemapCell[] {
   const sorted = [...cells].sort((a, b) => b.value - a.value);
   if (sorted.length <= MAX_CELLS_PER_GROUP) return sorted;
   const kept = sorted.slice(0, MAX_CELLS_PER_GROUP - 1);
   const rest = sorted.slice(MAX_CELLS_PER_GROUP - 1);
   kept.push({
-    key: `rest:${kept.length}`,
+    key: `rest:${groupKey}`,
     label: `Weitere ${rest.length} Abschnitte`,
     value: rest.reduce((sum, cell) => sum + cell.value, 0),
     count: rest.reduce((sum, cell) => sum + cell.count, 0),
@@ -150,20 +160,47 @@ function trimCells(cells: Iterable<TreemapCell>): TreemapCell[] {
   return kept;
 }
 
+/**
+ * Kacheln mehrerer Gewerke zu einer Liste zusammenführen. Derselbe Abschnitt
+ * kann Positionen aus mehreren Gewerken enthalten — dann gehört er in **eine**
+ * Kachel mit der Summe beider, nicht zweimal in dieselbe Gruppe.
+ */
+function mergeCells(groups: readonly TreemapGroup[]): TreemapCell[] {
+  const merged = new Map<string, TreemapCell>();
+  for (const group of groups) {
+    for (const cell of group.cells) {
+      const found = merged.get(cell.key);
+      if (found === undefined) merged.set(cell.key, { ...cell });
+      else {
+        found.value += cell.value;
+        found.count += cell.count;
+      }
+    }
+  }
+  return [...merged.values()];
+}
+
+/**
+ * Gruppen kürzen und erst danach ihre Kacheln: die Sammelgruppe führt die
+ * Abschnitte ihrer Gewerke zusammen, bevor gekürzt wird. Andersherum stünden in
+ * ihr die bereits gekürzten Listen mehrerer Gewerke — mit doppelten Abschnitten
+ * und doppelten Sammelkacheln.
+ */
 function trimGroups(groups: TreemapGroup[]): TreemapGroup[] {
   const sorted = groups.sort((a, b) => b.value - a.value);
-  if (sorted.length <= MAX_GROUPS) return sorted;
-  const kept = sorted.slice(0, MAX_GROUPS - 1);
-  const rest = sorted.slice(MAX_GROUPS - 1);
-  kept.push({
-    key: 'rest',
-    label: `Weitere ${rest.length} Gewerke`,
-    value: rest.reduce((sum, group) => sum + group.value, 0),
-    count: rest.reduce((sum, group) => sum + group.count, 0),
-    filterable: false,
-    cells: trimCells(rest.flatMap((group) => group.cells)),
-  });
-  return kept;
+  const kept = sorted.length <= MAX_GROUPS ? sorted : sorted.slice(0, MAX_GROUPS - 1);
+  if (sorted.length > MAX_GROUPS) {
+    const rest = sorted.slice(MAX_GROUPS - 1);
+    kept.push({
+      key: REST_GROUP,
+      label: `Weitere ${rest.length} Gewerke`,
+      value: rest.reduce((sum, group) => sum + group.value, 0),
+      count: rest.reduce((sum, group) => sum + group.count, 0),
+      filterable: false,
+      cells: mergeCells(rest),
+    });
+  }
+  return kept.map((group) => ({ ...group, cells: trimCells(group.cells, group.key) }));
 }
 
 function paretoOf(values: readonly number[], total: number): ParetoModel | null {
@@ -271,12 +308,12 @@ export function buildOverview({ index, mask, parents }: OverviewInput): Overview
       value: measure === 'preis' ? bucket.value : bucket.count,
       count: bucket.count,
       filterable: bucket.key !== NO_GEWERK,
-      cells: trimCells(
-        [...bucket.cells.values()].map((cell) => ({
-          ...cell,
-          value: measure === 'preis' ? cell.value : cell.count,
-        })),
-      ),
+      // Ungekürzt: `trimGroups` fasst erst die Gruppen zusammen und kürzt die
+      // Kacheln danach — sonst landen gekürzte Listen in der Sammelgruppe.
+      cells: [...bucket.cells.values()].map((cell) => ({
+        ...cell,
+        value: measure === 'preis' ? cell.value : cell.count,
+      })),
     })),
   );
 

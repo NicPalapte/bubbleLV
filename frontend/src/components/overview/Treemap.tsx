@@ -5,6 +5,11 @@
 // kachel wählt zusätzlich den Abschnitt an. Der Ansichtsmodus bleibt dabei
 // stehen — ein Filter ist kein Ansichtswechsel (.claude/CLAUDE.md).
 //
+// „Ohne Gewerk" und „Weitere n Gewerke" sind **keine** Gewerke, sondern
+// Sammelkacheln. Ihre Abschnitte lassen sich anwählen, filtern aber nicht:
+// als Facettenwert gesetzt träfen sie auf keine einzige Position, und die
+// Tabelle stünde ohne erkennbaren Grund leer da.
+//
 // Gezeichnet wird mit absolut gesetzten `div`s statt SVG: abgeschnittene
 // Beschriftungen, Titel-Tooltips und Tastaturbedienung kommen damit ohne
 // eigenen Nachbau aus.
@@ -32,7 +37,8 @@ export interface TreemapProps {
   /** Gerade gefilterte Gewerke — sie stehen hervorgehoben. */
   activeGewerke: ReadonlySet<string>;
   onPickGewerk: (gewerk: string) => void;
-  onPickSection: (gewerk: string, sectionId: string) => void;
+  /** `gewerk` ist `null`, wenn die Gruppe kein echtes Gewerk ist. */
+  onPickSection: (gewerk: string | null, sectionId: string) => void;
 }
 
 /**
@@ -136,8 +142,10 @@ export function Treemap({
                 key={item.key}
                 type="button"
                 disabled={item.collected}
-                onClick={() => onPickSection(group.key, item.key)}
-                title={describe(item.label, item.value, item.count, measure)}
+                onClick={() => onPickSection(group.filterable ? group.key : null, item.key)}
+                title={`${describe(item.label, item.value, item.count, measure)}${
+                  group.filterable ? ' — klicken filtert' : ' — klicken wählt den Abschnitt an'
+                }`}
                 className="absolute cursor-pointer overflow-hidden border border-solid border-white bg-white/35 p-[3px] text-left align-top font-mono text-[9px] leading-[1.25] text-ink disabled:cursor-default"
                 style={{ left: cell.x, top: cell.y, width: cell.width, height: cell.height }}
               >
