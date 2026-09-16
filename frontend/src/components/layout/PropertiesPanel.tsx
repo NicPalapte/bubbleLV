@@ -12,7 +12,8 @@ import { PanelHeader } from '../ui/PanelHeader';
 import { useViewer } from '../../state/viewer';
 
 export function PropertiesPanel({ width }: { width: number }) {
-  const { lv, tree, selectedNode, selectedPosition, hoveredNodeId, nodes } = useViewer();
+  const { lv, tree, selectedNode, selectedPosition, selection, nodes } = useViewer();
+  const { hoveredNodeId } = selection;
 
   // Hover auf einer Bubble zeigt eine Vorschau; Klick-Auswahl hat Vorrang.
   const hovered = hoveredNodeId === null ? null : (nodes.get(hoveredNodeId) ?? null);

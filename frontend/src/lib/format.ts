@@ -24,6 +24,11 @@ export function formatCount(value: number): string {
   return value.toLocaleString('de-DE');
 }
 
+/** „1 Position" / „28 Positionen" — Zahl und Beugung an einer Stelle. */
+export function formatPositions(count: number): string {
+  return `${formatCount(count)} ${count === 1 ? 'Position' : 'Positionen'}`;
+}
+
 export function truncate(text: string | null, max: number): string {
   if (text === null || text === '') return '';
   return text.length > max ? `${text.slice(0, max - 1)}…` : text;

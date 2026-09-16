@@ -20,7 +20,7 @@ selbst anlegen.
 | WP-I | Performance-Fundament für 10k Positionen | ✅ umgesetzt |
 | WP-J | Klassifizierung v2: generische Extraktoren + Textstellen | ✅ umgesetzt |
 | WP-K | Flags und VOB-Check, Ansicht „Prüfung" | ✅ umgesetzt |
-| WP-L | Ansichts-Gerüst + Ansicht „Überblick" | offen |
+| WP-L | Ansichts-Gerüst + Ansicht „Überblick" | ✅ umgesetzt |
 | WP-M | Beziehungen: Ähnlichkeit, Unterschiede, Ausreißer | offen |
 | WP-N | Ansicht „Vergleich" | offen |
 | WP-O | Ansicht „Matrix" | offen |
@@ -229,25 +229,41 @@ Ebenso leer: Herstellerliste (V3) und Nebenleistungs-Listen (V8, V9).
 
 **Ziel:** Acht gleichrangige Ansichten auf einem Filterzustand — und die erste neue.
 
-Schritte:
-1. `src/state/viewer.ts` trennen: `filterState` (Suche, Facetten, Modus),
-   `selectionState` (Auswahl, Mehrfachauswahl), `viewState` (aktive Ansicht, je Ansicht
-   eigener Zustand wie Zoom oder Sortierung).
-2. Ansichtsumschalter in der `TopBar`. Wechsel ändert **nie** Filter oder Auswahl.
-3. Ansicht **Überblick** (`src/components/overview/`):
-   - Kennzahlen: Positionen, Summe, Anzahl Gewerke, Anteil ohne Preis, Anzahl Hinweise
-   - Treemap nach Gewerk und Abschnitt, Klick filtert
-   - Pareto: welcher Anteil der Positionen trägt 80 % der Summe
-   - Mengen je Einheit, absteigend
-4. Ohne Preise in der Datei: Geld-Kacheln zeigen ausdrücklich „keine Preise in dieser
-   Datei" statt Nullwerten, Mengen übernehmen die Hauptrolle.
-5. Eine Gewerk-Farbskala in `src/lib/colors.ts`, gültig für **alle** Ansichten.
+**Umgesetzt.** Vier von acht Ansichten stehen: Überblick · Graph · Tabelle · Prüfung.
 
-**Fertig, wenn:**
+Schritte:
+1. ✅ Der Viewer-Zustand ist in drei Bereiche getrennt, je ein Modul mit eigenem
+   Reducer: `src/state/filterState.ts` (Suche, Facetten, Nicht-Treffer-Modus,
+   stummgeschaltete Prüfregeln), `src/state/selectionState.ts` (Auswahl,
+   Aufklapp-Zustand) und `src/state/viewState.ts` (aktive Ansicht plus je Ansicht
+   eigener Zustand). `viewer.ts` klammert sie und behandelt nur, was mehr als einen
+   Bereich betrifft (`loaded`, `clear`, `openInTable`, `showGraph`). Die
+   Mehrfachauswahl kommt mit WP-N dazu.
+2. ✅ Ansichtsumschalter in der `TopBar`. `setViewMode` fasst nur `view.mode` an;
+   Sortierung, Tabellen-Umfang, Spalten, Scrollposition je Ansicht und der
+   Graph-Ausschnitt liegen im Ansichts-Zustand und überleben den Wechsel. Der
+   Graph-Ausschnitt wandert **beim Verlassen** dorthin, nicht je Frame — als
+   Context-State würde jedes Ziehen die ganze Seite neu rendern.
+3. ✅ Ansicht **Überblick** (`src/components/overview/`, Rechenteil in
+   `src/lib/overview/`): Kennzahlen, Treemap (squarified, `lib/overview/treemap.ts`)
+   nach Gewerk und Abschnitt mit Klick-Filter, Pareto-Kurve und Mengen je Einheit.
+   Gerechnet wird gegen den flachen Positions-Index, einmal je Filterwechsel.
+4. ✅ Ohne Preise: die Geld-Kachel sagt „keine Preise", die Treemap misst die Anzahl
+   statt der Summe, und die Pareto-Auswertung entfällt mit sichtbarem Grund.
+5. ✅ Gewerk-Farbskala in `src/lib/colors.ts` über den Tokens `--cat-1…10`, einmal je
+   Datei im `ViewerProvider` gebaut und für alle Ansichten da
+   ([`decisions/0013`](decisions/0013-gewerk-farbskala.md)).
+
+**Der Überblick ist die Eingangsansicht** — nach dem Import steht er vorn, nicht mehr
+der Graph. Er ordnet die Datei ein, bevor man tiefer geht.
+
+**Fertig, wenn:** ✅ alle drei Kriterien erfüllt.
 - Filter setzen, Ansicht wechseln, zurückwechseln: Filter, Auswahl und Scrollposition
-  sind unverändert.
-- Der Überblick einer realen Datei stimmt gegen die Tabellensummen (Stichprobe).
-- Eine x83-Datei ohne Preise zeigt keine Null-Euro-Kacheln.
+  sind unverändert (`tests/state/viewer.test.ts`, `tests/App.test.tsx`).
+- Der Überblick einer realen Datei stimmt gegen die Tabellensummen (Stichprobe):
+  `tests/overview/model.test.ts` prüft die Summe gegen die vorberechneten Aggregate.
+- Eine x83-Datei ohne Preise zeigt keine Null-Euro-Kacheln
+  (`tests/components/overviewView.test.tsx` gegen die Beispieldatei).
 
 ---
 

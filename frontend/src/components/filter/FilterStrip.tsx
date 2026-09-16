@@ -19,7 +19,9 @@ const HIDE_MODES = [
 ] as const;
 
 export function FilterStrip() {
-  const { filters, hideMode } = useViewer();
+  const {
+    filter: { filters, hideMode },
+  } = useViewer();
   const dispatch = useViewerDispatch();
 
   const chips: ActiveChip[] = [];

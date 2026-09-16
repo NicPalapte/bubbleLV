@@ -118,7 +118,10 @@ export function PositionDetails({
   /** Nur die schwebende Karte im Graphen (Issue #30) braucht eine Schließen-Schaltfläche. */
   onClose?: () => void;
 }) {
-  const { search, parents } = useViewer();
+  const {
+    filter: { search },
+    parents,
+  } = useViewer();
   const parent = parents.get(node.id) ?? null;
   const total = node.totalPrice;
   const share =

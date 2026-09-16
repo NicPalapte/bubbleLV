@@ -3,12 +3,11 @@
 // `Bubbles` in design/claude-design/lv-graph.jsx; Vergabepaket-Kanten,
 // Dokument-Knoten und das Demo-Los entfallen (out of scope).
 //
-// Lokal bleibt nur der Ausschnitt (Pan/Zoom): er ändert sich beim Ziehen pro
-// Frame und würde als Context-State die ganze Seite neu rendern. Graph und
-// Tabelle sind seit Issue #30 zwei getrennte, sich gegenseitig ausschließende
-// Ansichtsmodi (statt eines Abstechers von der Auswahl) — die Komponente wird
-// beim Wechsel in die Tabelle ab- und beim Zurückwechseln neu gemountet; der
-// Ausschnitt geht dabei bewusst verloren, `fit()` passt beim Mounten neu ein.
+// Lokal bleibt nur der laufende Ausschnitt (Pan/Zoom): er ändert sich beim
+// Ziehen pro Frame und würde als Context-State die ganze Seite neu rendern.
+// Beim Verlassen der Ansicht wandert er einmal in `view.graph.viewport` und
+// steht beim Zurückwechseln wieder genau so da (WP-L). Nur ein neuer Import
+// verwirft ihn — dann passt `fit()` beim Mounten neu ein.
 
 import {
   useCallback,
@@ -69,9 +68,9 @@ interface BubbleGraphProps {
 
 export function BubbleGraph({ root }: BubbleGraphProps) {
   const {
-    sizeMode,
-    hideMode,
-    hoveredNodeId,
+    filter: { hideMode },
+    selection: { hoveredNodeId },
+    view: { graph },
     selectedNode,
     selectedPosition,
     matches,
@@ -79,10 +78,20 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
     openClusters,
   } = useViewer();
   const dispatch = useViewerDispatch();
+  const { sizeMode } = graph;
 
   const wrapRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
-  const [view, setView] = useState<View>({ tx: 0, ty: 0, k: 0.7 });
+  // Startwert aus dem Ansichts-Zustand, falls die Ansicht schon einmal offen
+  // war; sonst passt der Graph unten selbst ein.
+  const [view, setView] = useState<View>(graph.viewport ?? { tx: 0, ty: 0, k: 0.7 });
+
+  // Ausschnitt beim Abbau sichern — einmal, nicht je Frame.
+  const viewRef = useRef(view);
+  useEffect(() => {
+    viewRef.current = view;
+  }, [view]);
+  useEffect(() => () => dispatch({ type: 'graphViewport', viewport: viewRef.current }), [dispatch]);
 
   useLayoutEffect(() => {
     const element = wrapRef.current;
@@ -458,8 +467,12 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
   // Im Render statt im Effekt, wie der Fokus weiter unten
   // (react.dev/learn/you-might-not-need-an-effect): erst wenn die Canvas
   // ihre Größe kennt, sonst würde auf 0×0 eingepasst.
+  // Ein gemerkter Ausschnitt gilt als bereits eingepasst: sonst spränge der
+  // Graph beim Zurückwechseln doch wieder auf die Gesamtansicht.
   const selectionId = selectedPosition?.id ?? selectedNode?.id ?? null;
-  const [fittedRoot, setFittedRoot] = useState<LVNode | null>(null);
+  const [fittedRoot, setFittedRoot] = useState<LVNode | null>(
+    graph.viewport === null ? null : root,
+  );
   if (fittedRoot !== root && w > 0 && h > 0) {
     setFittedRoot(root);
     const next = (selectionId === null ? null : fitToView(selectionId)) ?? fitView();

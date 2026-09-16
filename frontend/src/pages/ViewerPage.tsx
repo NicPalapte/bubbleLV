@@ -1,8 +1,11 @@
-// Zwei Ansichtsmodi (Issue #30): Graph im Vollbild oder die klassische
-// 3-Spalten-Tabellenansicht (Tree · Tabelle · Eigenschaften) — umgeschaltet
-// über den Schalter in der Kopfleiste. Alle Daten stammen aus der lokalen
-// Pipeline (Datei → Parser → Klassifizierung → Baum); nichts wird geladen
-// oder persistiert.
+// Ansichts-Gerüst (WP-L): gleichrangige Ansichten auf **einem** Filterzustand —
+// Überblick, Graph im Vollbild, die 3-Spalten-Tabellenansicht (Tree · Tabelle ·
+// Eigenschaften) und Prüfung. Umgeschaltet wird über den Schalter in der
+// Kopfleiste; der Wechsel fasst weder Filter noch Auswahl an, und was eine
+// Ansicht sich merkt, steht in `view` (state/viewState.ts).
+//
+// Alle Daten stammen aus der lokalen Pipeline (Datei → Parser →
+// Klassifizierung → Baum); nichts wird geladen oder persistiert.
 
 import { Profiler, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { CheckView } from '../components/check/CheckView';
@@ -13,6 +16,7 @@ import { PropertiesPanel } from '../components/layout/PropertiesPanel';
 import { ResizeHandle } from '../components/layout/ResizeHandle';
 import { TopBar } from '../components/layout/TopBar';
 import { Tree } from '../components/layout/Tree';
+import { OverviewView } from '../components/overview/OverviewView';
 import { PositionsTable } from '../components/table/PositionsTable';
 import { FileDropzone } from '../components/upload/FileDropzone';
 import { PERF_ENABLED, reportViewSwitch } from '../lib/perf';
@@ -44,7 +48,8 @@ function ViewTiming({ view, children }: { view: string; children: ReactNode }) {
 }
 
 export function ViewerPage() {
-  const { tree, selectedNode, viewMode, panelSize } = useViewer();
+  const { tree, selectedNode, view } = useViewer();
+  const { mode: viewMode, panelSize } = view;
   const dispatch = useViewerDispatch();
   const [leftWidth, setLeftWidth] = useState(TREE_WIDTH);
   const [treeCollapsed, setTreeCollapsed] = useState(false);
@@ -69,6 +74,12 @@ export function ViewerPage() {
         {tree === null && (
           <main aria-label="LV-Ansicht" className="relative flex-1 overflow-hidden bg-paper">
             <FileDropzone />
+          </main>
+        )}
+
+        {tree !== null && viewMode === 'overview' && (
+          <main aria-label="Überblick" className="relative flex-1 overflow-hidden bg-paper">
+            <OverviewView />
           </main>
         )}
 

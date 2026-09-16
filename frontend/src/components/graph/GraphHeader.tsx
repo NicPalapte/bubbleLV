@@ -8,7 +8,11 @@ import { useViewer, useViewerDispatch, type SizeModeId } from '../../state/viewe
 import type { LVNode } from '../../types/lvNode';
 
 export function GraphHeader({ root }: { root: LVNode }) {
-  const { sizeMode } = useViewer();
+  const {
+    view: {
+      graph: { sizeMode },
+    },
+  } = useViewer();
   const dispatch = useViewerDispatch();
 
   const lots = root.children.length;

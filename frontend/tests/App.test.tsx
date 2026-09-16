@@ -23,11 +23,12 @@ async function loadFixture(name: string): Promise<void> {
 }
 
 /**
- * Ansichtsmodus über den Schalter in der Kopfleiste wechseln (Issue #30) —
- * Baum und Tabelle stehen nur im Modus "Tabelle", der Graph nur im Modus
- * "Graph"; anders als vorher wechselt keine Auswahl mehr automatisch mit.
+ * Ansicht über den Schalter in der Kopfleiste wechseln (Issue #30, WP-L) —
+ * Baum und Tabelle stehen nur in der Ansicht "Tabelle", der Graph nur in
+ * "Graph"; ein Wechsel ändert weder Filter noch Auswahl. Nach dem Import steht
+ * der "Überblick" vorn, deshalb schaltet fast jeder Test zuerst um.
  */
-function switchToView(mode: 'Graph' | 'Tabelle'): void {
+function switchToView(mode: 'Überblick' | 'Graph' | 'Tabelle' | 'Prüfung'): void {
   fireEvent.click(screen.getByRole('radio', { name: mode }));
 }
 
@@ -61,14 +62,64 @@ describe('Viewer', () => {
     expect(screen.getByText(/Übersicht ·/)).toBeInTheDocument();
   });
 
-  it('startet nach dem Import im Graphen', async () => {
+  it('startet nach dem Import im Überblick', async () => {
     render(<App />);
     await loadFixture('gaeb-xml-beispiel.x83');
     await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
 
-    expect(screen.getByRole('radio', { name: 'Graph' })).toHaveAttribute('aria-checked', 'true');
-    expect(screen.getByText(/Knoten gezeichnet/)).toBeInTheDocument();
+    // Der Überblick ordnet das LV ein, bevor man in Graph oder Tabelle geht
+    // (WP-L). Graph und Baum stehen erst nach dem Umschalten da.
+    expect(screen.getByRole('radio', { name: 'Überblick' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    expect(screen.getByRole('main', { name: 'Überblick' })).toBeInTheDocument();
     expect(screen.queryByRole('tree')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Knoten gezeichnet/)).not.toBeInTheDocument();
+
+    switchToView('Graph');
+    expect(screen.getByText(/Knoten gezeichnet/)).toBeInTheDocument();
+  });
+
+  // Abnahme von WP-L: ein Ansichtswechsel ändert weder Filter noch Auswahl,
+  // und jede Ansicht steht danach wieder so da, wie man sie verlassen hat.
+  it('behält Filter, Sortierung und Scrollposition über den Ansichtswechsel', async () => {
+    render(<App />);
+    await loadFixture('gaeb-xml-beispiel.x83');
+    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+
+    fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'Beton' } });
+    await waitFor(() => expect(screen.getByText(/AKTIVE FILTER|Beton/)).toBeInTheDocument());
+
+    // In der Prüfung ein Stück scrollen …
+    switchToView('Prüfung');
+    const pruefung = screen.getByRole('main', { name: 'Prüfung' }).firstElementChild as HTMLElement;
+    fireEvent.scroll(pruefung, { target: { scrollTop: 240 } });
+
+    // … in der Tabelle nach Menge sortieren …
+    switchToView('Tabelle');
+    const table = await screen.findByRole('table', { name: 'Positionen' });
+    fireEvent.click(within(table).getByRole('button', { name: /Menge/ }));
+    await waitFor(() =>
+      expect(within(table).getByRole('columnheader', { name: /Menge/ })).toHaveAttribute(
+        'aria-sort',
+        'ascending',
+      ),
+    );
+
+    // … und zurück: Suche, Sortierung und Scrollposition stehen unverändert da.
+    switchToView('Prüfung');
+    expect(
+      (screen.getByRole('main', { name: 'Prüfung' }).firstElementChild as HTMLElement).scrollTop,
+    ).toBe(240);
+    expect(screen.getByLabelText('Suche')).toHaveValue('Beton');
+
+    switchToView('Tabelle');
+    const again = await screen.findByRole('table', { name: 'Positionen' });
+    expect(within(again).getByRole('columnheader', { name: /Menge/ })).toHaveAttribute(
+      'aria-sort',
+      'ascending',
+    );
   });
 
   it('drillt aus dem Baum in die Positionstabelle', async () => {
@@ -190,6 +241,7 @@ describe('Viewer', () => {
     await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
 
     // Startzustand im Graphen.
+    switchToView('Graph');
     const before = nodeCount();
 
     // Im Baum aufklappen — Graph und Baum teilen sich denselben Zustand,
@@ -214,6 +266,7 @@ describe('Viewer', () => {
     await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
 
     // Klick auf die Projekt-Bubble im Graphen klappt sie zu …
+    switchToView('Graph');
     fireEvent.click(screen.getByText('PROJEKT'));
 
     // … der Baum zeigt danach keine Zeilen mehr.
@@ -466,6 +519,7 @@ describe('Viewer', () => {
 
     // Umschaltgruppe Größenmodus: benannte Radiogruppe statt klickbarer <span>
     // — nur im Graphen vorhanden (Issue #30).
+    switchToView('Graph');
     const sizeModes = screen.getByRole('radiogroup', { name: 'Größe der Bubbles' });
     expect(within(sizeModes).getAllByRole('radio').length).toBe(3);
 
