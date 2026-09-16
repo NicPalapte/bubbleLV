@@ -249,7 +249,7 @@ describe('viewerReducer · Aufklapp-Zustand', () => {
 // Die Größe der Info-Panels ist eine Layout-Vorliebe, kein Fachdatum: sie gilt
 // für alle Panels, überlebt Ansichtswechsel und einen neuen Import — und mit
 // dem Reload verschwindet sie, wie jeder Sitzungszustand.
-describe('viewerReducer · Größe der Info-Panels', () => {
+describe('viewerReducer · Größe und Ort der Info-Panels', () => {
   it('hält die Breite in den gemeinsamen Grenzen', () => {
     const zuBreit = viewerReducer(base, {
       type: 'panelSize',
@@ -263,7 +263,8 @@ describe('viewerReducer · Größe der Info-Panels', () => {
   });
 
   it('überlebt einen neuen Import und das Leeren', () => {
-    const breit = viewerReducer(base, { type: 'panelSize', size: { width: 500, height: 400 } });
+    const groesse = viewerReducer(base, { type: 'panelSize', size: { width: 500, height: 400 } });
+    const breit = viewerReducer(groesse, { type: 'cardPos', pos: { right: 200, top: 120 } });
     const tree = buildTree(DRAFT);
     const lv: LoadedLV = {
       fileName: 'test.x83',
@@ -275,9 +276,10 @@ describe('viewerReducer · Größe der Info-Panels', () => {
 
     const geladen = viewerReducer(breit, { type: 'loaded', lv });
     expect(geladen.panelSize).toEqual({ width: 500, height: 400 });
-    expect(viewerReducer(geladen, { type: 'clear' }).panelSize).toEqual({
-      width: 500,
-      height: 400,
-    });
+    expect(geladen.cardPos).toEqual({ right: 200, top: 120 });
+
+    const geleert = viewerReducer(geladen, { type: 'clear' });
+    expect(geleert.panelSize).toEqual({ width: 500, height: 400 });
+    expect(geleert.cardPos).toEqual({ right: 200, top: 120 });
   });
 });

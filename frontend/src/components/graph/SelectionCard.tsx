@@ -9,10 +9,12 @@
 // beißen kann, sobald sie groß genug wird — die Karte lässt sich dann selbst
 // aus dem Weg schieben, statt fest an der Ecke zu kleben.
 //
-// Größe am Knopf unten links: die Karte hängt rechts oben, deshalb wächst sie
-// nach links und unten. Die Breite liegt im Viewer-Zustand (`panelSize`) und
-// gilt damit auch für das Eigenschaften-Panel der Tabellenansicht — eine
-// Größe für alle Info-Panels, über den Ansichtswechsel hinweg.
+// Größe am Griff unten links: die Karte hängt rechts oben, deshalb wächst sie
+// nach links und unten. Größe (`panelSize`) und Ort (`cardPos`) liegen im
+// Viewer-Zustand, nicht in dieser Komponente: die Breite gilt damit auch für
+// das Eigenschaften-Panel der Tabellenansicht — eine Größe für alle
+// Info-Panels —, und beides übersteht Schließen, Ansichtswechsel und den
+// nächsten Import. Ein Reload setzt zurück, wie bei jedem Sitzungszustand.
 //
 // `data-graph-overlay` (lib/graph/overlay.ts): der Canvas darunter fängt Rad
 // und Maustaste global für Zoom und Pan ab. Ohne die Markierung zoomt das Rad
@@ -26,7 +28,6 @@ import {
   useCallback,
   useEffect,
   useRef,
-  useState,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
 } from 'react';
@@ -40,6 +41,7 @@ import {
   PANEL_MIN_WIDTH,
   useViewer,
   useViewerDispatch,
+  type CardPos,
   type PanelSize,
 } from '../../state/viewer';
 import type { LVNode } from '../../types/lvNode';
@@ -49,7 +51,6 @@ interface SelectionCardProps {
   onClose: () => void;
 }
 
-const DEFAULT_POS = { right: 16, top: 16 };
 /** Rand, der beim Ziehen sichtbar bleiben muss, damit der Griff erreichbar bleibt. */
 const EDGE_MARGIN = 40;
 /** Abstand zum Rand des Canvas, den die Karte auch aufgezogen frei lässt. */
@@ -84,14 +85,17 @@ export function SelectionCard({ node, onClose }: SelectionCardProps) {
   const ref = useRef<HTMLDivElement>(null);
   useDismiss(ref, true, onClose, { ignoreDrag: true });
 
-  const { panelSize } = useViewer();
+  const { panelSize, cardPos } = useViewer();
   const dispatch = useViewerDispatch();
-  const [pos, setPos] = useState(DEFAULT_POS);
   const drag = useRef({ on: false, x0: 0, y0: 0, right0: 0, top0: 0, width0: panelSize.width });
   const resize = useRef({ on: false, x0: 0, y0: 0, width0: 0, height0: 0, maxW: 0, maxH: 0 });
 
   const setSize = useCallback(
     (size: PanelSize): void => dispatch({ type: 'panelSize', size }),
+    [dispatch],
+  );
+  const setPos = useCallback(
+    (pos: CardPos): void => dispatch({ type: 'cardPos', pos }),
     [dispatch],
   );
 
@@ -127,7 +131,7 @@ export function SelectionCard({ node, onClose }: SelectionCardProps) {
       window.removeEventListener('mousemove', move);
       window.removeEventListener('mouseup', up);
     };
-  }, [setSize]);
+  }, [setSize, setPos]);
 
   const onGripMouseDown = useCallback(
     (event: ReactMouseEvent<HTMLDivElement>): void => {
@@ -136,12 +140,12 @@ export function SelectionCard({ node, onClose }: SelectionCardProps) {
         on: true,
         x0: event.clientX,
         y0: event.clientY,
-        right0: pos.right,
-        top0: pos.top,
+        right0: cardPos.right,
+        top0: cardPos.top,
         width0: panelSize.width,
       };
     },
-    [pos, panelSize.width],
+    [cardPos, panelSize.width],
   );
 
   // Aus „auto" wird beim ersten Zug die gerade gerenderte Höhe — sonst springt
@@ -190,11 +194,11 @@ export function SelectionCard({ node, onClose }: SelectionCardProps) {
       {...graphOverlayProps}
       className="absolute z-[10] flex flex-col overflow-hidden border border-line2 bg-white"
       style={{
-        right: pos.right,
-        top: pos.top,
+        right: cardPos.right,
+        top: cardPos.top,
         width: panelSize.width,
         height: panelSize.height ?? undefined,
-        maxHeight: `calc(100% - ${pos.top + EDGE_GAP}px)`,
+        maxHeight: `calc(100% - ${cardPos.top + EDGE_GAP}px)`,
         boxShadow: 'var(--shadow-popover)',
       }}
     >
@@ -211,15 +215,25 @@ export function SelectionCard({ node, onClose }: SelectionCardProps) {
       ) : (
         <NodeDetails node={node} onClose={onClose} />
       )}
+      {/* Trefferfläche 18 px, sichtbar sind nur die zwei Haarlinien in der Ecke;
+          `currentColor` färbt sie beim Überfahren und bei Fokus blau. */}
       <button
         type="button"
         onMouseDown={onResizeMouseDown}
         onKeyDown={onResizeKeyDown}
         title="Größe ändern — ziehen oder Pfeiltasten"
         aria-label="Info-Panel in der Größe ändern"
-        className="absolute bottom-[5px] left-[5px] z-[1] inline-flex h-[16px] w-[16px] cursor-sw-resize items-center justify-center border border-line bg-white p-0 font-mono text-[9px] leading-none text-dim hover:border-blue hover:text-blue focus-visible:border-blue focus-visible:text-blue"
+        className="absolute bottom-0 left-0 z-[1] inline-flex h-[18px] w-[18px] cursor-sw-resize items-end justify-start border-none bg-transparent p-[3px] text-line2 hover:text-blue focus-visible:text-blue"
       >
-        ⤢
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 12 12"
+          aria-hidden="true"
+          shapeRendering="geometricPrecision"
+        >
+          <path d="M0 3.5 L8.5 12 M0 8 L4 12" stroke="currentColor" strokeWidth="1.2" fill="none" />
+        </svg>
       </button>
     </div>
   );

@@ -398,6 +398,38 @@ describe('Viewer', () => {
     });
   });
 
+  it('merkt sich den Ort der Auswahlkarte über den Ansichtswechsel', async () => {
+    render(<App />);
+    await loadFixture('gaeb-xml-beispiel.x83');
+    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+
+    switchToView('Tabelle');
+    const tree = screen.getByRole('tree');
+    fireEvent.click(within(tree).getAllByRole('treeitem')[0]);
+    fireEvent.click(await within(tree).findByTitle('Bauhauptgewerke'));
+
+    switchToView('Graph');
+    const closeButton = await screen.findByRole('button', { name: 'Karte schließen' });
+    const card = closeButton.closest('[data-graph-overlay]') as HTMLElement;
+    expect(card.style.right).toBe('16px');
+
+    // Karte am Ziehgriff beiseiteschieben.
+    fireEvent.mouseDown(screen.getByLabelText('Karte verschieben'), { clientX: 500, clientY: 300 });
+    fireEvent.mouseMove(document, { clientX: 400, clientY: 350 });
+    fireEvent.mouseUp(document);
+    expect(card.style.right).toBe('116px');
+    expect(card.style.top).toBe('66px');
+
+    // Nach dem Ausflug in die Tabelle steht sie wieder dort, nicht in der Ecke.
+    switchToView('Tabelle');
+    switchToView('Graph');
+    const wieder = (await screen.findByRole('button', { name: 'Karte schließen' })).closest(
+      '[data-graph-overlay]',
+    ) as HTMLElement;
+    expect(wieder.style.right).toBe('116px');
+    expect(wieder.style.top).toBe('66px');
+  });
+
   it('schließt mit Escape zuerst das Popover, verlässt danach aber nicht mehr die Tabelle (Issue #30)', async () => {
     render(<App />);
     await loadFixture('gaeb-xml-beispiel.x83');

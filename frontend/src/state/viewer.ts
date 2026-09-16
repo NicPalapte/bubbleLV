@@ -35,6 +35,18 @@ export interface PanelSize {
 
 export const DEFAULT_PANEL_SIZE: PanelSize = { width: 320, height: null };
 
+/**
+ * Ort der schwebenden Auswahlkarte im Graphen, gemessen von der oberen rechten
+ * Ecke des Canvas. Gleiche Lebensdauer wie `panelSize`: einmal beiseite
+ * geschoben, steht die Karte auch nach dem nächsten Klick wieder dort.
+ */
+export interface CardPos {
+  right: number;
+  top: number;
+}
+
+export const DEFAULT_CARD_POS: CardPos = { right: 16, top: 16 };
+
 export type HideMode = 'dim' | 'hide';
 export type SizeModeId = 'count' | 'cost' | 'uniform';
 export type ViewMode = 'graph' | 'table' | 'check';
@@ -74,6 +86,8 @@ export interface ViewerState {
   viewMode: ViewMode;
   /** Größe der Info-Panels (siehe `PanelSize`) — reiner Sitzungszustand. */
   panelSize: PanelSize;
+  /** Ort der schwebenden Auswahlkarte (siehe `CardPos`). */
+  cardPos: CardPos;
 }
 
 export type ViewerAction =
@@ -107,7 +121,9 @@ export type ViewerAction =
    *  zurück auf den übergeordneten Knoten. */
   | { type: 'closeSelection' }
   /** Info-Panels vergrößern/verkleinern; `height` nur von der Karte genutzt. */
-  | { type: 'panelSize'; size: PanelSize };
+  | { type: 'panelSize'; size: PanelSize }
+  /** Schwebende Auswahlkarte verschieben. */
+  | { type: 'cardPos'; pos: CardPos };
 
 export const INITIAL_VIEWER_STATE: ViewerState = {
   lv: null,
@@ -125,6 +141,7 @@ export const INITIAL_VIEWER_STATE: ViewerState = {
   mutedRules: EMPTY_SET,
   viewMode: 'graph',
   panelSize: DEFAULT_PANEL_SIZE,
+  cardPos: DEFAULT_CARD_POS,
 };
 
 export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerState {
@@ -141,6 +158,7 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
         sizeMode: state.sizeMode,
         hideMode: state.hideMode,
         panelSize: state.panelSize,
+        cardPos: state.cardPos,
       };
     case 'error':
       return { ...state, loading: false, error: action.message };
@@ -150,6 +168,7 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
         sizeMode: state.sizeMode,
         hideMode: state.hideMode,
         panelSize: state.panelSize,
+        cardPos: state.cardPos,
       };
     case 'search':
       return { ...state, search: action.value };
@@ -238,6 +257,8 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
             action.size.height === null ? null : Math.max(PANEL_MIN_HEIGHT, action.size.height),
         },
       };
+    case 'cardPos':
+      return { ...state, cardPos: action.pos };
     default:
       return state;
   }
