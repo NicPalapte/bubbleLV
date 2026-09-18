@@ -8,10 +8,12 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { SimilarView } from '../../src/components/relate/SimilarView';
-import { runPipeline } from '../../src/lib/pipeline/runPipeline';
+import { classifyAndBuild, runPipeline } from '../../src/lib/pipeline/runPipeline';
 import { ViewerProvider } from '../../src/state/ViewerProvider';
 import { useViewerDispatch } from '../../src/state/viewer';
 import type { ViewerAction } from '../../src/state/viewer';
+import type { LVDraft, PositionDraft } from '../../src/types/lvDraft';
+import type { LoadedLV } from '../../src/lib/pipeline/runPipeline';
 import type { ReactNode } from 'react';
 
 function loadFixture() {
@@ -27,14 +29,22 @@ const lv = loadFixture();
 /** Eine Suche, die in der Musterdatei keine Position trifft. */
 const SUCHE_OHNE_TREFFER: ViewerAction = { type: 'search', value: 'zzz-kein-treffer-zzz' };
 
-function WithLv({ children }: { children: ReactNode }) {
+function WithLv({
+  datei,
+  filter,
+  children,
+}: {
+  datei: LoadedLV;
+  filter: ViewerAction;
+  children: ReactNode;
+}) {
   const dispatch = useViewerDispatch();
   return (
     <>
-      <button type="button" onClick={() => dispatch({ type: 'loaded', lv })}>
+      <button type="button" onClick={() => dispatch({ type: 'loaded', lv: datei })}>
         laden
       </button>
-      <button type="button" onClick={() => dispatch(SUCHE_OHNE_TREFFER)}>
+      <button type="button" onClick={() => dispatch(filter)}>
         filtern
       </button>
       {children}
@@ -42,10 +52,10 @@ function WithLv({ children }: { children: ReactNode }) {
   );
 }
 
-function renderView() {
+function renderView(datei: LoadedLV = lv, filter: ViewerAction = SUCHE_OHNE_TREFFER) {
   const result = render(
     <ViewerProvider>
-      <WithLv>
+      <WithLv datei={datei} filter={filter}>
         <SimilarView />
       </WithLv>
     </ViewerProvider>,
@@ -102,6 +112,73 @@ describe('SimilarView · Musterdatei', () => {
     renderView();
     const erwartet = Math.round(lv.relations.threshold * 100);
     expect(screen.getByText(new RegExp(`Ähnlichkeit von ${erwartet} %`))).toBeInTheDocument();
+  });
+});
+
+// ── Kennzahlen gegen gefilterte Mitgliederzahl ───────────────────────────────
+//
+// Die Karte zeigt zwei Zahlen nebeneinander, die sich auf Verschiedenes
+// beziehen: die Mitglieder **im Filter** und die Kennzahlen der **ganzen**
+// Gruppe. Das ist Absicht — der Median ist die Bezugsgröße der Ausreißer, und
+// die stehen einmal beim Laden fest. Damit das nicht verwirrt, muss die Karte
+// beides ausweisen, sobald der Filter Mitglieder ausblendet.
+
+function wiederholung(quantity: number, unitPrice: number, i: number): PositionDraft {
+  return {
+    oz: `01.001.00${i}0`,
+    shortText: 'Innenwand herstellen',
+    longText: 'Herstellen einer tragenden Innenwand aus Beton, Abrechnung nach Aufmaß.',
+    unit: 'm3',
+    quantity,
+    unitPrice,
+    positionType: 'NORMAL',
+    attributes: {},
+  };
+}
+
+/** Vier gleiche Positionen; eine hat eine Menge weit außerhalb des Filters. */
+const VIER_GLEICHE: LVDraft = {
+  projectName: 'Kennzahlen-Test',
+  client: null,
+  lots: [
+    {
+      number: '01',
+      label: 'Los',
+      sections: [
+        {
+          number: '01.001',
+          label: 'Abschnitt',
+          sections: [],
+          positions: [
+            wiederholung(10, 100, 1),
+            wiederholung(20, 110, 2),
+            wiederholung(30, 120, 3),
+            wiederholung(1000, 130, 4),
+          ],
+        },
+      ],
+    },
+  ],
+};
+
+/** Mengenfilter, der die vierte Position ausblendet. */
+const MENGE_BIS_100: ViewerAction = { type: 'setMenge', range: [0, 100] };
+
+describe('SimilarView · Kennzahlen im Filter', () => {
+  const kleinesLv = classifyAndBuild(VIER_GLEICHE, 'kennzahlen.x83');
+
+  it('nennt ohne Filter nur die Mitgliederzahl', () => {
+    renderView(kleinesLv, MENGE_BIS_100);
+    expect(screen.getByText('4 Positionen')).toBeInTheDocument();
+    expect(screen.queryByText(/über alle/)).toBeNull();
+  });
+
+  it('weist die ausgeblendeten Mitglieder aus und bezieht die Kennzahlen darauf', () => {
+    renderView(kleinesLv, MENGE_BIS_100);
+    fireEvent.click(screen.getByRole('button', { name: 'filtern' }));
+    // Mitglieder gefiltert, Kennzahlen über die ganze Gruppe — beides steht da.
+    expect(screen.getByText('3 von 4 Positionen')).toBeInTheDocument();
+    expect(screen.getByText(/über alle 4/)).toBeInTheDocument();
   });
 });
 

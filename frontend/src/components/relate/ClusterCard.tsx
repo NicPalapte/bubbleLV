@@ -29,6 +29,21 @@ function statsLine(label: string, stats: ValueStats, unit: string | null): strin
   return `${label} ${format(stats.median)} · von ${format(stats.min)} bis ${format(stats.max)}`;
 }
 
+/**
+ * Die Kennzahlen gelten für die **ganze** Gruppe, auch wenn der Filter
+ * Mitglieder ausblendet — und die Karte sagt das dann dazu.
+ *
+ * Warum nicht über die gefilterte Menge rechnen: Median und Quartilsabstand
+ * sind die Bezugsgröße, an der die Ausreißer hängen. Die werden einmal beim
+ * Laden im Worker bestimmt (.claude/CLAUDE.md#kritische-constraints) und
+ * beziehen sich auf die ganze Gruppe. Eine mitwandernde Bezugsgröße würde
+ * daneben eine zweite, andere Zahl behaupten — und bei drei sichtbaren
+ * Mitgliedern sagt ein Quartilsabstand ohnehin nichts mehr.
+ */
+function scopeNote(sichtbar: number, gesamt: number): string {
+  return sichtbar < gesamt ? ` · über alle ${gesamt}` : '';
+}
+
 function OutlierNote({ outlier, unit }: { outlier: Outlier; unit: string | null }) {
   const wert = outlier.field === 'ep' ? formatEuro(outlier.value) : formatNumber(outlier.value);
   const median = outlier.field === 'ep' ? formatEuro(outlier.median) : formatNumber(outlier.median);
@@ -97,6 +112,8 @@ export function ClusterCard({
 }) {
   const { cluster, members } = entry;
   const unit = members[0]?.position?.unit ?? null;
+  const gesamt = cluster.positionIds.length;
+  const note = scopeNote(members.length, gesamt);
 
   // Ausreißer nur für Mitglieder zeigen, die der Filter durchlässt — sonst
   // stünde hier ein Hinweis auf eine Position, die nirgends sonst zu sehen ist.
@@ -119,8 +136,10 @@ export function ClusterCard({
             {open ? '▾' : '▸'}
           </span>
         </button>
-        <Chip static on>
-          {members.length} Positionen
+        <Chip static on title={note === '' ? undefined : 'Der Filter blendet Mitglieder aus'}>
+          {members.length === gesamt
+            ? `${members.length} Positionen`
+            : `${members.length} von ${gesamt} Positionen`}
         </Chip>
         <span className="font-mono text-[9.5px] text-mute">
           Ähnlichkeit {Math.round(cluster.similarity * 100)} %
@@ -138,12 +157,13 @@ export function ClusterCard({
           {preisStreuung !== null && preisStreuung > 0 && (
             <span className="text-mute"> · Streuung {Math.round(preisStreuung * 100)} %</span>
           )}
+          <span className="text-mute">{note}</span>
         </p>
       )}
       {cluster.unitPrice === null && cluster.quantity !== null && (
         <p className="mt-[4px] font-mono text-[10px] text-dim">
           {statsLine('Menge · Median', cluster.quantity, unit)}
-          <span className="text-mute"> · keine Preise in der Datei</span>
+          <span className="text-mute">{note} · keine Preise in der Datei</span>
         </p>
       )}
 

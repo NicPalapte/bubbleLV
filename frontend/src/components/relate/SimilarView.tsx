@@ -11,6 +11,12 @@
 // Zahl für das ganze LV, während Tabelle und Graph daneben eine Teilmenge
 // zeigen. Fallen zu viele Mitglieder weg, verschwindet die Gruppe.
 //
+// Ausgenommen sind die **Kennzahlen** der Gruppe (Median, Spanne, Streuung):
+// sie beschreiben die Gruppe, nicht die Auswahl, und bleiben deshalb die
+// Bezugsgröße, an der die Ausreißer hängen. Blendet der Filter Mitglieder aus,
+// schreibt die Karte das dazu („3 von 8 Positionen · über alle 8") — Begründung
+// in ClusterCard.tsx#scopeNote.
+//
 // **Beschreibung, keine Bewertung:** ein Ausreißer ist eine Beobachtung über
 // die Datei („fällt aus dem Rahmen seiner Gruppe"), kein Preisurteil.
 
