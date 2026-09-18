@@ -257,6 +257,30 @@ describe('positionSimilarity', () => {
     expect(positionSimilarity(a, a)).toBe(1);
     expect(positionSimilarity(a, b)).toBeLessThan(1);
   });
+
+  it('rechnet mehrwertige Merkmale anteilig, nicht alles oder nichts', () => {
+    // Eine Norm mehr macht aus derselben Leistung keine andere. Gleiche Texte,
+    // nur die Normenliste unterscheidet sich — einmal überlappend, einmal
+    // fremd. Attribute direkt gesetzt, damit nur dieses Merkmal variiert.
+    const normen = (liste: string[]) => ({
+      gewerk: 'Betonarbeiten',
+      bauteiltyp: 'Wand',
+      normen: liste,
+    });
+    const index = rohIndexOf([
+      position({ oz: '01.001.0010', attributes: normen(['DIN 18299', 'DIN 18300']) }),
+      position({ oz: '01.001.0020', attributes: normen(['DIN 18300']) }),
+      position({ oz: '01.001.0030', attributes: normen(['DIN 18540']) }),
+      position({ oz: '01.001.0040', attributes: normen(['DIN 18299', 'DIN 18300']) }),
+    ]);
+    const [zwei, eine, fremde, gleiche] = index.positions;
+
+    const teilweise = positionSimilarity(zwei, eine);
+    const ohne = positionSimilarity(zwei, fremde);
+    expect(positionSimilarity(zwei, gleiche)).toBe(1);
+    expect(teilweise).toBeGreaterThan(ohne);
+    expect(teilweise).toBeLessThan(1);
+  });
 });
 
 describe('Reale Datei', () => {

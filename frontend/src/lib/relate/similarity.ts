@@ -86,6 +86,12 @@ interface Profile {
   empty: boolean;
 }
 
+/**
+ * Trennzeichen mehrwertiger Merkmale („DIN 18299 · DIN 18300"). Der Vergleich
+ * erkennt daran, dass er es mit einer Liste zu tun hat.
+ */
+export const LIST_SEP = ' · ';
+
 /** Merkmalswerte einer Position als Key → Anzeigewert. */
 export function merkmaleOf(position: PositionSummary): Map<string, string> {
   const out = new Map<string, string>();
@@ -97,7 +103,7 @@ export function merkmaleOf(position: PositionSummary): Map<string, string> {
       );
       // Sortiert: die Reihenfolge im Text ist kein Unterschied in der Sache.
       if (list.length > 0) {
-        out.set(key, [...list].sort((a, b) => a.localeCompare(b, 'de')).join(' · '));
+        out.set(key, [...list].sort((a, b) => a.localeCompare(b, 'de')).join(LIST_SEP));
       }
       continue;
     }
@@ -153,6 +159,22 @@ function textSimilarity(a: Profile, b: Profile): number {
 }
 
 /**
+ * Übereinstimmung eines einzelnen Merkmalswerts (0…1).
+ *
+ * Mehrwertige Merkmale — Normen, Verweise, Besonderheiten — zählen **anteilig**
+ * statt alles oder nichts: eine Position, die eine Norm mehr nennt, beschreibt
+ * deshalb keine andere Leistung. „DIN 18299 · DIN 18300" gegen „DIN 18300"
+ * ergibt 0,5, nicht 0. Einwertige Merkmale bleiben hart — eine andere
+ * Betongüte ist eine andere Betongüte.
+ */
+function valueAgreement(a: string, b: string | undefined): number {
+  if (b === undefined) return 0;
+  if (a === b) return 1;
+  if (!a.includes(LIST_SEP) && !b.includes(LIST_SEP)) return 0;
+  return jaccard(new Set(a.split(LIST_SEP)), new Set(b.split(LIST_SEP)));
+}
+
+/**
  * Anteil übereinstimmender Merkmale über alle Keys, die mindestens eine der
  * beiden Positionen trägt. `null`, wenn keine vergleichbaren Merkmale
  * vorliegen — dann entscheidet der Text allein, statt eine Null zu erfinden.
@@ -163,7 +185,7 @@ function merkmalSimilarity(a: Profile, b: Profile): number | null {
   for (const [key, value] of a.merkmale) {
     if (GROUPING_KEYS.has(key)) continue;
     gesamt++;
-    if (b.merkmale.get(key) === value) gleich++;
+    gleich += valueAgreement(value, b.merkmale.get(key));
   }
   for (const key of b.merkmale.keys()) {
     if (GROUPING_KEYS.has(key) || a.merkmale.has(key)) continue;
