@@ -4,7 +4,8 @@
 //  - eine bekannte Dublette wird gefunden,
 //  - bewusst unterschiedliche Positionen landen nicht im selben Cluster,
 //  - ein Cluster benennt gemeinsame und unterscheidende Merkmale,
-//  - 10.000 Positionen clustern in unter 3 Sekunden,
+//  - 10.000 Positionen clustern in unter 3 Sekunden — auch dann, wenn jeder
+//    Text eigen ist und die Abkürzung über gleiche Texte nicht greift,
 //  - eine reale Datei mit wiederkehrenden Leistungen zeigt sie als Cluster.
 
 import { readFileSync } from 'node:fs';
@@ -12,9 +13,11 @@ import { describe, expect, it } from 'vitest';
 import { classifyDraft, getClassifier } from '../../src/lib/classify';
 import { buildPositionIndex } from '../../src/lib/index/positionIndex';
 import { buildRelations, clusterByPosition, positionSimilarity } from '../../src/lib/relate';
+import { relateTokens } from '../../src/lib/relate/text';
 import { runPipeline } from '../../src/lib/pipeline/runPipeline';
 import { buildTree } from '../../src/lib/tree/buildTree';
-import { syntheticDraft } from '../support/syntheticLv';
+import { hardCaseDraft, syntheticDraft } from '../support/syntheticLv';
+import type { PositionIndex } from '../../src/lib/index/positionIndex';
 import type { RelationResult } from '../../src/lib/relate';
 import type { LVDraft, PositionDraft } from '../../src/types/lvDraft';
 
@@ -294,7 +297,20 @@ describe('Laufzeit', () => {
   /** Zusage aus dem Plan: 10k Positionen clustern in unter 3 Sekunden. */
   const BUDGET_MS = 3000;
 
-  it('clustert 10.000 Positionen innerhalb des Budgets', () => {
+  /** Verschiedene normalisierte Texte — so viele Stellvertreter entstehen. */
+  function signaturen(index: PositionIndex): number {
+    const gesehen = new Set<string>();
+    for (const position of index.positions) {
+      gesehen.add(
+        `${relateTokens(position.shortText).join(' ')}|${relateTokens(position.longText).join(' ')}`,
+      );
+    }
+    return gesehen.size;
+  }
+
+  it('clustert ein LV mit viel Wiederholung innerhalb des Budgets', () => {
+    // Der leichte Weg: dieselben Texte immer wieder. Die Signatur-Stufe fasst
+    // sie zusammen, bevor überhaupt verglichen wird.
     const index = buildPositionIndex(buildTree(syntheticDraft(10_000)));
     const started = performance.now();
     const result = buildRelations(index);
@@ -303,21 +319,25 @@ describe('Laufzeit', () => {
     expect(result.clusters.length).toBeGreaterThan(0);
   });
 
-  it('bleibt bezahlbar, wenn alle Positionen in einer Vorgruppe landen', () => {
-    // Härtester Fall: gleiches Gewerk, gleiche Einheit, gleicher Bauteiltyp,
-    // dazu viel gemeinsamer Standardtext — genau hier würde ein
-    // All-Paare-Vergleich unbezahlbar.
-    const woerter = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta'];
-    const positions = Array.from({ length: 10_000 }, (_, i) =>
-      position({
-        oz: `01.001.${i}`,
-        shortText: `Innenwand herstellen ${woerter[i % 8]} ${woerter[(i * 3) % 8]} Nr ${i}`,
-        longText: `${WAND_LANG} Ausführung ${woerter[i % 8]}, Fall ${i}.`,
-      }),
-    );
-    const index = rohIndexOf(positions);
+  it('clustert 10.000 verschiedene Texte in einer Vorgruppe im Budget', () => {
+    // Der teure Weg, und der einzige, der den invertierten Index wirklich
+    // fordert: 300 Wandtypen à 33 Varianten, alle unter demselben Gewerk, in
+    // derselben Einheit und mit demselben Bauteiltyp — und **jeder Text
+    // eigen**. Genau hier wäre ein All-Paare-Vergleich unbezahlbar.
+    const index = buildPositionIndex(buildTree(hardCaseDraft(300, 33)));
+
+    // Die Voraussetzung selbst prüfen: kollabieren die Texte doch wieder auf
+    // wenige Signaturen, misst der Test nicht mehr, was er behauptet.
+    expect(signaturen(index)).toBe(index.size);
+    expect(index.size).toBe(9900);
+
     const started = performance.now();
-    buildRelations(index);
+    const result = buildRelations(index);
     expect(performance.now() - started).toBeLessThan(BUDGET_MS);
+
+    // Und das Ergebnis stimmt: jede Familie wird eine Gruppe, keine zwei
+    // Familien fallen zusammen.
+    expect(result.clusters).toHaveLength(300);
+    expect(result.clustered).toBe(index.size);
   });
 });

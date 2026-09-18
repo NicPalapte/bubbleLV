@@ -58,7 +58,9 @@ aufbrechen.
 ## Folgen
 
 - Die Gruppen entstehen **einmal beim Laden im Worker** und liegen fertig im Zustand.
-  Kein Render rechnet sie nach. 10.000 Positionen brauchen dafür rund 0,4 Sekunden.
+  Kein Render rechnet sie nach. Gemessen an 10.000 Positionen: rund 0,3 Sekunden, wenn
+  jeder Text eigen ist und Stufe 2 nichts abkürzen kann — der teure Fall. Ein LV mit
+  viel Wiederholung liegt darunter.
 - Die Verkettung ist gewollt: Ist A ähnlich zu B und B ähnlich zu C, stehen alle drei
   zusammen. Der konservative Schwellwert (62 %) hält diese Ketten kurz.
 - Die Obergrenzen aus Stufe 3 sind eine bewusste Näherung: in einem LV mit tausenden

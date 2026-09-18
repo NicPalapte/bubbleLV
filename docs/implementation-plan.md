@@ -316,9 +316,12 @@ Eigenschaften-Panel. Sobald der Vergleich steht, führt er dorthin.
   nur in der Dicke unterscheiden (`tests/relate/similarity.test.ts`).
 - Ein Cluster benennt, welche Merkmale gemeinsam und welche unterschiedlich sind
   (`tests/components/similarView.test.tsx`).
-- Die Laufzeit bleibt im Worker und blockiert die UI nicht: 10.000 Positionen
-  clustern in ~0,4 s, auch wenn alle in derselben Vorgruppe landen (Budget 3 s,
-  `tests/relate/similarity.test.ts`).
+- Die Laufzeit bleibt im Worker und blockiert die UI nicht (Budget 3 s,
+  `tests/relate/similarity.test.ts`). Gemessen wird der **teure** Fall: 9.900
+  Positionen in **einer** Vorgruppe, jede mit eigenem Text — 300 Wandtypen à 33
+  Varianten, damit die Abkürzung über wortgleiche Texte nicht greift. Rund 0,3 s,
+  und die 300 Familien kommen als 300 Gruppen heraus. Ein LV mit viel Wiederholung
+  (`syntheticDraft`) liegt darunter und steht als zweiter Fall daneben.
 
 ---
 
