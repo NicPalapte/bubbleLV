@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 import { CHECK_RULES, runChecks } from '../../src/lib/check';
 import type { CheckRule } from '../../src/lib/check';
 import { classifyDraft, getClassifier } from '../../src/lib/classify';
+import { formatEuro } from '../../src/lib/format';
 import { parseStlbCsv } from '../../src/lib/classify/stlbCatalog';
 import { buildPositionIndex } from '../../src/lib/index/positionIndex';
 import { summarize } from '../../src/lib/index/summary';
@@ -251,6 +252,15 @@ describe('G4 · Einheitspreis fällt aus der Gruppe', () => {
     expect(flags).toHaveLength(1);
     expect(flags[0].positionId).toContain('01.001.0050');
     expect(flags[0].title).toContain('Median');
+  });
+
+  it('schreibt Beträge wie der Rest der Oberfläche', () => {
+    // Derselbe Ausreißer steht auch auf der Cluster-Karte der Ansicht
+    // „Ähnlichkeit"; beide gehen durch `formatEuro`, also mit zwei
+    // Nachkommastellen — sonst liest man je Ansicht eine andere Zahl.
+    const [flag] = flagsOf(gruppe(100, 105, 110, 115, 900), 'G4');
+    expect(flag.title).toContain(formatEuro(900));
+    expect(flag.title).toContain(`Median ${formatEuro(110)}`);
   });
 
   it('schweigt, solange die Preise der Gruppe beieinanderliegen', () => {

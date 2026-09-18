@@ -13,6 +13,10 @@
 // Ohne Preise in der Datei findet die Regel nichts — kein Fehler, nur ein
 // leeres Ergebnis (x83 führt in aller Regel keine Einheitspreise).
 
+// Geldbeträge kommen aus `lib/format.ts` — derselbe Ausreißer steht in der
+// Ansicht „Prüfung" und auf der Cluster-Karte, und beide sollen ihn gleich
+// schreiben.
+import { formatEuro } from '../../format';
 import type { CheckContext, CheckRule, Flag } from '../types';
 
 /** Nur EP-Ausreißer: eine abweichende Menge ist eine Aussage über das Bauwerk,
@@ -21,10 +25,6 @@ const FIELD = 'ep';
 
 function richtung(direction: 'hoch' | 'niedrig'): string {
   return direction === 'hoch' ? 'über' : 'unter';
-}
-
-function euro(value: number): string {
-  return `${value.toLocaleString('de-DE', { maximumFractionDigits: 2 })} €`;
 }
 
 export const g4Preisausreisser: CheckRule = {
@@ -47,8 +47,9 @@ export const g4Preisausreisser: CheckRule = {
           severity: 'beachten',
           positionId: outlier.positionId,
           title:
-            `${euro(outlier.value)} — ${richtung(outlier.direction)} dem Erwartungsbereich ` +
-            `von ${cluster.positionIds.length} ähnlichen Positionen (Median ${euro(outlier.median)})`,
+            `${formatEuro(outlier.value)} — ${richtung(outlier.direction)} dem ` +
+            `Erwartungsbereich von ${cluster.positionIds.length} ähnlichen Positionen ` +
+            `(Median ${formatEuro(outlier.median)})`,
         });
       }
     }
