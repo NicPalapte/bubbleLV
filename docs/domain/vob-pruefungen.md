@@ -22,6 +22,7 @@
 | V1, V2, V4, V5, V6, V7 | **umgesetzt und aktiv** |
 | V3, V8, V9, V10 | angemeldet, **inaktiv** — die Referenzdateien sind noch leer |
 | G1, G2, G3 | Kennzahlen ohne Norm-Bezug, aktiv (Kostentreiber, Mengentreiber, uneinheitliche Einheiten) |
+| G4 | Kennzahl ohne Norm-Bezug, aktiv (Einheitspreis fällt aus der Gruppe ähnlicher Positionen, WP-M) |
 
 Status und Norm-Verweis je Regel stehen in
 [`reference/pruefregeln.csv`](reference/pruefregeln.csv) — nicht im Code. Eine
@@ -31,7 +32,13 @@ behauptet aber keine Fundstelle in der Norm, die niemand geprüft hat. Mit
 `status = aus` verschwindet eine Regel vollständig, ohne Code-Änderung.
 
 Umgesetzt in `frontend/src/lib/check/`, ein Modul je Regelgruppe; die Ansicht
-„Prüfung" ist der dritte Ansichtsmodus.
+„Prüfung" ist einer der gleichrangigen Ansichtsmodi.
+
+**G4** war in WP-K zurückgestellt: ein Einheitspreis fällt nur „aus dem Rahmen", wenn
+es einen Rahmen gibt. Den liefern seit WP-M die Gruppen ähnlicher Positionen
+(`frontend/src/lib/relate/`). Die Regel rechnet nichts selbst, sie liest die fertigen
+Gruppen und meldet, wessen Preis außerhalb von Median ± 1,5 × Quartilsabstand liegt.
+Ohne Preise in der Datei findet sie nichts — kein Fehler.
 
 ## Regeln
 

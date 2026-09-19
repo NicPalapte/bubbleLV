@@ -82,3 +82,97 @@ export function syntheticDraft(count: number): LVDraft {
 
   return { projectName: `Synthetisches LV (${count} Positionen)`, client: 'Testfall', lots };
 }
+
+// ── Der harte Fall für die Ähnlichkeit (WP-M) ────────────────────────────────
+//
+// `syntheticDraft` oben erzeugt ein LV mit **viel Wiederholung**: dieselben
+// Texte immer wieder. Für die Cluster-Bildung ist das der leichte Fall — die
+// Signatur-Stufe fasst wortgleiche Positionen zusammen, bevor überhaupt
+// verglichen wird (lib/relate/similarity.ts).
+//
+// Teuer wird erst das Gegenteil: hunderte **verschieden** formulierte Texte in
+// derselben Vorgruppe (gleiches Gewerk, gleiche Einheit, gleicher Bauteiltyp),
+// die sich nur in wenigen Wörtern unterscheiden — hunderte Wandtypen unter
+// „Mauerarbeiten/m³/Wand". Dann greift die Signatur-Stufe nicht, und der
+// invertierte Index über Schindeln muss die Arbeit tragen.
+//
+// Deshalb **Kunstwörter statt Zahlen**: `relateTokens` maskiert jede Zahl zu
+// „#", eine laufende Nummer im Text würde alle Positionen wieder auf dieselbe
+// Signatur ziehen — und der Test liefe am teuren Pfad vorbei.
+
+/** Silben für aussprechbare Kunstwörter. */
+const SILBEN = [
+  'ka',
+  'me',
+  'lo',
+  'ri',
+  'tu',
+  'na',
+  'se',
+  'bi',
+  'do',
+  'fe',
+  'gu',
+  'ha',
+  'jo',
+  'ku',
+  'lu',
+  'mi',
+  'no',
+  'pa',
+  're',
+  'so',
+];
+
+/** Kunstwort zu einer Zahl — ziffernfrei, damit die Maskierung es stehen lässt. */
+export function kunstwort(n: number): string {
+  return (
+    SILBEN[n % 20] +
+    SILBEN[Math.floor(n / 20) % 20] +
+    SILBEN[Math.floor(n / 400) % 20] +
+    SILBEN[Math.floor(n / 8000) % 20]
+  );
+}
+
+const HART_LANG = [
+  'Herstellen einer tragenden Innenwand aus Beton einschließlich Schalung,',
+  'Bewehrung und Nachbehandlung. Abrechnung nach Aufmaß.',
+].join(' ');
+
+/**
+ * LV mit `familien` × `proFamilie` Positionen, alle in **einer** Vorgruppe.
+ * Innerhalb einer Familie sind die Texte nah verwandt (ein Wort unterscheidet
+ * sie), zwischen zwei Familien deutlich verschieden. Jede Position hat ihren
+ * eigenen Text — die Signatur-Stufe fasst nichts zusammen.
+ */
+export function hardCaseDraft(familien: number, proFamilie: number): LVDraft {
+  const positions: PositionDraft[] = [];
+  for (let familie = 0; familie < familien; familie++) {
+    for (let variante = 0; variante < proFamilie; variante++) {
+      const index = positions.length;
+      const typ = kunstwort(familie);
+      const art = kunstwort(50_000 + variante);
+      positions.push({
+        oz: `01.001.${String(index).padStart(5, '0')}`,
+        shortText: `Innenwand herstellen ${typ} ${art}`,
+        longText: `${HART_LANG} Ausführung ${typ} ${art}.`,
+        unit: 'm3',
+        quantity: (index % 900) + 1,
+        unitPrice: (index % 400) + 10,
+        positionType: 'NORMAL',
+        attributes: { gewerk: 'Betonarbeiten', bauteiltyp: 'Wand', positionsart: 'bauteil' },
+      });
+    }
+  }
+  return {
+    projectName: `Harter Fall (${positions.length} Positionen)`,
+    client: 'Testfall',
+    lots: [
+      {
+        number: '01',
+        label: 'Los 01',
+        sections: [{ number: '01.001', label: 'Abschnitt 01.001', sections: [], positions }],
+      },
+    ],
+  };
+}

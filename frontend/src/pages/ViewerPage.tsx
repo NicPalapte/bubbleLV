@@ -1,6 +1,6 @@
 // Ansichts-Gerüst (WP-L): gleichrangige Ansichten auf **einem** Filterzustand —
 // Überblick, Graph im Vollbild, die 3-Spalten-Tabellenansicht (Tree · Tabelle ·
-// Eigenschaften) und Prüfung. Umgeschaltet wird über den Schalter in der
+// Eigenschaften), Ähnlichkeit (WP-M) und Prüfung. Umgeschaltet wird über den Schalter in der
 // Kopfleiste; der Wechsel fasst weder Filter noch Auswahl an, und was eine
 // Ansicht sich merkt, steht in `view` (state/viewState.ts).
 //
@@ -17,6 +17,7 @@ import { ResizeHandle } from '../components/layout/ResizeHandle';
 import { TopBar } from '../components/layout/TopBar';
 import { Tree } from '../components/layout/Tree';
 import { OverviewView } from '../components/overview/OverviewView';
+import { SimilarView } from '../components/relate/SimilarView';
 import { PositionsTable } from '../components/table/PositionsTable';
 import { FileDropzone } from '../components/upload/FileDropzone';
 import { PERF_ENABLED, reportViewSwitch } from '../lib/perf';
@@ -90,6 +91,12 @@ export function ViewerPage() {
           <main aria-label="Bubble-Graph" className="relative flex-1 overflow-hidden bg-paper">
             <BubbleGraph root={tree} />
             <GraphHeader root={tree} />
+          </main>
+        )}
+
+        {tree !== null && viewMode === 'similar' && (
+          <main aria-label="Ähnlichkeit" className="relative flex-1 overflow-hidden bg-white">
+            <SimilarView />
           </main>
         )}
 

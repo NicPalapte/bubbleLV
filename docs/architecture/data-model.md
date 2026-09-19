@@ -193,6 +193,44 @@ Gesamtsumme" sieht das ganze LV und wäre je Render zu teuer. Sie bestehen nur a
 Zeichenketten und Zahlen und überstehen den `structuredClone` der Worker-Grenze
 unbeschadet — anders als der Positions-Index.
 
+### `Cluster` — Beziehungen zwischen Positionen (WP-M)
+
+Ein Cluster ist keine Eigenschaft **einer** Position, sondern eine Aussage über
+mehrere — dieselbe Trennung wie beim `Flag`. Er liegt deshalb in einer eigenen Liste
+am geladenen LV (`LoadedLV.relations`) und verweist über Knoten-IDs:
+
+```ts
+interface Cluster {
+  id: string;                          // "cluster:<erste Position>", stabil je Datei
+  positionIds: string[];               // Mitglieder in Dokumentreihenfolge, mindestens zwei
+  label: string;                       // häufigster Kurztext der Gruppe, aus der Datei
+  gemeinsameMerkmale: Record<string, string>;  // Key → Wert, den alle Mitglieder teilen
+  unterscheidendeMerkmale: string[];   // Keys, in denen sich die Mitglieder unterscheiden
+  ausreisser: Outlier[];               // auffälliger Einheitspreis oder auffällige Menge
+  unitPrice: ValueStats | null;        // Median, Quartile, Spanne; null ohne Preise
+  quantity: ValueStats | null;
+  similarity: number;                  // mittlere Ähnlichkeit innerhalb der Gruppe (0…1)
+}
+
+interface Outlier {
+  positionId: string;
+  field: 'ep' | 'menge';
+  direction: 'hoch' | 'niedrig';
+  value: number;
+  median: number;                      // Bezugsgröße der Aussage
+}
+```
+
+Ein Merkmal, das nur ein Teil der Gruppe trägt, zählt als **Unterschied** — auch wenn
+die Träger sich einig sind. `kurztext` steht als Pseudo-Key in
+`unterscheidendeMerkmale`, wenn die Kurztexte verschieden lauten.
+
+Berechnet wird **einmal beim Laden im Worker** (`lib/relate/`), nie im Render. Wie die
+Flags bestehen die Cluster nur aus Zeichenketten und Zahlen und überstehen den
+`structuredClone` der Worker-Grenze. Wie die Gruppen zustande kommen und warum nicht
+alle Paare verglichen werden:
+[`../decisions/0016-aehnlichkeit-und-cluster.md`](../decisions/0016-aehnlichkeit-und-cluster.md).
+
 ### Einheiten im Filter
 
 GAEB liefert die Einheit als freien Text (`<QU>`). Ein LV aus mehreren Teil-LVs
@@ -299,21 +337,7 @@ voraus, die das aktuelle MVP bewusst nicht hat. Details zur langfristigen Vision
 
 ## Geplante Erweiterungen (Release 2 — „LV verstehen")
 
-> Noch **nicht umgesetzt**. Hier steht, wohin das Modell wächst, damit neue Arbeit nicht
-> daneben baut. Umsetzung: [`../implementation-plan.md`](../implementation-plan.md)
-> (WP-M) · Scope: [`../scope.md`](../scope.md). Umgesetzt und darum oben
-> beschrieben: `PositionIndex` (WP-I), `spans` (WP-J) und `Flag` (WP-K).
-
-### `Cluster` — Beziehungen (WP-M)
-
-```ts
-interface Cluster {
-  id: string;
-  positionIds: string[];
-  gemeinsameMerkmale: Record<string, unknown>;
-  unterscheidendeMerkmale: string[];  // Keys, in denen sich die Mitglieder unterscheiden
-  ausreisser: string[];               // positionIds mit auffälligem EP oder auffälliger Menge
-}
-```
-
-Einmal beim Laden im Worker berechnet, danach unverändert im State — nicht im Render.
+> Umgesetzt und darum oben beschrieben: `PositionIndex` (WP-I), `spans` (WP-J),
+> `Flag` (WP-K) und `Cluster` (WP-M). Offen bleiben die Ansichten Vergleich und
+> Matrix — sie bringen kein neues Modell mit, sondern lesen das vorhandene
+> ([`../implementation-plan.md`](../implementation-plan.md), WP-N und WP-O).

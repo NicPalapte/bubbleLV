@@ -361,6 +361,34 @@ describe('viewerReducer · Prüfregeln', () => {
 
 // Der Baum wird für die Aktionen gebraucht, die alles auf- oder zuklappen —
 // ohne geladenes LV dürfen sie nichts tun statt zu stolpern.
+describe('viewerReducer · Ähnlichkeit', () => {
+  it('merkt sich Regler, Sortierung und aufgeklappte Gruppen über den Wechsel', () => {
+    let state = viewerReducer(loadedState(), { type: 'setViewMode', mode: 'similar' });
+    state = viewerReducer(state, { type: 'clusterMinMembers', value: 5 });
+    state = viewerReducer(state, { type: 'clusterSort', value: 'streuung' });
+    state = viewerReducer(state, {
+      type: 'toggleClusterOpen',
+      id: 'cluster:position:001.001.0010',
+    });
+
+    const zurueck = viewerReducer(viewerReducer(state, { type: 'setViewMode', mode: 'table' }), {
+      type: 'setViewMode',
+      mode: 'similar',
+    });
+    expect(zurueck.view.similar.minMembers).toBe(5);
+    expect(zurueck.view.similar.sort).toBe('streuung');
+    expect(zurueck.view.similar.openClusters.has('cluster:position:001.001.0010')).toBe(true);
+  });
+
+  it('behält Regler und Sortierung beim Import, wirft aber die Gruppen weg', () => {
+    let state = viewerReducer(loadedState(), { type: 'clusterMinMembers', value: 3 });
+    state = viewerReducer(state, { type: 'toggleClusterOpen', id: 'cluster:alt' });
+    const neu = loadedState(state);
+    expect(neu.view.similar.minMembers).toBe(3);
+    expect(neu.view.similar.openClusters.size).toBe(0);
+  });
+});
+
 describe('viewerReducer · ohne geladenes LV', () => {
   it('lässt `expandAll` und `collapseAll` wirkungslos', () => {
     expect(viewerReducer(base, { type: 'expandAll' })).toBe(base);

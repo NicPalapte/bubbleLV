@@ -12,6 +12,8 @@ import { classifyDraft, getClassifier } from '../classify';
 import { getGaebParser, mapToLvDraft } from '../gaeb';
 import { buildPositionIndex } from '../index/positionIndex';
 import { summarize, type LVSummary } from '../index/summary';
+import { measure } from '../perf';
+import { buildRelations, type RelationResult } from '../relate';
 import { buildTree } from '../tree/buildTree';
 import type { LVDraft } from '../../types/lvDraft';
 import type { LVNode } from '../../types/lvNode';
@@ -25,6 +27,12 @@ export interface LoadedLV {
   summary: LVSummary;
   /** Hinweise der Prüfregeln, fertig berechnet (WP-K). */
   check: CheckResult;
+  /**
+   * Ähnlichkeits-Cluster, Unterschiede und Ausreißer (WP-M). Entstehen hier —
+   * also im Worker, sobald dessen Schwelle greift — und nie im Render
+   * (.claude/CLAUDE.md#kritische-constraints).
+   */
+  relations: RelationResult;
 }
 
 /**
@@ -47,6 +55,9 @@ export function classifyAndBuild(draft: LVDraft, fileName: string): LoadedLV {
   // Haupt-Thread über dem empfangenen Baum neu auf (state/ViewerProvider.tsx).
   const index = buildPositionIndex(tree);
   const summary = summarize(index);
+  // Beziehungen vor den Prüfregeln: Regel G4 vergleicht den Einheitspreis
+  // gegen seinen Cluster und braucht ihn deshalb fertig.
+  const relations = measure('Beziehungen', () => buildRelations(index));
   return {
     tree,
     projectName: classified.projectName,
@@ -55,7 +66,8 @@ export function classifyAndBuild(draft: LVDraft, fileName: string): LoadedLV {
     summary,
     // Prüfregeln sehen das ganze LV (Anteil an der Gesamtsumme, Mengen-Rang) und
     // laufen deshalb hier — einmal, nie im Render.
-    check: runChecks(index, summary),
+    check: runChecks(index, summary, relations),
+    relations,
   };
 }
 

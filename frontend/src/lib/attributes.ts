@@ -8,6 +8,49 @@ import type { PositionSummary } from '../types/lvNode';
 /** Reservierte Keys: Provenance und Fundstellen, nie eine Facette. */
 const RESERVED_KEYS: ReadonlySet<string> = new Set(['_meta', '_spans']);
 
+/**
+ * Anzeigenamen der Klassifizierungs-Attribute. Sie stehen hier und nicht in
+ * einer Komponente, weil inzwischen mehrere Ansichten sie brauchen:
+ * Eigenschaften-Panel, Positionskarte im Graphen und die Merkmalslisten der
+ * Ansicht „Ähnlichkeit" (WP-M).
+ */
+const ATTRIBUTE_LABELS: Record<string, string> = {
+  positionsart: 'Positionsart',
+  gewerk: 'Gewerk',
+  gewerkLb: 'Leistungsbereich (STLB-Bau)',
+  bauteiltyp: 'Bauteiltyp',
+  beton: 'Druckfestigkeit',
+  expo: 'Expositionsklassen',
+  feuchtigkeitsklasse: 'Feuchtigkeitsklasse',
+  tragend: 'Tragend',
+  dicke: 'Dicke',
+  hoehe: 'Höhe',
+  laenge: 'Länge',
+  gewicht: 'Gewicht',
+  steinart: 'Steinart',
+  keywords: 'Besonderheiten',
+  normen: 'Normen',
+  material: 'Material',
+  verweise: 'Verweise',
+  fristen: 'Zeitbezug',
+  platzhalter: 'Offene Stellen',
+  platzhalterAnzahl: 'Anzahl offener Stellen',
+  qualifikation: 'Qualifikation',
+  zeiteinheit: 'Zeiteinheit',
+  planungsart: 'Planungsart',
+  einrichtungsart: 'Art der Einrichtung',
+  // Keine Attribute, sondern Felder der Position — die Merkmalsvergleiche der
+  // Ansicht „Ähnlichkeit" behandeln sie wie Merkmale (lib/relate/similarity.ts).
+  einheit: 'Einheit',
+  positionstyp: 'Positionstyp',
+  kurztext: 'Kurztext',
+};
+
+/** Anzeigename eines Attribut-Keys; unbekannte Keys stehen unverändert da. */
+export function attributeLabel(key: string): string {
+  return ATTRIBUTE_LABELS[key] ?? key;
+}
+
 export function attrString(attributes: Record<string, unknown>, key: string): string | null {
   const value = attributes[key];
   if (typeof value === 'string') return value === '' ? null : value;

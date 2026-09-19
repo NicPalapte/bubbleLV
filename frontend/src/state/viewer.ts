@@ -48,7 +48,8 @@ export {
   PANEL_MIN_WIDTH,
   clampPanelWidth,
 } from './viewState';
-export type { CardPos, PanelSize, SizeModeId, ViewMode, ViewState } from './viewState';
+export { CLUSTER_MIN_MEMBERS } from './viewState';
+export type { CardPos, ClusterSort, PanelSize, SizeModeId, ViewMode, ViewState } from './viewState';
 
 export interface ViewerState {
   lv: LoadedLV | null;
@@ -147,6 +148,9 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     case 'tableScope':
     case 'tableColumns':
     case 'toggleRuleOpen':
+    case 'clusterMinMembers':
+    case 'clusterSort':
+    case 'toggleClusterOpen':
     case 'viewScroll':
     case 'panelSize':
     case 'cardPos': {

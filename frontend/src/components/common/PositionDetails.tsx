@@ -10,7 +10,13 @@ import { BlockLabel, PanelHeader } from '../ui/PanelHeader';
 import { Chip } from '../ui/Chip';
 import { PropField, PropGrid } from '../ui/PropField';
 import { StatusPill } from '../ui/StatusPill';
-import { attrMeta, attrSpans, attrStrings, displayAttributes } from '../../lib/attributes';
+import {
+  attributeLabel,
+  attrMeta,
+  attrSpans,
+  attrStrings,
+  displayAttributes,
+} from '../../lib/attributes';
 import { facetOptionLabel, FACETS_BY_ID } from '../../lib/facets';
 import { formatEuro, formatNumber } from '../../lib/format';
 import { keysOfLabel, presentCategories } from '../../lib/spanCategories';
@@ -18,37 +24,6 @@ import { POSITION_STATUS } from '../../lib/status';
 import { useViewer } from '../../state/viewer';
 import type { ClassificationMeta } from '../../lib/classify';
 import type { LVNode, PositionSummary } from '../../types/lvNode';
-
-const ATTRIBUTE_LABELS: Record<string, string> = {
-  positionsart: 'Positionsart',
-  gewerk: 'Gewerk',
-  gewerkLb: 'Leistungsbereich (STLB-Bau)',
-  bauteiltyp: 'Bauteiltyp',
-  beton: 'Druckfestigkeit',
-  expo: 'Expositionsklassen',
-  feuchtigkeitsklasse: 'Feuchtigkeitsklasse',
-  tragend: 'Tragend',
-  dicke: 'Dicke',
-  hoehe: 'Höhe',
-  laenge: 'Länge',
-  gewicht: 'Gewicht',
-  steinart: 'Steinart',
-  keywords: 'Besonderheiten',
-  normen: 'Normen',
-  material: 'Material',
-  verweise: 'Verweise',
-  fristen: 'Zeitbezug',
-  platzhalter: 'Offene Stellen',
-  platzhalterAnzahl: 'Anzahl offener Stellen',
-  qualifikation: 'Qualifikation',
-  zeiteinheit: 'Zeiteinheit',
-  planungsart: 'Planungsart',
-  einrichtungsart: 'Art der Einrichtung',
-};
-
-function attributeLabel(key: string): string {
-  return ATTRIBUTE_LABELS[key] ?? key;
-}
 
 /**
  * Ein Gewerk, das aus der Abschnittsüberschrift stammt, wird als solches

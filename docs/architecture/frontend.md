@@ -51,6 +51,11 @@ frontend/
     │   ├── overview/                 # Kennzahlen, Treemap-Layout (WP-L)
     │   │   ├── model.ts              # buildOverview: Kennzahlen, Gruppen, Pareto, Mengen
     │   │   └── treemap.ts            # squarified Treemap, reine Funktion
+    │   ├── relate/                   # Beziehungen: Ähnlichkeit, Ausreißer (WP-M)
+    │   │   ├── text.ts               # Normalisierung, Wort-Schindeln, Jaccard
+    │   │   ├── stats.ts              # Median, Quartile, Ausreißer-Grenzen
+    │   │   ├── similarity.ts         # Vorgruppierung, Cluster-Bildung (im Worker)
+    │   │   └── types.ts              # Cluster, Outlier, RelationResult
     │   ├── check/                    # Prüfregeln + Hinweise (WP-K)
     │   │   ├── rules/                # ein Modul je Regelgruppe
     │   │   ├── referenz.ts           # Regel-Status und Listen aus den CSV
@@ -78,6 +83,8 @@ frontend/
         ├── upload/FileDropzone.tsx   # Drag&Drop/Datei-Dialog → Pipeline
         ├── graph/{BubbleGraph,BubbleNode,GraphControls,GraphHeader}.tsx
         ├── check/CheckView.tsx           # Ansicht „Prüfung" (WP-K)
+        ├── relate/                       # Ansicht „Ähnlichkeit" (WP-M)
+        │   └── {SimilarView,ClusterCard}.tsx
         ├── overview/                     # Ansicht „Überblick" (WP-L)
         │   └── {OverviewView,MetricTiles,Treemap,ParetoCard,UnitTotals}.tsx
         ├── table/PositionsTable.tsx
@@ -217,6 +224,22 @@ dieselbe Menge, die Tabelle und Graph zeigen.
 Führt die Datei **keine Preise** (x83), misst die Treemap die Anzahl statt der
 Summe, die Geld-Kachel sagt das ausdrücklich, und die Pareto-Auswertung entfällt
 mit Begründung — Nullwerte wären eine Aussage, die die Datei nicht macht.
+
+### Ansicht „Ähnlichkeit" (WP-M)
+
+Die Gruppen entstehen **nicht** hier, sondern einmal beim Laden im Worker
+(`lib/relate/`) und liegen fertig als `lv.relations` im Zustand. Die Ansicht wählt
+aus, sortiert und zeigt an — sie rechnet nichts nach.
+
+Wie die Ansicht „Prüfung" arbeitet sie auf der gefilterten Menge: eine Gruppe zeigt
+nur Mitglieder, die der aktive Filter durchlässt, und verschwindet, wenn zu wenige
+übrig bleiben. Der Regler „ab n Mitgliedern" begrenzt die Liste und ist bewusst
+**kein** globaler Filter: `matchPos` entscheidet je Position aus der Position selbst,
+die Gruppen-Zugehörigkeit entsteht erst danach
+([`../decisions/0016`](../decisions/0016-aehnlichkeit-und-cluster.md)).
+
+Ein Klick auf eine Position wählt sie an und wechselt in die Tabelle — bis der
+Vergleich (WP-N) steht, ist das der Ort, an dem eine Position vollständig zu sehen ist.
 
 Die `PositionsTable` zeigt wahlweise den gewählten Abschnitt oder das ganze LV
 (Umschalter im Tabellenkopf). Bei aktivem Filter fällt sie automatisch auf das

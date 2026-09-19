@@ -7,6 +7,7 @@
 // und wäre je Ansicht zu teuer (.claude/CLAUDE.md#kritische-constraints).
 
 import { regelEintrag } from './referenz';
+import { g4Preisausreisser } from './rules/ausreisser';
 import { g1Kostentreiber, g2Mengentreiber, g3Einheitenschreibweise } from './rules/treiber';
 import {
   v10Homogenbereiche,
@@ -23,6 +24,8 @@ import {
 import type { CheckContext, CheckResult, CheckRule, Flag, RuleStatus } from './types';
 import type { PositionIndex } from '../index/positionIndex';
 import type { LVSummary } from '../index/summary';
+import type { RelationResult } from '../relate';
+import { EMPTY_RELATIONS } from '../relate';
 
 export const CHECK_RULES: readonly CheckRule[] = [
   v1Bedarfsposition,
@@ -38,6 +41,7 @@ export const CHECK_RULES: readonly CheckRule[] = [
   g1Kostentreiber,
   g2Mengentreiber,
   g3Einheitenschreibweise,
+  g4Preisausreisser,
 ];
 
 /** Warum eine Regel nicht läuft — in einem Satz, den der Owner versteht. */
@@ -66,9 +70,10 @@ function inactiveReason(rule: CheckRule): string | null {
 export function runChecks(
   index: PositionIndex,
   summary: LVSummary,
+  relations: RelationResult = EMPTY_RELATIONS,
   ruleSet: readonly CheckRule[] = CHECK_RULES,
 ): CheckResult {
-  const context: CheckContext = { index, summary };
+  const context: CheckContext = { index, summary, relations };
   const flags: Flag[] = [];
   const rules: RuleStatus[] = [];
 
@@ -108,4 +113,12 @@ export function runChecks(
 }
 
 export { EMPTY_CHECK_RESULT } from './types';
-export type { CheckResult, CheckRule, Flag, FlagCategory, FlagSeverity, RuleStatus } from './types';
+export type {
+  CheckContext,
+  CheckResult,
+  CheckRule,
+  Flag,
+  FlagCategory,
+  FlagSeverity,
+  RuleStatus,
+} from './types';
