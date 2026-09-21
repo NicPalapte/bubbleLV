@@ -22,6 +22,7 @@ selbst anlegen.
 | WP-K | Flags und VOB-Check, Ansicht „Prüfung" | ✅ umgesetzt |
 | WP-L | Ansichts-Gerüst + Ansicht „Überblick" | ✅ umgesetzt |
 | WP-M | Beziehungen: Ähnlichkeit, Unterschiede, Ausreißer | umgesetzt |
+| WP-Q | Graph mit Mehrwert: Treffer isolieren, Stichworte, Menge, Sprung (Issues #51, #60) | offen · als Nächstes |
 | WP-N | Ansicht „Vergleich" | offen |
 | WP-O | Ansicht „Matrix" | offen |
 | WP-P | Feinschliff: Kommandopalette, URL-Zustand, Export, Druck | offen |
@@ -43,13 +44,17 @@ Ohne sie greifen die jeweiligen Regeln nicht — das ist kein Fehler.
 ```
 WP-H ──► WP-I ──┬──► WP-J ──► WP-K ──────────────┐
                 │                                 ├──► WP-P
-                └──► WP-L ──► WP-M ──► WP-N ──► WP-O
+                ├──► WP-L ──► WP-M ──► WP-N ──► WP-O
+                └──► WP-Q
 ```
 
 - **WP-H und WP-I zuerst** — beide stehen. Ohne tragfähigen Graphen und ohne
   Performance-Fundament bringt jede neue Ansicht nur mehr Ruckeln.
 - WP-J ist die Datengrundlage für WP-K, WP-M, WP-N und WP-O. Ohne die neuen Merkmale
   haben Prüfung, Ähnlichkeit, Vergleich und Matrix nichts zu zeigen.
+- **WP-Q läuft als Nächstes**, vor WP-N und WP-O: der Graph ist die Einstiegsansicht,
+  und die einzigen offenen Issues (#51, #60) zeigen auf ihn. Er hängt nur an WP-I
+  (Positions-Index) und WP-J (Merkmale), beide stehen.
 - Ein WP = ein Pull Request.
 
 ---
@@ -325,6 +330,64 @@ Eigenschaften-Panel. Sobald der Vergleich steht, führt er dorthin.
 
 ---
 
+## WP-Q · Graph mit Mehrwert · `feat(graph)`
+
+**Ziel:** Der Graph beantwortet drei Fragen auf einen Blick: Wo steckt das Geld? Wo
+sitzen meine Treffer? Was steht hinter dieser Bubble? Deckt Issue #51 und Issue #60 ab.
+
+**Vorgabe des Owners zu Issue #60:** beides bauen — Treffer im Baum hervorheben **und**
+Treffer isolieren — mit einem Umschalter dazwischen; die Isolation lässt sich zusätzlich
+neben dem Baum einblenden.
+
+Schritte:
+
+1. **Trefferansicht umschaltbar.** Neuer Zustand `graphFocus` in
+   `src/state/viewState.ts`: `'structure' | 'isolate' | 'split'`.
+   - `structure` — heutiger Stand: Baumstruktur, Treffer hervorgehoben, Rest gedämpft.
+   - `isolate` — nur Treffer, neu gruppiert (Schritt 2). Die Struktur tritt zurück.
+   - `split` — geteilte Fläche: links Struktur, rechts Isolation, **eine** Auswahl und
+     **ein** Zoom-Zustand je Seite.
+   Umschalter im Graph-Kopf, nur bedienbar, solange Filter oder Suche aktiv sind; ohne
+   Treffer fällt die Ansicht auf `structure` zurück. Der Umschalter ändert **nie** den
+   Filter — Regel „ein Filterzustand, alle Ansichten" bleibt unberührt.
+2. **Treffer-Cluster in der Isolation.** Gruppenschlüssel umschaltbar: Abschnitt,
+   Gewerk oder die Facette, die den Treffer erzeugt hat. Jede Gruppe ist eine Bubble mit
+   Trefferzahl und Summe, Gruppen absteigend nach dem aktiven Größenmodus sortiert.
+   Gerechnet wird auf dem Positions-Index aus WP-I, nicht auf dem Baum.
+3. **Positionen sortiert und beschriftet** (Issue #51). Innerhalb eines Abschnitts
+   stehen die Positionen absteigend nach dem aktiven Größenmodus — die teuerste sitzt
+   innen. Ab der mittleren Zoomstufe trägt jede Positions-Bubble neben der OZ ein
+   Stichwort aus dem Kurztext; Wortwahl über die vorhandene Textnormalisierung aus
+   `src/lib/relate/text.ts` (Stoppwörter raus, Zahlen und Einheiten maskiert), damit
+   Graph und Ähnlichkeit dieselben Worte verwenden.
+4. **Anteil sichtbar machen** (Issue #51). Abschnitts-Bubbles zeigen ihren Anteil am
+   Projekt in Prozent. Größenmodus **Menge** kommt dazu, wird aber nur angeboten, wenn
+   die gefilterte Menge **eine einzige Einheit** hat — m³ und Stück zu addieren ergibt
+   keine Zahl. Sonst ist der Modus ausgegraut und nennt den Grund.
+5. **Sprung in die Tabellenzeile** (Issue #51). Klick auf eine Positions-Bubble führt in
+   die Tabelle, scrollt auf die Zeile und öffnet das Eigenschaften-Panel — derselbe Weg
+   wie `jumpTo` in `src/components/check/CheckView.tsx` und
+   `src/components/relate/SimilarView.tsx`, dafür in eine gemeinsame Funktion gezogen.
+6. **Entscheidung festhalten:** `docs/decisions/0018-graph-treffer-isolation.md` —
+   warum drei Modi statt einem, und warum die Isolation die Struktur nicht ersetzt.
+7. **Tests:** Gruppenbildung und Sortierung als reine Funktionen in `tests/graph/`;
+   Umschalter, Sprung und der gesperrte Mengen-Modus in
+   `tests/components/bubbleGraph.test.tsx`; Laufzeit der Gruppenbildung bei 10k
+   Positionen gegen ein Budget.
+
+**Fertig, wenn:**
+- Eine Suche mit wenigen Treffern in einem 10k-LV zeigt in `isolate` nur diese Treffer,
+  gruppiert und sortiert; ein Umschalten nach `structure` und zurück ändert weder
+  Filter noch Auswahl.
+- `split` zeigt beide Seiten gleichzeitig; eine Auswahl links markiert dieselbe Position
+  rechts.
+- Positions-Bubbles tragen ab mittlerem Zoom ein lesbares Stichwort, und die größte
+  Position eines Abschnitts ist ohne Zoomen zu finden.
+- Klick auf eine Bubble landet in der zugehörigen Tabellenzeile.
+- Umschalten der Trefferansicht bleibt unter 100 ms bei 10k Positionen.
+
+---
+
 ## WP-N · Vergleich · `feat(viewer)`
 
 **Ziel:** 2–5 Positionen nebeneinander, Unterschiede sichtbar.
@@ -372,12 +435,31 @@ Schritte:
    Markdown, erzeugt als Blob im Browser.
 4. **Druckansicht** über Print-CSS für die gefilterte Menge.
 5. Tastaturbedienung in allen Ansichten (Auswahl mit Pfeiltasten, Enter öffnet).
+6. **Fehler melden** (Issue #57): ein Knopf öffnet ein vorbefülltes GitHub-Issue in
+   einem neuen Tab — Browser, App-Version, Fehlermeldung. **Keine Fachdaten aus der
+   geladenen Datei**, kein Dateiname, keine Positionstexte. Der Nutzer sieht den Text
+   vor dem Absenden und schickt ihn selbst ab. Begründung und die abgelehnte
+   Nutzungsmessung: [`decisions/0017`](decisions/0017-keine-nutzungsmessung.md).
 
 **Fertig, wenn:**
 - Ein geteilter Link stellt Ansicht und Filter wieder her, sobald dieselbe Datei geladen
   ist — ohne Fachdaten im Link außer der OZ der Auswahl.
 - Der Export enthält genau die gefilterte Menge.
 - Im Netzwerk-Tab ist bei Export und Druck kein Request zu sehen.
+- Der Melde-Knopf erzeugt einen GitHub-Link ohne einen einzigen Inhalt aus der geladenen
+  Datei (Test über die erzeugte URL).
+
+---
+
+## Zurückgestellt
+
+**Issue #56 — Lesezeichen und Text-Tags:** zurückgestellt, bis WP-N, WP-O und WP-P
+stehen. Ohne Persistenz wäre jedes Lesezeichen nach einem Reload weg. Ob das trotzdem
+nützt, entscheidet sich erst, wenn der Export aus WP-P existiert.
+
+**Issue #57 — Nutzung messen:** abgelehnt. Jede Messung braucht einen Empfänger, also
+einen Server. Vom Issue bleibt der Melde-Knopf in WP-P Schritt 6. Begründung:
+[`decisions/0017`](decisions/0017-keine-nutzungsmessung.md).
 
 ---
 

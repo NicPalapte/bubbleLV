@@ -23,6 +23,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das *Was*, diese Dateien da
 | 0014 | [Zweites Demo-LV: Angebot mit Preisen](0014-demo-lv-mit-preisen.md) | akzeptiert | 2026-09-16 |
 | 0015 | [Gewerk aus der Abschnittsüberschrift erben](0015-gewerk-aus-der-abschnittsueberschrift.md) | akzeptiert | 2026-09-16 |
 | 0016 | [Ähnliche Positionen: wie Bubble sie findet](0016-aehnlichkeit-und-cluster.md) | akzeptiert | 2026-09-16 |
+| 0017 | [Keine Nutzungsmessung, nur ein Melde-Knopf](0017-keine-nutzungsmessung.md) | akzeptiert | 2026-09-21 |
 
 ## Wann schreibe ich eine neue Datei?
 
