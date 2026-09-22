@@ -8,6 +8,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { SimilarView } from '../../src/components/relate/SimilarView';
+import { CompareView } from '../../src/components/compare/CompareView';
 import { classifyAndBuild, runPipeline } from '../../src/lib/pipeline/runPipeline';
 import { ViewerProvider } from '../../src/state/ViewerProvider';
 import { useViewerDispatch } from '../../src/state/viewer';
@@ -179,6 +180,56 @@ describe('SimilarView · Kennzahlen im Filter', () => {
     // Mitglieder gefiltert, Kennzahlen über die ganze Gruppe — beides steht da.
     expect(screen.getByText('3 von 4 Positionen')).toBeInTheDocument();
     expect(screen.getByText(/über alle 4/)).toBeInTheDocument();
+  });
+});
+
+// ── Gruppe in den Vergleich legen ────────────────────────────────────────────
+//
+// Nebeneinander passen nur MAX_COMPARE_COLUMNS Spalten, eine Gruppe hat aber
+// oft mehr Mitglieder. Gekürzt wird erst in der Ansicht — sonst verschwände
+// der Rest der Gruppe lautlos, statt benannt zu werden (WP-N).
+
+/** Sieben gleiche Positionen — mehr, als nebeneinander passen. */
+const SIEBEN_GLEICHE: LVDraft = {
+  projectName: 'Gruppen-Test',
+  client: null,
+  lots: [
+    {
+      number: '01',
+      label: 'Los',
+      sections: [
+        {
+          number: '01.001',
+          label: 'Abschnitt',
+          sections: [],
+          positions: [1, 2, 3, 4, 5, 6, 7].map((i) => wiederholung(10 * i, 100 + i, i)),
+        },
+      ],
+    },
+  ],
+};
+
+describe('SimilarView · Gruppe in den Vergleich', () => {
+  const grosseGruppe = classifyAndBuild(SIEBEN_GLEICHE, 'gruppe.x83');
+
+  it('übergibt die ganze Gruppe und benennt, was nicht nebeneinander passt', () => {
+    render(
+      <ViewerProvider>
+        <WithLv datei={grosseGruppe} filter={SUCHE_OHNE_TREFFER}>
+          <SimilarView />
+          <CompareView />
+        </WithLv>
+      </ViewerProvider>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'laden' }));
+    fireEvent.click(screen.getByRole('button', { name: 'VERGLEICHEN' }));
+
+    // Fünf Spalten stehen nebeneinander, die übrigen zwei sind genannt —
+    // nicht weggeworfen.
+    const kopf = screen.getAllByText(/nebeneinander/)[0]?.textContent ?? '';
+    expect(kopf).toContain('5 Positionen nebeneinander');
+    expect(kopf).toContain('2 weitere gewählt');
+    expect(screen.getAllByRole('button', { name: /aus dem Vergleich nehmen/ })).toHaveLength(5);
   });
 });
 

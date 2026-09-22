@@ -30,12 +30,7 @@ import { spread } from '../../lib/relate';
 import { matchCount } from '../../lib/tree/matchCounts';
 import { useJumpToPosition } from '../common/useJumpToPosition';
 import { useScrollMemory } from '../common/useScrollMemory';
-import {
-  CLUSTER_MIN_MEMBERS,
-  MAX_COMPARE_COLUMNS,
-  useViewer,
-  useViewerDispatch,
-} from '../../state/viewer';
+import { CLUSTER_MIN_MEMBERS, useViewer, useViewerDispatch } from '../../state/viewer';
 import type { ClusterSort } from '../../state/viewer';
 import type { LVNode } from '../../types/lvNode';
 
@@ -57,16 +52,17 @@ export function SimilarView() {
     view: { similar },
   } = useViewer();
   const dispatch = useViewerDispatch();
-  // Der Vergleich (WP-N) steht noch aus; bis dahin führt der Klick dorthin,
-  // wo eine Position vollständig zu sehen ist: Tabelle plus Eigenschaften.
+  // Ein Klick auf eine einzelne Position führt dorthin, wo sie vollständig zu
+  // sehen ist: Tabelle plus Eigenschaften.
   const jumpTo = useJumpToPosition();
   /**
-   * Gruppe in den Vergleich legen: die ersten Mitglieder, so viele wie
-   * nebeneinander passen (WP-N). Mehr wäre nicht lesbar, und eine Gruppe hat
-   * oft Dutzende.
+   * Gruppe in den Vergleich legen — **ungekürzt**. Nebeneinander passen nur
+   * `MAX_COMPARE_COLUMNS` Spalten, und eine Gruppe hat oft Dutzende; gekürzt
+   * wird aber erst in der Ansicht. Hier zu kürzen würde den Rest der Gruppe
+   * lautlos wegwerfen, statt ihn zu benennen (WP-N).
    */
   const vergleichen = (positionIds: readonly string[]): void => {
-    dispatch({ type: 'setCompare', positionIds: positionIds.slice(0, MAX_COMPARE_COLUMNS) });
+    dispatch({ type: 'setCompare', positionIds });
     dispatch({ type: 'setViewMode', mode: 'compare' });
   };
   const [attachScroll, onScroll] = useScrollMemory('similar');
