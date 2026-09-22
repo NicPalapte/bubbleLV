@@ -78,6 +78,21 @@ describe('compareRows', () => {
     expect(row(rows, 'einheit')?.differs).toBe(true);
   });
 
+  it('erkennt einen Unterschied, den die gerundete Anzeige verschluckt', () => {
+    // Auf der Anzeigeform verglichen wären beide „10 m³" — die Zeile fiele
+    // unter „Nur Unterschiede" weg, obwohl die Mengen verschieden sind.
+    const rows = compareRows([position({ quantity: 10.00001 }), position({ quantity: 10.00004 })]);
+    expect(row(rows, 'menge')?.differs).toBe(true);
+    // Und sie zeigt dann so viele Stellen, dass man den Unterschied sieht.
+    expect(row(rows, 'menge')?.values).toEqual(['10,00001 m³', '10,00004 m³']);
+  });
+
+  it('vergleicht auch Preise am Wert, nicht an den zwei Nachkommastellen', () => {
+    const rows = compareRows([position({ unitPrice: 100.001 }), position({ unitPrice: 100.004 })]);
+    expect(row(rows, 'einheitspreis')?.differs).toBe(true);
+    expect(row(rows, 'einheitspreis')?.values[0]).toContain('100,001');
+  });
+
   it('lässt Zahlenzeilen weg, die keine Position führt', () => {
     const ohnePreis = position({ unitPrice: null });
     const rows = compareRows([ohnePreis, ohnePreis]);

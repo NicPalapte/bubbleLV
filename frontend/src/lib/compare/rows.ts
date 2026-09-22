@@ -33,20 +33,54 @@ const LEADING_LABELS: Record<(typeof LEADING)[number], string> = {
   gesamtpreis: 'Gesamtpreis',
 };
 
-/** Zahlenwerte einer Position, bereits in Anzeigeform. */
-function leadingValue(key: (typeof LEADING)[number], position: PositionSummary): string | null {
+/** Nachkommastellen, wenn die gerundete Anzeige den Unterschied verschluckt. */
+const GENAU = 6;
+
+/**
+ * Zahlenwerte einer Position, bereits in Anzeigeform. `genau` zeigt mehr
+ * Nachkommastellen — nötig, wenn zwei verschiedene Werte gerundet gleich
+ * aussähen.
+ */
+function leadingValue(
+  key: (typeof LEADING)[number],
+  position: PositionSummary,
+  genau = false,
+): string | null {
   if (key === 'menge') {
     if (position.quantity === null) return null;
     // Einheit in der kanonischen Schreibweise: „Psch" und „PSCH" sind dieselbe
     // Einheit, und ein Unterschied in der Schreibweise ist keiner in der Sache.
     const einheit = canonicalUnit(position.unit);
-    return `${formatNumber(position.quantity)}${einheit === null ? '' : ` ${unitLabel(einheit)}`}`;
+    const menge = genau
+      ? position.quantity.toLocaleString('de-DE', { maximumFractionDigits: GENAU })
+      : formatNumber(position.quantity);
+    return `${menge}${einheit === null ? '' : ` ${unitLabel(einheit)}`}`;
   }
+  const stellen = genau ? GENAU : undefined;
   if (key === 'einheitspreis') {
-    return position.unitPrice === null ? null : formatEuro(position.unitPrice);
+    return position.unitPrice === null ? null : formatEuro(position.unitPrice, stellen);
   }
   if (position.quantity === null || position.unitPrice === null) return null;
-  return formatEuro(position.quantity * position.unitPrice);
+  return formatEuro(position.quantity * position.unitPrice, stellen);
+}
+
+/**
+ * Vergleichswert einer Zahlenzeile — **ungerundet**. Auf der Anzeigeform zu
+ * vergleichen hieße, dass zwei Mengen, die sich erst in der vierten
+ * Nachkommastelle unterscheiden, als gleich gälten und die Zeile unter „Nur
+ * Unterschiede" verschwände.
+ */
+function leadingKey(key: (typeof LEADING)[number], position: PositionSummary): string | null {
+  if (key === 'menge') {
+    if (position.quantity === null) return null;
+    // Die Einheit gehört zum Vergleich: 10 m³ und 10 m² sind nicht dasselbe.
+    return `${position.quantity}|${canonicalUnit(position.unit) ?? ''}`;
+  }
+  if (key === 'einheitspreis') {
+    return position.unitPrice === null ? null : String(position.unitPrice);
+  }
+  if (position.quantity === null || position.unitPrice === null) return null;
+  return String(position.quantity * position.unitPrice);
 }
 
 /** Alle Spalten gleich? `null` zählt dabei als eigener Wert („führt nichts"). */
@@ -65,9 +99,16 @@ export function compareRows(positions: readonly PositionSummary[]): CompareRow[]
 
   const rows: CompareRow[] = [];
   for (const key of LEADING) {
-    const values = positions.map((position) => leadingValue(key, position));
+    let values = positions.map((position) => leadingValue(key, position));
     if (values.every((value) => value === null)) continue;
-    rows.push({ key, label: LEADING_LABELS[key], values, differs: !allEqual(values) });
+    const differs = !allEqual(positions.map((position) => leadingKey(key, position)));
+    // Gerundet sähen die Werte gleich aus — dann zeigt die Zeile mehr
+    // Nachkommastellen. Ein markierter Unterschied, den man nicht sieht, wäre
+    // nicht nachvollziehbar.
+    if (differs && allEqual(values)) {
+      values = positions.map((position) => leadingValue(key, position, true));
+    }
+    rows.push({ key, label: LEADING_LABELS[key], values, differs });
   }
 
   // Die Einheit steht bereits an der Menge („10 m³"). Eine zweite Zeile mit
