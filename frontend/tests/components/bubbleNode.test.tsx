@@ -1,13 +1,16 @@
 // Knoten-Darstellung im Graphen (Issue #41, WP-41-4): Positionen einheitlich
 // ohne Rand, Nummern auch bei kleinen Bubbles lesbar, nur die eigene Ebene.
 
-import { render } from '@testing-library/react';
+import { fireEvent, render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { BubbleNode } from '../../src/components/graph/BubbleNode';
 import { RADII } from '../../src/lib/graph/constants';
 import { codeLabelFor } from '../../src/lib/graph/labels';
 import type { PlacedNode } from '../../src/lib/graph/layoutRadial';
 import type { LVNode } from '../../src/types/lvNode';
+
+/** Wie `BubbleNode` den Klick meldet — mit den Zusatztasten (WP-N). */
+type BubbleClick = (event: { ctrlKey: boolean; metaKey: boolean }) => void;
 
 function node(kind: LVNode['kind'], code: string, ownCode: string, label: string | null): LVNode {
   return {
@@ -53,7 +56,13 @@ function placed(id: string, tier: PlacedNode['tier']): PlacedNode {
 
 const noop = (): void => {};
 
-function renderBubble(target: LVNode, tier: PlacedNode['tier'], zoom: number, radius: number) {
+function renderBubble(
+  target: LVNode,
+  tier: PlacedNode['tier'],
+  zoom: number,
+  radius: number,
+  onClick: BubbleClick = noop,
+) {
   return render(
     <svg>
       <BubbleNode
@@ -65,7 +74,7 @@ function renderBubble(target: LVNode, tier: PlacedNode['tier'], zoom: number, ra
         hovered={false}
         focused={false}
         onHover={noop}
-        onClick={noop}
+        onClick={onClick}
         radius={radius}
         subLabel="3 Pos."
       />
@@ -112,6 +121,27 @@ describe('BubbleNode', () => {
     expect(Number(code?.getAttribute('y'))).toBeGreaterThan(22);
     // Der Titel bliebe bei so kleinem Zoom weg — er stünde über den Nachbarn.
     expect(texts.some((text) => text.textContent?.startsWith('Verbauten'))).toBe(false);
+  });
+
+  it('meldet Strg- und Cmd-Klick weiter (WP-N)', () => {
+    // Der Graph unterscheidet daran, ob eine Position in den Vergleich soll
+    // oder die Auswahlkarte aufgeht.
+    const klicks: Array<{ ctrlKey: boolean; metaKey: boolean }> = [];
+    const position = node('position', '01.07.0010', '0010', 'Estrichdämmung verlegen');
+    const { container } = renderBubble(position, 'position', 1, RADII.position, (event) =>
+      klicks.push({ ctrlKey: event.ctrlKey, metaKey: event.metaKey }),
+    );
+    const bubble = container.querySelector('[data-tier="position"]') as SVGGElement;
+
+    fireEvent.click(bubble);
+    fireEvent.click(bubble, { ctrlKey: true });
+    fireEvent.click(bubble, { metaKey: true });
+
+    expect(klicks).toEqual([
+      { ctrlKey: false, metaKey: false },
+      { ctrlKey: true, metaKey: false },
+      { ctrlKey: false, metaKey: true },
+    ]);
   });
 
   it('schreibt ab genug Abstand ein Stichwort an die Position (WP-Q)', () => {

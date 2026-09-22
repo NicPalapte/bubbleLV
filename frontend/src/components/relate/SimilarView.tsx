@@ -52,9 +52,19 @@ export function SimilarView() {
     view: { similar },
   } = useViewer();
   const dispatch = useViewerDispatch();
-  // Der Vergleich (WP-N) steht noch aus; bis dahin führt der Klick dorthin,
-  // wo eine Position vollständig zu sehen ist: Tabelle plus Eigenschaften.
+  // Ein Klick auf eine einzelne Position führt dorthin, wo sie vollständig zu
+  // sehen ist: Tabelle plus Eigenschaften.
   const jumpTo = useJumpToPosition();
+  /**
+   * Gruppe in den Vergleich legen — **ungekürzt**. Nebeneinander passen nur
+   * `MAX_COMPARE_COLUMNS` Spalten, und eine Gruppe hat oft Dutzende; gekürzt
+   * wird aber erst in der Ansicht. Hier zu kürzen würde den Rest der Gruppe
+   * lautlos wegwerfen, statt ihn zu benennen (WP-N).
+   */
+  const vergleichen = (positionIds: readonly string[]): void => {
+    dispatch({ type: 'setCompare', positionIds });
+    dispatch({ type: 'setViewMode', mode: 'compare' });
+  };
   const [attachScroll, onScroll] = useScrollMemory('similar');
 
   const relations = lv?.relations ?? null;
@@ -145,6 +155,7 @@ export function SimilarView() {
             open={similar.openClusters.has(entry.cluster.id)}
             onToggle={() => dispatch({ type: 'toggleClusterOpen', id: entry.cluster.id })}
             onJump={jumpTo}
+            onCompare={() => vergleichen(entry.members.map((node) => node.id))}
           />
         ))}
 

@@ -9,6 +9,7 @@
 
 import { Profiler, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { CheckView } from '../components/check/CheckView';
+import { CompareView } from '../components/compare/CompareView';
 import { FilterStrip } from '../components/filter/FilterStrip';
 import { BubbleGraph } from '../components/graph/BubbleGraph';
 import { GraphHeader } from '../components/graph/GraphHeader';
@@ -99,6 +100,12 @@ export function ViewerPage() {
         {tree !== null && viewMode === 'similar' && (
           <main aria-label="Ähnlichkeit" className="relative flex-1 overflow-hidden bg-white">
             <SimilarView />
+          </main>
+        )}
+
+        {tree !== null && viewMode === 'compare' && (
+          <main aria-label="Vergleich" className="relative flex-1 overflow-hidden bg-white">
+            <CompareView />
           </main>
         )}
 

@@ -50,7 +50,7 @@ export {
   PANEL_MIN_WIDTH,
   clampPanelWidth,
 } from './viewState';
-export { CLUSTER_MIN_MEMBERS } from './viewState';
+export { CLUSTER_MIN_MEMBERS, MAX_COMPARE_COLUMNS } from './viewState';
 export type {
   CardPos,
   ClusterSort,
@@ -145,6 +145,9 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     case 'expandAll':
     case 'collapseAll':
     case 'toggleCluster':
+    case 'toggleCompare':
+    case 'setCompare':
+    case 'clearCompare':
     case 'back':
     case 'closeSelection': {
       const selection = selectionReducer(state.selection, action, state.lv?.tree ?? null);
@@ -159,6 +162,7 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     case 'tableSort':
     case 'tableScope':
     case 'tableColumns':
+    case 'compareOnlyDiffs':
     case 'toggleRuleOpen':
     case 'clusterMinMembers':
     case 'clusterSort':
@@ -216,6 +220,11 @@ export interface ViewerDerived {
    * Knoten. Außerhalb der Graph-Ansicht leer.
    */
   quantities: FilteredQuantities;
+  /**
+   * Positionen im Vergleich, in der Reihenfolge ihrer Wahl (WP-N). IDs, die
+   * kein Knoten mehr trägt — etwa nach einem neuen Import — fallen heraus.
+   */
+  comparePositions: readonly LVNode[];
 }
 
 export type ViewerValue = ViewerState & ViewerDerived;

@@ -35,7 +35,8 @@ interface CommonProps {
   /** Aktueller Tastatur-Fokus (Issue #25) — wie `hovered`, aber von der Tastatur. */
   focused: boolean;
   onHover: (id: string | null) => void;
-  onClick: () => void;
+  /** Das Ereignis kommt mit: Strg-/Cmd-Klick sammelt für den Vergleich (WP-N). */
+  onClick: (event: { ctrlKey: boolean; metaKey: boolean }) => void;
   /** Doppelklick: Ausschnitt auf diesen Knoten und seinen Teilbaum einpassen. */
   onDoubleClick?: () => void;
 }
@@ -220,12 +221,17 @@ export function BubbleNode(props: BubbleProps) {
   const handlers = {
     onMouseEnter: () => onHover(placed.id),
     onMouseLeave: () => onHover(null),
-    onClick: (event: { stopPropagation: () => void; detail: number }) => {
+    onClick: (event: {
+      stopPropagation: () => void;
+      detail: number;
+      ctrlKey: boolean;
+      metaKey: boolean;
+    }) => {
       event.stopPropagation();
       // Der zweite Klick eines Doppelklicks löst nur das Einpassen aus —
       // sonst klappte die Bubble auf und gleich wieder zu.
       if (event.detail > 1) return;
-      onClick();
+      onClick(event);
     },
     onDoubleClick: (event: { stopPropagation: () => void }) => {
       event.stopPropagation();
@@ -414,7 +420,7 @@ export function ClusterNode({
       onMouseLeave={() => onHover(null)}
       onClick={(event) => {
         event.stopPropagation();
-        onClick();
+        onClick(event);
       }}
       onDoubleClick={(event) => {
         event.stopPropagation();

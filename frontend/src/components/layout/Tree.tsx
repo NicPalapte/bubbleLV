@@ -125,8 +125,13 @@ export function Tree({ width, collapsed, onToggleCollapsed }: TreeProps) {
   }, []);
 
   const selectRow = useCallback(
-    (row: VisibleRow): void => {
+    (row: VisibleRow, multi = false): void => {
       setActiveId(row.node.id);
+      // Strg- bzw. Cmd-Klick sammelt Positionen für den Vergleich (WP-N).
+      if (multi && row.node.kind === 'position') {
+        dispatch({ type: 'toggleCompare', positionId: row.node.id });
+        return;
+      }
       if (row.node.kind === 'position') {
         const parent = parents.get(row.node.id) ?? null;
         dispatch({
@@ -395,7 +400,7 @@ export function Tree({ width, collapsed, onToggleCollapsed }: TreeProps) {
                 dimmed={row.missed}
                 status={isPosition ? <StatusPill status={POSITION_STATUS} dotOnly /> : undefined}
                 count={count}
-                onClick={() => selectRow(row)}
+                onClick={(event) => selectRow(row, event.ctrlKey || event.metaKey)}
                 onToggle={
                   row.hasChildren
                     ? () => {

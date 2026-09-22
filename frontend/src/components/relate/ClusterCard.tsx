@@ -104,11 +104,14 @@ export function ClusterCard({
   open,
   onToggle,
   onJump,
+  onCompare,
 }: {
   entry: VisibleCluster;
   open: boolean;
   onToggle: () => void;
   onJump: (positionId: string) => void;
+  /** Die Mitglieder dieser Gruppe nebeneinanderlegen (WP-N). */
+  onCompare: () => void;
 }) {
   const { cluster, members } = entry;
   const unit = members[0]?.position?.unit ?? null;
@@ -144,6 +147,18 @@ export function ClusterCard({
         <span className="font-mono text-[9.5px] text-mute">
           Ähnlichkeit {Math.round(cluster.similarity * 100)} %
         </span>
+        {/* Der kürzeste Weg von „diese hängen zusammen" zu „worin genau
+            unterscheiden sie sich" (WP-N). */}
+        {members.length > 1 && (
+          <button
+            type="button"
+            onClick={onCompare}
+            title="Die Mitglieder dieser Gruppe nebeneinanderlegen"
+            className="cursor-pointer border border-line bg-white px-[6px] py-[2px] font-mono text-[9px] tracking-[0.6px] text-dim hover:text-blue"
+          >
+            VERGLEICHEN
+          </button>
+        )}
         {ausreisser.length > 0 && (
           <span className="font-mono text-[9.5px]" style={{ color: 'var(--amber)' }}>
             {ausreisser.length} Ausreißer
