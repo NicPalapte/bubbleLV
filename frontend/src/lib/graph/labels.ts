@@ -9,7 +9,9 @@ import type { LVNode } from '../../types/lvNode';
  * Nur die eigene Ebene, nicht die verkettete OZ (Issue #41).
  */
 export function codeLabelFor(node: LVNode, tier: string): string {
-  if (tier === 'project') return 'PROJEKT';
+  // Der echte Projektknoten hat nie einen `ownCode` (buildTree.ts) — der
+  // Isolations-Baum nutzt ihn, um sich als „TREFFER" auszuweisen (WP-Q).
+  if (tier === 'project') return node.ownCode === '' ? 'PROJEKT' : node.ownCode;
   if (tier === 'lot') return node.ownCode === '' ? 'LOS' : `LOS ${node.ownCode}`;
   if (tier === 'position') return node.ownCode;
   return node.ownCode === '' ? '' : `§ ${node.ownCode}`;

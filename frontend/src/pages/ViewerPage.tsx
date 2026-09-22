@@ -49,8 +49,11 @@ function ViewTiming({ view, children }: { view: string; children: ReactNode }) {
 }
 
 export function ViewerPage() {
-  const { tree, selectedNode, view } = useViewer();
+  const { tree, selectedNode, view, focus } = useViewer();
   const { mode: viewMode, panelSize } = view;
+  // Geteilt wird nur, wenn es auch etwas zu isolieren gibt: ohne Filter oder
+  // ohne Treffer bleibt der Graph die gewohnte Struktur (WP-Q).
+  const splitGraph = focus !== null && view.graph.focus === 'split';
   const dispatch = useViewerDispatch();
   const [leftWidth, setLeftWidth] = useState(TREE_WIDTH);
   const [treeCollapsed, setTreeCollapsed] = useState(false);
@@ -89,7 +92,20 @@ export function ViewerPage() {
           // in die schwebende Positionskarte (PositionCard in BubbleGraph) —
           // nur die Kopfleiste mit Suche/Filtern bleibt bestehen.
           <main aria-label="Bubble-Graph" className="relative flex-1 overflow-hidden bg-paper">
-            <BubbleGraph root={tree} />
+            {splitGraph ? (
+              <div className="absolute inset-0 flex">
+                <GraphPane label="Struktur">
+                  <BubbleGraph root={tree} remembersViewport={false} />
+                </GraphPane>
+                <div className="w-px shrink-0 bg-line" />
+                <GraphPane label="Treffer">
+                  {/* `focus` ist hier nie null — `splitGraph` prüft das. */}
+                  <BubbleGraph root={tree} focus={focus ?? undefined} />
+                </GraphPane>
+              </div>
+            ) : (
+              <BubbleGraph root={tree} focus={focus ?? undefined} />
+            )}
             <GraphHeader root={tree} />
           </main>
         )}
@@ -133,5 +149,23 @@ export function ViewerPage() {
         )}
       </div>
     </ViewTiming>
+  );
+}
+
+/**
+ * Eine Hälfte der geteilten Graph-Ansicht. Die Beschriftung sagt, welche Seite
+ * man vor sich hat — beide Seiten zeigen dasselbe LV und dieselbe Auswahl.
+ */
+function GraphPane({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <section aria-label={`Graph — ${label}`} className="relative min-w-0 flex-1 overflow-hidden">
+      {children}
+      <span
+        className="pointer-events-none absolute bottom-[14px] left-[14px] z-[1] border border-line px-[8px] py-[3px] font-mono text-[9px] tracking-[0.6px] text-mute"
+        style={{ background: 'var(--scrim)' }}
+      >
+        {label.toUpperCase()}
+      </span>
+    </section>
   );
 }

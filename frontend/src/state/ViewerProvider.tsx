@@ -5,9 +5,11 @@
 
 import { useMemo, useReducer, type ReactNode } from 'react';
 import { buildColorScale, EMPTY_COLOR_SCALE, type ColorScale } from '../lib/colors';
+import { buildFocusTree, type FocusGraph } from '../lib/graph/focusTree';
 import {
   buildPositionIndex,
   EMPTY_POSITION_INDEX,
+  filterMask,
   type PositionIndex,
 } from '../lib/index/positionIndex';
 import { prepareFilters, type ActiveFilters } from '../lib/matchPos';
@@ -78,6 +80,22 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
     return withHits(tree, matches, state.selection.openClusters);
   }, [tree, matches, state.selection.openClusters]);
 
+  // Isolation der Treffer (WP-Q): ein synthetischer Baum aus den Treffern,
+  // gebündelt nach Abschnitt, Gewerk oder Bauteiltyp. Entsteht hier und nicht
+  // im Graphen, weil er vom Filter abhängt und nicht vom Ausschnitt — und weil
+  // beide Hälften der geteilten Ansicht denselben brauchen.
+  const { focus: focusMode, groupBy, sizeMode } = state.view.graph;
+  const focus = useMemo<FocusGraph | null>(() => {
+    if (tree === null || focusMode === 'structure' || !matches.filtering) return null;
+    return measure('Treffer-Isolation', () =>
+      buildFocusTree(index, filterMask(index, active), {
+        groupBy,
+        sizeMode,
+        parents: structure.parents,
+      }),
+    );
+  }, [tree, focusMode, matches.filtering, index, active, groupBy, sizeMode, structure.parents]);
+
   const derived = useMemo<ViewerDerived>(
     () => ({
       tree,
@@ -97,6 +115,7 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
       openNodes,
       openClusters,
       gewerkColors,
+      focus,
     }),
     [
       tree,
@@ -109,6 +128,7 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
       openNodes,
       openClusters,
       gewerkColors,
+      focus,
     ],
   );
 

@@ -22,7 +22,7 @@ selbst anlegen.
 | WP-K | Flags und VOB-Check, Ansicht „Prüfung" | ✅ umgesetzt |
 | WP-L | Ansichts-Gerüst + Ansicht „Überblick" | ✅ umgesetzt |
 | WP-M | Beziehungen: Ähnlichkeit, Unterschiede, Ausreißer | umgesetzt |
-| WP-Q | Graph mit Mehrwert: Treffer isolieren, Stichworte, Menge, Sprung (Issues #51, #60) | offen · als Nächstes |
+| WP-Q | Graph mit Mehrwert: Treffer isolieren, Stichworte, Menge, Sprung (Issues #51, #60) | Schritt 1–2 umgesetzt, 3–5 offen |
 | WP-N | Ansicht „Vergleich" | offen |
 | WP-O | Ansicht „Matrix" | offen |
 | WP-P | Feinschliff: Kommandopalette, URL-Zustand, Export, Druck | offen |
@@ -341,7 +341,7 @@ neben dem Baum einblenden.
 
 Schritte:
 
-1. **Trefferansicht umschaltbar.** Neuer Zustand `graphFocus` in
+1. ✅ **Trefferansicht umschaltbar.** Zustand `view.graph.focus` in
    `src/state/viewState.ts`: `'structure' | 'isolate' | 'split'`.
    - `structure` — heutiger Stand: Baumstruktur, Treffer hervorgehoben, Rest gedämpft.
    - `isolate` — nur Treffer, neu gruppiert (Schritt 2). Die Struktur tritt zurück.
@@ -350,10 +350,10 @@ Schritte:
    Umschalter im Graph-Kopf, nur bedienbar, solange Filter oder Suche aktiv sind; ohne
    Treffer fällt die Ansicht auf `structure` zurück. Der Umschalter ändert **nie** den
    Filter — Regel „ein Filterzustand, alle Ansichten" bleibt unberührt.
-2. **Treffer-Cluster in der Isolation.** Gruppenschlüssel umschaltbar: Abschnitt,
-   Gewerk oder die Facette, die den Treffer erzeugt hat. Jede Gruppe ist eine Bubble mit
-   Trefferzahl und Summe, Gruppen absteigend nach dem aktiven Größenmodus sortiert.
-   Gerechnet wird auf dem Positions-Index aus WP-I, nicht auf dem Baum.
+2. ✅ **Treffer-Cluster in der Isolation.** Gruppenschlüssel umschaltbar: Abschnitt,
+   Gewerk oder Bauteiltyp. Jede Gruppe ist eine Bubble mit Trefferzahl und Summe,
+   Gruppen absteigend nach dem aktiven Größenmodus sortiert. Gerechnet wird auf dem
+   Positions-Index aus WP-I, nicht auf dem Baum.
 3. **Positionen sortiert und beschriftet** (Issue #51). Innerhalb eines Abschnitts
    stehen die Positionen absteigend nach dem aktiven Größenmodus — die teuerste sitzt
    innen. Ab der mittleren Zoomstufe trägt jede Positions-Bubble neben der OZ ein
@@ -374,6 +374,22 @@ Schritte:
    Umschalter, Sprung und der gesperrte Mengen-Modus in
    `tests/components/bubbleGraph.test.tsx`; Laufzeit der Gruppenbildung bei 10k
    Positionen gegen ein Budget.
+
+**Umgesetzt (Schritt 1 und 2).** Begründung und verworfene Wege:
+[`decisions/0018`](decisions/0018-graph-treffer-isolation.md). Kern ist
+`src/lib/graph/focusTree.ts`: die Isolation ist ein **synthetischer `LVNode`-Baum**
+(Wurzel → Gruppen → Treffer) und läuft durch dasselbe Layout und denselben Renderer
+wie die Struktur — kein zweiter Graph. Die Positionsknoten darin sind dieselben
+Objekte wie im echten Baum, deshalb gelten Auswahl und Farben in beiden Hälften.
+Tests: `tests/graph/focusTree.test.ts`, `tests/components/graphFocus.test.tsx`.
+
+**Abweichung zu Schritt 2:** Gebündelt wird nach Bauteiltyp statt nach „der Facette,
+die den Treffer erzeugt hat" — bei einer Volltextsuche gibt es keine auslösende
+Facette, die Bündelung wäre mal da und mal weg.
+
+**Offen aus Schritt 1–2:** Eine Gruppen-Bubble ist kein LV-Knoten; sie lässt sich
+einpassen, aber nicht auswählen und nicht zuklappen. Der Sprung in die Tabelle kommt
+mit Schritt 5.
 
 **Fertig, wenn:**
 - Eine Suche mit wenigen Treffern in einem 10k-LV zeigt in `isolate` nur diese Treffer,

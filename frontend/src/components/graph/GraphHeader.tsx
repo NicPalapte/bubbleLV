@@ -1,17 +1,41 @@
-// Kopfzeile über dem Graphen: Kennzahlen + Umschalter für den Größenmodus.
-// Portiert aus `CenterHint` in design/claude-design/lv-main.jsx.
+// Kopfzeile über dem Graphen: Kennzahlen + Umschalter für den Größenmodus und
+// für die Trefferansicht (WP-Q, Issue #60). Portiert aus `CenterHint` in
+// design/claude-design/lv-main.jsx.
 
 import { SegmentedControl } from '../ui/SegmentedControl';
 import { SIZE_MODES } from '../../lib/graph/constants';
+import { FOCUS_GROUP_LABELS, type FocusGroupBy } from '../../lib/graph/focusTree';
 import { formatCount } from '../../lib/format';
-import { useViewer, useViewerDispatch, type SizeModeId } from '../../state/viewer';
+import { useViewer, useViewerDispatch, type GraphFocus, type SizeModeId } from '../../state/viewer';
 import type { LVNode } from '../../types/lvNode';
+
+const FOCUS_OPTIONS: ReadonlyArray<{ value: GraphFocus; label: string; title: string }> = [
+  {
+    value: 'structure',
+    label: 'STRUKTUR',
+    title: 'Treffer im LV-Baum hervorheben — die Gliederung bleibt stehen.',
+  },
+  {
+    value: 'isolate',
+    label: 'ISOLIEREN',
+    title: 'Nur die Treffer zeigen, neu gebündelt — alles andere tritt weg.',
+  },
+  {
+    value: 'split',
+    label: 'GETEILT',
+    title: 'Links die Struktur, rechts die isolierten Treffer — eine Auswahl.',
+  },
+];
+
+const GROUP_OPTIONS: readonly FocusGroupBy[] = ['abschnitt', 'gewerk', 'bauteiltyp'];
 
 export function GraphHeader({ root }: { root: LVNode }) {
   const {
     view: {
-      graph: { sizeMode },
+      graph: { sizeMode, focus: focusMode, groupBy },
     },
+    matches,
+    focus,
   } = useViewer();
   const dispatch = useViewerDispatch();
 
@@ -24,14 +48,23 @@ export function GraphHeader({ root }: { root: LVNode }) {
   const priceless = root.totalPrice === 0;
 
   return (
-    <div className="pointer-events-none absolute left-0 right-0 top-[14px] z-[1] flex justify-center">
+    <div className="pointer-events-none absolute left-0 right-0 top-[14px] z-[1] flex justify-center px-[14px]">
       <div
-        className="pointer-events-auto inline-flex items-center gap-[12px] border border-line py-[5px] pl-[14px] pr-[6px]"
+        className="pointer-events-auto inline-flex max-w-full flex-wrap items-center justify-center gap-x-[12px] gap-y-[6px] border border-line py-[5px] pl-[14px] pr-[6px]"
         style={{ background: 'var(--scrim)', boxShadow: 'var(--shadow-hairline)' }}
       >
         <span className="font-mono text-[9px] tracking-[0.6px] text-mute">
           {formatCount(lots)} LOSE · {formatCount(sections)} ABSCHNITTE ·{' '}
-          {formatCount(root.positionCount)} POS. · GRÖSSE
+          {formatCount(root.positionCount)} POS.
+          {focus !== null && (
+            <>
+              {' · '}
+              <span className="text-ink">
+                {formatCount(focus.hitCount)} TREFFER IN {formatCount(focus.groupCount)} GRUPPEN
+              </span>
+            </>
+          )}
+          {' · GRÖSSE'}
         </span>
         <SegmentedControl
           label="Größe der Bubbles"
@@ -49,6 +82,40 @@ export function GraphHeader({ root }: { root: LVNode }) {
           value={sizeMode}
           onChange={(value) => dispatch({ type: 'sizeMode', value: value as SizeModeId })}
         />
+
+        {/* Die Trefferansicht steht nur zur Wahl, solange es Treffer zu zeigen
+            gibt — ohne Filter zeigt der Graph immer die Struktur. */}
+        {matches.filtering && (
+          <>
+            <span className="font-mono text-[9px] tracking-[0.6px] text-mute">TREFFER</span>
+            <SegmentedControl
+              label="Trefferansicht"
+              options={FOCUS_OPTIONS.map((option) => ({
+                value: option.value,
+                label: option.label,
+                title: option.title,
+              }))}
+              value={focusMode}
+              onChange={(value) => dispatch({ type: 'graphFocus', value: value as GraphFocus })}
+            />
+          </>
+        )}
+
+        {matches.filtering && focusMode !== 'structure' && (
+          <>
+            <span className="font-mono text-[9px] tracking-[0.6px] text-mute">BÜNDELN NACH</span>
+            <SegmentedControl
+              label="Treffer bündeln nach"
+              options={GROUP_OPTIONS.map((id) => ({
+                value: id,
+                label: FOCUS_GROUP_LABELS[id].toUpperCase(),
+                title: `Treffer nach ${FOCUS_GROUP_LABELS[id]} bündeln`,
+              }))}
+              value={groupBy}
+              onChange={(value) => dispatch({ type: 'focusGroupBy', value: value as FocusGroupBy })}
+            />
+          </>
+        )}
       </div>
     </div>
   );
