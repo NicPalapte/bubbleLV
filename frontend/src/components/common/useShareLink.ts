@@ -66,7 +66,13 @@ export function useShareLink(): void {
     // Ohne geladene Datei gibt es nichts zu teilen: nach „LV schließen" fällt
     // das Fragment weg, damit kein Link stehen bleibt, der auf eine Datei
     // zeigt, die gar nicht mehr offen ist.
+    //
+    // **Vor** der ersten Datei wird dagegen nichts geräumt: dort steht
+    // vielleicht ein geteilter Link, und wer ihn öffnet, sucht die Datei erst
+    // im Dateidialog — das dauert länger als die 300 ms hier. Der Link wäre
+    // weg, bevor der Lesen-Effekt ihn überhaupt zu sehen bekäme.
     if (lv === null) {
+      if (gelesenFuer.current === null) return;
       const timer = window.setTimeout(leereFragment, SCHREIB_VERZOEGERUNG);
       return () => window.clearTimeout(timer);
     }

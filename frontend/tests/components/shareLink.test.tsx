@@ -160,7 +160,9 @@ describe('Geteilter Link \u00b7 zweite Datei', () => {
       'true',
     );
     expect(screen.getByLabelText('Suche')).toHaveValue('');
-    expect(fragment()).toBe('');
+    // Die Adresszeile wird leer — je nach Weg sofort beim Import oder nach der
+    // Entprellung des Schreibens.
+    await waitFor(() => expect(fragment()).toBe(''));
   });
 
   it('r\u00e4umt die Adresszeile, wenn das LV geschlossen wird', async () => {
@@ -170,5 +172,26 @@ describe('Geteilter Link \u00b7 zweite Datei', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /LV schlie\u00dfen/ }));
     await waitFor(() => expect(fragment()).toBe(''));
+  });
+});
+
+describe('Geteilter Link \u00b7 Wettlauf mit dem Dateidialog', () => {
+  it('\u00fcberlebt, wenn die Datei erst nach einer Weile ausgew\u00e4hlt wird', async () => {
+    // Wer einen Link \u00f6ffnet, sucht die Datei erst im Dateidialog \u2014 das dauert
+    // l\u00e4nger als die Entpr\u00e4llung von 300 ms. Bis dahin darf nichts das
+    // Fragment wegr\u00e4umen, sonst ist der Link weg, bevor er gelesen wird.
+    setzeFragment('#v=table~q=Beton');
+    render(<App />);
+    await new Promise((fertig) => setTimeout(fertig, 500));
+    expect(fragment()).toBe('#v=table~q=Beton');
+
+    await ladeDatei('gaeb-xml-beispiel.x83');
+    await waitFor(() =>
+      expect(screen.getByRole('radio', { name: 'Tabelle' })).toHaveAttribute(
+        'aria-checked',
+        'true',
+      ),
+    );
+    expect(screen.getByLabelText('Suche')).toHaveValue('Beton');
   });
 });
