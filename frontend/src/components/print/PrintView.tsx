@@ -44,12 +44,13 @@ export function PrintView() {
 
   const mask = active.filtering ? filterMask(index, active) : null;
   const zeilen: number[] = [];
-  let mitPreisen = false;
+  let ohnePreis = 0;
   for (let i = 0; i < index.size; i++) {
     if (mask !== null && mask[i] !== 1) continue;
     zeilen.push(i);
-    if (Number.isFinite(index.unitPrice[i])) mitPreisen = true;
+    if (!Number.isFinite(index.unitPrice[i])) ohnePreis++;
   }
+  const mitPreisen = ohnePreis < zeilen.length;
   // Ohne Preise in der Datei (x83) fallen beide Preisspalten weg, statt als
   // leere Spalten aufs Blatt zu kommen — wie im Überblick, der dann Anzahl
   // statt Summe misst.
@@ -115,7 +116,12 @@ export function PrintView() {
           <tfoot>
             <tr>
               <td className="border-t border-line px-[4px] py-[3px]" colSpan={kopf.length - 1}>
-                Summe über {formatPositions(zeilen.length)}
+                {/* Zeilen ohne Preis stehen mit in der Liste, aber nicht in der
+                    Summe. Auf Papier lässt sich das nicht nachträglich prüfen,
+                    also muss die Fußzeile es benennen — wie die Kachel „ohne
+                    EP" im Überblick. */}
+                Summe über {formatPositions(zeilen.length - ohnePreis)}
+                {ohnePreis > 0 && ` von ${zeilen.length} · ${ohnePreis} ohne Preis`}
               </td>
               <td className="whitespace-nowrap border-t border-line px-[4px] py-[3px] text-right font-semibold">
                 {formatEuro(summe)}

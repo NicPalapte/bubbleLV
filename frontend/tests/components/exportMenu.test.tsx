@@ -163,9 +163,31 @@ describe('Drucken', () => {
     });
     const druck = document.querySelector('.nur-druck') as HTMLElement;
     expect(within(druck).getByText('GP')).toBeInTheDocument();
-    const zeilen = within(druck).getAllByRole('row');
-    // Kopfzeile, Positionen, Summenzeile.
-    expect(druck.textContent).toContain(`Summe über ${zeilen.length - 2} Positionen`);
+    // Kopfzeile, Positionen, Summenzeile — und darunter ein Betrag in Euro.
+    expect(druck.querySelector('tfoot')?.textContent).toMatch(/Summe über .* €$/);
+  });
+
+  it('benennt Zeilen ohne Preis, die nicht in der Summe stecken', async () => {
+    // Die Demo-Datei mischt: die meisten Zeilen führen einen Preis, einige
+    // nicht. Auf Papier lässt sich das nicht nachträglich prüfen.
+    await ladeApp(MIT_PREISEN);
+    act(() => {
+      window.dispatchEvent(new Event('beforeprint'));
+    });
+    const druck = document.querySelector('.nur-druck') as HTMLElement;
+
+    // Erwartung aus den gedruckten Zeilen selbst, nicht aus der Fußzeile:
+    // eine Zeile ohne Preis hat eine leere EP-Spalte.
+    const zeilen = within(druck).getAllByRole('row').slice(1, -1);
+    const ohnePreis = zeilen.filter(
+      // Spalten: OZ, Bezeichnung, Einheit, Menge, EP, GP.
+      (zeile) => within(zeile).getAllByRole('cell')[4].textContent === '',
+    ).length;
+    expect(ohnePreis).toBeGreaterThan(0);
+
+    const fuss = druck.querySelector('tfoot')?.textContent ?? '';
+    expect(fuss).toContain(`Summe über ${zeilen.length - ohnePreis} Positionen`);
+    expect(fuss).toContain(`von ${zeilen.length} · ${ohnePreis} ohne Preis`);
   });
 
   it('druckt nach einer Suche nur die Treffer', async () => {

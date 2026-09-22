@@ -28,7 +28,9 @@ Daten üblicherweise das Haus verlassen. Genau das darf hier nicht passieren.
 - **Druck über eine eigene, unvirtualisierte Tabelle**
   (`components/print/PrintView.tsx`), gezeichnet erst bei `beforeprint`.
 - **Ohne Preise in der Datei fallen die Preisspalten weg**; mit Preisen steht
-  eine Summe über genau die gedruckten Zeilen darunter. Mengen werden nicht
+  eine Summe über genau die gedruckten Zeilen darunter. Zeilen ohne Preis
+  stehen in der Liste, aber nicht in der Summe — die Fußzeile benennt sie
+  („Summe über 77 Positionen von 78 · 1 ohne Preis"). Mengen werden nicht
   summiert (Entscheidung 0019).
 - **Fehler melden** öffnet ein vorbefülltes GitHub-Formular in einem neuen Tab.
   Darin stehen ausschließlich: Bau-Stand, Ansicht, ob eine Datei geladen ist
@@ -47,6 +49,9 @@ Daten üblicherweise das Haus verlassen. Genau das darf hier nicht passieren.
   auf, wenn das Blatt beim Empfänger liegt.
 - Die Druckansicht wird erst bei `beforeprint` gezeichnet: 10k Zeilen dauerhaft
   im DOM würden jede Interaktion verlangsamen (Zielwerte in docs/scope.md).
+- Eine Summe auf Papier lässt sich nicht nachträglich prüfen. Stünde dort nur
+  ein Betrag, sähe er vollständig aus, obwohl unbepreiste Zeilen fehlen —
+  auf dem Bildschirm weist der Überblick genau das mit „ohne EP" aus.
 - Die GAEB-Datei kommt im Vergabeverfahren selten von dem, der sie liest —
   Planer, Bieter, Nachunternehmer liefern zu. Ein Kurztext `=HYPERLINK("…")`
   würde beim Öffnen der exportierten CSV in Excel als Formel ausgeführt. Die
