@@ -40,8 +40,12 @@ function heatOf(value: number, max: number): string {
   return HEAT[step];
 }
 
+/**
+ * Zahl einer Zelle. Auch die 0 wird ausgeschrieben: eine Zelle, die es gibt,
+ * deren Positionen aber weder Menge noch Preis führen, sähe sonst aus wie eine
+ * Lücke — und eine Lücke heißt hier „kommt nicht vor".
+ */
 function formatValue(value: number, model: MatrixModel): string {
-  if (value === 0) return '';
   if (model.measure === 'summe') return formatEuro(value, 0);
   if (model.measure === 'menge') return formatNumber(value, 0);
   return formatCount(value);

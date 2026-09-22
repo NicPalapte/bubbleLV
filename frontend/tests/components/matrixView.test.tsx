@@ -8,6 +8,12 @@ import { resolve } from 'node:path';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import App from '../../src/App';
+import { MatrixView } from '../../src/components/matrix/MatrixView';
+import { classifyAndBuild } from '../../src/lib/pipeline/runPipeline';
+import { ViewerProvider } from '../../src/state/ViewerProvider';
+import { useViewerDispatch } from '../../src/state/viewer';
+import type { LoadedLV } from '../../src/lib/pipeline/runPipeline';
+import type { LVDraft } from '../../src/types/lvDraft';
 
 const FIXTURE_DIR = resolve(process.cwd(), 'tests/fixtures');
 
@@ -159,5 +165,73 @@ describe('Matrix', () => {
 
     fireEvent.click(ansicht().getByRole('radio', { name: 'Menge' }));
     expect(kopfzeile()).toContain('Zellwert: Menge in m³');
+  });
+});
+
+// ── Zelle mit Wert 0 ─────────────────────────────────────────────────────────
+//
+// Eine Zelle, die es gibt, deren Positionen aber keine Menge führen, hat den
+// Wert 0. Ohne Zahl sähe sie aus wie eine Lücke — und eine Lücke heißt in
+// dieser Ansicht „diese Kombination kommt nicht vor".
+
+/** Zwei Positionen mit Einheit, aber ohne Menge. */
+const OHNE_MENGEN: LVDraft = {
+  projectName: 'Nullwert-Test',
+  client: null,
+  lots: [
+    {
+      number: '01',
+      label: 'Los',
+      sections: [
+        {
+          number: '01.001',
+          label: 'Abschnitt',
+          sections: [],
+          positions: [1, 2].map((i) => ({
+            oz: `01.001.00${i}0`,
+            shortText: 'Innenwand herstellen',
+            longText: 'Herstellen einer tragenden Innenwand aus Beton.',
+            unit: 'm3',
+            quantity: null,
+            unitPrice: null,
+            positionType: 'NORMAL' as const,
+            attributes: {},
+          })),
+        },
+      ],
+    },
+  ],
+};
+
+function WithLv({ datei }: { datei: LoadedLV }) {
+  const dispatch = useViewerDispatch();
+  return (
+    <>
+      <button type="button" onClick={() => dispatch({ type: 'loaded', lv: datei })}>
+        laden
+      </button>
+      <button type="button" onClick={() => dispatch({ type: 'matrixMeasure', value: 'menge' })}>
+        mengen
+      </button>
+      <MatrixView />
+    </>
+  );
+}
+
+describe('Matrix · Zelle ohne Menge', () => {
+  it('schreibt die 0 aus, statt wie eine Lücke auszusehen', () => {
+    render(
+      <ViewerProvider>
+        <WithLv datei={classifyAndBuild(OHNE_MENGEN, 'null.x83')} />
+      </ViewerProvider>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'laden' }));
+    fireEvent.click(screen.getByRole('button', { name: 'mengen' }));
+
+    // Die Zelle gibt es — sie trägt zwei Positionen, nur eben keine Menge.
+    const zelle = screen.getByTitle(/× .* · 2 Positionen/);
+    expect(zelle.textContent).toBe('0');
+    // …und sie ist nicht die Lücke: die trüge den Hinweis „kommt nicht vor".
+    expect(zelle.getAttribute('title')).not.toContain('kommt nicht vor');
   });
 });
