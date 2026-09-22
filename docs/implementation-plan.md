@@ -456,7 +456,8 @@ diese Zeile hervor. Tests: `tests/compare/`, `tests/components/compareView.test.
 - Zwei fast gleiche Positionen zeigen genau die abweichenden Zeilen
   (`tests/compare/rows.test.ts`, `tests/components/compareView.test.tsx`).
 - Fünf Positionen passen lesbar nebeneinander; ab sechs zeigt die Ansicht die ersten
-  fünf und benennt den Rest.
+  fünf und benennt den Rest — von Hand gewählt wie als ganze Gruppe
+  (`tests/components/compareView.test.tsx`, `tests/components/similarView.test.tsx`).
 
 ---
 
