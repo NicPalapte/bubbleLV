@@ -170,6 +170,13 @@ describe('positionsCsv · Zahlen', () => {
     expect(zeile.split(';')[5]).toBe('3,3');
   });
 
+  it('lässt den Gesamtpreis leer, wo die Datei keinen Preis führt', () => {
+    // Die Musterdatei (x83) führt keine Preise. „0" in jeder Zeile läse sich
+    // wie ein Nullpreis — die Datei sagt aber schlicht nichts dazu.
+    const zeilen = datenzeilen(positionsCsv(index, null));
+    expect(zeilen.every((zeile) => zeile.split(';')[5] === '')).toBe(true);
+  });
+
   it('kürzt echte Nachkommastellen nicht weg', () => {
     // Ein Einheitspreis mit vier Stellen ist im GAEB-Format zulässig; auf zwei
     // gerundet wäre die Summe in der Tabelle falsch.

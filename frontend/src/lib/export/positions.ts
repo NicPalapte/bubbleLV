@@ -20,7 +20,7 @@ const COLUMNS: ReadonlyArray<{ head: string; of(index: PositionIndex, slot: numb
   { head: 'Einheit', of: (index, i) => einheit(index, i) },
   { head: 'Menge', of: (index, i) => zahl(index.quantity[i]) },
   { head: 'Einheitspreis', of: (index, i) => zahl(index.unitPrice[i]) },
-  { head: 'Gesamtpreis', of: (index, i) => zahl(ohneRundungsrest(index.totalPrice[i])) },
+  { head: 'Gesamtpreis', of: (index, i) => gesamtpreis(index, i) },
   { head: 'Positionstyp', of: (index, i) => index.positions[i].positionType },
   { head: 'Gewerk', of: (index, i) => attr(index, i, 'gewerk') },
   { head: 'Bauteiltyp', of: (index, i) => attr(index, i, 'bauteiltyp') },
@@ -62,6 +62,18 @@ function zahl(value: number): string {
  */
 function ohneRundungsrest(value: number): number {
   return Number.isFinite(value) ? Number(value.toFixed(10)) : value;
+}
+
+/**
+ * Gesamtpreis der Zeile. `index.totalPrice` rechnet fehlende Werte als 0
+ * (`lineTotal` in buildTree.ts) — richtig für die Summen am Baum, die nicht an
+ * `NaN` scheitern dürfen. In einer Zeile wäre diese 0 dagegen eine Behauptung:
+ * sie liest sich wie ein Nullpreis und nicht wie „keine Angabe". Führt die
+ * Datei Menge oder Preis nicht, bleibt das Feld deshalb leer.
+ */
+function gesamtpreis(index: PositionIndex, slot: number): string {
+  if (!Number.isFinite(index.quantity[slot]) || !Number.isFinite(index.unitPrice[slot])) return '';
+  return zahl(ohneRundungsrest(index.totalPrice[slot]));
 }
 
 function attr(index: PositionIndex, slot: number, key: string): string {
