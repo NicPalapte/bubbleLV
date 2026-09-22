@@ -72,14 +72,22 @@ export function compareRows(positions: readonly PositionSummary[]): CompareRow[]
 
   // Die Einheit steht bereits an der Menge („10 m³"). Eine zweite Zeile mit
   // demselben Wert wäre Dopplung — und bei einer abweichenden Einheit stünden
-  // zwei Zeilen gleichzeitig als Unterschied da. Nur wenn keine Position eine
-  // Menge führt, trägt die eigene Zeile die Einheit.
-  const mengeGezeigt = rows.some((entry) => entry.key === 'menge');
+  // zwei Zeilen gleichzeitig als Unterschied da.
+  //
+  // Das gilt aber nur, solange die Menge-Zeile die Einheit **jeder** Spalte
+  // trägt. Führt eine Position eine Einheit ohne Menge (z. B. eine
+  // Bedarfsposition), steht in ihrer Menge-Zelle nichts — ihre Einheit wäre
+  // dann nirgends zu sehen, und ein echter Unterschied bliebe unsichtbar.
+  const mengeZeigtJedeEinheit =
+    rows.some((entry) => entry.key === 'menge') &&
+    positions.every(
+      (position) => canonicalUnit(position.unit) === null || position.quantity !== null,
+    );
 
   // Reihenfolge der Merkmale: nach Anzeigename, damit sie nicht von der
   // Reihenfolge der Klassifizierung abhängt.
   const keys = [...new Set(merkmale.flatMap((entry) => [...entry.keys()]))]
-    .filter((key) => !(key === 'einheit' && mengeGezeigt))
+    .filter((key) => !(key === 'einheit' && mengeZeigtJedeEinheit))
     .sort((a, b) => attributeLabel(a).localeCompare(attributeLabel(b), 'de'));
   for (const key of keys) {
     const values = merkmale.map((entry) => entry.get(key) ?? null);

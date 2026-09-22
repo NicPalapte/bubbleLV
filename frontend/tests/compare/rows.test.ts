@@ -68,6 +68,16 @@ describe('compareRows', () => {
     expect(row(rows, 'einheit')?.values[0]).toBe('m³');
   });
 
+  it('zeigt die Einheit, wenn eine Spalte sie ohne Menge führt', () => {
+    // Bedarfsposition: eigene Einheit, aber keine Menge. Ihre Menge-Zelle
+    // bleibt leer — ohne eigene Zeile wäre ihre Einheit nirgends zu sehen und
+    // der Unterschied zu m³ unsichtbar.
+    const rows = compareRows([position(), position({ unit: 'm2', quantity: null })]);
+    expect(row(rows, 'menge')?.values[1]).toBeNull();
+    expect(row(rows, 'einheit')?.values).toEqual(['m³', 'm²']);
+    expect(row(rows, 'einheit')?.differs).toBe(true);
+  });
+
   it('lässt Zahlenzeilen weg, die keine Position führt', () => {
     const ohnePreis = position({ unitPrice: null });
     const rows = compareRows([ohnePreis, ohnePreis]);
