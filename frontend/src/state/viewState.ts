@@ -14,7 +14,7 @@ import type { ColumnConfig } from '../lib/table/columns';
 import type { FocusGroupBy } from '../lib/graph/focusTree';
 
 export type ViewMode = 'overview' | 'graph' | 'table' | 'check' | 'similar';
-export type SizeModeId = 'count' | 'cost' | 'uniform';
+export type SizeModeId = 'count' | 'cost' | 'quantity' | 'uniform';
 /**
  * Was der Graph mit den Treffern macht, solange gefiltert wird (WP-Q, Issue #60):
  * `structure` zeigt den ganzen Graphen mit hervorgehobenen Treffern, `isolate`

@@ -51,6 +51,13 @@ export interface DataTableProps<T> {
   rows: readonly T[];
   rowKey: (row: T) => string;
   selectedKey?: string | null;
+  /**
+   * Zeile, die in den sichtbaren Bereich geholt werden soll, sobald sie
+   * wechselt. Ein Sprung aus Graph, Prüfung oder Ähnlichkeit landet sonst zwar
+   * auf der richtigen Zeile — nur steht die bei 10.000 Zeilen weit außerhalb
+   * des Fensters (WP-Q, Schritt 5).
+   */
+  revealKey?: string | null;
   onPick?: (key: string) => void;
   empty?: string;
   sort?: { key: string; dir: 1 | -1 };
@@ -219,6 +226,7 @@ export function DataTable<T>({
   rows,
   rowKey,
   selectedKey = null,
+  revealKey = null,
   onPick,
   empty = 'Keine Einträge.',
   sort,
@@ -286,6 +294,29 @@ export function DataTable<T>({
 
   const totalHeight = rowTop[rows.length] ?? 0;
   const measured = viewport > UNMEASURED && rowHeight > UNMEASURED;
+
+  // Gewählte Zeile ins Fenster holen — einmal je Wechsel, und nur, wenn sie
+  // nicht ohnehin zu sehen ist: ein Klick in die Tabelle soll nicht scrollen.
+  const revealed = useRef<string | null>(null);
+  useLayoutEffect(() => {
+    if (revealKey === null) {
+      revealed.current = null;
+      return;
+    }
+    if (!measured || revealed.current === revealKey) return;
+    const element = bodyRef.current;
+    if (element === null) return;
+    const index = rows.findIndex((row) => rowKey(row) === revealKey);
+    if (index < 0) return;
+    revealed.current = revealKey;
+    const top = rowTop[index] + (heads[index] !== null ? headHeight : 0);
+    const bottom = rowTop[index + 1];
+    if (top >= element.scrollTop && bottom <= element.scrollTop + viewport) return;
+    const next = Math.max(0, top - viewport / 2 + rowHeight / 2);
+    element.scrollTop = next;
+    scrollRef.current = next;
+    setScrollTop(next);
+  }, [revealKey, measured, rows, rowKey, rowTop, heads, headHeight, viewport, rowHeight]);
   const totalWidth = columns.reduce((sum, column) => sum + column.width, 0);
 
   /**

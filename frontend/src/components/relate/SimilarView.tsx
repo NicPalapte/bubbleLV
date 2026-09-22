@@ -28,6 +28,7 @@ import { SegmentedControl } from '../ui/SegmentedControl';
 import { formatCount, formatPositions } from '../../lib/format';
 import { spread } from '../../lib/relate';
 import { matchCount } from '../../lib/tree/matchCounts';
+import { useJumpToPosition } from '../common/useJumpToPosition';
 import { useScrollMemory } from '../common/useScrollMemory';
 import { CLUSTER_MIN_MEMBERS, useViewer, useViewerDispatch } from '../../state/viewer';
 import type { ClusterSort } from '../../state/viewer';
@@ -47,11 +48,13 @@ export function SimilarView() {
   const {
     lv,
     nodes,
-    parents,
     matches,
     view: { similar },
   } = useViewer();
   const dispatch = useViewerDispatch();
+  // Der Vergleich (WP-N) steht noch aus; bis dahin führt der Klick dorthin,
+  // wo eine Position vollständig zu sehen ist: Tabelle plus Eigenschaften.
+  const jumpTo = useJumpToPosition();
   const [attachScroll, onScroll] = useScrollMemory('similar');
 
   const relations = lv?.relations ?? null;
@@ -78,14 +81,6 @@ export function SimilarView() {
   if (relations === null) return null;
 
   const positionsShown = visible.reduce((sum, entry) => sum + entry.members.length, 0);
-
-  const jumpTo = (positionId: string): void => {
-    const parent = parents.get(positionId) ?? null;
-    dispatch({ type: 'selectPosition', nodeId: parent?.id ?? null, positionId });
-    // Der Vergleich (WP-N) steht noch aus; bis dahin führt der Klick dorthin,
-    // wo eine Position vollständig zu sehen ist: Tabelle plus Eigenschaften.
-    dispatch({ type: 'setViewMode', mode: 'table' });
-  };
 
   return (
     <div ref={attachScroll} onScroll={onScroll} className="absolute inset-0 overflow-auto bg-white">

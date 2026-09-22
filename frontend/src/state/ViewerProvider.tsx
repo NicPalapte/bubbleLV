@@ -7,6 +7,12 @@ import { useMemo, useReducer, type ReactNode } from 'react';
 import { buildColorScale, EMPTY_COLOR_SCALE, type ColorScale } from '../lib/colors';
 import { buildFocusTree, type FocusGraph } from '../lib/graph/focusTree';
 import {
+  NO_QUANTITIES,
+  quantitiesByNode,
+  singleUnit,
+  type FilteredQuantities,
+} from '../lib/graph/quantities';
+import {
   buildPositionIndex,
   EMPTY_POSITION_INDEX,
   filterMask,
@@ -90,28 +96,34 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
   // Ansicht, die gar nicht auf dem Schirm steht.
   const { focus: focusMode, groupBy, sizeMode } = state.view.graph;
   const graphAktiv = state.view.mode === 'graph';
+
+  // Eine Trefferbitmaske je Filterwechsel — Isolation und Mengen lesen dieselbe.
+  const mask = useMemo<Uint8Array | null>(
+    () => (tree === null || !graphAktiv ? null : filterMask(index, active)),
+    [tree, graphAktiv, index, active],
+  );
+
   const focus = useMemo<FocusGraph | null>(() => {
-    if (tree === null || !graphAktiv || focusMode === 'structure' || !matches.filtering) {
-      return null;
-    }
+    if (mask === null || focusMode === 'structure' || !matches.filtering) return null;
     return measure('Treffer-Isolation', () =>
-      buildFocusTree(index, filterMask(index, active), {
-        groupBy,
-        sizeMode,
-        parents: structure.parents,
-      }),
+      buildFocusTree(index, mask, { groupBy, sizeMode, parents: structure.parents }),
     );
-  }, [
-    tree,
-    graphAktiv,
-    focusMode,
-    matches.filtering,
-    index,
-    active,
-    groupBy,
-    sizeMode,
-    structure.parents,
-  ]);
+  }, [mask, focusMode, matches.filtering, index, groupBy, sizeMode, structure.parents]);
+
+  // Mengen für den Größenmodus „Menge" (WP-Q, Schritt 4). Die Einheit steht
+  // immer fest — der Umschalter braucht sie, um den Modus zu sperren —, die
+  // Summen je Knoten entstehen erst, wenn der Modus auch gewählt ist.
+  const quantities = useMemo<FilteredQuantities>(() => {
+    if (mask === null) return NO_QUANTITIES;
+    return measure('Mengen', () => {
+      const unit = singleUnit(index, mask);
+      const byNode =
+        sizeMode === 'quantity' && unit !== null
+          ? quantitiesByNode(index, mask, structure.parents)
+          : null;
+      return { unit, byNode };
+    });
+  }, [mask, index, sizeMode, structure.parents]);
 
   const derived = useMemo<ViewerDerived>(
     () => ({
@@ -133,6 +145,7 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
       openClusters,
       gewerkColors,
       focus,
+      quantities,
     }),
     [
       tree,
@@ -146,6 +159,7 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
       openClusters,
       gewerkColors,
       focus,
+      quantities,
     ],
   );
 

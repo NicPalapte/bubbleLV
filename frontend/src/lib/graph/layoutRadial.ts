@@ -69,6 +69,13 @@ export type ClusterSet = ReadonlySet<string>;
  * Treffer zusammen, statt Löcher zu lassen.
  */
 export type SkipFn = (node: LVNode) => boolean;
+/**
+ * Reihenfolge der Positionen in der Wolke. Die Sonnenblume setzt den ersten
+ * Eintrag nach innen — mit einer Ordnung nach Größe sitzt also die größte
+ * Position im Kern ihres Abschnitts (WP-Q, Issue #51). Ohne Ordnung bleibt die
+ * Dokumentreihenfolge, und damit die OZ-Folge.
+ */
+export type CloudOrder = (a: LVNode, b: LVNode) => number;
 
 /** Luft um den Teilbaum eines Kindes herum. */
 const GAP = 18;
@@ -86,7 +93,7 @@ const POSITION_SLOT = RADII.position;
  * Abstand der Sonnenblumen-Spirale. Muss über dem doppelten Positionsradius
  * liegen, sonst berühren sich benachbarte Positionen im dichtesten Bereich.
  */
-const CLOUD_SPACING = 2.2 * POSITION_SLOT;
+export const CLOUD_SPACING = 2.2 * POSITION_SLOT;
 /** Goldener Winkel — verteilt die Punkte gleichmäßig statt in sichtbaren Armen. */
 const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
 /**
@@ -195,6 +202,7 @@ function measure(
   expanded: ExpandedSet,
   clusters: ClusterSet,
   skip: SkipFn | undefined,
+  order: CloudOrder | undefined,
   out: Map<string, Measure>,
 ): number {
   const tier = tierOf(node, depth);
@@ -216,6 +224,9 @@ function measure(
   if (!expanded.has(node.id) || node.children.length === 0) return size;
 
   entry.cloudChildren = cloudChildrenOf(node, skip);
+  // Kopie ist schon da (`filter`), also darf hier sortiert werden — der Baum
+  // selbst bleibt unangetastet.
+  if (order !== undefined) entry.cloudChildren.sort(order);
   entry.core = cloudRadius(entry.cloudChildren.length, size + CLOUD_PAD);
   entry.spread = entry.core;
 
@@ -242,7 +253,7 @@ function measure(
   let widestSpan = 0;
   let widestSpread = 0;
   for (const child of ringChildren) {
-    const spread = measure(child, depth + 1, expanded, clusters, skip, out);
+    const spread = measure(child, depth + 1, expanded, clusters, skip, order, out);
     const span = spread + GAP;
     entry.childSpans.push(span);
     sum += span;
@@ -285,9 +296,10 @@ export function layoutRadial(
   expanded: ExpandedSet,
   clusters: ClusterSet = new Set(),
   skip?: SkipFn,
+  order?: CloudOrder,
 ): RadialLayout {
   const measures = new Map<string, Measure>();
-  const extent = measure(root, 0, expanded, clusters, skip, measures);
+  const extent = measure(root, 0, expanded, clusters, skip, order, measures);
 
   const nodes = new Map<string, PlacedNode>();
   const clouds = new Map<string, PlacedCloud>();

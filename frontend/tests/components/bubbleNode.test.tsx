@@ -4,6 +4,7 @@
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { BubbleNode } from '../../src/components/graph/BubbleNode';
+import { RADII } from '../../src/lib/graph/constants';
 import { codeLabelFor } from '../../src/lib/graph/labels';
 import type { PlacedNode } from '../../src/lib/graph/layoutRadial';
 import type { LVNode } from '../../src/types/lvNode';
@@ -44,7 +45,7 @@ function placed(id: string, tier: PlacedNode['tier']): PlacedNode {
     angle: 0,
     radius: 0,
     depth: 1,
-    dotted: false,
+    cloudOf: null,
     clusterOf: null,
     clusterCount: 0,
   };
@@ -67,11 +68,6 @@ function renderBubble(target: LVNode, tier: PlacedNode['tier'], zoom: number, ra
         onClick={noop}
         radius={radius}
         subLabel="3 Pos."
-        collapsible
-        isCollapsed={false}
-        childCount={3}
-        onToggleCollapse={noop}
-        onOpenTable={noop}
       />
     </svg>,
   );
@@ -116,6 +112,21 @@ describe('BubbleNode', () => {
     expect(Number(code?.getAttribute('y'))).toBeGreaterThan(22);
     // Der Titel bliebe bei so kleinem Zoom weg — er stünde über den Nachbarn.
     expect(texts.some((text) => text.textContent?.startsWith('Verbauten'))).toBe(false);
+  });
+
+  it('schreibt ab genug Abstand ein Stichwort an die Position (WP-Q)', () => {
+    // CLOUD_SPACING (17,6) × Zoom muss über KEYWORD_AT_PX (40) liegen.
+    const position = node('position', '01.07.0010', '0010', 'Estrichdämmung verlegen');
+    const { container } = renderBubble(position, 'position', 3, RADII.position);
+    const texts = [...container.querySelectorAll('text')].map((text) => text.textContent);
+    expect(texts).toContain('Estrichdämmung');
+  });
+
+  it('lässt das Stichwort weg, solange die Punkte zu dicht stehen', () => {
+    const position = node('position', '01.07.0010', '0010', 'Estrichdämmung verlegen');
+    const { container } = renderBubble(position, 'position', 1, RADII.position);
+    const texts = [...container.querySelectorAll('text')].map((text) => text.textContent);
+    expect(texts).not.toContain('Estrichdämmung');
   });
 
   it('zeigt die Nummer innen, sobald die Bubble groß genug ist', () => {

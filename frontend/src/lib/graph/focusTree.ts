@@ -55,6 +55,8 @@ interface Bucket {
   ownCode: string;
   children: LVNode[];
   totalPrice: number;
+  /** Mengensumme der Gruppe — nur der Größenmodus „Menge" sortiert danach. */
+  quantity: number;
 }
 
 /** Gruppenschlüssel einer Position: Wert und Beschriftung. */
@@ -115,18 +117,23 @@ export function buildFocusTree(
     const { key, label, code, ownCode } = bucketOf(groupBy, node, index.positions[i], parents);
     let bucket = buckets.get(key);
     if (bucket === undefined) {
-      bucket = { key, label, code, ownCode, children: [], totalPrice: 0 };
+      bucket = { key, label, code, ownCode, children: [], totalPrice: 0, quantity: 0 };
       buckets.set(key, bucket);
     }
     bucket.children.push(node);
     bucket.totalPrice += node.totalPrice;
+    if (Number.isFinite(index.quantity[i])) bucket.quantity += index.quantity[i];
     hitCount++;
   }
 
   if (hitCount === 0) return null;
 
   const groups: LVNode[] = [];
+  // Die Gruppen stehen in keinem Baum, also kennt sie auch keine Mengenkarte —
+  // hier entsteht die eine, die ihre Sortierung braucht.
+  const quantities = new Map<string, number>();
   for (const bucket of buckets.values()) {
+    quantities.set(`${FOCUS_PREFIX}${groupBy}:${bucket.key}`, bucket.quantity);
     groups.push({
       id: `${FOCUS_PREFIX}${groupBy}:${bucket.key}`,
       kind: 'section',
@@ -144,7 +151,7 @@ export function buildFocusTree(
   // Winkelanteil und steht oben. Der Größenmodus entscheidet, was „groß" ist.
   const mode = sizeModeById(sizeMode);
   groups.sort((a, b) => {
-    const diff = mode.get(b) - mode.get(a);
+    const diff = mode.get(b, quantities) - mode.get(a, quantities);
     if (diff !== 0) return diff;
     if (b.positionCount !== a.positionCount) return b.positionCount - a.positionCount;
     return (a.label ?? '').localeCompare(b.label ?? '', 'de');

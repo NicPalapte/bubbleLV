@@ -31,6 +31,7 @@ export function GraphHeader({ root }: { root: LVNode }) {
     },
     matches,
     focus,
+    quantities,
   } = useViewer();
   const dispatch = useViewerDispatch();
 
@@ -79,14 +80,26 @@ export function GraphHeader({ root }: { root: LVNode }) {
         <SegmentedControl
           label="Größe der Bubbles"
           options={SIZE_MODES.map((mode) => {
-            const disabled = mode.id === 'cost' && priceless;
+            // Ein Modus, der für die geladene Datei bzw. den aktuellen Filter
+            // nichts aussagt, wird gesperrt statt still auf „Anzahl"
+            // zurückzufallen: sonst sieht der Knopf gewählt aus und im Graphen
+            // ändert sich nichts.
+            const gesperrt =
+              (mode.id === 'cost' && priceless) ||
+              (mode.id === 'quantity' && quantities.unit === null);
+            const grund =
+              mode.id === 'cost'
+                ? 'Diese Datei führt keine Einheitspreise — Größe nach Gesamtpreis ist hier ohne Aussage.'
+                : 'Mengen lassen sich nur innerhalb einer Einheit vergleichen. Filtere auf eine Einheit, dann greift dieser Modus.';
+            const beschriftung =
+              mode.id === 'quantity' && quantities.unit !== null
+                ? `${mode.short} ${quantities.unit}`
+                : mode.short;
             return {
               value: mode.id,
-              label: disabled ? `${mode.short} ·—` : mode.short,
-              disabled,
-              title: disabled
-                ? 'Diese Datei führt keine Einheitspreise — Größe nach Gesamtpreis ist hier ohne Aussage.'
-                : mode.label,
+              label: gesperrt ? `${mode.short} ·—` : beschriftung,
+              disabled: gesperrt,
+              title: gesperrt ? grund : mode.label,
             };
           })}
           value={sizeMode}
