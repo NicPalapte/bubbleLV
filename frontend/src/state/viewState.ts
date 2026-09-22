@@ -11,9 +11,10 @@
 // erreichen kann (.claude/CLAUDE.md#kritische-constraints).
 
 import type { ColumnConfig } from '../lib/table/columns';
+import type { MatrixMeasure } from '../lib/matrix/model';
 import type { FocusGroupBy } from '../lib/graph/focusTree';
 
-export type ViewMode = 'overview' | 'graph' | 'table' | 'check' | 'similar' | 'compare';
+export type ViewMode = 'overview' | 'graph' | 'table' | 'matrix' | 'check' | 'similar' | 'compare';
 export type SizeModeId = 'count' | 'cost' | 'quantity' | 'uniform';
 /**
  * Was der Graph mit den Treffern macht, solange gefiltert wird (WP-Q, Issue #60):
@@ -94,6 +95,16 @@ export interface CompareViewState {
   onlyDiffs: boolean;
 }
 
+/** Standardachsen der Matrix — die beiden Facetten, die ein LV am ehesten ordnen. */
+export const DEFAULT_MATRIX_AXES = { row: 'gewerk', col: 'bauteiltyp' } as const;
+
+export interface MatrixViewState {
+  /** Facetten-IDs der beiden Achsen (lib/facets.ts). */
+  rowFacetId: string;
+  colFacetId: string;
+  measure: MatrixMeasure;
+}
+
 export interface CheckViewState {
   /** Aufgeklappte Regeln — welche Fundlisten offen stehen. */
   openRules: ReadonlySet<string>;
@@ -122,6 +133,7 @@ export interface ViewState {
   mode: ViewMode;
   graph: GraphViewState;
   table: TableViewState;
+  matrix: MatrixViewState;
   check: CheckViewState;
   similar: SimilarViewState;
   compare: CompareViewState;
@@ -142,6 +154,9 @@ export type ViewAction =
   | { type: 'tableSort'; key: string }
   | { type: 'tableScope'; scope: TableScope }
   | { type: 'tableColumns'; columns: ColumnConfig | null }
+  /** Achse der Matrix umstellen; die andere bleibt, wo sie ist. */
+  | { type: 'matrixAxis'; axis: 'row' | 'col'; facetId: string }
+  | { type: 'matrixMeasure'; value: MatrixMeasure }
   | { type: 'toggleRuleOpen'; id: string }
   | { type: 'compareOnlyDiffs'; value: boolean }
   | { type: 'clusterMinMembers'; value: number }
@@ -157,6 +172,7 @@ const NO_SCROLL: Readonly<Record<ViewMode, number>> = {
   overview: 0,
   graph: 0,
   table: 0,
+  matrix: 0,
   check: 0,
   similar: 0,
   compare: 0,
@@ -170,6 +186,11 @@ export const INITIAL_VIEW_STATE: ViewState = {
   // Isolation ist der zweite Blick, einen Knopfdruck entfernt (Issue #60).
   graph: { sizeMode: 'count', focus: 'structure', groupBy: 'abschnitt', viewport: null },
   table: { sort: { key: 'oz', dir: 1 }, scope: 'node', columns: null },
+  matrix: {
+    rowFacetId: DEFAULT_MATRIX_AXES.row,
+    colFacetId: DEFAULT_MATRIX_AXES.col,
+    measure: 'anzahl',
+  },
   check: { openRules: new Set() },
   similar: { minMembers: 2, sort: 'groesse', openClusters: new Set() },
   compare: { onlyDiffs: false },
@@ -193,6 +214,9 @@ export function viewStateForNewLv(state: ViewState): ViewState {
       groupBy: state.graph.groupBy,
       viewport: null,
     },
+    // Achsen und Zellwert der Matrix sind eine Vorliebe, kein Fachdatum: die
+    // Facettenliste ist für jede Datei dieselbe.
+    matrix: state.matrix,
     // Regler und Sortierung der Ähnlichkeit sind eine Vorliebe, kein Fachdatum
     // — die aufgeklappten Gruppen der alten Datei fallen dagegen weg.
     similar: {
@@ -235,6 +259,16 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
       return { ...state, table: { ...state.table, columns: action.columns } };
     case 'compareOnlyDiffs':
       return { ...state, compare: { onlyDiffs: action.value } };
+    case 'matrixAxis':
+      return {
+        ...state,
+        matrix:
+          action.axis === 'row'
+            ? { ...state.matrix, rowFacetId: action.facetId }
+            : { ...state.matrix, colFacetId: action.facetId },
+      };
+    case 'matrixMeasure':
+      return { ...state, matrix: { ...state.matrix, measure: action.value } };
     case 'toggleRuleOpen': {
       const openRules = new Set(state.check.openRules);
       if (!openRules.delete(action.id)) openRules.add(action.id);

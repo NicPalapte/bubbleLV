@@ -28,13 +28,14 @@ const SEARCH_DEBOUNCE_MS = 250;
 
 /**
  * Acht gleichrangige Ansichten auf einem Filterzustand sind das Ziel (WP-L);
- * sechs stehen. Der Umschalter ändert **nur** die Ansicht — Filter, Suche und
+ * sieben stehen. Der Umschalter ändert **nur** die Ansicht — Filter, Suche und
  * Auswahl bleiben, wo sie sind.
  */
 const VIEW_MODES = [
   { value: 'overview', label: 'Überblick', title: 'Kennzahlen, Treemap, Pareto' },
   { value: 'graph', label: 'Graph', title: 'Bubble-Graph, Vollbild' },
   { value: 'table', label: 'Tabelle', title: 'Baum, Tabelle und Eigenschaften' },
+  { value: 'matrix', label: 'Matrix', title: 'Heatmap über zwei Merkmale' },
   { value: 'similar', label: 'Ähnlichkeit', title: 'Ähnliche Positionen, Unterschiede, Ausreißer' },
   { value: 'compare', label: 'Vergleich', title: 'Gewählte Positionen nebeneinander' },
   { value: 'check', label: 'Prüfung', title: 'Hinweise der Prüfregeln' },

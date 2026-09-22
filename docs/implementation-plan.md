@@ -461,19 +461,29 @@ diese Zeile hervor. Tests: `tests/compare/`, `tests/components/compareView.test.
 
 ---
 
-## WP-O · Matrix · `feat(viewer)`
+## WP-O · Matrix · `feat(viewer)` ✅ umgesetzt
 
 **Ziel:** Heatmap über zwei Merkmale, Lücken und Häufungen auf einen Blick.
 
 Schritte:
-1. Zwei Achsen frei wählbar aus allen Facetten (Standard: Gewerk × Bauteiltyp).
-2. Zellwert umschaltbar: Anzahl, Menge, Summe.
-3. Klick auf eine Zelle setzt den passenden Filter und wechselt in die Tabelle.
-4. Leere Zellen bleiben sichtbar leer — die Lücke ist die Information.
+1. ✅ Zwei Achsen frei wählbar aus allen Facetten (Standard: Gewerk × Bauteiltyp).
+   Wer die Facette der Gegenachse wählt, tauscht die Achsen.
+2. ✅ Zellwert umschaltbar: Anzahl, Menge, Summe. „Menge" nur innerhalb einer
+   Einheit (Entscheidung 0019), „Summe" nur mit Preisen in der Datei — sonst
+   steht der Knopf gesperrt da und nennt den Grund.
+3. ✅ Klick auf eine Zelle setzt **beide** Facetten auf den Wert der Zelle und
+   wechselt in die Tabelle.
+4. ✅ Leere Zellen bleiben sichtbar leer — die Lücke ist die Information.
+5. ✅ Zählregeln in `docs/decisions/0021-matrix-zaehlregeln.md`: mehrwertige
+   Merkmale zählen in jeder Zelle mit (und die Ansicht sagt es), „Ohne Angabe"
+   bekommt eine eigene, nicht filterbare Zeile, 14 Werte je Achse stehen
+   einzeln, der Rest wird gesammelt.
 
-**Fertig, wenn:**
-- Achsen und Zellwert lassen sich umschalten, ohne den Filter zu verlieren.
-- Klick auf eine Zelle führt zur passenden gefilterten Menge.
+**Fertig, wenn:** ✅ beide Kriterien erfüllt.
+- Achsen und Zellwert lassen sich umschalten, ohne den Filter zu verlieren
+  (`tests/components/matrixView.test.tsx`).
+- Klick auf eine Zelle führt zur passenden gefilterten Menge
+  (`tests/matrix/model.test.ts`, `tests/components/matrixView.test.tsx`).
 
 ---
 
