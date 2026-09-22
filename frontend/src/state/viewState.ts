@@ -151,7 +151,9 @@ export const INITIAL_VIEW_STATE: ViewState = {
   // Der Überblick ist die Eingangsansicht: er ordnet das LV ein, bevor man in
   // Graph oder Tabelle geht (docs/implementation-plan.md, WP-L).
   mode: 'overview',
-  graph: { sizeMode: 'count', focus: 'isolate', groupBy: 'abschnitt', viewport: null },
+  // Einstieg ist der ganze Graph: er ordnet die Treffer ins LV ein. Die
+  // Isolation ist der zweite Blick, einen Knopfdruck entfernt (Issue #60).
+  graph: { sizeMode: 'count', focus: 'structure', groupBy: 'abschnitt', viewport: null },
   table: { sort: { key: 'oz', dir: 1 }, scope: 'node', columns: null },
   check: { openRules: new Set() },
   similar: { minMembers: 2, sort: 'groesse', openClusters: new Set() },

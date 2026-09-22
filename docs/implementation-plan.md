@@ -350,6 +350,12 @@ Schritte:
    Umschalter im Graph-Kopf, nur bedienbar, solange Filter oder Suche aktiv sind; ohne
    Treffer fällt die Ansicht auf `structure` zurück. Der Umschalter ändert **nie** den
    Filter — Regel „ein Filterzustand, alle Ansichten" bleibt unberührt.
+   **Einstieg ist `structure`** (Wunsch des Owners nach der Preview von PR #61): der
+   ganze Graph ordnet die Treffer ins LV ein, die Isolation ist der zweite Blick.
+   Dazu steht der Umschalter „Nicht-Treffer" (Hervorheben/Ausblenden) nur noch dort,
+   wo er etwas bewirkt — im Baum der Tabellenansicht und im ganzen Graphen. Die
+   Isolation zeigt ausschließlich Treffer, Überblick, Prüfung und Ähnlichkeit
+   rechnen ohnehin nur mit ihnen.
 2. ✅ **Treffer-Cluster in der Isolation.** Gruppenschlüssel umschaltbar: Abschnitt,
    Gewerk oder Bauteiltyp. Jede Gruppe ist eine Bubble mit Trefferzahl und Summe,
    Gruppen absteigend nach dem aktiven Größenmodus sortiert. Gerechnet wird auf dem
