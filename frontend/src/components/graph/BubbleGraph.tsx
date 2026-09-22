@@ -28,6 +28,7 @@ import {
   MAX_ZOOM,
   MIN_ZOOM,
   RADII,
+  effectiveSizeMode,
   sizeModeById,
   sizedRadius,
 } from '../../lib/graph/constants';
@@ -162,16 +163,11 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
     return (node: LVNode): boolean => (matches.counts.get(node.id) ?? 0) === 0;
   }, [filtering, hideMode, matches]);
 
-  // Größenmodus "Gesamtpreis" trägt nicht, wenn die Datei keine Einheitspreise
-  // führt (x83) — dann würden alle Bubbles auf Radius 0 fallen. "Menge" trägt
-  // nicht, solange die gefilterte Menge mehrere Einheiten mischt. Beide fallen
-  // dann auf "Anzahl" zurück; gesperrt sind sie ohnehin (GraphHeader).
-  const priceless = root.totalPrice === 0;
-  const tragend =
-    (sizeMode === 'cost' && priceless) || (sizeMode === 'quantity' && quantities.unit === null)
-      ? 'count'
-      : sizeMode;
-  const mode = sizeModeById(tragend);
+  // Ein Maß, das für diese Datei oder diesen Filter nichts aussagt, fällt auf
+  // "Anzahl" zurück — dieselbe Regel, nach der die Isolation ihre Gruppen ordnet
+  // (lib/graph/constants.ts). Gesperrt sind solche Modi ohnehin (GraphHeader).
+  const priceless = lvRoot.totalPrice === 0;
+  const mode = sizeModeById(effectiveSizeMode(sizeMode, { priceless, unit: quantities.unit }));
   // In der Isolation tragen Wurzel und Gruppen synthetische IDs, die die
   // Mengenkarte des echten Baums nicht kennt — der Isolations-Baum bringt
   // seine eigene mit (lib/graph/focusTree.ts).

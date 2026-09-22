@@ -168,6 +168,24 @@ export const SIZE_MODES: readonly SizeMode[] = [
   },
 ];
 
+/**
+ * Der Modus, der tatsächlich trägt. „Gesamtpreis" sagt nichts über eine Datei
+ * ohne Einheitspreise, „Menge" nichts über eine Auswahl, die Einheiten mischt —
+ * beide fallen dann auf „Anzahl" zurück (docs/decisions/0019-mengen-nur-je-einheit.md).
+ *
+ * Die Regel steht hier und nicht bei ihren Aufrufern: Größe **und** Sortierung
+ * müssen dasselbe Maß benutzen, sonst ordnet der Graph nach einer Zahl, die er
+ * selbst nicht mehr zeigt.
+ */
+export function effectiveSizeMode(
+  sizeMode: SizeModeId,
+  context: { priceless: boolean; unit: string | null },
+): SizeModeId {
+  if (sizeMode === 'cost' && context.priceless) return 'count';
+  if (sizeMode === 'quantity' && context.unit === null) return 'count';
+  return sizeMode;
+}
+
 export function sizeModeById(id: SizeModeId): SizeMode {
   return SIZE_MODES.find((mode) => mode.id === id) ?? SIZE_MODES[0];
 }

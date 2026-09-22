@@ -5,6 +5,7 @@
 
 import { useMemo, useReducer, type ReactNode } from 'react';
 import { buildColorScale, EMPTY_COLOR_SCALE, type ColorScale } from '../lib/colors';
+import { effectiveSizeMode } from '../lib/graph/constants';
 import { buildFocusTree, type FocusGraph } from '../lib/graph/focusTree';
 import {
   NO_QUANTITIES,
@@ -103,13 +104,6 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
     [tree, graphAktiv, index, active],
   );
 
-  const focus = useMemo<FocusGraph | null>(() => {
-    if (mask === null || focusMode === 'structure' || !matches.filtering) return null;
-    return measure('Treffer-Isolation', () =>
-      buildFocusTree(index, mask, { groupBy, sizeMode, parents: structure.parents }),
-    );
-  }, [mask, focusMode, matches.filtering, index, groupBy, sizeMode, structure.parents]);
-
   // Mengen für den Größenmodus „Menge" (WP-Q, Schritt 4). Die Einheit steht
   // immer fest — der Umschalter braucht sie, um den Modus zu sperren —, die
   // Summen je Knoten entstehen erst, wenn der Modus auch gewählt ist.
@@ -124,6 +118,21 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
       return { unit, byNode };
     });
   }, [mask, index, sizeMode, structure.parents]);
+
+  // Nach welchem Maß die Isolation ihre Gruppen ordnet: nach dem, das auch
+  // die Größe der Bubbles bestimmt. Sonst stünde die größte Gruppe vorn,
+  // gemessen an einer Zahl, die der Graph daneben gar nicht mehr zeigt.
+  const sortMode = effectiveSizeMode(sizeMode, {
+    priceless: (tree?.totalPrice ?? 0) === 0,
+    unit: quantities.unit,
+  });
+
+  const focus = useMemo<FocusGraph | null>(() => {
+    if (mask === null || focusMode === 'structure' || !matches.filtering) return null;
+    return measure('Treffer-Isolation', () =>
+      buildFocusTree(index, mask, { groupBy, sizeMode: sortMode, parents: structure.parents }),
+    );
+  }, [mask, focusMode, matches.filtering, index, groupBy, sortMode, structure.parents]);
 
   const derived = useMemo<ViewerDerived>(
     () => ({
