@@ -29,6 +29,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das *Was*, diese Dateien da
 | 0020 | [Langtext-Vergleich: Wortmenge statt Teilfolge](0020-langtext-vergleich-ohne-bibliothek.md) | akzeptiert | 2026-09-22 |
 | 0021 | [Matrix: Zählregeln und Farbskala](0021-matrix-zaehlregeln.md) | akzeptiert | 2026-09-22 |
 | 0022 | [Export, Druck und Fehlermeldung ohne Request](0022-export-und-druck-ohne-request.md) | akzeptiert | 2026-09-22 |
+| 0023 | [Ansicht, Filter und Auswahl im URL-Fragment](0023-zustand-im-url-fragment.md) | akzeptiert | 2026-09-22 |
 
 ## Wann schreibe ich eine neue Datei?
 

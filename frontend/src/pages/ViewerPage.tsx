@@ -23,6 +23,7 @@ import { PrintView } from '../components/print/PrintView';
 import { SimilarView } from '../components/relate/SimilarView';
 import { PositionsTable } from '../components/table/PositionsTable';
 import { FileDropzone } from '../components/upload/FileDropzone';
+import { useShareLink } from '../components/common/useShareLink';
 import { PERF_ENABLED, reportViewSwitch } from '../lib/perf';
 import { PANEL_MAX_WIDTH, PANEL_MIN_WIDTH, useViewer, useViewerDispatch } from '../state/viewer';
 
@@ -59,6 +60,10 @@ export function ViewerPage() {
   const [treeCollapsed, setTreeCollapsed] = useState(false);
 
   // ESC geht eine Ebene zurück — wie im Design.
+  // Ansicht, Filter und Auswahl stehen in der Adresszeile — ein Link stellt
+  // sie wieder her, sobald dieselbe Datei geladen ist (WP-P, Schritt 2).
+  useShareLink();
+
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') dispatch({ type: 'back' });
