@@ -498,15 +498,21 @@ export function BubbleGraph({ root: lvRoot, focus, remembersViewport = true }: B
    * LV-Knoten — sie lässt sich nicht auswählen und nicht auf- oder zuklappen
    * (ihre Positionen stehen ohnehin offen), wohl aber einpassen.
    */
+  const isFocusGroup = useCallback(
+    (node: LVNode | null): boolean =>
+      node !== null && focus !== undefined && focus.groupIds.has(node.id),
+    [focus],
+  );
+
   const activateNode = useCallback(
     (node: LVNode): void => {
-      if (focus !== undefined && focus.groupIds.has(node.id)) {
+      if (isFocusGroup(node)) {
         fitTo(node.id);
         return;
       }
       openNode(node);
     },
-    [focus, fitTo, openNode],
+    [isFocusGroup, fitTo, openNode],
   );
 
   // Die Ringradien hängen jetzt an der Größe des LV (Issue #11) — ein fixer
@@ -664,9 +670,13 @@ export function BubbleGraph({ root: lvRoot, focus, remembersViewport = true }: B
         case 'ArrowLeft': {
           event.preventDefault();
           const node = entry.node;
+          // Eine Gruppe der Isolation steht immer offen und klappt nicht zu.
+          // Ohne diese Ausnahme schluckte der Zweig hier die Taste, und der
+          // Sprung zum Elternknoten darunter käme nie an (WP-Q).
           if (
             entry.tier !== 'cluster' &&
             node !== null &&
+            !isFocusGroup(node) &&
             node.children.length > 0 &&
             openNodes.has(node.id)
           ) {
@@ -700,6 +710,7 @@ export function BubbleGraph({ root: lvRoot, focus, remembersViewport = true }: B
       childrenOf,
       parentIdOf,
       openNodes,
+      isFocusGroup,
       toggleCollapse,
       toggleCluster,
       activate,

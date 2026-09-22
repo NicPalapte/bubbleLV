@@ -101,6 +101,29 @@ describe('Trefferansicht im Graphen', () => {
     expect(screen.getByLabelText('Suche')).toHaveValue('Beton');
   });
 
+  it('lässt die Pfeiltasten auch an einer Gruppen-Bubble weiterlaufen', async () => {
+    await loadAndShowGraph();
+    await search('Beton');
+
+    const canvas = screen.getByRole('group', { name: /Bubble-Graph/ });
+    // Der Graph sagt den fokussierten Knoten über eine eigene Live-Region an —
+    // daran lässt sich die Tastaturnavigation ablesen.
+    const ansage = canvas.querySelector('.sr-only') as HTMLElement;
+    fireEvent.focus(canvas);
+    expect(ansage.textContent).toContain('nach Abschnitt');
+
+    // Hinein in die erste Gruppe …
+    fireEvent.keyDown(canvas, { key: 'ArrowRight' });
+    const gruppe = ansage.textContent ?? '';
+    expect(gruppe).not.toContain('nach Abschnitt');
+    expect(gruppe).not.toBe('');
+
+    // … und zurück. Eine Gruppe klappt nicht zu, also muss die Taste zur
+    // Wurzel führen statt ins Leere zu laufen.
+    fireEvent.keyDown(canvas, { key: 'ArrowLeft' });
+    expect(ansage.textContent).toContain('nach Abschnitt');
+  });
+
   it('zeigt geteilt beide Seiten nebeneinander', async () => {
     await loadAndShowGraph();
     await search('Beton');
