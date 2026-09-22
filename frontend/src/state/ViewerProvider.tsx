@@ -134,6 +134,18 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
     );
   }, [mask, focusMode, matches.filtering, index, groupBy, sortMode, structure.parents]);
 
+  // Die gewählten Vergleichs-Positionen als Knoten, in der Reihenfolge der
+  // Wahl. Unbekannte IDs fallen still heraus: nach einem neuen Import zeigt
+  // der Vergleich sonst auf Positionen, die es nicht mehr gibt.
+  const comparePositions = useMemo<readonly LVNode[]>(() => {
+    const out: LVNode[] = [];
+    for (const id of state.selection.compare) {
+      const node = structure.nodes.get(id);
+      if (node !== undefined && node.position !== null) out.push(node);
+    }
+    return out;
+  }, [state.selection.compare, structure.nodes]);
+
   const derived = useMemo<ViewerDerived>(
     () => ({
       tree,
@@ -155,6 +167,7 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
       gewerkColors,
       focus,
       quantities,
+      comparePositions,
     }),
     [
       tree,
@@ -169,6 +182,7 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
       gewerkColors,
       focus,
       quantities,
+      comparePositions,
     ],
   );
 

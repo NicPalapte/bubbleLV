@@ -58,7 +58,11 @@ export interface DataTableProps<T> {
    * des Fensters (WP-Q, Schritt 5).
    */
   revealKey?: string | null;
-  onPick?: (key: string) => void;
+  /**
+   * Zeile gewählt. Das Ereignis kommt mit, damit Aufrufer Strg-/Cmd-Klick von
+   * einem gewöhnlichen Klick unterscheiden können (Mehrfachauswahl, WP-N).
+   */
+  onPick?: (key: string, event: ReactMouseEvent) => void;
   empty?: string;
   sort?: { key: string; dir: 1 | -1 };
   onSort?: (key: string) => void;
@@ -543,7 +547,7 @@ export function DataTable<T>({
                 key={key}
                 role="row"
                 aria-selected={selected}
-                onClick={() => onPick?.(key)}
+                onClick={(event) => onPick?.(key, event)}
                 style={{
                   display: 'flex',
                   borderBottom: '1px solid var(--grid)',

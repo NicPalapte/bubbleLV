@@ -539,14 +539,20 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
   );
 
   const activateNode = useCallback(
-    (node: LVNode): void => {
+    (node: LVNode, multi = false): void => {
+      // Strg- bzw. Cmd-Klick sammelt Positionen für den Vergleich (WP-N),
+      // statt die Karte zu öffnen.
+      if (multi && node.kind === 'position') {
+        dispatch({ type: 'toggleCompare', positionId: node.id });
+        return;
+      }
       if (isFocusGroup(node)) {
         fitTo(node.id);
         return;
       }
       openNode(node);
     },
-    [isFocusGroup, fitTo, openNode],
+    [dispatch, isFocusGroup, fitTo, openNode],
   );
 
   // Die Ringradien hängen jetzt an der Größe des LV (Issue #11) — ein fixer
@@ -898,7 +904,7 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
                 hovered={hoveredNodeId === entry.id}
                 focused={graphFocused && focusedId === entry.id}
                 onHover={(id) => dispatch({ type: 'hover', id })}
-                onClick={() => activateNode(node)}
+                onClick={(event) => activateNode(node, event.ctrlKey || event.metaKey)}
                 onDoubleClick={() => fitTo(entry.id)}
                 radius={radius}
                 subLabel={metric?.subLabel ?? ''}

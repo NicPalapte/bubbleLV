@@ -36,7 +36,7 @@ export interface TreeRowProps {
   count?: ReactNode;
   /** Ausgefiltert, aber weiter sichtbar (hideMode 'dim'). */
   dimmed?: boolean;
-  onClick?: () => void;
+  onClick?: (event: ReactMouseEvent) => void;
   onToggle?: () => void;
   title?: string;
 }

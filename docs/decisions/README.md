@@ -26,6 +26,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das *Was*, diese Dateien da
 | 0017 | [Keine Nutzungsmessung, nur ein Melde-Knopf](0017-keine-nutzungsmessung.md) | akzeptiert | 2026-09-21 |
 | 0018 | [Treffer im Graphen: isolieren oder im Ganzen zeigen](0018-graph-treffer-isolation.md) | akzeptiert | 2026-09-22 |
 | 0019 | [Mengen im Graphen nur innerhalb einer Einheit](0019-mengen-nur-je-einheit.md) | akzeptiert | 2026-09-22 |
+| 0020 | [Langtext-Vergleich: Wortmenge statt Teilfolge](0020-langtext-vergleich-ohne-bibliothek.md) | akzeptiert | 2026-09-22 |
 
 ## Wann schreibe ich eine neue Datei?
 

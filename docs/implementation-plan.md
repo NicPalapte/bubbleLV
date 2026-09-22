@@ -23,7 +23,7 @@ selbst anlegen.
 | WP-L | Ansichts-Gerüst + Ansicht „Überblick" | ✅ umgesetzt |
 | WP-M | Beziehungen: Ähnlichkeit, Unterschiede, Ausreißer | umgesetzt |
 | WP-Q | Graph mit Mehrwert: Treffer isolieren, Stichworte, Menge, Sprung (Issues #51, #60) | ✅ umgesetzt |
-| WP-N | Ansicht „Vergleich" | offen |
+| WP-N | Ansicht „Vergleich" | ✅ umgesetzt |
 | WP-O | Ansicht „Matrix" | offen |
 | WP-P | Feinschliff: Kommandopalette, URL-Zustand, Export, Druck | offen |
 
@@ -311,8 +311,9 @@ Vergleichsgruppe nicht berechenbar"); mit den Clustern ist sie berechenbar.
 Liste **in der Ansicht** und ist kein globaler Filter. `matchPos` entscheidet je
 Position aus der Position selbst; die Cluster-Zugehörigkeit entsteht erst danach.
 
-**Offen für WP-N:** Ein Klick auf eine Position führt in die Tabelle mit
-Eigenschaften-Panel. Sobald der Vergleich steht, führt er dorthin.
+**Mit WP-N nachgezogen:** Jede Cluster-Karte legt ihre Mitglieder auf Wunsch
+nebeneinander („Vergleichen"); der Klick auf eine einzelne Position führt weiterhin
+in die Tabelle.
 
 **Fertig, wenn:** ✅ alle drei Kriterien erfüllt.
 - Eine reale Datei mit wiederkehrenden Leistungen zeigt diese als Cluster: die
@@ -429,16 +430,33 @@ einpassen, aber nicht auswählen und nicht zuklappen.
 **Ziel:** 2–5 Positionen nebeneinander, Unterschiede sichtbar.
 
 Schritte:
-1. Mehrfachauswahl: Strg-Klick in Tabelle, Baum, Graph und Cluster-Liste.
-2. Ansicht **Vergleich**: Spalte je Position, Zeile je Merkmal. Abweichende Werte
-   farbig, gleiche Werte gedämpft.
-3. Langtext-Diff wortweise (eigene, kleine Implementierung oder Bibliothek — Auswahl in
-   einer Entscheidung festhalten, falls eine Abhängigkeit dazukommt).
-4. Sprung von jeder Spalte zurück in die Tabelle oder den Graphen.
+1. ✅ Mehrfachauswahl: Strg-/Cmd-Klick in Tabelle, Baum und Graph; die Cluster-Liste
+   der Ähnlichkeit legt eine ganze Gruppe auf einmal nebeneinander („Vergleichen").
+2. ✅ Ansicht **Vergleich**: Spalte je Position, Zeile je Merkmal. Abweichende Werte
+   farbig, gleiche Werte gedämpft, dazu ein Schalter „nur Unterschiede".
+3. ✅ Langtext-Diff wortweise, eigene Implementierung ohne Abhängigkeit —
+   [`decisions/0020`](decisions/0020-langtext-vergleich-ohne-bibliothek.md).
+4. ✅ Sprung von jeder Spalte zurück in die Tabelle (`useJumpToPosition`).
 
-**Fertig, wenn:**
-- Zwei fast gleiche Positionen zeigen genau die abweichenden Zeilen.
-- Fünf Positionen passen lesbar nebeneinander; ab sechs wird die Auswahl begrenzt.
+**Umgesetzt.** Neu sind `src/lib/compare/rows.ts` (Merkmalszeilen) und
+`src/lib/compare/textDiff.ts` (Wortvergleich), dazu die Ansicht
+`src/components/compare/CompareView.tsx`. Die Merkmalszeilen kommen aus
+`merkmaleOf` (WP-M) — dieselbe Funktion, nach der die Ähnlichkeit gruppiert:
+sagt sie „diese beiden unterscheiden sich in der Dicke", hebt der Vergleich genau
+diese Zeile hervor. Tests: `tests/compare/`, `tests/components/compareView.test.tsx`.
+
+**Abweichungen:**
+- Die **Auswahl** wird nicht begrenzt; die **Ansicht** zeigt die ersten fünf und sagt,
+  wie viele warten. Eine Auswahl still wegzuwerfen wäre schlimmer als eine ehrliche
+  Grenze.
+- Die Menge steht mit der kanonischen Einheit da („Psch" und „PSCH" sind dieselbe):
+  ein Unterschied in der Schreibweise ist keiner in der Sache.
+
+**Fertig, wenn:** ✅ beide Kriterien erfüllt.
+- Zwei fast gleiche Positionen zeigen genau die abweichenden Zeilen
+  (`tests/compare/rows.test.ts`, `tests/components/compareView.test.tsx`).
+- Fünf Positionen passen lesbar nebeneinander; ab sechs zeigt die Ansicht die ersten
+  fünf und benennt den Rest.
 
 ---
 

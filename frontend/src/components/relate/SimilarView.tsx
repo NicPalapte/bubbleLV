@@ -30,7 +30,12 @@ import { spread } from '../../lib/relate';
 import { matchCount } from '../../lib/tree/matchCounts';
 import { useJumpToPosition } from '../common/useJumpToPosition';
 import { useScrollMemory } from '../common/useScrollMemory';
-import { CLUSTER_MIN_MEMBERS, useViewer, useViewerDispatch } from '../../state/viewer';
+import {
+  CLUSTER_MIN_MEMBERS,
+  MAX_COMPARE_COLUMNS,
+  useViewer,
+  useViewerDispatch,
+} from '../../state/viewer';
 import type { ClusterSort } from '../../state/viewer';
 import type { LVNode } from '../../types/lvNode';
 
@@ -55,6 +60,15 @@ export function SimilarView() {
   // Der Vergleich (WP-N) steht noch aus; bis dahin führt der Klick dorthin,
   // wo eine Position vollständig zu sehen ist: Tabelle plus Eigenschaften.
   const jumpTo = useJumpToPosition();
+  /**
+   * Gruppe in den Vergleich legen: die ersten Mitglieder, so viele wie
+   * nebeneinander passen (WP-N). Mehr wäre nicht lesbar, und eine Gruppe hat
+   * oft Dutzende.
+   */
+  const vergleichen = (positionIds: readonly string[]): void => {
+    dispatch({ type: 'setCompare', positionIds: positionIds.slice(0, MAX_COMPARE_COLUMNS) });
+    dispatch({ type: 'setViewMode', mode: 'compare' });
+  };
   const [attachScroll, onScroll] = useScrollMemory('similar');
 
   const relations = lv?.relations ?? null;
@@ -145,6 +159,7 @@ export function SimilarView() {
             open={similar.openClusters.has(entry.cluster.id)}
             onToggle={() => dispatch({ type: 'toggleClusterOpen', id: entry.cluster.id })}
             onJump={jumpTo}
+            onCompare={() => vergleichen(entry.members.map((node) => node.id))}
           />
         ))}
 

@@ -444,13 +444,19 @@ export function PositionsTable({ root }: { root: LVNode }) {
         rowKey={(row) => row.node.id}
         selectedKey={selectedPositionId}
         revealKey={selectedPositionId}
-        onPick={(key) =>
+        onPick={(key, event) => {
+          // Strg- bzw. Cmd-Klick sammelt für den Vergleich (WP-N), statt die
+          // Auswahl zu ersetzen.
+          if (event.ctrlKey || event.metaKey) {
+            dispatch({ type: 'toggleCompare', positionId: key });
+            return;
+          }
           dispatch({
             type: 'selectPosition',
             nodeId: root.id,
             positionId: selectedPositionId === key ? null : key,
-          })
-        }
+          });
+        }}
         initialScrollTop={scroll.table}
         onLeave={(top) => dispatch({ type: 'viewScroll', view: 'table', top })}
         empty="Keine Positionen entsprechen den Filtern."

@@ -24,6 +24,13 @@ export interface SelectionState {
   expanded: ReadonlySet<string>;
   /** Aufgelöste Cluster-Bubbles — reine Graph-Darstellung (Issue #10). */
   openClusters: ReadonlySet<string>;
+  /**
+   * Positionen im Vergleich (WP-N). Eine **Liste**, keine Menge: die
+   * Reihenfolge ist die Reihenfolge der Spalten, und wer zuerst gewählt wurde,
+   * steht links. Die Ansicht begrenzt, wie viele davon nebeneinander passen —
+   * der Zustand selbst vergisst nichts.
+   */
+  compare: readonly string[];
 }
 
 export type SelectionAction =
@@ -35,6 +42,11 @@ export type SelectionAction =
   | { type: 'expandAll' }
   | { type: 'collapseAll' }
   | { type: 'toggleCluster'; id: string }
+  /** Position in den Vergleich nehmen bzw. wieder herausnehmen (WP-N). */
+  | { type: 'toggleCompare'; positionId: string }
+  /** Mehrere auf einmal in den Vergleich legen — ersetzt die bisherige Auswahl. */
+  | { type: 'setCompare'; positionIds: readonly string[] }
+  | { type: 'clearCompare' }
   /** Eine Ebene zurück: erst die Position, dann der Knoten (Escape). */
   | { type: 'back' }
   /** Schwebende Auswahlkarte im Graphen schließen (X, Klick daneben, Escape
@@ -47,6 +59,7 @@ export const INITIAL_SELECTION_STATE: SelectionState = {
   hoveredNodeId: null,
   expanded: EMPTY_SET,
   openClusters: EMPTY_SET,
+  compare: [],
 };
 
 /** Auswahlzustand für ein frisch geladenes LV: Projekt und Lose offen. */
@@ -83,6 +96,16 @@ export function selectionReducer(
       // Die Wurzel bleibt offen — sonst stünde der Graph auf einer einzigen
       // Bubble und der Baum wäre leer.
       return { ...state, expanded: expandedToDepth(tree, 1), openClusters: EMPTY_SET };
+    case 'toggleCompare': {
+      const compare = state.compare.includes(action.positionId)
+        ? state.compare.filter((id) => id !== action.positionId)
+        : [...state.compare, action.positionId];
+      return { ...state, compare };
+    }
+    case 'setCompare':
+      return { ...state, compare: [...action.positionIds] };
+    case 'clearCompare':
+      return { ...state, compare: [] };
     case 'toggleCluster': {
       const openClusters = new Set(state.openClusters);
       if (!openClusters.delete(action.id)) openClusters.add(action.id);

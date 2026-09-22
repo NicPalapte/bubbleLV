@@ -13,7 +13,7 @@
 import type { ColumnConfig } from '../lib/table/columns';
 import type { FocusGroupBy } from '../lib/graph/focusTree';
 
-export type ViewMode = 'overview' | 'graph' | 'table' | 'check' | 'similar';
+export type ViewMode = 'overview' | 'graph' | 'table' | 'check' | 'similar' | 'compare';
 export type SizeModeId = 'count' | 'cost' | 'quantity' | 'uniform';
 /**
  * Was der Graph mit den Treffern macht, solange gefiltert wird (WP-Q, Issue #60):
@@ -82,6 +82,18 @@ export interface TableViewState {
   columns: ColumnConfig | null;
 }
 
+/**
+ * So viele Positionen passen im Vergleich nebeneinander, ohne unlesbar zu
+ * werden (WP-N). Die Auswahl selbst wird davon **nicht** begrenzt: die Ansicht
+ * zeigt die ersten und sagt, wie viele warten.
+ */
+export const MAX_COMPARE_COLUMNS = 5;
+
+export interface CompareViewState {
+  /** Nur Zeilen zeigen, in denen sich die Spalten unterscheiden (WP-N). */
+  onlyDiffs: boolean;
+}
+
 export interface CheckViewState {
   /** Aufgeklappte Regeln — welche Fundlisten offen stehen. */
   openRules: ReadonlySet<string>;
@@ -112,6 +124,7 @@ export interface ViewState {
   table: TableViewState;
   check: CheckViewState;
   similar: SimilarViewState;
+  compare: CompareViewState;
   /** Scrollposition je Ansicht — sie überlebt den Wechsel (WP-L, Abnahme). */
   scroll: Readonly<Record<ViewMode, number>>;
   panelSize: PanelSize;
@@ -130,6 +143,7 @@ export type ViewAction =
   | { type: 'tableScope'; scope: TableScope }
   | { type: 'tableColumns'; columns: ColumnConfig | null }
   | { type: 'toggleRuleOpen'; id: string }
+  | { type: 'compareOnlyDiffs'; value: boolean }
   | { type: 'clusterMinMembers'; value: number }
   | { type: 'clusterSort'; value: ClusterSort }
   | { type: 'toggleClusterOpen'; id: string }
@@ -145,6 +159,7 @@ const NO_SCROLL: Readonly<Record<ViewMode, number>> = {
   table: 0,
   check: 0,
   similar: 0,
+  compare: 0,
 };
 
 export const INITIAL_VIEW_STATE: ViewState = {
@@ -157,6 +172,7 @@ export const INITIAL_VIEW_STATE: ViewState = {
   table: { sort: { key: 'oz', dir: 1 }, scope: 'node', columns: null },
   check: { openRules: new Set() },
   similar: { minMembers: 2, sort: 'groesse', openClusters: new Set() },
+  compare: { onlyDiffs: false },
   scroll: NO_SCROLL,
   panelSize: DEFAULT_PANEL_SIZE,
   cardPos: DEFAULT_CARD_POS,
@@ -217,6 +233,8 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
       return { ...state, table: { ...state.table, scope: action.scope } };
     case 'tableColumns':
       return { ...state, table: { ...state.table, columns: action.columns } };
+    case 'compareOnlyDiffs':
+      return { ...state, compare: { onlyDiffs: action.value } };
     case 'toggleRuleOpen': {
       const openRules = new Set(state.check.openRules);
       if (!openRules.delete(action.id)) openRules.add(action.id);
