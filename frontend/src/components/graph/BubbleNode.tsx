@@ -241,7 +241,9 @@ export function BubbleNode(props: BubbleProps) {
     // Ab einer festen Stufe stünden in einer dichten Wolke hundert Wörter
     // übereinander.
     const keyword =
-      CLOUD_SPACING * zoom >= KEYWORD_AT_PX ? keywordFor(node.position?.shortText ?? '') : '';
+      CLOUD_SPACING * zoom >= KEYWORD_AT_PX && node.position !== null
+        ? keywordFor(node.position)
+        : '';
     return (
       <g
         transform={`translate(${placed.cx},${placed.cy})`}
