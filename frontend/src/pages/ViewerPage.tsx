@@ -49,7 +49,7 @@ function ViewTiming({ view, children }: { view: string; children: ReactNode }) {
 }
 
 export function ViewerPage() {
-  const { tree, selectedNode, view } = useViewer();
+  const { tree, selectedNode, view, focus } = useViewer();
   const { mode: viewMode, panelSize } = view;
   const dispatch = useViewerDispatch();
   const [leftWidth, setLeftWidth] = useState(TREE_WIDTH);
@@ -89,7 +89,9 @@ export function ViewerPage() {
           // in die schwebende Positionskarte (PositionCard in BubbleGraph) —
           // nur die Kopfleiste mit Suche/Filtern bleibt bestehen.
           <main aria-label="Bubble-Graph" className="relative flex-1 overflow-hidden bg-paper">
-            <BubbleGraph root={tree} />
+            {/* `focus` steht nur, wenn gefiltert wird und die Isolation
+                gewählt ist — sonst zeichnet der Graph das ganze LV (WP-Q). */}
+            <BubbleGraph root={tree} focus={focus ?? undefined} />
             <GraphHeader root={tree} />
           </main>
         )}

@@ -32,6 +32,7 @@ import {
   sizedRadius,
 } from '../../lib/graph/constants';
 import { cullBounds, isInView } from '../../lib/graph/culling';
+import type { FocusGraph } from '../../lib/graph/focusTree';
 import { isOverlayEvent } from '../../lib/graph/overlay';
 import {
   layoutRadial,
@@ -64,34 +65,57 @@ const FIT_SELECTION_MAX_ZOOM = 2;
 
 interface BubbleGraphProps {
   root: LVNode;
+  /**
+   * Isolation der Treffer (WP-Q): statt des LV-Baums zeichnet der Graph den
+   * synthetischen Treffer-Baum. Dieselbe Engine, dieselbe Auswahl — nur Baum,
+   * Trefferzahlen und Aufklapp-Zustand kommen dann von hier statt aus dem
+   * Viewer-Zustand.
+   */
+  focus?: FocusGraph;
 }
 
-export function BubbleGraph({ root }: BubbleGraphProps) {
+export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
   const {
     filter: { hideMode },
     selection: { hoveredNodeId },
     view: { graph },
     selectedNode,
     selectedPosition,
-    matches,
-    openNodes,
+    matches: lvMatches,
+    openNodes: lvOpenNodes,
     openClusters,
+    parents: treeParents,
   } = useViewer();
   const dispatch = useViewerDispatch();
   const { sizeMode } = graph;
+
+  const isolated = focus !== undefined;
+  /** Nur der ganze Graph nimmt den zuletzt verlassenen Ausschnitt wieder auf. */
+  const remembers = !isolated;
+  const root = focus?.tree ?? lvRoot;
+  const matches = focus?.matches ?? lvMatches;
+  const openNodes = focus?.openNodes ?? lvOpenNodes;
 
   const wrapRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   // Startwert aus dem Ansichts-Zustand, falls die Ansicht schon einmal offen
   // war; sonst passt der Graph unten selbst ein.
-  const [view, setView] = useState<View>(graph.viewport ?? { tx: 0, ty: 0, k: 0.7 });
+  // Die Isolation merkt sich keinen Ausschnitt: ihr Baum wechselt mit jedem
+  // Filterzug, ein gemerkter Ausschnitt zeigte danach ins Leere. Sie passt sich
+  // stattdessen jedes Mal neu ein.
+  const [view, setView] = useState<View>(
+    (remembers ? graph.viewport : null) ?? { tx: 0, ty: 0, k: 0.7 },
+  );
 
   // Ausschnitt beim Abbau sichern — einmal, nicht je Frame.
   const viewRef = useRef(view);
   useEffect(() => {
     viewRef.current = view;
   }, [view]);
-  useEffect(() => () => dispatch({ type: 'graphViewport', viewport: viewRef.current }), [dispatch]);
+  useEffect(() => {
+    if (!remembers) return;
+    return () => dispatch({ type: 'graphViewport', viewport: viewRef.current });
+  }, [dispatch, remembers]);
 
   useLayoutEffect(() => {
     const element = wrapRef.current;
@@ -361,7 +385,9 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
         // Öffnet die schwebende Positionskarte über dem Canvas statt in die
         // Tabelle zu springen (Issue #30) — `selectedPosition` treibt die
         // Karte in ViewerPage, solange der Graph der aktive Ansichtsmodus ist.
-        const parent = parents.get(node.id) ?? null;
+        // Der Elternknoten kommt aus dem **echten** Baum: in der Isolation ist
+        // der Elternknoten eine Gruppen-Bubble, und die steht in keiner Tabelle.
+        const parent = treeParents.get(node.id) ?? null;
         dispatch({ type: 'selectPosition', nodeId: parent?.id ?? null, positionId: node.id });
         return;
       }
@@ -370,7 +396,7 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
       dispatch({ type: 'selectNode', id: node.id });
       if (node.children.length > 0) toggleCollapse(node.id);
     },
-    [dispatch, parents, toggleCollapse],
+    [dispatch, treeParents, toggleCollapse],
   );
 
   /** Cluster-Bubble auflösen bzw. wieder zusammenfassen. */
@@ -460,6 +486,28 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
     [fitToView],
   );
 
+  /**
+   * Klick oder Eingabetaste auf eine Bubble. Eine Gruppe der Isolation ist kein
+   * LV-Knoten — sie lässt sich nicht auswählen und nicht auf- oder zuklappen
+   * (ihre Positionen stehen ohnehin offen), wohl aber einpassen.
+   */
+  const isFocusGroup = useCallback(
+    (node: LVNode | null): boolean =>
+      node !== null && focus !== undefined && focus.groupIds.has(node.id),
+    [focus],
+  );
+
+  const activateNode = useCallback(
+    (node: LVNode): void => {
+      if (isFocusGroup(node)) {
+        fitTo(node.id);
+        return;
+      }
+      openNode(node);
+    },
+    [isFocusGroup, fitTo, openNode],
+  );
+
   // Die Ringradien hängen jetzt an der Größe des LV (Issue #11) — ein fixer
   // Startzoom passt dafür nicht mehr. Deshalb einmal je Baum einpassen. Steht
   // beim Mounten schon eine Auswahl (Wechsel Tabelle → Graph), wird auf sie
@@ -471,7 +519,7 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
   // Graph beim Zurückwechseln doch wieder auf die Gesamtansicht.
   const selectionId = selectedPosition?.id ?? selectedNode?.id ?? null;
   const [fittedRoot, setFittedRoot] = useState<LVNode | null>(
-    graph.viewport === null ? null : root,
+    remembers && graph.viewport !== null ? root : null,
   );
   if (fittedRoot !== root && w > 0 && h > 0) {
     setFittedRoot(root);
@@ -574,9 +622,9 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
         if (entry.clusterOf !== null) toggleCluster(entry.clusterOf);
         return;
       }
-      if (entry.node !== null) openNode(entry.node);
+      if (entry.node !== null) activateNode(entry.node);
     },
-    [toggleCluster, openNode],
+    [toggleCluster, activateNode],
   );
 
   const onGraphKeyDown = useCallback(
@@ -615,9 +663,13 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
         case 'ArrowLeft': {
           event.preventDefault();
           const node = entry.node;
+          // Eine Gruppe der Isolation steht immer offen und klappt nicht zu.
+          // Ohne diese Ausnahme schluckte der Zweig hier die Taste, und der
+          // Sprung zum Elternknoten darunter käme nie an (WP-Q).
           if (
             entry.tier !== 'cluster' &&
             node !== null &&
+            !isFocusGroup(node) &&
             node.children.length > 0 &&
             openNodes.has(node.id)
           ) {
@@ -651,6 +703,7 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
       childrenOf,
       parentIdOf,
       openNodes,
+      isFocusGroup,
       toggleCollapse,
       toggleCluster,
       activate,
@@ -804,7 +857,7 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
                 hovered={hoveredNodeId === entry.id}
                 focused={graphFocused && focusedId === entry.id}
                 onHover={(id) => dispatch({ type: 'hover', id })}
-                onClick={() => openNode(node)}
+                onClick={() => activateNode(node)}
                 onDoubleClick={() => fitTo(entry.id)}
                 radius={radius}
                 subLabel={metric?.subLabel ?? ''}
@@ -840,8 +893,8 @@ export function BubbleGraph({ root }: BubbleGraphProps) {
         onFitSelection={selectionId === null ? undefined : fitSelection}
         onReset={() => setView({ tx: w / 2, ty: h / 2, k: 0.7 })}
         onZoom={zoomBy}
-        onCollapseAll={() => dispatch({ type: 'collapseAll' })}
-        onExpandAll={() => dispatch({ type: 'expandAll' })}
+        onCollapseAll={isolated ? undefined : () => dispatch({ type: 'collapseAll' })}
+        onExpandAll={isolated ? undefined : () => dispatch({ type: 'expandAll' })}
       />
     </div>
   );

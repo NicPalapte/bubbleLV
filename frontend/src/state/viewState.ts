@@ -11,9 +11,16 @@
 // erreichen kann (.claude/CLAUDE.md#kritische-constraints).
 
 import type { ColumnConfig } from '../lib/table/columns';
+import type { FocusGroupBy } from '../lib/graph/focusTree';
 
 export type ViewMode = 'overview' | 'graph' | 'table' | 'check' | 'similar';
 export type SizeModeId = 'count' | 'cost' | 'uniform';
+/**
+ * Was der Graph mit den Treffern macht, solange gefiltert wird (WP-Q, Issue #60):
+ * `structure` zeigt den ganzen Graphen mit hervorgehobenen Treffern, `isolate`
+ * nur die Treffer, neu nach Gruppen sortiert.
+ */
+export type GraphFocus = 'structure' | 'isolate';
 export type TableScope = 'node' | 'lv';
 
 /**
@@ -55,6 +62,10 @@ export interface Viewport {
 
 export interface GraphViewState {
   sizeMode: SizeModeId;
+  /** Trefferansicht; ohne aktiven Filter zeigt der Graph immer die Struktur. */
+  focus: GraphFocus;
+  /** Wonach die Isolation bündelt. */
+  groupBy: FocusGroupBy;
   /**
    * Zuletzt verlassener Ausschnitt; `null` = noch keiner, dann passt der Graph
    * beim Öffnen selbst ein. Während des Ziehens bleibt der Ausschnitt lokal in
@@ -110,6 +121,9 @@ export interface ViewState {
 export type ViewAction =
   | { type: 'setViewMode'; mode: ViewMode }
   | { type: 'sizeMode'; value: SizeModeId }
+  /** Trefferansicht umschalten — fasst Filter, Suche und Auswahl nie an. */
+  | { type: 'graphFocus'; value: GraphFocus }
+  | { type: 'focusGroupBy'; value: FocusGroupBy }
   /** Graph-Ausschnitt sichern — beim Verlassen der Ansicht, nicht je Frame. */
   | { type: 'graphViewport'; viewport: Viewport | null }
   | { type: 'tableSort'; key: string }
@@ -137,7 +151,7 @@ export const INITIAL_VIEW_STATE: ViewState = {
   // Der Überblick ist die Eingangsansicht: er ordnet das LV ein, bevor man in
   // Graph oder Tabelle geht (docs/implementation-plan.md, WP-L).
   mode: 'overview',
-  graph: { sizeMode: 'count', viewport: null },
+  graph: { sizeMode: 'count', focus: 'isolate', groupBy: 'abschnitt', viewport: null },
   table: { sort: { key: 'oz', dir: 1 }, scope: 'node', columns: null },
   check: { openRules: new Set() },
   similar: { minMembers: 2, sort: 'groesse', openClusters: new Set() },
@@ -155,7 +169,12 @@ export const INITIAL_VIEW_STATE: ViewState = {
 export function viewStateForNewLv(state: ViewState): ViewState {
   return {
     ...INITIAL_VIEW_STATE,
-    graph: { sizeMode: state.graph.sizeMode, viewport: null },
+    graph: {
+      sizeMode: state.graph.sizeMode,
+      focus: state.graph.focus,
+      groupBy: state.graph.groupBy,
+      viewport: null,
+    },
     // Regler und Sortierung der Ähnlichkeit sind eine Vorliebe, kein Fachdatum
     // — die aufgeklappten Gruppen der alten Datei fallen dagegen weg.
     similar: {
@@ -181,6 +200,10 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
       return state.mode === action.mode ? state : { ...state, mode: action.mode };
     case 'sizeMode':
       return { ...state, graph: { ...state.graph, sizeMode: action.value } };
+    case 'graphFocus':
+      return { ...state, graph: { ...state.graph, focus: action.value } };
+    case 'focusGroupBy':
+      return { ...state, graph: { ...state.graph, groupBy: action.value } };
     case 'graphViewport':
       return { ...state, graph: { ...state.graph, viewport: action.viewport } };
     case 'tableSort': {

@@ -32,6 +32,7 @@ import {
   type ViewState,
 } from './viewState';
 import type { ColorScale } from '../lib/colors';
+import type { FocusGraph } from '../lib/graph/focusTree';
 import type { PositionIndex } from '../lib/index/positionIndex';
 import type { ActiveFilters } from '../lib/matchPos';
 import type { LoadedLV } from '../lib/pipeline/runPipeline';
@@ -49,7 +50,15 @@ export {
   clampPanelWidth,
 } from './viewState';
 export { CLUSTER_MIN_MEMBERS } from './viewState';
-export type { CardPos, ClusterSort, PanelSize, SizeModeId, ViewMode, ViewState } from './viewState';
+export type {
+  CardPos,
+  ClusterSort,
+  GraphFocus,
+  PanelSize,
+  SizeModeId,
+  ViewMode,
+  ViewState,
+} from './viewState';
 
 export interface ViewerState {
   lv: LoadedLV | null;
@@ -143,6 +152,8 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
 
     case 'setViewMode':
     case 'sizeMode':
+    case 'graphFocus':
+    case 'focusGroupBy':
     case 'graphViewport':
     case 'tableSort':
     case 'tableScope':
@@ -192,6 +203,12 @@ export interface ViewerDerived {
   openClusters: ReadonlySet<string>;
   /** Eine Gewerk-Farbskala für alle Ansichten (WP-L, Schritt 5). */
   gewerkColors: ColorScale;
+  /**
+   * Isolations-Baum des Graphen (WP-Q): die Treffer, nach Gruppen gebündelt.
+   * `null`, solange nicht gefiltert wird, die Trefferansicht auf `structure`
+   * steht oder kein Treffer übrig bleibt.
+   */
+  focus: FocusGraph | null;
 }
 
 export type ViewerValue = ViewerState & ViewerDerived;
