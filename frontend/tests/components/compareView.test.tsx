@@ -39,7 +39,9 @@ async function ladeTabelle(): Promise<void> {
 
 /** Die Kopfzeile der Ansicht als Text — Zahl und Wort stehen getrennt im Markup. */
 function kopfzeile(): string {
-  return screen.getByText(/nebeneinander/).textContent ?? '';
+  // Bei mehr als fünf gewählten Positionen steht „nebeneinander" zweimal.
+  // Der äußere Absatz kommt in der Dokumentreihenfolge zuerst und enthält beides.
+  return screen.getAllByText(/nebeneinander/)[0]?.textContent ?? '';
 }
 
 /** Zeilen der Positionstabelle, in der gezeichneten Reihenfolge. */
@@ -158,6 +160,20 @@ describe('Vergleich', () => {
     expect(spalten).toBeGreaterThan(1);
     expect(spalten).toBeLessThanOrEqual(5);
     expect(kopfzeile()).toContain(`${spalten} Positionen nebeneinander`);
+  });
+
+  it('zeigt fünf nebeneinander und benennt die übrigen', async () => {
+    await ladeTabelle();
+    const zeilen = tabellenzeilen().slice(0, 6);
+    expect(zeilen).toHaveLength(6);
+    for (const zeile of zeilen) fireEvent.click(zeile, { ctrlKey: true });
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Vergleich' }));
+    // Mehr als fünf Spalten sind nicht mehr lesbar — die sechste wird nicht
+    // weggeworfen, sondern benannt.
+    expect(kopfzeile()).toContain('5 Positionen nebeneinander');
+    expect(kopfzeile()).toContain('1 weitere gewählt');
+    expect(screen.getAllByRole('button', { name: /aus dem Vergleich nehmen/ })).toHaveLength(5);
   });
 
   it('lässt den Filter und die Auswahl unangetastet', async () => {

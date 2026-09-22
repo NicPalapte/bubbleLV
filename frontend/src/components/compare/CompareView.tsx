@@ -141,7 +141,14 @@ export function CompareView() {
 
             {sichtbar.length === 0 && (
               <div className="mt-[16px]">
-                <EmptyState>Keine Unterschiede in den Merkmalen</EmptyState>
+                {/* „Keine Unterschiede" wäre eine Aussage über den Vergleich.
+                    Führen die Positionen gar keine Merkmale, gab es nichts zu
+                    vergleichen — das ist etwas anderes und muss so dastehen. */}
+                <EmptyState>
+                  {rows.length === 0
+                    ? 'Keine Merkmale zum Vergleichen — diese Positionen führen keine'
+                    : 'Keine Unterschiede in den Merkmalen'}
+                </EmptyState>
               </div>
             )}
 
