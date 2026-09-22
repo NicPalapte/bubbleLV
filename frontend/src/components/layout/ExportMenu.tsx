@@ -8,6 +8,7 @@
 // (docs/decisions/0017-keine-nutzungsmessung.md).
 
 import { useCallback, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { Chip } from '../ui/Chip';
 import { Popover, PopoverHead, PopoverRow } from '../ui/Popover';
 import { useDismiss } from '../common/useDismiss';
@@ -74,7 +75,11 @@ export function ExportMenu() {
   };
 
   const drucken = (): void => {
-    setOpen(false);
+    // `window.print()` blockiert den Aufbau der Druckseite: ein normales
+    // `setState` wäre erst danach gezeichnet, und das offene Menü stünde mit
+    // auf dem Blatt. (Die Klasse am Popover deckt denselben Fall auch für
+    // Strg+P ab — hier geht es um die Reihenfolge.)
+    flushSync(() => setOpen(false));
     window.print();
   };
 

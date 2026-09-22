@@ -190,6 +190,27 @@ describe('Drucken', () => {
     expect(fuss).toContain(`von ${zeilen.length} · ${ohnePreis} ohne Preis`);
   });
 
+  it('nimmt kein offenes Menü mit aufs Blatt', async () => {
+    await ladeApp();
+    oeffneMenu();
+    // Popover hängen per Portal an <body>, also außerhalb der Hülle, die beim
+    // Drucken zurücktritt — sie brauchen die Klasse selbst.
+    const offen = [...document.body.children].filter(
+      (element) => (element as HTMLElement).style.position === 'fixed',
+    );
+    expect(offen).toHaveLength(1);
+    expect(offen[0].className).toContain('nur-bildschirm');
+
+    // Und der Klick auf „Drucken" schließt es, bevor gedruckt wird.
+    fireEvent.click(menueEintrag('Drucken'));
+    expect(
+      [...document.body.children].filter(
+        (element) => (element as HTMLElement).style.position === 'fixed',
+      ),
+    ).toHaveLength(0);
+    expect(window.print).toHaveBeenCalledTimes(1);
+  });
+
   it('druckt nach einer Suche nur die Treffer', async () => {
     await ladeApp();
     fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'Beton' } });

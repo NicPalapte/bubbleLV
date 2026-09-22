@@ -101,6 +101,10 @@ export const Popover = forwardRef<HTMLDivElement, PopoverProps>(function Popover
     <PopoverHostContext.Provider value={hostNode}>
       <div
         ref={setNode}
+        className="nur-bildschirm"
+        // Popover hängen per Portal an <body> — also außerhalb der Hülle, die
+        // beim Drucken zurücktritt. Ohne diese Klasse käme ein offenes Menü
+        // mit aufs Blatt (WP-P, components/print/PrintView.tsx).
         style={{
           position: 'fixed',
           top: 0,
