@@ -296,11 +296,11 @@ export function MatrixView() {
                       {formatValue(col.value, model)}
                     </td>
                   ))}
-                  <td className="border border-line bg-panel px-[6px] py-[4px] text-right font-mono text-[10px] text-dim">
-                    {formatValue(
-                      model.cols.reduce((sum, col) => sum + col.value, 0),
-                      model,
-                    )}
+                  <td
+                    title="Jede Position genau einmal gezählt"
+                    className="border border-line bg-panel px-[6px] py-[4px] text-right font-mono text-[10px] text-ink"
+                  >
+                    {formatValue(model.total, model)}
                   </td>
                 </tr>
               </tbody>

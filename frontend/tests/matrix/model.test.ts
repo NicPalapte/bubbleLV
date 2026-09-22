@@ -162,6 +162,38 @@ describe('buildMatrix · Ohne Angabe und Sammelwerte', () => {
     expect(sammel.filterable).toBe(false);
   });
 
+  it('zählt den Beitrag je Achse einmal, nicht je Zellkombination', () => {
+    const model = modelOf(
+      [position('001.0010', { attributes: { gewerk: 'Betonarbeiten', expo: ['XC1', 'XF3'] } })],
+      'expo',
+      'gewerk',
+    );
+    // Die Spalte ist einwertig: ihre Randsumme ist 1, auch wenn die Position
+    // in zwei Zeilen steht.
+    expect(model.cols.map((entry) => entry.value)).toEqual([1]);
+    // Die mehrwertige Achse trägt in jeder ihrer Zeilen — so ist die Regel.
+    expect(model.rows.map((entry) => entry.value)).toEqual([1, 1]);
+    // Und die Gesamtsumme zählt die Position genau einmal.
+    expect(model.total).toBe(1);
+  });
+
+  it('zählt auch Geldsummen am Rand nur einmal je Position', () => {
+    const model = modelOf(
+      [
+        position('001.0010', {
+          quantity: 2,
+          unitPrice: 50,
+          attributes: { gewerk: 'Betonarbeiten', expo: ['XC1', 'XF3'] },
+        }),
+      ],
+      'expo',
+      'gewerk',
+      'summe',
+    );
+    expect(model.cols[0].value).toBe(100);
+    expect(model.total).toBe(100);
+  });
+
   it('zählt eine Position in jeder Zeile, in die sie gehört — und sagt es', () => {
     const model = modelOf(
       [position('001.0010', { attributes: { gewerk: 'Betonarbeiten', expo: ['XC1', 'XF3'] } })],

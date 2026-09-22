@@ -73,6 +73,12 @@ export interface MatrixModel {
   /** Positionen im Raster (jede genau einmal, auch bei mehrwertigen Achsen). */
   positions: number;
   /**
+   * Gesamtsumme im gewählten Zellmaß, jede Position **genau einmal** gezählt.
+   * Bei einer mehrwertigen Achse ergeben die Randsummen mehr — dort zählt eine
+   * Position in jeder Zeile mit, in die sie gehört.
+   */
+  total: number;
+  /**
    * Trägt eine Achse mehrwertige Facetten (Exposition, Besonderheiten …)?
    * Dann zählt eine Position in jeder Zeile mit, in die sie gehört, und die
    * Summe der Zellen ist größer als die Zahl der Positionen.
@@ -99,6 +105,7 @@ export const EMPTY_MATRIX: MatrixModel = {
   measure: 'anzahl',
   unit: null,
   positions: 0,
+  total: 0,
   multiValued: false,
   hasPrices: false,
 };
@@ -221,21 +228,39 @@ export function buildMatrix({
 
   const cells = new Map<string, MatrixCell>();
   let max = 0;
+  let total = 0;
   for (let i = 0; i < index.size; i++) {
     if (mask !== null && mask[i] !== 1) continue;
-    const beitrag = contribution(effective, index, i);
-    for (const rowKey of valuesOf(rowFacetId, index, i)) {
+    const roh = contribution(effective, index, i);
+    // Eine fehlende Menge trägt nichts bei — nicht 0, sondern gar nichts.
+    const beitrag = Number.isFinite(roh) ? roh : 0;
+    const rowKeys = valuesOf(rowFacetId, index, i);
+    const colKeys = valuesOf(colFacetId, index, i);
+
+    // Randsummen: je Achse **einmal je Wert** dieser Position. In der
+    // Zellschleife unten stünde der Beitrag so oft, wie die Gegenachse Werte
+    // hat — die Gesamtspalte zeigte dann mehr, als in der Datei steht.
+    for (const rowKey of rowKeys) {
+      rows[rowSlot.get(rowKey) ?? (rowSlot.get(COLLECTED_KEY) as number)].value += beitrag;
+    }
+    for (const colKey of colKeys) {
+      cols[colSlot.get(colKey) ?? (colSlot.get(COLLECTED_KEY) as number)].value += beitrag;
+    }
+    // Die Gesamtsumme zählt jede Position genau einmal, egal wie viele Werte
+    // sie trägt. Die Randsummen daneben können mehr ergeben — das ist die
+    // Mehrfachzählung, auf die die Ansicht hinweist.
+    total += beitrag;
+
+    for (const rowKey of rowKeys) {
       const row = rowSlot.get(rowKey) ?? (rowSlot.get(COLLECTED_KEY) as number);
-      for (const colKey of valuesOf(colFacetId, index, i)) {
+      for (const colKey of colKeys) {
         const col = colSlot.get(colKey) ?? (colSlot.get(COLLECTED_KEY) as number);
         const key = cellKey(row, col);
         const cell = cells.get(key) ?? { count: 0, value: 0 };
         cell.count++;
-        if (Number.isFinite(beitrag)) cell.value += beitrag;
+        cell.value += beitrag;
         cells.set(key, cell);
         if (cell.value > max) max = cell.value;
-        rows[row].value += Number.isFinite(beitrag) ? beitrag : 0;
-        cols[col].value += Number.isFinite(beitrag) ? beitrag : 0;
       }
     }
   }
@@ -248,6 +273,7 @@ export function buildMatrix({
     measure: effective,
     unit,
     positions,
+    total,
     multiValued,
     hasPrices,
   };
