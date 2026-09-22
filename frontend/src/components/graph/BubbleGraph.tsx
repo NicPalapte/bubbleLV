@@ -172,7 +172,10 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
       ? 'count'
       : sizeMode;
   const mode = sizeModeById(tragend);
-  const byNode = quantities.byNode;
+  // In der Isolation tragen Wurzel und Gruppen synthetische IDs, die die
+  // Mengenkarte des echten Baums nicht kennt — der Isolations-Baum bringt
+  // seine eigene mit (lib/graph/focusTree.ts).
+  const byNode = focus?.quantities ?? quantities.byNode;
 
   // Die Wolke eines Abschnitts steht nach Größe — die größte Position innen
   // (WP-Q, Issue #51). "Anzahl" ordnet nichts, dort bleibt die OZ-Reihenfolge.

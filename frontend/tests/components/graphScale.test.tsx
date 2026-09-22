@@ -61,6 +61,37 @@ describe('Größe und Anteil', () => {
   });
 });
 
+describe('Menge in der Isolation', () => {
+  it('gibt den Gruppen unterschiedliche Größen, nicht allen dieselbe', async () => {
+    await loadAndShowGraph();
+
+    // Auf eine Einheit filtern — erst dann ist der Mengenvergleich zulässig.
+    fireEvent.click(screen.getByRole('button', { name: /Einheit ▾/ }));
+    const wert = await screen.findByTitle('m³');
+    fireEvent.click(wert);
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+
+    const modi = await screen.findByRole('radiogroup', { name: 'Größe der Bubbles' });
+    const menge = within(modi).getByRole('radio', { name: /MENGE/ });
+    expect(menge).not.toBeDisabled();
+    fireEvent.click(menge);
+
+    // Isolation an, nach Gewerk bündeln.
+    fireEvent.click(screen.getByRole('radio', { name: 'ISOLATION' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'GEWERK' }));
+
+    // Die Gruppen-Bubbles der Isolation sind Abschnitts-Bubbles. Ohne eigene
+    // Mengenkarte fiele jede auf den Basisradius zurück — alle gleich groß.
+    const radien = [
+      ...document.querySelectorAll(
+        '[aria-label^="Bubble-Graph"] svg circle[fill="var(--bub-section)"]',
+      ),
+    ].map((circle) => Number(circle.getAttribute('r')));
+    expect(radien.length).toBeGreaterThan(1);
+    expect(new Set(radien).size).toBeGreaterThan(1);
+  });
+});
+
 describe('Sprung in die Tabelle', () => {
   it('führt von der Auswahlkarte in die Tabelle', async () => {
     await loadAndShowGraph();

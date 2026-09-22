@@ -111,6 +111,48 @@ describe('buildFocusTree', () => {
   });
 });
 
+describe('Mengen im Isolations-Baum', () => {
+  it('trägt Mengen für Wurzel, Gruppen und Positionen', () => {
+    const focus = focusFor('beton', 'gewerk');
+    expect(focus).not.toBeNull();
+    const { quantities, tree } = focus!;
+
+    // Jede Gruppe trägt die Summe ihrer Mitglieder …
+    let summe = 0;
+    for (const group of tree.children) {
+      const erwartet = group.children.reduce((total, child) => {
+        const slot = index.slotOf.get(child.id);
+        const value = slot === undefined ? Number.NaN : index.quantity[slot];
+        return Number.isFinite(value) ? total + value : total;
+      }, 0);
+      expect(quantities.get(group.id) ?? 0).toBeCloseTo(erwartet, 6);
+      summe += erwartet;
+    }
+    // … und die Wurzel die Summe über alle Treffer.
+    expect(quantities.get(tree.id) ?? 0).toBeCloseTo(summe, 6);
+    expect(summe).toBeGreaterThan(0);
+
+    // Ohne diese Karte bekämen im Modus „Menge" alle Gruppen denselben Radius:
+    // die Mengenkarte des echten Baums kennt keine synthetische ID.
+    expect(tree.children.some((group) => (quantities.get(group.id) ?? 0) > 0)).toBe(true);
+  });
+
+  it('nimmt Positionen ohne Menge nicht mit 0 auf', () => {
+    const focus = focusFor('', 'gewerk', {
+      facets: { positionsart: new Set(['bauteil']) },
+      menge: null,
+    });
+    expect(focus).not.toBeNull();
+    for (const group of focus!.tree.children) {
+      for (const child of group.children) {
+        const slot = index.slotOf.get(child.id);
+        const value = slot === undefined ? Number.NaN : index.quantity[slot];
+        if (!Number.isFinite(value)) expect(focus!.quantities.has(child.id)).toBe(false);
+      }
+    }
+  });
+});
+
 describe('Laufzeit', () => {
   it('bleibt bei 10.000 Treffern unter dem Budget eines Filterwechsels', () => {
     const big = classifyAndBuild(syntheticDraft(10_000), 'synthetisch.x83');

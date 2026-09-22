@@ -46,6 +46,13 @@ export interface FocusGraph {
   groupCount: number;
   hitCount: number;
   groupBy: FocusGroupBy;
+  /**
+   * Mengen je Knoten dieses Baums — Wurzel, Gruppen und Positionen. Die Karte
+   * des echten Baums (lib/graph/quantities.ts) kennt die synthetischen IDs
+   * nicht; ohne diese hier bekämen im Modus „Menge" alle Gruppen denselben
+   * Radius, und zwar ohne dass es auffiele.
+   */
+  quantities: ReadonlyMap<string, number>;
 }
 
 interface Bucket {
@@ -109,7 +116,10 @@ export function buildFocusTree(
 ): FocusGraph | null {
   const { groupBy, sizeMode, parents } = options;
   const buckets = new Map<string, Bucket>();
+  // Mengen dieses Baums: Positionen kommen hier dazu, Gruppen und Wurzel unten.
+  const quantities = new Map<string, number>();
   let hitCount = 0;
+  let hitQuantity = 0;
 
   for (let i = 0; i < index.size; i++) {
     if (mask[i] !== 1) continue;
@@ -122,16 +132,19 @@ export function buildFocusTree(
     }
     bucket.children.push(node);
     bucket.totalPrice += node.totalPrice;
-    if (Number.isFinite(index.quantity[i])) bucket.quantity += index.quantity[i];
+    const quantity = index.quantity[i];
+    if (Number.isFinite(quantity)) {
+      // Eine fehlende Menge ist keine Menge von null — sie steht gar nicht drin.
+      quantities.set(node.id, quantity);
+      bucket.quantity += quantity;
+      hitQuantity += quantity;
+    }
     hitCount++;
   }
 
   if (hitCount === 0) return null;
 
   const groups: LVNode[] = [];
-  // Die Gruppen stehen in keinem Baum, also kennt sie auch keine Mengenkarte —
-  // hier entsteht die eine, die ihre Sortierung braucht.
-  const quantities = new Map<string, number>();
   for (const bucket of buckets.values()) {
     quantities.set(`${FOCUS_PREFIX}${groupBy}:${bucket.key}`, bucket.quantity);
     groups.push({
@@ -171,6 +184,8 @@ export function buildFocusTree(
     position: null,
   };
 
+  quantities.set(tree.id, hitQuantity);
+
   const counts = new Map<string, number>();
   counts.set(tree.id, hitCount);
   const openNodes = new Set<string>([tree.id]);
@@ -190,5 +205,6 @@ export function buildFocusTree(
     groupCount: groups.length,
     hitCount,
     groupBy,
+    quantities,
   };
 }
