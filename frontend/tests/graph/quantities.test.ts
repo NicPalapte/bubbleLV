@@ -5,8 +5,9 @@ import { readFileSync } from 'node:fs';
 import { quantitiesByNode, singleUnit } from '../../src/lib/graph/quantities';
 import { buildPositionIndex, filterMask } from '../../src/lib/index/positionIndex';
 import { EMPTY_FILTERS, prepareFilters, type Filters } from '../../src/lib/matchPos';
-import { runPipeline } from '../../src/lib/pipeline/runPipeline';
+import { classifyAndBuild, runPipeline } from '../../src/lib/pipeline/runPipeline';
 import { indexParents } from '../../src/lib/tree/buildTree';
+import { syntheticDraft } from '../support/syntheticLv';
 
 function loadFixture() {
   const bytes = readFileSync('tests/fixtures/gaeb-xml-beispiel.x83');
@@ -85,5 +86,30 @@ describe('quantitiesByNode', () => {
       // Ohne Menge steht die Position in keiner Summe — auch nicht mit 0.
       expect(byNode.has(index.nodes[i].id)).toBe(false);
     }
+  });
+});
+
+describe('Laufzeit', () => {
+  it('bleibt bei 10.000 Positionen im Budget eines Filterwechsels', () => {
+    const big = classifyAndBuild(syntheticDraft(10_000), 'synthetisch.x83');
+    const bigIndex = buildPositionIndex(big.tree);
+    const bigParents = indexParents(big.tree);
+    const mask = filterMask(bigIndex, prepareFilters(EMPTY_FILTERS, 'Bauteils'));
+
+    const started = performance.now();
+    // Beides läuft bei jedem Filterwechsel im Hauptthread, solange der Graph
+    // die aktive Ansicht ist — `singleUnit` sogar unabhängig vom Größenmodus,
+    // weil der Umschalter die Einheit kennen muss.
+    const unit = singleUnit(bigIndex, mask);
+    const byNode = quantitiesByNode(bigIndex, mask, bigParents);
+    const dauer = performance.now() - started;
+
+    expect(byNode.size).toBeGreaterThan(0);
+    // Das synthetische LV mischt Einheiten — genau der Fall, in dem
+    // `singleUnit` früh abbricht und der Modus gesperrt bleibt.
+    expect(unit).toBeNull();
+    // Zielwert „Filterwechsel < 100 ms" aus docs/scope.md; diese beiden sind
+    // nur ein Teil davon, deshalb die Hälfte als Schranke.
+    expect(dauer).toBeLessThan(50);
   });
 });
