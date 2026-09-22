@@ -92,6 +92,16 @@ describe('Matrix', () => {
     expect(screen.getByLabelText('Suche')).toHaveValue('Beton');
   });
 
+  it('nennt die Bezugsgröße, sobald gefiltert wird — bei jeder Art Filter', async () => {
+    await ladeMatrix();
+    expect(kopfzeile()).not.toContain('im aktuellen Filter');
+
+    // Eine Suche ist ein Filter wie jeder andere: die Zahlen im Raster sind
+    // danach keine Aussage mehr über das ganze LV.
+    fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'Beton' } });
+    await waitFor(() => expect(kopfzeile()).toContain('im aktuellen Filter, von 28'));
+  });
+
   it('tauscht die Achsen, wenn man die Facette der anderen wählt', async () => {
     await ladeMatrix();
     fireEvent.click(ansicht().getByRole('button', { name: /Gewerk ▾/ }));

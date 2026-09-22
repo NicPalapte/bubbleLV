@@ -55,7 +55,7 @@ function measureLabel(model: MatrixModel): string {
 }
 
 export function MatrixView() {
-  const { lv, index, active, filter, view } = useViewer();
+  const { lv, index, active, view } = useViewer();
   const dispatch = useViewerDispatch();
   const [attachScroll, onScroll] = useScrollMemory('matrix');
   const { rowFacetId, colFacetId, measure } = view.matrix;
@@ -108,6 +108,10 @@ export function MatrixView() {
           <p className="mt-[2px] font-sans text-[13px] text-ink">
             <span className="font-semibold">{formatPositions(model.positions)}</span>
             <span className="text-dim">
+              {/* Wie im Überblick: sobald gefiltert wird, steht die
+                  Bezugsgröße daneben. Sonst liest man die Zahlen im Raster
+                  leicht als Aussage über das ganze LV. */}
+              {active.filtering && <> · im aktuellen Filter, von {formatCount(index.size)}</>}
               {' · '}
               {rowFacet?.label ?? rowFacetId} × {colFacet?.label ?? colFacetId}
               {' · '}
@@ -306,12 +310,6 @@ export function MatrixView() {
               </tbody>
             </table>
           </div>
-        )}
-
-        {!leer && filter.filters.facets[rowFacetId] !== undefined && (
-          <p className="mt-[8px] font-mono text-[9.5px] text-mute">
-            DIE MATRIX ZEIGT NUR, WAS DER AKTIVE FILTER DURCHLÄSST
-          </p>
         )}
       </div>
     </div>
