@@ -221,10 +221,17 @@ export function buildMatrix({
   // wird immer bestimmt, nicht nur im Mengenmodus: die Ansicht muss den Knopf
   // sperren können, **bevor** jemand ihn drückt.
   const unit = singleUnit(index, maskOrAll(index, mask));
+  //
+  // Ohne Treffer greift kein Rückfall: `unit` ist dann `null` und `hasPrices`
+  // `false`, aber nicht weil Einheiten gemischt sind oder Preise fehlen —
+  // sondern weil gar nichts da ist. Das sagt der Leerzustand, und zwei
+  // widersprüchliche Begründungen nebeneinander wären schlimmer als keine.
   const effective: MatrixMeasure =
-    (measure === 'menge' && unit === null) || (measure === 'summe' && !hasPrices)
-      ? 'anzahl'
-      : measure;
+    positions === 0
+      ? measure
+      : (measure === 'menge' && unit === null) || (measure === 'summe' && !hasPrices)
+        ? 'anzahl'
+        : measure;
 
   const cells = new Map<string, MatrixCell>();
   let max = 0;

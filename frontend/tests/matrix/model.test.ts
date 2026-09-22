@@ -208,6 +208,15 @@ describe('buildMatrix · Ohne Angabe und Sammelwerte', () => {
 });
 
 describe('buildMatrix · Rückfälle des Zellwerts', () => {
+  it('fällt ohne Treffer gar nicht zurück — dort gibt es nichts zu begründen', () => {
+    const leer = maskFor(EMPTY_FILTERS, 'zzz-kein-treffer-zzz');
+    const model = matrix('gewerk', 'bauteiltyp', 'summe', leer);
+    expect(model.positions).toBe(0);
+    // Ohne Position ist weder „mischt Einheiten" noch „führt keine Preise"
+    // der Grund — der Leerzustand sagt den richtigen.
+    expect(model.measure).toBe('summe');
+  });
+
   it('fällt auf Anzahl zurück, sobald mehrere Einheiten im Filter stehen', () => {
     const model = modelOf(
       [position('001.0010'), position('001.0020', { unit: 'm2' })],

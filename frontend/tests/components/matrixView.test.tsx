@@ -299,6 +299,16 @@ describe('Matrix · stiller Rückfall und Abzüge', () => {
     expect(screen.getByText(/Zellwert: Anzahl/)).toBeInTheDocument();
   });
 
+  it('begründet nichts, wo der Filter nichts übrig lässt', () => {
+    zeige(lvMit([preisPosition('01.001.0010', 'm3', 100)]));
+    fireEvent.click(screen.getByRole('button', { name: 'summen' }));
+    // Der Filter trifft keine Position — dann ist weder „keine Preise" noch
+    // „mischt Einheiten" der Grund, sondern schlicht: da ist nichts.
+    fireEvent.click(screen.getByRole('button', { name: 'nur m2' }));
+    expect(screen.getByText('Keine Position im aktuellen Filter')).toBeInTheDocument();
+    expect(screen.queryByText(/KEINE PREISE IM AKTUELLEN FILTER/)).not.toBeInTheDocument();
+  });
+
   it('kennzeichnet eine negative Summe, statt sie wie eine Lücke aussehen zu lassen', () => {
     zeige(lvMit([preisPosition('01.001.0010', 'm3', -50)]));
     fireEvent.click(screen.getByRole('button', { name: 'summen' }));
