@@ -70,11 +70,17 @@ export function compareRows(positions: readonly PositionSummary[]): CompareRow[]
     rows.push({ key, label: LEADING_LABELS[key], values, differs: !allEqual(values) });
   }
 
+  // Die Einheit steht bereits an der Menge („10 m³"). Eine zweite Zeile mit
+  // demselben Wert wäre Dopplung — und bei einer abweichenden Einheit stünden
+  // zwei Zeilen gleichzeitig als Unterschied da. Nur wenn keine Position eine
+  // Menge führt, trägt die eigene Zeile die Einheit.
+  const mengeGezeigt = rows.some((entry) => entry.key === 'menge');
+
   // Reihenfolge der Merkmale: nach Anzeigename, damit sie nicht von der
   // Reihenfolge der Klassifizierung abhängt.
-  const keys = [...new Set(merkmale.flatMap((entry) => [...entry.keys()]))].sort((a, b) =>
-    attributeLabel(a).localeCompare(attributeLabel(b), 'de'),
-  );
+  const keys = [...new Set(merkmale.flatMap((entry) => [...entry.keys()]))]
+    .filter((key) => !(key === 'einheit' && mengeGezeigt))
+    .sort((a, b) => attributeLabel(a).localeCompare(attributeLabel(b), 'de'));
   for (const key of keys) {
     const values = merkmale.map((entry) => entry.get(key) ?? null);
     rows.push({ key, label: attributeLabel(key), values, differs: !allEqual(values) });

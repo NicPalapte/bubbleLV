@@ -53,6 +53,21 @@ describe('compareRows', () => {
     expect(beton?.differs).toBe(true);
   });
 
+  it('schreibt die Einheit nicht zweimal hin', () => {
+    const rows = compareRows([position(), position()]);
+    // Sie steht an der Menge — eine eigene Zeile wäre dieselbe Aussage, und
+    // bei einer abweichenden Einheit stünden zwei Unterschiede statt einem.
+    expect(row(rows, 'menge')?.values[0]).toContain('m³');
+    expect(row(rows, 'einheit')).toBeUndefined();
+  });
+
+  it('gibt der Einheit eine eigene Zeile, wenn keine Menge dasteht', () => {
+    const ohneMenge = position({ quantity: null });
+    const rows = compareRows([ohneMenge, ohneMenge]);
+    expect(row(rows, 'menge')).toBeUndefined();
+    expect(row(rows, 'einheit')?.values[0]).toBe('m³');
+  });
+
   it('lässt Zahlenzeilen weg, die keine Position führt', () => {
     const ohnePreis = position({ unitPrice: null });
     const rows = compareRows([ohnePreis, ohnePreis]);
