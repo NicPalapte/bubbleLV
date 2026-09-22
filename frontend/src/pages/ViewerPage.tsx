@@ -17,6 +17,7 @@ import { PropertiesPanel } from '../components/layout/PropertiesPanel';
 import { ResizeHandle } from '../components/layout/ResizeHandle';
 import { TopBar } from '../components/layout/TopBar';
 import { Tree } from '../components/layout/Tree';
+import { MatrixView } from '../components/matrix/MatrixView';
 import { OverviewView } from '../components/overview/OverviewView';
 import { SimilarView } from '../components/relate/SimilarView';
 import { PositionsTable } from '../components/table/PositionsTable';
@@ -94,6 +95,12 @@ export function ViewerPage() {
                 gewählt ist — sonst zeichnet der Graph das ganze LV (WP-Q). */}
             <BubbleGraph root={tree} focus={focus ?? undefined} />
             <GraphHeader root={tree} />
+          </main>
+        )}
+
+        {tree !== null && viewMode === 'matrix' && (
+          <main aria-label="Matrix" className="relative flex-1 overflow-hidden bg-white">
+            <MatrixView />
           </main>
         )}
 

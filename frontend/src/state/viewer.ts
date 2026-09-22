@@ -163,6 +163,8 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     case 'tableScope':
     case 'tableColumns':
     case 'compareOnlyDiffs':
+    case 'matrixAxis':
+    case 'matrixMeasure':
     case 'toggleRuleOpen':
     case 'clusterMinMembers':
     case 'clusterSort':

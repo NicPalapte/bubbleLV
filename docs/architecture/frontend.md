@@ -51,6 +51,8 @@ frontend/
     │   ├── overview/                 # Kennzahlen, Treemap-Layout (WP-L)
     │   │   ├── model.ts              # buildOverview: Kennzahlen, Gruppen, Pareto, Mengen
     │   │   └── treemap.ts            # squarified Treemap, reine Funktion
+    │   ├── matrix/                   # Heatmap über zwei Facetten (WP-O)
+    │   │   └── model.ts              # buildMatrix: Achsen, Zellen, Zellmaß
     │   ├── relate/                   # Beziehungen: Ähnlichkeit, Ausreißer (WP-M)
     │   │   ├── text.ts               # Normalisierung, Wort-Schindeln, Jaccard
     │   │   ├── stats.ts              # Median, Quartile, Ausreißer-Grenzen
@@ -87,6 +89,8 @@ frontend/
         │   └── {SimilarView,ClusterCard}.tsx
         ├── overview/                     # Ansicht „Überblick" (WP-L)
         │   └── {OverviewView,MetricTiles,Treemap,ParetoCard,UnitTotals}.tsx
+        ├── matrix/                       # Ansicht „Matrix" (WP-O)
+        │   └── {MatrixView,AxisPicker}.tsx
         ├── table/PositionsTable.tsx
         ├── filter/{FilterStrip,FacetButton,RangeButton}.tsx
         ├── common/{Highlighted.tsx,useOutsideClose.ts}
@@ -238,8 +242,36 @@ nur Mitglieder, die der aktive Filter durchlässt, und verschwindet, wenn zu wen
 die Gruppen-Zugehörigkeit entsteht erst danach
 ([`../decisions/0016`](../decisions/0016-aehnlichkeit-und-cluster.md)).
 
-Ein Klick auf eine Position wählt sie an und wechselt in die Tabelle — bis der
-Vergleich (WP-N) steht, ist das der Ort, an dem eine Position vollständig zu sehen ist.
+Ein Klick auf eine Position wählt sie an und wechselt in die Tabelle, wo sie
+vollständig zu sehen ist. „Vergleichen" an einer Gruppe legt ihre Mitglieder
+nebeneinander (WP-N) — ungekürzt: gekürzt wird erst in der Ansicht, damit der Rest
+der Gruppe benannt statt weggeworfen wird.
+
+### Ansicht „Vergleich" (WP-N)
+
+Bis zu fünf gewählte Positionen nebeneinander, eine Spalte je Position, eine Zeile
+je Merkmal. Die Merkmale kommen aus `merkmaleOf` (`lib/relate/similarity.ts`) —
+derselben Funktion, nach der die Ähnlichkeit gruppiert. Unterschiede in Menge und
+Preis entscheidet der **rohe** Wert, nicht die gerundete Anzeige; sehen zwei Werte
+gerundet gleich aus, zeigt die Zeile mehr Nachkommastellen. Der Langtext wird
+wortweise verglichen ([`../decisions/0020`](../decisions/0020-langtext-vergleich-ohne-bibliothek.md)).
+
+Die Auswahl selbst ist **nicht** begrenzt: die Ansicht zeigt die ersten fünf und
+sagt, wie viele warten.
+
+### Ansicht „Matrix" (WP-O)
+
+Zwei Facetten als Achsen, eine Zelle je Wertepaar. `buildMatrix`
+(`lib/matrix/model.ts`) läuft einmal je Filterwechsel über dem flachen
+Positions-Index; die Ansicht rechnet nichts selbst. Ein Klick auf eine Zelle setzt
+**beide** Facetten auf den Wert der Zelle und wechselt in die Tabelle.
+
+Die Zählregeln — mehrwertige Merkmale zählen in jeder Zelle mit, „Ohne Angabe"
+bekommt eine eigene, nicht filterbare Zeile, 14 Werte je Achse stehen einzeln —
+stehen in [`../decisions/0021`](../decisions/0021-matrix-zaehlregeln.md). Der
+Zellwert „Menge" gilt weiter nur innerhalb einer Einheit
+([`../decisions/0019`](../decisions/0019-mengen-nur-je-einheit.md)), „Summe" nur
+mit Preisen in der Datei; sonst steht der Knopf gesperrt da und nennt den Grund.
 
 Die `PositionsTable` zeigt wahlweise den gewählten Abschnitt oder das ganze LV
 (Umschalter im Tabellenkopf). Bei aktivem Filter fällt sie automatisch auf das

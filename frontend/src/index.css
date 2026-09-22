@@ -57,6 +57,17 @@
   --cat-10: #bdc9d6;
   /* Positionen ohne Gewerk — bewusst farblos, nicht "elfte Farbe". */
   --cat-none: #e4ecf4;
+
+  /* Fünf Stufen einer Skala für die Matrix (WP-O): hier trennt die Farbe
+     nicht, sie misst — deshalb ein Ton in fünf Sättigungen statt fünf Töne.
+     Bewusst Cyan und nicht Blau: Blau ist im System Auswahl und Interaktion,
+     eine gefilterte Zelle muss sich von einer vollen unterscheiden lassen.
+     Alle Stufen tragen --ink lesbar (Kontrast ≥ 6:1). */
+  --heat-1: #e8f3f7;
+  --heat-2: #cbe8f1;
+  --heat-3: #a6d8e7;
+  --heat-4: #7cc4da;
+  --heat-5: #4fadc9;
 }
 
 /* ── Bubble-Graph — kräftigere Töne als die Panel-Flächen, damit sich die
