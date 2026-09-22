@@ -84,9 +84,16 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
   // gebündelt nach Abschnitt, Gewerk oder Bauteiltyp. Entsteht hier und nicht
   // im Graphen, weil er vom Filter abhängt und nicht vom Ausschnitt — und weil
   // beide Hälften der geteilten Ansicht denselben brauchen.
+  //
+  // Nur, solange der Graph die aktive Ansicht ist: sonst zahlte jeder
+  // Filterwechsel in Tabelle, Prüfung und Überblick einen Aufschlag für eine
+  // Ansicht, die gar nicht auf dem Schirm steht.
   const { focus: focusMode, groupBy, sizeMode } = state.view.graph;
+  const graphAktiv = state.view.mode === 'graph';
   const focus = useMemo<FocusGraph | null>(() => {
-    if (tree === null || focusMode === 'structure' || !matches.filtering) return null;
+    if (tree === null || !graphAktiv || focusMode === 'structure' || !matches.filtering) {
+      return null;
+    }
     return measure('Treffer-Isolation', () =>
       buildFocusTree(index, filterMask(index, active), {
         groupBy,
@@ -94,7 +101,17 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
         parents: structure.parents,
       }),
     );
-  }, [tree, focusMode, matches.filtering, index, active, groupBy, sizeMode, structure.parents]);
+  }, [
+    tree,
+    graphAktiv,
+    focusMode,
+    matches.filtering,
+    index,
+    active,
+    groupBy,
+    sizeMode,
+    structure.parents,
+  ]);
 
   const derived = useMemo<ViewerDerived>(
     () => ({

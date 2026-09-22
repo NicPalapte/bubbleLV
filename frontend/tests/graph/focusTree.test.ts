@@ -73,8 +73,14 @@ describe('buildFocusTree', () => {
   });
 
   it('stellt die größte Gruppe nach vorn', () => {
-    const focus = focusFor('', 'gewerk', { facets: { positionsart: ['bauteil'] }, menge: null });
+    const focus = focusFor('', 'gewerk', {
+      facets: { positionsart: new Set(['bauteil']) },
+      menge: null,
+    });
     expect(focus).not.toBeNull();
+    // Der Facettenfilter muss auch wirklich gegriffen haben, sonst prüfte die
+    // Sortierung unten den ungefilterten Gesamtbestand.
+    expect(focus!.hitCount).toBeLessThan(index.size);
     const counts = focus!.tree.children.map((group) => group.positionCount);
     expect([...counts].sort((a, b) => b - a)).toEqual(counts);
   });
@@ -107,7 +113,7 @@ describe('buildFocusTree', () => {
 
 describe('Laufzeit', () => {
   it('bleibt bei 10.000 Treffern unter dem Budget eines Filterwechsels', () => {
-    const big = classifyAndBuild(syntheticDraft(10_000));
+    const big = classifyAndBuild(syntheticDraft(10_000), 'synthetisch.x83');
     const bigIndex = buildPositionIndex(big.tree);
     const bigParents = indexParents(big.tree);
     const active = prepareFilters(EMPTY_FILTERS, 'Bauteils');
