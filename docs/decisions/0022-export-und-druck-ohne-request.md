@@ -20,7 +20,10 @@ Daten üblicherweise das Haus verlassen. Genau das darf hier nicht passieren.
   `;` als Spaltentrenner, und ohne BOM wird aus „m³" ein „mÂ³".
 - **Der Export trägt alle Spalten**, nicht die gerade sichtbaren. Zeilen sind
   die gefilterte Menge.
-- **Eine fehlende Menge bleibt ein leeres Feld**, keine 0.
+- **Eine fehlende Menge bleibt ein leeres Feld**, keine 0. Ein Gesamtpreis
+  braucht **beide** Werte: fehlt einer, bleibt das Feld leer — in der CSV wie
+  auf dem Blatt. (`index.totalPrice` rechnet fehlende Werte als 0; das ist für
+  die Summen am Baum richtig und in einer Zeile eine Behauptung.)
 - **Formel-Starts werden entschärft**: ein Feld, das mit `=`, `+`, `-`, `@` oder
   einem Tabulator beginnt, bekommt ein führendes `'` (CSV-Injection, CWE-1236).
   Echte Zahlen bleiben Zahlen — ein negativer Einheitspreis soll in Excel als
@@ -30,7 +33,7 @@ Daten üblicherweise das Haus verlassen. Genau das darf hier nicht passieren.
 - **Ohne Preise in der Datei fallen die Preisspalten weg**; mit Preisen steht
   eine Summe über genau die gedruckten Zeilen darunter. Zeilen ohne Preis
   stehen in der Liste, aber nicht in der Summe — die Fußzeile benennt sie
-  („Summe über 77 Positionen von 78 · 1 ohne Preis"). Mengen werden nicht
+  („Summe über 77 Positionen von 78 · 1 ohne Gesamtpreis"). Mengen werden nicht
   summiert (Entscheidung 0019).
 - **Fehler melden** öffnet ein vorbefülltes GitHub-Formular in einem neuen Tab.
   Darin stehen ausschließlich: Bau-Stand, Ansicht, ob eine Datei geladen ist

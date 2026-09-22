@@ -10,6 +10,12 @@ import { resolve } from 'node:path';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '../../src/App';
+import { PrintView } from '../../src/components/print/PrintView';
+import { classifyAndBuild } from '../../src/lib/pipeline/runPipeline';
+import { ViewerProvider } from '../../src/state/ViewerProvider';
+import { useViewerDispatch } from '../../src/state/viewer';
+import type { LoadedLV } from '../../src/lib/pipeline/runPipeline';
+import type { LVDraft, PositionDraft } from '../../src/types/lvDraft';
 
 const FIXTURE_DIR = resolve(process.cwd(), 'tests/fixtures');
 
@@ -117,6 +123,50 @@ describe('Mitnehmen', () => {
   });
 });
 
+/** Kleines LV direkt in die Druckansicht — ohne Umweg über eine GAEB-Datei. */
+function WithLv({ datei }: { datei: LoadedLV }) {
+  const dispatch = useViewerDispatch();
+  return (
+    <>
+      <button type="button" onClick={() => dispatch({ type: 'loaded', lv: datei })}>
+        laden
+      </button>
+      <PrintView />
+    </>
+  );
+}
+
+function position(oz: string, overrides: Partial<PositionDraft> = {}): PositionDraft {
+  return {
+    oz,
+    shortText: 'Innenwand herstellen',
+    longText: 'Herstellen einer tragenden Innenwand aus Beton.',
+    unit: 'm3',
+    quantity: 10,
+    unitPrice: 100,
+    positionType: 'NORMAL',
+    attributes: {},
+    ...overrides,
+  };
+}
+
+function lvMit(positionen: readonly PositionDraft[]): LoadedLV {
+  const draft: LVDraft = {
+    projectName: 'Druck-Test',
+    client: null,
+    lots: [
+      {
+        number: '01',
+        label: 'Los',
+        sections: [
+          { number: '01.001', label: 'Abschnitt', sections: [], positions: [...positionen] },
+        ],
+      },
+    ],
+  };
+  return classifyAndBuild(draft, 'druck.x83');
+}
+
 describe('Drucken', () => {
   it('druckt die ganze gefilterte Liste, nicht nur das sichtbare Fenster', async () => {
     await ladeApp();
@@ -177,17 +227,17 @@ describe('Drucken', () => {
     const druck = document.querySelector('.nur-druck') as HTMLElement;
 
     // Erwartung aus den gedruckten Zeilen selbst, nicht aus der Fußzeile:
-    // eine Zeile ohne Preis hat eine leere EP-Spalte.
+    // gezählt wird die leere GP-Spalte — eine Zeile ohne Gesamtpreis.
     const zeilen = within(druck).getAllByRole('row').slice(1, -1);
-    const ohnePreis = zeilen.filter(
+    const ohneGesamt = zeilen.filter(
       // Spalten: OZ, Bezeichnung, Einheit, Menge, EP, GP.
-      (zeile) => within(zeile).getAllByRole('cell')[4].textContent === '',
+      (zeile) => within(zeile).getAllByRole('cell')[5].textContent === '',
     ).length;
-    expect(ohnePreis).toBeGreaterThan(0);
+    expect(ohneGesamt).toBeGreaterThan(0);
 
     const fuss = druck.querySelector('tfoot')?.textContent ?? '';
-    expect(fuss).toContain(`Summe über ${zeilen.length - ohnePreis} Positionen`);
-    expect(fuss).toContain(`von ${zeilen.length} · ${ohnePreis} ohne Preis`);
+    expect(fuss).toContain(`Summe über ${zeilen.length - ohneGesamt} Positionen`);
+    expect(fuss).toContain(`von ${zeilen.length} · ${ohneGesamt} ohne Gesamtpreis`);
   });
 
   it('nimmt kein offenes Menü mit aufs Blatt', async () => {
@@ -209,6 +259,36 @@ describe('Drucken', () => {
       ),
     ).toHaveLength(0);
     expect(window.print).toHaveBeenCalledTimes(1);
+  });
+
+  it('lässt den Gesamtpreis leer, wenn nur die Menge fehlt', async () => {
+    // Preis vorhanden, Menge nicht: `index.totalPrice` steht dann auf 0. Auf
+    // dem Blatt wäre das ein Nullpreis — und stünde stillschweigend in der
+    // Summe, ohne dass die Fußzeile es nennt.
+    render(
+      <ViewerProvider>
+        <WithLv
+          datei={lvMit([
+            position('01.001.0010'),
+            position('01.001.0020', { quantity: null, unitPrice: 80 }),
+          ])}
+        />
+      </ViewerProvider>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'laden' }));
+    act(() => {
+      window.dispatchEvent(new Event('beforeprint'));
+    });
+
+    const druck = document.querySelector('.nur-druck') as HTMLElement;
+    const zeilen = within(druck).getAllByRole('row').slice(1, -1);
+    expect(within(zeilen[1]).getAllByRole('cell')[4].textContent).toContain('80');
+    expect(within(zeilen[1]).getAllByRole('cell')[5].textContent).toBe('');
+
+    const fuss = druck.querySelector('tfoot')?.textContent ?? '';
+    expect(fuss).toContain('Summe über 1 Position von 2 · 1 ohne Gesamtpreis');
+    // …und die 0 steckt nicht in der Summe: 10 × 100 € und sonst nichts.
+    expect(fuss).toContain('1.000,00 €');
   });
 
   it('druckt nach einer Suche nur die Treffer', async () => {

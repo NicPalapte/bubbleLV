@@ -13,7 +13,7 @@
 import { useEffect, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { formatEuro, formatNumber, formatPositions } from '../../lib/format';
-import { filterMask } from '../../lib/index/positionIndex';
+import { filterMask, type PositionIndex } from '../../lib/index/positionIndex';
 import { canonicalUnit, unitLabel } from '../../lib/units';
 import { useViewer } from '../../state/viewer';
 
@@ -37,6 +37,14 @@ function usePrinting(): boolean {
   return printing;
 }
 
+/**
+ * Trägt die Zeile einen Gesamtpreis? Nur wenn Menge **und** Einheitspreis da
+ * sind — dieselbe Regel wie im CSV-Export (lib/export/positions.ts).
+ */
+function hatGesamtpreis(index: PositionIndex, slot: number): boolean {
+  return Number.isFinite(index.quantity[slot]) && Number.isFinite(index.unitPrice[slot]);
+}
+
 export function PrintView() {
   const { lv, index, active } = useViewer();
   const printing = usePrinting();
@@ -44,13 +52,17 @@ export function PrintView() {
 
   const mask = active.filtering ? filterMask(index, active) : null;
   const zeilen: number[] = [];
-  let ohnePreis = 0;
+  let mitPreisen = false;
+  let ohneGesamt = 0;
   for (let i = 0; i < index.size; i++) {
     if (mask !== null && mask[i] !== 1) continue;
     zeilen.push(i);
-    if (!Number.isFinite(index.unitPrice[i])) ohnePreis++;
+    if (Number.isFinite(index.unitPrice[i])) mitPreisen = true;
+    // Ein Gesamtpreis braucht **beide** Werte. Fehlt nur die Menge, steht in
+    // `index.totalPrice` trotzdem eine 0 (`lineTotal` in buildTree.ts) — die
+    // wäre auf dem Blatt ein Nullpreis statt „keine Angabe".
+    if (!hatGesamtpreis(index, i)) ohneGesamt++;
   }
-  const mitPreisen = ohnePreis < zeilen.length;
   // Ohne Preise in der Datei (x83) fallen beide Preisspalten weg, statt als
   // leere Spalten aufs Blatt zu kommen — wie im Überblick, der dann Anzahl
   // statt Summe misst.
@@ -60,7 +72,10 @@ export function PrintView() {
   // Summe über genau die gedruckten Zeilen — die Zahl, wegen der ein LV
   // überhaupt ausgedruckt wird. Mengen werden nicht summiert: sie mischen
   // Einheiten (docs/decisions/0019-mengen-nur-je-einheit.md).
-  const summe = zeilen.reduce((sum, slot) => sum + index.totalPrice[slot], 0);
+  const summe = zeilen.reduce(
+    (sum, slot) => (hatGesamtpreis(index, slot) ? sum + index.totalPrice[slot] : sum),
+    0,
+  );
 
   return (
     <div className="nur-druck">
@@ -104,7 +119,7 @@ export function PrintView() {
                       {position.unitPrice === null ? '' : formatEuro(position.unitPrice)}
                     </td>
                     <td className="whitespace-nowrap border-b border-grid px-[4px] py-[2px] text-right align-top">
-                      {position.unitPrice === null ? '' : formatEuro(index.totalPrice[slot])}
+                      {hatGesamtpreis(index, slot) ? formatEuro(index.totalPrice[slot]) : ''}
                     </td>
                   </>
                 )}
@@ -120,8 +135,8 @@ export function PrintView() {
                     Summe. Auf Papier lässt sich das nicht nachträglich prüfen,
                     also muss die Fußzeile es benennen — wie die Kachel „ohne
                     EP" im Überblick. */}
-                Summe über {formatPositions(zeilen.length - ohnePreis)}
-                {ohnePreis > 0 && ` von ${zeilen.length} · ${ohnePreis} ohne Preis`}
+                Summe über {formatPositions(zeilen.length - ohneGesamt)}
+                {ohneGesamt > 0 && ` von ${zeilen.length} · ${ohneGesamt} ohne Gesamtpreis`}
               </td>
               <td className="whitespace-nowrap border-t border-line px-[4px] py-[3px] text-right font-semibold">
                 {formatEuro(summe)}
