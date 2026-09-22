@@ -4,10 +4,28 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import App from '../../src/App';
 
 const FIXTURE_DIR = resolve(process.cwd(), 'tests/fixtures');
+
+// jsdom misst jedes Element mit 0×0 — dann läge der ganze Graph außerhalb des
+// Ausschnitts und es würde keine einzige Bubble gezeichnet.
+beforeAll(() => {
+  Element.prototype.getBoundingClientRect = function rect(): DOMRect {
+    return {
+      width: 1200,
+      height: 800,
+      top: 0,
+      left: 0,
+      bottom: 800,
+      right: 1200,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect;
+  };
+});
 
 async function ladeTabelle(): Promise<void> {
   render(<App />);
@@ -90,6 +108,37 @@ describe('Vergleich', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'IN DER TABELLE' })[0]);
     expect(screen.getByRole('radio', { name: 'Tabelle' })).toHaveAttribute('aria-checked', 'true');
     expect(screen.getByRole('table', { name: 'Positionen' })).toBeInTheDocument();
+  });
+
+  it('sammelt auch per Strg-Klick im Baum', async () => {
+    await ladeTabelle();
+    // Positionen stehen im Baum erst unter einem aufgeklappten Abschnitt.
+    fireEvent.click(screen.getByRole('button', { name: 'Alle aufklappen' }));
+    const baum = screen.getByRole('tree');
+    // Positionszeilen sind die Blätter — sie tragen kein `aria-expanded`.
+    const position = within(baum)
+      .getAllByRole('treeitem')
+      .find((zeile) => !zeile.hasAttribute('aria-expanded'));
+    expect(position).toBeDefined();
+    fireEvent.click(position as HTMLElement, { ctrlKey: true });
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Vergleich' }));
+    expect(kopfzeile()).toContain('1 Position nebeneinander');
+  });
+
+  it('sammelt auch per Strg-Klick im Graphen', async () => {
+    await ladeTabelle();
+    fireEvent.click(screen.getByRole('radio', { name: 'Graph' }));
+    // Positionen erscheinen erst unter offenen Abschnitten, und der Ausschnitt
+    // muss sie danach auch zeigen.
+    fireEvent.click(screen.getByTitle('Alles ausklappen'));
+    fireEvent.click(screen.getByTitle('Alles einpassen'));
+    const punkte = document.querySelectorAll('[data-tier="position"]');
+    expect(punkte.length).toBeGreaterThan(0);
+    fireEvent.click(punkte[0], { ctrlKey: true });
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Vergleich' }));
+    expect(kopfzeile()).toContain('1 Position nebeneinander');
   });
 
   it('lässt den Filter und die Auswahl unangetastet', async () => {
