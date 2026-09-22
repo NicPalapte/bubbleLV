@@ -114,7 +114,9 @@ function draft(positions: readonly PositionDraft[]): LVDraft {
       {
         number: '01',
         label: 'Los',
-        sections: [{ number: '01.001', label: 'Abschnitt', sections: [], positions: [...positions] }],
+        sections: [
+          { number: '01.001', label: 'Abschnitt', sections: [], positions: [...positions] },
+        ],
       },
     ],
   };

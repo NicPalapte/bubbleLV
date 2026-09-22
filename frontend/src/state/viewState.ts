@@ -14,14 +14,7 @@ import type { ColumnConfig } from '../lib/table/columns';
 import type { MatrixMeasure } from '../lib/matrix/model';
 import type { FocusGroupBy } from '../lib/graph/focusTree';
 
-export type ViewMode =
-  | 'overview'
-  | 'graph'
-  | 'table'
-  | 'matrix'
-  | 'check'
-  | 'similar'
-  | 'compare';
+export type ViewMode = 'overview' | 'graph' | 'table' | 'matrix' | 'check' | 'similar' | 'compare';
 export type SizeModeId = 'count' | 'cost' | 'quantity' | 'uniform';
 /**
  * Was der Graph mit den Treffern macht, solange gefiltert wird (WP-Q, Issue #60):
