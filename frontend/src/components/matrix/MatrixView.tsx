@@ -30,8 +30,15 @@ const MEASURES: ReadonlyArray<{ value: MatrixMeasure; label: string }> = [
   { value: 'summe', label: 'Summe' },
 ];
 
-/** Ton einer Zelle. `value` von 0 bleibt farblos — nichts ist nichts. */
+/**
+ * Ton einer Zelle. Ein Wert von 0 bleibt farblos — nichts ist nichts.
+ *
+ * Negative Summen gibt es wirklich (Abzugspositionen, Nachlässe führen einen
+ * negativen Einheitspreis). Sie bekommen einen eigenen Ton statt der weißen
+ * Fläche: sonst sähe ein Abzug aus wie eine Kombination, die es nicht gibt.
+ */
 function heatOf(value: number, max: number): string {
+  if (value < 0) return 'var(--redS)';
   if (value <= 0 || max <= 0) return 'var(--white)';
   // Wurzel statt linear: ohne sie verschwände alles neben der einen großen
   // Zelle, die ein LV fast immer hat, in derselben blassen Stufe.
@@ -173,9 +180,14 @@ export function MatrixView() {
             </div>
           </div>
 
-          {measure === 'menge' && model.measure !== 'menge' && (
+          {/* Der Zellwert kann still zurückfallen, wenn ein Filter die
+              Grundlage wegnimmt. Dann muss dastehen, warum — für beide
+              Rückfälle, nicht nur für den der Mengen. */}
+          {model.measure !== measure && (
             <p className="mt-[6px] font-mono text-[9.5px] text-mute">
-              MENGEN NUR INNERHALB EINER EINHEIT — DER FILTER MISCHT MEHRERE, DESHALB ANZAHL
+              {measure === 'menge'
+                ? 'MENGEN NUR INNERHALB EINER EINHEIT — DER FILTER MISCHT MEHRERE, DESHALB ANZAHL'
+                : 'KEINE PREISE IM AKTUELLEN FILTER — DESHALB ANZAHL'}
             </p>
           )}
           {model.multiValued && (

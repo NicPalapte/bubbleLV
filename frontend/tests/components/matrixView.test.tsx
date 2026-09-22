@@ -213,6 +213,15 @@ function WithLv({ datei }: { datei: LoadedLV }) {
       <button type="button" onClick={() => dispatch({ type: 'matrixMeasure', value: 'menge' })}>
         mengen
       </button>
+      <button type="button" onClick={() => dispatch({ type: 'matrixMeasure', value: 'summe' })}>
+        summen
+      </button>
+      <button
+        type="button"
+        onClick={() => dispatch({ type: 'setFacet', facetId: 'einheit', values: new Set(['m2']) })}
+      >
+        nur m2
+      </button>
       <MatrixView />
     </>
   );
@@ -233,5 +242,70 @@ describe('Matrix · Zelle ohne Menge', () => {
     expect(zelle.textContent).toBe('0');
     // …und sie ist nicht die Lücke: die trüge den Hinweis „kommt nicht vor".
     expect(zelle.getAttribute('title')).not.toContain('kommt nicht vor');
+  });
+});
+
+// ── Rückfall auf „Anzahl" und negative Summen ────────────────────────────────
+
+/** Eine Position mit Preis, eine ohne — oder eine mit Abzug. */
+function preisPosition(oz: string, unit: string, unitPrice: number | null) {
+  return {
+    oz,
+    shortText: 'Innenwand herstellen',
+    longText: 'Herstellen einer tragenden Innenwand aus Beton.',
+    unit,
+    quantity: 10,
+    unitPrice,
+    positionType: 'NORMAL' as const,
+    attributes: {},
+  };
+}
+
+function lvMit(positionen: ReturnType<typeof preisPosition>[]): LVDraft {
+  return {
+    projectName: 'Rückfall-Test',
+    client: null,
+    lots: [
+      {
+        number: '01',
+        label: 'Los',
+        sections: [{ number: '01.001', label: 'Abschnitt', sections: [], positions: positionen }],
+      },
+    ],
+  };
+}
+
+function zeige(draft: LVDraft): void {
+  render(
+    <ViewerProvider>
+      <WithLv datei={classifyAndBuild(draft, 'rueckfall.x83')} />
+    </ViewerProvider>,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'laden' }));
+}
+
+describe('Matrix · stiller Rückfall und Abzüge', () => {
+  it('sagt auch beim Zellwert „Summe", warum plötzlich Anzahl dasteht', () => {
+    zeige(
+      lvMit([preisPosition('01.001.0010', 'm3', 100), preisPosition('01.001.0020', 'm2', null)]),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'summen' }));
+    expect(screen.getByText(/Zellwert: Summe/)).toBeInTheDocument();
+
+    // Der Filter lässt nur Positionen ohne Preis übrig — die Ansicht rechnet
+    // dann Anzahl und muss sagen, warum.
+    fireEvent.click(screen.getByRole('button', { name: 'nur m2' }));
+    expect(screen.getByText(/KEINE PREISE IM AKTUELLEN FILTER/)).toBeInTheDocument();
+    expect(screen.getByText(/Zellwert: Anzahl/)).toBeInTheDocument();
+  });
+
+  it('kennzeichnet eine negative Summe, statt sie wie eine Lücke aussehen zu lassen', () => {
+    zeige(lvMit([preisPosition('01.001.0010', 'm3', -50)]));
+    fireEvent.click(screen.getByRole('button', { name: 'summen' }));
+
+    const zelle = screen.getByTitle(/× .* · 1 Position ·/);
+    expect(zelle.textContent).toContain('-500');
+    // Abzugsposition: eigener Ton statt der weißen Fläche einer Lücke.
+    expect(zelle.style.background).toBe('var(--redS)');
   });
 });

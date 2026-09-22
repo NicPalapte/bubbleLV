@@ -32,6 +32,12 @@ Drei Dinge sind dabei nicht selbstverständlich und mussten entschieden werden:
 - **Eigene Farbskala** in fünf Stufen (`--heat-1` … `--heat-5` in
   `frontend/src/index.css`), Cyan statt Blau. Die Stufen folgen der Wurzel des
   Anteils am größten Zellwert.
+- **Jede vorhandene Zelle trägt eine Zahl**, auch die 0. Leer ist nur, was es
+  nicht gibt („·").
+- **Negative Summen** (Abzugspositionen, Nachlässe) bekommen einen eigenen Ton
+  (`--redS`) statt der weißen Fläche einer Lücke.
+- **Fällt der Zellwert zurück**, weil ein Filter die Grundlage wegnimmt, steht
+  der Grund über dem Raster — für Mengen wie für Summen.
 - **Mengen als Zellwert** gelten weiter nur innerhalb einer Einheit
   (Entscheidung 0019); mischt der Filter Einheiten, ist der Knopf gesperrt.
   Ohne Preise in der Datei ist „Summe" gesperrt.
