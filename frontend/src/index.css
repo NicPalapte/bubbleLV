@@ -285,3 +285,35 @@ a:hover {
   outline: 2px solid var(--blueD);
   outline-offset: 1px;
 }
+
+/* ── Drucken (WP-P, Schritt 4) ───────────────────────────────────────────────
+   Auf dem Bildschirm gibt es die Druckansicht nicht, beim Drucken nur sie.
+   Gedruckt wird die gefilterte Liste — components/print/PrintView.tsx erklärt,
+   warum das eine eigene Tabelle ist und nicht die virtualisierte. ── */
+@media screen {
+  .nur-druck {
+    display: none;
+  }
+}
+
+@media print {
+  .nur-bildschirm {
+    display: none !important;
+  }
+
+  html,
+  body {
+    height: auto;
+    background: #fff;
+  }
+
+  /* Kopfzeilen der Tabelle wiederholen sich auf jeder Seite, und eine Zeile
+     wird nicht mitten durchgeschnitten. */
+  thead {
+    display: table-header-group;
+  }
+
+  tr {
+    break-inside: avoid;
+  }
+}

@@ -19,6 +19,7 @@ import { TopBar } from '../components/layout/TopBar';
 import { Tree } from '../components/layout/Tree';
 import { MatrixView } from '../components/matrix/MatrixView';
 import { OverviewView } from '../components/overview/OverviewView';
+import { PrintView } from '../components/print/PrintView';
 import { SimilarView } from '../components/relate/SimilarView';
 import { PositionsTable } from '../components/table/PositionsTable';
 import { FileDropzone } from '../components/upload/FileDropzone';
@@ -68,7 +69,11 @@ export function ViewerPage() {
 
   return (
     <ViewTiming view={tree === null ? 'leer' : viewMode}>
-      <div className="flex h-full flex-col bg-paper">
+      {/* Die Druckansicht steht daneben, nicht darin: beim Drucken tritt die
+          ganze Bildschirm-Hülle zurück (Kopfleiste, Baum, Panels), damit das
+          Blatt die Liste trägt und nicht die Bedienung. */}
+      <PrintView />
+      <div className="nur-bildschirm flex h-full flex-col bg-paper">
         <header>
           <TopBar />
           <FilterStrip />

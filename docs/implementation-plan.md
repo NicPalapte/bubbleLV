@@ -496,23 +496,34 @@ Schritte:
 2. **Zustand im URL-Fragment** (`#...`): aktive Ansicht, Filter, Auswahl. Ein Fragment
    wird von Browsern **nie** an einen Server gesendet — die Regel „keine Fachdaten nach
    draußen" bleibt gewahrt. Kurz in der Entscheidung festhalten.
-3. **Lokaler Export**: gefilterte Positionsliste und Prüf-Hinweise als CSV oder
-   Markdown, erzeugt als Blob im Browser.
-4. **Druckansicht** über Print-CSS für die gefilterte Menge.
+3. ✅ **Lokaler Export**: gefilterte Positionsliste als CSV (alle Spalten,
+   Semikolon und BOM für Excel) und Prüf-Hinweise als Markdown, erzeugt als Blob
+   im Browser (`lib/export/`).
+4. ✅ **Druckansicht** für die gefilterte Menge — als **eigene, unvirtualisierte**
+   Tabelle (`components/print/PrintView.tsx`), gezeichnet erst bei `beforeprint`.
+   Print-CSS über die Positionstabelle hätte nur das sichtbare Fenster gedruckt.
+   Ohne Preise fallen die Preisspalten weg, mit Preisen steht eine Summe über
+   genau die gedruckten Zeilen darunter.
 5. Tastaturbedienung in allen Ansichten (Auswahl mit Pfeiltasten, Enter öffnet).
-6. **Fehler melden** (Issue #57): ein Knopf öffnet ein vorbefülltes GitHub-Issue in
+6. ✅ **Fehler melden** (Issue #57): ein Knopf öffnet ein vorbefülltes GitHub-Issue in
    einem neuen Tab — Browser, App-Version, Fehlermeldung. **Keine Fachdaten aus der
    geladenen Datei**, kein Dateiname, keine Positionstexte. Der Nutzer sieht den Text
    vor dem Absenden und schickt ihn selbst ab. Begründung und die abgelehnte
    Nutzungsmessung: [`decisions/0017`](decisions/0017-keine-nutzungsmessung.md).
 
+Die Schritte 3, 4 und 6 stehen (Menü „Mitnehmen" in der Kopfleiste); Begründungen
+und verworfene Wege: [`decisions/0022`](decisions/0022-export-und-druck-ohne-request.md).
+Offen sind die Schritte 1, 2 und 5.
+
 **Fertig, wenn:**
 - Ein geteilter Link stellt Ansicht und Filter wieder her, sobald dieselbe Datei geladen
   ist — ohne Fachdaten im Link außer der OZ der Auswahl.
-- Der Export enthält genau die gefilterte Menge.
-- Im Netzwerk-Tab ist bei Export und Druck kein Request zu sehen.
-- Der Melde-Knopf erzeugt einen GitHub-Link ohne einen einzigen Inhalt aus der geladenen
-  Datei (Test über die erzeugte URL).
+- ✅ Der Export enthält genau die gefilterte Menge (`tests/export/positions.test.ts`,
+  `tests/components/exportMenu.test.tsx`).
+- ✅ Im Netzwerk-Tab ist bei Export und Druck kein Request zu sehen
+  (`tests/export/download.test.ts`; zusätzlich im Browser gegengeprüft).
+- ✅ Der Melde-Knopf erzeugt einen GitHub-Link ohne einen einzigen Inhalt aus der geladenen
+  Datei (Test über die erzeugte URL: `tests/export/issueLink.test.ts`).
 
 ---
 
