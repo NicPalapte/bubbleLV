@@ -19,6 +19,10 @@ Zusage aus Versehen bricht.
   Nicht-Treffern und die **OZ** der gewählten Position.
 - **Nicht im Link:** Dateiname, Projektname, Kurz- oder Langtexte, Mengen,
   Preise, Prüf-Hinweise. Ein Link ohne dieselbe Datei ist nutzlos — so gewollt.
+- **Einzelne Filterwerte stehen wörtlich so in der Datei:** die Facetten
+  `normen` und `beton` sind die Bezeichnung aus dem Langtext („DIN EN
+  1992-1-1", „C30/37"), und in der Suche steht, was jemand getippt hat. Das
+  bleibt drin.
 - Geschrieben wird mit `history.replaceState`, entprellt (300 ms).
 - Gelesen wird **einmal je Session**, sobald die erste Datei geladen ist: der
   Link kommt vor der Datei, und erst nach dem Laden gibt es etwas zu filtern.
@@ -36,9 +40,13 @@ Zusage aus Versehen bricht.
   noch im `Referer`. Selbst wenn die App irgendwann unter einer fremden Adresse
   liegt, bleibt der Zustand lokal. Eine Query (`?filter=…`) stünde dagegen in
   jedem Server-Log.
-- **Die OZ ist das einzige Stück Datei im Link,** und sie ist der Preis dafür,
-  dass „schau dir das hier an" überhaupt teilbar ist. Sie steht ohnehin in dem
-  Satz, den man danebenschreibt.
+- **Die OZ ist der Preis dafür, dass „schau dir das hier an" überhaupt
+  teilbar ist.** Sie steht ohnehin in dem Satz, den man danebenschreibt.
+- **Normnummer und Betongüte bleiben im Link,** obwohl sie wörtlich aus dem
+  Langtext kommen: ohne sie wäre „schau dir die C30/37-Positionen an" nicht
+  teilbar, und das ist der halbe Zweck der Sache. Es sind Bezeichnungen aus
+  einem Normenwerk, nicht die Daten des Projekts — der Unterschied zu
+  Kurztext, Menge und Preis, die draußen bleiben.
 - **`replaceState` statt `pushState`:** jeder Tastendruck in der Suche erzeugte
   sonst einen History-Eintrag, und die Zurück-Taste führte durch hundert
   Zwischenstände statt aus der App heraus.
@@ -69,7 +77,9 @@ Zusage aus Versehen bricht.
 
 - Für den Repo-Owner ändert sich nichts an der Einrichtung.
 - Die Adresszeile ändert sich beim Arbeiten. Wer einen Link kopiert, teilt
-  seinen Blick auf das LV — die Datei muss der Empfänger selbst haben.
+  seinen Blick auf das LV: Ansicht, Filter, gewählte Position — darunter der
+  Suchbegriff und, wenn danach gefiltert wird, eine Normnummer oder Betongüte
+  aus dem Text. Die Datei muss der Empfänger selbst haben.
 - Neue Datei im selben Tab: die Adresszeile fängt leer an. Filter und Auswahl
   aus dem alten Link greifen nicht auf die neue Datei über — ein Import
   ersetzt den kompletten Stand, auch den im Link.

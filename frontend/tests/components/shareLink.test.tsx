@@ -121,7 +121,7 @@ describe('Geteilter Link · lesen', () => {
 });
 
 describe('Was im Link steht', () => {
-  it('trägt aus der Datei nur die OZ der Auswahl', async () => {
+  it('trägt weder Dateinamen noch Projektnamen — und keine Position ohne Auswahl', async () => {
     await ladeApp();
     fireEvent.click(screen.getByRole('radio', { name: 'Tabelle' }));
     fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'Beton' } });

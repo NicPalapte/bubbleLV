@@ -8,12 +8,18 @@
 //
 // **Was im Link steht:** die Ansicht, die Filter (Facetten, Suche,
 // Mengenbereich, Umgang mit Nicht-Treffern) und die OZ der gewählten Position.
-// Die OZ ist das einzige Stück Datei im Link — ohne sie wäre „schau dir das
-// hier an" nicht teilbar, und sie steht ohnehin schon im Text, den man
-// danebenschreibt.
 //
-// **Was nicht drin steht:** Dateiname, Projektname, Texte, Mengen, Preise.
-// Ein Link ohne dieselbe Datei ist nutzlos — und genau so ist es gewollt.
+// Ein Teil davon stammt aus der Datei, und zwar mehr als nur die OZ: die
+// Facetten `normen` und `beton` tragen die Bezeichnung, die im Langtext steht
+// („DIN EN 1992-1-1", „C30/37"), und in der Suche steht, was jemand getippt
+// hat — oft ein Wort aus dem Kurztext. Das ist gewollt, denn genau dafür teilt
+// man einen Link („schau dir die C30/37-Positionen an"), und es sind
+// Normbezeichnungen, keine Projektdaten. Wer einen Link weitergibt, gibt seinen
+// Blick auf das LV weiter — das ist der Zweck.
+//
+// **Was nicht drin steht:** Dateiname, Projektname, Kurz- und Langtexte,
+// Mengen, Preise, Prüf-Hinweise. Ein Link ohne dieselbe Datei ist nutzlos —
+// und genau so ist es gewollt.
 
 import { FACETS_BY_ID } from '../facets';
 import type { Range } from '../matchPos';

@@ -95,13 +95,23 @@ describe('decodeShared · fremde Links', () => {
 });
 
 describe('Was im Link steht', () => {
-  it('trägt aus der Datei nur die OZ', () => {
-    // Kein Dateiname, kein Projektname, kein Text, keine Menge, kein Preis:
-    // ein Link ohne dieselbe Datei ist nutzlos — genau so ist es gewollt.
+  it('trägt keinen Dateinamen, keinen Text, keine Menge, keinen Preis', () => {
+    // Ein Link ohne dieselbe Datei ist nutzlos — genau so ist es gewollt.
     const fragment = encodeShared(
       zustand({ view: 'table', facets: { gewerk: ['Betonarbeiten'] }, oz: '001.004.0030' }),
     );
     const schluessel = fragment.split('~').map((teil) => teil.split('=')[0]);
     expect(new Set(schluessel)).toEqual(new Set(['v', 'f.gewerk', 'p']));
+  });
+
+  it('trägt Normnummer und Betongüte mit — dafür teilt man den Link', () => {
+    // Beide Werte stehen wörtlich im Langtext. Sie bleiben trotzdem drin:
+    // ohne sie wäre „schau dir die C30/37-Positionen an" nicht teilbar
+    // (docs/decisions/0023-zustand-im-url-fragment.md).
+    const fragment = decodeURIComponent(
+      encodeShared(zustand({ facets: { normen: ['DIN EN 1992-1-1'], beton: ['C30/37'] } })),
+    );
+    expect(fragment).toContain('DIN EN 1992-1-1');
+    expect(fragment).toContain('C30/37');
   });
 });
