@@ -17,10 +17,10 @@ export type ViewMode = 'overview' | 'graph' | 'table' | 'check' | 'similar';
 export type SizeModeId = 'count' | 'cost' | 'uniform';
 /**
  * Was der Graph mit den Treffern macht, solange gefiltert wird (WP-Q, Issue #60):
- * `structure` hebt sie im LV-Baum hervor, `isolate` zeigt nur sie — neu nach
- * Gruppen sortiert —, `split` beides nebeneinander.
+ * `structure` zeigt den ganzen Graphen mit hervorgehobenen Treffern, `isolate`
+ * nur die Treffer, neu nach Gruppen sortiert.
  */
-export type GraphFocus = 'structure' | 'isolate' | 'split';
+export type GraphFocus = 'structure' | 'isolate';
 export type TableScope = 'node' | 'lv';
 
 /**

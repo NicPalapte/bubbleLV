@@ -12,18 +12,13 @@ import type { LVNode } from '../../types/lvNode';
 const FOCUS_OPTIONS: ReadonlyArray<{ value: GraphFocus; label: string; title: string }> = [
   {
     value: 'structure',
-    label: 'STRUKTUR',
-    title: 'Treffer im LV-Baum hervorheben — die Gliederung bleibt stehen.',
+    label: 'GESAMTER GRAPH',
+    title: 'Das ganze LV zeigen, Treffer darin hervorheben.',
   },
   {
     value: 'isolate',
-    label: 'ISOLIEREN',
+    label: 'ISOLATION',
     title: 'Nur die Treffer zeigen, neu gebündelt — alles andere tritt weg.',
-  },
-  {
-    value: 'split',
-    label: 'GETEILT',
-    title: 'Links die Struktur, rechts die isolierten Treffer — eine Auswahl.',
   },
 ];
 

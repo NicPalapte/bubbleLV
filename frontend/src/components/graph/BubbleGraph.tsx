@@ -72,16 +72,9 @@ interface BubbleGraphProps {
    * Viewer-Zustand.
    */
   focus?: FocusGraph;
-  /**
-   * Ob dieser Graph den zuletzt verlassenen Ausschnitt wieder aufnimmt.
-   * In der geteilten Ansicht nicht: der gemerkte Ausschnitt stammt aus einer
-   * doppelt so breiten Canvas, der Graph stünde halb außerhalb. Beide Hälften
-   * passen sich stattdessen selbst ein.
-   */
-  remembersViewport?: boolean;
 }
 
-export function BubbleGraph({ root: lvRoot, focus, remembersViewport = true }: BubbleGraphProps) {
+export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
   const {
     filter: { hideMode },
     selection: { hoveredNodeId },
@@ -97,8 +90,8 @@ export function BubbleGraph({ root: lvRoot, focus, remembersViewport = true }: B
   const { sizeMode } = graph;
 
   const isolated = focus !== undefined;
-  /** Nur ein Graph, der für sich allein steht, merkt sich seinen Ausschnitt. */
-  const remembers = remembersViewport && !isolated;
+  /** Nur der ganze Graph nimmt den zuletzt verlassenen Ausschnitt wieder auf. */
+  const remembers = !isolated;
   const root = focus?.tree ?? lvRoot;
   const matches = focus?.matches ?? lvMatches;
   const openNodes = focus?.openNodes ?? lvOpenNodes;

@@ -335,18 +335,18 @@ Eigenschaften-Panel. Sobald der Vergleich steht, führt er dorthin.
 **Ziel:** Der Graph beantwortet drei Fragen auf einen Blick: Wo steckt das Geld? Wo
 sitzen meine Treffer? Was steht hinter dieser Bubble? Deckt Issue #51 und Issue #60 ab.
 
-**Vorgabe des Owners zu Issue #60:** beides bauen — Treffer im Baum hervorheben **und**
-Treffer isolieren — mit einem Umschalter dazwischen; die Isolation lässt sich zusätzlich
-neben dem Baum einblenden.
+**Vorgabe des Owners zu Issue #60:** beides bauen — Treffer im ganzen Graphen
+hervorheben **und** Treffer isolieren — mit einem Umschalter dazwischen. Eine geteilte
+Ansicht war zunächst gebaut und wurde nach dem Ausprobieren wieder verworfen
+([`decisions/0018`](decisions/0018-graph-treffer-isolation.md)).
 
 Schritte:
 
 1. ✅ **Trefferansicht umschaltbar.** Zustand `view.graph.focus` in
-   `src/state/viewState.ts`: `'structure' | 'isolate' | 'split'`.
-   - `structure` — heutiger Stand: Baumstruktur, Treffer hervorgehoben, Rest gedämpft.
-   - `isolate` — nur Treffer, neu gruppiert (Schritt 2). Die Struktur tritt zurück.
-   - `split` — geteilte Fläche: links Struktur, rechts Isolation, **eine** Auswahl und
-     **ein** Zoom-Zustand je Seite.
+   `src/state/viewState.ts`: `'structure' | 'isolate'`.
+   - `structure` („Gesamter Graph") — heutiger Stand: das ganze LV, Treffer
+     hervorgehoben, Rest gedämpft.
+   - `isolate` („Isolation") — nur Treffer, neu gruppiert (Schritt 2).
    Umschalter im Graph-Kopf, nur bedienbar, solange Filter oder Suche aktiv sind; ohne
    Treffer fällt die Ansicht auf `structure` zurück. Der Umschalter ändert **nie** den
    Filter — Regel „ein Filterzustand, alle Ansichten" bleibt unberührt.
@@ -379,8 +379,8 @@ Schritte:
 [`decisions/0018`](decisions/0018-graph-treffer-isolation.md). Kern ist
 `src/lib/graph/focusTree.ts`: die Isolation ist ein **synthetischer `LVNode`-Baum**
 (Wurzel → Gruppen → Treffer) und läuft durch dasselbe Layout und denselben Renderer
-wie die Struktur — kein zweiter Graph. Die Positionsknoten darin sind dieselben
-Objekte wie im echten Baum, deshalb gelten Auswahl und Farben in beiden Hälften.
+wie der ganze Graph — kein zweiter Graph. Die Positionsknoten darin sind dieselben
+Objekte wie im echten Baum, deshalb bleiben Auswahl und Farben beim Umschalten stehen.
 Tests: `tests/graph/focusTree.test.ts`, `tests/components/graphFocus.test.tsx`.
 
 **Abweichung zu Schritt 2:** Gebündelt wird nach Bauteiltyp statt nach „der Facette,
@@ -395,8 +395,6 @@ mit Schritt 5.
 - Eine Suche mit wenigen Treffern in einem 10k-LV zeigt in `isolate` nur diese Treffer,
   gruppiert und sortiert; ein Umschalten nach `structure` und zurück ändert weder
   Filter noch Auswahl.
-- `split` zeigt beide Seiten gleichzeitig; eine Auswahl links markiert dieselbe Position
-  rechts.
 - Positions-Bubbles tragen ab mittlerem Zoom ein lesbares Stichwort, und die größte
   Position eines Abschnitts ist ohne Zoomen zu finden.
 - Klick auf eine Bubble landet in der zugehörigen Tabellenzeile.

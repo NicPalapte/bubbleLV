@@ -1,4 +1,4 @@
-# 0018 – Treffer im Graphen: drei Ansichten statt einer
+# 0018 – Treffer im Graphen: isolieren oder im Ganzen zeigen
 
 - **Status:** akzeptiert
 - **Datum:** 2026-09-22
@@ -16,13 +16,12 @@ andere soll weg.
 
 ## Entscheidung
 
-Der Graph kennt drei Trefferansichten, umschaltbar in der Kopfleiste:
+Der Graph kennt zwei Trefferansichten, umschaltbar in der Kopfleiste:
 
 | Ansicht | Was man sieht |
 |---|---|
-| **Struktur** | wie bisher: LV-Baum, Treffer hervorgehoben |
-| **Isolieren** | nur die Treffer, neu gebündelt — die Gliederung tritt weg |
-| **Geteilt** | beides nebeneinander, eine Auswahl, ein Filter |
+| **Gesamter Graph** | wie bisher: das ganze LV, Treffer darin hervorgehoben |
+| **Isolation** | nur die Treffer, neu gebündelt — der Rest tritt weg |
 
 - Gebündelt wird nach **Abschnitt, Gewerk oder Bauteiltyp**; die größte Gruppe
   steht vorn, gemessen am eingestellten Größenmodus.
@@ -41,20 +40,24 @@ Struktur.
   Tastaturbedienung — alles, was am Graphen schon funktioniert, funktioniert
   hier sofort mit.
 - Die Positionsknoten im Isolations-Baum sind **dieselben Objekte** wie im
-  echten Baum, keine Kopien. Deshalb gilt die Auswahl in beiden Hälften der
-  geteilten Ansicht, und die Gewerk-Farben stimmen ohne Zutun.
+  echten Baum, keine Kopien. Deshalb bleibt die Auswahl beim Umschalten stehen,
+  und die Gewerk-Farben stimmen ohne Zutun.
 - Gebaut wird der Baum einmal je Filterwechsel im Provider, nicht im Render.
   Bei 10.000 Treffern kostet das wenige Millisekunden (Test in
   `tests/graph/focusTree.test.ts`).
 
 ## Verworfene Wege
 
-- **Isolation statt Struktur, ohne Umschalter:** Der Owner will beides und den
-  Wechsel dazwischen — die Struktur beantwortet „wo im LV steckt das?", die
+- **Isolation statt Ganzem, ohne Umschalter:** Der Owner will beides und den
+  Wechsel dazwischen — der ganze Graph beantwortet „wo im LV steckt das?", die
   Isolation „was habe ich eigentlich getroffen?".
-- **Treffer-Gruppen zusätzlich am Rand der Struktur:** Zwei Ordnungen in einem
-  Bild; die Kanten hätten sich gekreuzt und der Graph wäre unruhig geworden.
-  Die geteilte Ansicht zeigt dasselbe, nur sauber getrennt.
+- **Geteilte Ansicht** (beides nebeneinander, eine Auswahl): war zunächst
+  gebaut und wurde nach dem Ausprobieren wieder entfernt. Auf halber Breite ist
+  keine der beiden Hälften mehr gut lesbar, und der Umschalter beantwortet
+  dieselbe Frage in einem Schritt.
+- **Treffer-Gruppen zusätzlich am Rand des ganzen Graphen:** Zwei Ordnungen in
+  einem Bild; die Kanten hätten sich gekreuzt und der Graph wäre unruhig
+  geworden.
 - **Cluster der Ansicht „Ähnlichkeit" wiederverwenden** (WP-M): Die bündeln nach
   Textähnlichkeit, nicht nach dem Filter. Ein Treffer-Bündel muss zeigen, warum
   etwas getroffen wurde, nicht was sich ähnelt.
@@ -69,9 +72,8 @@ Struktur.
   passt den Ausschnitt auf sie ein. Der Sprung in die Tabelle kommt mit WP-Q
   Schritt 5.
 - Die Isolation merkt sich keinen Ausschnitt: ihr Baum wechselt mit jedem
-  Filterzug. Sie passt sich jedes Mal neu ein — und in der geteilten Ansicht
-  tut das auch die Strukturhälfte, weil der gemerkte Ausschnitt aus einer
-  doppelt so breiten Canvas stammt.
+  Filterzug. Sie passt sich jedes Mal neu ein. Der gemerkte Ausschnitt gehört
+  dem gesamten Graphen und steht beim Zurückschalten wieder da.
 - Mehrwertige Merkmale (etwa Expositionsklassen) taugen nicht als
   Bündelungsmerkmal: dieselbe Position läge in mehreren Gruppen. Die drei
   angebotenen Merkmale sind einwertig.
