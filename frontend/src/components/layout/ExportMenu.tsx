@@ -7,7 +7,7 @@
 // einen einzigen Inhalt aus der geladenen Datei
 // (docs/decisions/0017-keine-nutzungsmessung.md).
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Chip } from '../ui/Chip';
 import { Popover, PopoverHead, PopoverRow } from '../ui/Popover';
@@ -32,10 +32,18 @@ export function ExportMenu() {
     useCallback(() => setOpen(false), []),
   );
 
-  if (lv === null) return null;
+  // Die Maske kostet einen Durchlauf über den Positions-Index (bei 10k
+  // Positionen spürbar). Das Menü steht dauerhaft in der Kopfleiste, also
+  // rechnet es zweimal nicht: nicht bei jedem Render (useMemo) und gar nicht,
+  // solange es zu ist — gebraucht wird sie erst für die Zahl im Eintrag und
+  // den Export selbst.
+  const mask = useMemo(
+    () => (open && active.filtering ? filterMask(index, active) : null),
+    [open, index, active],
+  );
+  const anzahl = useMemo(() => (open ? exportCount(index, mask) : 0), [open, index, mask]);
 
-  const mask = active.filtering ? filterMask(index, active) : null;
-  const anzahl = exportCount(index, mask);
+  if (lv === null) return null;
 
   const positionenAlsCsv = (): void => {
     downloadText(
