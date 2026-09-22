@@ -56,13 +56,33 @@ function liste(index: PositionIndex, slot: number, key: string): string {
   return attrStrings(index.positions[slot].attributes, key).join(', ');
 }
 
+/** Zeichen, mit denen Excel und LibreOffice eine Formel beginnen lassen. */
+const FORMELSTART = /^[=+\-@\t\r]/;
+
+/** Eine Zahl, wie `zahl()` sie schreibt — die darf so bleiben. */
+const ZAHL = /^-?\d+(?:,\d+)?$/;
+
+/**
+ * Formel-Start entschärfen (CSV-Injection, CWE-1236). Texte stammen aus der
+ * geladenen Datei, und die kommt im Vergabeverfahren selten vom Leser selbst:
+ * ein Kurztext `=HYPERLINK("…")` würde beim Öffnen der Datei in Excel als
+ * Formel ausgeführt. Das führende Apostroph macht daraus wieder Text.
+ *
+ * Zahlen bleiben unangetastet: ein negativer Einheitspreis („-50") ist eine
+ * Zahl und soll in Excel auch als Zahl ankommen.
+ */
+function entschaerfen(value: string): string {
+  return FORMELSTART.test(value) && !ZAHL.test(value) ? `'${value}` : value;
+}
+
 /**
  * Ein CSV-Feld. Semikolon als Trennzeichen, weil Excel in deutscher
  * Spracheinstellung nur das als Spaltentrenner liest — mit Komma landet die
  * ganze Zeile in einer Zelle. Zeilenumbrüche im Langtext bleiben erhalten;
  * in Anführungszeichen ist das gültiges CSV.
  */
-function feld(value: string): string {
+function feld(roh: string): string {
+  const value = entschaerfen(roh);
   return /[";\n\r]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
 }
 

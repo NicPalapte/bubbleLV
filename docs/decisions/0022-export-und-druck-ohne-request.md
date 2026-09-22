@@ -21,6 +21,10 @@ Daten üblicherweise das Haus verlassen. Genau das darf hier nicht passieren.
 - **Der Export trägt alle Spalten**, nicht die gerade sichtbaren. Zeilen sind
   die gefilterte Menge.
 - **Eine fehlende Menge bleibt ein leeres Feld**, keine 0.
+- **Formel-Starts werden entschärft**: ein Feld, das mit `=`, `+`, `-`, `@` oder
+  einem Tabulator beginnt, bekommt ein führendes `'` (CSV-Injection, CWE-1236).
+  Echte Zahlen bleiben Zahlen — ein negativer Einheitspreis soll in Excel als
+  Zahl ankommen.
 - **Druck über eine eigene, unvirtualisierte Tabelle**
   (`components/print/PrintView.tsx`), gezeichnet erst bei `beforeprint`.
 - **Ohne Preise in der Datei fallen die Preisspalten weg**; mit Preisen steht
@@ -43,6 +47,10 @@ Daten üblicherweise das Haus verlassen. Genau das darf hier nicht passieren.
   auf, wenn das Blatt beim Empfänger liegt.
 - Die Druckansicht wird erst bei `beforeprint` gezeichnet: 10k Zeilen dauerhaft
   im DOM würden jede Interaktion verlangsamen (Zielwerte in docs/scope.md).
+- Die GAEB-Datei kommt im Vergabeverfahren selten von dem, der sie liest —
+  Planer, Bieter, Nachunternehmer liefern zu. Ein Kurztext `=HYPERLINK("…")`
+  würde beim Öffnen der exportierten CSV in Excel als Formel ausgeführt. Die
+  Abwehr kostet eine Zeile, der Schaden wäre der Rechner des Lesers.
 - Beim Melde-Link ist die Versuchung groß, „zur besseren Analyse" ein bisschen
   Kontext mitzugeben. Deshalb steht die erlaubte Liste an **einer** Stelle im
   Code, und ein Test prüft nicht nur „diese Werte fehlen", sondern „mehr als

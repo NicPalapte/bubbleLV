@@ -8,6 +8,8 @@ import { exportCount, positionsCsv } from '../../src/lib/export/positions';
 import { buildPositionIndex, filterMask } from '../../src/lib/index/positionIndex';
 import { EMPTY_FILTERS, prepareFilters, type Filters } from '../../src/lib/matchPos';
 import { runPipeline } from '../../src/lib/pipeline/runPipeline';
+import { buildTree } from '../../src/lib/tree/buildTree';
+import type { LVDraft, PositionDraft } from '../../src/types/lvDraft';
 
 function loadFixture() {
   const bytes = readFileSync('tests/fixtures/gaeb-xml-beispiel.x83');
@@ -89,5 +91,73 @@ describe('positionsCsv', () => {
     const csv = positionsCsv(index, null);
     expect(csv).toContain('"');
     expect(datenzeilen(csv)).toHaveLength(index.size);
+  });
+});
+
+// ── Formeln aus der Datei ────────────────────────────────────────────────────
+//
+// Die GAEB-Datei kommt im Vergabeverfahren selten von dem, der sie liest.
+// Ein Kurztext, der mit „=" beginnt, führt Excel beim Öffnen der exportierten
+// CSV als Formel aus (CSV-Injection, CWE-1236).
+
+function csvVon(positions: readonly PositionDraft[]): string[] {
+  const kleinerIndex = buildPositionIndex(buildTree(draftMit(positions)));
+  return positionsCsv(kleinerIndex, null).split('\r\n');
+}
+
+function draftMit(positions: readonly PositionDraft[]): LVDraft {
+  return {
+    projectName: 'Export-Test',
+    client: null,
+    lots: [
+      {
+        number: '01',
+        label: 'Los',
+        sections: [
+          { number: '01.001', label: 'Abschnitt', sections: [], positions: [...positions] },
+        ],
+      },
+    ],
+  };
+}
+
+function position(overrides: Partial<PositionDraft> = {}): PositionDraft {
+  return {
+    oz: '01.001.0010',
+    shortText: 'Wand herstellen',
+    longText: 'Herstellen einer Wand.',
+    unit: 'm3',
+    quantity: 10,
+    unitPrice: 100,
+    positionType: 'NORMAL',
+    attributes: {},
+    ...overrides,
+  };
+}
+
+describe('positionsCsv · Formel-Injection', () => {
+  it('entschärft einen Text, der als Formel beginnt', () => {
+    const [, zeile] = csvVon([
+      position({ shortText: '=HYPERLINK("https://evil.example","Klick")' }),
+    ]);
+    // Das Apostroph macht in Excel und LibreOffice wieder Text daraus.
+    expect(zeile).toContain(`"'=HYPERLINK`);
+    expect(zeile).not.toContain(';=HYPERLINK');
+  });
+
+  it('entschärft auch die anderen Formel-Startzeichen', () => {
+    for (const start of ['+', '-', '@', '\t']) {
+      const [, zeile] = csvVon([position({ shortText: `${start}cmd|'/c calc'!A0` })]);
+      expect(zeile.split(';')[1].startsWith(`'${start}`) || zeile.includes(`"'${start}`)).toBe(
+        true,
+      );
+    }
+  });
+
+  it('lässt eine negative Zahl eine Zahl bleiben', () => {
+    // Abzugspositionen führen einen negativen Einheitspreis — er soll in Excel
+    // als Zahl ankommen und nicht als Text mit Apostroph.
+    const [, zeile] = csvVon([position({ unitPrice: -50 })]);
+    expect(zeile.split(';')[4]).toBe('-50');
   });
 });
