@@ -20,8 +20,11 @@ Zusage aus Versehen bricht.
 - **Nicht im Link:** Dateiname, Projektname, Kurz- oder Langtexte, Mengen,
   Preise, Prüf-Hinweise. Ein Link ohne dieselbe Datei ist nutzlos — so gewollt.
 - Geschrieben wird mit `history.replaceState`, entprellt (300 ms).
-- Gelesen wird **einmal je geladener Datei**: der Link kommt vor der Datei, und
-  erst nach dem Laden gibt es etwas zu filtern.
+- Gelesen wird **einmal je Session**, sobald die erste Datei geladen ist: der
+  Link kommt vor der Datei, und erst nach dem Laden gibt es etwas zu filtern.
+- **Eine neue Datei leert den Link.** Beim Schließen des LV und beim Import
+  einer zweiten Datei verschwindet das Fragment; der alte Link wird nicht auf
+  die neue Datei angewendet.
 - **Beim Lesen wird alles geprüft.** Unbekannte Ansicht, erfundene Facette,
   verdrehter Mengenbereich: fällt weg, der Rest des Links gilt weiter.
 - Findet sich die OZ in dieser Datei nicht, bleibt die Auswahl leer — Ansicht
@@ -67,6 +70,6 @@ Zusage aus Versehen bricht.
 - Für den Repo-Owner ändert sich nichts an der Einrichtung.
 - Die Adresszeile ändert sich beim Arbeiten. Wer einen Link kopiert, teilt
   seinen Blick auf das LV — die Datei muss der Empfänger selbst haben.
-- Neue Datei im selben Tab: der Link wird beim nächsten Schreiben überschrieben.
-  Die Auswahl aus dem alten Link greift nicht auf die neue Datei über, weil die
-  OZ dort nicht gefunden wird.
+- Neue Datei im selben Tab: die Adresszeile fängt leer an. Filter und Auswahl
+  aus dem alten Link greifen nicht auf die neue Datei über — ein Import
+  ersetzt den kompletten Stand, auch den im Link.

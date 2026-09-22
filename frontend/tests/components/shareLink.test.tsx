@@ -27,13 +27,16 @@ afterEach(() => {
   setzeFragment('');
 });
 
-async function ladeApp(): Promise<void> {
-  render(<App />);
-  const name = 'gaeb-xml-beispiel.x83';
+async function ladeDatei(name: string): Promise<void> {
   fireEvent.change(screen.getByLabelText('GAEB-Datei auswählen'), {
     target: { files: [new File([readFileSync(resolve(FIXTURE_DIR, name))], name)] },
   });
   await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+}
+
+async function ladeApp(name = 'gaeb-xml-beispiel.x83'): Promise<void> {
+  render(<App />);
+  await ladeDatei(name);
 }
 
 describe('Geteilter Link · schreiben', () => {
@@ -130,5 +133,42 @@ describe('Was im Link steht', () => {
     expect(hash).not.toContain('BVBS');
     // Und keine Position, solange keine gewählt ist.
     expect(hash).not.toContain('p=');
+  });
+});
+
+describe('Geteilter Link \u00b7 zweite Datei', () => {
+  it('l\u00e4sst den Link der vorigen Datei nicht auf die n\u00e4chste \u00fcbergreifen', async () => {
+    // Ein Re-Import ersetzt den kompletten Session-Zustand
+    // (docs/architecture/data-model.md#re-import-in-derselben-session). Das
+    // Fragment der ersten Datei d\u00fcrfte sonst still weiterwirken: seine
+    // Filter geh\u00f6ren zu einer Datei, die gar nicht mehr offen ist.
+    setzeFragment('#v=table~q=Beton');
+    await ladeApp();
+    await waitFor(() =>
+      expect(screen.getByRole('radio', { name: 'Tabelle' })).toHaveAttribute(
+        'aria-checked',
+        'true',
+      ),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /LV schlie\u00dfen/ }));
+    await waitFor(() => expect(screen.getByLabelText('GAEB-Datei ausw\u00e4hlen')).toBeVisible());
+    await ladeDatei('sample.X83');
+
+    expect(screen.getByRole('radio', { name: '\u00dcberblick' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    expect(screen.getByLabelText('Suche')).toHaveValue('');
+    expect(fragment()).toBe('');
+  });
+
+  it('r\u00e4umt die Adresszeile, wenn das LV geschlossen wird', async () => {
+    await ladeApp();
+    fireEvent.click(screen.getByRole('radio', { name: 'Graph' }));
+    await waitFor(() => expect(fragment()).toContain('v=graph'));
+
+    fireEvent.click(screen.getByRole('button', { name: /LV schlie\u00dfen/ }));
+    await waitFor(() => expect(fragment()).toBe(''));
   });
 });
