@@ -9,3 +9,12 @@ if (!('ResizeObserver' in globalThis)) {
   }
   Object.defineProperty(globalThis, 'ResizeObserver', { value: ResizeObserverStub });
 }
+
+// Jeder Test beginnt mit leerer Adresszeile. Seit die App Ansicht und Filter
+// ins URL-Fragment schreibt (WP-P, Schritt 2), würde sonst der Stand des
+// vorigen Tests im Fragment stehen bleiben und beim nächsten `render(<App />)`
+// wieder angewendet — im Browser richtig (ein Reload mit Link), in einer
+// Testdatei aber ein Übergriff von einem Test auf den nächsten.
+beforeEach(() => {
+  window.history.replaceState(null, '', '/');
+});
