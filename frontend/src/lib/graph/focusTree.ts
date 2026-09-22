@@ -46,6 +46,13 @@ export interface FocusGraph {
   groupCount: number;
   hitCount: number;
   groupBy: FocusGroupBy;
+  /**
+   * Mengen je Knoten dieses Baums — Wurzel, Gruppen und Positionen. Die Karte
+   * des echten Baums (lib/graph/quantities.ts) kennt die synthetischen IDs
+   * nicht; ohne diese hier bekämen im Modus „Menge" alle Gruppen denselben
+   * Radius, und zwar ohne dass es auffiele.
+   */
+  quantities: ReadonlyMap<string, number>;
 }
 
 interface Bucket {
@@ -55,6 +62,8 @@ interface Bucket {
   ownCode: string;
   children: LVNode[];
   totalPrice: number;
+  /** Mengensumme der Gruppe — nur der Größenmodus „Menge" sortiert danach. */
+  quantity: number;
 }
 
 /** Gruppenschlüssel einer Position: Wert und Beschriftung. */
@@ -107,7 +116,10 @@ export function buildFocusTree(
 ): FocusGraph | null {
   const { groupBy, sizeMode, parents } = options;
   const buckets = new Map<string, Bucket>();
+  // Mengen dieses Baums: Positionen kommen hier dazu, Gruppen und Wurzel unten.
+  const quantities = new Map<string, number>();
   let hitCount = 0;
+  let hitQuantity = 0;
 
   for (let i = 0; i < index.size; i++) {
     if (mask[i] !== 1) continue;
@@ -115,11 +127,18 @@ export function buildFocusTree(
     const { key, label, code, ownCode } = bucketOf(groupBy, node, index.positions[i], parents);
     let bucket = buckets.get(key);
     if (bucket === undefined) {
-      bucket = { key, label, code, ownCode, children: [], totalPrice: 0 };
+      bucket = { key, label, code, ownCode, children: [], totalPrice: 0, quantity: 0 };
       buckets.set(key, bucket);
     }
     bucket.children.push(node);
     bucket.totalPrice += node.totalPrice;
+    const quantity = index.quantity[i];
+    if (Number.isFinite(quantity)) {
+      // Eine fehlende Menge ist keine Menge von null — sie steht gar nicht drin.
+      quantities.set(node.id, quantity);
+      bucket.quantity += quantity;
+      hitQuantity += quantity;
+    }
     hitCount++;
   }
 
@@ -127,6 +146,7 @@ export function buildFocusTree(
 
   const groups: LVNode[] = [];
   for (const bucket of buckets.values()) {
+    quantities.set(`${FOCUS_PREFIX}${groupBy}:${bucket.key}`, bucket.quantity);
     groups.push({
       id: `${FOCUS_PREFIX}${groupBy}:${bucket.key}`,
       kind: 'section',
@@ -144,7 +164,7 @@ export function buildFocusTree(
   // Winkelanteil und steht oben. Der Größenmodus entscheidet, was „groß" ist.
   const mode = sizeModeById(sizeMode);
   groups.sort((a, b) => {
-    const diff = mode.get(b) - mode.get(a);
+    const diff = mode.get(b, quantities) - mode.get(a, quantities);
     if (diff !== 0) return diff;
     if (b.positionCount !== a.positionCount) return b.positionCount - a.positionCount;
     return (a.label ?? '').localeCompare(b.label ?? '', 'de');
@@ -163,6 +183,8 @@ export function buildFocusTree(
     children: groups,
     position: null,
   };
+
+  quantities.set(tree.id, hitQuantity);
 
   const counts = new Map<string, number>();
   counts.set(tree.id, hitCount);
@@ -183,5 +205,6 @@ export function buildFocusTree(
     groupCount: groups.length,
     hitCount,
     groupBy,
+    quantities,
   };
 }

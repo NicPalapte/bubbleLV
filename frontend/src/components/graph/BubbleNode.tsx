@@ -13,10 +13,17 @@
 // Zähler. Die Knöpfe an den Bubbles sind entfallen: Klick auf die Bubble klappt
 // ohnehin auf, die Tabelle sitzt in der Kopfleiste (Issue #49).
 
-import { COMPACT_AT, LABEL_K, OUTSIDE_LABEL_PX, RADII } from '../../lib/graph/constants';
+import {
+  COMPACT_AT,
+  KEYWORD_AT_PX,
+  LABEL_K,
+  OUTSIDE_LABEL_PX,
+  RADII,
+} from '../../lib/graph/constants';
 import { formatCount, truncate } from '../../lib/format';
+import { keywordFor } from '../../lib/graph/keywords';
 import { codeLabelFor } from '../../lib/graph/labels';
-import type { PlacedCloud, PlacedNode } from '../../lib/graph/layoutRadial';
+import { CLOUD_SPACING, type PlacedCloud, type PlacedNode } from '../../lib/graph/layoutRadial';
 import type { LVNode } from '../../types/lvNode';
 
 interface CommonProps {
@@ -229,6 +236,14 @@ export function BubbleNode(props: BubbleProps) {
   if (placed.tier === 'position') {
     // Ein Kreis, eine Farbe, kein Rand — Hover und Fokus heben nur den Rand an.
     const showCode = active || zoom >= LABEL_K.position;
+    // Das Stichwort steht nicht ab einer festen Zoomstufe, sondern sobald der
+    // Abstand zweier Nachbarn auf dem Schirm ein Wort trägt (WP-Q, Issue #51).
+    // Ab einer festen Stufe stünden in einer dichten Wolke hundert Wörter
+    // übereinander.
+    const keyword =
+      CLOUD_SPACING * zoom >= KEYWORD_AT_PX && node.position !== null
+        ? keywordFor(node.position)
+        : '';
     return (
       <g
         transform={`translate(${placed.cx},${placed.cy})`}
@@ -263,6 +278,19 @@ export function BubbleNode(props: BubbleProps) {
             style={HALO}
           >
             {truncate(node.ownCode, 14)}
+          </text>
+        )}
+        {keyword !== '' && (
+          <text
+            textAnchor="middle"
+            y={radius + 9}
+            fontFamily="var(--sans)"
+            fontSize="7.5"
+            fill="var(--dim)"
+            strokeWidth={2.5}
+            style={HALO}
+          >
+            {truncate(keyword, 16)}
           </text>
         )}
       </g>

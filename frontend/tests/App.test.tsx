@@ -523,7 +523,8 @@ describe('Viewer', () => {
     // — nur im Graphen vorhanden (Issue #30).
     switchToView('Graph');
     const sizeModes = screen.getByRole('radiogroup', { name: 'Größe der Bubbles' });
-    expect(within(sizeModes).getAllByRole('radio').length).toBe(3);
+    // Anzahl · Gesamtpreis · Menge · Einheitlich (Menge kam mit WP-Q dazu).
+    expect(within(sizeModes).getAllByRole('radio').length).toBe(4);
 
     switchToView('Tabelle');
 

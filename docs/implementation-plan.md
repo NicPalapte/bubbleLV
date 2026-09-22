@@ -22,7 +22,7 @@ selbst anlegen.
 | WP-K | Flags und VOB-Check, Ansicht „Prüfung" | ✅ umgesetzt |
 | WP-L | Ansichts-Gerüst + Ansicht „Überblick" | ✅ umgesetzt |
 | WP-M | Beziehungen: Ähnlichkeit, Unterschiede, Ausreißer | umgesetzt |
-| WP-Q | Graph mit Mehrwert: Treffer isolieren, Stichworte, Menge, Sprung (Issues #51, #60) | Schritt 1–2 umgesetzt, 3–5 offen |
+| WP-Q | Graph mit Mehrwert: Treffer isolieren, Stichworte, Menge, Sprung (Issues #51, #60) | ✅ umgesetzt |
 | WP-N | Ansicht „Vergleich" | offen |
 | WP-O | Ansicht „Matrix" | offen |
 | WP-P | Feinschliff: Kommandopalette, URL-Zustand, Export, Druck | offen |
@@ -350,29 +350,35 @@ Schritte:
    Umschalter im Graph-Kopf, nur bedienbar, solange Filter oder Suche aktiv sind; ohne
    Treffer fällt die Ansicht auf `structure` zurück. Der Umschalter ändert **nie** den
    Filter — Regel „ein Filterzustand, alle Ansichten" bleibt unberührt.
+   **Einstieg ist `structure`** (Wunsch des Owners nach der Preview von PR #61): der
+   ganze Graph ordnet die Treffer ins LV ein, die Isolation ist der zweite Blick.
+   Dazu steht der Umschalter „Nicht-Treffer" (Hervorheben/Ausblenden) nur noch dort,
+   wo er etwas bewirkt — im Baum der Tabellenansicht und im ganzen Graphen. Die
+   Isolation zeigt ausschließlich Treffer, Überblick, Prüfung und Ähnlichkeit
+   rechnen ohnehin nur mit ihnen.
 2. ✅ **Treffer-Cluster in der Isolation.** Gruppenschlüssel umschaltbar: Abschnitt,
    Gewerk oder Bauteiltyp. Jede Gruppe ist eine Bubble mit Trefferzahl und Summe,
    Gruppen absteigend nach dem aktiven Größenmodus sortiert. Gerechnet wird auf dem
    Positions-Index aus WP-I, nicht auf dem Baum.
-3. **Positionen sortiert und beschriftet** (Issue #51). Innerhalb eines Abschnitts
+3. ✅ **Positionen sortiert und beschriftet** (Issue #51). Innerhalb eines Abschnitts
    stehen die Positionen absteigend nach dem aktiven Größenmodus — die teuerste sitzt
-   innen. Ab der mittleren Zoomstufe trägt jede Positions-Bubble neben der OZ ein
-   Stichwort aus dem Kurztext; Wortwahl über die vorhandene Textnormalisierung aus
-   `src/lib/relate/text.ts` (Stoppwörter raus, Zahlen und Einheiten maskiert), damit
-   Graph und Ähnlichkeit dieselben Worte verwenden.
-4. **Anteil sichtbar machen** (Issue #51). Abschnitts-Bubbles zeigen ihren Anteil am
+   innen. Jede Positions-Bubble trägt neben der OZ ein Stichwort aus dem Kurztext;
+   Wortwahl über die vorhandene Textnormalisierung aus `src/lib/relate/text.ts`
+   (Stoppwörter raus, Zahlen und Einheiten maskiert), damit Graph und Ähnlichkeit
+   dieselben Worte verwenden.
+4. ✅ **Anteil sichtbar machen** (Issue #51). Abschnitts-Bubbles zeigen ihren Anteil am
    Projekt in Prozent. Größenmodus **Menge** kommt dazu, wird aber nur angeboten, wenn
    die gefilterte Menge **eine einzige Einheit** hat — m³ und Stück zu addieren ergibt
    keine Zahl. Sonst ist der Modus ausgegraut und nennt den Grund.
-5. **Sprung in die Tabellenzeile** (Issue #51). Klick auf eine Positions-Bubble führt in
-   die Tabelle, scrollt auf die Zeile und öffnet das Eigenschaften-Panel — derselbe Weg
-   wie `jumpTo` in `src/components/check/CheckView.tsx` und
-   `src/components/relate/SimilarView.tsx`, dafür in eine gemeinsame Funktion gezogen.
-6. **Entscheidung festhalten:** `docs/decisions/0018-graph-treffer-isolation.md` —
-   warum drei Modi statt einem, und warum die Isolation die Struktur nicht ersetzt.
-7. **Tests:** Gruppenbildung und Sortierung als reine Funktionen in `tests/graph/`;
-   Umschalter, Sprung und der gesperrte Mengen-Modus in
-   `tests/components/bubbleGraph.test.tsx`; Laufzeit der Gruppenbildung bei 10k
+5. ✅ **Sprung in die Tabellenzeile** (Issue #51). Die Auswahlkarte im Graphen führt in
+   die Tabelle, die dort auf die Zeile scrollt — derselbe Weg wie `jumpTo` in
+   `src/components/check/CheckView.tsx` und `src/components/relate/SimilarView.tsx`,
+   dafür in `src/components/common/useJumpToPosition.ts` zusammengezogen.
+6. ✅ **Entscheidung festhalten:** `docs/decisions/0018-graph-treffer-isolation.md` —
+   warum zwei Ansichten, und warum die Isolation den ganzen Graphen nicht ersetzt.
+7. ✅ **Tests:** Gruppenbildung, Wolken-Sortierung, Stichwort und Mengen als reine
+   Funktionen in `tests/graph/`; Umschalter, Anteil, gesperrter Mengen-Modus, Sprung
+   und das Holen der Zeile in `tests/components/`; Laufzeit der Gruppenbildung bei 10k
    Positionen gegen ein Budget.
 
 **Umgesetzt (Schritt 1 und 2).** Begründung und verworfene Wege:
@@ -387,17 +393,33 @@ Tests: `tests/graph/focusTree.test.ts`, `tests/components/graphFocus.test.tsx`.
 die den Treffer erzeugt hat" — bei einer Volltextsuche gibt es keine auslösende
 Facette, die Bündelung wäre mal da und mal weg.
 
-**Offen aus Schritt 1–2:** Eine Gruppen-Bubble ist kein LV-Knoten; sie lässt sich
-einpassen, aber nicht auswählen und nicht zuklappen. Der Sprung in die Tabelle kommt
-mit Schritt 5.
+**Umgesetzt (Schritt 3 bis 5).** Neu sind `src/lib/graph/keywords.ts` (Stichwort aus
+dem Kurztext), `src/lib/graph/quantities.ts` (Mengen über die gefilterte Menge) und
+`src/components/common/useJumpToPosition.ts` (ein Sprung für alle Ansichten). Die
+Tabelle holt die gewählte Zeile jetzt ins Fenster (`revealKey` in `ui/DataTable.tsx`)
+— das fehlte auch Prüfung und Ähnlichkeit.
+
+**Abweichungen:**
+- Das Stichwort erscheint nicht ab einer festen Zoomstufe, sondern sobald der Abstand
+  zweier Nachbarn auf dem Schirm ein Wort trägt (`KEYWORD_AT_PX`). Ab einer festen
+  Stufe stünden in einer dichten Wolke hundert Wörter übereinander.
+- Der Klick auf eine Positions-Bubble öffnet weiter die Auswahlkarte (Issue #30); der
+  Sprung in die Tabelle sitzt als Knopf **in** der Karte. Ein Klick, der die Ansicht
+  wechselt, wäre ein Rückschritt hinter Issue #30.
+- Der Anteil steht nicht an der Wurzel und nicht an Positionen: „100 %" am einzigen Los
+  ist keine Information, und Positionsanteile sind zu kleine Zahlen.
+
+**Offen:** Eine Gruppen-Bubble der Isolation ist kein LV-Knoten; sie lässt sich
+einpassen, aber nicht auswählen und nicht zuklappen.
 
 **Fertig, wenn:**
 - Eine Suche mit wenigen Treffern in einem 10k-LV zeigt in `isolate` nur diese Treffer,
   gruppiert und sortiert; ein Umschalten nach `structure` und zurück ändert weder
   Filter noch Auswahl.
-- Positions-Bubbles tragen ab mittlerem Zoom ein lesbares Stichwort, und die größte
-  Position eines Abschnitts ist ohne Zoomen zu finden.
-- Klick auf eine Bubble landet in der zugehörigen Tabellenzeile.
+- ✅ Positions-Bubbles tragen ein lesbares Stichwort, sobald der Platz dafür reicht, und
+  die größte Position eines Abschnitts sitzt im Kern ihrer Wolke.
+- ✅ Aus der Auswahlkarte landet man in der zugehörigen Tabellenzeile, und die Tabelle
+  scrollt sie ins Fenster.
 - Umschalten der Trefferansicht bleibt unter 100 ms bei 10k Positionen.
 
 ---

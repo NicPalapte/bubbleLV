@@ -34,6 +34,7 @@ import {
 import { NodeDetails } from '../common/NodeDetails';
 import { PositionDetails } from '../common/PositionDetails';
 import { useDismiss } from '../common/useDismiss';
+import { useJumpToPosition } from '../common/useJumpToPosition';
 import { graphOverlayProps } from '../../lib/graph/overlay';
 import {
   PANEL_MAX_WIDTH,
@@ -89,6 +90,12 @@ export function SelectionCard({ node, onClose }: SelectionCardProps) {
     view: { panelSize, cardPos },
   } = useViewer();
   const dispatch = useViewerDispatch();
+  const jumpToPosition = useJumpToPosition();
+  /** Position → ihre Zeile; Abschnitt oder Los → seine Teilmenge der Tabelle. */
+  const jumpToTable = useCallback((): void => {
+    if (node.position !== null) jumpToPosition(node.id);
+    else dispatch({ type: 'openInTable', id: node.id });
+  }, [node, jumpToPosition, dispatch]);
   const drag = useRef({ on: false, x0: 0, y0: 0, right0: 0, top0: 0, width0: panelSize.width });
   const resize = useRef({ on: false, x0: 0, y0: 0, width0: 0, height0: 0, maxW: 0, maxH: 0 });
 
@@ -211,6 +218,23 @@ export function SelectionCard({ node, onClose }: SelectionCardProps) {
         className="flex shrink-0 cursor-grab items-center justify-center border-b border-line2 bg-panel py-[3px] text-[10px] leading-none text-dim active:cursor-grabbing"
       >
         ⠿
+      </div>
+      {/* Sprung in die Tabelle (WP-Q, Schritt 5; Issue #51): der Klick auf eine
+          Bubble öffnet weiter diese Karte (Issue #30) — wer die Zeile im
+          Zusammenhang sehen will, kommt von hier aus dorthin. */}
+      <div className="flex shrink-0 justify-end border-b border-line2 bg-panel px-[8px] py-[4px]">
+        <button
+          type="button"
+          onClick={jumpToTable}
+          title={
+            node.position !== null
+              ? 'Diese Position in der Tabelle zeigen'
+              : 'Diesen Abschnitt in der Tabelle zeigen'
+          }
+          className="inline-flex cursor-pointer items-center border border-line bg-white px-[8px] py-[2px] font-mono text-[9px] tracking-[0.6px] text-dim hover:text-blue focus-visible:text-blue"
+        >
+          IN DER TABELLE ZEIGEN
+        </button>
       </div>
       {node.position !== null ? (
         <PositionDetails node={node} position={node.position} onClose={onClose} />

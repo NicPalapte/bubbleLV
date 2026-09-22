@@ -33,6 +33,7 @@ import {
 } from './viewState';
 import type { ColorScale } from '../lib/colors';
 import type { FocusGraph } from '../lib/graph/focusTree';
+import type { FilteredQuantities } from '../lib/graph/quantities';
 import type { PositionIndex } from '../lib/index/positionIndex';
 import type { ActiveFilters } from '../lib/matchPos';
 import type { LoadedLV } from '../lib/pipeline/runPipeline';
@@ -209,6 +210,12 @@ export interface ViewerDerived {
    * steht oder kein Treffer übrig bleibt.
    */
   focus: FocusGraph | null;
+  /**
+   * Mengen für den Größenmodus „Menge" (WP-Q): die eine Einheit der
+   * gefilterten Menge und — nur wenn der Modus aktiv ist — die Summen je
+   * Knoten. Außerhalb der Graph-Ansicht leer.
+   */
+  quantities: FilteredQuantities;
 }
 
 export type ViewerValue = ViewerState & ViewerDerived;

@@ -28,6 +28,7 @@ import {
   MAX_ZOOM,
   MIN_ZOOM,
   RADII,
+  effectiveSizeMode,
   sizeModeById,
   sizedRadius,
 } from '../../lib/graph/constants';
@@ -37,6 +38,7 @@ import { isOverlayEvent } from '../../lib/graph/overlay';
 import {
   layoutRadial,
   walkParents,
+  type CloudOrder,
   type PlacedCloud,
   type PlacedNode,
 } from '../../lib/graph/layoutRadial';
@@ -58,6 +60,17 @@ interface Metric {
 
 function clampZoom(value: number): number {
   return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, value));
+}
+
+/**
+ * Anteil als Prozentangabe; unter einem halben Prozent als „<1 %". Wer das
+ * Ganze ist, bekommt keine Angabe: „100 %" an einem Los, das als einziges im
+ * LV steht, ist keine Information.
+ */
+function formatShare(share: number): string {
+  if (share >= 0.995) return '';
+  if (share < 0.005) return '<1 %';
+  return `${Math.round(share * 100)} %`;
 }
 
 /** Obergrenze beim Einpassen auf eine Auswahl — eine Position bleibt lesbar, nicht riesig. */
@@ -85,6 +98,7 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
     openNodes: lvOpenNodes,
     openClusters,
     parents: treeParents,
+    quantities,
   } = useViewer();
   const dispatch = useViewerDispatch();
   const { sizeMode } = graph;
@@ -149,15 +163,27 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
     return (node: LVNode): boolean => (matches.counts.get(node.id) ?? 0) === 0;
   }, [filtering, hideMode, matches]);
 
-  const { nodes: placed, clouds } = useMemo(
-    () => layoutRadial(root, openNodes, openClusters, skip),
-    [root, openNodes, openClusters, skip],
-  );
+  // Ein Maß, das für diese Datei oder diesen Filter nichts aussagt, fällt auf
+  // "Anzahl" zurück — dieselbe Regel, nach der die Isolation ihre Gruppen ordnet
+  // (lib/graph/constants.ts). Gesperrt sind solche Modi ohnehin (GraphHeader).
+  const priceless = lvRoot.totalPrice === 0;
+  const mode = sizeModeById(effectiveSizeMode(sizeMode, { priceless, unit: quantities.unit }));
+  // In der Isolation tragen Wurzel und Gruppen synthetische IDs, die die
+  // Mengenkarte des echten Baums nicht kennt — der Isolations-Baum bringt
+  // seine eigene mit (lib/graph/focusTree.ts).
+  const byNode = focus?.quantities ?? quantities.byNode;
 
-  // Größenmodus "Gesamtpreis" trägt nicht, wenn die Datei keine Einheitspreise
-  // führt (x83) — dann würden alle Bubbles auf Radius 0 fallen.
-  const priceless = root.totalPrice === 0;
-  const mode = sizeModeById(sizeMode === 'cost' && priceless ? 'count' : sizeMode);
+  // Die Wolke eines Abschnitts steht nach Größe — die größte Position innen
+  // (WP-Q, Issue #51). "Anzahl" ordnet nichts, dort bleibt die OZ-Reihenfolge.
+  const cloudOrder = useMemo<CloudOrder | undefined>(() => {
+    if (!mode.ranksPositions) return undefined;
+    return (a, b) => mode.get(b, byNode) - mode.get(a, byNode);
+  }, [mode, byNode]);
+
+  const { nodes: placed, clouds } = useMemo(
+    () => layoutRadial(root, openNodes, openClusters, skip, cloudOrder),
+    [root, openNodes, openClusters, skip, cloudOrder],
+  );
 
   const metrics = useMemo(() => {
     const map = new Map<string, Metric>();
@@ -166,7 +192,7 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
     const rangeByTier = new Map<string, { min: number; max: number }>();
     for (const entry of placed.values()) {
       if (entry.node === null) continue;
-      const value = mode.get(entry.node);
+      const value = mode.get(entry.node, byNode);
       const range = rangeByTier.get(entry.tier);
       if (range === undefined) rangeByTier.set(entry.tier, { min: value, max: value });
       else {
@@ -175,10 +201,13 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
       }
     }
 
+    // Bezugsgröße für den Anteil: der Wert der Wurzel im selben Maß.
+    const ganzes = mode.get(root, byNode);
+
     for (const entry of placed.values()) {
       const node = entry.node;
       if (node === null) continue;
-      const value = mode.get(node);
+      const value = mode.get(node, byNode);
       const range = rangeByTier.get(entry.tier) ?? { min: value, max: value };
       // Positionen sind immer gleich groß (Issue #41) — der Größenmodus
       // vergleicht nur Lose und Abschnitte.
@@ -188,7 +217,19 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
           : sizedRadius(entry.tier, value, range, mode.uniform);
 
       const hits = matches.counts.get(node.id) ?? 0;
-      const baseLabel = mode.uniform ? '' : mode.format(value);
+      // Anteil am Ganzen (WP-Q, Issue #51): beantwortet „welcher Abschnitt
+      // macht den größten Teil aus?" ohne Kopfrechnen. Nicht an der Wurzel
+      // (immer 100 %) und nicht an Positionen (zu kleine Zahlen).
+      const anteil =
+        mode.uniform ||
+        ganzes <= 0 ||
+        value <= 0 ||
+        entry.tier === 'project' ||
+        entry.tier === 'position'
+          ? ''
+          : formatShare(value / ganzes);
+      const valueLabel = mode.uniform ? '' : mode.format(value, quantities.unit);
+      const baseLabel = anteil === '' ? valueLabel : `${valueLabel} · ${anteil}`;
       const subLabel =
         filtering && node.kind !== 'position' && hits !== node.positionCount
           ? `${hits.toLocaleString('de-DE')}/${node.positionCount.toLocaleString('de-DE')}${
@@ -199,7 +240,7 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
       map.set(entry.id, { radius, subLabel, missed: filtering && hits === 0 });
     }
     return map;
-  }, [placed, mode, matches, filtering]);
+  }, [placed, root, mode, byNode, quantities.unit, matches, filtering]);
 
   // ── Pan
   const drag = useRef({ on: false, x0: 0, y0: 0, tx0: 0, ty0: 0, moved: false });

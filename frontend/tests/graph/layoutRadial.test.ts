@@ -262,6 +262,52 @@ describe('Positionswolke (WP-41-5)', () => {
     expect(elapsed).toBeLessThan(100);
   });
 
+  it('setzt die größte Position mit einer Ordnung nach innen', () => {
+    const tree = buildTree(draftWith([6]));
+    const section = tree.children[0].children[0];
+    // Die Positionen tragen alle denselben Preis — eine bekommt das Zehnfache
+    // und muss danach im Kern der Wolke sitzen.
+    const teuerste = section.children[4];
+    const preise = new Map(section.children.map((child) => [child.id, child.totalPrice]));
+    preise.set(teuerste.id, 1000);
+
+    const mitte = (id: string) => {
+      const platziert = layout.nodes.get(id);
+      const anker = layout.nodes.get(section.id);
+      return Math.hypot(
+        (platziert?.cx ?? 0) - (anker?.cx ?? 0),
+        (platziert?.cy ?? 0) - (anker?.cy ?? 0),
+      );
+    };
+
+    const layout = layoutRadial(
+      tree,
+      allExpanded(tree),
+      new Set(),
+      undefined,
+      (a, b) => (preise.get(b.id) ?? 0) - (preise.get(a.id) ?? 0),
+    );
+
+    const abstaende = section.children.map((child) => mitte(child.id));
+    expect(mitte(teuerste.id)).toBe(Math.min(...abstaende));
+  });
+
+  it('behält ohne Ordnung die Dokumentreihenfolge', () => {
+    const tree = buildTree(draftWith([5]));
+    const section = tree.children[0].children[0];
+    const layout = layoutRadial(tree, allExpanded(tree));
+    const anker = layout.nodes.get(section.id);
+    const abstand = (id: string) =>
+      Math.hypot(
+        (layout.nodes.get(id)?.cx ?? 0) - (anker?.cx ?? 0),
+        (layout.nodes.get(id)?.cy ?? 0) - (anker?.cy ?? 0),
+      );
+    // Die Sonnenblume setzt den ersten Eintrag nach innen — ohne Ordnung ist
+    // das die erste OZ.
+    const abstaende = section.children.map((child) => abstand(child.id));
+    expect(abstaende[0]).toBe(Math.min(...abstaende));
+  });
+
   it('schrumpft im Modus „Ausblenden" auf die Treffer zusammen', () => {
     const tree = buildTree(draftWith([100]));
     const section = tree.children[0].children[0];

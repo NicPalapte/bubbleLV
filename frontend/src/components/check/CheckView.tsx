@@ -17,6 +17,7 @@
 // Kopfzeile sagt darum auch, dass gefiltert wird.
 
 import { useMemo } from 'react';
+import { useJumpToPosition } from '../common/useJumpToPosition';
 import { BlockLabel } from '../ui/PanelHeader';
 import { Chip } from '../ui/Chip';
 import { formatCount } from '../../lib/format';
@@ -146,7 +147,6 @@ export function CheckView() {
   const {
     lv,
     nodes,
-    parents,
     filter: { mutedRules },
     view: {
       check: { openRules },
@@ -154,6 +154,7 @@ export function CheckView() {
     matches,
   } = useViewer();
   const dispatch = useViewerDispatch();
+  const jumpTo = useJumpToPosition();
   const [attachScroll, onScroll] = useScrollMemory('check');
 
   const check = lv?.check ?? null;
@@ -180,12 +181,6 @@ export function CheckView() {
     rule.active ? (byRule.get(rule.id)?.length ?? 0) : 0;
   const sichtbar = check.rules.filter((rule) => rule.active && !mutedRules.has(rule.id));
   const gesamt = sichtbar.reduce((sum, rule) => sum + countOf(rule), 0);
-
-  const jumpTo = (positionId: string): void => {
-    const parent = parents.get(positionId) ?? null;
-    dispatch({ type: 'selectPosition', nodeId: parent?.id ?? null, positionId });
-    dispatch({ type: 'setViewMode', mode: 'table' });
-  };
 
   const toggleOpen = (id: string): void => dispatch({ type: 'toggleRuleOpen', id });
 

@@ -443,6 +443,7 @@ export function PositionsTable({ root }: { root: LVNode }) {
         rows={rows}
         rowKey={(row) => row.node.id}
         selectedKey={selectedPositionId}
+        revealKey={selectedPositionId}
         onPick={(key) =>
           dispatch({
             type: 'selectPosition',

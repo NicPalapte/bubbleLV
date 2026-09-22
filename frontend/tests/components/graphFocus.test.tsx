@@ -47,6 +47,11 @@ async function search(value: string): Promise<void> {
   await screen.findByRole('radiogroup', { name: 'Trefferansicht' });
 }
 
+/** In die Isolation schalten — Einstieg ist der ganze Graph. */
+function isolieren(): void {
+  fireEvent.click(screen.getByRole('radio', { name: 'ISOLATION' }));
+}
+
 /** Beschriftungen im Canvas — die Kopfleiste zählt hier bewusst nicht mit. */
 function graphText(root: HTMLElement | Document = document): string {
   return [...root.querySelectorAll('[aria-label^="Bubble-Graph"] svg')]
@@ -66,7 +71,11 @@ describe('Trefferansicht im Graphen', () => {
     await loadAndShowGraph();
     await search('Beton');
 
-    // Standard ist die Isolation: der Baum zeigt die Treffer, nicht das LV.
+    // Einstieg ist der ganze Graph — das Los steht da, keine Trefferzahl.
+    expect(graphText()).toContain('LOS');
+    expect(screen.queryByText(/TREFFER IN \d+ GRUPPEN/)).not.toBeInTheDocument();
+
+    isolieren();
     expect(screen.getByText(/TREFFER IN \d+ GRUPPEN/)).toBeInTheDocument();
     expect(graphText()).toContain('TREFFER');
     expect(graphText()).not.toContain('LOS');
@@ -80,6 +89,7 @@ describe('Trefferansicht im Graphen', () => {
   it('lässt Suche und Auswahl beim Umschalten unangetastet', async () => {
     await loadAndShowGraph();
     await search('Beton');
+    isolieren();
     const treffer = screen.getByText(/TREFFER IN \d+ GRUPPEN/).textContent;
 
     fireEvent.click(screen.getByRole('radio', { name: 'GESAMTER GRAPH' }));
@@ -92,6 +102,7 @@ describe('Trefferansicht im Graphen', () => {
   it('bündelt auf Wunsch nach Gewerk statt nach Abschnitt', async () => {
     await loadAndShowGraph();
     await search('Beton');
+    isolieren();
     expect(graphText()).toContain('nach Abschnitt');
 
     fireEvent.click(screen.getByRole('radio', { name: 'GEWERK' }));
@@ -105,20 +116,45 @@ describe('Trefferansicht im Graphen', () => {
     await loadAndShowGraph();
     await search('zzz-kein-treffer-zzz');
 
-    // Ohne Treffer gibt es nichts zu isolieren. Der Graph zeigt weiter das
-    // ganze LV — dann muss die Kopfleiste sagen, warum.
+    // Im gesamten Graphen steht die Aussage schlicht da.
+    expect(screen.getByText(/KEINE TREFFER$/)).toBeInTheDocument();
+
+    // In der Isolation gibt es nichts zu isolieren — der Graph zeigt weiter
+    // das ganze LV, und die Kopfleiste sagt warum.
+    isolieren();
     expect(screen.getByText(/KEINE TREFFER — NICHTS ZU ISOLIEREN/)).toBeInTheDocument();
     expect(screen.queryByText(/TREFFER IN \d+ GRUPPEN/)).not.toBeInTheDocument();
     expect(graphText()).toContain('LOS');
+  });
 
-    // Im gesamten Graphen steht dieselbe Aussage ohne den Zusatz.
-    fireEvent.click(screen.getByRole('radio', { name: 'GESAMTER GRAPH' }));
-    expect(screen.getByText(/KEINE TREFFER$/)).toBeInTheDocument();
+  it('zeigt den Umschalter „Nicht-Treffer" nur, wo er etwas bewirkt', async () => {
+    await loadAndShowGraph();
+    // Die Filterleiste erscheint erst mit einer gesetzten Facette.
+    fireEvent.click(screen.getByRole('button', { name: /Einheit ▾/ }));
+    fireEvent.click(await screen.findByTitle('m³'));
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+
+    // Im ganzen Graphen entscheidet er, ob Nicht-Treffer gedämpft oder
+    // weggelassen werden.
+    expect(await screen.findByRole('radiogroup', { name: 'Nicht-Treffer' })).toBeInTheDocument();
+
+    // In der Isolation gibt es keine Nicht-Treffer — also auch keine Wahl.
+    isolieren();
+    expect(screen.queryByRole('radiogroup', { name: 'Nicht-Treffer' })).not.toBeInTheDocument();
+
+    // Der Überblick rechnet ohnehin nur mit Treffern.
+    fireEvent.click(screen.getByRole('radio', { name: 'Überblick' }));
+    expect(screen.queryByRole('radiogroup', { name: 'Nicht-Treffer' })).not.toBeInTheDocument();
+
+    // In der Tabelle blendet der Baum aus bzw. dämpft — dort steht er wieder.
+    fireEvent.click(screen.getByRole('radio', { name: 'Tabelle' }));
+    expect(screen.getByRole('radiogroup', { name: 'Nicht-Treffer' })).toBeInTheDocument();
   });
 
   it('lässt die Pfeiltasten auch an einer Gruppen-Bubble weiterlaufen', async () => {
     await loadAndShowGraph();
     await search('Beton');
+    isolieren();
 
     const canvas = screen.getByRole('group', { name: /Bubble-Graph/ });
     // Der Graph sagt den fokussierten Knoten über eine eigene Live-Region an —

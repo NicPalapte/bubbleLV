@@ -1,5 +1,12 @@
 // Leiste der aktiven Filter: entfernbare Chips, Umschalter Hervorheben/Ausblenden,
 // Zurücksetzen. Portiert aus `FilterStrip` in design/claude-design/lv-main.jsx.
+//
+// Der Umschalter „Nicht-Treffer" steht nur da, wo er etwas bewirkt (WP-Q): er
+// entscheidet, ob Nicht-Treffer gedämpft oder weggelassen werden — und das
+// betrifft nur die beiden Ansichten, die Nicht-Treffer überhaupt zeigen. Die
+// Isolation des Graphen zeigt ausschließlich Treffer, Überblick, Prüfung und
+// Ähnlichkeit rechnen ohnehin nur mit ihnen. Ein Umschalter ohne Wirkung ist
+// schlimmer als keiner: er behauptet eine Wahl, die es nicht gibt.
 
 import { Chip } from '../ui/Chip';
 import { SegmentedControl } from '../ui/SegmentedControl';
@@ -21,8 +28,12 @@ const HIDE_MODES = [
 export function FilterStrip() {
   const {
     filter: { filters, hideMode },
+    view,
+    focus,
   } = useViewer();
   const dispatch = useViewerDispatch();
+
+  const zeigtNichtTreffer = view.mode === 'table' || (view.mode === 'graph' && focus === null);
 
   const chips: ActiveChip[] = [];
   for (const facet of FACETS) {
@@ -79,15 +90,19 @@ export function FilterStrip() {
         ))}
       </div>
       <span className="flex-1" />
-      <span className="shrink-0 font-mono text-[8px] tracking-[0.6px] text-mute">
-        NICHT-TREFFER
-      </span>
-      <SegmentedControl
-        label="Nicht-Treffer"
-        options={HIDE_MODES}
-        value={hideMode}
-        onChange={(value) => dispatch({ type: 'hideMode', value: value as HideMode })}
-      />
+      {zeigtNichtTreffer && (
+        <>
+          <span className="shrink-0 font-mono text-[8px] tracking-[0.6px] text-mute">
+            NICHT-TREFFER
+          </span>
+          <SegmentedControl
+            label="Nicht-Treffer"
+            options={HIDE_MODES}
+            value={hideMode}
+            onChange={(value) => dispatch({ type: 'hideMode', value: value as HideMode })}
+          />
+        </>
+      )}
       <Chip dashed onClick={() => dispatch({ type: 'resetFilters' })}>
         ✕ Zurücksetzen
       </Chip>

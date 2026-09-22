@@ -53,6 +53,13 @@ export const CLOUD_LOD_PX = 44;
  */
 export const CLOUD_LOD_MIN = 8;
 
+/**
+ * Platz auf dem Schirm (in px), den zwei benachbarte Positionen brauchen, damit
+ * ein Stichwort dazwischen passt (WP-Q, Issue #51). Gemessen wird am Abstand
+ * der Wolke (`CLOUD_SPACING × Zoom`), nicht an einer festen Zoomstufe.
+ */
+export const KEYWORD_AT_PX = 40;
+
 /** Kleinster Zoom k, ab dem eine Ebene ihr Label zeigt. */
 export const LABEL_K: Record<Tier, number> = {
   project: 0.18,
@@ -98,13 +105,27 @@ export function sizedRadius(
   return base * (SIZE_MIN_FACTOR + share * (SIZE_MAX_FACTOR - SIZE_MIN_FACTOR));
 }
 
+/**
+ * Summe der Mengen je Knoten, über die **gefilterte** Menge gerechnet
+ * (lib/graph/quantities.ts). Nur der Modus „Menge" liest sie: die Mengen des
+ * ganzen LV taugen dafür nicht, weil sie Einheiten mischen würden.
+ */
+export type QuantityByNode = ReadonlyMap<string, number>;
+
 export interface SizeMode {
   id: SizeModeId;
   label: string;
   short: string;
-  get(node: LVNode): number;
-  format(value: number): string;
+  get(node: LVNode, quantities: QuantityByNode | null): number;
+  /** `unit` ist gesetzt, solange die gefilterte Menge genau eine Einheit hat. */
+  format(value: number, unit: string | null): string;
   uniform: boolean;
+  /**
+   * Ob der Modus Positionen untereinander ordnet. „Anz. Positionen" tut das
+   * nicht — jede Position zählt 1 —, deshalb bleibt die Wolke dort in
+   * OZ-Reihenfolge statt in einer willkürlichen (WP-Q, Issue #51).
+   */
+  ranksPositions: boolean;
 }
 
 export const SIZE_MODES: readonly SizeMode[] = [
@@ -115,6 +136,7 @@ export const SIZE_MODES: readonly SizeMode[] = [
     get: (node) => node.positionCount,
     format: (value) => `${value.toLocaleString('de-DE')} Pos.`,
     uniform: false,
+    ranksPositions: false,
   },
   {
     id: 'cost',
@@ -123,6 +145,17 @@ export const SIZE_MODES: readonly SizeMode[] = [
     get: (node) => node.totalPrice,
     format: (value) => `${value.toLocaleString('de-DE', { maximumFractionDigits: 0 })} €`,
     uniform: false,
+    ranksPositions: true,
+  },
+  {
+    id: 'quantity',
+    label: 'Menge',
+    short: 'MENGE',
+    get: (node, quantities) => quantities?.get(node.id) ?? 0,
+    format: (value, unit) =>
+      `${value.toLocaleString('de-DE', { maximumFractionDigits: 2 })}${unit === null ? '' : ` ${unit}`}`,
+    uniform: false,
+    ranksPositions: true,
   },
   {
     id: 'uniform',
@@ -131,8 +164,27 @@ export const SIZE_MODES: readonly SizeMode[] = [
     get: () => 1,
     format: () => '',
     uniform: true,
+    ranksPositions: false,
   },
 ];
+
+/**
+ * Der Modus, der tatsächlich trägt. „Gesamtpreis" sagt nichts über eine Datei
+ * ohne Einheitspreise, „Menge" nichts über eine Auswahl, die Einheiten mischt —
+ * beide fallen dann auf „Anzahl" zurück (docs/decisions/0019-mengen-nur-je-einheit.md).
+ *
+ * Die Regel steht hier und nicht bei ihren Aufrufern: Größe **und** Sortierung
+ * müssen dasselbe Maß benutzen, sonst ordnet der Graph nach einer Zahl, die er
+ * selbst nicht mehr zeigt.
+ */
+export function effectiveSizeMode(
+  sizeMode: SizeModeId,
+  context: { priceless: boolean; unit: string | null },
+): SizeModeId {
+  if (sizeMode === 'cost' && context.priceless) return 'count';
+  if (sizeMode === 'quantity' && context.unit === null) return 'count';
+  return sizeMode;
+}
 
 export function sizeModeById(id: SizeModeId): SizeMode {
   return SIZE_MODES.find((mode) => mode.id === id) ?? SIZE_MODES[0];
