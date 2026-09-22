@@ -51,6 +51,11 @@ frontend/
     │   ├── overview/                 # Kennzahlen, Treemap-Layout (WP-L)
     │   │   ├── model.ts              # buildOverview: Kennzahlen, Gruppen, Pareto, Mengen
     │   │   └── treemap.ts            # squarified Treemap, reine Funktion
+    │   ├── export/                   # CSV, Markdown, Download, Melde-Link (WP-P)
+    │   │   ├── positions.ts          # positionsCsv: gefilterte Menge, alle Spalten
+    │   │   ├── checkReport.ts        # checkMarkdown: Hinweise im aktuellen Filter
+    │   │   ├── download.ts           # Blob → <a download>, kein Request
+    │   │   └── issueLink.ts          # vorbefülltes GitHub-Formular, ohne Fachdaten
     │   ├── matrix/                   # Heatmap über zwei Facetten (WP-O)
     │   │   └── model.ts              # buildMatrix: Achsen, Zellen, Zellmaß
     │   ├── relate/                   # Beziehungen: Ähnlichkeit, Ausreißer (WP-M)
@@ -91,6 +96,7 @@ frontend/
         │   └── {OverviewView,MetricTiles,Treemap,ParetoCard,UnitTotals}.tsx
         ├── matrix/                       # Ansicht „Matrix" (WP-O)
         │   └── {MatrixView,AxisPicker}.tsx
+        ├── print/PrintView.tsx           # Druckansicht, unvirtualisiert (WP-P)
         ├── table/PositionsTable.tsx
         ├── filter/{FilterStrip,FacetButton,RangeButton}.tsx
         ├── common/{Highlighted.tsx,useOutsideClose.ts}
@@ -258,6 +264,19 @@ wortweise verglichen ([`../decisions/0020`](../decisions/0020-langtext-vergleich
 
 Die Auswahl selbst ist **nicht** begrenzt: die Ansicht zeigt die ersten fünf und
 sagt, wie viele warten.
+
+### Mitnehmen: Export, Druck, Fehler melden (WP-P)
+
+Drei Wege aus der App heraus, alle **ohne Request**: CSV und Markdown entstehen als
+Blob im Browser (`lib/export/`), der Druck läuft über `window.print()`, und der
+Melde-Knopf öffnet ein vorbefülltes GitHub-Formular ohne einen Inhalt aus der
+geladenen Datei. Begründungen und verworfene Wege:
+[`../decisions/0022`](../decisions/0022-export-und-druck-ohne-request.md).
+
+Gedruckt wird eine **eigene, unvirtualisierte** Tabelle
+(`components/print/PrintView.tsx`), gezeichnet erst bei `beforeprint`. Print-CSS über
+die Positionstabelle hätte nur das gerade sichtbare Fenster aufs Papier gebracht —
+und wäre vollständig ausgesehen.
 
 ### Ansicht „Matrix" (WP-O)
 
