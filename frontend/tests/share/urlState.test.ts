@@ -79,6 +79,19 @@ describe('decodeShared · fremde Links', () => {
     }
     expect(decodeShared('p=').oz).toBeNull();
   });
+
+  it('übersteht eine defekte Prozent-Kodierung', () => {
+    // `decodeURIComponent('%')` wirft. Ein Link, der beim Kopieren in einen
+    // Chat abgeschnitten wurde, darf die App nicht mitreißen.
+    for (const kaputt of ['q=%', 'p=%E4%', 'f.gewerk=%3', 'q=%zz']) {
+      expect(() => decodeShared(kaputt)).not.toThrow();
+    }
+    expect(decodeShared('q=%').search).toBe('');
+    expect(decodeShared('p=%E4%').oz).toBeNull();
+    expect(decodeShared('f.gewerk=%3').facets).toEqual({});
+    // Und was daneben steht, gilt weiter.
+    expect(decodeShared('q=%~v=graph').view).toBe('graph');
+  });
 });
 
 describe('Was im Link steht', () => {

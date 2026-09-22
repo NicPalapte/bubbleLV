@@ -75,6 +75,19 @@ export function encodeShared(state: SharedState): string {
   return teile.join(TEIL);
 }
 
+/**
+ * Wert aus dem Fragment; `null`, wenn die Prozent-Kodierung defekt ist.
+ * `decodeURIComponent('%')` **wirft** — und ein Link, der beim Kopieren in
+ * einen Chat abgeschnitten wurde, dürfte sonst die ganze App mitreißen.
+ */
+function dec(value: string): string | null {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return null;
+  }
+}
+
 /** Zahl aus dem Fragment; `null`, sobald sie keine ist. */
 function zahl(text: string): number | null {
   if (text === '') return null;
@@ -113,7 +126,7 @@ export function decodeShared(fragment: string): SharedState {
       continue;
     }
     if (schluessel === 'q') {
-      state.search = decodeURIComponent(wert);
+      state.search = dec(wert) ?? '';
       continue;
     }
     if (schluessel === 'm') {
@@ -126,7 +139,7 @@ export function decodeShared(fragment: string): SharedState {
       continue;
     }
     if (schluessel === 'p') {
-      const oz = decodeURIComponent(wert);
+      const oz = dec(wert) ?? '';
       state.oz = oz === '' ? null : oz;
       continue;
     }
@@ -137,8 +150,8 @@ export function decodeShared(fragment: string): SharedState {
       if (!FACETS_BY_ID.has(facetId)) continue;
       const values = wert
         .split(WERT)
-        .map((value) => decodeURIComponent(value))
-        .filter((value) => value !== '');
+        .map(dec)
+        .filter((value): value is string => value !== null && value !== '');
       if (values.length > 0) state.facets[facetId] = values;
     }
   }
