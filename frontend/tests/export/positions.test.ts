@@ -161,3 +161,21 @@ describe('positionsCsv · Formel-Injection', () => {
     expect(zeile.split(';')[4]).toBe('-50');
   });
 });
+
+describe('positionsCsv · Zahlen', () => {
+  it('schreibt keinen Rundungsrest in den Gesamtpreis', () => {
+    // 1,1 × 3 ergibt in JavaScript 3.3000000000000003. Diese Ziffernkette hat
+    // in einer Tabelle nichts verloren, mit der jemand weiterrechnet.
+    const [, zeile] = csvVon([position({ quantity: 1.1, unitPrice: 3 })]);
+    expect(zeile.split(';')[5]).toBe('3,3');
+  });
+
+  it('kürzt echte Nachkommastellen nicht weg', () => {
+    // Ein Einheitspreis mit vier Stellen ist im GAEB-Format zulässig; auf zwei
+    // gerundet wäre die Summe in der Tabelle falsch.
+    const [, zeile] = csvVon([position({ quantity: 10, unitPrice: 0.0125 })]);
+    const felder = zeile.split(';');
+    expect(felder[4]).toBe('0,0125');
+    expect(felder[5]).toBe('0,125');
+  });
+});

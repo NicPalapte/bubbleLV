@@ -20,7 +20,7 @@ const COLUMNS: ReadonlyArray<{ head: string; of(index: PositionIndex, slot: numb
   { head: 'Einheit', of: (index, i) => einheit(index, i) },
   { head: 'Menge', of: (index, i) => zahl(index.quantity[i]) },
   { head: 'Einheitspreis', of: (index, i) => zahl(index.unitPrice[i]) },
-  { head: 'Gesamtpreis', of: (index, i) => zahl(index.totalPrice[i]) },
+  { head: 'Gesamtpreis', of: (index, i) => zahl(ohneRundungsrest(index.totalPrice[i])) },
   { head: 'Positionstyp', of: (index, i) => index.positions[i].positionType },
   { head: 'Gewerk', of: (index, i) => attr(index, i, 'gewerk') },
   { head: 'Bauteiltyp', of: (index, i) => attr(index, i, 'bauteiltyp') },
@@ -43,9 +43,25 @@ function einheit(index: PositionIndex, slot: number): string {
 /**
  * Zahl in deutscher Schreibweise; `NaN` wird zu einem leeren Feld. Eine 0 wäre
  * eine erfundene Menge — die Datei führt an dieser Stelle schlicht nichts.
+ *
+ * Gerundet wird **nicht**: was die Datei führt, geht so hinaus, wie es drin
+ * steht. Ein Einheitspreis mit vier Nachkommastellen ist im GAEB-Format
+ * zulässig, und eine auf zwei Stellen gekürzte Zahl in einer Tabelle, mit der
+ * jemand weiterrechnet, wäre ein stiller Fehler.
  */
 function zahl(value: number): string {
   return Number.isFinite(value) ? String(value).replace('.', ',') : '';
+}
+
+/**
+ * Rundungsreste aus der Fließkomma-Multiplikation entfernen. Der Gesamtpreis
+ * ist der einzige Wert, den **wir** rechnen (Menge × EP in buildTree): aus
+ * 7,2 × 18,4 macht JavaScript 132,48000000000002, und genau diese Ziffernkette
+ * stünde sonst in der Tabelle. Zehn Nachkommastellen lassen jede echte
+ * Genauigkeit stehen und schneiden nur das Rauschen ab.
+ */
+function ohneRundungsrest(value: number): number {
+  return Number.isFinite(value) ? Number(value.toFixed(10)) : value;
 }
 
 function attr(index: PositionIndex, slot: number, key: string): string {
