@@ -101,6 +101,21 @@ describe('Trefferansicht im Graphen', () => {
     expect(screen.getByLabelText('Suche')).toHaveValue('Beton');
   });
 
+  it('sagt es, wenn ein Filter gar nichts trifft', async () => {
+    await loadAndShowGraph();
+    await search('zzz-kein-treffer-zzz');
+
+    // Ohne Treffer gibt es nichts zu isolieren. Der Graph zeigt weiter das
+    // ganze LV — dann muss die Kopfleiste sagen, warum.
+    expect(screen.getByText(/KEINE TREFFER — NICHTS ZU ISOLIEREN/)).toBeInTheDocument();
+    expect(screen.queryByText(/TREFFER IN \d+ GRUPPEN/)).not.toBeInTheDocument();
+    expect(graphText()).toContain('LOS');
+
+    // Im gesamten Graphen steht dieselbe Aussage ohne den Zusatz.
+    fireEvent.click(screen.getByRole('radio', { name: 'GESAMTER GRAPH' }));
+    expect(screen.getByText(/KEINE TREFFER$/)).toBeInTheDocument();
+  });
+
   it('lässt die Pfeiltasten auch an einer Gruppen-Bubble weiterlaufen', async () => {
     await loadAndShowGraph();
     await search('Beton');

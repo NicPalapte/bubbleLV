@@ -34,6 +34,13 @@ export function GraphHeader({ root }: { root: LVNode }) {
   } = useViewer();
   const dispatch = useViewerDispatch();
 
+  // Filter ohne Treffer: dann gibt es nichts zu isolieren, und der Graph zeigt
+  // weiter das ganze LV — gedämpft bzw. ausgeblendet, je nach Modus. Das muss
+  // dastehen, sonst behauptet der Umschalter „Isolation", während das volle LV
+  // auf dem Schirm steht.
+  const treffer = matches.counts.get(root.id) ?? 0;
+  const keineTreffer = matches.filtering && treffer === 0;
+
   const lots = root.children.length;
   const sections = root.children.reduce((total, lot) => total + lot.children.length, 0);
   // x83-Dateien führen keine Einheitspreise — der Größenmodus "Gesamtpreis"
@@ -56,6 +63,14 @@ export function GraphHeader({ root }: { root: LVNode }) {
               {' · '}
               <span className="text-ink">
                 {formatCount(focus.hitCount)} TREFFER IN {formatCount(focus.groupCount)} GRUPPEN
+              </span>
+            </>
+          )}
+          {keineTreffer && (
+            <>
+              {' · '}
+              <span className="text-ink">
+                KEINE TREFFER{focusMode === 'isolate' ? ' — NICHTS ZU ISOLIEREN' : ''}
               </span>
             </>
           )}
