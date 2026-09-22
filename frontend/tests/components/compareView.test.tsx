@@ -141,6 +141,25 @@ describe('Vergleich', () => {
     expect(kopfzeile()).toContain('1 Position nebeneinander');
   });
 
+  it('legt eine ganze Gruppe der Ähnlichkeit auf einmal nebeneinander', async () => {
+    await ladeTabelle();
+    fireEvent.click(screen.getByRole('radio', { name: 'Ähnlichkeit' }));
+    const knopf = screen.getAllByRole('button', { name: 'VERGLEICHEN' })[0];
+    expect(knopf).toBeDefined();
+    fireEvent.click(knopf);
+
+    // Der Knopf wechselt selbst in die Ansicht — der Weg von „diese hängen
+    // zusammen" zu „worin unterscheiden sie sich" ist ein Klick.
+    expect(screen.getByRole('radio', { name: 'Vergleich' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    const spalten = screen.getAllByRole('button', { name: /aus dem Vergleich nehmen/ }).length;
+    expect(spalten).toBeGreaterThan(1);
+    expect(spalten).toBeLessThanOrEqual(5);
+    expect(kopfzeile()).toContain(`${spalten} Positionen nebeneinander`);
+  });
+
   it('lässt den Filter und die Auswahl unangetastet', async () => {
     await ladeTabelle();
     fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'Beton' } });
