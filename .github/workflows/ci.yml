@@ -37,6 +37,14 @@ jobs:
         working-directory: frontend
         run: npm run format:check
 
+      # Prüft src, vite.config.ts **und** tests/ (tsconfig.test.json). Ohne diesen
+      # Schritt liefe nur der App-Code durch den Compiler — Typfehler in Tests
+      # fielen erst auf, wenn ein Test aus einem anderen Grund rot wird.
+      - name: Typecheck
+        if: steps.check.outputs.exists == 'true'
+        working-directory: frontend
+        run: npm run typecheck
+
       - name: Test
         if: steps.check.outputs.exists == 'true'
         working-directory: frontend

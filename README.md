@@ -97,7 +97,7 @@ bubble/
 │   ├── decisions/                # Warum das Projekt so gebaut ist (eine Datei je Entscheidung)
 │   └── setup/                    # Einmalige Handgriffe für den Repo-Owner
 ├── .github/workflows/
-│   ├── ci.yml                    # Lint, Format, Test, Build bei jedem PR
+│   ├── ci.yml                    # Lint, Format, Typecheck, Test, Build bei jedem PR
 │   ├── claude-review.yml         # KI-Review je PR, gedeckelt auf 3 automatische Läufe
 │   ├── pr-preview.yml            # Preview-App je PR
 │   └── deploy-pages.yml          # main → Branch gh-pages → Live-Seite
