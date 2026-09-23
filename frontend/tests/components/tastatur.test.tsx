@@ -125,7 +125,13 @@ describe('Tabelle · Tastatur', () => {
     const letzte = aktiveZeile(grid);
 
     // Auswahl über die Kommandopalette — also von außerhalb der Tabelle.
-    fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
+    // Mit Wiederholung: der Listener der Palette hängt in einem `useEffect`,
+    // den React erst nach dem Commit ausführt — ein Tastendruck genau dazwischen
+    // liefe ins Leere.
+    await waitFor(() => {
+      fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
+      expect(screen.getByRole('dialog', { name: 'Kommandopalette' })).toBeInTheDocument();
+    });
     fireEvent.change(screen.getByLabelText('Befehl oder OZ'), {
       target: { value: '001.004.0030' },
     });
