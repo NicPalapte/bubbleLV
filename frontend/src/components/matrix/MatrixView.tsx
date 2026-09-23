@@ -9,7 +9,7 @@
 //
 // Gerechnet wird im Modell (lib/matrix/model.ts), einmal je Filterwechsel.
 
-import { useMemo } from 'react';
+import { useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { AxisPicker } from './AxisPicker';
 import { EmptyState } from '../ui/EmptyState';
 import { BlockLabel } from '../ui/PanelHeader';
@@ -71,10 +71,36 @@ export function MatrixView() {
   const [attachScroll, onScroll] = useScrollMemory('matrix');
   const { rowFacetId, colFacetId, measure } = view.matrix;
 
+  // Vor dem frühen Rücksprung: ein Hook läuft in jedem Durchlauf.
+  const rasterRef = useRef<HTMLTableElement>(null);
+  /** Die Zelle, auf der der eine Tab-Stopp des Rasters steht („r-c"). */
+  const [tabZelle, setTabZelle] = useState<string | null>(null);
+
   const model = useMemo(() => {
     const mask = active.filtering ? filterMask(index, active) : null;
     return buildMatrix({ index, mask, rowFacetId, colFacetId, measure });
   }, [index, active, rowFacetId, colFacetId, measure]);
+
+  const ersteZelle = useMemo(() => {
+    for (let r = 0; r < model.rows.length; r++) {
+      if (!model.rows[r].filterable) continue;
+      for (let c = 0; c < model.cols.length; c++) {
+        if (model.cols[c].filterable && model.cells.has(cellKey(r, c))) return `${r}-${c}`;
+      }
+    }
+    return null;
+  }, [model]);
+
+  /** Ein Filterwechsel kann die gemerkte Zelle entfernt haben — dann zurück an den Anfang. */
+  const gemerkteZelle = useMemo(() => {
+    if (tabZelle === null) return ersteZelle;
+    const [r, c] = tabZelle.split('-').map(Number);
+    const vorhanden =
+      model.rows[r]?.filterable === true &&
+      model.cols[c]?.filterable === true &&
+      model.cells.has(cellKey(r, c));
+    return vorhanden ? tabZelle : ersteZelle;
+  }, [tabZelle, ersteZelle, model]);
 
   if (lv === null) return null;
 
@@ -107,6 +133,51 @@ export function MatrixView() {
     dispatch({ type: 'setFacet', facetId: rowFacetId, values: new Set([model.rows[row].key]) });
     dispatch({ type: 'setFacet', facetId: colFacetId, values: new Set([model.cols[col].key]) });
     dispatch({ type: 'setViewMode', mode: 'table' });
+  };
+
+  // ── Tastatur ────────────────────────────────────────────────────────────
+  // Ein Raster mit zwölf mal zwölf Zellen wären 144 Tab-Stopps. Es hat deshalb
+  // genau **einen**: Tab führt ins Raster, die Pfeiltasten bewegen darin den
+  // Fokus, Tab führt wieder hinaus. Enter und Leertaste lösen die Zelle aus —
+  // das erledigt die Schaltfläche selbst.
+  //
+  // Der Tab-Stopp bleibt auf der zuletzt besuchten Zelle stehen: wer das
+  // Raster verlässt und zurückkommt, steht wieder dort und nicht am Anfang.
+
+  /** Fokus auf die Zelle setzen; `false`, wenn es dort keine gibt. */
+  const fokussiereZelle = (row: number, col: number): boolean => {
+    const zelle = rasterRef.current?.querySelector<HTMLButtonElement>(
+      `button[data-r="${row}"][data-c="${col}"]`,
+    );
+    if (zelle === null || zelle === undefined) return false;
+    zelle.focus();
+    return true;
+  };
+
+  const onRasterKeyDown = (event: ReactKeyboardEvent<HTMLTableElement>): void => {
+    const ziel = event.target as HTMLElement;
+    const row = Number(ziel.dataset.r);
+    const col = Number(ziel.dataset.c);
+    if (!Number.isInteger(row) || !Number.isInteger(col)) return;
+    const schritt: Record<string, [number, number]> = {
+      ArrowRight: [0, 1],
+      ArrowLeft: [0, -1],
+      ArrowDown: [1, 0],
+      ArrowUp: [-1, 0],
+    };
+    const richtung = schritt[event.key];
+    if (richtung === undefined) return;
+    event.preventDefault();
+    // Über nicht filterbare Zellen („Ohne Angabe", „Weitere", leere
+    // Kombinationen) wird hinweggegangen — sie nehmen keinen Fokus, und ein
+    // Halt davor wäre eine Sackgasse mitten im Raster.
+    let r = row + richtung[0];
+    let c = col + richtung[1];
+    while (r >= 0 && c >= 0 && r < model.rows.length && c < model.cols.length) {
+      if (fokussiereZelle(r, c)) return;
+      r += richtung[0];
+      c += richtung[1];
+    }
   };
 
   const leer = model.rows.length === 0 || model.cols.length === 0;
@@ -205,7 +276,20 @@ export function MatrixView() {
 
         {!leer && (
           <div className="mt-[12px] overflow-auto">
-            <table className="border-collapse" aria-label="Matrix">
+            <table
+              ref={rasterRef}
+              onKeyDown={onRasterKeyDown}
+              // Gibt es keine filterbare Zelle — jede Position fällt auf
+              // beiden Achsen unter „Ohne Angabe" oder „Weitere" —, dann trägt
+              // keine Schaltfläche den Tab-Stopp. Dann nimmt ihn das Raster
+              // selbst, statt still aus der Tab-Reihenfolge zu fallen.
+              tabIndex={gemerkteZelle === null ? 0 : undefined}
+              // `grid` statt der reinen Tabellen-Semantik: die Zellen sind
+              // Einstiege, keine Messwerte zum Nachlesen (WP-P, Schritt 5).
+              role="grid"
+              className="border-collapse"
+              aria-label="Matrix"
+            >
               <caption className="sr-only">
                 {rowFacet?.label ?? rowFacetId} nach {colFacet?.label ?? colFacetId}. Jede Zelle:{' '}
                 {measureLabel(model)}.
@@ -255,6 +339,7 @@ export function MatrixView() {
                         return (
                           <td
                             key={col.key}
+                            role="gridcell"
                             title={`${beschriftung} · kommt nicht vor`}
                             className="border border-line bg-white px-[6px] py-[4px] text-right font-mono text-[10px] text-mute"
                           >
@@ -269,6 +354,7 @@ export function MatrixView() {
                         return (
                           <td
                             key={col.key}
+                            role="gridcell"
                             title={`${beschriftung} · ${formatPositions(cell.count)} · nicht filterbar`}
                             style={{ background: heatOf(value, model.max) }}
                             className="border border-line px-[6px] py-[4px] text-right font-mono text-[10px] text-dim"
@@ -278,9 +364,14 @@ export function MatrixView() {
                         );
                       }
                       return (
-                        <td key={col.key} className="border border-line p-0">
+                        <td key={col.key} role="gridcell" className="border border-line p-0">
                           <button
                             type="button"
+                            data-r={r}
+                            data-c={c}
+                            // Genau eine Zelle im Raster ist ein Tab-Stopp.
+                            tabIndex={`${r}-${c}` === gemerkteZelle ? 0 : -1}
+                            onFocus={() => setTabZelle(`${r}-${c}`)}
                             onClick={() => pickCell(r, c)}
                             title={`${beschriftung} · ${formatPositions(cell.count)}`}
                             aria-label={`${beschriftung}, ${formatValue(value, model)}`}
@@ -293,6 +384,7 @@ export function MatrixView() {
                       );
                     })}
                     <td
+                      role="gridcell"
                       title={`${row.label} · ${formatPositions(row.count)}`}
                       className="border border-line bg-panel px-[6px] py-[4px] text-right font-mono text-[10px] text-dim"
                     >
@@ -310,6 +402,7 @@ export function MatrixView() {
                   {model.cols.map((col) => (
                     <td
                       key={col.key}
+                      role="gridcell"
                       title={`${col.label} · ${formatPositions(col.count)}`}
                       className="border border-line bg-panel px-[6px] py-[4px] text-right font-mono text-[10px] text-dim"
                     >
@@ -317,6 +410,7 @@ export function MatrixView() {
                     </td>
                   ))}
                   <td
+                    role="gridcell"
                     title="Jede Position genau einmal gezählt"
                     className="border border-line bg-panel px-[6px] py-[4px] text-right font-mono text-[10px] text-ink"
                   >

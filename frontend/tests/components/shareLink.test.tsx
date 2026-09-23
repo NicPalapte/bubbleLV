@@ -136,12 +136,12 @@ describe('Was im Link steht', () => {
   });
 });
 
-describe('Geteilter Link \u00b7 zweite Datei', () => {
-  it('l\u00e4sst den Link der vorigen Datei nicht auf die n\u00e4chste \u00fcbergreifen', async () => {
+describe('Geteilter Link · zweite Datei', () => {
+  it('lässt den Link der vorigen Datei nicht auf die nächste übergreifen', async () => {
     // Ein Re-Import ersetzt den kompletten Session-Zustand
     // (docs/architecture/data-model.md#re-import-in-derselben-session). Das
-    // Fragment der ersten Datei d\u00fcrfte sonst still weiterwirken: seine
-    // Filter geh\u00f6ren zu einer Datei, die gar nicht mehr offen ist.
+    // Fragment der ersten Datei dürfte sonst still weiterwirken: seine
+    // Filter gehören zu einer Datei, die gar nicht mehr offen ist.
     setzeFragment('#v=table~q=Beton');
     await ladeApp();
     await waitFor(() =>
@@ -151,11 +151,11 @@ describe('Geteilter Link \u00b7 zweite Datei', () => {
       ),
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /LV schlie\u00dfen/ }));
-    await waitFor(() => expect(screen.getByLabelText('GAEB-Datei ausw\u00e4hlen')).toBeVisible());
+    fireEvent.click(screen.getByRole('button', { name: /LV schließen/ }));
+    await waitFor(() => expect(screen.getByLabelText('GAEB-Datei auswählen')).toBeVisible());
     await ladeDatei('sample.X83');
 
-    expect(screen.getByRole('radio', { name: '\u00dcberblick' })).toHaveAttribute(
+    expect(screen.getByRole('radio', { name: 'Überblick' })).toHaveAttribute(
       'aria-checked',
       'true',
     );
@@ -165,21 +165,21 @@ describe('Geteilter Link \u00b7 zweite Datei', () => {
     await waitFor(() => expect(fragment()).toBe(''));
   });
 
-  it('r\u00e4umt die Adresszeile, wenn das LV geschlossen wird', async () => {
+  it('räumt die Adresszeile, wenn das LV geschlossen wird', async () => {
     await ladeApp();
     fireEvent.click(screen.getByRole('radio', { name: 'Graph' }));
     await waitFor(() => expect(fragment()).toContain('v=graph'));
 
-    fireEvent.click(screen.getByRole('button', { name: /LV schlie\u00dfen/ }));
+    fireEvent.click(screen.getByRole('button', { name: /LV schließen/ }));
     await waitFor(() => expect(fragment()).toBe(''));
   });
 });
 
-describe('Geteilter Link \u00b7 Wettlauf mit dem Dateidialog', () => {
-  it('\u00fcberlebt, wenn die Datei erst nach einer Weile ausgew\u00e4hlt wird', async () => {
-    // Wer einen Link \u00f6ffnet, sucht die Datei erst im Dateidialog \u2014 das dauert
-    // l\u00e4nger als die Entpr\u00e4llung von 300 ms. Bis dahin darf nichts das
-    // Fragment wegr\u00e4umen, sonst ist der Link weg, bevor er gelesen wird.
+describe('Geteilter Link · Wettlauf mit dem Dateidialog', () => {
+  it('überlebt, wenn die Datei erst nach einer Weile ausgewählt wird', async () => {
+    // Wer einen Link öffnet, sucht die Datei erst im Dateidialog — das dauert
+    // länger als die Entprällung von 300 ms. Bis dahin darf nichts das
+    // Fragment wegräumen, sonst ist der Link weg, bevor er gelesen wird.
     setzeFragment('#v=table~q=Beton');
     render(<App />);
     await new Promise((fertig) => setTimeout(fertig, 500));

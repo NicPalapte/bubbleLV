@@ -46,7 +46,7 @@ function kopfzeile(): string {
 
 /** Zeilen der Positionstabelle, in der gezeichneten Reihenfolge. */
 function tabellenzeilen(): HTMLElement[] {
-  const table = screen.getByRole('table', { name: 'Positionen' });
+  const table = screen.getByRole('grid', { name: 'Positionen' });
   return within(table)
     .getAllByRole('row')
     .filter((row) => row.getAttribute('aria-selected') !== null);
@@ -109,7 +109,7 @@ describe('Vergleich', () => {
 
     fireEvent.click(screen.getAllByRole('button', { name: 'IN DER TABELLE' })[0]);
     expect(screen.getByRole('radio', { name: 'Tabelle' })).toHaveAttribute('aria-checked', 'true');
-    expect(screen.getByRole('table', { name: 'Positionen' })).toBeInTheDocument();
+    expect(screen.getByRole('grid', { name: 'Positionen' })).toBeInTheDocument();
   });
 
   it('sammelt auch per Strg-Klick im Baum', async () => {

@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   buildCommands,
+  facetCommandId,
   groupOrder,
   positionCommand,
   type Command,
@@ -76,7 +77,7 @@ describe('buildCommands · Filter', () => {
     const gewerke = lv.summary.facets.get('gewerk');
     expect(gewerke, 'Fixture ohne Gewerke').toBeDefined();
     const [wert, anzahl] = [...(gewerke as ReadonlyMap<string, number>)][0];
-    const command = mitId(befehle(), `facet:gewerk:${wert}`);
+    const command = mitId(befehle(), facetCommandId('gewerk', wert));
     expect(command.label).toContain(wert);
     expect(command.label).toContain('Gewerk');
     expect(command.hint).toBe(String(anzahl));
@@ -86,7 +87,7 @@ describe('buildCommands · Filter', () => {
     const gewerke = [...(lv.summary.facets.get('gewerk') as ReadonlyMap<string, number>)];
     const [erster] = gewerke[0];
     const gesetzt: Filters = { facets: { gewerk: new Set([erster]) }, menge: null };
-    const command = mitId(befehle({ filters: gesetzt }), `facet:gewerk:${erster}`);
+    const command = mitId(befehle({ filters: gesetzt }), facetCommandId('gewerk', erster));
     expect(command.on).toBe(true);
     expect(command.actions).toEqual([{ type: 'setFacet', facetId: 'gewerk', values: new Set() }]);
   });
@@ -97,7 +98,7 @@ describe('buildCommands · Filter', () => {
     const [erster] = gewerke[0];
     const [zweiter] = gewerke[1];
     const gesetzt: Filters = { facets: { gewerk: new Set([erster]) }, menge: null };
-    const command = mitId(befehle({ filters: gesetzt }), `facet:gewerk:${zweiter}`);
+    const command = mitId(befehle({ filters: gesetzt }), facetCommandId('gewerk', zweiter));
     expect(command.actions).toEqual([
       { type: 'setFacet', facetId: 'gewerk', values: new Set([erster, zweiter]) },
     ]);
@@ -163,5 +164,15 @@ describe('groupOrder', () => {
     // zufällig „Baunebengewerk" steht.
     expect(groupOrder('gewerk')[0]).toBe('Ansicht');
     expect(groupOrder('')[0]).toBe('Ansicht');
+  });
+});
+
+describe('facetCommandId', () => {
+  it('hält zwei Werte auseinander, auch wenn einer einen Doppelpunkt trägt', () => {
+    // Facettenwerte kommen aus der Datei — ein Stichwort darf alles enthalten.
+    expect(facetCommandId('keywords', 'a:b')).not.toBe(
+      facetCommandId('keywords', 'a').concat(':b'),
+    );
+    expect(facetCommandId('keywords', 'a:b')).not.toBe(facetCommandId('keywords:a', 'b'));
   });
 });

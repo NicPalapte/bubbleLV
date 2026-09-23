@@ -28,7 +28,7 @@ async function ladeMatrix(): Promise<void> {
 }
 
 function raster(): HTMLElement {
-  return screen.getByRole('table', { name: 'Matrix' });
+  return screen.getByRole('grid', { name: 'Matrix' });
 }
 
 /**
@@ -80,7 +80,7 @@ describe('Matrix', () => {
     // Die erste Zeile ist der Spaltenkopf — sie trägt keine Zellen.
     const zeilen = within(raster()).getAllByRole('row').slice(1);
     // Jede Zeile hat gleich viele Zellen — auch die, in denen wenig steht.
-    const breiten = new Set(zeilen.map((zeile) => within(zeile).getAllByRole('cell').length));
+    const breiten = new Set(zeilen.map((zeile) => within(zeile).getAllByRole('gridcell').length));
     expect(breiten.size).toBeLessThanOrEqual(1);
     // Und es gibt tatsächlich leere Zellen: sie tragen den Hinweis statt einer Zahl.
     expect(screen.getAllByTitle(/kommt nicht vor/).length).toBeGreaterThan(0);

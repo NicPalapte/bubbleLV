@@ -9,6 +9,7 @@
 // über `matchPos`. Ein Befehl ist nur eine zweite Tür zum selben Zustand.
 
 import { FACETS_BY_ID } from '../facets';
+import { jumpActions } from '../navigate/jump';
 import type { LVSummary } from '../index/summary';
 import type { Filters } from '../matchPos';
 import type { HideMode } from '../../state/filterState';
@@ -58,6 +59,16 @@ const VIEWS: readonly { mode: ViewMode; label: string }[] = [
   { mode: 'check', label: 'Prüfung' },
 ];
 
+/**
+ * ID eines Facetten-Befehls. Der Wert wird kodiert, weil er aus der Datei
+ * stammt: ein Doppelpunkt darin — etwa in einem Stichwort oder einer
+ * Materialangabe — hätte sonst zwei verschiedene Befehle auf dieselbe ID
+ * fallen lassen, und React hätte zwei Zeilen mit demselben Key gezeichnet.
+ */
+export function facetCommandId(facetId: string, value: string): string {
+  return `facet:${facetId}:${encodeURIComponent(value)}`;
+}
+
 function toggled(values: ReadonlySet<string> | undefined, value: string): Set<string> {
   const next = new Set(values ?? []);
   if (!next.delete(value)) next.add(value);
@@ -104,7 +115,7 @@ export function buildCommands({
     for (const [value, count] of values) {
       const on = gesetzt?.has(value) === true;
       commands.push({
-        id: `facet:${facetId}:${value}`,
+        id: facetCommandId(facetId, value),
         group: 'Filter',
         // Facettenname mit im Text: „Gewerk Betonarbeiten" findet sich auch
         // über das Gewerk, nicht nur über den Wert.
@@ -155,10 +166,7 @@ export function buildCommands({
  */
 export function positionCommand(node: LVNode, parent: LVNode | null, view: ViewMode): Command {
   const position = node.position;
-  const actions: ViewerAction[] = [
-    { type: 'selectPosition', nodeId: parent?.id ?? null, positionId: node.id },
-  ];
-  if (view !== 'graph') actions.push({ type: 'setViewMode', mode: 'table' });
+  const actions = jumpActions(node.id, parent?.id ?? null, { stayInView: view === 'graph' });
   return {
     id: `position:${node.id}`,
     group: 'Position',
