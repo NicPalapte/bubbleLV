@@ -334,6 +334,7 @@ export function MatrixView() {
                         return (
                           <td
                             key={col.key}
+                            role="gridcell"
                             title={`${beschriftung} · kommt nicht vor`}
                             className="border border-line bg-white px-[6px] py-[4px] text-right font-mono text-[10px] text-mute"
                           >
@@ -348,6 +349,7 @@ export function MatrixView() {
                         return (
                           <td
                             key={col.key}
+                            role="gridcell"
                             title={`${beschriftung} · ${formatPositions(cell.count)} · nicht filterbar`}
                             style={{ background: heatOf(value, model.max) }}
                             className="border border-line px-[6px] py-[4px] text-right font-mono text-[10px] text-dim"
@@ -357,7 +359,7 @@ export function MatrixView() {
                         );
                       }
                       return (
-                        <td key={col.key} className="border border-line p-0">
+                        <td key={col.key} role="gridcell" className="border border-line p-0">
                           <button
                             type="button"
                             data-r={r}
@@ -377,6 +379,7 @@ export function MatrixView() {
                       );
                     })}
                     <td
+                      role="gridcell"
                       title={`${row.label} · ${formatPositions(row.count)}`}
                       className="border border-line bg-panel px-[6px] py-[4px] text-right font-mono text-[10px] text-dim"
                     >
@@ -394,6 +397,7 @@ export function MatrixView() {
                   {model.cols.map((col) => (
                     <td
                       key={col.key}
+                      role="gridcell"
                       title={`${col.label} · ${formatPositions(col.count)}`}
                       className="border border-line bg-panel px-[6px] py-[4px] text-right font-mono text-[10px] text-dim"
                     >
@@ -401,6 +405,7 @@ export function MatrixView() {
                     </td>
                   ))}
                   <td
+                    role="gridcell"
                     title="Jede Position genau einmal gezählt"
                     className="border border-line bg-panel px-[6px] py-[4px] text-right font-mono text-[10px] text-ink"
                   >

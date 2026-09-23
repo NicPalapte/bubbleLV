@@ -221,7 +221,7 @@ function GroupHeadRow({ head, style }: { head: ReactNode; style?: CSSProperties 
         ...style,
       }}
     >
-      <div role="cell" style={{ flex: 1, minWidth: 0 }}>
+      <div role="gridcell" style={{ flex: 1, minWidth: 0 }}>
         {head}
       </div>
     </div>
@@ -693,7 +693,7 @@ export function DataTable<T>({
                 {columns.map((column) => (
                   <div
                     key={column.key}
-                    role="cell"
+                    role="gridcell"
                     title={cellTitle?.(row, column)}
                     style={{
                       flex: `0 0 ${column.width}px`,
