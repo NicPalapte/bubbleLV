@@ -496,7 +496,10 @@ export function DataTable<T>({
         flex: 1,
         minHeight: 0,
         background: 'var(--white)',
-        outline: 'none',
+        // Den Fokusring des Browsers nur dann abschalten, wenn die aktive
+        // Zeile ihn übernimmt. Ohne Zeilen — leeres Filterergebnis — bliebe
+        // sonst gar nichts sichtbar, obwohl die Tastatur hier steht.
+        outline: activeIndex < 0 ? undefined : 'none',
       }}
     >
       {/* Der Kopf scrollt waagerecht mit dem Körper mit (scrollLeft-Abgleich in

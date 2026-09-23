@@ -80,6 +80,25 @@ describe('Tabelle · Tastatur', () => {
     );
   });
 
+  it('zeigt den Fokus auch dann, wenn keine Zeile übrig ist', async () => {
+    // Leeres Filterergebnis: es gibt keine aktive Zeile, die den Fokusring
+    // übernehmen könnte — dann muss der des Browsers stehen bleiben.
+    await ladeApp();
+    ansicht('Tabelle');
+    fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'gibtesnichtimlv' } });
+    // Die Suche ist entprellt — warten, bis die Tabelle wirklich leer ist.
+    await waitFor(() =>
+      expect(
+        within(tabelle()).getByText('Keine Positionen entsprechen den Filtern.'),
+      ).toBeInTheDocument(),
+    );
+
+    const grid = tabelle();
+    fireEvent.focus(grid);
+    expect(grid.getAttribute('aria-activedescendant')).toBeNull();
+    expect(grid.style.outline).toBe('');
+  });
+
   it('sortiert mit Enter im Spaltenkopf, ohne nebenbei eine Zeile zu wählen', async () => {
     await ladeApp();
     ansicht('Tabelle');
