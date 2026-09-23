@@ -378,6 +378,11 @@ export function DataTable<T>({
 
   const onKeyDown = useCallback(
     (event: ReactKeyboardEvent<HTMLDivElement>): void => {
+      // Nur Tasten, die dem Raster selbst gelten. Die Spaltenköpfe und die
+      // Zieh-Griffe darin sind eigene Schaltflächen; ihr Enter blubberte sonst
+      // bis hierher und wählte nebenbei eine Zeile aus — mitsamt Panel und
+      // Graph, obwohl jemand nur sortieren wollte.
+      if (event.target !== event.currentTarget) return;
       if (rows.length === 0) return;
       // Ohne aktive Zeile beginnt jede Bewegung oben.
       const current = activeIndex < 0 ? 0 : activeIndex;

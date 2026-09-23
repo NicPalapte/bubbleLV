@@ -80,6 +80,20 @@ describe('Tabelle · Tastatur', () => {
     );
   });
 
+  it('sortiert mit Enter im Spaltenkopf, ohne nebenbei eine Zeile zu wählen', async () => {
+    await ladeApp();
+    ansicht('Tabelle');
+    const grid = tabelle();
+    const kopf = within(grid).getAllByRole('columnheader')[0];
+    const knopf = within(kopf).getByRole('button');
+
+    knopf.focus();
+    fireEvent.keyDown(knopf, { key: 'Enter' });
+
+    // Der Tastendruck gilt dem Spaltenkopf — nicht der Liste darunter.
+    expect(within(grid).queryAllByRole('row', { selected: true })).toHaveLength(0);
+  });
+
   it('führt die Tastatur an die Auswahl, die von außen kommt', async () => {
     // Sonst springt der nächste Pfeiltastendruck an eine ganz andere Stelle.
     await ladeApp();
