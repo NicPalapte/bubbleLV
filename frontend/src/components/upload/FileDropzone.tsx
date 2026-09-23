@@ -61,7 +61,43 @@ export function FileDropzone() {
   };
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-paper p-[24px]">
+    <div className="absolute inset-0 flex flex-col items-center justify-center gap-[18px] overflow-auto bg-paper p-[24px]">
+      {/*
+        Einstiegstext für den ersten Besuch (Issue #72). Er steht bewusst
+        **außerhalb** der Ablagefläche: die ist als Ganzes anklickbar, und wer
+        einen Text liest, will dabei keinen Dateidialog öffnen.
+
+        Die entscheidende Frage beim ersten Mal ist nicht „was kann das", sondern
+        „wo landet meine Datei" — deshalb steht die Antwort hier und nicht in
+        einer Datenschutzerklärung, die niemand aufschlägt.
+      */}
+      <div className="w-full max-w-[540px]">
+        <div className="font-sans text-[15px] font-semibold text-ink">
+          Bubble macht ein Leistungsverzeichnis lesbar.
+        </div>
+        <dl className="mt-[10px] font-mono text-[10.5px] leading-[1.7] text-mute">
+          <div className="flex gap-[8px]">
+            <dt className="w-[132px] shrink-0 text-dim">Was Bubble tut</dt>
+            <dd>
+              GAEB-Datei lesen, klassifizieren, auf VOB-Punkte hinweisen — acht Ansichten auf einem
+              Filterzustand, dazu Export und Druck.
+            </dd>
+          </div>
+          <div className="mt-[6px] flex gap-[8px]">
+            <dt className="w-[132px] shrink-0 text-dim">Wo die Datei bleibt</dt>
+            <dd>
+              Im Browser. Kein Server, kein Upload, kein Konto. Ein Reload verwirft den Stand.
+            </dd>
+          </div>
+          <div className="mt-[6px] flex gap-[8px]">
+            <dt className="w-[132px] shrink-0 text-dim">Was es nicht ist</dt>
+            <dd>
+              Kein Ersatz für AVA oder Kalkulation. Die Prüfregeln geben Hinweise mit Norm-Verweis,
+              keine Rechtsberatung.
+            </dd>
+          </div>
+        </dl>
+      </div>
       <div
         onDragEnter={(event) => {
           event.preventDefault();
@@ -97,7 +133,7 @@ export function FileDropzone() {
         </div>
         <div className="max-w-[420px] font-mono text-[10.5px] leading-[1.6] text-mute">
           GAEB DA XML (X81–X86), Versionen 3.0 bis 3.3. Die Datei wird ausschließlich im Browser
-          verarbeitet — nichts wird hochgeladen, nichts gespeichert. Ein Reload verwirft den Stand.
+          verarbeitet — nichts wird hochgeladen, nichts gespeichert.
         </div>
         {/*
           Der Klick auf die Fläche ist eine Mausbequemlichkeit; die bedienbare
