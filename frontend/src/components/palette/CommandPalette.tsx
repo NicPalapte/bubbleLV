@@ -35,7 +35,16 @@ function istPaletteTaste(event: KeyboardEvent): boolean {
   return (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k';
 }
 
-export function CommandPalette() {
+export interface CommandPaletteProps {
+  /**
+   * Gesperrt, solange ein anderes Fenster über der Seite liegt (Melden). Zwei
+   * Fenster übereinander wären für niemanden vorhersehbar — und welches
+   * Escape zuerst sieht, hinge an der Reihenfolge im DOM.
+   */
+  gesperrt?: boolean;
+}
+
+export function CommandPalette({ gesperrt = false }: CommandPaletteProps) {
   const { lv, index, parents, filter, view } = useViewer();
   const dispatch = useViewerDispatch();
   const [open, setOpen] = useState(false);
@@ -55,7 +64,7 @@ export function CommandPalette() {
   // in Browsern und Editoren dieselbe, und wer sie drückt, will die Palette.
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
-      if (!istPaletteTaste(event)) return;
+      if (gesperrt || !istPaletteTaste(event)) return;
       event.preventDefault();
       setQuery('');
       setAktiv(0);
@@ -63,7 +72,7 @@ export function CommandPalette() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [gesperrt]);
 
   // Der Fokus gehört beim Öffnen ins Eingabefeld — die Palette ist eine
   // Tastatur-Sache. Als Ref-Rückruf statt Effekt: das Feld entsteht erst mit

@@ -4,7 +4,7 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '../../src/App';
 
@@ -125,17 +125,21 @@ describe('Fehler melden · die drei Wege', () => {
     const fenster = await oeffneMeldung();
     beschreibe(fenster, 'Druck bricht ab.');
 
+    // Über `vi.stubGlobal`, damit das `vi.unstubAllGlobals()` im afterEach es
+    // wieder aufräumt: ein dauerhaft ersetztes `location` fiele später den
+    // Tests auf die Füße, die den Zustand im URL-Fragment lesen (0023).
     const ziele: string[] = [];
-    Object.defineProperty(window, 'location', {
-      configurable: true,
-      value: {
-        ...window.location,
-        set href(wert: string) {
-          ziele.push(wert);
-        },
-        get href() {
-          return 'http://localhost/';
-        },
+    const echt = window.location;
+    vi.stubGlobal('location', {
+      ...echt,
+      assign: echt.assign.bind(echt),
+      replace: echt.replace.bind(echt),
+      reload: echt.reload.bind(echt),
+      set href(wert: string) {
+        ziele.push(wert);
+      },
+      get href() {
+        return echt.href;
       },
     });
     fireEvent.click(within(fenster).getByRole('button', { name: /E-Mail/ }));
@@ -200,6 +204,20 @@ describe('Fehler melden · schließen', () => {
         selected: true,
       }).length,
     ).toBe(1);
+  });
+});
+
+describe('Fehler melden · nur ein Fenster', () => {
+  it('lässt die Kommandopalette nicht dazwischenfunken', async () => {
+    // Beide liegen über der Seite. Zwei Fenster übereinander wären für
+    // niemanden vorhersehbar — und welches Escape zuerst sieht, hinge an der
+    // Reihenfolge im DOM.
+    await oeffneMeldung();
+    await act(async () => {});
+    fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
+
+    expect(screen.queryByRole('dialog', { name: 'Kommandopalette' })).toBeNull();
+    expect(screen.getByRole('dialog', { name: 'Fehler melden' })).toBeInTheDocument();
   });
 });
 

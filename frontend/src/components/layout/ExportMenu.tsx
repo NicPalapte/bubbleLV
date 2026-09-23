@@ -16,17 +16,24 @@ import { Popover, PopoverHead, PopoverRow } from '../ui/Popover';
 import { useDismiss } from '../common/useDismiss';
 import { checkMarkdown } from '../../lib/export/checkReport';
 import { downloadText, exportFileName } from '../../lib/export/download';
-import { ReportDialog } from '../report/ReportDialog';
 import { exportCount, positionsCsv } from '../../lib/export/positions';
 import { formatCount } from '../../lib/format';
 import { filterMask } from '../../lib/index/positionIndex';
 import { matchCount } from '../../lib/tree/matchCounts';
 import { useViewer } from '../../state/viewer';
 
-export function ExportMenu() {
-  const { lv, index, active, filter, matches, nodes, view } = useViewer();
+export interface ExportMenuProps {
+  /**
+   * „Fehler melden" gewählt. Das Fenster hängt in der Kopfleiste, nicht hier:
+   * solange es offen ist, darf die Kommandopalette nicht dazwischenfunken
+   * (beide liegen auf derselben Ebene über der Seite).
+   */
+  onFehlerMelden: () => void;
+}
+
+export function ExportMenu({ onFehlerMelden }: ExportMenuProps) {
+  const { lv, index, active, filter, matches, nodes } = useViewer();
   const [open, setOpen] = useState(false);
-  const [melden, setMelden] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   useDismiss(
@@ -98,7 +105,7 @@ export function ExportMenu() {
     // Das Fenster statt des GitHub-Links: wer kein Konto hat, käme dort nicht
     // weiter (docs/decisions/0024-fehler-melden-ohne-konto.md).
     setOpen(false);
-    setMelden(true);
+    onFehlerMelden();
   };
 
   return (
@@ -128,12 +135,6 @@ export function ExportMenu() {
           Fehler melden
         </PopoverRow>
       </Popover>
-      {melden && (
-        <ReportDialog
-          context={{ view: view.mode, loaded: true }}
-          onClose={() => setMelden(false)}
-        />
-      )}
     </div>
   );
 }

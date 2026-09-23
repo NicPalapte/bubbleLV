@@ -3,7 +3,7 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import App from '../../src/App';
 
@@ -33,17 +33,15 @@ function tippe(text: string): void {
 /**
  * Strg + K auf dem Fenster — so kommt die Palette im Betrieb hoch.
  *
- * Mit Wiederholung: der Listener hängt in einem `useEffect`, und React führt
- * den **nach** dem Commit aus. `waitFor` sieht das fertige DOM schon vorher —
- * ein Tastendruck in genau diesem Moment läuft ins Leere. Im Browser ist das
- * ein Bruchteil einer Millisekunde und niemandem zumutbar zu treffen; im Test
- * traf es jeden zweiten Lauf.
+ * Das leere `act` davor ist nicht Zierde: der Listener hängt in einem
+ * `useEffect`, und React führt den **nach** dem Commit aus. `waitFor` sieht
+ * das fertige DOM schon vorher — ein Tastendruck in genau diesem Moment läuft
+ * ins Leere. Im Browser ist das ein Bruchteil einer Millisekunde und niemandem
+ * zumutbar zu treffen; im Test traf es jeden zweiten Lauf.
  */
 async function strgK(): Promise<void> {
-  await waitFor(() => {
-    fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
-    expect(screen.getByRole('dialog', { name: 'Kommandopalette' })).toBeInTheDocument();
-  });
+  await act(async () => {});
+  fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
 }
 
 describe('Kommandopalette · öffnen und schließen', () => {
