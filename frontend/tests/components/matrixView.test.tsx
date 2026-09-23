@@ -28,7 +28,7 @@ async function ladeMatrix(): Promise<void> {
 }
 
 function raster(): HTMLElement {
-  return screen.getByRole('table', { name: 'Matrix' });
+  return screen.getByRole('grid', { name: 'Matrix' });
 }
 
 /**

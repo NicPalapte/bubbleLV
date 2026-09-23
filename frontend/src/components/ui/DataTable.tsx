@@ -23,12 +23,15 @@
 
 import {
   Fragment,
+  useCallback,
   useEffect,
+  useId,
   useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type CSSProperties,
+  type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from 'react';
@@ -62,7 +65,7 @@ export interface DataTableProps<T> {
    * Zeile gewählt. Das Ereignis kommt mit, damit Aufrufer Strg-/Cmd-Klick von
    * einem gewöhnlichen Klick unterscheiden können (Mehrfachauswahl, WP-N).
    */
-  onPick?: (key: string, event: ReactMouseEvent) => void;
+  onPick?: (key: string, event: ReactMouseEvent | ReactKeyboardEvent) => void;
   empty?: string;
   sort?: { key: string; dir: 1 | -1 };
   onSort?: (key: string) => void;
@@ -321,6 +324,104 @@ export function DataTable<T>({
     scrollRef.current = next;
     setScrollTop(next);
   }, [revealKey, measured, rows, rowKey, rowTop, heads, headHeight, viewport, rowHeight]);
+
+  // ── Tastatur ──────────────────────────────────────────────────────────────
+  // Dieselbe Bedeutung wie im Baum (layout/Tree.tsx): die Pfeiltasten bewegen
+  // eine **aktive** Zeile, Enter wählt sie. Bewegen und Wählen zu trennen ist
+  // hier nicht Geschmack, sondern nötig: jede Auswahl zieht das
+  // Eigenschaften-Panel und den Graphen mit, und bei 10.000 Zeilen wäre ein
+  // Durchlauf mit gedrückter Pfeiltaste sonst eine Kaskade aus Neuberechnungen.
+  const gridId = useId();
+  const rowDomId = useCallback((key: string): string => `${gridId}-${key}`, [gridId]);
+
+  const [activeKey, setActiveKey] = useState<string | null>(selectedKey ?? null);
+  // Eine Auswahl von außen (Baum, Graph, Kommandopalette) führt die Tastatur
+  // mit — sonst spränge der nächste Pfeiltastendruck an eine andere Stelle.
+  const [followedSelection, setFollowedSelection] = useState<string | null>(selectedKey ?? null);
+  if ((selectedKey ?? null) !== followedSelection) {
+    setFollowedSelection(selectedKey ?? null);
+    if (selectedKey !== null && selectedKey !== undefined) setActiveKey(selectedKey);
+  }
+
+  const activeIndex = useMemo(
+    () => (activeKey === null ? -1 : rows.findIndex((row) => rowKey(row) === activeKey)),
+    [activeKey, rows, rowKey],
+  );
+
+  /** Zeile ins Fenster holen — die Tabelle ist virtualisiert. */
+  const revealRow = useCallback(
+    (index: number): void => {
+      const element = bodyRef.current;
+      if (element === null || !measured) return;
+      const top = rowTop[index] + (heads[index] !== null ? headHeight : 0);
+      const bottom = rowTop[index + 1];
+      if (top >= element.scrollTop && bottom <= element.scrollTop + viewport) return;
+      const next = top < element.scrollTop ? top : bottom - viewport;
+      const geklemmt = Math.max(0, next);
+      element.scrollTop = geklemmt;
+      scrollRef.current = geklemmt;
+      setScrollTop(geklemmt);
+    },
+    [measured, rowTop, heads, headHeight, viewport],
+  );
+
+  const moveTo = useCallback(
+    (index: number): void => {
+      const geklemmt = Math.max(0, Math.min(rows.length - 1, index));
+      const row = rows[geklemmt];
+      if (row === undefined) return;
+      setActiveKey(rowKey(row));
+      revealRow(geklemmt);
+    },
+    [rows, rowKey, revealRow],
+  );
+
+  const onKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLDivElement>): void => {
+      if (rows.length === 0) return;
+      // Ohne aktive Zeile beginnt jede Bewegung oben.
+      const current = activeIndex < 0 ? 0 : activeIndex;
+      const seite = Math.max(1, Math.floor(viewport / Math.max(1, rowHeight)) - 1);
+
+      switch (event.key) {
+        case 'ArrowDown':
+          event.preventDefault();
+          moveTo(activeIndex < 0 ? 0 : current + 1);
+          return;
+        case 'ArrowUp':
+          event.preventDefault();
+          moveTo(activeIndex < 0 ? 0 : current - 1);
+          return;
+        case 'PageDown':
+          event.preventDefault();
+          moveTo(activeIndex < 0 ? 0 : current + seite);
+          return;
+        case 'PageUp':
+          event.preventDefault();
+          moveTo(activeIndex < 0 ? 0 : current - seite);
+          return;
+        case 'Home':
+          event.preventDefault();
+          moveTo(0);
+          return;
+        case 'End':
+          event.preventDefault();
+          moveTo(rows.length - 1);
+          return;
+        case 'Enter':
+        case ' ': {
+          event.preventDefault();
+          const row = rows[current];
+          if (row !== undefined) onPick?.(rowKey(row), event);
+          return;
+        }
+        default:
+          return;
+      }
+    },
+    [rows, rowKey, activeIndex, moveTo, onPick, viewport, rowHeight],
+  );
+
   const totalWidth = columns.reduce((sum, column) => sum + column.width, 0);
 
   /**
@@ -371,15 +472,26 @@ export function DataTable<T>({
   }, [group, measured, rows.length, rowTop, scrollTop, heads]);
 
   return (
+    // `grid` statt `table`: die Tabelle ist bedienbar, nicht nur lesbar — sie
+    // nimmt den Fokus und führt eine aktive Zeile (WP-P, Schritt 5).
     <div
-      role="table"
+      role="grid"
       aria-label={label}
+      tabIndex={0}
+      aria-activedescendant={activeIndex < 0 ? undefined : rowDomId(rowKey(rows[activeIndex]))}
+      onKeyDown={onKeyDown}
+      // Wer die Tabelle mit Tab erreicht, muss sehen, wo er steht: ohne aktive
+      // Zeile zeigte der Fokus sonst gar nichts an.
+      onFocus={() => {
+        if (activeKey === null && rows.length > 0) setActiveKey(rowKey(rows[0]));
+      }}
       style={{
         display: 'flex',
         flexDirection: 'column',
         flex: 1,
         minHeight: 0,
         background: 'var(--white)',
+        outline: 'none',
       }}
     >
       {/* Der Kopf scrollt waagerecht mit dem Körper mit (scrollLeft-Abgleich in
@@ -545,6 +657,7 @@ export function DataTable<T>({
             const rowMarkup = (
               <div
                 key={key}
+                id={rowDomId(key)}
                 role="row"
                 aria-selected={selected}
                 onClick={(event) => onPick?.(key, event)}
@@ -552,6 +665,11 @@ export function DataTable<T>({
                   display: 'flex',
                   borderBottom: '1px solid var(--grid)',
                   cursor: onPick === undefined ? 'default' : 'pointer',
+                  // Die aktive Zeile ist die, auf der die Tastatur steht; die
+                  // gewählte ist blau. Beide zugleich sichtbar zu halten
+                  // braucht zwei verschiedene Mittel — Fläche und Kante.
+                  outline: key === activeKey ? '1px solid var(--blue)' : 'none',
+                  outlineOffset: '-1px',
                   background: selected
                     ? 'var(--blueS)'
                     : index % 2 === 1

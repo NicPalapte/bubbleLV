@@ -25,7 +25,7 @@ selbst anlegen.
 | WP-Q | Graph mit Mehrwert: Treffer isolieren, Stichworte, Menge, Sprung (Issues #51, #60) | ✅ umgesetzt |
 | WP-N | Ansicht „Vergleich" | ✅ umgesetzt |
 | WP-O | Ansicht „Matrix" | offen |
-| WP-P | Feinschliff: Kommandopalette, URL-Zustand, Export, Druck | offen |
+| WP-P | Feinschliff: Kommandopalette, URL-Zustand, Export, Druck | steht |
 
 Seit [`decisions/0015`](decisions/0015-gewerk-aus-der-abschnittsueberschrift.md) erbt
 eine Position das Gewerk aus der Überschrift ihres Abschnitts, wenn ihr eigener Text
@@ -511,22 +511,32 @@ Schritte:
    Print-CSS über die Positionstabelle hätte nur das sichtbare Fenster gedruckt.
    Ohne Preise fallen die Preisspalten weg, mit Preisen steht eine Summe über
    genau die gedruckten Zeilen darunter.
-5. Tastaturbedienung in allen Ansichten (Auswahl mit Pfeiltasten, Enter öffnet).
+5. ✅ **Tastaturbedienung in allen Ansichten** (Auswahl mit Pfeiltasten, Enter öffnet).
+   Tabelle und Matrix hatten keine: die Tabelle bekommt eine **aktive Zeile**
+   (`role="grid"`, `aria-activedescendant`, ↑↓/Bild↑↓/Pos1/Ende, Enter wählt) —
+   dieselbe Bedeutung wie im Baum, und Bewegen bleibt vom Wählen getrennt, weil
+   jede Auswahl Panel und Graph mitzieht. Im Raster der Matrix bewegen die
+   Pfeiltasten den Fokus von Zelle zu Zelle, statt 144 Tab-Stopps zu verlangen.
+   Prüfung, Ähnlichkeit, Vergleich und Überblick waren schon bedienbar — dort
+   sind alle Einstiege echte Schaltflächen.
 6. ✅ **Fehler melden** (Issue #57): ein Knopf öffnet ein vorbefülltes GitHub-Issue in
    einem neuen Tab — Browser, App-Version, Fehlermeldung. **Keine Fachdaten aus der
    geladenen Datei**, kein Dateiname, keine Positionstexte. Der Nutzer sieht den Text
    vor dem Absenden und schickt ihn selbst ab. Begründung und die abgelehnte
    Nutzungsmessung: [`decisions/0017`](decisions/0017-keine-nutzungsmessung.md).
 
-Die Schritte 1, 2, 3, 4 und 6 stehen: Kommandopalette, Menü „Mitnehmen" in der
-Kopfleiste ([`decisions/0022`](decisions/0022-export-und-druck-ohne-request.md)) und
-der Zustand im URL-Fragment ([`decisions/0023`](decisions/0023-zustand-im-url-fragment.md)).
-Offen ist nur noch Schritt 5 (Tastatur in allen Ansichten).
+**Alle sechs Schritte stehen:** Kommandopalette, Zustand im URL-Fragment
+([`decisions/0023`](decisions/0023-zustand-im-url-fragment.md)), Menü „Mitnehmen"
+in der Kopfleiste ([`decisions/0022`](decisions/0022-export-und-druck-ohne-request.md)),
+Druckansicht, Tastatur und der Melde-Knopf
+([`decisions/0017`](decisions/0017-keine-nutzungsmessung.md)).
 
 **Fertig, wenn:**
 - ✅ Ein geteilter Link stellt Ansicht und Filter wieder her, sobald dieselbe Datei geladen
   ist — ohne Fachdaten im Link außer der OZ der Auswahl (`tests/share/urlState.test.ts`,
   `tests/components/shareLink.test.tsx`).
+- ✅ Tabelle und Matrix lassen sich ohne Maus bedienen; in den übrigen Ansichten ist
+  jeder Einstieg eine Schaltfläche (`tests/components/tastatur.test.tsx`).
 - ✅ Strg/Cmd + K öffnet die Palette; ein getippter Befehl wechselt die Ansicht, setzt
   einen Filter oder springt zur OZ (`tests/palette/`, `tests/components/commandPalette.test.tsx`).
 - ✅ Der Export enthält genau die gefilterte Menge (`tests/export/positions.test.ts`,

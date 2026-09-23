@@ -7,6 +7,7 @@
 // richtigen Zeile, nur weit außerhalb des sichtbaren Bereichs.
 
 import { useCallback } from 'react';
+import { jumpActions } from '../../lib/navigate/jump';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 
 export function useJumpToPosition(): (positionId: string) => void {
@@ -15,8 +16,7 @@ export function useJumpToPosition(): (positionId: string) => void {
   return useCallback(
     (positionId: string): void => {
       const parent = parents.get(positionId) ?? null;
-      dispatch({ type: 'selectPosition', nodeId: parent?.id ?? null, positionId });
-      dispatch({ type: 'setViewMode', mode: 'table' });
+      for (const action of jumpActions(positionId, parent?.id ?? null)) dispatch(action);
     },
     [parents, dispatch],
   );

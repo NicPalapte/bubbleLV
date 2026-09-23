@@ -104,7 +104,7 @@ describe('Sprung in die Tabelle', () => {
     // … und von dort führt der Knopf in die Tabelle, auf genau diesen Abschnitt.
     fireEvent.click(knopf);
     expect(screen.getByRole('radio', { name: 'Tabelle' })).toHaveAttribute('aria-checked', 'true');
-    expect(screen.getByRole('table', { name: 'Positionen' })).toBeInTheDocument();
+    expect(screen.getByRole('grid', { name: 'Positionen' })).toBeInTheDocument();
     expect(screen.getAllByText(/Bauhauptgewerke/).length).toBeGreaterThan(0);
   });
 });

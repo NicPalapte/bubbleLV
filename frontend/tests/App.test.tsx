@@ -100,7 +100,7 @@ describe('Viewer', () => {
 
     // … in der Tabelle nach Menge sortieren …
     switchToView('Tabelle');
-    const table = await screen.findByRole('table', { name: 'Positionen' });
+    const table = await screen.findByRole('grid', { name: 'Positionen' });
     fireEvent.click(within(table).getByRole('button', { name: /Menge/ }));
     await waitFor(() =>
       expect(within(table).getByRole('columnheader', { name: /Menge/ })).toHaveAttribute(
@@ -117,7 +117,7 @@ describe('Viewer', () => {
     expect(screen.getByLabelText('Suche')).toHaveValue('Beton');
 
     switchToView('Tabelle');
-    const again = await screen.findByRole('table', { name: 'Positionen' });
+    const again = await screen.findByRole('grid', { name: 'Positionen' });
     expect(within(again).getByRole('columnheader', { name: /Menge/ })).toHaveAttribute(
       'aria-sort',
       'ascending',
@@ -134,7 +134,7 @@ describe('Viewer', () => {
     const [lot] = within(screen.getByRole('tree')).getAllByRole('treeitem');
     fireEvent.click(lot);
 
-    const table = await screen.findByRole('table', { name: 'Positionen' });
+    const table = await screen.findByRole('grid', { name: 'Positionen' });
     const headers = within(table)
       .getAllByRole('columnheader')
       .map((cell) => cell.textContent?.trim().replace(/\s+[↑↓]$/, ''));
@@ -153,7 +153,7 @@ describe('Viewer', () => {
 
     const [lot] = within(screen.getByRole('tree')).getAllByRole('treeitem');
     fireEvent.click(lot);
-    const table = await screen.findByRole('table', { name: 'Positionen' });
+    const table = await screen.findByRole('grid', { name: 'Positionen' });
     expect(within(table).getAllByText('001.001.0010').length).toBeGreaterThan(0);
 
     fireEvent.change(screen.getByLabelText('Suche'), {
@@ -177,7 +177,7 @@ describe('Viewer', () => {
     fireEvent.click(await within(tree).findByTitle('Bauhauptgewerke'));
     fireEvent.click(await within(tree).findByTitle('Baustelleneinrichtung'));
 
-    const table = await screen.findByRole('table', { name: 'Positionen' });
+    const table = await screen.findByRole('grid', { name: 'Positionen' });
     expect(within(table).getAllByText('001.001.0010').length).toBeGreaterThan(0);
 
     // „Kabel" kommt nur in den Elektroarbeiten vor — im gewählten Abschnitt
@@ -199,13 +199,13 @@ describe('Viewer', () => {
     fireEvent.click(within(tree).getAllByRole('treeitem')[0]);
     fireEvent.click(await within(tree).findByTitle('Bauhauptgewerke'));
     fireEvent.click(await within(tree).findByTitle('Baustelleneinrichtung'));
-    await screen.findByRole('table', { name: 'Positionen' });
+    await screen.findByRole('grid', { name: 'Positionen' });
 
     fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'Beton' } });
 
     // Die Treffer verteilen sich über mehrere Abschnitte und stehen jeweils
     // unter ihrem Überschriftenpfad.
-    const table = await screen.findByRole('table', { name: 'Positionen' });
+    const table = await screen.findByRole('grid', { name: 'Positionen' });
     await waitFor(() =>
       expect(
         within(table).getByText(/Bauhauptgewerke.+§ 001\.004 · Betonarbeiten/),
@@ -226,13 +226,13 @@ describe('Viewer', () => {
     fireEvent.click(within(tree).getAllByRole('treeitem')[0]);
     fireEvent.click(await within(tree).findByTitle('Bauhauptgewerke'));
     fireEvent.click(await within(tree).findByTitle('Baustelleneinrichtung'));
-    await screen.findByRole('table', { name: 'Positionen' });
+    await screen.findByRole('grid', { name: 'Positionen' });
 
     // Drei Ebenen tief — der Umschalter in der Kopfleiste geht trotzdem in
     // einem Schritt zurück (die Tabelle hat keinen eigenen Graph-Knopf mehr).
     switchToView('Graph');
     await waitFor(() =>
-      expect(screen.queryByRole('table', { name: 'Positionen' })).not.toBeInTheDocument(),
+      expect(screen.queryByRole('grid', { name: 'Positionen' })).not.toBeInTheDocument(),
     );
     expect(screen.getByRole('radio', { name: 'Graph' })).toHaveAttribute('aria-checked', 'true');
   });
@@ -329,7 +329,7 @@ describe('Viewer', () => {
     expect(
       screen.getByText('Baustelleneinrichtung für sämtliche', { exact: false }),
     ).toBeInTheDocument();
-    expect(screen.queryByRole('table', { name: 'Positionen' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('grid', { name: 'Positionen' })).not.toBeInTheDocument();
     expect(screen.getByRole('radio', { name: 'Graph' })).toHaveAttribute('aria-checked', 'true');
 
     // Escape schließt die Karte komplett — sie springt nicht auf den
@@ -490,7 +490,7 @@ describe('Viewer', () => {
     await loadFixture('gaeb-xml-beispiel.x83');
     await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
     switchToView('Tabelle');
-    await screen.findByRole('table', { name: 'Positionen' });
+    await screen.findByRole('grid', { name: 'Positionen' });
 
     // Die Facettenwerte im Popover sind die einzigen Schaltflächen mit
     // aria-pressed — daran hängt die Prüfung, ob das Popover offen ist.
@@ -505,12 +505,12 @@ describe('Viewer', () => {
       expect(screen.queryAllByRole('button', { pressed: false })).toHaveLength(0),
     );
     // Die Tabelle steht noch — Escape hat nur das Popover geschlossen.
-    expect(screen.getByRole('table', { name: 'Positionen' })).toBeInTheDocument();
+    expect(screen.getByRole('grid', { name: 'Positionen' })).toBeInTheDocument();
 
     // Der Ansichtsmodus ist jetzt eine bewusste, dauerhafte Wahl (Issue #30) —
     // ein zweites Escape wechselt nicht mehr zurück in den Graphen.
     fireEvent.keyDown(document.body, { key: 'Escape' });
-    expect(screen.getByRole('table', { name: 'Positionen' })).toBeInTheDocument();
+    expect(screen.getByRole('grid', { name: 'Positionen' })).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: 'Tabelle' })).toHaveAttribute('aria-checked', 'true');
   });
 
@@ -589,7 +589,7 @@ describe('Viewer', () => {
     // Enter wählt wie ein Klick — die Positionstabelle bleibt offen und
     // zeigt jetzt den gewählten Abschnitt.
     fireEvent.keyDown(tree, { key: 'Enter' });
-    await screen.findByRole('table', { name: 'Positionen' });
+    await screen.findByRole('grid', { name: 'Positionen' });
   });
 
   it('zeigt eine verständliche Fehlermeldung bei nicht unterstützter GAEB-Version', async () => {
