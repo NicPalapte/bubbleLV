@@ -21,11 +21,11 @@ selbst anlegen.
 | WP-J | Klassifizierung v2: generische Extraktoren + Textstellen | ✅ umgesetzt |
 | WP-K | Flags und VOB-Check, Ansicht „Prüfung" | ✅ umgesetzt |
 | WP-L | Ansichts-Gerüst + Ansicht „Überblick" | ✅ umgesetzt |
-| WP-M | Beziehungen: Ähnlichkeit, Unterschiede, Ausreißer | umgesetzt |
+| WP-M | Beziehungen: Ähnlichkeit, Unterschiede, Ausreißer | ✅ umgesetzt |
 | WP-Q | Graph mit Mehrwert: Treffer isolieren, Stichworte, Menge, Sprung (Issues #51, #60) | ✅ umgesetzt |
 | WP-N | Ansicht „Vergleich" | ✅ umgesetzt |
-| WP-O | Ansicht „Matrix" | offen |
-| WP-P | Feinschliff: Kommandopalette, URL-Zustand, Export, Druck | steht |
+| WP-O | Ansicht „Matrix" | ✅ umgesetzt |
+| WP-P | Feinschliff: Kommandopalette, URL-Zustand, Export, Druck, Tastatur, Melden | ✅ umgesetzt |
 
 Seit [`decisions/0015`](decisions/0015-gewerk-aus-der-abschnittsueberschrift.md) erbt
 eine Position das Gewerk aus der Überschrift ihres Abschnitts, wenn ihr eigener Text

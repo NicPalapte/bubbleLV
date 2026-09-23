@@ -9,6 +9,8 @@ name: Claude PR Review
 # - danach nur noch auf Zuruf: Kommentar mit "@claude review" schreiben
 # - Entwürfe (Draft-PRs) werden nicht automatisch geprüft
 # - der Agent darf nur lesen und kommentieren, niemals Code ändern oder pushen
+# - pro Review höchstens 60 Arbeitsschritte (--max-turns); vorher waren es 40, was
+#   bei großen PRs vor der Zusammenfassung ausging — dann fehlte der Gesamtkommentar
 #
 # Einrichtung: docs/setup/ci-und-agenten.md · Begründung: docs/decisions/0001-pr-review-agent.md
 
@@ -188,7 +190,7 @@ jobs:
             Verboten: Code ändern, committen, pushen, Reviews genehmigen, PRs mergen.
           claude_args: |
             --model ${{ steps.model.outputs.model }}
-            --max-turns 40
+            --max-turns 60
             --allowedTools "mcp__github_inline_comment__create_inline_comment,Read,Grep,Glob,Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr comment:*)"
 
       - name: Budget-Zähler aktualisieren

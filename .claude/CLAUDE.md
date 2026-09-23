@@ -19,6 +19,7 @@ Entscheidungen: @docs/decisions/README.md · Einrichtung CI/Agenten: @docs/setup
 ## Bash-Befehle
 - `cd frontend && npm run dev` – App lokal starten
 - `cd frontend && npm test` – Vitest (Unit-Tests, inkl. GAEB-Parser gegen Fixtures)
+- `cd frontend && npm run typecheck` – TypeScript über `src`, `vite.config.ts` und `tests`
 - `cd frontend && npm run build` – Production-Build (statisches Bundle)
 
 _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Write
@@ -156,7 +157,7 @@ Prompts in Workflows):
 - Anleitungen für manuelle Schritte des Owners nach `docs/setup/`
 
 ## Automatik im Repo (nicht ohne Rückfrage ändern)
-- `.github/workflows/ci.yml` – Lint, Format, Test, Build bei jedem PR
+- `.github/workflows/ci.yml` – Lint, Format, Typecheck, Test, Build bei jedem PR
 - `.github/workflows/claude-review.yml` – Review-Agent, max. 3 automatische Läufe je PR
 - `.github/workflows/pr-preview.yml` – Preview-App je PR unter `pr-preview/pr-<nr>/`
 - `.github/workflows/deploy-pages.yml` – `main` → Branch `gh-pages` (Wurzel)

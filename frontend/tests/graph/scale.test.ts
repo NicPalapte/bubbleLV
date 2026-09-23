@@ -114,8 +114,10 @@ describe('Graph-Engine bei ~10k Positionen', () => {
   });
 
   it('liefert je Größenmodus den passenden Aggregatwert', () => {
-    expect(sizeModeById('count').get(tree)).toBe(10_000);
-    expect(sizeModeById('cost').get(tree)).toBe(1_000_000);
-    expect(sizeModeById('uniform').get(tree)).toBe(1);
+    // Zweites Argument: die Mengen je Knoten. Nur der Modus „Menge" liest sie,
+    // die drei hier geprüften nicht — deshalb `null`.
+    expect(sizeModeById('count').get(tree, null)).toBe(10_000);
+    expect(sizeModeById('cost').get(tree, null)).toBe(1_000_000);
+    expect(sizeModeById('uniform').get(tree, null)).toBe(1);
   });
 });
