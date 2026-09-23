@@ -9,7 +9,7 @@
 //
 // Gerechnet wird im Modell (lib/matrix/model.ts), einmal je Filterwechsel.
 
-import { useMemo, useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { AxisPicker } from './AxisPicker';
 import { EmptyState } from '../ui/EmptyState';
 import { BlockLabel } from '../ui/PanelHeader';
@@ -73,11 +73,34 @@ export function MatrixView() {
 
   // Vor dem frühen Rücksprung: ein Hook läuft in jedem Durchlauf.
   const rasterRef = useRef<HTMLTableElement>(null);
+  /** Die Zelle, auf der der eine Tab-Stopp des Rasters steht („r-c"). */
+  const [tabZelle, setTabZelle] = useState<string | null>(null);
 
   const model = useMemo(() => {
     const mask = active.filtering ? filterMask(index, active) : null;
     return buildMatrix({ index, mask, rowFacetId, colFacetId, measure });
   }, [index, active, rowFacetId, colFacetId, measure]);
+
+  const ersteZelle = useMemo(() => {
+    for (let r = 0; r < model.rows.length; r++) {
+      if (!model.rows[r].filterable) continue;
+      for (let c = 0; c < model.cols.length; c++) {
+        if (model.cols[c].filterable && model.cells.has(cellKey(r, c))) return `${r}-${c}`;
+      }
+    }
+    return null;
+  }, [model]);
+
+  /** Ein Filterwechsel kann die gemerkte Zelle entfernt haben — dann zurück an den Anfang. */
+  const gemerkteZelle = useMemo(() => {
+    if (tabZelle === null) return ersteZelle;
+    const [r, c] = tabZelle.split('-').map(Number);
+    const vorhanden =
+      model.rows[r]?.filterable === true &&
+      model.cols[c]?.filterable === true &&
+      model.cells.has(cellKey(r, c));
+    return vorhanden ? tabZelle : ersteZelle;
+  }, [tabZelle, ersteZelle, model]);
 
   if (lv === null) return null;
 
@@ -113,9 +136,13 @@ export function MatrixView() {
   };
 
   // ── Tastatur ────────────────────────────────────────────────────────────
-  // Ein Raster mit zwölf mal zwölf Zellen sind 144 Tab-Stopps. Die Pfeiltasten
-  // bewegen deshalb den Fokus von Zelle zu Zelle; Enter und Leertaste lösen sie
-  // aus (das erledigt die Schaltfläche selbst).
+  // Ein Raster mit zwölf mal zwölf Zellen wären 144 Tab-Stopps. Es hat deshalb
+  // genau **einen**: Tab führt ins Raster, die Pfeiltasten bewegen darin den
+  // Fokus, Tab führt wieder hinaus. Enter und Leertaste lösen die Zelle aus —
+  // das erledigt die Schaltfläche selbst.
+  //
+  // Der Tab-Stopp bleibt auf der zuletzt besuchten Zelle stehen: wer das
+  // Raster verlässt und zurückkommt, steht wieder dort und nicht am Anfang.
 
   /** Fokus auf die Zelle setzen; `false`, wenn es dort keine gibt. */
   const fokussiereZelle = (row: number, col: number): boolean => {
@@ -335,6 +362,9 @@ export function MatrixView() {
                             type="button"
                             data-r={r}
                             data-c={c}
+                            // Genau eine Zelle im Raster ist ein Tab-Stopp.
+                            tabIndex={`${r}-${c}` === gemerkteZelle ? 0 : -1}
+                            onFocus={() => setTabZelle(`${r}-${c}`)}
                             onClick={() => pickCell(r, c)}
                             title={`${beschriftung} · ${formatPositions(cell.count)}`}
                             aria-label={`${beschriftung}, ${formatValue(value, model)}`}

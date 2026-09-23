@@ -150,6 +150,24 @@ describe('Matrix · Tastatur', () => {
     expect(document.activeElement).toBe(zelle);
   });
 
+  it('hat genau einen Tab-Stopp — nicht einen je Zelle', async () => {
+    await ladeApp();
+    ansicht('Matrix');
+    const raster = screen.getByRole('grid', { name: 'Matrix' });
+
+    const stopps = () => raster.querySelectorAll('button[data-r][tabindex="0"]');
+    expect(raster.querySelectorAll('button[data-r]').length).toBeGreaterThan(1);
+    expect(stopps()).toHaveLength(1);
+
+    // Der Stopp wandert mit dem Fokus mit: wer das Raster verlässt und
+    // zurückkommt, steht wieder dort, wo er war.
+    const zweite = raster.querySelectorAll<HTMLButtonElement>('button[data-r]')[1];
+    zweite.focus();
+    fireEvent.focus(zweite);
+    expect(stopps()).toHaveLength(1);
+    expect(zweite).toHaveAttribute('tabindex', '0');
+  });
+
   it('löst eine Zelle mit Enter aus — sie ist eine Schaltfläche', async () => {
     await ladeApp();
     ansicht('Matrix');
