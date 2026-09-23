@@ -37,6 +37,7 @@ import type { FilteredQuantities } from '../lib/graph/quantities';
 import type { PositionIndex } from '../lib/index/positionIndex';
 import type { ActiveFilters } from '../lib/matchPos';
 import type { LoadedLV } from '../lib/pipeline/runPipeline';
+import type { SharedState } from '../lib/share/urlState';
 import type { MatchIndex } from '../lib/tree/matchCounts';
 import type { LVNode } from '../types/lvNode';
 
@@ -73,6 +74,8 @@ export interface ViewerState {
 /** Aktionen, die mehr als einen Bereich betreffen oder das LV austauschen. */
 type LvAction =
   | { type: 'loading' }
+  /** Zustand aus einem geteilten Link (WP-P, Schritt 2, lib/share/urlState.ts). */
+  | { type: 'applyShared'; shared: SharedState; nodeId: string | null; positionId: string | null }
   | { type: 'loaded'; lv: LoadedLV }
   | { type: 'error'; message: string }
   | { type: 'clear' }
@@ -107,6 +110,28 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
         selection: selectionForTree(action.lv.tree),
         view: viewStateForNewLv(state.view),
       };
+    // Ein geteilter Link (WP-P, Schritt 2): Ansicht, Filter und Auswahl in
+    // **einem** Schritt setzen. Einzelne Aktionen nacheinander würden
+    // Zwischenstände erzeugen, die kurz gezeichnet und sofort wieder
+    // überschrieben werden — und jeder davon schriebe die Adresszeile neu.
+    case 'applyShared': {
+      const { shared, nodeId, positionId } = action;
+      const facets: Record<string, Set<string>> = {};
+      for (const [facetId, values] of Object.entries(shared.facets)) {
+        if (values.length > 0) facets[facetId] = new Set(values);
+      }
+      return {
+        ...state,
+        filter: {
+          ...state.filter,
+          search: shared.search,
+          filters: { facets, menge: shared.menge },
+          hideMode: shared.hideMode,
+        },
+        selection: { ...state.selection, nodeId, positionId },
+        view: viewReducer(state.view, { type: 'setViewMode', mode: shared.view }),
+      };
+    }
     case 'error':
       return { ...state, loading: false, error: action.message };
     case 'clear':

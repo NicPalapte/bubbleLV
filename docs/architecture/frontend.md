@@ -56,6 +56,8 @@ frontend/
     │   │   ├── checkReport.ts        # checkMarkdown: Hinweise im aktuellen Filter
     │   │   ├── download.ts           # Blob → <a download>, kein Request
     │   │   └── issueLink.ts          # vorbefülltes GitHub-Formular, ohne Fachdaten
+    │   ├── share/                    # Zustand im URL-Fragment (WP-P)
+    │   │   └── urlState.ts           # encode/decode, prüft jeden fremden Link
     │   ├── matrix/                   # Heatmap über zwei Facetten (WP-O)
     │   │   └── model.ts              # buildMatrix: Achsen, Zellen, Zellmaß
     │   ├── relate/                   # Beziehungen: Ähnlichkeit, Ausreißer (WP-M)
@@ -264,6 +266,16 @@ wortweise verglichen ([`../decisions/0020`](../decisions/0020-langtext-vergleich
 
 Die Auswahl selbst ist **nicht** begrenzt: die Ansicht zeigt die ersten fünf und
 sagt, wie viele warten.
+
+### Geteilter Link (WP-P, Schritt 2)
+
+Ansicht, Filter und die OZ der Auswahl stehen im **Fragment** der Adresse
+(`components/common/useShareLink.ts`, `lib/share/urlState.ts`). Alles hinter `#`
+sendet ein Browser nie an einen Server — auch nicht im Referrer. Geschrieben wird
+entprellt per `replaceState`, gelesen einmal je geladener Datei, und beim Lesen
+wird jeder Wert geprüft: ein Link aus einer älteren Fassung darf die App nicht in
+einen Zustand bringen, den ihre Oberfläche nicht kennt
+([`../decisions/0023`](../decisions/0023-zustand-im-url-fragment.md)).
 
 ### Mitnehmen: Export, Druck, Fehler melden (WP-P)
 
