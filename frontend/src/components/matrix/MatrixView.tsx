@@ -279,6 +279,11 @@ export function MatrixView() {
             <table
               ref={rasterRef}
               onKeyDown={onRasterKeyDown}
+              // Gibt es keine filterbare Zelle — jede Position fällt auf
+              // beiden Achsen unter „Ohne Angabe" oder „Weitere" —, dann trägt
+              // keine Schaltfläche den Tab-Stopp. Dann nimmt ihn das Raster
+              // selbst, statt still aus der Tab-Reihenfolge zu fallen.
+              tabIndex={gemerkteZelle === null ? 0 : undefined}
               // `grid` statt der reinen Tabellen-Semantik: die Zellen sind
               // Einstiege, keine Messwerte zum Nachlesen (WP-P, Schritt 5).
               role="grid"

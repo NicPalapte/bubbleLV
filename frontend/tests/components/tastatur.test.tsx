@@ -190,6 +190,33 @@ describe('Matrix · Tastatur', () => {
     expect(zweite).toHaveAttribute('tabindex', '0');
   });
 
+  it('bleibt erreichbar, wenn keine Zelle filterbar ist', async () => {
+    // „Material" und „Zeitbezug" kommen in der Musterdatei nicht vor: beide
+    // Achsen bestehen dann nur aus „Ohne Angabe", und keine Zelle ist ein
+    // Einstieg. Ohne Tab-Stopp fiele das Raster still aus der Reihenfolge.
+    await ladeApp();
+    ansicht('Matrix');
+    const wechsle = (achse: string, facette: string): void => {
+      // Der Filter-Chip in der Kopfleiste heißt genauso — hier zählt der in
+      // der Ansicht.
+      fireEvent.click(
+        within(screen.getByRole('main')).getByRole('button', { name: new RegExp(`${achse} ▾`) }),
+      );
+      const offen = [...document.body.children].filter(
+        (element) => (element as HTMLElement).style.position === 'fixed',
+      );
+      fireEvent.click(
+        within(offen[offen.length - 1] as HTMLElement).getByText(facette, { selector: '*' }),
+      );
+    };
+    wechsle('Gewerk', 'Material');
+    wechsle('Bauteiltyp', 'Zeitbezug');
+
+    const raster = screen.getByRole('grid', { name: 'Matrix' });
+    expect(raster.querySelectorAll('button[data-r]')).toHaveLength(0);
+    expect(raster).toHaveAttribute('tabindex', '0');
+  });
+
   it('löst eine Zelle mit Enter aus — sie ist eine Schaltfläche', async () => {
     await ladeApp();
     ansicht('Matrix');
