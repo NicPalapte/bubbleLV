@@ -2,10 +2,12 @@
 // und Fehler melden.
 //
 // Alle vier Einträge erzeugen **keinen Request**: CSV und Markdown entstehen
-// als Blob im Browser, der Druck läuft über `window.print()`, und der
-// Melde-Link öffnet nur ein vorbefülltes Formular in einem neuen Tab — ohne
-// einen einzigen Inhalt aus der geladenen Datei
-// (docs/decisions/0017-keine-nutzungsmessung.md).
+// als Blob im Browser, der Druck läuft über `window.print()`, und „Fehler
+// melden" öffnet ein Fenster mit der fertigen Meldung — zum Kopieren, als
+// Mail oder als GitHub-Issue, jedes davon erst auf Knopfdruck und ohne einen
+// einzigen Inhalt aus der geladenen Datei
+// (docs/decisions/0017-keine-nutzungsmessung.md,
+//  docs/decisions/0024-fehler-melden-ohne-konto.md).
 
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
