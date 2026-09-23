@@ -28,13 +28,22 @@ const MAILTO_GRENZE = 1800;
 
 export interface ReportDialogProps {
   context: IssueContext;
+  /**
+   * Startwert für „Was ist passiert?" — die Fehlerseite legt die Meldung des
+   * Absturzes hier ab und **nicht** in den fertigen Meldetext. Grund: der
+   * Meldetext ist schreibgeschützt, dieses Feld nicht. Was Bubble selbst
+   * beiträgt, ist nachweislich frei von Inhalten der Datei; eine
+   * Fehlermeldung aus fremdem Code ist es nicht zwingend — also gehört sie
+   * dorthin, wo der Nutzer sie lesen und löschen kann.
+   */
+  vorbelegung?: string;
   onClose: () => void;
 }
 
 type Kopierstand = 'bereit' | 'kopiert' | 'fehlgeschlagen';
 
-export function ReportDialog({ context, onClose }: ReportDialogProps) {
-  const [beschreibung, setBeschreibung] = useState('');
+export function ReportDialog({ context, vorbelegung = '', onClose }: ReportDialogProps) {
+  const [beschreibung, setBeschreibung] = useState(vorbelegung);
   const [kopiert, setKopiert] = useState<Kopierstand>('bereit');
   const feldRef = useRef<HTMLTextAreaElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);

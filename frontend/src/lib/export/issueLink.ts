@@ -29,12 +29,6 @@ export interface IssueContext {
   view: string;
   /** Ist überhaupt eine Datei geladen? Nur ja/nein, nicht welche. */
   loaded: boolean;
-  /**
-   * Fehlermeldung eines Absturzes (Issue #73). Nur die Meldung selbst, kein
-   * Stacktrace: der kann Werte aus der geladenen Datei tragen, die Meldung
-   * eines Programmfehlers nicht.
-   */
-  fehler?: string;
 }
 
 /**
@@ -62,9 +56,7 @@ function umgebung({ view, loaded }: IssueContext): string[] {
  */
 export function issueBody(context: IssueContext, beschreibung = ''): string {
   const text = beschreibung.trim();
-  const absturz = context.fehler?.trim() ?? '';
   return [
-    ...(absturz === '' ? [] : ['## Fehlermeldung', '', '```', absturz, '```', '']),
     '## Was ist passiert?',
     '',
     // Klartext statt Markdown-Kommentar: derselbe Text geht auch in die

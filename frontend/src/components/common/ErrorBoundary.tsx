@@ -85,7 +85,12 @@ function CrashPanel({
         </div>
         {melden && (
           <ReportDialog
-            context={{ view: bereich, loaded: dateiGeladen, fehler: meldung }}
+            context={{ view: bereich, loaded: dateiGeladen }}
+            // Die Meldung steht im bearbeitbaren Feld, nicht im fertigen Text:
+            // sie kommt aus dem Programm, und niemand kann ausschließen, dass
+            // ein künftiger Fehler einen Wert aus der Datei hineinschreibt.
+            // Dort kann der Nutzer sie lesen — und löschen.
+            vorbelegung={`Absturz in ${bereich}: ${meldung}`}
             onClose={() => setMelden(false)}
           />
         )}

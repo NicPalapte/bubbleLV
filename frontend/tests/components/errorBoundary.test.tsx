@@ -95,6 +95,28 @@ describe('ErrorBoundary', () => {
     expect(text).not.toContain(STACK_MARKE);
   });
 
+  it('legt die Meldung ins bearbeitbare Feld, nicht in den festen Text', () => {
+    render(
+      <ErrorBoundary bereich="graph" dateiGeladen>
+        <Kaputt />
+      </ErrorBoundary>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Fehler melden/ }));
+    const fenster = screen.getByRole('dialog', { name: 'Fehler melden' });
+    const feld = within(fenster).getByLabelText(/Was ist passiert/) as HTMLTextAreaElement;
+
+    // Vorbelegt — und löschbar. Was Bubble selbst beiträgt, ist nachweislich
+    // frei von Inhalten der Datei; eine Fehlermeldung aus fremdem Code ist es
+    // nicht zwingend. Also muss der Nutzer sie entfernen können.
+    expect(feld.value).toContain('Kurztext war undefined');
+    expect(feld.readOnly).toBe(false);
+
+    fireEvent.change(feld, { target: { value: 'ohne die Meldung' } });
+    const text = (within(fenster).getByLabelText('Meldetext') as HTMLTextAreaElement).value;
+    expect(text).toContain('ohne die Meldung');
+    expect(text).not.toContain('Kurztext war undefined');
+  });
+
   it('schreibt den Absturz samt Stacktrace nur in die Konsole', () => {
     render(
       <ErrorBoundary bereich="matrix" dateiGeladen={false}>

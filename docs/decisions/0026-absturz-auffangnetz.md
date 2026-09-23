@@ -22,8 +22,9 @@ kann nicht einmal melden, was passiert ist, weil der Melde-Knopf mit verschwunde
 - **Die Fehlerseite sagt drei Dinge:** dass es ein Fehler im Programm ist und nicht in
   der Datei, dass die Datei den Browser nicht verlassen hat, und was genau schiefging
   (`name: message`).
-- **Melden geht aus der Fehlerseite heraus** — dasselbe Fenster wie sonst, die
-  Fehlermeldung steht vorbefüllt darin.
+- **Melden geht aus der Fehlerseite heraus** — dasselbe Fenster wie sonst. Die
+  Fehlermeldung steht im **bearbeitbaren** Feld „Was ist passiert?", nicht im
+  schreibgeschützten Meldetext.
 - **Der Stacktrace geht nur in die Konsole des Nutzers**, nie in den Meldetext.
 - **Der Bau-Stand hat eine Quelle** (`lib/version.ts`): Kopfleiste und Meldetext lesen
   denselben Wert.
@@ -35,6 +36,13 @@ kann nicht einmal melden, was passiert ist, weil der Melde-Knopf mit verschwunde
 - Das feinere Netz je Ansicht ist der eigentliche Gewinn. Stürzt der Graph ab, bleiben
   Tabelle, Filter und Suche bedienbar — das LV ist weiter lesbar, und genau dafür gibt
   es Bubble.
+- **Die Fehlermeldung gehört ins bearbeitbare Feld.** Der Meldetext sagt zu: „Aus
+  der geladenen Datei steht in dieser Meldung nichts." Diese Zusage gilt für alles,
+  was Bubble selbst beiträgt — für eine Fehlermeldung aus fremdem Code kann sie
+  niemand garantieren (ein künftiges `throw new Error(\`Ungültige Menge ${menge}\`)`
+  genügte). Im schreibgeschützten Text wäre sie unentfernbar; im Beschreibungsfeld
+  liest der Nutzer sie und kann sie löschen. Gefunden hat das der Review-Agent an
+  der ersten Fassung dieses PRs.
 - **Kein Stacktrace in der Meldung:** ein Stacktrace kann Werte tragen, die beim
   Absturz in der Zeile standen — Positionstexte, Mengen, Preise. Die Meldung eines
   Programmfehlers kann das nicht. Dieselbe Linie wie
@@ -51,6 +59,12 @@ kann nicht einmal melden, was passiert ist, weil der Melde-Knopf mit verschwunde
 - **Netz außerhalb des Providers** – der Neuaufbau verlöre die geladene Datei; genau
   das, was die weiße Seite schon tat.
 - **Stacktrace in die Meldung, „zur besseren Analyse"** – siehe oben.
+- **Fehlermeldung in den festen Meldetext, Zusage entsprechend abschwächen** – die
+  Zusage ist das Kernstück des Fensters; eine Einschränkung darin wöge schwerer als
+  der Umweg über das Beschreibungsfeld.
+- **Meldetext bearbeitbar machen** – dann könnten die drei Wege (Kopieren, Mail,
+  Issue) auseinanderlaufen; außerdem soll sichtbar bleiben, was Bubble selbst
+  beiträgt.
 - **`window.onerror` statt Auffangnetz** – meldet den Fehler, repariert die Anzeige
   aber nicht: die Seite bliebe weiß.
 - **Automatisch neu laden nach einem Absturz** – verliert die Datei und verbirgt den
