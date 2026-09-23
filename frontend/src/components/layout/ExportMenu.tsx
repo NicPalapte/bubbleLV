@@ -14,7 +14,7 @@ import { Popover, PopoverHead, PopoverRow } from '../ui/Popover';
 import { useDismiss } from '../common/useDismiss';
 import { checkMarkdown } from '../../lib/export/checkReport';
 import { downloadText, exportFileName } from '../../lib/export/download';
-import { issueUrl } from '../../lib/export/issueLink';
+import { ReportDialog } from '../report/ReportDialog';
 import { exportCount, positionsCsv } from '../../lib/export/positions';
 import { formatCount } from '../../lib/format';
 import { filterMask } from '../../lib/index/positionIndex';
@@ -24,6 +24,7 @@ import { useViewer } from '../../state/viewer';
 export function ExportMenu() {
   const { lv, index, active, filter, matches, nodes, view } = useViewer();
   const [open, setOpen] = useState(false);
+  const [melden, setMelden] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   useDismiss(
@@ -92,8 +93,10 @@ export function ExportMenu() {
   };
 
   const fehlerMelden = (): void => {
-    window.open(issueUrl({ view: view.mode, loaded: true }), '_blank', 'noopener,noreferrer');
+    // Das Fenster statt des GitHub-Links: wer kein Konto hat, käme dort nicht
+    // weiter (docs/decisions/0024-fehler-melden-ohne-konto.md).
     setOpen(false);
+    setMelden(true);
   };
 
   return (
@@ -118,11 +121,17 @@ export function ExportMenu() {
         </PopoverRow>
         <PopoverRow
           onClick={fehlerMelden}
-          title="Öffnet ein vorbefülltes Formular — ohne Inhalte aus deiner Datei"
+          title="Fertige Meldung zum Kopieren, Mailen oder als GitHub-Issue — ohne Inhalte aus deiner Datei"
         >
           Fehler melden
         </PopoverRow>
       </Popover>
+      {melden && (
+        <ReportDialog
+          context={{ view: view.mode, loaded: true }}
+          onClose={() => setMelden(false)}
+        />
+      )}
     </div>
   );
 }
