@@ -2,10 +2,12 @@
 // und Fehler melden.
 //
 // Alle vier Einträge erzeugen **keinen Request**: CSV und Markdown entstehen
-// als Blob im Browser, der Druck läuft über `window.print()`, und der
-// Melde-Link öffnet nur ein vorbefülltes Formular in einem neuen Tab — ohne
-// einen einzigen Inhalt aus der geladenen Datei
-// (docs/decisions/0017-keine-nutzungsmessung.md).
+// als Blob im Browser, der Druck läuft über `window.print()`, und „Fehler
+// melden" öffnet ein Fenster mit der fertigen Meldung — zum Kopieren, als
+// Mail oder als GitHub-Issue, jedes davon erst auf Knopfdruck und ohne einen
+// einzigen Inhalt aus der geladenen Datei
+// (docs/decisions/0017-keine-nutzungsmessung.md,
+//  docs/decisions/0024-fehler-melden-ohne-konto.md).
 
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
@@ -14,15 +16,23 @@ import { Popover, PopoverHead, PopoverRow } from '../ui/Popover';
 import { useDismiss } from '../common/useDismiss';
 import { checkMarkdown } from '../../lib/export/checkReport';
 import { downloadText, exportFileName } from '../../lib/export/download';
-import { issueUrl } from '../../lib/export/issueLink';
 import { exportCount, positionsCsv } from '../../lib/export/positions';
 import { formatCount } from '../../lib/format';
 import { filterMask } from '../../lib/index/positionIndex';
 import { matchCount } from '../../lib/tree/matchCounts';
 import { useViewer } from '../../state/viewer';
 
-export function ExportMenu() {
-  const { lv, index, active, filter, matches, nodes, view } = useViewer();
+export interface ExportMenuProps {
+  /**
+   * „Fehler melden" gewählt. Das Fenster hängt in der Kopfleiste, nicht hier:
+   * solange es offen ist, darf die Kommandopalette nicht dazwischenfunken
+   * (beide liegen auf derselben Ebene über der Seite).
+   */
+  onFehlerMelden: () => void;
+}
+
+export function ExportMenu({ onFehlerMelden }: ExportMenuProps) {
+  const { lv, index, active, filter, matches, nodes } = useViewer();
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -92,8 +102,10 @@ export function ExportMenu() {
   };
 
   const fehlerMelden = (): void => {
-    window.open(issueUrl({ view: view.mode, loaded: true }), '_blank', 'noopener,noreferrer');
+    // Das Fenster statt des GitHub-Links: wer kein Konto hat, käme dort nicht
+    // weiter (docs/decisions/0024-fehler-melden-ohne-konto.md).
     setOpen(false);
+    onFehlerMelden();
   };
 
   return (
@@ -118,7 +130,7 @@ export function ExportMenu() {
         </PopoverRow>
         <PopoverRow
           onClick={fehlerMelden}
-          title="Öffnet ein vorbefülltes Formular — ohne Inhalte aus deiner Datei"
+          title="Fertige Meldung zum Kopieren, Mailen oder als GitHub-Issue — ohne Inhalte aus deiner Datei"
         >
           Fehler melden
         </PopoverRow>

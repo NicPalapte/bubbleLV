@@ -4,7 +4,7 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import App from '../../src/App';
 
@@ -125,6 +125,9 @@ describe('Tabelle · Tastatur', () => {
     const letzte = aktiveZeile(grid);
 
     // Auswahl über die Kommandopalette — also von außerhalb der Tabelle.
+    // Das leere `act` wartet auf den Effekt, der den Tastatur-Listener der
+    // Palette anhängt; ohne das liefe der Tastendruck manchmal ins Leere.
+    await act(async () => {});
     fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
     fireEvent.change(screen.getByLabelText('Befehl oder OZ'), {
       target: { value: '001.004.0030' },

@@ -3,7 +3,7 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import App from '../../src/App';
 
@@ -30,8 +30,17 @@ function tippe(text: string): void {
   fireEvent.change(feld(), { target: { value: text } });
 }
 
-/** Strg + K auf dem Fenster — so kommt die Palette im Betrieb hoch. */
-function strgK(): void {
+/**
+ * Strg + K auf dem Fenster — so kommt die Palette im Betrieb hoch.
+ *
+ * Das leere `act` davor ist nicht Zierde: der Listener hängt in einem
+ * `useEffect`, und React führt den **nach** dem Commit aus. `waitFor` sieht
+ * das fertige DOM schon vorher — ein Tastendruck in genau diesem Moment läuft
+ * ins Leere. Im Browser ist das ein Bruchteil einer Millisekunde und niemandem
+ * zumutbar zu treffen; im Test traf es jeden zweiten Lauf.
+ */
+async function strgK(): Promise<void> {
+  await act(async () => {});
   fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
 }
 
@@ -40,7 +49,7 @@ describe('Kommandopalette · öffnen und schließen', () => {
     await ladeApp();
     expect(screen.queryByRole('dialog', { name: 'Kommandopalette' })).toBeNull();
 
-    strgK();
+    await strgK();
     expect(feld()).toHaveFocus();
 
     fireEvent.keyDown(palette(), { key: 'Escape' });
@@ -55,10 +64,10 @@ describe('Kommandopalette · öffnen und schließen', () => {
 
   it('beginnt jedes Mal leer', async () => {
     await ladeApp();
-    strgK();
+    await strgK();
     tippe('Matrix');
     fireEvent.keyDown(palette(), { key: 'Escape' });
-    strgK();
+    await strgK();
     expect(feld()).toHaveValue('');
   });
 });
@@ -66,7 +75,7 @@ describe('Kommandopalette · öffnen und schließen', () => {
 describe('Kommandopalette · Ansicht wechseln', () => {
   it('wechselt mit Enter in die getippte Ansicht', async () => {
     await ladeApp();
-    strgK();
+    await strgK();
     tippe('Matrix');
     fireEvent.keyDown(palette(), { key: 'Enter' });
 
@@ -79,7 +88,7 @@ describe('Kommandopalette · Ansicht wechseln', () => {
 
   it('geht mit den Pfeiltasten durch die Treffer', async () => {
     await ladeApp();
-    strgK();
+    await strgK();
     tippe('a');
     const erste = within(palette()).getAllByRole('option')[0];
     fireEvent.keyDown(palette(), { key: 'ArrowDown' });
@@ -91,7 +100,7 @@ describe('Kommandopalette · Ansicht wechseln', () => {
 describe('Kommandopalette · Filter setzen', () => {
   it('setzt einen Facettenwert — derselbe Filter wie über die Chips', async () => {
     await ladeApp();
-    strgK();
+    await strgK();
     tippe('Einheit m');
     const zeile = within(palette()).getAllByRole('option')[0];
     const beschriftung = zeile.textContent ?? '';
@@ -109,7 +118,7 @@ describe('Kommandopalette · Filter setzen', () => {
 describe('Kommandopalette · zu einer Position springen', () => {
   it('findet die Position über ihre OZ und öffnet sie in der Tabelle', async () => {
     await ladeApp();
-    strgK();
+    await strgK();
     tippe('001.004.0030');
 
     const zeile = within(palette()).getAllByRole('option')[0];
@@ -127,7 +136,7 @@ describe('Kommandopalette · zu einer Position springen', () => {
 
   it('sagt es, wenn nichts passt, statt eine leere Liste zu zeigen', async () => {
     await ladeApp();
-    strgK();
+    await strgK();
     tippe('gibtesnichtimlv');
     expect(within(palette()).getByText('Kein Befehl')).toBeInTheDocument();
   });

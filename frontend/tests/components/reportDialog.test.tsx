@@ -1,0 +1,234 @@
+// „Fehler melden" (WP-P, Schritt 6). Die Zusage: drei Wege zur selben
+// Meldung, keiner davon braucht einen Server — und in keinem steht ein Inhalt
+// aus der geladenen Datei (docs/decisions/0024-fehler-melden-ohne-konto.md).
+
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import App from '../../src/App';
+
+const FIXTURE_DIR = resolve(process.cwd(), 'tests/fixtures');
+
+let geschrieben: string[] = [];
+let geoeffnet: string[] = [];
+let zwischenablageGeht = true;
+
+beforeEach(() => {
+  geschrieben = [];
+  geoeffnet = [];
+  zwischenablageGeht = true;
+  Object.defineProperty(navigator, 'clipboard', {
+    configurable: true,
+    value: {
+      writeText: (text: string) => {
+        if (!zwischenablageGeht) return Promise.reject(new Error('kein sicherer Kontext'));
+        geschrieben.push(text);
+        return Promise.resolve();
+      },
+    },
+  });
+  vi.stubGlobal(
+    'open',
+    vi.fn((url: string) => {
+      geoeffnet.push(url);
+      return null;
+    }),
+  );
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+async function oeffneMeldung(): Promise<HTMLElement> {
+  render(<App />);
+  const name = 'gaeb-xml-beispiel.x83';
+  fireEvent.change(screen.getByLabelText('GAEB-Datei auswählen'), {
+    target: { files: [new File([readFileSync(resolve(FIXTURE_DIR, name))], name)] },
+  });
+  await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+
+  fireEvent.click(within(screen.getByRole('banner')).getByRole('button', { name: /Mitnehmen/ }));
+  const menu = [...document.body.children].filter(
+    (element) => (element as HTMLElement).style.position === 'fixed',
+  );
+  fireEvent.click(
+    within(menu[menu.length - 1] as HTMLElement).getByRole('button', { name: 'Fehler melden' }),
+  );
+  return screen.getByRole('dialog', { name: 'Fehler melden' });
+}
+
+function beschreibe(fenster: HTMLElement, text: string): void {
+  fireEvent.change(within(fenster).getByLabelText(/Was ist passiert/), {
+    target: { value: text },
+  });
+}
+
+describe('Fehler melden · der Text', () => {
+  it('trägt die eigene Beschreibung und die technischen Angaben', async () => {
+    const fenster = await oeffneMeldung();
+    beschreibe(fenster, 'Der Graph bleibt leer.');
+
+    const meldetext = within(fenster).getByLabelText('Meldetext') as HTMLTextAreaElement;
+    expect(meldetext.value).toContain('Der Graph bleibt leer.');
+    expect(meldetext.value).toContain('Datei geladen: ja');
+    expect(meldetext.value).toContain('Ansicht:');
+  });
+
+  it('trägt nichts aus der geladenen Datei', async () => {
+    const fenster = await oeffneMeldung();
+    const meldetext = (within(fenster).getByLabelText('Meldetext') as HTMLTextAreaElement).value;
+    // Weder Dateiname noch Projektname noch eine OZ.
+    expect(meldetext).not.toContain('gaeb-xml-beispiel');
+    expect(meldetext).not.toContain('BVBS');
+    expect(meldetext).not.toMatch(/\d{3}\.\d{3}\.\d{4}/);
+  });
+
+  it('ist überall lesbar — kein Markdown-Kommentar, den nur GitHub ausblendet', async () => {
+    // Derselbe Text geht in die Zwischenablage und ins Mailprogramm; dort
+    // stünde `<!-- … -->` wörtlich da.
+    const fenster = await oeffneMeldung();
+    const leer = (within(fenster).getByLabelText('Meldetext') as HTMLTextAreaElement).value;
+    expect(leer).not.toContain('<!--');
+    expect(leer).toContain('(keine Beschreibung eingetragen)');
+
+    beschreibe(fenster, 'Etwas ist schiefgegangen.');
+    const gefuellt = (within(fenster).getByLabelText('Meldetext') as HTMLTextAreaElement).value;
+    expect(gefuellt).not.toContain('<!--');
+    expect(gefuellt).not.toContain('(keine Beschreibung eingetragen)');
+  });
+});
+
+describe('Fehler melden · die drei Wege', () => {
+  it('kopiert den Text in die Zwischenablage', async () => {
+    const fenster = await oeffneMeldung();
+    beschreibe(fenster, 'Spalte bleibt leer.');
+    fireEvent.click(within(fenster).getByRole('button', { name: /Text kopieren/ }));
+
+    await waitFor(() => expect(geschrieben).toHaveLength(1));
+    expect(geschrieben[0]).toContain('Spalte bleibt leer.');
+    expect(within(fenster).getByText('kopiert')).toBeInTheDocument();
+  });
+
+  it('sagt es, wenn die Zwischenablage nicht darf, statt stillzuhalten', async () => {
+    zwischenablageGeht = false;
+    const fenster = await oeffneMeldung();
+    fireEvent.click(within(fenster).getByRole('button', { name: /Text kopieren/ }));
+
+    await waitFor(() =>
+      expect(within(fenster).getByText(/Kopieren nicht möglich/)).toBeInTheDocument(),
+    );
+  });
+
+  it('öffnet eine Mail ohne Empfänger — die Adresse trägt der Absender ein', async () => {
+    const fenster = await oeffneMeldung();
+    beschreibe(fenster, 'Druck bricht ab.');
+
+    // Über `vi.stubGlobal`, damit das `vi.unstubAllGlobals()` im afterEach es
+    // wieder aufräumt: ein dauerhaft ersetztes `location` fiele später den
+    // Tests auf die Füße, die den Zustand im URL-Fragment lesen (0023).
+    const ziele: string[] = [];
+    const echt = window.location;
+    vi.stubGlobal('location', {
+      ...echt,
+      assign: echt.assign.bind(echt),
+      replace: echt.replace.bind(echt),
+      reload: echt.reload.bind(echt),
+      set href(wert: string) {
+        ziele.push(wert);
+      },
+      get href() {
+        return echt.href;
+      },
+    });
+    fireEvent.click(within(fenster).getByRole('button', { name: /E-Mail/ }));
+
+    expect(ziele).toHaveLength(1);
+    expect(ziele[0].startsWith('mailto:?')).toBe(true);
+    expect(decodeURIComponent(ziele[0])).toContain('Druck bricht ab.');
+  });
+
+  it('öffnet das GitHub-Formular mit demselben Text', async () => {
+    const fenster = await oeffneMeldung();
+    beschreibe(fenster, 'Filter greift nicht.');
+    fireEvent.click(within(fenster).getByRole('button', { name: /GitHub-Issue/ }));
+
+    expect(geoeffnet).toHaveLength(1);
+    expect(geoeffnet[0]).toContain('github.com/NicPalapte/bubbleLV/issues/new');
+    const text = decodeURIComponent(geoeffnet[0]).replace(/\+/g, ' ');
+    expect(text).toContain('Filter greift nicht.');
+    expect(text).not.toContain('gaeb-xml-beispiel');
+  });
+
+  it('sagt beim GitHub-Weg, dass ein Konto nötig ist', async () => {
+    const fenster = await oeffneMeldung();
+    expect(within(fenster).getByRole('button', { name: /Konto nötig/ })).toBeInTheDocument();
+  });
+});
+
+describe('Fehler melden · schließen', () => {
+  it('geht mit Escape zu, ohne nebenbei die Auswahl abzuräumen', async () => {
+    // Die Seite hört ebenfalls auf Escape („eine Ebene zurück"). Ohne die
+    // Capture-Phase verlöre man mit dem Schließen auch die gewählte Position.
+    render(<App />);
+    const name = 'gaeb-xml-beispiel.x83';
+    fireEvent.change(screen.getByLabelText('GAEB-Datei auswählen'), {
+      target: { files: [new File([readFileSync(resolve(FIXTURE_DIR, name))], name)] },
+    });
+    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+
+    // Eine Position wählen — sie steht danach im Eigenschaften-Panel.
+    fireEvent.click(screen.getByRole('radio', { name: 'Tabelle' }));
+    const grid = screen.getByRole('grid', { name: 'Positionen' });
+    fireEvent.keyDown(grid, { key: 'ArrowDown' });
+    fireEvent.keyDown(grid, { key: 'Enter' });
+    await waitFor(() =>
+      expect(within(grid).getAllByRole('row', { selected: true }).length).toBe(1),
+    );
+
+    fireEvent.click(within(screen.getByRole('banner')).getByRole('button', { name: /Mitnehmen/ }));
+    const menu = [...document.body.children].filter(
+      (element) => (element as HTMLElement).style.position === 'fixed',
+    );
+    fireEvent.click(
+      within(menu[menu.length - 1] as HTMLElement).getByRole('button', { name: 'Fehler melden' }),
+    );
+    expect(screen.getByRole('dialog', { name: 'Fehler melden' })).toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('dialog', { name: 'Fehler melden' })).toBeNull();
+    // Die Auswahl steht noch.
+    expect(
+      within(screen.getByRole('grid', { name: 'Positionen' })).getAllByRole('row', {
+        selected: true,
+      }).length,
+    ).toBe(1);
+  });
+});
+
+describe('Fehler melden · nur ein Fenster', () => {
+  it('lässt die Kommandopalette nicht dazwischenfunken', async () => {
+    // Beide liegen über der Seite. Zwei Fenster übereinander wären für
+    // niemanden vorhersehbar — und welches Escape zuerst sieht, hinge an der
+    // Reihenfolge im DOM.
+    await oeffneMeldung();
+    await act(async () => {});
+    fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
+
+    expect(screen.queryByRole('dialog', { name: 'Kommandopalette' })).toBeNull();
+    expect(screen.getByRole('dialog', { name: 'Fehler melden' })).toBeInTheDocument();
+  });
+});
+
+describe('Fehler melden · langer Text', () => {
+  it('sagt, dass Kopieren sicherer ist, wenn die Mail zu lang wird', async () => {
+    // Windows reicht `mailto:` über die Kommandozeile weiter und schneidet bei
+    // etwa 2000 Zeichen ab — ohne Rückmeldung.
+    const fenster = await oeffneMeldung();
+    expect(within(fenster).queryByText(/Kopieren sicherer/)).toBeNull();
+
+    beschreibe(fenster, 'x'.repeat(2500));
+    expect(within(fenster).getByText(/Kopieren sicherer/)).toBeInTheDocument();
+  });
+});

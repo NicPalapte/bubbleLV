@@ -4,6 +4,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CommandPalette } from '../palette/CommandPalette';
+import { ReportDialog } from '../report/ReportDialog';
 import { ExportMenu } from './ExportMenu';
 import { Chip } from '../ui/Chip';
 import { BubbleLogo } from '../ui/BubbleLogo';
@@ -51,6 +52,8 @@ export function TopBar() {
   } = useViewer();
   const dispatch = useViewerDispatch();
   const inputRef = useRef<HTMLInputElement>(null);
+  /** „Fehler melden" — das Fenster gehört hierher, nicht ins Menü (WP-P, Schritt 6). */
+  const [melden, setMelden] = useState(false);
 
   // Das Eingabefeld hängt am lokalen Wert, damit Tippen nie auf den Suchlauf
   // wartet; der Viewer-State folgt verzögert nach.
@@ -200,12 +203,21 @@ export function TopBar() {
       )}
       {loaded && (
         <div className="flex items-center gap-[8px] border-l border-line px-[18px]">
-          <CommandPalette />
-          <ExportMenu />
+          {/* Die Palette schweigt, solange das Melde-Fenster offen ist: beide
+              liegen über der Seite, und zwei Fenster übereinander wären für
+              niemanden vorhersehbar. */}
+          <CommandPalette gesperrt={melden} />
+          <ExportMenu onFehlerMelden={() => setMelden(true)} />
           <Chip onClick={() => dispatch({ type: 'clear' })} title="LV schließen und neu laden">
             ✕ LV schließen
           </Chip>
         </div>
+      )}
+      {melden && (
+        <ReportDialog
+          context={{ view: view.mode, loaded: lv !== null }}
+          onClose={() => setMelden(false)}
+        />
       )}
     </div>
   );

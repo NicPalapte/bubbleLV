@@ -108,18 +108,19 @@ describe('Mitnehmen', () => {
     expect(dateien[0].text).toContain('Hinweise, keine Urteile');
   });
 
-  it('meldet einen Fehler ohne einen Inhalt aus der Datei', async () => {
+  it('öffnet zum Melden das Fenster mit den drei Wegen', async () => {
+    // Direkt auf GitHub führte nur weiter, wer dort ein Konto hat
+    // (docs/decisions/0024-fehler-melden-ohne-konto.md).
     await ladeApp();
     oeffneMenu();
     fireEvent.click(menueEintrag('Fehler melden'));
 
-    expect(window.open).toHaveBeenCalledTimes(1);
-    const [url, ziel] = (window.open as unknown as { mock: { calls: string[][] } }).mock.calls[0];
-    expect(ziel).toBe('_blank');
-    // URLSearchParams schreibt Leerzeichen als „+" — für den Vergleich zurück.
-    const text = decodeURIComponent(url).replace(/\+/g, ' ');
-    expect(text).not.toContain('gaeb-xml-beispiel');
-    expect(text).toContain('Datei geladen: ja');
+    const fenster = within(screen.getByRole('dialog', { name: 'Fehler melden' }));
+    expect(fenster.getByRole('button', { name: /Text kopieren/ })).toBeInTheDocument();
+    expect(fenster.getByRole('button', { name: /E-Mail/ })).toBeInTheDocument();
+    expect(fenster.getByRole('button', { name: /GitHub-Issue/ })).toBeInTheDocument();
+    // Und nichts geht von selbst irgendwohin.
+    expect(window.open).not.toHaveBeenCalled();
   });
 });
 
