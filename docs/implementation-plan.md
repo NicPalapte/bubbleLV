@@ -492,7 +492,12 @@ Schritte:
 **Ziel:** Das Werkzeug wird schnell bedienbar und teilbar.
 
 Schritte:
-1. **Kommandopalette** (Strg/Cmd + K): zu OZ springen, Filter setzen, Ansicht wechseln.
+1. ✅ **Kommandopalette** (Strg/Cmd + K): zu OZ springen, Filter setzen, Ansicht
+   wechseln (`lib/palette/`, `components/palette/CommandPalette.tsx`). Die Palette
+   ist eine zweite Tür zum selben Zustand — sie löst dieselben Aktionen aus wie
+   die Chips daneben, und Positionen findet sie über `matchPos`, nicht über einen
+   zweiten Suchpfad. Eine getippte Nummer stellt die Positionen nach vorn, ein
+   getipptes Wort die Befehle.
 2. ✅ **Zustand im URL-Fragment** (`#...`): aktive Ansicht, Filter, Auswahl. Ein Fragment
    wird von Browsern **nie** an einen Server gesendet — die Regel „keine Fachdaten nach
    draußen" bleibt gewahrt. Aus der Datei steht nur die OZ der Auswahl im Link;
@@ -513,15 +518,17 @@ Schritte:
    vor dem Absenden und schickt ihn selbst ab. Begründung und die abgelehnte
    Nutzungsmessung: [`decisions/0017`](decisions/0017-keine-nutzungsmessung.md).
 
-Die Schritte 2, 3, 4 und 6 stehen: Menü „Mitnehmen" in der Kopfleiste
-([`decisions/0022`](decisions/0022-export-und-druck-ohne-request.md)) und der
-Zustand im URL-Fragment ([`decisions/0023`](decisions/0023-zustand-im-url-fragment.md)).
-Offen sind die Schritte 1 (Kommandopalette) und 5 (Tastatur in allen Ansichten).
+Die Schritte 1, 2, 3, 4 und 6 stehen: Kommandopalette, Menü „Mitnehmen" in der
+Kopfleiste ([`decisions/0022`](decisions/0022-export-und-druck-ohne-request.md)) und
+der Zustand im URL-Fragment ([`decisions/0023`](decisions/0023-zustand-im-url-fragment.md)).
+Offen ist nur noch Schritt 5 (Tastatur in allen Ansichten).
 
 **Fertig, wenn:**
 - ✅ Ein geteilter Link stellt Ansicht und Filter wieder her, sobald dieselbe Datei geladen
   ist — ohne Fachdaten im Link außer der OZ der Auswahl (`tests/share/urlState.test.ts`,
   `tests/components/shareLink.test.tsx`).
+- ✅ Strg/Cmd + K öffnet die Palette; ein getippter Befehl wechselt die Ansicht, setzt
+  einen Filter oder springt zur OZ (`tests/palette/`, `tests/components/commandPalette.test.tsx`).
 - ✅ Der Export enthält genau die gefilterte Menge (`tests/export/positions.test.ts`,
   `tests/components/exportMenu.test.tsx`).
 - ✅ Im Netzwerk-Tab ist bei Export und Druck kein Request zu sehen

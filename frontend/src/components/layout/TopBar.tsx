@@ -3,6 +3,7 @@
 // es gibt genau ein geladenes LV je Session).
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { CommandPalette } from '../palette/CommandPalette';
 import { ExportMenu } from './ExportMenu';
 import { Chip } from '../ui/Chip';
 import { BubbleLogo } from '../ui/BubbleLogo';
@@ -199,6 +200,7 @@ export function TopBar() {
       )}
       {loaded && (
         <div className="flex items-center gap-[8px] border-l border-line px-[18px]">
+          <CommandPalette />
           <ExportMenu />
           <Chip onClick={() => dispatch({ type: 'clear' })} title="LV schließen und neu laden">
             ✕ LV schließen
