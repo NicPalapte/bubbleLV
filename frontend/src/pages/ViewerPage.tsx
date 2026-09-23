@@ -23,6 +23,7 @@ import { PrintView } from '../components/print/PrintView';
 import { SimilarView } from '../components/relate/SimilarView';
 import { PositionsTable } from '../components/table/PositionsTable';
 import { FileDropzone } from '../components/upload/FileDropzone';
+import { ErrorBoundary } from '../components/common/ErrorBoundary';
 import { useShareLink } from '../components/common/useShareLink';
 import { PERF_ENABLED, reportViewSwitch } from '../lib/perf';
 import { PANEL_MAX_WIDTH, PANEL_MIN_WIDTH, useViewer, useViewerDispatch } from '../state/viewer';
@@ -84,79 +85,91 @@ export function ViewerPage() {
           <FilterStrip />
         </header>
 
-        {tree === null && (
-          <main aria-label="LV-Ansicht" className="relative flex-1 overflow-hidden bg-paper">
-            <FileDropzone />
-          </main>
-        )}
+        {/*
+          Zweites, engeres Netz (Issue #73): stürzt eine Ansicht ab, bleiben
+          Kopfleiste, Filter und die übrigen Ansichten bedienbar. Der `key`
+          sorgt dafür, dass ein Ansichtswechsel mit einem frischen Netz
+          beginnt — sonst bliebe die Fehlerseite der Matrix im Graphen stehen.
+        */}
+        <ErrorBoundary
+          key={tree === null ? 'leer' : viewMode}
+          bereich={tree === null ? 'start' : viewMode}
+          dateiGeladen={tree !== null}
+        >
+          {tree === null && (
+            <main aria-label="LV-Ansicht" className="relative flex-1 overflow-hidden bg-paper">
+              <FileDropzone />
+            </main>
+          )}
 
-        {tree !== null && viewMode === 'overview' && (
-          <main aria-label="Überblick" className="relative flex-1 overflow-hidden bg-paper">
-            <OverviewView />
-          </main>
-        )}
+          {tree !== null && viewMode === 'overview' && (
+            <main aria-label="Überblick" className="relative flex-1 overflow-hidden bg-paper">
+              <OverviewView />
+            </main>
+          )}
 
-        {tree !== null && viewMode === 'graph' && (
-          // Vollbild-Graph: die Baumspalte entfällt, die Eigenschaften wandern
-          // in die schwebende Positionskarte (PositionCard in BubbleGraph) —
-          // nur die Kopfleiste mit Suche/Filtern bleibt bestehen.
-          <main aria-label="Bubble-Graph" className="relative flex-1 overflow-hidden bg-paper">
-            {/* `focus` steht nur, wenn gefiltert wird und die Isolation
+          {tree !== null && viewMode === 'graph' && (
+            // Vollbild-Graph: die Baumspalte entfällt, die Eigenschaften wandern
+            // in die schwebende Positionskarte (PositionCard in BubbleGraph) —
+            // nur die Kopfleiste mit Suche/Filtern bleibt bestehen.
+            <main aria-label="Bubble-Graph" className="relative flex-1 overflow-hidden bg-paper">
+              {/* `focus` steht nur, wenn gefiltert wird und die Isolation
                 gewählt ist — sonst zeichnet der Graph das ganze LV (WP-Q). */}
-            <BubbleGraph root={tree} focus={focus ?? undefined} />
-            <GraphHeader root={tree} />
-          </main>
-        )}
+              <BubbleGraph root={tree} focus={focus ?? undefined} />
+              <GraphHeader root={tree} />
+            </main>
+          )}
 
-        {tree !== null && viewMode === 'matrix' && (
-          <main aria-label="Matrix" className="relative flex-1 overflow-hidden bg-white">
-            <MatrixView />
-          </main>
-        )}
+          {tree !== null && viewMode === 'matrix' && (
+            <main aria-label="Matrix" className="relative flex-1 overflow-hidden bg-white">
+              <MatrixView />
+            </main>
+          )}
 
-        {tree !== null && viewMode === 'similar' && (
-          <main aria-label="Ähnlichkeit" className="relative flex-1 overflow-hidden bg-white">
-            <SimilarView />
-          </main>
-        )}
+          {tree !== null && viewMode === 'similar' && (
+            <main aria-label="Ähnlichkeit" className="relative flex-1 overflow-hidden bg-white">
+              <SimilarView />
+            </main>
+          )}
 
-        {tree !== null && viewMode === 'compare' && (
-          <main aria-label="Vergleich" className="relative flex-1 overflow-hidden bg-white">
-            <CompareView />
-          </main>
-        )}
+          {tree !== null && viewMode === 'compare' && (
+            <main aria-label="Vergleich" className="relative flex-1 overflow-hidden bg-white">
+              <CompareView />
+            </main>
+          )}
 
-        {tree !== null && viewMode === 'check' && (
-          <main aria-label="Prüfung" className="relative flex-1 overflow-hidden bg-white">
-            <CheckView />
-          </main>
-        )}
+          {tree !== null && viewMode === 'check' && (
+            <main aria-label="Prüfung" className="relative flex-1 overflow-hidden bg-white">
+              <CheckView />
+            </main>
+          )}
 
-        {tree !== null && viewMode === 'table' && (
-          <main aria-label="LV-Tabelle" className="flex flex-1 overflow-hidden">
-            <Tree
-              width={leftWidth}
-              collapsed={treeCollapsed}
-              onToggleCollapsed={() => setTreeCollapsed((value) => !value)}
-            />
-            {!treeCollapsed && (
-              <ResizeHandle value={leftWidth} onChange={setLeftWidth} min={180} max={460} />
-            )}
+          {tree !== null && viewMode === 'table' && (
+            <main aria-label="LV-Tabelle" className="flex flex-1 overflow-hidden">
+              <Tree
+                width={leftWidth}
+                collapsed={treeCollapsed}
+                onToggleCollapsed={() => setTreeCollapsed((value) => !value)}
+              />
+              {!treeCollapsed && (
+                <ResizeHandle value={leftWidth} onChange={setLeftWidth} min={180} max={460} />
+              )}
 
-            <div className="relative min-w-0 flex-1 overflow-hidden bg-paper">
-              <PositionsTable root={selectedNode ?? tree} />
-            </div>
+              <div className="relative min-w-0 flex-1 overflow-hidden bg-paper">
+                <PositionsTable root={selectedNode ?? tree} />
+              </div>
 
-            <ResizeHandle
-              value={panelSize.width}
-              onChange={(width) => dispatch({ type: 'panelSize', size: { ...panelSize, width } })}
-              min={PANEL_MIN_WIDTH}
-              max={PANEL_MAX_WIDTH}
-              sign={-1}
-            />
-            <PropertiesPanel width={panelSize.width} />
-          </main>
-        )}
+              <ResizeHandle
+                value={panelSize.width}
+                onChange={(width) => dispatch({ type: 'panelSize', size: { ...panelSize, width } })}
+                min={PANEL_MIN_WIDTH}
+                max={PANEL_MAX_WIDTH}
+                sign={-1}
+              />
+              <PropertiesPanel width={panelSize.width} />
+            </main>
+          )}
+        </ErrorBoundary>
       </div>
     </ViewTiming>
   );

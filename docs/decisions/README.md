@@ -32,6 +32,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das *Was*, diese Dateien da
 | 0023 | [Ansicht, Filter und Auswahl im URL-Fragment](0023-zustand-im-url-fragment.md) | akzeptiert | 2026-09-22 |
 | 0024 | [Fehler melden ohne GitHub-Konto](0024-fehler-melden-ohne-konto.md) | akzeptiert | 2026-09-23 |
 | 0025 | [Typecheck läuft auch über die Tests](0025-typecheck-ueber-die-tests.md) | akzeptiert | 2026-09-23 |
+| 0026 | [Ein Absturz zeigt eine Seite, keine weiße Fläche](0026-absturz-auffangnetz.md) | akzeptiert | 2026-09-23 |
 
 ## Wann schreibe ich eine neue Datei?
 
