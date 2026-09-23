@@ -10,6 +10,9 @@ export default defineConfig({
   // `git`: der Build darf nicht daran scheitern, dass es kein Repo gibt.
   define: {
     __BUILD_ID__: JSON.stringify((process.env.GITHUB_SHA ?? 'dev').slice(0, 7)),
+    // Bau-Tag, damit der Stand auch ohne GitHub etwas aussagt. Nur das Datum:
+    // eine Uhrzeit wäre ohne Zeitzone irreführend und hilft niemandem weiter.
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString().slice(0, 10)),
   },
   server: {
     // Bind to all interfaces: Docker port-mapping (see .devcontainer/docker-compose.yml)

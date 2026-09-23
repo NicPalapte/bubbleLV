@@ -10,6 +10,8 @@
 // Abgeschickt wird nichts automatisch: der Link öffnet das ausgefüllte
 // Formular in einem neuen Tab, der Nutzer liest es und drückt selbst ab.
 
+import { BUILD_ID, BUILD_TIME } from '../version';
+
 const REPO = 'https://github.com/NicPalapte/bubbleLV';
 
 /**
@@ -22,14 +24,17 @@ const REPO = 'https://github.com/NicPalapte/bubbleLV';
  */
 const MELDE_MAIL = '';
 
-/** Bau-Stand; in CI gesetzt, lokal „dev". Siehe vite.config.ts. */
-declare const __BUILD_ID__: string;
-
 export interface IssueContext {
   /** Aktive Ansicht — „graph", „matrix" … Kein Inhalt, nur der Modus. */
   view: string;
   /** Ist überhaupt eine Datei geladen? Nur ja/nein, nicht welche. */
   loaded: boolean;
+  /**
+   * Fehlermeldung eines Absturzes (Issue #73). Nur die Meldung selbst, kein
+   * Stacktrace: der kann Werte aus der geladenen Datei tragen, die Meldung
+   * eines Programmfehlers nicht.
+   */
+  fehler?: string;
 }
 
 /**
@@ -41,7 +46,7 @@ function umgebung({ view, loaded }: IssueContext): string[] {
   const nav = typeof navigator === 'undefined' ? null : navigator;
   const fenster = typeof window === 'undefined' ? null : window;
   return [
-    `- Bubble-Stand: ${typeof __BUILD_ID__ === 'string' ? __BUILD_ID__ : 'dev'}`,
+    `- Bubble-Stand: ${BUILD_ID}${BUILD_TIME === '' ? '' : ` vom ${BUILD_TIME}`}`,
     `- Ansicht: ${view}`,
     `- Datei geladen: ${loaded ? 'ja' : 'nein'}`,
     `- Browser: ${nav?.userAgent ?? 'unbekannt'}`,
@@ -57,7 +62,9 @@ function umgebung({ view, loaded }: IssueContext): string[] {
  */
 export function issueBody(context: IssueContext, beschreibung = ''): string {
   const text = beschreibung.trim();
+  const absturz = context.fehler?.trim() ?? '';
   return [
+    ...(absturz === '' ? [] : ['## Fehlermeldung', '', '```', absturz, '```', '']),
     '## Was ist passiert?',
     '',
     // Klartext statt Markdown-Kommentar: derselbe Text geht auch in die
