@@ -164,9 +164,53 @@ describe('Fehler melden · die drei Wege', () => {
 });
 
 describe('Fehler melden · schließen', () => {
-  it('geht mit Escape zu', async () => {
-    await oeffneMeldung();
+  it('geht mit Escape zu, ohne nebenbei die Auswahl abzuräumen', async () => {
+    // Die Seite hört ebenfalls auf Escape („eine Ebene zurück"). Ohne die
+    // Capture-Phase verlöre man mit dem Schließen auch die gewählte Position.
+    render(<App />);
+    const name = 'gaeb-xml-beispiel.x83';
+    fireEvent.change(screen.getByLabelText('GAEB-Datei auswählen'), {
+      target: { files: [new File([readFileSync(resolve(FIXTURE_DIR, name))], name)] },
+    });
+    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+
+    // Eine Position wählen — sie steht danach im Eigenschaften-Panel.
+    fireEvent.click(screen.getByRole('radio', { name: 'Tabelle' }));
+    const grid = screen.getByRole('grid', { name: 'Positionen' });
+    fireEvent.keyDown(grid, { key: 'ArrowDown' });
+    fireEvent.keyDown(grid, { key: 'Enter' });
+    await waitFor(() =>
+      expect(within(grid).getAllByRole('row', { selected: true }).length).toBe(1),
+    );
+
+    fireEvent.click(within(screen.getByRole('banner')).getByRole('button', { name: /Mitnehmen/ }));
+    const menu = [...document.body.children].filter(
+      (element) => (element as HTMLElement).style.position === 'fixed',
+    );
+    fireEvent.click(
+      within(menu[menu.length - 1] as HTMLElement).getByRole('button', { name: 'Fehler melden' }),
+    );
+    expect(screen.getByRole('dialog', { name: 'Fehler melden' })).toBeInTheDocument();
+
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(screen.queryByRole('dialog', { name: 'Fehler melden' })).toBeNull();
+    // Die Auswahl steht noch.
+    expect(
+      within(screen.getByRole('grid', { name: 'Positionen' })).getAllByRole('row', {
+        selected: true,
+      }).length,
+    ).toBe(1);
+  });
+});
+
+describe('Fehler melden · langer Text', () => {
+  it('sagt, dass Kopieren sicherer ist, wenn die Mail zu lang wird', async () => {
+    // Windows reicht `mailto:` über die Kommandozeile weiter und schneidet bei
+    // etwa 2000 Zeichen ab — ohne Rückmeldung.
+    const fenster = await oeffneMeldung();
+    expect(within(fenster).queryByText(/Kopieren sicherer/)).toBeNull();
+
+    beschreibe(fenster, 'x'.repeat(2500));
+    expect(within(fenster).getByText(/Kopieren sicherer/)).toBeInTheDocument();
   });
 });

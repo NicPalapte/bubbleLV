@@ -12,10 +12,19 @@
 // Mailprogramm, der GitHub-Link öffnet einen neuen Tab. Nichts wird von selbst
 // verschickt, und aus der geladenen Datei steht nichts im Text.
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Chip } from '../ui/Chip';
+import { useDismiss } from '../common/useDismiss';
 import { issueBody, issueUrl, mailtoUrl, type IssueContext } from '../../lib/export/issueLink';
+
+/**
+ * Ab hier wird der `mailto:`-Link riskant: Windows gibt ihn über die
+ * Kommandozeile an das Mailprogramm weiter und schneidet bei etwa 2000 Zeichen
+ * ab — ohne Rückmeldung. Dann ist Kopieren der sichere Weg, und das Fenster
+ * sagt es auch.
+ */
+const MAILTO_GRENZE = 1800;
 
 export interface ReportDialogProps {
   context: IssueContext;
@@ -28,15 +37,15 @@ export function ReportDialog({ context, onClose }: ReportDialogProps) {
   const [beschreibung, setBeschreibung] = useState('');
   const [kopiert, setKopiert] = useState<Kopierstand>('bereit');
   const feldRef = useRef<HTMLTextAreaElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const text = issueBody(context, beschreibung);
+  const mailZuLang = mailtoUrl(context, beschreibung).length > MAILTO_GRENZE;
 
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  // Escape und Klick daneben über dasselbe Muster wie jedes Popover: der
+  // Handler hängt in der Capture-Phase und stoppt die Weitergabe. Sonst
+  // schlösse Escape nicht nur dieses Fenster, sondern räumte nebenbei die
+  // Auswahl im Baum ab (ViewerPage hört ebenfalls auf Escape).
+  useDismiss(dialogRef, true, onClose);
 
   const fokussiere = useCallback((element: HTMLTextAreaElement | null): void => {
     element?.focus();
@@ -77,6 +86,7 @@ export function ReportDialog({ context, onClose }: ReportDialogProps) {
       }}
     >
       <div
+        ref={dialogRef}
         role="dialog"
         aria-label="Fehler melden"
         style={{
@@ -174,6 +184,11 @@ export function ReportDialog({ context, onClose }: ReportDialogProps) {
             >
               ↗ Als GitHub-Issue (Konto nötig)
             </Chip>
+            {mailZuLang && (
+              <span style={{ color: 'var(--mute)' }}>
+                langer Text — für die Mail ist Kopieren sicherer
+              </span>
+            )}
             {kopiert !== 'bereit' && (
               <span style={{ color: kopiert === 'kopiert' ? 'var(--greenD)' : 'var(--redD)' }}>
                 {kopiert === 'kopiert'
