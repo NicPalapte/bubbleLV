@@ -84,6 +84,20 @@ describe('Fehler melden · der Text', () => {
     expect(meldetext).not.toContain('BVBS');
     expect(meldetext).not.toMatch(/\d{3}\.\d{3}\.\d{4}/);
   });
+
+  it('ist überall lesbar — kein Markdown-Kommentar, den nur GitHub ausblendet', async () => {
+    // Derselbe Text geht in die Zwischenablage und ins Mailprogramm; dort
+    // stünde `<!-- … -->` wörtlich da.
+    const fenster = await oeffneMeldung();
+    const leer = (within(fenster).getByLabelText('Meldetext') as HTMLTextAreaElement).value;
+    expect(leer).not.toContain('<!--');
+    expect(leer).toContain('(keine Beschreibung eingetragen)');
+
+    beschreibe(fenster, 'Etwas ist schiefgegangen.');
+    const gefuellt = (within(fenster).getByLabelText('Meldetext') as HTMLTextAreaElement).value;
+    expect(gefuellt).not.toContain('<!--');
+    expect(gefuellt).not.toContain('(keine Beschreibung eingetragen)');
+  });
 });
 
 describe('Fehler melden · die drei Wege', () => {

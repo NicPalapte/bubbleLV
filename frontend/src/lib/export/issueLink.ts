@@ -60,9 +60,10 @@ export function issueBody(context: IssueContext, beschreibung = ''): string {
   return [
     '## Was ist passiert?',
     '',
-    text === ''
-      ? '<!-- Bitte hier beschreiben. Keine Inhalte aus dem LV einfügen, wenn sie\n     vertraulich sind — diese Meldung ist öffentlich. -->'
-      : text,
+    // Klartext statt Markdown-Kommentar: derselbe Text geht auch in die
+    // Zwischenablage und ins Mailprogramm, und dort steht `<!-- … -->`
+    // wörtlich da. Nur GitHub blendet es aus.
+    text === '' ? '(keine Beschreibung eingetragen)' : text,
     '',
     '## Was war zu erwarten?',
     '',
@@ -71,8 +72,8 @@ export function issueBody(context: IssueContext, beschreibung = ''): string {
     '',
     ...umgebung(context),
     '',
-    '<!-- Aus der geladenen Datei steht hier nichts: kein Dateiname, keine',
-    '     Positionen, keine Mengen oder Preise. -->',
+    'Aus der geladenen Datei steht in dieser Meldung nichts: kein Dateiname,',
+    'keine Positionen, keine Mengen, keine Preise.',
   ].join('\n');
 }
 
