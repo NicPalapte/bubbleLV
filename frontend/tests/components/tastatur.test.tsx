@@ -107,10 +107,13 @@ describe('Tabelle · Tastatur', () => {
     const knopf = within(kopf).getByRole('button');
 
     knopf.focus();
+    fireEvent.focus(knopf);
     fireEvent.keyDown(knopf, { key: 'Enter' });
 
     // Der Tastendruck gilt dem Spaltenkopf — nicht der Liste darunter.
     expect(within(grid).queryAllByRole('row', { selected: true })).toHaveLength(0);
+    // Und er markiert auch keine Zeile als aktiv: sortieren ist kein Navigieren.
+    expect(grid.getAttribute('aria-activedescendant')).toBeNull();
   });
 
   it('führt die Tastatur an die Auswahl, die von außen kommt', async () => {

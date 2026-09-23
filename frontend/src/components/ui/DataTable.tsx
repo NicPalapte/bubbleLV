@@ -487,7 +487,12 @@ export function DataTable<T>({
       onKeyDown={onKeyDown}
       // Wer die Tabelle mit Tab erreicht, muss sehen, wo er steht: ohne aktive
       // Zeile zeigte der Fokus sonst gar nichts an.
-      onFocus={() => {
+      onFocus={(event) => {
+        // Wie beim Tastendruck: nur der Fokus auf dem Raster selbst zählt.
+        // `onFocus` folgt dem bubbelnden `focusin` — ein Klick auf einen
+        // Spaltenkopf markierte sonst Zeile 1 als aktiv, obwohl niemand mit
+        // der Tastatur unterwegs ist.
+        if (event.target !== event.currentTarget) return;
         if (activeKey === null && rows.length > 0) setActiveKey(rowKey(rows[0]));
       }}
       style={{
