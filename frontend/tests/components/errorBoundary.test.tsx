@@ -66,6 +66,20 @@ describe('ErrorBoundary', () => {
     expect(screen.getByText(/Bubble ist abgestürzt/)).toBeInTheDocument();
   });
 
+  it('verspricht auf der Startseite keine Ansichten, die es dort nicht gibt', () => {
+    render(
+      <ErrorBoundary bereich="start" dateiGeladen={false}>
+        <Kaputt />
+      </ErrorBoundary>,
+    );
+    const seite = screen.getByRole('alert');
+    // Vor dem ersten Laden sind Ansichtsumschalter und Filterzeile gar nicht
+    // gezeichnet und die Suche ist gesperrt (TopBar hängt sie an `loaded`).
+    expect(seite.textContent).not.toContain('Ansichten, Filter und Suche laufen weiter');
+    expect(seite.textContent).toContain('erneut hierher ziehen');
+    expect(within(seite).getByText(/Das Laden ist abgestürzt/)).toBeInTheDocument();
+  });
+
   it('baut die Ansicht auf Knopfdruck neu auf', () => {
     render(
       <ErrorBoundary bereich="table" dateiGeladen>

@@ -66,6 +66,26 @@ function CrashPanel({
   // steht schwarz auf weiß, dass kein Stacktrace mitgeht.
   const meldung = `${fehler.name}: ${fehler.message}`;
 
+  // Drei Lagen, drei Texte. „Start" ist die Ablagefläche vor dem ersten Laden:
+  // dort gibt es weder eine Datei noch andere Ansichten, Filter oder Suche —
+  // die sind in der Kopfleiste an `loaded` gehängt. Ein Satz über
+  // weiterlaufende Ansichten wäre dort ein Versprechen ins Leere.
+  const start = bereich === 'start';
+  const app = bereich === 'app';
+  const ueberschrift = app
+    ? 'Bubble ist abgestürzt.'
+    : start
+      ? 'Das Laden ist abgestürzt.'
+      : 'Diese Ansicht ist abgestürzt.';
+  const lage = start
+    ? 'Das ist ein Fehler im Programm. Hochgeladen oder gespeichert wurde nichts.'
+    : 'Das ist ein Fehler im Programm, nicht in deiner Datei. Die Datei hat den Browser nicht verlassen — sie wurde nirgendwohin geschickt und nirgends gespeichert.';
+  const weiter = app
+    ? 'Der Neuaufbau versucht es mit demselben Stand noch einmal.'
+    : start
+      ? 'Nach dem Neuaufbau kannst du die Datei erneut hierher ziehen.'
+      : 'Die anderen Ansichten, Filter und Suche laufen weiter.';
+
   return (
     <main
       aria-label="Fehler"
@@ -75,15 +95,9 @@ function CrashPanel({
         role="alert"
         className="w-full max-w-[540px] border border-line bg-white px-[32px] py-[28px]"
       >
-        <div className="font-sans text-[15px] font-semibold text-ink">
-          {bereich === 'app' ? 'Bubble ist abgestürzt.' : 'Diese Ansicht ist abgestürzt.'}
-        </div>
+        <div className="font-sans text-[15px] font-semibold text-ink">{ueberschrift}</div>
         <div className="mt-[10px] font-mono text-[10.5px] leading-[1.7] text-mute">
-          Das ist ein Fehler im Programm, nicht in deiner Datei. Die Datei hat den Browser nicht
-          verlassen — sie wurde nirgendwohin geschickt und nirgends gespeichert.
-          {bereich === 'app'
-            ? ' Der Neuaufbau versucht es mit demselben Stand noch einmal.'
-            : ' Die anderen Ansichten, Filter und Suche laufen weiter.'}
+          {lage} {weiter}
         </div>
         <pre className="mt-[14px] overflow-auto border border-line bg-paper px-[10px] py-[8px] font-mono text-[10px] leading-[1.6] text-ink">
           {meldung}
