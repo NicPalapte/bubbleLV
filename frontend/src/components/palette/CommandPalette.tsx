@@ -7,12 +7,17 @@
 // müssen. Die Palette ist eine zweite Tür zum selben Zustand — sie löst
 // dieselben Aktionen aus wie die Chips daneben und kennt keine eigene Logik.
 //
+// Seit Issue #80 trägt sie zusätzlich „Mitnehmen": Export, Druck und Melden
+// standen als Knöpfe in der Kopfleiste, die dafür zu eng ist. Die Palette hat
+// selbst keinen Knopf mehr — sie öffnet mit Strg/Cmd + K, und die Filterzeile
+// nennt die Taste.
+//
 // **Positionen** kommen über `matchPos` in die Liste (Suchfeld-Logik, eine
 // Quelle, .claude/CLAUDE.md), nicht über einen zweiten Suchpfad.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { Chip } from '../ui/Chip';
+import { createPortal, flushSync } from 'react-dom';
+import { useMitnehmen } from '../common/useMitnehmen';
 import {
   buildCommands,
   groupOrder,
@@ -42,23 +47,21 @@ export interface CommandPaletteProps {
    * Escape zuerst sieht, hinge an der Reihenfolge im DOM.
    */
   gesperrt?: boolean;
+  /**
+   * „Fehler melden" — das Fenster hängt in der Kopfleiste, nicht hier: zwei
+   * Fenster übereinander wären für niemanden vorhersehbar.
+   */
+  onFehlerMelden: () => void;
 }
 
-export function CommandPalette({ gesperrt = false }: CommandPaletteProps) {
+export function CommandPalette({ gesperrt = false, onFehlerMelden }: CommandPaletteProps) {
   const { lv, index, parents, filter, view } = useViewer();
   const dispatch = useViewerDispatch();
+  const mitnehmen = useMitnehmen();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [aktiv, setAktiv] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // Jedes Öffnen beginnt leer. Eine Palette, die den letzten Befehl noch
-  // anzeigt, führt beim schnellen Tippen zuverlässig den falschen aus.
-  const oeffne = useCallback((): void => {
-    setQuery('');
-    setAktiv(0);
-    setOpen(true);
-  }, []);
 
   // Strg/Cmd + K greift überall, auch im Suchfeld: die Tastenkombination ist
   // in Browsern und Editoren dieselbe, und wer sie drückt, will die Palette.
@@ -122,9 +125,27 @@ export function CommandPalette({ gesperrt = false }: CommandPaletteProps) {
   const ausfuehren = useCallback(
     (command: Command): void => {
       for (const action of command.actions) dispatch(action);
-      setOpen(false);
+      // Erst schließen, dann wirken: `window.print()` blockiert den Aufbau
+      // der Druckseite, ein späteres `setState` stünde mit auf dem Blatt.
+      flushSync(() => setOpen(false));
+      switch (command.effect) {
+        case 'export-csv':
+          mitnehmen.positionenAlsCsv();
+          break;
+        case 'export-md':
+          mitnehmen.hinweiseAlsMarkdown();
+          break;
+        case 'print':
+          mitnehmen.drucken();
+          break;
+        case 'report':
+          onFehlerMelden();
+          break;
+        default:
+          break;
+      }
     },
-    [dispatch],
+    [dispatch, mitnehmen, onFehlerMelden],
   );
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
@@ -156,9 +177,6 @@ export function CommandPalette({ gesperrt = false }: CommandPaletteProps) {
 
   return (
     <>
-      <Chip onClick={oeffne} title="Kommandopalette (Strg/Cmd + K)">
-        ⌕ Befehle
-      </Chip>
       {open &&
         createPortal(
           <div

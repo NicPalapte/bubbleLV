@@ -96,6 +96,13 @@ export function FileDropzone() {
               keine Rechtsberatung.
             </dd>
           </div>
+          <div className="mt-[6px] flex gap-[8px]">
+            <dt className="w-[132px] shrink-0 text-dim">Tastatur</dt>
+            <dd>
+              <span className="text-ink">Strg/Cmd + K</span> öffnet die Befehle: Ansicht wechseln,
+              filtern, zu einer OZ springen, exportieren, drucken.
+            </dd>
+          </div>
         </dl>
       </div>
       <div
