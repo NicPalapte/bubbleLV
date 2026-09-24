@@ -1,10 +1,9 @@
-// „Mitnehmen"-Menü und Druckansicht in der App (WP-P, Schritte 3, 4 und 6).
+// „Mitnehmen": Export, Druck und Melden (WP-P, Schritte 3 und 4).
 //
-// Geprüft wird, was sich nur in der ganzen App prüfen lässt: dass der Export
-// die gefilterte Menge nimmt, dass der Druck die **vollständige** Liste zeigt
-// (nicht nur das virtualisierte Fenster) und dass der Melde-Link nichts aus
-// der Datei trägt.
-
+// Seit Issue #80 stehen sie nicht mehr als Knöpfe in der Kopfleiste, sondern
+// als Befehle in der Palette (Strg/Cmd + K). Die Zusagen bleiben dieselben:
+// genau die gefilterte Menge, kein Request, und das Blatt trägt die ganze
+// Liste statt des sichtbaren Fensters.
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
@@ -68,25 +67,39 @@ async function ladeApp(pfad = resolve(FIXTURE_DIR, 'gaeb-xml-beispiel.x83')): Pr
 /** Die Demo-Datei ist die einzige mit Preisen (x84). */
 const MIT_PREISEN = resolve(process.cwd(), 'src/assets/demo/bubble-demo-angebot.x84');
 
-function oeffneMenu(): void {
-  fireEvent.click(screen.getByRole('button', { name: /Mitnehmen/ }));
+/**
+ * Strg + K auf dem Fenster. Das leere `act` davor ist nötig: der Listener
+ * hängt in einem `useEffect`, den React erst **nach** dem Commit ausführt.
+ */
+async function oeffnePalette(): Promise<void> {
+  await act(async () => {});
+  fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
 }
 
-function menueEintrag(name: string): HTMLElement {
-  return screen.getByRole('button', { name: new RegExp(`^${name}`) });
+/** Wartet, bis die Suche aus dem Eingabefeld im Filterzustand angekommen ist. */
+async function warteAufFilter(): Promise<void> {
+  await act(async () => {
+    await new Promise((fertig) => setTimeout(fertig, 300));
+  });
+}
+
+/** Befehl über die Palette auslösen — so, wie ein Nutzer es täte. */
+async function befehl(name: string): Promise<void> {
+  await oeffnePalette();
+  fireEvent.change(screen.getByLabelText('Befehl oder OZ'), { target: { value: name } });
+  fireEvent.click(screen.getByRole('option', { name: new RegExp(name) }));
 }
 
 describe('Mitnehmen', () => {
   it('lädt die Positionen als CSV — genau die gefilterte Menge', async () => {
     await ladeApp();
     fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'Beton' } });
-    await waitFor(() => expect(screen.getByLabelText('Suche')).toHaveValue('Beton'));
+    // Das Feld hängt am lokalen Wert, der Filter folgt 250 ms später
+    // (SEARCH_DEBOUNCE_MS in TopBar.tsx). Ohne dieses Warten exportierte der
+    // Befehl die ungefilterte Datei — genau das ist hier die Zusage.
+    await warteAufFilter();
 
-    oeffneMenu();
-    // Der Eintrag nennt die Zahl, die im Export landet.
-    const eintrag = menueEintrag('Positionen als CSV');
-    const angekuendigt = Number(eintrag.textContent?.match(/(\d+)$/)?.[1]);
-    fireEvent.click(eintrag);
+    await befehl('Positionen als CSV');
 
     expect(dateien).toHaveLength(1);
     const [datei] = dateien;
@@ -94,26 +107,46 @@ describe('Mitnehmen', () => {
     // Kopfzeile plus je eine Zeile pro Treffer; der Langtext enthält Umbrüche,
     // deshalb zählt der Test die Zeilen über die OZ-Spalte am Zeilenanfang.
     const zeilen = datei.text.split('\r\n').filter((zeile) => /^\d/.test(zeile));
-    expect(zeilen).toHaveLength(angekuendigt);
-    expect(angekuendigt).toBeGreaterThan(0);
+    // Die gefilterte Menge, nicht die ganze Datei — und jede Zeile trägt den
+    // Suchbegriff, in Kurz- oder Langtext.
+    expect(zeilen.length).toBeGreaterThan(0);
+    expect(zeilen.length).toBeLessThan(28);
+    for (const zeile of zeilen) expect(zeile).toMatch(/beton/i);
   });
 
   it('lädt die Hinweise als Markdown', async () => {
     await ladeApp();
-    oeffneMenu();
-    fireEvent.click(menueEintrag('Hinweise als Markdown'));
+    await befehl('Hinweise als Markdown');
 
     expect(dateien).toHaveLength(1);
     expect(dateien[0].name).toMatch(/-hinweise-\d{4}-\d{2}-\d{2}\.md$/);
     expect(dateien[0].text).toContain('Hinweise, keine Urteile');
   });
 
-  it('trägt das Melden nicht mehr — das sitzt jetzt hinter dem Logo', async () => {
-    // Eine Meldung ist kein Export (Issue #80). Der Weg selbst ist in
-    // tests/components/reportDialog.test.tsx geprüft.
+  it('steht als Befehl bereit, ohne Knopf in der Leiste', async () => {
     await ladeApp();
-    oeffneMenu();
-    expect(screen.queryByRole('button', { name: /^Fehler melden/ })).not.toBeInTheDocument();
+    const leiste = within(screen.getByRole('banner'));
+    // Issue #80: keine Export-Knöpfe mehr in der Kopfleiste …
+    expect(leiste.queryByRole('button', { name: /Mitnehmen/ })).not.toBeInTheDocument();
+    expect(leiste.queryByRole('button', { name: /^Befehle/ })).not.toBeInTheDocument();
+    // … dafür der Hinweis auf die Taste, sonst fände die Palette niemand.
+    expect(leiste.getByText(/STRG\/CMD \+ K/)).toBeInTheDocument();
+
+    await oeffnePalette();
+    fireEvent.change(screen.getByLabelText('Befehl oder OZ'), { target: { value: 'CSV' } });
+    // Der Treffer steht unter der Gruppe „Mitnehmen" — gesucht wird nach dem
+    // Befehlsnamen, nicht nach der Gruppe.
+    expect(screen.getByRole('option', { name: /Positionen als CSV/ })).toBeInTheDocument();
+    expect(screen.getByText('Mitnehmen')).toBeInTheDocument();
+  });
+
+  it('öffnet das Melde-Fenster aus der Palette heraus', async () => {
+    await ladeApp();
+    await befehl('Fehler melden');
+    const fenster = within(screen.getByRole('dialog', { name: 'Fehler melden' }));
+    expect(fenster.getByRole('button', { name: /Text kopieren/ })).toBeInTheDocument();
+    expect(fenster.getByRole('button', { name: /E-Mail/ })).toBeInTheDocument();
+    expect(fenster.getByRole('button', { name: /GitHub-Issue/ })).toBeInTheDocument();
   });
 });
 
@@ -164,8 +197,7 @@ function lvMit(positionen: readonly PositionDraft[]): LoadedLV {
 describe('Drucken', () => {
   it('druckt die ganze gefilterte Liste, nicht nur das sichtbare Fenster', async () => {
     await ladeApp();
-    oeffneMenu();
-    fireEvent.click(menueEintrag('Drucken'));
+    await befehl('Drucken');
     expect(window.print).toHaveBeenCalledTimes(1);
 
     // Auf dem Bildschirm gibt es die Druckansicht nicht …
@@ -234,19 +266,20 @@ describe('Drucken', () => {
     expect(fuss).toContain(`von ${zeilen.length} · ${ohneGesamt} ohne Gesamtpreis`);
   });
 
-  it('nimmt kein offenes Menü mit aufs Blatt', async () => {
+  it('nimmt die offene Palette nicht mit aufs Blatt', async () => {
     await ladeApp();
-    oeffneMenu();
-    // Popover hängen per Portal an <body>, also außerhalb der Hülle, die beim
-    // Drucken zurücktritt — sie brauchen die Klasse selbst.
+    await oeffnePalette();
+    // Die Palette hängt per Portal an <body>, also außerhalb der Hülle, die
+    // beim Drucken zurücktritt — sie braucht die Klasse selbst.
     const offen = [...document.body.children].filter(
       (element) => (element as HTMLElement).style.position === 'fixed',
     );
     expect(offen).toHaveLength(1);
     expect(offen[0].className).toContain('nur-bildschirm');
 
-    // Und der Klick auf „Drucken" schließt es, bevor gedruckt wird.
-    fireEvent.click(menueEintrag('Drucken'));
+    // Und der Befehl „Drucken" schließt sie, bevor gedruckt wird.
+    fireEvent.change(screen.getByLabelText('Befehl oder OZ'), { target: { value: 'Drucken' } });
+    fireEvent.click(screen.getByRole('option', { name: /Drucken/ }));
     expect(
       [...document.body.children].filter(
         (element) => (element as HTMLElement).style.position === 'fixed',

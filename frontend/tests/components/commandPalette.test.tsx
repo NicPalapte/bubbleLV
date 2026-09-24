@@ -56,10 +56,13 @@ describe('Kommandopalette · öffnen und schließen', () => {
     expect(screen.queryByRole('dialog', { name: 'Kommandopalette' })).toBeNull();
   });
 
-  it('lässt sich auch über den Chip in der Kopfleiste öffnen', async () => {
+  it('hat keinen Knopf mehr, aber die Leiste nennt die Taste', async () => {
     await ladeApp();
-    fireEvent.click(within(screen.getByRole('banner')).getByRole('button', { name: /Befehle/ }));
-    expect(palette()).toBeInTheDocument();
+    const leiste = within(screen.getByRole('banner'));
+    // Issue #80: die Kopfleiste ist zu eng für Dauer-Knöpfe …
+    expect(leiste.queryByRole('button', { name: /^Befehle/ })).not.toBeInTheDocument();
+    // … ohne Hinweis fände die Palette aber niemand, der sie nicht kennt.
+    expect(leiste.getByText(/STRG\/CMD \+ K/)).toBeInTheDocument();
   });
 
   it('beginnt jedes Mal leer', async () => {

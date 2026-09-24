@@ -127,11 +127,3 @@ export function positionsCsv(index: PositionIndex, mask: Uint8Array | null): str
   // CRLF: Excel erwartet es, jeder Texteditor kommt damit zurecht.
   return `${zeilen.join('\r\n')}\r\n`;
 }
-
-/** Wie viele Zeilen der Export hätte — für die Beschriftung des Knopfs. */
-export function exportCount(index: PositionIndex, mask: Uint8Array | null): number {
-  if (mask === null) return index.size;
-  let count = 0;
-  for (let i = 0; i < index.size; i++) if (mask[i] === 1) count++;
-  return count;
-}

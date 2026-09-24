@@ -18,9 +18,22 @@ import type { ViewerAction } from '../../state/viewer';
 import type { LVNode } from '../../types/lvNode';
 
 /** Gruppe in der Trefferliste; zugleich die Reihenfolge der Abschnitte. */
-export type CommandGroup = 'Position' | 'Ansicht' | 'Filter';
+export type CommandGroup = 'Position' | 'Ansicht' | 'Filter' | 'Mitnehmen';
 
-export const COMMAND_GROUPS: readonly CommandGroup[] = ['Ansicht', 'Filter', 'Position'];
+export const COMMAND_GROUPS: readonly CommandGroup[] = [
+  'Ansicht',
+  'Filter',
+  'Mitnehmen',
+  'Position',
+];
+
+/**
+ * Wirkung außerhalb des Viewer-Zustands: Datei herunterladen, drucken, melden.
+ * Als **Marke** statt als Funktion, damit ein Befehl weiter reine Daten bleibt
+ * und ein Test lesen kann, was er auslöst, ohne ihn auszuführen. Die Palette
+ * setzt die Marke in den Aufruf um (components/palette/CommandPalette.tsx).
+ */
+export type CommandEffect = 'export-csv' | 'export-md' | 'print' | 'report';
 
 /**
  * Reihenfolge der Abschnitte zur Eingabe.
@@ -31,7 +44,7 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = ['Ansicht', 'Filter', 'Po
  * „Baunebengewerk" steht.
  */
 export function groupOrder(query: string): readonly CommandGroup[] {
-  return /^\s*\d/.test(query) ? ['Position', 'Ansicht', 'Filter'] : COMMAND_GROUPS;
+  return /^\s*\d/.test(query) ? ['Position', 'Ansicht', 'Filter', 'Mitnehmen'] : COMMAND_GROUPS;
 }
 
 export interface Command {
@@ -46,7 +59,21 @@ export interface Command {
   on?: boolean;
   /** Was beim Auslösen passiert, der Reihe nach. */
   actions: readonly ViewerAction[];
+  /** Zusätzliche Wirkung außerhalb des Zustands — siehe `CommandEffect`. */
+  effect?: CommandEffect;
 }
+
+/**
+ * Export, Druck und Melden als Befehle (Issue #80). Sie standen als Knöpfe in
+ * der Kopfleiste; die ist zu eng dafür, die Funktionen bleiben aber. Nur mit
+ * geladener Datei — ohne LV gibt es nichts mitzunehmen.
+ */
+const MITNEHMEN: readonly { id: string; label: string; hint: string; effect: CommandEffect }[] = [
+  { id: 'take:csv', label: 'Positionen als CSV', hint: 'Datei', effect: 'export-csv' },
+  { id: 'take:md', label: 'Hinweise als Markdown', hint: 'Datei', effect: 'export-md' },
+  { id: 'take:print', label: 'Drucken', hint: 'Blatt', effect: 'print' },
+  { id: 'take:report', label: 'Fehler melden', hint: 'Fenster', effect: 'report' },
+];
 
 /** Ansichten in der Reihenfolge des Umschalters in der Kopfleiste. */
 const VIEWS: readonly { mode: ViewMode; label: string }[] = [
@@ -96,6 +123,10 @@ export function buildCommands({
   view,
 }: CommandContext): Command[] {
   const commands: Command[] = [];
+
+  for (const { id, label, hint, effect } of MITNEHMEN) {
+    commands.push({ id, group: 'Mitnehmen', label, hint, actions: [], effect });
+  }
 
   for (const { mode, label } of VIEWS) {
     commands.push({

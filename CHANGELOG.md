@@ -9,6 +9,19 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.2.0 — 24.09.2026 · aufgeräumte Kopfleiste
+
+- **Zwei Leisten statt einer.** Oben Logo, Projekt und die acht Ansichten; darunter
+  Suche und Filter. Vorher passte bei 1440 px kein einziger Facetten-Knopf in die
+  Zeile — jetzt stehen acht davon sichtbar da, der Rest unter „Weitere Filter".
+- **Export, Druck und Melden sind Befehle geworden.** Die Knöpfe „Mitnehmen" und
+  „Befehle" sind aus der Leiste verschwunden, die Funktionen nicht: **Strg/Cmd + K**
+  öffnet die Palette, dort stehen sie unter „Mitnehmen". Die Filterleiste nennt die
+  Taste, der Einstiegstext erklärt sie.
+- **„Fehler melden"** erreichst du weiterhin auch hinter dem Logo.
+
+---
+
 ## 0.1.0 — 24.09.2026 · erste öffentliche Beta
 
 **Acht Ansichten auf einem Filterzustand.** Ein Ansichtswechsel fasst Filter, Suche und
