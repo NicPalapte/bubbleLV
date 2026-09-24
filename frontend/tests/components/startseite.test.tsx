@@ -5,7 +5,7 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import App from '../../src/App';
 import { issueBody } from '../../src/lib/export/issueLink';
@@ -31,6 +31,17 @@ describe('Einstiegstext', () => {
     expect(screen.getByText(/Kein Server, kein Upload, kein Konto/)).toBeInTheDocument();
     // Und die Grenze, damit niemand Rechtsrat erwartet.
     expect(screen.getByText(/keine Rechtsberatung/)).toBeInTheDocument();
+  });
+
+  it('verspricht die Befehle erst für den Zustand, in dem es sie gibt', async () => {
+    render(<App />);
+    // Die Palette hängt am geladenen LV (TopBar: `loaded &&`), auf der
+    // Startseite tut die Taste also nichts. Der Text sagt das auch.
+    expect(screen.getByText(/Sobald ein LV geladen ist/)).toBeInTheDocument();
+
+    await act(async () => {});
+    fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
+    expect(screen.queryByRole('dialog', { name: 'Kommandopalette' })).toBeNull();
   });
 
   it('tritt zurück, sobald eine Datei geladen ist, und kommt beim Schließen wieder', async () => {
