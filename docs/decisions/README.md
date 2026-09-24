@@ -33,6 +33,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das *Was*, diese Dateien da
 | 0024 | [Fehler melden ohne GitHub-Konto](0024-fehler-melden-ohne-konto.md) | akzeptiert | 2026-09-23 |
 | 0025 | [Typecheck läuft auch über die Tests](0025-typecheck-ueber-die-tests.md) | akzeptiert | 2026-09-23 |
 | 0026 | [Ein Absturz zeigt eine Seite, keine weiße Fläche](0026-absturz-auffangnetz.md) | akzeptiert | 2026-09-23 |
+| 0027 | [Versionsnummer, Changelog und „Über diese App"](0027-versionsnummer-und-ueber-diese-app.md) | akzeptiert | 2026-09-24 |
 
 ## Wann schreibe ich eine neue Datei?
 

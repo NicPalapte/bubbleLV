@@ -5,10 +5,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CommandPalette } from '../palette/CommandPalette';
 import { ReportDialog } from '../report/ReportDialog';
+import { AboutMenu } from './AboutMenu';
 import { ExportMenu } from './ExportMenu';
-import { VersionBadge } from './VersionBadge';
 import { Chip } from '../ui/Chip';
-import { BubbleLogo } from '../ui/BubbleLogo';
 import { FacetButton } from '../filter/FacetButton';
 import { FilterOverflowRow, type OverflowItem } from '../filter/FilterOverflowRow';
 import { RangeButton } from '../filter/RangeButton';
@@ -142,8 +141,11 @@ export function TopBar() {
 
   return (
     <div className="relative z-[5] flex h-[54px] shrink-0 items-stretch border-b border-line bg-white">
-      <div className="flex items-center border-r border-line px-[18px]">
-        <BubbleLogo size={22} />
+      {/* Das Logo öffnet „Über diese App": Version, Änderungen, Fehler melden
+          (Issue #71). Dort sitzt, was selten gebraucht wird, aber auffindbar
+          sein muss — in der Kopfleiste kostet es dauerhaft Platz. */}
+      <div className="flex items-center border-r border-line">
+        <AboutMenu onFehlerMelden={() => setMelden(true)} />
       </div>
       {/* Projektkontext: begrenzt und abgeschnitten — reale Projektnamen sind
           lang, und die Filterzeile rechts darf darunter nicht verschwinden. */}
@@ -208,18 +210,12 @@ export function TopBar() {
               liegen über der Seite, und zwei Fenster übereinander wären für
               niemanden vorhersehbar. */}
           <CommandPalette gesperrt={melden} />
-          <ExportMenu onFehlerMelden={() => setMelden(true)} />
+          <ExportMenu />
           <Chip onClick={() => dispatch({ type: 'clear' })} title="LV schließen und neu laden">
             ✕ LV schließen
           </Chip>
         </div>
       )}
-      {/* Ganz rechts und ohne Bedingung: der Stand gehört auch dann auf den
-          Bildschirm, wenn noch keine Datei geladen ist — dann meldet jemand
-          vielleicht gerade, dass das Laden nicht klappt. */}
-      <div className="ml-auto flex items-stretch">
-        <VersionBadge kompakt={loaded} />
-      </div>
       {melden && (
         <ReportDialog
           context={{ view: view.mode, loaded: lv !== null }}

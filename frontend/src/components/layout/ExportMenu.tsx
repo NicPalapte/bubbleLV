@@ -1,13 +1,11 @@
-// „Mitnehmen"-Menü der Kopfleiste (WP-P, Schritte 3, 4 und 6): Export, Druck
-// und Fehler melden.
+// „Mitnehmen"-Menü der Kopfleiste (WP-P, Schritte 3 und 4): Export und Druck.
 //
-// Alle vier Einträge erzeugen **keinen Request**: CSV und Markdown entstehen
-// als Blob im Browser, der Druck läuft über `window.print()`, und „Fehler
-// melden" öffnet ein Fenster mit der fertigen Meldung — zum Kopieren, als
-// Mail oder als GitHub-Issue, jedes davon erst auf Knopfdruck und ohne einen
-// einzigen Inhalt aus der geladenen Datei
-// (docs/decisions/0017-keine-nutzungsmessung.md,
-//  docs/decisions/0024-fehler-melden-ohne-konto.md).
+// Alle drei Einträge erzeugen **keinen Request**: CSV und Markdown entstehen
+// als Blob im Browser, der Druck läuft über `window.print()`
+// (docs/decisions/0022-export-und-druck-ohne-request.md).
+//
+// „Fehler melden" stand früher hier und sitzt jetzt in „Über diese App" hinter
+// dem Logo (AboutMenu, Issue #80): eine Meldung ist kein Export.
 
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
@@ -22,16 +20,7 @@ import { filterMask } from '../../lib/index/positionIndex';
 import { matchCount } from '../../lib/tree/matchCounts';
 import { useViewer } from '../../state/viewer';
 
-export interface ExportMenuProps {
-  /**
-   * „Fehler melden" gewählt. Das Fenster hängt in der Kopfleiste, nicht hier:
-   * solange es offen ist, darf die Kommandopalette nicht dazwischenfunken
-   * (beide liegen auf derselben Ebene über der Seite).
-   */
-  onFehlerMelden: () => void;
-}
-
-export function ExportMenu({ onFehlerMelden }: ExportMenuProps) {
+export function ExportMenu() {
   const { lv, index, active, filter, matches, nodes } = useViewer();
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
@@ -101,16 +90,9 @@ export function ExportMenu({ onFehlerMelden }: ExportMenuProps) {
     window.print();
   };
 
-  const fehlerMelden = (): void => {
-    // Das Fenster statt des GitHub-Links: wer kein Konto hat, käme dort nicht
-    // weiter (docs/decisions/0024-fehler-melden-ohne-konto.md).
-    setOpen(false);
-    onFehlerMelden();
-  };
-
   return (
     <div ref={anchorRef}>
-      <Chip onClick={() => setOpen((value) => !value)} title="Exportieren, drucken, Fehler melden">
+      <Chip onClick={() => setOpen((value) => !value)} title="Exportieren und drucken">
         ⇩ Mitnehmen <span className="-ml-[2px] text-mute">▾</span>
       </Chip>
       <Popover ref={popoverRef} open={open} width={260} anchorRef={anchorRef}>
@@ -127,12 +109,6 @@ export function ExportMenu({ onFehlerMelden }: ExportMenuProps) {
         </PopoverRow>
         <PopoverRow onClick={drucken} title="Druckt die gefilterte Liste, nicht nur das Sichtbare">
           Drucken
-        </PopoverRow>
-        <PopoverRow
-          onClick={fehlerMelden}
-          title="Fertige Meldung zum Kopieren, Mailen oder als GitHub-Issue — ohne Inhalte aus deiner Datei"
-        >
-          Fehler melden
         </PopoverRow>
       </Popover>
     </div>

@@ -9,7 +9,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { describe, expect, it } from 'vitest';
 import App from '../../src/App';
 import { issueBody } from '../../src/lib/export/issueLink';
-import { BUILD_ID, buildDate } from '../../src/lib/version';
+import { APP_VERSION, BUILD_ID, buildDate } from '../../src/lib/version';
 
 const FIXTURE_DIR = resolve(process.cwd(), 'tests/fixtures');
 
@@ -44,41 +44,59 @@ describe('Einstiegstext', () => {
   });
 });
 
-describe('Bau-Stand', () => {
-  it('steht in der Kopfleiste, auch ohne geladene Datei', () => {
+describe('Über diese App', () => {
+  function oeffnePanel(): HTMLElement {
+    fireEvent.click(
+      within(screen.getByRole('banner')).getByRole('button', { name: 'Über diese App' }),
+    );
+    const fenster = [...document.body.children].filter(
+      (element) => (element as HTMLElement).style.position === 'fixed',
+    );
+    return fenster[fenster.length - 1] as HTMLElement;
+  }
+
+  it('sitzt hinter dem Logo und nennt Version und Stand', () => {
     render(<App />);
-    const leiste = within(screen.getByRole('banner'));
-    expect(leiste.getByText('BETA')).toBeInTheDocument();
-    expect(leiste.getByText(BUILD_ID)).toBeInTheDocument();
-    const datum = buildDate();
-    if (datum !== '') expect(leiste.getByText(datum)).toBeInTheDocument();
+    const panel = within(oeffnePanel());
+    expect(panel.getByText(`v${APP_VERSION}`)).toBeInTheDocument();
+    expect(panel.getByText(new RegExp(BUILD_ID))).toBeInTheDocument();
+    expect(panel.getByRole('button', { name: /Was ist neu/ })).toBeInTheDocument();
+    expect(panel.getByRole('button', { name: 'Fehler melden' })).toBeInTheDocument();
+    // Ehrlicher Hinweis statt Link ins Leere, solange die Texte fehlen.
+    expect(panel.getByText('Impressum')).toBeInTheDocument();
+    expect(panel.getAllByText('folgt')).toHaveLength(2);
   });
 
-  it('gibt mit geladener Datei den Platz frei und behält das Datum im Tooltip', async () => {
+  it('öffnet auch ohne geladene Datei — dann meldet vielleicht gerade jemand das Laden', () => {
     render(<App />);
-    ladeDatei();
-    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
-    const leiste = within(screen.getByRole('banner'));
-    expect(leiste.getByText('BETA')).toBeInTheDocument();
+    expect(screen.queryByText('FILTER')).not.toBeInTheDocument();
+    const panel = within(oeffnePanel());
+    expect(panel.getByText(`v${APP_VERSION}`)).toBeInTheDocument();
+  });
+
+  it('nennt denselben Stand, den die Meldung mitschickt', () => {
+    render(<App />);
+    const panel = within(oeffnePanel());
+    // Eine Quelle für beide (lib/version.ts): der Nutzer liest genau den Wert,
+    // der später in seiner Meldung steht — Stand und Datum.
+    expect(panel.getByText(new RegExp(BUILD_ID))).toBeInTheDocument();
+    const text = issueBody({ view: 'table', loaded: false });
+    expect(text).toContain(`Bubble-Stand: v${APP_VERSION} (${BUILD_ID}`);
     const datum = buildDate();
     if (datum !== '') {
-      expect(leiste.queryByText(datum)).not.toBeInTheDocument();
-      expect(
-        leiste.getByTitle(new RegExp(`vom ${datum.replace(/\./g, '\\.')}`)),
-      ).toBeInTheDocument();
+      expect(panel.getByText(new RegExp(datum.replace(/\./g, '\\.')))).toBeInTheDocument();
+      expect(text).toContain(datum);
     }
   });
 
-  it('nennt denselben Stand, den die Meldung mitschickt', async () => {
+  it('gibt der Kopfleiste den Platz zurück — kein Stand-Schild mehr daneben', async () => {
     render(<App />);
-    const gezeigt = within(screen.getByRole('banner')).getByText(BUILD_ID).textContent ?? '';
-    expect(gezeigt).not.toBe('');
-    // Eine Quelle für beide (lib/version.ts): der Nutzer liest genau den Wert,
-    // der später in seiner Meldung steht — Stand **und** Datum, in derselben
-    // Schreibweise.
-    const text = issueBody({ view: 'table', loaded: false });
-    expect(text).toContain(`Bubble-Stand: ${gezeigt}`);
-    const datum = buildDate();
-    if (datum !== '') expect(text).toContain(`vom ${datum}`);
+    ladeDatei();
+    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+    // Der Stand steht im Panel, nicht in der Leiste (Issue #80: kein Platz).
+    expect(within(screen.getByRole('banner')).queryByText('BETA')).not.toBeInTheDocument();
+    expect(
+      within(screen.getByRole('banner')).getByRole('button', { name: 'Über diese App' }),
+    ).toBeInTheDocument();
   });
 });

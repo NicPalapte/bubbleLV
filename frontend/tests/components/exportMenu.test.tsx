@@ -108,19 +108,12 @@ describe('Mitnehmen', () => {
     expect(dateien[0].text).toContain('Hinweise, keine Urteile');
   });
 
-  it('öffnet zum Melden das Fenster mit den drei Wegen', async () => {
-    // Direkt auf GitHub führte nur weiter, wer dort ein Konto hat
-    // (docs/decisions/0024-fehler-melden-ohne-konto.md).
+  it('trägt das Melden nicht mehr — das sitzt jetzt hinter dem Logo', async () => {
+    // Eine Meldung ist kein Export (Issue #80). Der Weg selbst ist in
+    // tests/components/reportDialog.test.tsx geprüft.
     await ladeApp();
     oeffneMenu();
-    fireEvent.click(menueEintrag('Fehler melden'));
-
-    const fenster = within(screen.getByRole('dialog', { name: 'Fehler melden' }));
-    expect(fenster.getByRole('button', { name: /Text kopieren/ })).toBeInTheDocument();
-    expect(fenster.getByRole('button', { name: /E-Mail/ })).toBeInTheDocument();
-    expect(fenster.getByRole('button', { name: /GitHub-Issue/ })).toBeInTheDocument();
-    // Und nichts geht von selbst irgendwohin.
-    expect(window.open).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: /^Fehler melden/ })).not.toBeInTheDocument();
   });
 });
 
