@@ -100,7 +100,8 @@ export function FileDropzone() {
             <dt className="w-[132px] shrink-0 text-dim">Tastatur</dt>
             <dd>
               Sobald ein LV geladen ist, öffnet <span className="text-ink">Strg/Cmd + K</span> die
-              Befehle: Ansicht wechseln, filtern, zu einer OZ springen, exportieren, drucken.
+              Befehle: Ansicht wechseln, filtern, zu einer OZ springen, exportieren, drucken,
+              melden.
             </dd>
           </div>
         </dl>
