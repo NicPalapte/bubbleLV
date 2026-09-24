@@ -49,7 +49,10 @@ async function oeffneMeldung(): Promise<HTMLElement> {
   });
   await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
 
-  fireEvent.click(within(screen.getByRole('banner')).getByRole('button', { name: /Mitnehmen/ }));
+  // Seit Issue #80 sitzt der Weg in „Über diese App" hinter dem Logo.
+  fireEvent.click(
+    within(screen.getByRole('banner')).getByRole('button', { name: /Über diese App/ }),
+  );
   const menu = [...document.body.children].filter(
     (element) => (element as HTMLElement).style.position === 'fixed',
   );
@@ -187,7 +190,9 @@ describe('Fehler melden · schließen', () => {
       expect(within(grid).getAllByRole('row', { selected: true }).length).toBe(1),
     );
 
-    fireEvent.click(within(screen.getByRole('banner')).getByRole('button', { name: /Mitnehmen/ }));
+    fireEvent.click(
+      within(screen.getByRole('banner')).getByRole('button', { name: /Über diese App/ }),
+    );
     const menu = [...document.body.children].filter(
       (element) => (element as HTMLElement).style.position === 'fixed',
     );

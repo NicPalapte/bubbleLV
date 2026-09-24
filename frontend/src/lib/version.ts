@@ -6,8 +6,17 @@
 // Gesetzt wird beides beim Bauen (vite.config.ts). Lokal gibt es keinen
 // Commit, dann steht „dev".
 
+declare const __APP_VERSION__: string;
 declare const __BUILD_ID__: string;
 declare const __BUILD_TIME__: string;
+
+/**
+ * Veröffentlichte Versionsnummer aus `package.json` (`v0.1.0`). Sie sagt dem
+ * Leser, **welcher Stand** das ist; der Commit darunter sagt, **welcher Bau**.
+ * Für eine Meldung braucht es beides: die Nummer ordnet ein, der Commit trifft
+ * die Zeile.
+ */
+export const APP_VERSION: string = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.0.0';
 
 /** Kurzer Commit-Stand, in CI aus `GITHUB_SHA`; lokal „dev". */
 export const BUILD_ID: string = typeof __BUILD_ID__ === 'string' ? __BUILD_ID__ : 'dev';

@@ -90,6 +90,7 @@ bubble/
 │       └── fixtures/             # echte GAEB DA XML-Testdateien
 ├── tests/
 │   └── fixtures/                 # GAEB DA XML-Testdateien (Quelle, siehe oben)
+├── CHANGELOG.md                  # Was sich je Version geändert hat
 ├── docs/
 │   ├── scope.md                  # Feature-Specs und Out-of-Scope-Liste
 │   ├── implementation-plan.md    # Arbeitspakete (Release 2: WP-H…P)

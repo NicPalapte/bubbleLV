@@ -10,7 +10,7 @@
 // Abgeschickt wird nichts automatisch: der Link öffnet das ausgefüllte
 // Formular in einem neuen Tab, der Nutzer liest es und drückt selbst ab.
 
-import { BUILD_ID, buildDate } from '../version';
+import { APP_VERSION, BUILD_ID, buildDate } from '../version';
 
 const REPO = 'https://github.com/NicPalapte/bubbleLV';
 
@@ -41,9 +41,10 @@ function umgebung({ view, loaded }: IssueContext): string[] {
   const nav = typeof navigator === 'undefined' ? null : navigator;
   const fenster = typeof window === 'undefined' ? null : window;
   return [
-    // Dasselbe Format wie in der Kopfleiste (TT.MM.JJJJ): der Nutzer soll den
-    // Stand in seiner Meldung wiedererkennen, ohne ihn umrechnen zu müssen.
-    `- Bubble-Stand: ${BUILD_ID}${datum === '' ? '' : ` vom ${datum}`}`,
+    // Genau die Angaben aus „Über diese App": Versionsnummer, Commit und
+    // Datum in derselben Schreibweise. Der Nutzer soll den Stand in seiner
+    // Meldung wiedererkennen, ohne ihn umrechnen zu müssen.
+    `- Bubble-Stand: v${APP_VERSION} (${BUILD_ID}${datum === '' ? '' : ` · ${datum}`})`,
     `- Ansicht: ${view}`,
     `- Datei geladen: ${loaded ? 'ja' : 'nein'}`,
     `- Browser: ${nav?.userAgent ?? 'unbekannt'}`,
