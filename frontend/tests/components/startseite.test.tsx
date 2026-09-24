@@ -74,7 +74,11 @@ describe('Bau-Stand', () => {
     const gezeigt = within(screen.getByRole('banner')).getByText(BUILD_ID).textContent ?? '';
     expect(gezeigt).not.toBe('');
     // Eine Quelle für beide (lib/version.ts): der Nutzer liest genau den Wert,
-    // der später in seiner Meldung steht.
-    expect(issueBody({ view: 'table', loaded: false })).toContain(`Bubble-Stand: ${gezeigt}`);
+    // der später in seiner Meldung steht — Stand **und** Datum, in derselben
+    // Schreibweise.
+    const text = issueBody({ view: 'table', loaded: false });
+    expect(text).toContain(`Bubble-Stand: ${gezeigt}`);
+    const datum = buildDate();
+    if (datum !== '') expect(text).toContain(`vom ${datum}`);
   });
 });

@@ -117,6 +117,22 @@ describe('ErrorBoundary', () => {
     expect(text).not.toContain('Kurztext war undefined');
   });
 
+  it('bleibt brauchbar, wenn kein Error geworfen wird', () => {
+    function WirftText(): never {
+      // JavaScript erlaubt jeden Wert; fremder Code hält sich nicht immer an
+      // `new Error(…)`. Ohne Umhüllung stünde hier „undefined: undefined".
+      throw 'Zeichenkette statt Fehler';
+    }
+    render(
+      <ErrorBoundary bereich="graph" dateiGeladen>
+        <WirftText />
+      </ErrorBoundary>,
+    );
+    const seite = screen.getByRole('alert');
+    expect(seite.textContent).toContain('Zeichenkette statt Fehler');
+    expect(seite.textContent).not.toContain('undefined');
+  });
+
   it('schreibt den Absturz samt Stacktrace nur in die Konsole', () => {
     render(
       <ErrorBoundary bereich="matrix" dateiGeladen={false}>

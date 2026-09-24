@@ -35,6 +35,17 @@ interface ErrorBoundaryState {
 }
 
 /**
+ * React reicht durch, was geworfen wurde — und JavaScript erlaubt jeden Wert,
+ * nicht nur `Error`. Die Typisierung der Lebenszyklus-Methoden behauptet
+ * `Error`, garantiert es aber nicht. Ohne diese Umhüllung stünde nach einem
+ * `throw 'kaputt'` aus fremdem Code „undefined: undefined" auf der Seite —
+ * also genau die Information nicht da, für die es die Seite gibt.
+ */
+function alsFehler(wert: unknown): Error {
+  return wert instanceof Error ? wert : new Error(String(wert));
+}
+
+/**
  * Die Fehlerseite. Eigene Funktionskomponente, weil sie einen eigenen Zustand
  * braucht (Melde-Fenster offen) — eine Klassenkomponente könnte das zwar auch,
  * aber dann läge der Zustand des Fensters im Auffangnetz selbst.
@@ -102,11 +113,11 @@ function CrashPanel({
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   state: ErrorBoundaryState = { fehler: null };
 
-  static getDerivedStateFromError(fehler: Error): ErrorBoundaryState {
-    return { fehler };
+  static getDerivedStateFromError(fehler: unknown): ErrorBoundaryState {
+    return { fehler: alsFehler(fehler) };
   }
 
-  componentDidCatch(fehler: Error, info: ErrorInfo): void {
+  componentDidCatch(fehler: unknown, info: ErrorInfo): void {
     // Die Konsole ist die einzige Stelle, an der der Stacktrace landen darf:
     // sie bleibt im Browser des Nutzers. Verschickt wird er nie.
     console.error(`Absturz in ${this.props.bereich}:`, fehler, info.componentStack);
