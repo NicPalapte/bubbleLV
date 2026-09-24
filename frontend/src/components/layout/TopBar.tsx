@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { CommandPalette } from '../palette/CommandPalette';
 import { ReportDialog } from '../report/ReportDialog';
 import { ExportMenu } from './ExportMenu';
+import { VersionBadge } from './VersionBadge';
 import { Chip } from '../ui/Chip';
 import { BubbleLogo } from '../ui/BubbleLogo';
 import { FacetButton } from '../filter/FacetButton';
@@ -213,6 +214,12 @@ export function TopBar() {
           </Chip>
         </div>
       )}
+      {/* Ganz rechts und ohne Bedingung: der Stand gehört auch dann auf den
+          Bildschirm, wenn noch keine Datei geladen ist — dann meldet jemand
+          vielleicht gerade, dass das Laden nicht klappt. */}
+      <div className="ml-auto flex items-stretch">
+        <VersionBadge kompakt={loaded} />
+      </div>
       {melden && (
         <ReportDialog
           context={{ view: view.mode, loaded: lv !== null }}

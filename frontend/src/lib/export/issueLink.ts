@@ -10,6 +10,8 @@
 // Abgeschickt wird nichts automatisch: der Link öffnet das ausgefüllte
 // Formular in einem neuen Tab, der Nutzer liest es und drückt selbst ab.
 
+import { BUILD_ID, buildDate } from '../version';
+
 const REPO = 'https://github.com/NicPalapte/bubbleLV';
 
 /**
@@ -21,9 +23,6 @@ const REPO = 'https://github.com/NicPalapte/bubbleLV';
  * niemand sie braucht, bleibt sie leer.
  */
 const MELDE_MAIL = '';
-
-/** Bau-Stand; in CI gesetzt, lokal „dev". Siehe vite.config.ts. */
-declare const __BUILD_ID__: string;
 
 export interface IssueContext {
   /** Aktive Ansicht — „graph", „matrix" … Kein Inhalt, nur der Modus. */
@@ -38,10 +37,13 @@ export interface IssueContext {
  * genau diese Stelle.
  */
 function umgebung({ view, loaded }: IssueContext): string[] {
+  const datum = buildDate();
   const nav = typeof navigator === 'undefined' ? null : navigator;
   const fenster = typeof window === 'undefined' ? null : window;
   return [
-    `- Bubble-Stand: ${typeof __BUILD_ID__ === 'string' ? __BUILD_ID__ : 'dev'}`,
+    // Dasselbe Format wie in der Kopfleiste (TT.MM.JJJJ): der Nutzer soll den
+    // Stand in seiner Meldung wiedererkennen, ohne ihn umrechnen zu müssen.
+    `- Bubble-Stand: ${BUILD_ID}${datum === '' ? '' : ` vom ${datum}`}`,
     `- Ansicht: ${view}`,
     `- Datei geladen: ${loaded ? 'ja' : 'nein'}`,
     `- Browser: ${nav?.userAgent ?? 'unbekannt'}`,
