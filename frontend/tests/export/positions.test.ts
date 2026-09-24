@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { exportCount, positionsCsv } from '../../src/lib/export/positions';
+import { positionsCsv } from '../../src/lib/export/positions';
 import { buildPositionIndex, filterMask } from '../../src/lib/index/positionIndex';
 import { EMPTY_FILTERS, prepareFilters, type Filters } from '../../src/lib/matchPos';
 import { runPipeline } from '../../src/lib/pipeline/runPipeline';
@@ -57,12 +57,11 @@ describe('positionsCsv', () => {
   it('schreibt ohne Filter jede Position genau einmal', () => {
     const zeilen = datenzeilen(positionsCsv(index, null));
     expect(zeilen).toHaveLength(index.size);
-    expect(exportCount(index, null)).toBe(index.size);
   });
 
   it('enthält genau die gefilterte Menge', () => {
     const mask = maskFor('Beton');
-    const treffer = exportCount(index, mask);
+    const treffer = mask.reduce((summe: number, wert) => summe + (wert === 1 ? 1 : 0), 0);
     expect(treffer).toBeGreaterThan(0);
     expect(treffer).toBeLessThan(index.size);
     expect(datenzeilen(positionsCsv(index, mask))).toHaveLength(treffer);
