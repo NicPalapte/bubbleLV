@@ -19,6 +19,26 @@ export interface JumpOptions {
   stayInView?: boolean;
 }
 
+/**
+ * Sprung in die Ansicht „Prüfung", auf eine bestimmte Regel (WP-R, R1).
+ *
+ * Die Auswahl wandert mit: wer aus dem Graphen kommt, hat eine Position im
+ * Blick und soll sie in der Prüfliste wiederfinden, statt sie zu suchen. Die
+ * Regel wird **aufgeklappt**, nicht umgeschaltet — ein zweiter Sprung auf
+ * dieselbe Regel klappte sie sonst zu.
+ */
+export function checkActions(
+  ruleId: string,
+  positionId: string,
+  parentId: string | null,
+): ViewerAction[] {
+  return [
+    { type: 'selectPosition', nodeId: parentId, positionId },
+    { type: 'openRule', id: ruleId },
+    { type: 'setViewMode', mode: 'check' },
+  ];
+}
+
 /** Auswahl setzen und — sofern gewünscht — in die Tabelle wechseln. */
 export function jumpActions(
   positionId: string,

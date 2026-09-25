@@ -31,6 +31,7 @@ import {
   type ViewAction,
   type ViewState,
 } from './viewState';
+import type { HintIndex } from '../lib/check';
 import type { ColorScale } from '../lib/colors';
 import type { FocusGraph } from '../lib/graph/focusTree';
 import type { FilteredQuantities } from '../lib/graph/quantities';
@@ -191,6 +192,8 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     case 'matrixAxis':
     case 'matrixMeasure':
     case 'toggleRuleOpen':
+    case 'openRule':
+    case 'ruleRevealed':
     case 'clusterMinMembers':
     case 'clusterSort':
     case 'toggleClusterOpen':
@@ -252,6 +255,12 @@ export interface ViewerDerived {
    * kein Knoten mehr trägt — etwa nach einem neuen Import — fallen heraus.
    */
   comparePositions: readonly LVNode[];
+  /**
+   * Hinweise der Prüfregeln, nach Position sortiert (WP-R, R1). Grundlage für
+   * den Ring an der Bubble und den Block „Hinweise" in der Auswahlkarte.
+   * Abgeschaltete Regeln fehlen darin — ein Filterzustand, alle Ansichten.
+   */
+  hints: HintIndex;
 }
 
 export type ViewerValue = ViewerState & ViewerDerived;

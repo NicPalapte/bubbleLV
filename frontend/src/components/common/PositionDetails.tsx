@@ -6,6 +6,7 @@
 
 import { useMemo, useState, type ReactNode } from 'react';
 import { Highlighted } from './Highlighted';
+import { HintBlock } from '../check/HintBlock';
 import { BlockLabel, PanelHeader } from '../ui/PanelHeader';
 import { Chip } from '../ui/Chip';
 import { PropField, PropGrid } from '../ui/PropField';
@@ -177,6 +178,10 @@ export function PositionDetails({
             ))}
           </div>
         )}
+
+        {/* Hinweise vor dem Langtext: wer eine Position aufmacht, soll zuerst
+            sehen, ob an ihr etwas auffällt (WP-R, R1). */}
+        <HintBlock positionId={node.id} />
 
         {position.longText !== '' && (
           <div

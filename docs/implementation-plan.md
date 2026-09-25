@@ -579,7 +579,7 @@ verlassen. Kennzeichnung über Ring und Muster, nie über die Füllfarbe
 
 Vier Schritte, in dieser Reihenfolge. Jeder ist ein eigener Pull Request.
 
-### R1 · Prüfung im Graph
+### R1 · Prüfung im Graph ✅ umgesetzt
 
 1. Hinweise **nach Position gruppieren** — einmal je Import, nie im Render
    (`lib/check/hints.ts`, im `ViewerProvider` abgeleitet). Abgeschaltete Regeln
@@ -594,11 +594,17 @@ Vier Schritte, in dieser Reihenfolge. Jeder ist ein eigener Pull Request.
 
 **Fertig, wenn:**
 
-- Eine Position mit Hinweis trägt im hineingezoomten Graphen einen Ring; eine ohne nicht.
-- Weit herausgezoomt (Wolke als Fläche) trägt keine Position einen Ring.
-- Eine in der Prüfung abgeschaltete Regel markiert im Graphen nichts mehr.
-- Der Block in der Auswahlkarte zeigt dieselbe Zahl Hinweise wie die Ansicht „Prüfung"
-  für diese Position, und der Knopf landet dort bei der richtigen Regel.
+- ✅ Eine Position mit Hinweis trägt im hineingezoomten Graphen einen Ring; eine ohne
+  nicht (`tests/components/bubbleNode.test.tsx`, `tests/components/graphHints.test.tsx`).
+- ✅ Weit herausgezoomt trägt keine Position einen Ring — die Schwelle steht als eigene
+  Funktion `marksVisible` und ist einzeln geprüft.
+- ✅ Eine in der Prüfung abgeschaltete Regel markiert im Graphen nichts mehr
+  (`tests/check/hints.test.ts`; Legende und Block prüfen dasselbe).
+- ✅ Der Block in der Auswahlkarte zeigt dieselbe Zahl Hinweise wie die Ansicht „Prüfung"
+  für diese Position, und der Knopf holt die Regel dort aufgeklappt ins Fenster
+  (`tests/components/checkView.test.tsx`).
+- ✅ Im Browser gegengeprüft: 9 von 28 Positionen tragen einen Ring, die Kopfzeile nennt
+  dieselbe Zahl, der Sprung landet in der Prüfung — kein einziger fremder Request.
 
 ### R2 · Ähnlichkeit im Graph
 

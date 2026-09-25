@@ -108,6 +108,13 @@ export interface MatrixViewState {
 export interface CheckViewState {
   /** Aufgeklappte Regeln — welche Fundlisten offen stehen. */
   openRules: ReadonlySet<string>;
+  /**
+   * Regel, die die Ansicht einmalig ins Fenster holen soll (WP-R, R1). Ein
+   * Sprung aus dem Graphen klappt die Regel auf — ohne dieses Merkzeichen
+   * landete er am gemerkten Scrollstand, also meist weit über ihr. Die Ansicht
+   * setzt es nach dem Scrollen zurück; es überlebt keinen zweiten Blick.
+   */
+  revealRule: string | null;
 }
 
 /** Wonach die Ansicht „Ähnlichkeit" ihre Gruppen ordnet. */
@@ -158,6 +165,10 @@ export type ViewAction =
   | { type: 'matrixAxis'; axis: 'row' | 'col'; facetId: string }
   | { type: 'matrixMeasure'; value: MatrixMeasure }
   | { type: 'toggleRuleOpen'; id: string }
+  /** Regel gezielt aufklappen — der Sprung aus dem Graphen soll sie offen finden. */
+  | { type: 'openRule'; id: string }
+  /** Die Ansicht hat die Regel ins Fenster geholt; das Merkzeichen ist verbraucht. */
+  | { type: 'ruleRevealed' }
   | { type: 'compareOnlyDiffs'; value: boolean }
   | { type: 'clusterMinMembers'; value: number }
   | { type: 'clusterSort'; value: ClusterSort }
@@ -191,7 +202,7 @@ export const INITIAL_VIEW_STATE: ViewState = {
     colFacetId: DEFAULT_MATRIX_AXES.col,
     measure: 'anzahl',
   },
-  check: { openRules: new Set() },
+  check: { openRules: new Set(), revealRule: null },
   similar: { minMembers: 2, sort: 'groesse', openClusters: new Set() },
   compare: { onlyDiffs: false },
   scroll: NO_SCROLL,
@@ -272,8 +283,15 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
     case 'toggleRuleOpen': {
       const openRules = new Set(state.check.openRules);
       if (!openRules.delete(action.id)) openRules.add(action.id);
-      return { ...state, check: { openRules } };
+      return { ...state, check: { ...state.check, openRules } };
     }
+    case 'openRule': {
+      const openRules = new Set(state.check.openRules).add(action.id);
+      return { ...state, check: { openRules, revealRule: action.id } };
+    }
+    case 'ruleRevealed':
+      if (state.check.revealRule === null) return state;
+      return { ...state, check: { ...state.check, revealRule: null } };
     case 'clusterMinMembers':
       return { ...state, similar: { ...state.similar, minMembers: action.value } };
     case 'clusterSort':

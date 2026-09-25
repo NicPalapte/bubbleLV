@@ -4,6 +4,7 @@
 // bekommen dasselbe Ergebnis (Issue #18, WP-L).
 
 import { useMemo, useReducer, type ReactNode } from 'react';
+import { EMPTY_HINTS, hintsByPosition, type HintIndex } from '../lib/check';
 import { buildColorScale, EMPTY_COLOR_SCALE, type ColorScale } from '../lib/colors';
 import { effectiveSizeMode } from '../lib/graph/constants';
 import { buildFocusTree, type FocusGraph } from '../lib/graph/focusTree';
@@ -146,6 +147,15 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
     return out;
   }, [state.selection.compare, structure.nodes]);
 
+  // Hinweise je Position (WP-R, R1). Hängt am Import und am Regel-Schalter,
+  // nicht am Filter: was hier steht, gilt für das ganze LV — der Ring an der
+  // Bubble verschwindet ohnehin mit der Bubble, sobald der Filter sie ausblendet.
+  const hints = useMemo<HintIndex>(() => {
+    const check = state.lv?.check ?? null;
+    if (check === null) return EMPTY_HINTS;
+    return hintsByPosition(check, state.filter.mutedRules);
+  }, [state.lv, state.filter.mutedRules]);
+
   const derived = useMemo<ViewerDerived>(
     () => ({
       tree,
@@ -168,6 +178,7 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
       focus,
       quantities,
       comparePositions,
+      hints,
     }),
     [
       tree,
@@ -183,6 +194,7 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
       focus,
       quantities,
       comparePositions,
+      hints,
     ],
   );
 

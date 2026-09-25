@@ -9,6 +9,25 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.3.0 — 25.09.2026 · Hinweise im Graphen
+
+- **Ring an der Bubble.** Eine Position, an der eine Prüfregel etwas gefunden hat,
+  bekommt im Graphen einen Ring. Die Ringfarbe sagt, wie schwer es wiegt — orange für
+  „beachten", grau für „Hinweis". Die Füllfarbe bleibt unverändert: sie gehört dem
+  Gewerk.
+- **Der Ring erscheint erst, wenn du nah genug dran bist.** Weit draußen ist eine
+  Position nur ein Punkt; ein Ring darum wäre ein Fleck.
+- **Kopfzeile des Graphen nennt die Zahl:** „9 mit Hinweis", gerechnet im aktuellen
+  Filter, mit dem Ring als Legende daneben.
+- **Block „Hinweise" in den Positionsdetails.** Klickst du eine Bubble an, steht über
+  dem Langtext, was an dieser Position auffällt — nach Regel gruppiert, mit Norm-Verweis
+  und einem Knopf „In der Prüfung zeigen", der die Regel dort aufgeklappt ins Bild holt.
+  Derselbe Block steht im Eigenschaften-Panel der Tabelle.
+- **Eine abgeschaltete Regel markiert nichts mehr.** Was du in der Prüfung stumm
+  stellst, verschwindet auch aus dem Graphen.
+
+---
+
 ## 0.2.0 — 24.09.2026 · aufgeräumte Kopfleiste
 
 - **Zwei Leisten statt einer.** Oben Logo, Projekt und die acht Ansichten; darunter
@@ -27,16 +46,16 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 **Acht Ansichten auf einem Filterzustand.** Ein Ansichtswechsel fasst Filter, Suche und
 Auswahl nicht an.
 
-| Ansicht | Wofür |
-|---|---|
-| Überblick | Kennzahlen, Verteilung nach Gewerk und Abschnitt, Pareto, Mengen je Einheit |
-| Graph | Das LV als Bubbles; Größe nach Anzahl, Gesamtpreis, Menge oder einheitlich |
-| Tabelle | Baum, Positionsliste und Eigenschaften nebeneinander |
-| Matrix | Heatmap über zwei Merkmale |
-| Ähnlichkeit | Ähnliche Positionen, ihre Unterschiede, Ausreißer |
-| Vergleich | Bis zu fünf Positionen nebeneinander, Abweichungen markiert |
-| Prüfung | Hinweise der VOB-Prüfregeln mit Norm-Verweis und Fundstelle |
-| Eigenschaften | Langtext mit Hervorhebungen, Attribute, Menge und Preis |
+| Ansicht       | Wofür                                                                       |
+| ------------- | --------------------------------------------------------------------------- |
+| Überblick     | Kennzahlen, Verteilung nach Gewerk und Abschnitt, Pareto, Mengen je Einheit |
+| Graph         | Das LV als Bubbles; Größe nach Anzahl, Gesamtpreis, Menge oder einheitlich  |
+| Tabelle       | Baum, Positionsliste und Eigenschaften nebeneinander                        |
+| Matrix        | Heatmap über zwei Merkmale                                                  |
+| Ähnlichkeit   | Ähnliche Positionen, ihre Unterschiede, Ausreißer                           |
+| Vergleich     | Bis zu fünf Positionen nebeneinander, Abweichungen markiert                 |
+| Prüfung       | Hinweise der VOB-Prüfregeln mit Norm-Verweis und Fundstelle                 |
+| Eigenschaften | Langtext mit Hervorhebungen, Attribute, Menge und Preis                     |
 
 **Neu in dieser Version**
 
