@@ -58,6 +58,9 @@ function Harness({ positionId, children }: { positionId: string; children?: Reac
       graph: { highlightCluster },
     },
     selection: { positionId: positionId2 },
+    view: {
+      similar: { openClusters, revealCluster, minMembers },
+    },
   } = useViewer();
   return (
     <>
@@ -76,6 +79,9 @@ function Harness({ positionId, children }: { positionId: string; children?: Reac
       <button type="button" onClick={() => dispatch({ type: 'search', value: EIN_MITGLIED })}>
         auf ein Mitglied filtern
       </button>
+      <button type="button" onClick={() => dispatch({ type: 'clusterMinMembers', value: 9 })}>
+        Regler hoch
+      </button>
       <button
         type="button"
         onClick={() => dispatch({ type: 'selectPosition', nodeId: null, positionId: MIT_GRUPPE })}
@@ -85,6 +91,9 @@ function Harness({ positionId, children }: { positionId: string; children?: Reac
       <span data-testid="ansicht">{mode}</span>
       <span data-testid="hervorgehoben">{highlightCluster ?? ''}</span>
       <span data-testid="auswahl">{positionId2 ?? ''}</span>
+      <span data-testid="offene-gruppen">{[...openClusters].join(',')}</span>
+      <span data-testid="holt-gruppe">{revealCluster ?? ''}</span>
+      <span data-testid="regler">{minMembers}</span>
       <SimilarBlock positionId={positionId} />
       {children}
     </>
@@ -156,6 +165,27 @@ describe('SimilarBlock', () => {
     fireEvent.click(screen.getByRole('button', { name: 'IN DER ÄHNLICHKEIT ZEIGEN' }));
     expect(screen.getByTestId('ansicht')).toHaveTextContent('similar');
     expect(screen.getByTestId('hervorgehoben')).toHaveTextContent('');
+  });
+
+  it('klappt die Gruppe dort auf und merkt sie zum Ins-Fenster-Holen vor', () => {
+    // „Zeigen" heißt zeigen: die Liste ist nach Größe sortiert, ein bloßer
+    // Ansichtswechsel ließe den Nutzer seine Gruppe suchen.
+    const gruppe = clusters.get(MIT_GRUPPE);
+    renderBlock(MIT_GRUPPE, false);
+    fireEvent.click(screen.getByRole('button', { name: 'IN DER ÄHNLICHKEIT ZEIGEN' }));
+    expect(screen.getByTestId('offene-gruppen').textContent?.split(',')).toContain(gruppe?.id);
+    expect(screen.getByTestId('holt-gruppe')).toHaveTextContent(gruppe?.id ?? 'x');
+    expect(screen.getByTestId('auswahl')).toHaveTextContent(MIT_GRUPPE);
+  });
+
+  it('senkt den Regler, wenn er genau die Gruppe verstecken würde', () => {
+    const gesamt = clusters.get(MIT_GRUPPE)?.positionIds.length ?? 0;
+    renderBlock(MIT_GRUPPE, false);
+    fireEvent.click(screen.getByRole('button', { name: 'Regler hoch' }));
+    expect(Number(screen.getByTestId('regler').textContent)).toBeGreaterThan(gesamt);
+    fireEvent.click(screen.getByRole('button', { name: 'IN DER ÄHNLICHKEIT ZEIGEN' }));
+    // Sonst landete der Nutzer nach „zeigen" vor einer leeren Liste.
+    expect(Number(screen.getByTestId('regler').textContent)).toBe(gesamt);
   });
 });
 

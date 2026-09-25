@@ -143,6 +143,13 @@ export interface SimilarViewState {
   sort: ClusterSort;
   /** Aufgeklappte Gruppen — welche Mitgliederlisten offen stehen. */
   openClusters: ReadonlySet<string>;
+  /**
+   * Gruppe, die die Ansicht einmalig ins Fenster holen soll (WP-R, R2) — das
+   * Gegenstück zu `check.revealRule`. Ohne dieses Merkzeichen landete ein
+   * Sprung aus dem Graphen am gemerkten Scrollstand, irgendwo in einer nach
+   * Größe sortierten Liste. Die Ansicht setzt es nach dem Scrollen zurück.
+   */
+  revealCluster: string | null;
 }
 
 export interface ViewState {
@@ -184,6 +191,10 @@ export type ViewAction =
   | { type: 'clusterMinMembers'; value: number }
   | { type: 'clusterSort'; value: ClusterSort }
   | { type: 'toggleClusterOpen'; id: string }
+  /** Gruppe gezielt aufklappen und ins Fenster holen — der Sprung aus dem Graphen. */
+  | { type: 'openCluster'; id: string }
+  /** Die Ansicht hat die Gruppe ins Fenster geholt; das Merkzeichen ist verbraucht. */
+  | { type: 'clusterRevealed' }
   | { type: 'viewScroll'; view: ViewMode; top: number }
   /** Info-Panels vergrößern/verkleinern; `height` nur von der Karte genutzt. */
   | { type: 'panelSize'; size: PanelSize }
@@ -220,7 +231,7 @@ export const INITIAL_VIEW_STATE: ViewState = {
     measure: 'anzahl',
   },
   check: { openRules: new Set(), revealRule: null },
-  similar: { minMembers: 2, sort: 'groesse', openClusters: new Set() },
+  similar: { minMembers: 2, sort: 'groesse', openClusters: new Set(), revealCluster: null },
   compare: { onlyDiffs: false },
   scroll: NO_SCROLL,
   panelSize: DEFAULT_PANEL_SIZE,
@@ -254,6 +265,7 @@ export function viewStateForNewLv(state: ViewState): ViewState {
       minMembers: state.similar.minMembers,
       sort: state.similar.sort,
       openClusters: new Set(),
+      revealCluster: null,
     },
     panelSize: state.panelSize,
     cardPos: state.cardPos,
@@ -324,6 +336,13 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
       if (!openClusters.delete(action.id)) openClusters.add(action.id);
       return { ...state, similar: { ...state.similar, openClusters } };
     }
+    case 'openCluster': {
+      const openClusters = new Set(state.similar.openClusters).add(action.id);
+      return { ...state, similar: { ...state.similar, openClusters, revealCluster: action.id } };
+    }
+    case 'clusterRevealed':
+      if (state.similar.revealCluster === null) return state;
+      return { ...state, similar: { ...state.similar, revealCluster: null } };
     case 'viewScroll':
       if (state.scroll[action.view] === action.top) return state;
       return { ...state, scroll: { ...state.scroll, [action.view]: action.top } };

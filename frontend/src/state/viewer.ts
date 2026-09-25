@@ -199,6 +199,8 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     case 'clusterMinMembers':
     case 'clusterSort':
     case 'toggleClusterOpen':
+    case 'openCluster':
+    case 'clusterRevealed':
     case 'viewScroll':
     case 'panelSize':
     case 'cardPos': {

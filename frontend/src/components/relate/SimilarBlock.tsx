@@ -15,6 +15,7 @@
 // — in beiden Fällen bleibt man, wo man ist.
 
 import { useJumpToPosition } from '../common/useJumpToPosition';
+import { useJumpToSimilar } from '../common/useJumpToSimilar';
 import { truncate } from '../../lib/format';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 
@@ -28,6 +29,7 @@ export function SimilarBlock({ positionId }: { positionId: string }) {
   } = useViewer();
   const dispatch = useViewerDispatch();
   const jumpTo = useJumpToPosition();
+  const jumpToSimilar = useJumpToSimilar();
 
   const cluster = clusters.get(positionId);
   // Keine Geschwister, kein Block — eine Überschrift über einer leeren Liste
@@ -64,7 +66,9 @@ export function SimilarBlock({ positionId }: { positionId: string }) {
                   type: 'highlightCluster',
                   id: hervorgehoben ? null : cluster.id,
                 })
-              : dispatch({ type: 'setViewMode', mode: 'similar' })
+              : // Nicht nur die Ansicht wechseln: die Liste ist nach Größe
+                // sortiert, die Gruppe müsste man darin sonst suchen.
+                jumpToSimilar(cluster.id, positionId)
           }
           className="inline-flex cursor-pointer items-center border border-line bg-white px-[7px] py-[2px] font-mono text-[9px] tracking-[0.6px] text-dim hover:text-blue focus-visible:text-blue"
         >

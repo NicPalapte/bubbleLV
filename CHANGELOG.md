@@ -22,7 +22,9 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
   oder ein Fenster offen, schließt der erste Druck das — erst der nächste hebt die
   Gruppe auf. Filter, Suche und Auswahl bleiben unberührt.
 - **Kopfzeile nennt die Zahl:** „8 mit Ähnlichen", mit dem Ring daneben als Legende.
-- Außerhalb des Graphen führt derselbe Knopf in die Ansicht „Ähnlichkeit".
+- Außerhalb des Graphen führt derselbe Knopf in die Ansicht „Ähnlichkeit" — und zwar
+  direkt zu dieser Gruppe: sie steht aufgeklappt da, statt irgendwo in einer nach
+  Größe sortierten Liste.
 
 ---
 

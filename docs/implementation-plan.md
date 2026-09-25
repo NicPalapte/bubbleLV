@@ -629,8 +629,10 @@ Vier Schritte, in dieser Reihenfolge. Jeder ist ein eigener Pull Request.
   in derselben Gruppe führt.
 - ✅ Die Hervorhebung fasst Filter, Suche und Auswahl nicht an und lässt sich auf drei
   Wegen wieder aufheben — Escape gestaffelt hinter Karte und Dialog, jeder Fall geprüft.
-- ✅ Außerhalb des Graphen führt derselbe Knopf in die Ansicht „Ähnlichkeit", statt
-  wirkungslos dazustehen.
+- ✅ Außerhalb des Graphen führt derselbe Knopf in die Ansicht „Ähnlichkeit", klappt
+  dort **diese** Gruppe auf und holt sie ins Fenster — dieselbe Mechanik wie der Sprung
+  in die Prüfung aus R1. Versteckt der Regler „ab n Mitgliedern" genau diese Gruppe,
+  geht er so weit herunter, wie es nötig ist.
 - ✅ Im Browser gegengeprüft: 8 von 28 Positionen tragen den leisen Ring, die Kopfzeile
   nennt dieselbe Zahl, die Hervorhebung greift und lässt sich aufheben — kein fremder
   Request.
