@@ -5,6 +5,7 @@
 
 import { useMemo, useReducer, type ReactNode } from 'react';
 import { EMPTY_HINTS, hintsByPosition, type HintIndex } from '../lib/check';
+import { clusterByPosition, type Cluster } from '../lib/relate';
 import { buildColorScale, EMPTY_COLOR_SCALE, type ColorScale } from '../lib/colors';
 import { effectiveSizeMode } from '../lib/graph/constants';
 import { buildFocusTree, type FocusGraph } from '../lib/graph/focusTree';
@@ -156,6 +157,14 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
     return hintsByPosition(check, state.filter.mutedRules);
   }, [state.lv, state.filter.mutedRules]);
 
+  // Umkehrung der Ähnlichkeits-Cluster (WP-R, R2): Position → ihre Gruppe.
+  // Hängt allein am Import — die Gruppen entstehen im Worker und ändern sich
+  // danach nicht mehr.
+  const clusters = useMemo<ReadonlyMap<string, Cluster>>(() => {
+    const relations = state.lv?.relations ?? null;
+    return relations === null ? new Map() : clusterByPosition(relations);
+  }, [state.lv]);
+
   const derived = useMemo<ViewerDerived>(
     () => ({
       tree,
@@ -179,6 +188,7 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
       quantities,
       comparePositions,
       hints,
+      clusters,
     }),
     [
       tree,
@@ -195,6 +205,7 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
       quantities,
       comparePositions,
       hints,
+      clusters,
     ],
   );
 

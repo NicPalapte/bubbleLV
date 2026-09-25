@@ -1,0 +1,357 @@
+// Ähnlichkeit im Graph (WP-R, R2): der gestrichelte Ring an Positionen mit
+// Geschwistern, der Block „Ähnliche" in den Positionsdetails und die
+// Hervorhebung einer Gruppe.
+//
+// Die Zusage dahinter (decisions/0029): **Muster statt Farbe** — die Füllung
+// der Bubble bleibt dem Gewerk. Und: leise, solange nichts hervorgehoben ist;
+// in einem LV steckt schnell ein Drittel aller Positionen in einer Gruppe.
+
+import { readFileSync } from 'node:fs';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
+import type { ReactNode } from 'react';
+import { BubbleGraph } from '../../src/components/graph/BubbleGraph';
+import { GraphHeader } from '../../src/components/graph/GraphHeader';
+import { SimilarBlock } from '../../src/components/relate/SimilarBlock';
+import { clusterByPosition } from '../../src/lib/relate';
+import { runPipeline } from '../../src/lib/pipeline/runPipeline';
+import { ViewerProvider } from '../../src/state/ViewerProvider';
+import { useViewer, useViewerDispatch } from '../../src/state/viewer';
+
+function loadFixture() {
+  const bytes = readFileSync('tests/fixtures/gaeb-xml-beispiel.x83');
+  return runPipeline(
+    bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer,
+    'beispiel.x83',
+  );
+}
+
+const lv = loadFixture();
+const clusters = clusterByPosition(lv.relations);
+
+/** Eine Position der Musterdatei, die Geschwister hat. */
+const MIT_GRUPPE = [...clusters.keys()][0];
+/** Eine Position ohne jede Gruppe. */
+const OHNE_GRUPPE =
+  lv.relations.total > lv.relations.clustered
+    ? ([...lv.tree.children[0].children]
+        .flatMap((section) => section.children)
+        .map((node) => node.id)
+        .find((id) => !clusters.has(id)) ?? '')
+    : '';
+
+/**
+ * Ein Suchbegriff, der genau eine Position der Gruppe durchlässt: die OZ des
+ * ersten Mitglieds. Damit lässt sich prüfen, dass die Zahl im Chip dem Filter
+ * folgt, statt die volle Gruppengröße zu behaupten.
+ */
+const EIN_MITGLIED =
+  [...(clusters.get(MIT_GRUPPE)?.positionIds ?? [])]
+    .map((id) => id.replace(/^position:/, ''))
+    .at(0) ?? '';
+
+function Harness({ positionId, children }: { positionId: string; children?: ReactNode }) {
+  const dispatch = useViewerDispatch();
+  const {
+    view: {
+      mode,
+      graph: { highlightCluster },
+    },
+    selection: { positionId: positionId2 },
+    view: {
+      similar: { openClusters, revealCluster, minMembers },
+    },
+  } = useViewer();
+  return (
+    <>
+      <button type="button" onClick={() => dispatch({ type: 'loaded', lv })}>
+        laden
+      </button>
+      <button type="button" onClick={() => dispatch({ type: 'setViewMode', mode: 'graph' })}>
+        in den Graphen
+      </button>
+      <button
+        type="button"
+        onClick={() => dispatch({ type: 'search', value: 'zzz-kein-treffer-zzz' })}
+      >
+        filtern
+      </button>
+      <button type="button" onClick={() => dispatch({ type: 'search', value: EIN_MITGLIED })}>
+        auf ein Mitglied filtern
+      </button>
+      <button type="button" onClick={() => dispatch({ type: 'clusterMinMembers', value: 9 })}>
+        Regler hoch
+      </button>
+      <button
+        type="button"
+        onClick={() => dispatch({ type: 'selectPosition', nodeId: null, positionId: MIT_GRUPPE })}
+      >
+        Position wählen
+      </button>
+      <span data-testid="ansicht">{mode}</span>
+      <span data-testid="hervorgehoben">{highlightCluster ?? ''}</span>
+      <span data-testid="auswahl">{positionId2 ?? ''}</span>
+      <span data-testid="offene-gruppen">{[...openClusters].join(',')}</span>
+      <span data-testid="holt-gruppe">{revealCluster ?? ''}</span>
+      <span data-testid="regler">{minMembers}</span>
+      <SimilarBlock positionId={positionId} />
+      {children}
+    </>
+  );
+}
+
+function renderBlock(positionId: string, imGraphen = true) {
+  const result = render(
+    <ViewerProvider>
+      <Harness positionId={positionId} />
+    </ViewerProvider>,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'laden' }));
+  if (imGraphen) fireEvent.click(screen.getByRole('button', { name: 'in den Graphen' }));
+  return result;
+}
+
+describe('SimilarBlock', () => {
+  it('nennt die Gruppe und wie viele Positionen noch dazugehören', () => {
+    expect(MIT_GRUPPE).toBeDefined();
+    renderBlock(MIT_GRUPPE);
+    const gruppe = clusters.get(MIT_GRUPPE);
+    expect(screen.getByText('Ähnliche')).toBeInTheDocument();
+    expect(
+      screen.getByText(new RegExp(`^${(gruppe?.positionIds.length ?? 1) - 1} weitere`)),
+    ).toBeInTheDocument();
+  });
+
+  it('bleibt weg, wo es keine Geschwister gibt', () => {
+    expect(OHNE_GRUPPE).not.toBe('');
+    expect(clusters.has(OHNE_GRUPPE)).toBe(false);
+    renderBlock(OHNE_GRUPPE);
+    expect(screen.queryByText('Ähnliche')).toBeNull();
+  });
+
+  it('hebt die Gruppe hervor und nimmt die Hervorhebung beim zweiten Klick zurück', () => {
+    renderBlock(MIT_GRUPPE);
+    const knopf = (name: string): HTMLElement => screen.getByRole('button', { name });
+    fireEvent.click(knopf('ÄHNLICHE ZEIGEN'));
+    expect(screen.getByTestId('hervorgehoben')).toHaveTextContent(
+      clusters.get(MIT_GRUPPE)?.id ?? 'x',
+    );
+    fireEvent.click(knopf('HERVORHEBUNG AUFHEBEN'));
+    expect(screen.getByTestId('hervorgehoben')).toHaveTextContent('');
+  });
+
+  it('fasst Filter und Auswahl beim Hervorheben nicht an', () => {
+    renderBlock(MIT_GRUPPE);
+    fireEvent.click(screen.getByRole('button', { name: 'ÄHNLICHE ZEIGEN' }));
+    expect(screen.getByTestId('ansicht')).toHaveTextContent('graph');
+  });
+
+  it('setzt mit „zur nächsten" nur die Auswahl weiter, ohne die Ansicht zu wechseln', () => {
+    // Der Knopf steht direkt neben „Ähnliche zeigen", dessen ganzer Sinn ist,
+    // im Graphen zu bleiben. Ein Sprung in die Tabelle daneben wäre ein
+    // Widerspruch — und im Label nicht angekündigt.
+    renderBlock(MIT_GRUPPE);
+    const nachbar = clusters.get(MIT_GRUPPE)?.positionIds.find((id) => id !== MIT_GRUPPE);
+    expect(nachbar).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'ZUR NÄCHSTEN' }));
+    expect(screen.getByTestId('auswahl')).toHaveTextContent(nachbar as string);
+    expect(screen.getByTestId('ansicht')).toHaveTextContent('graph');
+  });
+
+  it('führt außerhalb des Graphen in die Ansicht „Ähnlichkeit" statt ins Leere', () => {
+    // Die Hervorhebung wirkt nur im Graphen — ein Knopf, der anderswo nichts
+    // tut, wäre schlimmer als keiner.
+    renderBlock(MIT_GRUPPE, false);
+    fireEvent.click(screen.getByRole('button', { name: 'IN DER ÄHNLICHKEIT ZEIGEN' }));
+    expect(screen.getByTestId('ansicht')).toHaveTextContent('similar');
+    expect(screen.getByTestId('hervorgehoben')).toHaveTextContent('');
+  });
+
+  it('klappt die Gruppe dort auf und merkt sie zum Ins-Fenster-Holen vor', () => {
+    // „Zeigen" heißt zeigen: die Liste ist nach Größe sortiert, ein bloßer
+    // Ansichtswechsel ließe den Nutzer seine Gruppe suchen.
+    const gruppe = clusters.get(MIT_GRUPPE);
+    renderBlock(MIT_GRUPPE, false);
+    fireEvent.click(screen.getByRole('button', { name: 'IN DER ÄHNLICHKEIT ZEIGEN' }));
+    expect(screen.getByTestId('offene-gruppen').textContent?.split(',')).toContain(gruppe?.id);
+    expect(screen.getByTestId('holt-gruppe')).toHaveTextContent(gruppe?.id ?? 'x');
+    expect(screen.getByTestId('auswahl')).toHaveTextContent(MIT_GRUPPE);
+  });
+
+  it('senkt den Regler, wenn er genau die Gruppe verstecken würde', () => {
+    const gesamt = clusters.get(MIT_GRUPPE)?.positionIds.length ?? 0;
+    renderBlock(MIT_GRUPPE, false);
+    fireEvent.click(screen.getByRole('button', { name: 'Regler hoch' }));
+    expect(Number(screen.getByTestId('regler').textContent)).toBeGreaterThan(gesamt);
+    fireEvent.click(screen.getByRole('button', { name: 'IN DER ÄHNLICHKEIT ZEIGEN' }));
+    // Sonst landete der Nutzer nach „zeigen" vor einer leeren Liste.
+    expect(Number(screen.getByTestId('regler').textContent)).toBe(gesamt);
+  });
+});
+
+describe('Graph-Kopf', () => {
+  function renderHeader() {
+    const result = render(
+      <ViewerProvider>
+        <Harness positionId={MIT_GRUPPE}>
+          <GraphHeader root={lv.tree} />
+        </Harness>
+      </ViewerProvider>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'laden' }));
+    fireEvent.click(screen.getByRole('button', { name: 'in den Graphen' }));
+    return result;
+  }
+
+  it('nennt, wie viele Positionen Geschwister haben', () => {
+    renderHeader();
+    expect(screen.getByText(`${clusters.size} MIT ÄHNLICHEN`)).toBeInTheDocument();
+  });
+
+  it('zählt im aktuellen Filter, nicht über das ganze LV', () => {
+    // Ein Filterzustand, alle Ansichten (.claude/CLAUDE.md): eine Zahl für das
+    // ganze LV neben einem Graphen, der nur eine Teilmenge zeigt, wäre falsch.
+    renderHeader();
+    expect(screen.getByText(`${clusters.size} MIT ÄHNLICHEN`)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'filtern' }));
+    expect(screen.queryByText(/MIT ÄHNLICHEN/)).toBeNull();
+  });
+
+  it('nennt im Chip die sichtbaren Mitglieder und die volle Gruppengröße', () => {
+    const gesamt = clusters.get(MIT_GRUPPE)?.positionIds.length ?? 0;
+    expect(gesamt).toBeGreaterThan(1);
+    renderHeader();
+    fireEvent.click(screen.getAllByRole('button', { name: 'ÄHNLICHE ZEIGEN' })[0]);
+    // Ohne Filter: nur die Gesamtzahl, ohne „von".
+    expect(screen.getByRole('button', { name: /^ÄHNLICHE:/ }).textContent).toContain(`· ${gesamt}`);
+
+    fireEvent.click(screen.getByRole('button', { name: 'auf ein Mitglied filtern' }));
+    const beschriftung = screen.getByRole('button', { name: /^ÄHNLICHE:/ }).textContent ?? '';
+    expect(beschriftung).toContain(`VON ${gesamt}`);
+    expect(beschriftung).not.toContain(`· ${gesamt} `);
+  });
+
+  it('bietet eine Schaltfläche, die die Hervorhebung wieder aufhebt', () => {
+    renderHeader();
+    fireEvent.click(screen.getByRole('button', { name: 'ÄHNLICHE ZEIGEN' }));
+    const aufheben = screen.getByRole('button', { name: /^ÄHNLICHE:/ });
+    fireEvent.click(aufheben);
+    expect(screen.getByTestId('hervorgehoben')).toHaveTextContent('');
+    // Danach steht die Legende wieder da.
+    expect(screen.getByText(`${clusters.size} MIT ÄHNLICHEN`)).toBeInTheDocument();
+  });
+});
+
+describe('Muster im Graphen', () => {
+  function renderGraph() {
+    Element.prototype.getBoundingClientRect = function rect(): DOMRect {
+      return {
+        width: 1200,
+        height: 800,
+        top: 0,
+        left: 0,
+        bottom: 800,
+        right: 1200,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      } as DOMRect;
+    };
+    const result = render(
+      <ViewerProvider>
+        <Harness positionId={MIT_GRUPPE}>
+          <BubbleGraph root={lv.tree} />
+        </Harness>
+      </ViewerProvider>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'laden' }));
+    fireEvent.click(screen.getByRole('button', { name: 'in den Graphen' }));
+    fireEvent.click(screen.getByTitle('Alles ausklappen'));
+    // Auf die Auswahl einpassen statt blind zu zoomen: nur so steht die
+    // markierte Position anschließend sicher im Ausschnitt.
+    fireEvent.click(screen.getByRole('button', { name: 'Position wählen' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Auf Auswahl zoomen' }));
+    return result;
+  }
+
+  function marks(container: HTMLElement, art: string): number {
+    return container.querySelectorAll(`[data-group="${art}"]`).length;
+  }
+
+  it('markiert Gruppenmitglieder leise, solange nichts hervorgehoben ist', () => {
+    const { container } = renderGraph();
+    expect(marks(container, 'leise')).toBeGreaterThan(0);
+    expect(marks(container, 'hervor')).toBe(0);
+    // Die Bubble behält ihre Füllfarbe — die gehört dem Gewerk (0013).
+    const ring = container.querySelector('[data-group="leise"]');
+    expect(ring?.getAttribute('fill')).toBe('none');
+    expect(ring?.getAttribute('stroke-dasharray')).not.toBeNull();
+  });
+
+  it('hebt beim Hervorheben genau die Mitglieder der Gruppe heraus', () => {
+    const { container } = renderGraph();
+    // Die Auswahlkarte im Graphen zeigt denselben Block — beide Knöpfe lösen
+    // dasselbe aus, für den Test genügt der erste.
+    fireEvent.click(screen.getAllByRole('button', { name: 'ÄHNLICHE ZEIGEN' })[0]);
+    const gruppe = clusters.get(MIT_GRUPPE);
+    const gezeichnet = [...container.querySelectorAll('[data-group="hervor"]')];
+    expect(gezeichnet.length).toBeGreaterThan(0);
+    expect(gezeichnet.length).toBeLessThanOrEqual(gruppe?.positionIds.length ?? 0);
+  });
+
+  // Escape ist der dritte Weg zurück — und der heikelste: die Auswahlkarte
+  // fängt die Taste in der Capture-Phase am window ab (useDismiss). Ohne diese
+  // Tests behauptete der Changelog etwas, das nur ohne offene Karte stimmt.
+  it('hebt die Hervorhebung mit Escape auf, wenn keine Karte offen steht', () => {
+    renderGraph();
+    fireEvent.click(screen.getAllByRole('button', { name: 'ÄHNLICHE ZEIGEN' })[0]);
+    // Die Karte schließen, die das Einpassen geöffnet hat.
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.getByTestId('hervorgehoben')).not.toHaveTextContent('');
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.getByTestId('hervorgehoben')).toHaveTextContent('');
+  });
+
+  it('gibt Escape zuerst der offenen Karte und erst dann der Gruppe', () => {
+    renderGraph();
+    fireEvent.click(screen.getAllByRole('button', { name: 'ÄHNLICHE ZEIGEN' })[0]);
+    expect(screen.getByRole('button', { name: 'Karte schließen' })).toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    // Erster Druck: die Karte ist weg, die Gruppe steht noch.
+    expect(screen.queryByRole('button', { name: 'Karte schließen' })).toBeNull();
+    expect(screen.getByTestId('hervorgehoben')).not.toHaveTextContent('');
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.getByTestId('hervorgehoben')).toHaveTextContent('');
+  });
+
+  it('lässt Escape einem offenen Dialog, statt ihn zu überholen', () => {
+    // Die Palette hängt ihren Listener erst beim Öffnen ein — also nach diesem.
+    // Ohne die eigene Zurückhaltung schluckte der Graph die Taste, und die
+    // Palette bliebe offen stehen.
+    renderGraph();
+    fireEvent.click(screen.getAllByRole('button', { name: 'ÄHNLICHE ZEIGEN' })[0]);
+    fireEvent.keyDown(window, { key: 'Escape' }); // schließt die Karte
+
+    const dialog = document.createElement('div');
+    dialog.setAttribute('role', 'dialog');
+    document.body.appendChild(dialog);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.getByTestId('hervorgehoben')).not.toHaveTextContent('');
+
+    dialog.remove();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.getByTestId('hervorgehoben')).toHaveTextContent('');
+  });
+
+  it('lässt das Muster beim Rauszoomen weg — wie den Hinweis-Ring', () => {
+    const { container } = renderGraph();
+    for (let step = 0; step < 14; step += 1) {
+      fireEvent.click(screen.getByTitle('Auszoomen'));
+    }
+    expect(container.querySelectorAll('[data-tier="position"]').length).toBeGreaterThan(0);
+    expect(marks(container, 'leise')).toBe(0);
+  });
+});

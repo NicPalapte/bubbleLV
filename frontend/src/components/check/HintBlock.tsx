@@ -68,7 +68,7 @@ function RuleHints({
               style={{ borderColor: 'var(--amber)', color: 'var(--amber)' }}
               title="Der Norm-Verweis ist noch nicht bestätigt — siehe docs/domain/vob-pruefungen.md"
             >
-              zu bestätigen
+              Verweis zu bestätigen
             </span>
           )}
         </p>

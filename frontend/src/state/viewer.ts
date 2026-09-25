@@ -32,6 +32,7 @@ import {
   type ViewState,
 } from './viewState';
 import type { HintIndex } from '../lib/check';
+import type { Cluster } from '../lib/relate';
 import type { ColorScale } from '../lib/colors';
 import type { FocusGraph } from '../lib/graph/focusTree';
 import type { FilteredQuantities } from '../lib/graph/quantities';
@@ -185,6 +186,7 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     case 'graphFocus':
     case 'focusGroupBy':
     case 'graphViewport':
+    case 'highlightCluster':
     case 'tableSort':
     case 'tableScope':
     case 'tableColumns':
@@ -197,6 +199,8 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     case 'clusterMinMembers':
     case 'clusterSort':
     case 'toggleClusterOpen':
+    case 'openCluster':
+    case 'clusterRevealed':
     case 'viewScroll':
     case 'panelSize':
     case 'cardPos': {
@@ -261,6 +265,12 @@ export interface ViewerDerived {
    * Abgeschaltete Regeln fehlen darin — ein Filterzustand, alle Ansichten.
    */
   hints: HintIndex;
+  /**
+   * Ähnlichkeitsgruppe je Position (WP-R, R2). Die Gruppen selbst entstehen im
+   * Worker (WP-M); hier steht nur die Umkehrung — „in welcher Gruppe steckt
+   * diese Position?" —, einmal je Import gebaut.
+   */
+  clusters: ReadonlyMap<string, Cluster>;
 }
 
 export type ViewerValue = ViewerState & ViewerDerived;

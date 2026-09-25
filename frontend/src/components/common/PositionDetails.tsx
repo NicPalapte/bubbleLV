@@ -7,6 +7,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Highlighted } from './Highlighted';
 import { HintBlock } from '../check/HintBlock';
+import { SimilarBlock } from '../relate/SimilarBlock';
 import { BlockLabel, PanelHeader } from '../ui/PanelHeader';
 import { Chip } from '../ui/Chip';
 import { PropField, PropGrid } from '../ui/PropField';
@@ -182,6 +183,9 @@ export function PositionDetails({
         {/* Hinweise vor dem Langtext: wer eine Position aufmacht, soll zuerst
             sehen, ob an ihr etwas auffällt (WP-R, R1). */}
         <HintBlock positionId={node.id} />
+        {/* Geschwister direkt darunter (WP-R, R2): „gibt es das noch einmal?"
+            ist die zweite Frage nach „fällt hier etwas auf?". */}
+        <SimilarBlock positionId={node.id} />
 
         {position.longText !== '' && (
           <div

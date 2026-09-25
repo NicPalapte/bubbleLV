@@ -39,6 +39,33 @@ export function checkActions(
   ];
 }
 
+/**
+ * Sprung in die Ansicht „Ähnlichkeit", auf eine bestimmte Gruppe (WP-R, R2) —
+ * das Gegenstück zu `checkActions`.
+ *
+ * Die Gruppe wird **aufgeklappt und ins Fenster geholt**, nicht nur die Ansicht
+ * gewechselt: die Liste ist nach Größe sortiert, und wer aus dem Graphen kommt,
+ * müsste seine Gruppe darin sonst erst suchen.
+ *
+ * `minMembers` ist der Regler der Ansicht. Steht er höher als die Gruppe groß
+ * ist, versteckt er genau die Gruppe, die gezeigt werden soll — dann geht er
+ * so weit herunter, wie es dafür nötig ist. Der Regler steht sichtbar daneben;
+ * eine leere Liste nach einem Klick auf „zeigen" wäre schlimmer.
+ */
+export function similarActions(
+  clusterId: string,
+  positionId: string,
+  parentId: string | null,
+  groesse: number,
+  minMembers: number,
+): ViewerAction[] {
+  const actions: ViewerAction[] = [{ type: 'selectPosition', nodeId: parentId, positionId }];
+  if (minMembers > groesse) actions.push({ type: 'clusterMinMembers', value: groesse });
+  actions.push({ type: 'openCluster', id: clusterId });
+  actions.push({ type: 'setViewMode', mode: 'similar' });
+  return actions;
+}
+
 /** Auswahl setzen und — sofern gewünscht — in die Tabelle wechseln. */
 export function jumpActions(
   positionId: string,
