@@ -213,6 +213,53 @@ describe('Muster im Graphen', () => {
     expect(gezeichnet.length).toBeLessThanOrEqual(gruppe?.positionIds.length ?? 0);
   });
 
+  // Escape ist der dritte Weg zurück — und der heikelste: die Auswahlkarte
+  // fängt die Taste in der Capture-Phase am window ab (useDismiss). Ohne diese
+  // Tests behauptete der Changelog etwas, das nur ohne offene Karte stimmt.
+  it('hebt die Hervorhebung mit Escape auf, wenn keine Karte offen steht', () => {
+    renderGraph();
+    fireEvent.click(screen.getAllByRole('button', { name: 'ÄHNLICHE ZEIGEN' })[0]);
+    // Die Karte schließen, die das Einpassen geöffnet hat.
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.getByTestId('hervorgehoben')).not.toHaveTextContent('');
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.getByTestId('hervorgehoben')).toHaveTextContent('');
+  });
+
+  it('gibt Escape zuerst der offenen Karte und erst dann der Gruppe', () => {
+    renderGraph();
+    fireEvent.click(screen.getAllByRole('button', { name: 'ÄHNLICHE ZEIGEN' })[0]);
+    expect(screen.getByRole('button', { name: 'Karte schließen' })).toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    // Erster Druck: die Karte ist weg, die Gruppe steht noch.
+    expect(screen.queryByRole('button', { name: 'Karte schließen' })).toBeNull();
+    expect(screen.getByTestId('hervorgehoben')).not.toHaveTextContent('');
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.getByTestId('hervorgehoben')).toHaveTextContent('');
+  });
+
+  it('lässt Escape einem offenen Dialog, statt ihn zu überholen', () => {
+    // Die Palette hängt ihren Listener erst beim Öffnen ein — also nach diesem.
+    // Ohne die eigene Zurückhaltung schluckte der Graph die Taste, und die
+    // Palette bliebe offen stehen.
+    renderGraph();
+    fireEvent.click(screen.getAllByRole('button', { name: 'ÄHNLICHE ZEIGEN' })[0]);
+    fireEvent.keyDown(window, { key: 'Escape' }); // schließt die Karte
+
+    const dialog = document.createElement('div');
+    dialog.setAttribute('role', 'dialog');
+    document.body.appendChild(dialog);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.getByTestId('hervorgehoben')).not.toHaveTextContent('');
+
+    dialog.remove();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.getByTestId('hervorgehoben')).toHaveTextContent('');
+  });
+
   it('lässt das Muster beim Rauszoomen weg — wie den Hinweis-Ring', () => {
     const { container } = renderGraph();
     for (let step = 0; step < 14; step += 1) {

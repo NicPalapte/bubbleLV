@@ -18,7 +18,9 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
   gehört und wie viele noch dazugehören. Ein Klick hebt die ganze Gruppe im Graphen
   hervor, alles andere tritt zurück.
 - **Wieder aufheben** mit demselben Knopf, mit der Schaltfläche oben im Graphen oder mit
-  Escape. Filter, Suche und Auswahl bleiben dabei unberührt.
+  Escape. Escape geht dabei eine Ebene nach der anderen zurück: steht noch eine Karte
+  oder ein Fenster offen, schließt der erste Druck das — erst der nächste hebt die
+  Gruppe auf. Filter, Suche und Auswahl bleiben unberührt.
 - **Kopfzeile nennt die Zahl:** „8 mit Ähnlichen", mit dem Ring daneben als Legende.
 - Außerhalb des Graphen führt derselbe Knopf in die Ansicht „Ähnlichkeit".
 

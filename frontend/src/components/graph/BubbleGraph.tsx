@@ -733,14 +733,6 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
 
   const onGraphKeyDown = useCallback(
     (event: ReactKeyboardEvent<HTMLDivElement>): void => {
-      // Vor der Fokus-Prüfung: Escape hebt die hervorgehobene
-      // Ähnlichkeitsgruppe auf (WP-R, R2), auch wenn keine Bubble den
-      // Tastaturfokus trägt — sonst wäre die Taste meist wirkungslos.
-      if (event.key === 'Escape' && highlightCluster !== null) {
-        event.preventDefault();
-        dispatch({ type: 'highlightCluster', id: null });
-        return;
-      }
       if (focusedId === null) return;
       const entry = placed.get(focusedId);
       if (entry === undefined) return;
@@ -822,8 +814,6 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
       focusEntry,
       selectionId,
       fitTo,
-      highlightCluster,
-      dispatch,
     ],
   );
 
@@ -866,6 +856,35 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
   // stehen ('selectPosition' setzt beide IDs), die Karte zeigt aber immer nur
   // eine Ebene.
   const cardNode = selectedPosition ?? selectedNode;
+
+  /**
+   * Escape hebt die hervorgehobene Ähnlichkeitsgruppe auf (WP-R, R2).
+   *
+   * Am `window` in der Capture-Phase, wie die Popover selbst: ein React-Handler
+   * am Canvas sähe die Taste nie, solange eine Karte offen ist — `useDismiss`
+   * stoppt sie dort mit `stopImmediatePropagation` — und er verlangte obendrein
+   * den Tastaturfokus auf dem Canvas.
+   *
+   * **Gestaffelt, nicht gleichzeitig:** solange eine Karte oder ein Dialog offen
+   * steht, gehört Escape dem. Erst der nächste Druck hebt die Gruppe auf — eine
+   * Taste, eine Ebene. Der Listener steht dafür selbst still, statt sich auf die
+   * Reihenfolge des Einhängens zu verlassen: die Kommandopalette hängt ihren
+   * Listener erst beim Öffnen ein, also nach diesem, und würde sonst von ihm
+   * überholt.
+   */
+  useEffect(() => {
+    if (highlightCluster === null || cardNode !== null) return;
+    const onEscape = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape') return;
+      // Palette und Melde-Fenster sind Dialoge; solange einer offen ist,
+      // schließt Escape ihn und sonst nichts.
+      if (document.querySelector('[role="dialog"]') !== null) return;
+      event.stopImmediatePropagation();
+      dispatch({ type: 'highlightCluster', id: null });
+    };
+    window.addEventListener('keydown', onEscape, true);
+    return () => window.removeEventListener('keydown', onEscape, true);
+  }, [highlightCluster, cardNode, dispatch]);
 
   return (
     <div

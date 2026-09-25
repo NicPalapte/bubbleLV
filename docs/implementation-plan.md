@@ -615,7 +615,10 @@ Vier Schritte, in dieser Reihenfolge. Jeder ist ein eigener Pull Request.
 2. Die Auswahlkarte einer Position nennt ihre Gruppe und bietet **„Ähnliche zeigen"**:
    der Graph hebt die Mitglieder kräftig hervor, alles andere tritt zurück — über
    dieselbe Dämpfung wie beim Überfahren mit der Maus, nicht über eine zweite.
-3. Aufheben: derselbe Knopf, die Schaltfläche in der Kopfzeile oder Escape.
+3. Aufheben: derselbe Knopf, die Schaltfläche in der Kopfzeile oder Escape. Escape
+   liegt am `window` in der Capture-Phase wie die Popover selbst — ein Handler am
+   Canvas sieht die Taste nie, solange eine Karte offen ist. Er steht still, während
+   eine Karte oder ein Dialog offen ist: eine Taste, eine Ebene.
 4. Dieselbe Zoom-Schwelle wie R1 (`marksVisible`).
 
 **Fertig, wenn:**
@@ -625,7 +628,7 @@ Vier Schritte, in dieser Reihenfolge. Jeder ist ein eigener Pull Request.
 - ✅ „Ähnliche zeigen" hebt genau die Mitglieder hervor, die die Ansicht „Ähnlichkeit"
   in derselben Gruppe führt.
 - ✅ Die Hervorhebung fasst Filter, Suche und Auswahl nicht an und lässt sich auf drei
-  Wegen wieder aufheben.
+  Wegen wieder aufheben — Escape gestaffelt hinter Karte und Dialog, jeder Fall geprüft.
 - ✅ Außerhalb des Graphen führt derselbe Knopf in die Ansicht „Ähnlichkeit", statt
   wirkungslos dazustehen.
 - ✅ Im Browser gegengeprüft: 8 von 28 Positionen tragen den leisen Ring, die Kopfzeile
