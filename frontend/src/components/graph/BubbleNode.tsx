@@ -24,6 +24,7 @@ import { formatCount, truncate } from '../../lib/format';
 import { keywordFor } from '../../lib/graph/keywords';
 import { codeLabelFor } from '../../lib/graph/labels';
 import { CLOUD_SPACING, type PlacedCloud, type PlacedNode } from '../../lib/graph/layoutRadial';
+import type { FlagSeverity } from '../../lib/check';
 import type { LVNode } from '../../types/lvNode';
 
 interface CommonProps {
@@ -50,6 +51,12 @@ interface BubbleProps extends CommonProps {
    * der Bubble rückt dann nach außen — sonst stünde sie zwischen den Punkten.
    */
   cloudRadius?: number;
+  /**
+   * Schwerster Hinweis an dieser Position (WP-R, R1) — zeichnet einen Ring um
+   * die Bubble. `undefined` heißt: kein Hinweis, oder die Zoomstufe trägt die
+   * Markierung noch nicht (decisions/0029). Nur Positionen tragen ihn.
+   */
+  hint?: FlagSeverity;
 }
 
 const TIER_FILL: Record<string, { fill: string; stroke: string }> = {
@@ -59,6 +66,19 @@ const TIER_FILL: Record<string, { fill: string; stroke: string }> = {
   subsection: { fill: 'var(--bub-subsection)', stroke: 'var(--bub-subsection-line)' },
   group: { fill: 'var(--bub-group)', stroke: 'var(--bub-group-line)' },
 };
+
+/**
+ * Ringfarbe nach Schwere (decisions/0029). Farbe steht im Graphen sonst für das
+ * Gewerk (decisions/0013) — deshalb bekommt der Hinweis einen Ring **außen**
+ * und nicht die Füllung, und deshalb sind es zwei Stufen statt sechs Kategorien.
+ */
+const HINT_RING: Record<FlagSeverity, string> = {
+  beachten: 'var(--amber)',
+  hinweis: 'var(--mute)',
+};
+
+/** Abstand des Hinweis-Rings zur Bubble, in Weltkoordinaten. */
+const HINT_RING_GAP = 3;
 
 /** Weißer Halo hinter Schrift, die über dem Raster oder über Kanten steht. */
 const HALO = {
@@ -206,6 +226,7 @@ export function BubbleNode(props: BubbleProps) {
     radius,
     subLabel,
     cloudRadius,
+    hint,
   } = props;
 
   // Tastatur-Fokus zählt überall dort wie Hover — sonst ließen sich Badges,
@@ -264,6 +285,16 @@ export function BubbleNode(props: BubbleProps) {
           strokeWidth={active ? 1.5 : 0}
           style={{ transition: 'all .15s' }}
         />
+        {hint !== undefined && (
+          <circle
+            data-hint={hint}
+            r={radius + HINT_RING_GAP}
+            fill="none"
+            stroke={HINT_RING[hint]}
+            strokeWidth="1.6"
+            style={{ pointerEvents: 'none' }}
+          />
+        )}
         {focused && (
           <circle
             r={radius + 5}

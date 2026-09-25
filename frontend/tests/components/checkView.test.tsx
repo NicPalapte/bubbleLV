@@ -35,6 +35,11 @@ function WithLv({ children }: { children: ReactNode }) {
       <button type="button" onClick={() => dispatch(SUCHE_OHNE_TREFFER)}>
         filtern
       </button>
+      {/* Der Sprung aus dem Graphen (WP-R, R1): Regel aufklappen und ins
+          Fenster holen. */}
+      <button type="button" onClick={() => dispatch({ type: 'openRule', id: 'V7' })}>
+        zu V7 springen
+      </button>
       {children}
     </>
   );
@@ -122,5 +127,18 @@ describe('CheckView', () => {
   it('formuliert die Kopfzeile als Hinweis, nicht als Urteil', () => {
     renderView();
     expect(screen.getByText(/keine Bewertung und kein/)).toBeTruthy();
+  });
+
+  it('holt eine aus dem Graphen aufgeklappte Regel ins Fenster', () => {
+    // jsdom kennt scrollIntoView nicht — ohne Ersatz bliebe der Sprung ungeprüft.
+    const geholt: HTMLElement[] = [];
+    Element.prototype.scrollIntoView = function scroll(this: HTMLElement): void {
+      geholt.push(this);
+    };
+    renderView();
+    fireEvent.click(screen.getByRole('button', { name: 'zu V7 springen' }));
+    expect(geholt).toContain(sectionOf('V7'));
+    // Die Funde stehen offen da — ein Sprung, der nur scrollt, zeigt nichts.
+    expect(within(sectionOf('V7')).getByText(/offene Stellen/)).toBeTruthy();
   });
 });

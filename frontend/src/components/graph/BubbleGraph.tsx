@@ -29,6 +29,7 @@ import {
   MIN_ZOOM,
   RADII,
   effectiveSizeMode,
+  marksVisible,
   sizeModeById,
   sizedRadius,
 } from '../../lib/graph/constants';
@@ -99,6 +100,7 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
     openClusters,
     parents: treeParents,
     quantities,
+    hints,
   } = useViewer();
   const dispatch = useViewerDispatch();
   const { sizeMode } = graph;
@@ -334,6 +336,11 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
     (cx: number, cy: number, r: number): boolean => isInView(cull, cx, cy, r),
     [cull],
   );
+
+  // Markierungen an Positionen (WP-R, R1) erscheinen erst, wenn die Bubble
+  // groß genug für einen Ring ist. Positionen sind alle gleich groß (Issue #41),
+  // also fällt die Entscheidung einmal für den ganzen Graphen.
+  const showMarks = marksVisible(view.k);
 
   // Detailstufe: zu kleine Wolken werden als eine Fläche gezeichnet. Ohne das
   // hingen bei 10k Positionen zehntausende Kreise im DOM.
@@ -909,6 +916,7 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
                 radius={radius}
                 subLabel={metric?.subLabel ?? ''}
                 cloudRadius={clouds.get(entry.id)?.radius}
+                hint={showMarks ? hints.get(entry.id)?.severity : undefined}
               />
             );
           })}

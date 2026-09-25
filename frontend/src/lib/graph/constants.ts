@@ -60,6 +60,26 @@ export const CLOUD_LOD_MIN = 8;
  */
 export const KEYWORD_AT_PX = 40;
 
+/**
+ * Radius einer Positions-Bubble auf dem Schirm (px), ab dem Markierungen an ihr
+ * gezeichnet werden — Hinweis-Ring (WP-R, R1) und später die Ähnlichkeitsgruppe
+ * (decisions/0029). Darunter ist die Bubble selbst nur ein Punkt; ein Ring darum
+ * wäre ein Fleck und keine Markierung. `RADII.position` mal Zoom gegen diesen
+ * Wert — Positionen sind immer gleich groß (Issue #41), also gilt die Schwelle
+ * für alle gleichzeitig.
+ */
+export const MARK_AT_PX = 4;
+
+/**
+ * Trägt der Graph bei diesem Zoom Markierungen an den Positionen? Eine
+ * Funktion statt einer Rechnung im Render, damit die Schwelle einzeln prüfbar
+ * ist und R2 (Ähnlichkeit) dieselbe benutzt statt einer zweiten, leicht
+ * anderen.
+ */
+export function marksVisible(zoom: number): boolean {
+  return RADII.position * zoom >= MARK_AT_PX;
+}
+
 /** Kleinster Zoom k, ab dem eine Ebene ihr Label zeigt. */
 export const LABEL_K: Record<Tier, number> = {
   project: 0.18,

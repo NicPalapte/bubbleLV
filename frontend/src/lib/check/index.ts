@@ -112,6 +112,8 @@ export function runChecks(
   return { flags, rules };
 }
 
+export { EMPTY_HINTS, groupByRule, hintsByPosition } from './hints';
+export type { HintIndex, PositionHints } from './hints';
 export { EMPTY_CHECK_RESULT } from './types';
 export type {
   CheckContext,

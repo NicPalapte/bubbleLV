@@ -4,7 +4,8 @@
 import { fireEvent, render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { BubbleNode } from '../../src/components/graph/BubbleNode';
-import { RADII } from '../../src/lib/graph/constants';
+import { MARK_AT_PX, RADII, marksVisible } from '../../src/lib/graph/constants';
+import type { FlagSeverity } from '../../src/lib/check';
 import { codeLabelFor } from '../../src/lib/graph/labels';
 import type { PlacedNode } from '../../src/lib/graph/layoutRadial';
 import type { LVNode } from '../../src/types/lvNode';
@@ -62,6 +63,7 @@ function renderBubble(
   zoom: number,
   radius: number,
   onClick: BubbleClick = noop,
+  hint?: FlagSeverity,
 ) {
   return render(
     <svg>
@@ -77,6 +79,7 @@ function renderBubble(
         onClick={onClick}
         radius={radius}
         subLabel="3 Pos."
+        hint={hint}
       />
     </svg>,
   );
@@ -169,5 +172,48 @@ describe('BubbleNode', () => {
     const texts = [...container.querySelectorAll('text')];
     expect(texts.map((text) => text.textContent)).toContain('§ 07');
     expect(texts.some((text) => text.textContent?.startsWith('Verbauten'))).toBe(true);
+  });
+});
+
+// ── Hinweis-Ring (WP-R, R1; decisions/0029): Farbe steht im Graphen für das
+// Gewerk, deshalb liegt der Hinweis als Ring außen und färbt die Bubble nicht um.
+describe('Hinweis-Ring', () => {
+  const position = node('position', '01.07.0010', '0010', 'Wand');
+
+  it('bleibt weg, solange die Position keinen Hinweis trägt', () => {
+    const { container } = renderBubble(position, 'position', 1, RADII.position);
+    expect(container.querySelector('[data-hint]')).toBeNull();
+  });
+
+  it('zeichnet einen Ring außerhalb der Bubble, ohne ihre Füllung zu ändern', () => {
+    const { container } = renderBubble(position, 'position', 1, RADII.position, noop, 'beachten');
+    const ring = container.querySelector('[data-hint]');
+    expect(ring?.getAttribute('fill')).toBe('none');
+    expect(Number(ring?.getAttribute('r'))).toBeGreaterThan(RADII.position);
+    // Die Bubble selbst behält ihre Farbe — die gehört dem Gewerk (0013).
+    const fill = container.querySelector('circle');
+    expect(fill?.getAttribute('fill')).toBe('var(--bub-position-line)');
+  });
+
+  it('färbt den Ring nach Schwere, nicht nach Kategorie', () => {
+    const beachten = renderBubble(position, 'position', 1, RADII.position, noop, 'beachten');
+    const ring = beachten.container.querySelector('[data-hint]');
+    expect(ring?.getAttribute('stroke')).toBe('var(--amber)');
+
+    const hinweis = renderBubble(position, 'position', 1, RADII.position, noop, 'hinweis');
+    const zweiter = hinweis.container.querySelectorAll('[data-hint]');
+    expect(zweiter[zweiter.length - 1]?.getAttribute('stroke')).toBe('var(--mute)');
+  });
+});
+
+describe('marksVisible', () => {
+  it('trägt Markierungen erst, wenn die Bubble groß genug für einen Ring ist', () => {
+    const schwelle = MARK_AT_PX / RADII.position;
+    expect(marksVisible(schwelle)).toBe(true);
+    expect(marksVisible(schwelle * 0.99)).toBe(false);
+  });
+
+  it('lässt sie beim weitesten Rauszoomen weg — dort ist die Bubble ein Punkt', () => {
+    expect(marksVisible(0.12)).toBe(false);
   });
 });

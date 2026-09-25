@@ -12,20 +12,21 @@ selbst anlegen.
 
 ## Stand
 
-| WP | Was | Status |
-|---|---|---|
-| WP-A…G | MVP: Import, Klassifizierung, Baum, Tree/Tabelle/Filter, Graph, Panel | ✅ umgesetzt (Details unten) |
-| WP-41-1…3 | Langtexte, Eigenschaften-Panel, Tabellen-Spalten (Issue #41) | ✅ umgesetzt |
-| WP-H | Graph fertigstellen (= WP-41-4 + WP-41-5) | ✅ umgesetzt |
-| WP-I | Performance-Fundament für 10k Positionen | ✅ umgesetzt |
-| WP-J | Klassifizierung v2: generische Extraktoren + Textstellen | ✅ umgesetzt |
-| WP-K | Flags und VOB-Check, Ansicht „Prüfung" | ✅ umgesetzt |
-| WP-L | Ansichts-Gerüst + Ansicht „Überblick" | ✅ umgesetzt |
-| WP-M | Beziehungen: Ähnlichkeit, Unterschiede, Ausreißer | ✅ umgesetzt |
-| WP-Q | Graph mit Mehrwert: Treffer isolieren, Stichworte, Menge, Sprung (Issues #51, #60) | ✅ umgesetzt |
-| WP-N | Ansicht „Vergleich" | ✅ umgesetzt |
-| WP-O | Ansicht „Matrix" | ✅ umgesetzt |
-| WP-P | Feinschliff: Kommandopalette, URL-Zustand, Export, Druck, Tastatur, Melden | ✅ umgesetzt |
+| WP        | Was                                                                                | Status                       |
+| --------- | ---------------------------------------------------------------------------------- | ---------------------------- |
+| WP-A…G    | MVP: Import, Klassifizierung, Baum, Tree/Tabelle/Filter, Graph, Panel              | ✅ umgesetzt (Details unten) |
+| WP-41-1…3 | Langtexte, Eigenschaften-Panel, Tabellen-Spalten (Issue #41)                       | ✅ umgesetzt                 |
+| WP-H      | Graph fertigstellen (= WP-41-4 + WP-41-5)                                          | ✅ umgesetzt                 |
+| WP-I      | Performance-Fundament für 10k Positionen                                           | ✅ umgesetzt                 |
+| WP-J      | Klassifizierung v2: generische Extraktoren + Textstellen                           | ✅ umgesetzt                 |
+| WP-K      | Flags und VOB-Check, Ansicht „Prüfung"                                             | ✅ umgesetzt                 |
+| WP-L      | Ansichts-Gerüst + Ansicht „Überblick"                                              | ✅ umgesetzt                 |
+| WP-M      | Beziehungen: Ähnlichkeit, Unterschiede, Ausreißer                                  | ✅ umgesetzt                 |
+| WP-Q      | Graph mit Mehrwert: Treffer isolieren, Stichworte, Menge, Sprung (Issues #51, #60) | ✅ umgesetzt                 |
+| WP-N      | Ansicht „Vergleich"                                                                | ✅ umgesetzt                 |
+| WP-O      | Ansicht „Matrix"                                                                   | ✅ umgesetzt                 |
+| WP-P      | Feinschliff: Kommandopalette, URL-Zustand, Export, Druck, Tastatur, Melden         | ✅ umgesetzt                 |
+| WP-R      | Graph als Herzstück: Prüfung, Ähnlichkeit, Vergleich im Graphen (Issue #80)        | ▶ läuft                      |
 
 Seit [`decisions/0015`](decisions/0015-gewerk-aus-der-abschnittsueberschrift.md) erbt
 eine Position das Gewerk aus der Überschrift ihres Abschnitts, wenn ihr eigener Text
@@ -55,6 +56,8 @@ WP-H ──► WP-I ──┬──► WP-J ──► WP-K ───────
 - **WP-Q läuft als Nächstes**, vor WP-N und WP-O: der Graph ist die Einstiegsansicht,
   und die einzigen offenen Issues (#51, #60) zeigen auf ihn. Er hängt nur an WP-I
   (Positions-Index) und WP-J (Merkmale), beide stehen.
+- **WP-R läuft danach**: der Graph bekommt, was bisher nur in eigenen Ansichten steht
+  — Hinweise, Ähnlichkeit, Vergleich. Er hängt an WP-K, WP-M und WP-N, alle drei stehen.
 - Ein WP = ein Pull Request.
 
 ---
@@ -89,6 +92,7 @@ trug nicht.
 [`decisions/0010-positions-index-und-aggregate.md`](decisions/0010-positions-index-und-aggregate.md).
 
 Schritte:
+
 1. ✅ `src/lib/index/positionIndex.ts`: flacher Index über alle Positionen, einmal nach
    `buildTree` erzeugt. Je Position ein Eintrag mit Verweis auf den Baumknoten, den
    vorberechneten Facettenwerten und dem fertigen Suchtext; Menge, EP und GP als
@@ -109,17 +113,18 @@ Schritte:
 
 **Gemessen bei 10.000 Positionen** (Node 22, CI-Container):
 
-| Schritt | Zeit |
-|---|---|
+| Schritt                                                | Zeit    |
+| ------------------------------------------------------ | ------- |
 | Klassifizierung + Baum + Index + Aggregate (im Worker) | ~360 ms |
-| Index-Aufbau allein (Haupt-Thread, einmal je LV) | ~35 ms |
-| Filterlauf (Facette, Mengenbereich oder Volltextsuche) | ~2 ms |
-| Trefferzahlen für Baum und Graph | ~7 ms |
+| Index-Aufbau allein (Haupt-Thread, einmal je LV)       | ~35 ms  |
+| Filterlauf (Facette, Mengenbereich oder Volltextsuche) | ~2 ms   |
+| Trefferzahlen für Baum und Graph                       | ~7 ms   |
 
 Vorher kostete allein die Positionsprüfung ~30 ms je Durchlauf — und sie lief
 mehrfach je Filterwechsel.
 
 **Fertig, wenn:** ✅ alle drei Kriterien erfüllt.
+
 - 10k Positionen: erste Ansicht < 5 s, Filterwechsel < 100 ms, Ansichtswechsel < 200 ms.
 - Die Tabelle mit 10k Zeilen scrollt flüssig.
 - `npm test` enthält einen Performance-Test (`tests/perf/filter.test.ts`), der die
@@ -135,6 +140,7 @@ mehrfach je Filterwechsel.
 [`decisions/0011-extraktoren-und-fundstellen.md`](decisions/0011-extraktoren-und-fundstellen.md).
 
 Schritte:
+
 1. ✅ `ClassificationResult` um `spans` erweitert (`{ key, start, end, label }`),
    abgelegt unter dem reservierten `attributes._spans`. Die Indizes zeigen auf den
    **Rohtext** des Langtexts — auf der normalisierten Fassung ließe sich nichts
@@ -169,6 +175,7 @@ Schritte:
 Zeitbezug · Offene Stellen.
 
 **Fertig, wenn:** ✅ alle drei Kriterien erfüllt.
+
 - Eine Position mit „C30/37 nach DIN EN 206, d = 30 cm" liefert `normen`, `dicke`
   und `beton` — jeweils mit korrekter Textstelle (Test in
   `tests/classify/extractors.test.ts`).
@@ -189,6 +196,7 @@ Gegenprobe an der echten Beispieldatei (`tests/fixtures/gaeb-xml-beispiel.x83`):
 [`decisions/0012-pruefregeln-und-norm-verweise.md`](decisions/0012-pruefregeln-und-norm-verweise.md).
 
 Schritte:
+
 1. ✅ `src/lib/check/types.ts`: `Flag { id, category, severity, positionId, title, span }`.
    Kategorien: `geld | menge | risiko | norm | frist | vob`. Dazu `RuleStatus` — eine
    Regel, die nicht läuft, verschwindet nicht, sondern nennt ihren Grund.
@@ -213,6 +221,7 @@ Schritte:
    „unzulässig", „Verstoß", „verboten", „fehlerhaft" oder „falsch" sagen.
 
 **Fertig, wenn:** ✅ alle vier Kriterien erfüllt.
+
 - Eine reale Datei mit Bedarfspositionen und Platzhaltern erzeugt Hinweise mit
   korrekter Anzahl und korrektem Sprungziel.
 - Jede Regel ist einzeln abschaltbar; abgeschaltet verschwindet sie aus allen Ansichten.
@@ -240,6 +249,7 @@ Ebenso leer: Herstellerliste (V3) und Nebenleistungs-Listen (V8, V9).
 **Umgesetzt.** Vier von acht Ansichten stehen: Überblick · Graph · Tabelle · Prüfung.
 
 Schritte:
+
 1. ✅ Der Viewer-Zustand ist in drei Bereiche getrennt, je ein Modul mit eigenem
    Reducer: `src/state/filterState.ts` (Suche, Facetten, Nicht-Treffer-Modus,
    stummgeschaltete Prüfregeln), `src/state/selectionState.ts` (Auswahl,
@@ -266,6 +276,7 @@ Schritte:
 der Graph. Er ordnet die Datei ein, bevor man tiefer geht.
 
 **Fertig, wenn:** ✅ alle drei Kriterien erfüllt.
+
 - Filter setzen, Ansicht wechseln, zurückwechseln: Filter, Auswahl und Scrollposition
   sind unverändert (`tests/state/viewer.test.ts`, `tests/App.test.tsx`).
 - Der Überblick einer realen Datei stimmt gegen die Tabellensummen (Stichprobe):
@@ -283,6 +294,7 @@ der Graph. Er ordnet die Datei ein, bevor man tiefer geht.
 [`decisions/0016`](decisions/0016-aehnlichkeit-und-cluster.md).
 
 Schritte:
+
 1. ✅ `src/lib/relate/` — `text.ts` (Kleinschreibung, Zahlen und Einheiten maskiert,
    Stoppwörter, Wort-Schindeln), `stats.ts` (Median, Quartile), `similarity.ts`
    (Vorgruppierung, Ähnlichkeitsmaß, Cluster), `types.ts`. Vorgruppiert wird nach
@@ -290,7 +302,7 @@ Schritte:
    Ähnlichkeit = Jaccard über Wort-Schindeln (Kurztext vor Langtext) plus
    Merkmals-Übereinstimmung. Schwellwert einstellbar, Standard 0,62.
 2. ✅ Ergebnis `Cluster { id, positionIds, label, gemeinsameMerkmale,
-   unterscheidendeMerkmale, ausreisser, unitPrice, quantity, similarity }` —
+unterscheidendeMerkmale, ausreisser, unitPrice, quantity, similarity }` —
    beschrieben in [`architecture/data-model.md`](architecture/data-model.md#cluster).
 3. ✅ Läuft in `classifyAndBuild` — also im Worker, sobald dessen Schwelle greift —
    und liegt fertig als `LoadedLV.relations` im State. Kein Render rechnet nach.
@@ -316,6 +328,7 @@ nebeneinander („Vergleichen"); der Klick auf eine einzelne Position führt wei
 in die Tabelle.
 
 **Fertig, wenn:** ✅ alle drei Kriterien erfüllt.
+
 - Eine reale Datei mit wiederkehrenden Leistungen zeigt diese als Cluster: die
   Beispieldatei (`tests/fixtures/gaeb-xml-beispiel.x83`, 28 Positionen) ergibt
   4 Gruppen mit 8 Positionen — unter anderem zwei Kalksandstein-Innenwände, die sich
@@ -348,15 +361,15 @@ Schritte:
    - `structure` („Gesamter Graph") — heutiger Stand: das ganze LV, Treffer
      hervorgehoben, Rest gedämpft.
    - `isolate` („Isolation") — nur Treffer, neu gruppiert (Schritt 2).
-   Umschalter im Graph-Kopf, nur bedienbar, solange Filter oder Suche aktiv sind; ohne
-   Treffer fällt die Ansicht auf `structure` zurück. Der Umschalter ändert **nie** den
-   Filter — Regel „ein Filterzustand, alle Ansichten" bleibt unberührt.
-   **Einstieg ist `structure`** (Wunsch des Owners nach der Preview von PR #61): der
-   ganze Graph ordnet die Treffer ins LV ein, die Isolation ist der zweite Blick.
-   Dazu steht der Umschalter „Nicht-Treffer" (Hervorheben/Ausblenden) nur noch dort,
-   wo er etwas bewirkt — im Baum der Tabellenansicht und im ganzen Graphen. Die
-   Isolation zeigt ausschließlich Treffer, Überblick, Prüfung und Ähnlichkeit
-   rechnen ohnehin nur mit ihnen.
+     Umschalter im Graph-Kopf, nur bedienbar, solange Filter oder Suche aktiv sind; ohne
+     Treffer fällt die Ansicht auf `structure` zurück. Der Umschalter ändert **nie** den
+     Filter — Regel „ein Filterzustand, alle Ansichten" bleibt unberührt.
+     **Einstieg ist `structure`** (Wunsch des Owners nach der Preview von PR #61): der
+     ganze Graph ordnet die Treffer ins LV ein, die Isolation ist der zweite Blick.
+     Dazu steht der Umschalter „Nicht-Treffer" (Hervorheben/Ausblenden) nur noch dort,
+     wo er etwas bewirkt — im Baum der Tabellenansicht und im ganzen Graphen. Die
+     Isolation zeigt ausschließlich Treffer, Überblick, Prüfung und Ähnlichkeit
+     rechnen ohnehin nur mit ihnen.
 2. ✅ **Treffer-Cluster in der Isolation.** Gruppenschlüssel umschaltbar: Abschnitt,
    Gewerk oder Bauteiltyp. Jede Gruppe ist eine Bubble mit Trefferzahl und Summe,
    Gruppen absteigend nach dem aktiven Größenmodus sortiert. Gerechnet wird auf dem
@@ -401,6 +414,7 @@ Tabelle holt die gewählte Zeile jetzt ins Fenster (`revealKey` in `ui/DataTable
 — das fehlte auch Prüfung und Ähnlichkeit.
 
 **Abweichungen:**
+
 - Das Stichwort erscheint nicht ab einer festen Zoomstufe, sondern sobald der Abstand
   zweier Nachbarn auf dem Schirm ein Wort trägt (`KEYWORD_AT_PX`). Ab einer festen
   Stufe stünden in einer dichten Wolke hundert Wörter übereinander.
@@ -414,6 +428,7 @@ Tabelle holt die gewählte Zeile jetzt ins Fenster (`revealKey` in `ui/DataTable
 einpassen, aber nicht auswählen und nicht zuklappen.
 
 **Fertig, wenn:**
+
 - Eine Suche mit wenigen Treffern in einem 10k-LV zeigt in `isolate` nur diese Treffer,
   gruppiert und sortiert; ein Umschalten nach `structure` und zurück ändert weder
   Filter noch Auswahl.
@@ -430,6 +445,7 @@ einpassen, aber nicht auswählen und nicht zuklappen.
 **Ziel:** 2–5 Positionen nebeneinander, Unterschiede sichtbar.
 
 Schritte:
+
 1. ✅ Mehrfachauswahl: Strg-/Cmd-Klick in Tabelle, Baum und Graph; die Cluster-Liste
    der Ähnlichkeit legt eine ganze Gruppe auf einmal nebeneinander („Vergleichen").
 2. ✅ Ansicht **Vergleich**: Spalte je Position, Zeile je Merkmal. Abweichende Werte
@@ -446,6 +462,7 @@ sagt sie „diese beiden unterscheiden sich in der Dicke", hebt der Vergleich ge
 diese Zeile hervor. Tests: `tests/compare/`, `tests/components/compareView.test.tsx`.
 
 **Abweichungen:**
+
 - Die **Auswahl** wird nicht begrenzt; die **Ansicht** zeigt die ersten fünf und sagt,
   wie viele warten. Eine Auswahl still wegzuwerfen wäre schlimmer als eine ehrliche
   Grenze.
@@ -453,6 +470,7 @@ diese Zeile hervor. Tests: `tests/compare/`, `tests/components/compareView.test.
   ein Unterschied in der Schreibweise ist keiner in der Sache.
 
 **Fertig, wenn:** ✅ beide Kriterien erfüllt.
+
 - Zwei fast gleiche Positionen zeigen genau die abweichenden Zeilen
   (`tests/compare/rows.test.ts`, `tests/components/compareView.test.tsx`).
 - Fünf Positionen passen lesbar nebeneinander; ab sechs zeigt die Ansicht die ersten
@@ -466,6 +484,7 @@ diese Zeile hervor. Tests: `tests/compare/`, `tests/components/compareView.test.
 **Ziel:** Heatmap über zwei Merkmale, Lücken und Häufungen auf einen Blick.
 
 Schritte:
+
 1. ✅ Zwei Achsen frei wählbar aus allen Facetten (Standard: Gewerk × Bauteiltyp).
    Wer die Facette der Gegenachse wählt, tauscht die Achsen.
 2. ✅ Zellwert umschaltbar: Anzahl, Menge, Summe. „Menge" nur innerhalb einer
@@ -480,6 +499,7 @@ Schritte:
    einzeln, der Rest wird gesammelt.
 
 **Fertig, wenn:** ✅ beide Kriterien erfüllt.
+
 - Achsen und Zellwert lassen sich umschalten, ohne den Filter zu verlieren
   (`tests/components/matrixView.test.tsx`).
 - Klick auf eine Zelle führt zur passenden gefilterten Menge
@@ -492,6 +512,7 @@ Schritte:
 **Ziel:** Das Werkzeug wird schnell bedienbar und teilbar.
 
 Schritte:
+
 1. ✅ **Kommandopalette** (Strg/Cmd + K): zu OZ springen, Filter setzen, Ansicht
    wechseln (`lib/palette/`, `components/palette/CommandPalette.tsx`). Die Palette
    ist eine zweite Tür zum selben Zustand — sie löst dieselben Aktionen aus wie
@@ -532,6 +553,7 @@ Druckansicht, Tastatur und der Melde-Knopf
 ([`decisions/0017`](decisions/0017-keine-nutzungsmessung.md)).
 
 **Fertig, wenn:**
+
 - ✅ Ein geteilter Link stellt Ansicht und Filter wieder her, sobald dieselbe Datei geladen
   ist — ohne Fachdaten im Link außer der OZ der Auswahl (`tests/share/urlState.test.ts`,
   `tests/components/shareLink.test.tsx`).
@@ -545,6 +567,88 @@ Druckansicht, Tastatur und der Melde-Knopf
   (`tests/export/download.test.ts`; zusätzlich im Browser gegengeprüft).
 - ✅ Der Melde-Knopf erzeugt einen GitHub-Link ohne einen einzigen Inhalt aus der geladenen
   Datei (Test über die erzeugte URL: `tests/export/issueLink.test.ts`).
+
+---
+
+## WP-R · Graph als Herzstück · `feat(graph)`
+
+**Ziel:** Der Graph zeigt nicht nur Struktur und Größe, sondern auch **Hinweise** und
+**Zusammengehörigkeit** — und der Vergleich lässt sich betrachten, ohne ihn zu
+verlassen. Kennzeichnung über Ring und Muster, nie über die Füllfarbe
+([`decisions/0029`](decisions/0029-markierungen-im-graphen.md)).
+
+Vier Schritte, in dieser Reihenfolge. Jeder ist ein eigener Pull Request.
+
+### R1 · Prüfung im Graph ✅ umgesetzt
+
+1. Hinweise **nach Position gruppieren** — einmal je Import, nie im Render
+   (`lib/check/hints.ts`, im `ViewerProvider` abgeleitet). Abgeschaltete Regeln
+   (`filter.mutedRules`) zählen nicht mit.
+2. **Ring an der Positions-Bubble**, Farbe nach Schwere. Er erscheint erst, wenn die
+   Positionswolke als Punkte gezeichnet wird — also ab der Zoomstufe, auf der eine
+   Position überhaupt einzeln sichtbar ist.
+3. **Popover:** die Auswahlkarte bekommt einen Block „Hinweise", nach Regel gruppiert,
+   mit Regel-ID, Norm-Verweis-Zustand und der Fundstelle in einem Halbsatz.
+4. **Sprung in die Prüfung:** ein Knopf im Block öffnet die Ansicht „Prüfung" mit
+   genau dieser Regel aufgeklappt und der Position ausgewählt.
+
+**Fertig, wenn:**
+
+- ✅ Eine Position mit Hinweis trägt im hineingezoomten Graphen einen Ring; eine ohne
+  nicht (`tests/components/bubbleNode.test.tsx`, `tests/components/graphHints.test.tsx`).
+- ✅ Weit herausgezoomt trägt keine Position einen Ring — die Schwelle steht als eigene
+  Funktion `marksVisible` und ist einzeln geprüft.
+- ✅ Eine in der Prüfung abgeschaltete Regel markiert im Graphen nichts mehr
+  (`tests/check/hints.test.ts`; Legende und Block prüfen dasselbe).
+- ✅ Der Block in der Auswahlkarte zeigt dieselbe Zahl Hinweise wie die Ansicht „Prüfung"
+  für diese Position, und der Knopf holt die Regel dort aufgeklappt ins Fenster
+  (`tests/components/checkView.test.tsx`).
+- ✅ Im Browser gegengeprüft: 9 von 28 Positionen tragen einen Ring, die Kopfzeile nennt
+  dieselbe Zahl, der Sprung landet in der Prüfung — kein einziger fremder Request.
+
+### R2 · Ähnlichkeit im Graph
+
+1. Positionen einer Ähnlichkeitsgruppe (WP-M, [`decisions/0016`](decisions/0016-aehnlichkeit-und-cluster.md))
+   tragen ein **Muster** (gestrichelter Doppelrand) — keine neue Farbe.
+2. Die Auswahlkarte einer Position nennt ihre Gruppe und bietet **„ähnliche zeigen"**:
+   der Graph hebt die Gruppe hervor, alles andere tritt zurück.
+3. Dieselbe Zoom-Schwelle wie R1.
+
+**Fertig, wenn:**
+
+- Zwei Positionen derselben Gruppe sind im Graphen als zusammengehörig erkennbar, ohne
+  dass eine Farbe ihre Bedeutung wechselt.
+- „ähnliche zeigen" hebt genau die Mitglieder hervor, die die Ansicht „Ähnlichkeit"
+  in derselben Gruppe führt.
+
+### R3 · Vergleich als Fenster über dem Graphen
+
+1. Die Merkmalszeilen der Ansicht „Vergleich" (WP-N) in ein Fenster über dem Canvas —
+   **dieselbe Komponente**, nicht eine zweite Darstellung derselben Sache.
+2. Das Fenster ist **ziehbar und größenveränderbar**, wie die Auswahlkarte (Issue #47,
+   `data-graph-overlay`).
+3. Ab **drei Spalten** schlägt es vor, in die volle Ansicht „Vergleich" zu wechseln —
+   breiter wird es über dem Graphen nicht lesbar.
+
+**Fertig, wenn:**
+
+- Strg-/Cmd-Klick auf zwei Bubbles öffnet das Fenster mit denselben Zeilen wie die
+  Ansicht „Vergleich".
+- Das Fenster lässt sich verschieben und in der Größe ändern, ohne den Graphen zu zoomen.
+- Bei der dritten Spalte erscheint der Vorschlag, in die volle Ansicht zu wechseln.
+
+### R4 · Graph als Einstieg
+
+1. Ein geladenes LV öffnet im Graphen statt im Überblick.
+2. Regeländerung in `.claude/CLAUDE.md` („Der Graph ist eine Ansicht unter mehreren,
+   kein Sonderfall") und in [`scope.md`](scope.md#6--ansichten--gleichrangig-ein-filterzustand).
+3. Eigener Entscheidungseintrag für die Kursänderung — [`0029`](decisions/0029-markierungen-im-graphen.md)
+   regelt nur die Kennzeichnung, nicht den Rang der Ansichten.
+
+**Fertig, wenn:**
+
+- Nach dem Laden steht der Graph da, mit demselben Filterzustand wie jede andere Ansicht.
+- Regeltext und Entscheidungseintrag sagen dasselbe wie der Code.
 
 ---
 
@@ -580,12 +684,13 @@ einen Server. Vom Issue bleibt der Melde-Knopf in WP-P Schritt 6. Begründung:
 > Historie. Diese Pakete sind umgesetzt und werden nicht mehr geändert — sie
 > dokumentieren, wie der heutige Stand entstanden ist.
 
-## WP-A · Frontend-Gerüst  · `feat(frontend)`
+## WP-A · Frontend-Gerüst · `feat(frontend)`
 
 **Ziel:** Vite + React + TypeScript + Tailwind in `frontend/`, lauffähig, ohne
 Fachlogik. Grundlage für alle folgenden WPs.
 
 Schritte:
+
 1. `frontend/` mit Vite (React-TS-Template) + Tailwind aufsetzen.
 2. `src/types/lvDraft.ts`, `src/types/lvNode.ts` — TS-Äquivalente der bisherigen
    Pydantic-Modelle (`LVDraft`/`LotDraft`/`SectionDraft`/`PositionDraft`, `LVNode`),
@@ -596,18 +701,20 @@ Schritte:
 5. ESLint + Prettier-Konfiguration (wird vom Claude-Code-Hook genutzt).
 
 **Fertig, wenn:**
+
 - `npm run dev` startet die App lokal.
 - `npm test` läuft grün (Smoke-Test).
 - `npm run build` erzeugt ein statisches Bundle ohne Fehler.
 
 ---
 
-## WP-B · GAEB-Parser (TS)  · `feat(gaeb)`
+## WP-B · GAEB-Parser (TS) · `feat(gaeb)`
 
 **Ziel:** GAEB DA XML (2.0–3.3) im Browser parsen, ohne Server. Ersetzt den
 `PyGAEBAdapter` funktional, portiert dessen Feldabdeckung.
 
 Schritte:
+
 1. `src/lib/gaeb/parser.ts`: `GaebParser`-Interface + `XmlGaebParser`-Implementierung
    (DOMParser, kein zusätzliches XML-Package nötig für den Kernpfad; bei Bedarf
    `fast-xml-parser` als Fallback für Edge Cases).
@@ -622,6 +729,7 @@ Schritte:
    `tests/fixtures/` im Repo-Root übernehmen) — Parser-Tests laufen dagegen.
 
 **Fertig, wenn:**
+
 - Alle Fixtures unter `frontend/tests/fixtures/` parsen fehlerfrei zu `LVDraft`.
 - Eine Datei mit nicht unterstützter Version wirft `GAEBVersionError`.
 - `grep -R "GaebParser\|LVDraft" src/lib/classify src/lib/tree` liefert nichts — der
@@ -629,13 +737,14 @@ Schritte:
 
 ---
 
-## WP-C · Klassifizierung (TS)  · `feat(classify)`
+## WP-C · Klassifizierung (TS) · `feat(classify)`
 
 **Ziel:** Merkmale aus Kurz-/Langtext **mehrstufig** erzeugen und in `attributes`
 ablegen — hinter einem stabilen TS-Interface, analog zum bisherigen
 `ClassifierProtocol`. Design: [`architecture/pipeline.md`](architecture/pipeline.md#klassifizierung).
 
 Schritte:
+
 1. `src/lib/classify/types.ts`: `Classifier`-Interface, `ClassifierInput`,
    `ClassificationResult` (`attributes` + `meta`).
 2. **Stufe 0 (StlbMatch):** Kurz-/Langtext gegen die Referenztabelle
@@ -655,6 +764,7 @@ Schritte:
    registriertem Ruleset, Ruleset-Fallback-Pfad, Nicht-Bauteil-Pfad.
 
 **Fertig, wenn:**
+
 - Eine Wand-Position mit Beton-/Stahlbetonarbeiten-LB im Referenzkatalog →
   `positionsart:"bauteil"`, `gewerk_lb`, `gewerk`, `bauteiltyp:"Wand"`, `beton`,
   `expo`, `tragend`, `_meta.classifier="rule"`.
@@ -664,12 +774,13 @@ Schritte:
 
 ---
 
-## WP-D · In-Memory-Baum  · `feat(tree)`
+## WP-D · In-Memory-Baum · `feat(tree)`
 
 **Ziel:** `buildTree(draft): LVNode` — reine Funktion, ersetzt den früher geplanten
 `/tree`-Endpunkt. Ein Contract, zwei Konsumenten (Tree-Spalte, Bubble-Graph).
 
 Schritte:
+
 1. `src/types/lvNode.ts`: `LVNode` (`id`, `kind`, `code`, `label`, `position_count`,
    `total_price`, `children`, optional `position`).
 2. `src/lib/tree/buildTree.ts`: `LVDraft` (nach Klassifizierung) → `LVNode`-Baum,
@@ -679,6 +790,7 @@ Schritte:
 
 **Was der Parser aus WP-B liefert** (Annahmen für `buildTree`, verifiziert gegen die
 Fixtures in `frontend/tests/fixtures/`):
+
 - `SectionDraft.number` und `PositionDraft.oz` sind bereits **vollständige Pfade**
   (`"001.002"`, `"001.002.0050"`), keine lokalen Teilnummern. Indexpositionen tragen
   den Index als letztes Segment (`"001.001.0010.A"`), damit die OZ eindeutig bleibt —
@@ -696,6 +808,7 @@ Fixtures in `frontend/tests/fixtures/`):
   dafür einen Fallback auf „Anzahl" statt Bubbles mit Radius 0.
 
 **Fertig, wenn:**
+
 - Eine geparste + klassifizierte Fixture ergibt einen `LVNode`-Baum mit korrekten
   Aggregatwerten (Stichprobe manuell verifiziert).
 - Ein LV ohne Los-Ebene und ein LV mit Los-Ebene (`sample.X83`) ergeben beide einen
@@ -703,12 +816,13 @@ Fixtures in `frontend/tests/fixtures/`):
 
 ---
 
-## WP-E · Viewer: Tree + Tabelle + Suche + Filter  · `feat(viewer)`
+## WP-E · Viewer: Tree + Tabelle + Suche + Filter · `feat(viewer)`
 
 **Ziel:** Tree, Tabelle, Suche, Facetten-Filter rendern eine geladene LV (noch ohne
 Graph).
 
 Schritte:
+
 1. Port aus `design/claude-design/lv-main.jsx`: `Tree`, `PositionsTable`, `TopBar`,
    `FilterStrip`, `FacetButton`/`RangeButton`, `Highlighted`, `Status`.
 2. `src/lib/matchPos.ts` — Filter-/Suchlogik 1:1 aus dem Design (single source of
@@ -719,6 +833,7 @@ Schritte:
 4. Fehleranzeige für `GAEBParseError`/`GAEBValidationError`/`GAEBVersionError`.
 
 **Anbindung an den Parser aus WP-B:**
+
 - **Bytes, nicht Text:** `file.arrayBuffer()` verwenden, **nicht** `FileReader.readAsText`.
   Der Parser liest das Encoding aus der XML-Deklaration (GAEB-Exporte sind oft
   ISO-8859-1); vorab als UTF-8 dekodierter Text zerstört Umlaute in Positionstexten.
@@ -731,13 +846,14 @@ Schritte:
   `buildTree` — über das `structuredClone`-fähige `LVDraft`. Details:
   [`architecture/pipeline.md`](architecture/pipeline.md#wo-der-worker-ansetzt-und-warum-nicht-früher).
 - Facette „Positionsart": `positionType` ist `NORMAL | ALTERNATIV | BEDARF |
-  ZULAGENPOSITION`; alle vier kommen in `gaeb-xml-beispiel.x83` vor und eignen sich als
+ZULAGENPOSITION`; alle vier kommen in `gaeb-xml-beispiel.x83` vor und eignen sich als
   Testfall für den Filter.
 - Suche über `longText` trifft auch Unterbeschreibungen (`<SubDescr>`), die der Parser
   an den Langtext der Position anhängt. `shortText` ist nie leer, solange ein Langtext
   existiert (Fallback auf dessen erste Zeile).
 
 **Fertig, wenn:**
+
 - App lädt eine echte GAEB-Datei per Drag & Drop und zeigt Tree + Tabelle.
 - Suche und alle Facetten-Filter (inkl. Hervorheben/Ausblenden) funktionieren.
 - `grep -R "window.LV\|localStorage" frontend/src` liefert nichts für Fachdaten.
@@ -746,12 +862,13 @@ Schritte:
 
 ---
 
-## WP-F · Bubble-Graph  · `feat(graph)`
+## WP-F · Bubble-Graph · `feat(graph)`
 
 **Ziel:** Die Graph-Engine aus `lv-graph.jsx` als Mitte-Modus, gespeist aus demselben
 `LVNode`-Baum. Vergabepaket-Kanten entfallen (out of scope).
 
 Schritte:
+
 1. Engine nach `src/lib/graph/` (Baumaufbau, `layoutRadial`, Walk) und Komponenten
    nach `src/components/graph/`.
 2. An `LVNode` aus WP-D binden (kein Fixture, kein Demo-Lot im Default-Pfad).
@@ -762,6 +879,7 @@ Schritte:
 5. `nodeVpIds`/Vergabepaket-Overlays entfernen.
 
 **Fertig, wenn:**
+
 - Graph rendert eine geladene LV; Zoom/LOD/Culling funktionieren.
 - Größenmodi schalten korrekt um; Klick drillt in Abschnitt → Tabelle.
 - Eine ~10k-Positionen-Fixture (oder synthetisch generiert) bleibt bei Zoom/Pan
@@ -769,12 +887,13 @@ Schritte:
 
 ---
 
-## WP-G · Eigenschaften-Panel + Static-Deploy-Vorbereitung  · `feat(frontend)`
+## WP-G · Eigenschaften-Panel + Static-Deploy-Vorbereitung · `feat(frontend)`
 
 **Ziel:** Eigenschaften-Panel rechts, letzter Schliff, Build ist deploy-fertig für
 einen beliebigen statischen Host (Netlify/Vercel/Cloudflare Pages/GitHub Pages).
 
 Schritte:
+
 1. Eigenschaften-Panel rechts: Langtext mit `Highlighted`, Attribute, Einheit/
    Menge/EP.
 2. `npm run build` erzeugt ein reines Static-Bundle, keine Server-abhängigen Pfade
@@ -784,6 +903,7 @@ Schritte:
    Webfonts von Google Fonts — sonst nichts.
 
 **Fertig, wenn:**
+
 - Panel zeigt klassifizierte Merkmale der gewählten Position.
 - Das gebaute Bundle läuft von einem beliebigen statischen Host aus, ohne Backend.
 

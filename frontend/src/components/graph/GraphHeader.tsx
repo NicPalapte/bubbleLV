@@ -2,6 +2,7 @@
 // für die Trefferansicht (WP-Q, Issue #60). Portiert aus `CenterHint` in
 // design/claude-design/lv-main.jsx.
 
+import { useMemo } from 'react';
 import { SegmentedControl } from '../ui/SegmentedControl';
 import { SIZE_MODES } from '../../lib/graph/constants';
 import { FOCUS_GROUP_LABELS, type FocusGroupBy } from '../../lib/graph/focusTree';
@@ -32,6 +33,7 @@ export function GraphHeader({ root }: { root: LVNode }) {
     matches,
     focus,
     quantities,
+    hints,
   } = useViewer();
   const dispatch = useViewerDispatch();
 
@@ -41,6 +43,17 @@ export function GraphHeader({ root }: { root: LVNode }) {
   // auf dem Schirm steht.
   const treffer = matches.counts.get(root.id) ?? 0;
   const keineTreffer = matches.filtering && treffer === 0;
+
+  // Legende und Zahl in einem: der Ring an der Bubble braucht eine Erklärung,
+  // und wie viele Positionen ihn tragen, will man ohnehin wissen (WP-R, R1).
+  // Gezählt wird im aktuellen Filter — sonst stünde hier eine Zahl für das
+  // ganze LV, während im Graphen daneben eine Teilmenge steht.
+  const hintCount = useMemo(() => {
+    if (!matches.filtering) return hints.size;
+    let count = 0;
+    for (const id of hints.keys()) if ((matches.counts.get(id) ?? 0) > 0) count += 1;
+    return count;
+  }, [hints, matches]);
 
   const lots = root.children.length;
   const sections = root.children.reduce((total, lot) => total + lot.children.length, 0);
@@ -77,6 +90,18 @@ export function GraphHeader({ root }: { root: LVNode }) {
           )}
           {' · GRÖSSE'}
         </span>
+        {hintCount > 0 && (
+          <span
+            className="inline-flex items-center gap-[4px] font-mono text-[9px] tracking-[0.6px] text-mute"
+            title="Ring an der Bubble: an dieser Position hat mindestens eine Prüfregel etwas gefunden. Er erscheint, sobald du nah genug herangezoomt hast."
+          >
+            <svg width="12" height="12" aria-hidden="true">
+              <circle cx="6" cy="6" r="2.2" fill="var(--bub-position-line)" />
+              <circle cx="6" cy="6" r="4.6" fill="none" stroke="var(--amber)" strokeWidth="1.2" />
+            </svg>
+            {formatCount(hintCount)} MIT HINWEIS
+          </span>
+        )}
         <SegmentedControl
           label="Größe der Bubbles"
           options={SIZE_MODES.map((mode) => {

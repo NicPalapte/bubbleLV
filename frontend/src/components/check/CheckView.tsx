@@ -16,7 +16,7 @@
 // das ganze LV, während Tabelle und Graph daneben eine Teilmenge zeigen. Die
 // Kopfzeile sagt darum auch, dass gefiltert wird.
 
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useJumpToPosition } from '../common/useJumpToPosition';
 import { BlockLabel } from '../ui/PanelHeader';
 import { Chip } from '../ui/Chip';
@@ -149,13 +149,28 @@ export function CheckView() {
     nodes,
     filter: { mutedRules },
     view: {
-      check: { openRules },
+      check: { openRules, revealRule },
     },
     matches,
   } = useViewer();
   const dispatch = useViewerDispatch();
   const jumpTo = useJumpToPosition();
   const [attachScroll, onScroll] = useScrollMemory('check');
+
+  // Sprung aus dem Graphen (WP-R, R1): die aufgeklappte Regel ins Fenster
+  // holen. `useScrollMemory` stellt beim Einhängen den gemerkten Stand her —
+  // dieser Effekt läuft danach und überschreibt ihn gezielt für diesen einen
+  // Sprung.
+  const sections = useRef(new Map<string, HTMLElement>());
+  const attachSection = useCallback((id: string, node: HTMLElement | null): void => {
+    if (node === null) sections.current.delete(id);
+    else sections.current.set(id, node);
+  }, []);
+  useEffect(() => {
+    if (revealRule === null) return;
+    sections.current.get(revealRule)?.scrollIntoView({ block: 'start' });
+    dispatch({ type: 'ruleRevealed' });
+  }, [revealRule, dispatch]);
 
   const check = lv?.check ?? null;
 
@@ -207,6 +222,7 @@ export function CheckView() {
           return (
             <section
               key={rule.id}
+              ref={(node) => attachSection(rule.id, node)}
               className="border-b border-grid py-[12px]"
               style={{ opacity: rule.active && !muted ? 1 : 0.55 }}
             >
