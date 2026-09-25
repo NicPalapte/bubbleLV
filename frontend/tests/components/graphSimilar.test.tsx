@@ -58,6 +58,12 @@ function Harness({ positionId, children }: { positionId: string; children?: Reac
       </button>
       <button
         type="button"
+        onClick={() => dispatch({ type: 'search', value: 'zzz-kein-treffer-zzz' })}
+      >
+        filtern
+      </button>
+      <button
+        type="button"
         onClick={() => dispatch({ type: 'selectPosition', nodeId: null, positionId: MIT_GRUPPE })}
       >
         Position wählen
@@ -143,6 +149,15 @@ describe('Graph-Kopf', () => {
   it('nennt, wie viele Positionen Geschwister haben', () => {
     renderHeader();
     expect(screen.getByText(`${clusters.size} MIT ÄHNLICHEN`)).toBeInTheDocument();
+  });
+
+  it('zählt im aktuellen Filter, nicht über das ganze LV', () => {
+    // Ein Filterzustand, alle Ansichten (.claude/CLAUDE.md): eine Zahl für das
+    // ganze LV neben einem Graphen, der nur eine Teilmenge zeigt, wäre falsch.
+    renderHeader();
+    expect(screen.getByText(`${clusters.size} MIT ÄHNLICHEN`)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'filtern' }));
+    expect(screen.queryByText(/MIT ÄHNLICHEN/)).toBeNull();
   });
 
   it('bietet eine Schaltfläche, die die Hervorhebung wieder aufhebt', () => {
