@@ -606,20 +606,31 @@ Vier Schritte, in dieser Reihenfolge. Jeder ist ein eigener Pull Request.
 - ✅ Im Browser gegengeprüft: 9 von 28 Positionen tragen einen Ring, die Kopfzeile nennt
   dieselbe Zahl, der Sprung landet in der Prüfung — kein einziger fremder Request.
 
-### R2 · Ähnlichkeit im Graph
+### R2 · Ähnlichkeit im Graph ✅ umgesetzt
 
 1. Positionen einer Ähnlichkeitsgruppe (WP-M, [`decisions/0016`](decisions/0016-aehnlichkeit-und-cluster.md))
-   tragen ein **Muster** (gestrichelter Doppelrand) — keine neue Farbe.
-2. Die Auswahlkarte einer Position nennt ihre Gruppe und bietet **„ähnliche zeigen"**:
-   der Graph hebt die Gruppe hervor, alles andere tritt zurück.
-3. Dieselbe Zoom-Schwelle wie R1.
+   tragen ein **Muster** (gestrichelter Ring) — keine neue Farbe. **Leise, solange nichts
+   hervorgehoben ist**: in einem LV steckt schnell ein Drittel aller Positionen in
+   irgendeiner Gruppe, ein kräftiger Ring an jeder wäre nur Rauschen.
+2. Die Auswahlkarte einer Position nennt ihre Gruppe und bietet **„Ähnliche zeigen"**:
+   der Graph hebt die Mitglieder kräftig hervor, alles andere tritt zurück — über
+   dieselbe Dämpfung wie beim Überfahren mit der Maus, nicht über eine zweite.
+3. Aufheben: derselbe Knopf, die Schaltfläche in der Kopfzeile oder Escape.
+4. Dieselbe Zoom-Schwelle wie R1 (`marksVisible`).
 
 **Fertig, wenn:**
 
-- Zwei Positionen derselben Gruppe sind im Graphen als zusammengehörig erkennbar, ohne
-  dass eine Farbe ihre Bedeutung wechselt.
-- „ähnliche zeigen" hebt genau die Mitglieder hervor, die die Ansicht „Ähnlichkeit"
+- ✅ Zwei Positionen derselben Gruppe sind im Graphen als zusammengehörig erkennbar, ohne
+  dass eine Farbe ihre Bedeutung wechselt (`tests/components/graphSimilar.test.tsx`).
+- ✅ „Ähnliche zeigen" hebt genau die Mitglieder hervor, die die Ansicht „Ähnlichkeit"
   in derselben Gruppe führt.
+- ✅ Die Hervorhebung fasst Filter, Suche und Auswahl nicht an und lässt sich auf drei
+  Wegen wieder aufheben.
+- ✅ Außerhalb des Graphen führt derselbe Knopf in die Ansicht „Ähnlichkeit", statt
+  wirkungslos dazustehen.
+- ✅ Im Browser gegengeprüft: 8 von 28 Positionen tragen den leisen Ring, die Kopfzeile
+  nennt dieselbe Zahl, die Hervorhebung greift und lässt sich aufheben — kein fremder
+  Request.
 
 ### R3 · Vergleich als Fenster über dem Graphen
 

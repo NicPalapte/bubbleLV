@@ -74,6 +74,15 @@ export interface GraphViewState {
    * rendern. Erst beim Verlassen der Ansicht wandert er hierher.
    */
   viewport: Viewport | null;
+  /**
+   * Hervorgehobene Ähnlichkeitsgruppe (WP-R, R2) — ihre Mitglieder treten
+   * hervor, alles andere tritt zurück. `null` = keine.
+   *
+   * Reiner Anzeigezustand des Graphen: er fasst Filter, Suche und Auswahl
+   * nicht an (.claude/CLAUDE.md#frontend). Ein Ansichtswechsel lässt ihn
+   * stehen, ein neuer Import verwirft ihn mit dem ganzen Zustand.
+   */
+  highlightCluster: string | null;
 }
 
 export interface TableViewState {
@@ -158,6 +167,8 @@ export type ViewAction =
   | { type: 'focusGroupBy'; value: FocusGroupBy }
   /** Graph-Ausschnitt sichern — beim Verlassen der Ansicht, nicht je Frame. */
   | { type: 'graphViewport'; viewport: Viewport | null }
+  /** Ähnlichkeitsgruppe hervorheben; `null` hebt die Hervorhebung auf. */
+  | { type: 'highlightCluster'; id: string | null }
   | { type: 'tableSort'; key: string }
   | { type: 'tableScope'; scope: TableScope }
   | { type: 'tableColumns'; columns: ColumnConfig | null }
@@ -195,7 +206,13 @@ export const INITIAL_VIEW_STATE: ViewState = {
   mode: 'overview',
   // Einstieg ist der ganze Graph: er ordnet die Treffer ins LV ein. Die
   // Isolation ist der zweite Blick, einen Knopfdruck entfernt (Issue #60).
-  graph: { sizeMode: 'count', focus: 'structure', groupBy: 'abschnitt', viewport: null },
+  graph: {
+    sizeMode: 'count',
+    focus: 'structure',
+    groupBy: 'abschnitt',
+    viewport: null,
+    highlightCluster: null,
+  },
   table: { sort: { key: 'oz', dir: 1 }, scope: 'node', columns: null },
   matrix: {
     rowFacetId: DEFAULT_MATRIX_AXES.row,
@@ -224,6 +241,9 @@ export function viewStateForNewLv(state: ViewState): ViewState {
       focus: state.graph.focus,
       groupBy: state.graph.groupBy,
       viewport: null,
+      // Die Gruppen der alten Datei gibt es nicht mehr — eine gemerkte ID
+      // zeigte ins Leere.
+      highlightCluster: null,
     },
     // Achsen und Zellwert der Matrix sind eine Vorliebe, kein Fachdatum: die
     // Facettenliste ist für jede Datei dieselbe.
@@ -259,6 +279,9 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
       return { ...state, graph: { ...state.graph, groupBy: action.value } };
     case 'graphViewport':
       return { ...state, graph: { ...state.graph, viewport: action.viewport } };
+    case 'highlightCluster':
+      if (state.graph.highlightCluster === action.id) return state;
+      return { ...state, graph: { ...state.graph, highlightCluster: action.id } };
     case 'tableSort': {
       const { sort } = state.table;
       const dir: 1 | -1 = sort.key === action.key ? ((sort.dir * -1) as 1 | -1) : 1;

@@ -57,7 +57,17 @@ interface BubbleProps extends CommonProps {
    * Markierung noch nicht (decisions/0029). Nur Positionen tragen ihn.
    */
   hint?: FlagSeverity;
+  /**
+   * Zugehörigkeit zu einer Ähnlichkeitsgruppe (WP-R, R2): `'leise'` für jede
+   * Position in irgendeiner Gruppe, `'hervor'` für die Mitglieder der gerade
+   * hervorgehobenen. Gestrichelt statt farbig — Farbe gehört dem Gewerk
+   * (decisions/0029).
+   */
+  group?: GroupMark;
 }
+
+/** Wie deutlich die Gruppen-Markierung steht. */
+export type GroupMark = 'leise' | 'hervor';
 
 const TIER_FILL: Record<string, { fill: string; stroke: string }> = {
   project: { fill: 'var(--bub-project)', stroke: 'var(--bub-project-line)' },
@@ -79,6 +89,23 @@ const HINT_RING: Record<FlagSeverity, string> = {
 
 /** Abstand des Hinweis-Rings zur Bubble, in Weltkoordinaten. */
 const HINT_RING_GAP = 3;
+
+/**
+ * Der Gruppen-Ring liegt **außerhalb** des Hinweis-Rings: eine Position kann
+ * beides tragen, und gestapelt bleiben beide lesbar.
+ */
+const GROUP_RING_GAP = 7.5;
+
+/**
+ * Leise heißt wirklich leise: in einem LV steckt schnell ein Drittel aller
+ * Positionen in irgendeiner Gruppe. Erst die Hervorhebung macht den Ring
+ * kräftig — dann sind es nur wenige.
+ */
+const GROUP_RING: Record<GroupMark, { stroke: string; width: number; dash: string }> = {
+  leise: { stroke: 'var(--line2)', width: 1, dash: '1.5 2.5' },
+  // Nicht blau: blau gestrichelt ist im Graphen schon der Tastatur-Fokus.
+  hervor: { stroke: 'var(--ink)', width: 1.6, dash: '3 2' },
+};
 
 /** Weißer Halo hinter Schrift, die über dem Raster oder über Kanten steht. */
 const HALO = {
@@ -227,6 +254,7 @@ export function BubbleNode(props: BubbleProps) {
     subLabel,
     cloudRadius,
     hint,
+    group,
   } = props;
 
   // Tastatur-Fokus zählt überall dort wie Hover — sonst ließen sich Badges,
@@ -292,6 +320,17 @@ export function BubbleNode(props: BubbleProps) {
             fill="none"
             stroke={HINT_RING[hint]}
             strokeWidth="1.6"
+            style={{ pointerEvents: 'none' }}
+          />
+        )}
+        {group !== undefined && (
+          <circle
+            data-group={group}
+            r={radius + GROUP_RING_GAP}
+            fill="none"
+            stroke={GROUP_RING[group].stroke}
+            strokeWidth={GROUP_RING[group].width}
+            strokeDasharray={GROUP_RING[group].dash}
             style={{ pointerEvents: 'none' }}
           />
         )}

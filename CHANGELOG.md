@@ -9,6 +9,21 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.4.0 — 25.09.2026 · Ähnliche Positionen im Graphen
+
+- **Gestrichelter Ring an der Bubble.** Gibt es zu einer Position ähnliche, sieht man das
+  jetzt im Graphen — dezent, damit der Graph ruhig bleibt. Die Füllfarbe gehört weiter
+  dem Gewerk.
+- **„Ähnliche zeigen".** In den Positionsdetails steht, zu welcher Gruppe eine Position
+  gehört und wie viele noch dazugehören. Ein Klick hebt die ganze Gruppe im Graphen
+  hervor, alles andere tritt zurück.
+- **Wieder aufheben** mit demselben Knopf, mit der Schaltfläche oben im Graphen oder mit
+  Escape. Filter, Suche und Auswahl bleiben dabei unberührt.
+- **Kopfzeile nennt die Zahl:** „8 mit Ähnlichen", mit dem Ring daneben als Legende.
+- Außerhalb des Graphen führt derselbe Knopf in die Ansicht „Ähnlichkeit".
+
+---
+
 ## 0.3.0 — 25.09.2026 · Hinweise im Graphen
 
 - **Ring an der Bubble.** Eine Position, an der eine Prüfregel etwas gefunden hat,
