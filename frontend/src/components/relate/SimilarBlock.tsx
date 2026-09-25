@@ -9,6 +9,10 @@
 // eine andere Ansicht zu springen: wer eine Bubble angeklickt hat, will die
 // Geschwister dort sehen, wo er gerade steht. Ein zweiter Klick hebt die
 // Hervorhebung wieder auf.
+//
+// Dasselbe gilt für „zur nächsten": er setzt nur die Auswahl weiter. Der Block
+// steht in der Auswahlkarte des Graphen und im Eigenschaften-Panel der Tabelle
+// — in beiden Fällen bleibt man, wo man ist.
 
 import { useJumpToPosition } from '../common/useJumpToPosition';
 import { truncate } from '../../lib/format';
@@ -77,7 +81,10 @@ export function SimilarBlock({ positionId }: { positionId: string }) {
             <button
               key={id}
               type="button"
-              onClick={() => jumpTo(id)}
+              // `stayInView`: der Knopf setzt nur die Auswahl weiter. Ohne das
+              // sprünge er in die Tabelle — und stünde damit gegen den Zweck
+              // dieses Blocks, die Geschwister dort zu zeigen, wo man steht.
+              onClick={() => jumpTo(id, { stayInView: true })}
               className="inline-flex cursor-pointer items-center border border-line bg-white px-[7px] py-[2px] font-mono text-[9px] tracking-[0.6px] text-dim hover:text-blue focus-visible:text-blue"
             >
               ZUR NÄCHSTEN

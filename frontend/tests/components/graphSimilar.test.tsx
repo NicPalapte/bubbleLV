@@ -47,6 +47,7 @@ function Harness({ positionId, children }: { positionId: string; children?: Reac
       mode,
       graph: { highlightCluster },
     },
+    selection: { positionId: positionId2 },
   } = useViewer();
   return (
     <>
@@ -70,6 +71,7 @@ function Harness({ positionId, children }: { positionId: string; children?: Reac
       </button>
       <span data-testid="ansicht">{mode}</span>
       <span data-testid="hervorgehoben">{highlightCluster ?? ''}</span>
+      <span data-testid="auswahl">{positionId2 ?? ''}</span>
       <SimilarBlock positionId={positionId} />
       {children}
     </>
@@ -119,6 +121,18 @@ describe('SimilarBlock', () => {
   it('fasst Filter und Auswahl beim Hervorheben nicht an', () => {
     renderBlock(MIT_GRUPPE);
     fireEvent.click(screen.getByRole('button', { name: 'ÄHNLICHE ZEIGEN' }));
+    expect(screen.getByTestId('ansicht')).toHaveTextContent('graph');
+  });
+
+  it('setzt mit „zur nächsten" nur die Auswahl weiter, ohne die Ansicht zu wechseln', () => {
+    // Der Knopf steht direkt neben „Ähnliche zeigen", dessen ganzer Sinn ist,
+    // im Graphen zu bleiben. Ein Sprung in die Tabelle daneben wäre ein
+    // Widerspruch — und im Label nicht angekündigt.
+    renderBlock(MIT_GRUPPE);
+    const nachbar = clusters.get(MIT_GRUPPE)?.positionIds.find((id) => id !== MIT_GRUPPE);
+    expect(nachbar).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'ZUR NÄCHSTEN' }));
+    expect(screen.getByTestId('auswahl')).toHaveTextContent(nachbar as string);
     expect(screen.getByTestId('ansicht')).toHaveTextContent('graph');
   });
 
