@@ -82,6 +82,14 @@ export function GraphHeader({ root }: { root: LVNode }) {
       ? null
       : (lv?.relations.clusters.find((cluster) => cluster.id === highlightCluster) ?? null);
 
+  // Mitglieder der hervorgehobenen Gruppe, die der Filter durchlässt — dieselbe
+  // Zählung wie bei den Legenden daneben. Eine ungefilterte Zahl neben einer
+  // gefilterten wäre ein Widerspruch im selben Atemzug.
+  const sichtbareMitglieder =
+    hervorgehoben === null
+      ? 0
+      : imFilter(hervorgehoben.positionIds, hervorgehoben.positionIds.length, matches);
+
   const lots = root.children.length;
   const sections = root.children.reduce((total, lot) => total + lot.children.length, 0);
   // x83-Dateien führen keine Einheitspreise — der Größenmodus "Gesamtpreis"
@@ -126,7 +134,12 @@ export function GraphHeader({ root }: { root: LVNode }) {
           >
             <span className="truncate">
               ÄHNLICHE: {truncate(hervorgehoben.label, 28).toUpperCase()} ·{' '}
-              {formatCount(hervorgehoben.positionIds.length)}
+              {formatCount(sichtbareMitglieder)}
+              {/* Blendet der Filter Mitglieder aus, steht die volle Gruppengröße
+                  dahinter: im Graphen treten nur die durchgelassenen hervor,
+                  aber die Gruppe ist größer — beides ist eine Information. */}
+              {sichtbareMitglieder < hervorgehoben.positionIds.length &&
+                ` VON ${formatCount(hervorgehoben.positionIds.length)}`}
             </span>
             <span aria-hidden="true">✕</span>
           </button>

@@ -40,6 +40,16 @@ const OHNE_GRUPPE =
         .find((id) => !clusters.has(id)) ?? '')
     : '';
 
+/**
+ * Ein Suchbegriff, der genau eine Position der Gruppe durchlässt: die OZ des
+ * ersten Mitglieds. Damit lässt sich prüfen, dass die Zahl im Chip dem Filter
+ * folgt, statt die volle Gruppengröße zu behaupten.
+ */
+const EIN_MITGLIED =
+  [...(clusters.get(MIT_GRUPPE)?.positionIds ?? [])]
+    .map((id) => id.replace(/^position:/, ''))
+    .at(0) ?? '';
+
 function Harness({ positionId, children }: { positionId: string; children?: ReactNode }) {
   const dispatch = useViewerDispatch();
   const {
@@ -62,6 +72,9 @@ function Harness({ positionId, children }: { positionId: string; children?: Reac
         onClick={() => dispatch({ type: 'search', value: 'zzz-kein-treffer-zzz' })}
       >
         filtern
+      </button>
+      <button type="button" onClick={() => dispatch({ type: 'search', value: EIN_MITGLIED })}>
+        auf ein Mitglied filtern
       </button>
       <button
         type="button"
@@ -172,6 +185,20 @@ describe('Graph-Kopf', () => {
     expect(screen.getByText(`${clusters.size} MIT ÄHNLICHEN`)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'filtern' }));
     expect(screen.queryByText(/MIT ÄHNLICHEN/)).toBeNull();
+  });
+
+  it('nennt im Chip die sichtbaren Mitglieder und die volle Gruppengröße', () => {
+    const gesamt = clusters.get(MIT_GRUPPE)?.positionIds.length ?? 0;
+    expect(gesamt).toBeGreaterThan(1);
+    renderHeader();
+    fireEvent.click(screen.getAllByRole('button', { name: 'ÄHNLICHE ZEIGEN' })[0]);
+    // Ohne Filter: nur die Gesamtzahl, ohne „von".
+    expect(screen.getByRole('button', { name: /^ÄHNLICHE:/ }).textContent).toContain(`· ${gesamt}`);
+
+    fireEvent.click(screen.getByRole('button', { name: 'auf ein Mitglied filtern' }));
+    const beschriftung = screen.getByRole('button', { name: /^ÄHNLICHE:/ }).textContent ?? '';
+    expect(beschriftung).toContain(`VON ${gesamt}`);
+    expect(beschriftung).not.toContain(`· ${gesamt} `);
   });
 
   it('bietet eine Schaltfläche, die die Hervorhebung wieder aufhebt', () => {
