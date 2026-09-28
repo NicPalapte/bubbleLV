@@ -12,7 +12,7 @@
 import { BlockLabel } from '../ui/PanelHeader';
 import { EmptyState } from '../ui/EmptyState';
 import { useJumpToPosition } from '../common/useJumpToPosition';
-import { comparedPositions, compareRows } from '../../lib/compare/rows';
+import { compareRows } from '../../lib/compare/rows';
 import { markCommonWords } from '../../lib/compare/textDiff';
 import { truncate } from '../../lib/format';
 import { useViewerDispatch } from '../../state/viewer';
@@ -37,34 +37,41 @@ export function CompareBody({ gezeigt, onlyDiffs }: CompareBodyProps) {
   const dispatch = useViewerDispatch();
   const jumpTo = useJumpToPosition();
 
-  const positionen = comparedPositions(gezeigt);
-  const rows = compareRows(positionen);
+  // **Eine Liste für Kopf, Zeilen und Langtext.** Liefe der Kopf über
+  // `gezeigt` und die Werte über die Positionen daraus, verschöben sich beide
+  // gegeneinander, sobald ein Knoten ohne Position dabei wäre — und zwar
+  // lautlos, mit falsch zugeordneten Zahlen unter den Kurztexten. `flatMap`
+  // wirft solche Knoten hier einmal weg, danach hat jede Spalte ihre Position.
+  const spalten = gezeigt.flatMap((node) =>
+    node.position === null ? [] : [{ id: node.id, position: node.position }],
+  );
+  const rows = compareRows(spalten.map((spalte) => spalte.position));
   const sichtbar = onlyDiffs ? rows.filter((row) => row.differs) : rows;
-  const langtexte = markCommonWords(positionen.map((position) => position.longText));
+  const langtexte = markCommonWords(spalten.map((spalte) => spalte.position.longText));
 
   return (
     <>
       {/* Kopf: je Spalte OZ, Kurztext und die beiden Wege hinaus. */}
       <div className="mt-[12px] flex border-b border-line2">
         <div className={LABEL_SPALTE} aria-hidden="true" />
-        {gezeigt.map((node) => (
-          <div key={node.id} className={SPALTE}>
-            <div className="font-mono text-[10px] text-dim">{node.position?.oz}</div>
+        {spalten.map((spalte) => (
+          <div key={spalte.id} className={SPALTE}>
+            <div className="font-mono text-[10px] text-dim">{spalte.position.oz}</div>
             <div className="mt-[2px] font-sans text-[12px] font-semibold leading-[1.35] text-ink">
-              {truncate(node.position?.shortText ?? '', 90)}
+              {truncate(spalte.position.shortText, 90)}
             </div>
             <div className="mt-[6px] flex gap-[6px]">
               <button
                 type="button"
-                onClick={() => jumpTo(node.id)}
+                onClick={() => jumpTo(spalte.id)}
                 className="cursor-pointer border border-line bg-white px-[6px] py-[2px] font-mono text-[9px] text-dim hover:text-blue"
               >
                 IN DER TABELLE
               </button>
               <button
                 type="button"
-                onClick={() => dispatch({ type: 'toggleCompare', positionId: node.id })}
-                aria-label={`${node.position?.oz ?? ''} aus dem Vergleich nehmen`}
+                onClick={() => dispatch({ type: 'toggleCompare', positionId: spalte.id })}
+                aria-label={`${spalte.position.oz} aus dem Vergleich nehmen`}
                 className="cursor-pointer border border-line bg-white px-[6px] py-[2px] font-mono text-[9px] text-mute hover:text-blue"
               >
                 ✕
@@ -99,7 +106,7 @@ export function CompareBody({ gezeigt, onlyDiffs }: CompareBodyProps) {
               </th>
               {row.values.map((value, index) => (
                 <td
-                  key={gezeigt[index].id}
+                  key={spalten[index].id}
                   className={`${SPALTE} font-sans text-[11.5px] leading-[1.4] ${
                     row.differs ? 'font-medium text-ink' : 'text-mute'
                   }`}
@@ -119,7 +126,7 @@ export function CompareBody({ gezeigt, onlyDiffs }: CompareBodyProps) {
           <div className={LABEL_SPALTE} aria-hidden="true" />
           {langtexte.map((teile, index) => (
             <div
-              key={gezeigt[index].id}
+              key={spalten[index].id}
               className={`${SPALTE} whitespace-pre-wrap font-sans text-[11.5px] leading-[1.5] text-ink`}
             >
               {teile.length === 0 ? (

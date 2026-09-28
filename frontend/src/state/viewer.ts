@@ -184,19 +184,23 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
       return selection === state.selection ? state : { ...state, selection };
     }
 
-    // Vergleich erweitern oder ändern: die Auswahl wandert in `selectionState`,
-    // und ein zugeklapptes Vergleichsfenster im Graphen kommt zurück (WP-R, R3)
-    // — wer eine Position dazunimmt, will das Ergebnis sehen. Deshalb nicht im
-    // Block darüber: diese Aktionen berühren zwei Zustände.
+    // Vergleich ändern: die Auswahl wandert in `selectionState`, und ein
+    // zugeklapptes Vergleichsfenster im Graphen kommt zurück (WP-R, R3) — wer
+    // eine Position dazunimmt, will das Ergebnis sehen. Deshalb nicht im Block
+    // darüber: diese Aktionen berühren zwei Zustände.
+    //
+    // **Nur wenn der Vergleich gewachsen ist.** `toggleCompare` nimmt auch
+    // heraus, und `clearCompare` leert ganz: ein Fenster, das nach dem
+    // Herausnehmen von selbst wiederkommt, macht das bewusste ✕ rückgängig.
     case 'toggleCompare':
     case 'setCompare':
     case 'clearCompare': {
       const selection = selectionReducer(state.selection, action, state.lv?.tree ?? null);
       if (selection === state.selection) return state;
       const view =
-        action.type === 'clearCompare'
-          ? state.view
-          : viewReducer(state.view, { type: 'compareWindow', open: true });
+        selection.compare.length > state.selection.compare.length
+          ? viewReducer(state.view, { type: 'compareWindow', open: true })
+          : state.view;
       return { ...state, selection, view };
     }
 

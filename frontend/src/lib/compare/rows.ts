@@ -149,9 +149,9 @@ export function diffCount(nodes: readonly LVNode[]): number {
 
 /**
  * Die Positionen hinter den Spalten. Im Vergleich stehen nur Positionsknoten;
- * ein Knoten ohne Position hätte keine Merkmale und fällt hier weg, statt die
- * Zeilen um eine leere Spalte zu verschieben.
+ * ein Knoten ohne Position hätte keine Merkmale und fällt hier weg — so zählt
+ * `diffCount` genau die Spalten, die `CompareBody` auch zeichnet.
  */
-export function comparedPositions(nodes: readonly LVNode[]): PositionSummary[] {
+function comparedPositions(nodes: readonly LVNode[]): PositionSummary[] {
   return nodes.flatMap((node) => (node.position === null ? [] : [node.position]));
 }

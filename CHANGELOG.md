@@ -22,7 +22,8 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 - **Ab drei Spalten** schlägt das Fenster vor, in die ganze Ansicht zu wechseln. Dort
   ist mehr Platz — eng wird es trotzdem nicht: das Fenster scrollt.
 - **Das ✕ schließt nur das Fenster.** Die Positionen bleiben im Vergleich; oben im
-  Graphen steht dann „Vergleich · 3 Pos. zeigen" und holt es zurück.
+  Graphen steht dann „Vergleich · 3 Pos. zeigen" und holt es zurück. Von selbst kommt
+  es erst zurück, wenn eine Position dazukommt — Herausnehmen holt es nicht wieder.
 - Korrektur: Im Vergleich standen die Spaltenköpfe und die Langtexte um eine
   Spaltenbreite versetzt zu den Werten darunter. Jetzt fluchten sie.
 

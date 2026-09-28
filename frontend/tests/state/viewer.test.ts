@@ -347,6 +347,7 @@ describe('viewerReducer · Größe und Ort der Info-Panels', () => {
 
 describe('viewerReducer · Vergleichsfenster über dem Graphen', () => {
   const POS = 'position:001.001.0010';
+  const POS2 = 'position:001.001.0020';
 
   it('hält Größe und Ort getrennt von den Info-Panels', () => {
     // Zwei Flächen, zwei Maße: das Fenster zeigt mehrere Spalten und ist
@@ -391,6 +392,25 @@ describe('viewerReducer · Vergleichsfenster über dem Graphen', () => {
     const dazu = viewerReducer(zu, { type: 'toggleCompare', positionId: POS });
     expect(dazu.view.compare.windowOpen).toBe(true);
     expect(dazu.selection.compare).toContain(POS);
+  });
+
+  it('bleibt zu, wenn eine Position nur herausgenommen wird', () => {
+    // Das ✕ am Fenster ist eine Entscheidung. Herausnehmen ist kein neuer
+    // Vergleich — käme das Fenster dabei zurück, machte es die Entscheidung
+    // rückgängig, ohne dass etwas dazugekommen wäre.
+    const zwei = viewerReducer(
+      viewerReducer(loadedState(), { type: 'toggleCompare', positionId: POS }),
+      { type: 'toggleCompare', positionId: POS2 },
+    );
+    const zu = viewerReducer(zwei, { type: 'compareWindow', open: false });
+
+    const weniger = viewerReducer(zu, { type: 'toggleCompare', positionId: POS2 });
+    expect(weniger.selection.compare).toEqual([POS]);
+    expect(weniger.view.compare.windowOpen).toBe(false);
+
+    // Dazunehmen holt es weiter zurück.
+    const wieder = viewerReducer(weniger, { type: 'toggleCompare', positionId: POS2 });
+    expect(wieder.view.compare.windowOpen).toBe(true);
   });
 
   it('lässt es beim Leeren des Vergleichs zu, wie es war', () => {
