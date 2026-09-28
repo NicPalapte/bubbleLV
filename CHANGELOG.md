@@ -9,6 +9,34 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.5.0 — 28.09.2026 · Vergleich über dem Graphen
+
+- **Zwei Bubbles mit Strg-Klick, und der Vergleich steht da.** Er öffnet sich als
+  Fenster über dem Graphen — kein Ansichtswechsel, die Bubbles bleiben sichtbar, und
+  eine dritte Position kommt mit dem nächsten Strg-Klick dazu.
+- **Klick, dann Strg-Klick.** Ist schon eine Position angewählt, nimmt der erste
+  Strg-Klick sie gleich mit in den Vergleich — zwei Positionen, ein Strg-Klick. Das gilt
+  auch in Tabelle und Baum.
+- **Rechtsklick auf eine Position** — als Bubble im Graphen oder als Zeile in Tabelle
+  und Baum — bietet „Zum Vergleich hinzufügen" an (bzw. „Mit … vergleichen" oder „Aus
+  dem Vergleich nehmen"). Der Weg ohne Strg-Taste.
+- **Aussortieren im Fenster:** Wer Spalten herausnimmt, behält das Fenster — auch mit
+  nur noch einer Position. Es geht erst zu, wenn der Vergleich leer ist.
+- **Dieselben Zeilen wie die Ansicht „Vergleich".** Auch „Nur Unterschiede" ist
+  derselbe Schalter: was du im Fenster umstellst, steht in der Ansicht genauso.
+- **Fenster verschieben und aufziehen** wie die Auswahlkarte — am Griff oben, Größe
+  unten links. Ort und Größe merkt sich Bubble getrennt von den Info-Panels; ein Reload
+  setzt zurück, wie immer.
+- **Ab drei Spalten** schlägt das Fenster vor, in die ganze Ansicht zu wechseln. Dort
+  ist mehr Platz — eng wird es trotzdem nicht: das Fenster scrollt.
+- **Das ✕ schließt nur das Fenster.** Die Positionen bleiben im Vergleich; oben im
+  Graphen steht dann „Vergleich · 3 Pos. zeigen" und holt es zurück. Von selbst kommt
+  es erst zurück, wenn eine Position dazukommt — Herausnehmen holt es nicht wieder.
+- Korrektur: Im Vergleich standen die Spaltenköpfe und die Langtexte um eine
+  Spaltenbreite versetzt zu den Werten darunter. Jetzt fluchten sie.
+
+---
+
 ## 0.4.0 — 25.09.2026 · Ähnliche Positionen im Graphen
 
 - **Gestrichelter Ring an der Bubble.** Gibt es zu einer Position ähnliche, sieht man das

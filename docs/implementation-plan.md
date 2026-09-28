@@ -637,21 +637,34 @@ Vier Schritte, in dieser Reihenfolge. Jeder ist ein eigener Pull Request.
   nennt dieselbe Zahl, die Hervorhebung greift und lässt sich aufheben — kein fremder
   Request.
 
-### R3 · Vergleich als Fenster über dem Graphen
+### R3 · Vergleich als Fenster über dem Graphen ✅ umgesetzt
 
 1. Die Merkmalszeilen der Ansicht „Vergleich" (WP-N) in ein Fenster über dem Canvas —
-   **dieselbe Komponente**, nicht eine zweite Darstellung derselben Sache.
+   **dieselbe Komponente** (`compare/CompareBody.tsx`), nicht eine zweite Darstellung
+   derselben Sache. Auch der Schalter „nur Unterschiede" ist derselbe Zustand.
 2. Das Fenster ist **ziehbar und größenveränderbar**, wie die Auswahlkarte (Issue #47,
-   `data-graph-overlay`).
+   `data-graph-overlay`) — dieselbe Mechanik aus `common/useDragResize.ts`, eigene Maße
+   im Ansichtszustand.
 3. Ab **drei Spalten** schlägt es vor, in die volle Ansicht „Vergleich" zu wechseln —
    breiter wird es über dem Graphen nicht lesbar.
+4. Das ✕ schließt nur das Fenster; die Positionen bleiben im Vergleich, und die
+   Kopfzeile des Graphen bietet es wieder an. Ein weiterer Strg-Klick holt es von selbst
+   zurück.
 
 **Fertig, wenn:**
 
-- Strg-/Cmd-Klick auf zwei Bubbles öffnet das Fenster mit denselben Zeilen wie die
-  Ansicht „Vergleich".
-- Das Fenster lässt sich verschieben und in der Größe ändern, ohne den Graphen zu zoomen.
-- Bei der dritten Spalte erscheint der Vorschlag, in die volle Ansicht zu wechseln.
+- ✅ Strg-/Cmd-Klick auf zwei Bubbles öffnet das Fenster mit denselben Zeilen wie die
+  Ansicht „Vergleich"; beide nennen dieselbe Zahl Unterschiede (eine Quelle: `diffCount`).
+  Bei einer einzigen Position bleibt es weg — eine Spalte ist kein Vergleich
+  (`tests/components/compareWindow.test.tsx`).
+- ✅ Das Fenster lässt sich verschieben und in der Größe ändern, ohne den Graphen zu
+  zoomen; das Mausrad darin scrollt seinen Inhalt statt den Graphen.
+- ✅ Bei der dritten Spalte erscheint der Vorschlag, in die volle Ansicht zu wechseln.
+- ✅ Ort und Größe sind von denen der Info-Panels getrennt und überleben Schließen,
+  Ansichtswechsel und den nächsten Import (`tests/state/viewer.test.ts`).
+- ✅ Im Browser gegengeprüft: jeder Knopf einmal geklickt, Ziehen und Aufziehen gemessen
+  (786 × 508 px), Rad über dem Fenster scrollt (0 → 267) und lässt den Graphen stehen —
+  kein fremder Request.
 
 ### R4 · Graph als Einstieg
 

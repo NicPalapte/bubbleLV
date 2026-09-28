@@ -13,6 +13,7 @@
 
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { useCompareMenu } from '../compare/useCompareMenu';
 import { StatusPill } from '../ui/StatusPill';
 import { TreeRow } from '../ui/TreeRow';
 import { formatCount } from '../../lib/format';
@@ -83,6 +84,8 @@ export function Tree({ width, collapsed, onToggleCollapsed }: TreeProps) {
     selectedPosition,
   } = useViewer();
   const dispatch = useViewerDispatch();
+  // Rechtsklick auf eine Positionszeile: in den Vergleich (PR #86).
+  const { openMenu, menu } = useCompareMenu();
 
   const listRef = useRef<HTMLDivElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
@@ -401,6 +404,7 @@ export function Tree({ width, collapsed, onToggleCollapsed }: TreeProps) {
                 status={isPosition ? <StatusPill status={POSITION_STATUS} dotOnly /> : undefined}
                 count={count}
                 onClick={(event) => selectRow(row, event.ctrlKey || event.metaKey)}
+                onContextMenu={(event) => openMenu(node, event)}
                 onToggle={
                   row.hasChildren
                     ? () => {
@@ -414,6 +418,7 @@ export function Tree({ width, collapsed, onToggleCollapsed }: TreeProps) {
           })}
         </div>
       </div>
+      {menu}
     </div>
   );
 }

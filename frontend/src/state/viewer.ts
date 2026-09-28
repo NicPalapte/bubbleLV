@@ -54,6 +54,12 @@ export {
   clampPanelWidth,
 } from './viewState';
 export { CLUSTER_MIN_MEMBERS, MAX_COMPARE_COLUMNS } from './viewState';
+export {
+  COMPARE_MAX_WIDTH,
+  COMPARE_MIN_HEIGHT,
+  COMPARE_MIN_WIDTH,
+  DEFAULT_COMPARE_SIZE,
+} from './viewState';
 export type {
   CardPos,
   ClusterSort,
@@ -172,13 +178,37 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     case 'expandAll':
     case 'collapseAll':
     case 'toggleCluster':
-    case 'toggleCompare':
-    case 'setCompare':
-    case 'clearCompare':
     case 'back':
     case 'closeSelection': {
       const selection = selectionReducer(state.selection, action, state.lv?.tree ?? null);
       return selection === state.selection ? state : { ...state, selection };
+    }
+
+    // Vergleich ändern: die Auswahl wandert in `selectionState`, das Fenster
+    // über dem Graphen folgt (WP-R, R3). Deshalb nicht im Block darüber: diese
+    // Aktionen berühren zwei Zustände.
+    //
+    // - **Auf** erst, wenn der Vergleich wächst und dabei zwei Positionen
+    //   erreicht — eine Spalte allein ist noch kein Vergleich. Wächst er, geht
+    //   auch ein weggeklicktes Fenster wieder auf: wer dazunimmt, will sehen.
+    // - **Offen bleiben** beim Herausnehmen, auch bis auf eine Spalte (Owner in
+    //   PR #86): wer im Fenster aussortiert, will das Fenster behalten. Ein
+    //   bewusstes ✕ bleibt ebenso stehen.
+    // - **Zu** erst, wenn nichts mehr im Vergleich steht.
+    case 'toggleCompare':
+    case 'setCompare':
+    case 'clearCompare': {
+      const selection = selectionReducer(state.selection, action, state.lv?.tree ?? null);
+      if (selection === state.selection) return state;
+      const count = selection.compare.length;
+      const grew = count > state.selection.compare.length;
+      const view =
+        grew && count >= 2
+          ? viewReducer(state.view, { type: 'compareWindow', open: true })
+          : count === 0
+            ? viewReducer(state.view, { type: 'compareWindow', open: false })
+            : state.view;
+      return { ...state, selection, view };
     }
 
     case 'setViewMode':
@@ -191,6 +221,9 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     case 'tableScope':
     case 'tableColumns':
     case 'compareOnlyDiffs':
+    case 'compareWindow':
+    case 'compareWindowPos':
+    case 'compareWindowSize':
     case 'matrixAxis':
     case 'matrixMeasure':
     case 'toggleRuleOpen':

@@ -48,7 +48,9 @@ export function GraphHeader({ root }: { root: LVNode }) {
   const {
     view: {
       graph: { sizeMode, focus: focusMode, groupBy, highlightCluster },
+      compare: { windowOpen: compareOpen },
     },
+    comparePositions,
     matches,
     focus,
     quantities,
@@ -89,6 +91,14 @@ export function GraphHeader({ root }: { root: LVNode }) {
     hervorgehoben === null
       ? 0
       : imFilter(hervorgehoben.positionIds, hervorgehoben.positionIds.length, matches);
+
+  // Weggeklicktes Vergleichsfenster (WP-R, R3): ohne diese Zeile wäre der
+  // Vergleich nur noch über den Ansichtswechsel erreichbar — die Positionen
+  // stehen ja weiter darin, unsichtbar. Dieselbe Stelle wie die Hervorhebung
+  // daneben, weil es dasselbe ist: ein Zustand des Graphen, den man wieder
+  // loswerden bzw. zurückholen muss.
+  const verglichen = comparePositions.length;
+  const vergleichZurueck = !compareOpen && verglichen >= 1;
 
   const lots = root.children.length;
   const sections = root.children.reduce((total, lot) => total + lot.children.length, 0);
@@ -163,6 +173,16 @@ export function GraphHeader({ root }: { root: LVNode }) {
             </svg>
             {formatCount(gruppiert)} MIT ÄHNLICHEN
           </span>
+        )}
+        {vergleichZurueck && (
+          <button
+            type="button"
+            onClick={() => dispatch({ type: 'compareWindow', open: true })}
+            title="Das Vergleichsfenster wieder über dem Graphen zeigen"
+            className="inline-flex cursor-pointer items-center gap-[6px] border border-line bg-white px-[7px] py-[2px] font-mono text-[9px] tracking-[0.6px] text-ink hover:text-blue focus-visible:text-blue"
+          >
+            VERGLEICH · {formatCount(verglichen)} POS. ZEIGEN
+          </button>
         )}
         {hintCount > 0 && (
           <span

@@ -37,6 +37,8 @@ export interface TreeRowProps {
   /** Ausgefiltert, aber weiter sichtbar (hideMode 'dim'). */
   dimmed?: boolean;
   onClick?: (event: ReactMouseEvent) => void;
+  /** Rechtsklick auf die Zeile — z. B. das Vergleichsmenü an Positionen. */
+  onContextMenu?: (event: ReactMouseEvent) => void;
   onToggle?: () => void;
   title?: string;
 }
@@ -58,6 +60,7 @@ export function TreeRow({
   count,
   dimmed = false,
   onClick,
+  onContextMenu,
   onToggle,
   title,
 }: TreeRowProps) {
@@ -71,6 +74,7 @@ export function TreeRow({
     <div
       id={id}
       onClick={onClick}
+      onContextMenu={onContextMenu}
       role="treeitem"
       aria-level={depth + 1}
       aria-selected={selected}

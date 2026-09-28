@@ -66,6 +66,8 @@ export interface DataTableProps<T> {
    * einem gewöhnlichen Klick unterscheiden können (Mehrfachauswahl, WP-N).
    */
   onPick?: (key: string, event: ReactMouseEvent | ReactKeyboardEvent) => void;
+  /** Rechtsklick auf eine Zeile — z. B. das Vergleichsmenü (PR #86). */
+  onRowContextMenu?: (key: string, event: ReactMouseEvent) => void;
   empty?: string;
   sort?: { key: string; dir: 1 | -1 };
   onSort?: (key: string) => void;
@@ -235,6 +237,7 @@ export function DataTable<T>({
   selectedKey = null,
   revealKey = null,
   onPick,
+  onRowContextMenu,
   empty = 'Keine Einträge.',
   sort,
   onSort,
@@ -674,6 +677,11 @@ export function DataTable<T>({
                 role="row"
                 aria-selected={selected}
                 onClick={(event) => onPick?.(key, event)}
+                onContextMenu={
+                  onRowContextMenu === undefined
+                    ? undefined
+                    : (event) => onRowContextMenu(key, event)
+                }
                 style={{
                   display: 'flex',
                   borderBottom: '1px solid var(--grid)',

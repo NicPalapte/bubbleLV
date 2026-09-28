@@ -97,10 +97,19 @@ export function selectionReducer(
       // Bubble und der Baum wäre leer.
       return { ...state, expanded: expandedToDepth(tree, 1), openClusters: EMPTY_SET };
     case 'toggleCompare': {
-      const compare = state.compare.includes(action.positionId)
-        ? state.compare.filter((id) => id !== action.positionId)
-        : [...state.compare, action.positionId];
-      return { ...state, compare };
+      const id = action.positionId;
+      if (state.compare.includes(id)) {
+        return { ...state, compare: state.compare.filter((other) => other !== id) };
+      }
+      // Erster Strg-Klick nach einem normalen Klick: die angewählte Position
+      // kommt mit in den Vergleich (PR #86) — sonst bräuchte der erste Vergleich
+      // zwei Strg-Klicks, obwohl die erste Position schon angewählt ist. Nur bei
+      // leerem Vergleich: steht er schon, ist die Auswahl dort bewusst getroffen.
+      const seed =
+        state.compare.length === 0 && state.positionId !== null && state.positionId !== id
+          ? [state.positionId]
+          : state.compare;
+      return { ...state, compare: [...seed, id] };
     }
     case 'setCompare':
       return { ...state, compare: [...action.positionIds] };
