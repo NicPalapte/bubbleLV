@@ -44,7 +44,7 @@ async function ladeUndStuerzeAb(): Promise<HTMLElement> {
   });
   await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
   fireEvent.click(screen.getByRole('radio', { name: 'Graph' }));
-  return screen.getByRole('alert');
+  return screen.findByRole('alert');
 }
 
 describe('Absturz einer Ansicht in der App', () => {
@@ -68,7 +68,7 @@ describe('Absturz einer Ansicht in der App', () => {
     kaputt = false;
     fireEvent.click(screen.getByRole('button', { name: /Ansicht neu aufbauen/ }));
 
-    expect(screen.getByText('Graph steht wieder')).toBeInTheDocument();
+    expect(await screen.findByText('Graph steht wieder')).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     // Die Datei ist noch da — nichts musste neu hineingezogen werden.
     expect(screen.getByText('FILTER')).toBeInTheDocument();
