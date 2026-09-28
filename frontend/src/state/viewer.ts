@@ -54,6 +54,12 @@ export {
   clampPanelWidth,
 } from './viewState';
 export { CLUSTER_MIN_MEMBERS, MAX_COMPARE_COLUMNS } from './viewState';
+export {
+  COMPARE_MAX_WIDTH,
+  COMPARE_MIN_HEIGHT,
+  COMPARE_MIN_WIDTH,
+  DEFAULT_COMPARE_SIZE,
+} from './viewState';
 export type {
   CardPos,
   ClusterSort,
@@ -172,13 +178,26 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     case 'expandAll':
     case 'collapseAll':
     case 'toggleCluster':
-    case 'toggleCompare':
-    case 'setCompare':
-    case 'clearCompare':
     case 'back':
     case 'closeSelection': {
       const selection = selectionReducer(state.selection, action, state.lv?.tree ?? null);
       return selection === state.selection ? state : { ...state, selection };
+    }
+
+    // Vergleich erweitern oder ändern: die Auswahl wandert in `selectionState`,
+    // und ein zugeklapptes Vergleichsfenster im Graphen kommt zurück (WP-R, R3)
+    // — wer eine Position dazunimmt, will das Ergebnis sehen. Deshalb nicht im
+    // Block darüber: diese Aktionen berühren zwei Zustände.
+    case 'toggleCompare':
+    case 'setCompare':
+    case 'clearCompare': {
+      const selection = selectionReducer(state.selection, action, state.lv?.tree ?? null);
+      if (selection === state.selection) return state;
+      const view =
+        action.type === 'clearCompare'
+          ? state.view
+          : viewReducer(state.view, { type: 'compareWindow', open: true });
+      return { ...state, selection, view };
     }
 
     case 'setViewMode':
@@ -191,6 +210,9 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     case 'tableScope':
     case 'tableColumns':
     case 'compareOnlyDiffs':
+    case 'compareWindow':
+    case 'compareWindowPos':
+    case 'compareWindowSize':
     case 'matrixAxis':
     case 'matrixMeasure':
     case 'toggleRuleOpen':

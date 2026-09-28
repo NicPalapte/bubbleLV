@@ -22,6 +22,7 @@ import {
 import { BubbleNode, CloudDisc, CloudHalo, ClusterNode, type GroupMark } from './BubbleNode';
 import { GraphControls } from './GraphControls';
 import { SelectionCard } from './SelectionCard';
+import { CompareWindow } from '../compare/CompareWindow';
 import {
   CLOUD_LOD_MIN,
   CLOUD_LOD_PX,
@@ -1019,6 +1020,11 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
       )}
 
       {cardNode !== null && <SelectionCard node={cardNode} onClose={closeCard} />}
+
+      {/* Vergleich als Fenster über dem Graphen (WP-R, R3). Entscheidet selbst,
+          ob es dasteht: erst ab zwei Positionen im Vergleich und nur, solange
+          es nicht weggeklickt wurde. */}
+      <CompareWindow />
 
       <GraphControls
         zoom={view.k}

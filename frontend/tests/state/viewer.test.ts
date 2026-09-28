@@ -13,6 +13,10 @@ import { describe, expect, it } from 'vitest';
 import { classifyAndBuild } from '../../src/lib/pipeline/runPipeline';
 import { buildTree } from '../../src/lib/tree/buildTree';
 import {
+  COMPARE_MAX_WIDTH,
+  COMPARE_MIN_HEIGHT,
+  COMPARE_MIN_WIDTH,
+  DEFAULT_COMPARE_SIZE,
   INITIAL_VIEWER_STATE,
   PANEL_MAX_WIDTH,
   PANEL_MIN_HEIGHT,
@@ -338,6 +342,97 @@ describe('viewerReducer · Größe und Ort der Info-Panels', () => {
     const geleert = viewerReducer(geladen, { type: 'clear' });
     expect(geleert.view.panelSize).toEqual({ width: 500, height: 400 });
     expect(geleert.view.cardPos).toEqual({ right: 200, top: 120 });
+  });
+});
+
+describe('viewerReducer · Vergleichsfenster über dem Graphen', () => {
+  const POS = 'position:001.001.0010';
+
+  it('hält Größe und Ort getrennt von den Info-Panels', () => {
+    // Zwei Flächen, zwei Maße: das Fenster zeigt mehrere Spalten und ist
+    // deshalb breiter als jedes Info-Panel. Eine gemeinsame Zahl hieße, dass
+    // das Aufziehen des einen das andere verstellt.
+    const state = viewerReducer(base, {
+      type: 'compareWindowSize',
+      size: { width: 800, height: 500 },
+    });
+    expect(state.view.compare.windowSize).toEqual({ width: 800, height: 500 });
+    expect(state.view.panelSize).toEqual(base.view.panelSize);
+
+    const verschoben = viewerReducer(state, {
+      type: 'compareWindowPos',
+      pos: { right: 220, top: 90 },
+    });
+    expect(verschoben.view.compare.windowPos).toEqual({ right: 220, top: 90 });
+    expect(verschoben.view.cardPos).toEqual(base.view.cardPos);
+  });
+
+  it('hält Breite und Höhe in den eigenen Grenzen', () => {
+    const zuGross = viewerReducer(base, {
+      type: 'compareWindowSize',
+      size: { width: 5000, height: 4000 },
+    });
+    expect(zuGross.view.compare.windowSize.width).toBe(COMPARE_MAX_WIDTH);
+
+    const zuKlein = viewerReducer(base, {
+      type: 'compareWindowSize',
+      size: { width: 10, height: 10 },
+    });
+    expect(zuKlein.view.compare.windowSize.width).toBe(COMPARE_MIN_WIDTH);
+    expect(zuKlein.view.compare.windowSize.height).toBe(COMPARE_MIN_HEIGHT);
+  });
+
+  it('holt ein geschlossenes Fenster zurück, sobald eine Position dazukommt', () => {
+    // Wer den Vergleich erweitert, will das Ergebnis sehen — sonst wirkt der
+    // Strg-Klick, als hätte er nichts getan.
+    const zu = viewerReducer(loadedState(), { type: 'compareWindow', open: false });
+    expect(zu.view.compare.windowOpen).toBe(false);
+
+    const dazu = viewerReducer(zu, { type: 'toggleCompare', positionId: POS });
+    expect(dazu.view.compare.windowOpen).toBe(true);
+    expect(dazu.selection.compare).toContain(POS);
+  });
+
+  it('lässt es beim Leeren des Vergleichs zu, wie es war', () => {
+    // „Auswahl leeren" ist keine Bitte, ein weggeklicktes Fenster zu öffnen —
+    // es hätte ohnehin nichts zu zeigen.
+    const mitAuswahl = viewerReducer(loadedState(), { type: 'toggleCompare', positionId: POS });
+    const zu = viewerReducer(mitAuswahl, { type: 'compareWindow', open: false });
+    const geleert = viewerReducer(zu, { type: 'clearCompare' });
+    expect(geleert.view.compare.windowOpen).toBe(false);
+    expect(geleert.selection.compare).toHaveLength(0);
+  });
+
+  it('behält Ort und Größe über einen neuen Import, öffnet aber wieder', () => {
+    const gezogen = viewerReducer(base, {
+      type: 'compareWindowSize',
+      size: { width: 700, height: 420 },
+    });
+    const verschoben = viewerReducer(gezogen, {
+      type: 'compareWindowPos',
+      pos: { right: 200, top: 48 },
+    });
+    const zu = viewerReducer(verschoben, { type: 'compareWindow', open: false });
+
+    const geladen = loadedState(zu);
+    expect(geladen.view.compare.windowSize).toEqual({ width: 700, height: 420 });
+    expect(geladen.view.compare.windowPos).toEqual({ right: 200, top: 48 });
+    // Die neue Datei fängt ohne Vergleich an; ein noch zugeklapptes Fenster
+    // wäre eine Erinnerung an die alte.
+    expect(geladen.view.compare.windowOpen).toBe(true);
+  });
+
+  it('lässt „nur Unterschiede" und die Fenstermaße nebeneinander stehen', () => {
+    // Beides steckt im selben Ast des Zustands — ohne Zusammenführen hätte die
+    // eine Aktion die andere überschrieben.
+    const mitMass = viewerReducer(base, {
+      type: 'compareWindowSize',
+      size: { width: 640, height: 300 },
+    });
+    const mitSchalter = viewerReducer(mitMass, { type: 'compareOnlyDiffs', value: true });
+    expect(mitSchalter.view.compare.onlyDiffs).toBe(true);
+    expect(mitSchalter.view.compare.windowSize).toEqual({ width: 640, height: 300 });
+    expect(mitSchalter.view.compare.windowSize).not.toEqual(DEFAULT_COMPARE_SIZE);
   });
 });
 

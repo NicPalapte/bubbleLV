@@ -99,9 +99,42 @@ export interface TableViewState {
  */
 export const MAX_COMPARE_COLUMNS = 5;
 
+/**
+ * Maße des Vergleichsfensters über dem Graphen (WP-R, R3). Weiter als die
+ * Info-Panels, weil hier mehrere Spalten nebeneinander stehen: fünf Spalten à
+ * 200 px passen in kein Panel-Maß. Schmaler als 360 px wird die zweite Spalte
+ * unlesbar.
+ */
+export const COMPARE_MIN_WIDTH = 360;
+export const COMPARE_MAX_WIDTH = 900;
+export const COMPARE_MIN_HEIGHT = 200;
+
+/**
+ * Startort links neben der Auswahlkarte (die hängt bei `right: 16`) und unter
+ * der Kopfzeile des Graphen: beide können gleichzeitig dastehen, und ein
+ * Fenster, das Karte oder Kennzahlen verdeckt, sieht wie ein Fehler aus.
+ * Verschieben geht trotzdem — auch übereinander.
+ */
+export const DEFAULT_COMPARE_POS: CardPos = { right: 360, top: 60 };
+export const DEFAULT_COMPARE_SIZE: PanelSize = { width: 560, height: 360 };
+
 export interface CompareViewState {
   /** Nur Zeilen zeigen, in denen sich die Spalten unterscheiden (WP-N). */
   onlyDiffs: boolean;
+  /**
+   * Fenster über dem Graphen offen (WP-R, R3). Es erscheint erst, wenn
+   * mindestens zwei Positionen im Vergleich stehen — ein Vergleich mit einer
+   * Spalte ist keiner.
+   *
+   * Geschlossen heißt **nicht** „Auswahl weg": die Positionen bleiben im
+   * Vergleich, die Kopfzeile des Graphen bietet das Fenster wieder an. Ein
+   * weiterer Strg-Klick holt es von selbst zurück (state/viewer.ts) — wer den
+   * Vergleich erweitert, will ihn sehen.
+   */
+  windowOpen: boolean;
+  /** Eigener Ort und eigene Größe — nicht die der Info-Panels. */
+  windowPos: CardPos;
+  windowSize: PanelSize;
 }
 
 /** Standardachsen der Matrix — die beiden Facetten, die ein LV am ehesten ordnen. */
@@ -188,6 +221,10 @@ export type ViewAction =
   /** Die Ansicht hat die Regel ins Fenster geholt; das Merkzeichen ist verbraucht. */
   | { type: 'ruleRevealed' }
   | { type: 'compareOnlyDiffs'; value: boolean }
+  /** Vergleichsfenster über dem Graphen öffnen bzw. schließen. */
+  | { type: 'compareWindow'; open: boolean }
+  | { type: 'compareWindowPos'; pos: CardPos }
+  | { type: 'compareWindowSize'; size: PanelSize }
   | { type: 'clusterMinMembers'; value: number }
   | { type: 'clusterSort'; value: ClusterSort }
   | { type: 'toggleClusterOpen'; id: string }
@@ -232,7 +269,12 @@ export const INITIAL_VIEW_STATE: ViewState = {
   },
   check: { openRules: new Set(), revealRule: null },
   similar: { minMembers: 2, sort: 'groesse', openClusters: new Set(), revealCluster: null },
-  compare: { onlyDiffs: false },
+  compare: {
+    onlyDiffs: false,
+    windowOpen: true,
+    windowPos: DEFAULT_COMPARE_POS,
+    windowSize: DEFAULT_COMPARE_SIZE,
+  },
   scroll: NO_SCROLL,
   panelSize: DEFAULT_PANEL_SIZE,
   cardPos: DEFAULT_CARD_POS,
@@ -266,6 +308,13 @@ export function viewStateForNewLv(state: ViewState): ViewState {
       sort: state.similar.sort,
       openClusters: new Set(),
       revealCluster: null,
+    },
+    // Ort und Größe des Vergleichsfensters sind ebenfalls eine Vorliebe; was
+    // darin stand, gehörte zur alten Datei und fällt mit der Auswahl weg.
+    compare: {
+      ...INITIAL_VIEW_STATE.compare,
+      windowPos: state.compare.windowPos,
+      windowSize: state.compare.windowSize,
     },
     panelSize: state.panelSize,
     cardPos: state.cardPos,
@@ -304,7 +353,26 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
     case 'tableColumns':
       return { ...state, table: { ...state.table, columns: action.columns } };
     case 'compareOnlyDiffs':
-      return { ...state, compare: { onlyDiffs: action.value } };
+      return { ...state, compare: { ...state.compare, onlyDiffs: action.value } };
+    case 'compareWindow':
+      return state.compare.windowOpen === action.open
+        ? state
+        : { ...state, compare: { ...state.compare, windowOpen: action.open } };
+    case 'compareWindowPos':
+      return { ...state, compare: { ...state.compare, windowPos: action.pos } };
+    case 'compareWindowSize':
+      return {
+        ...state,
+        compare: {
+          ...state.compare,
+          // Gemeinsame Grenzen wie bei den Info-Panels, aber eigene Zahlen.
+          windowSize: {
+            width: Math.min(Math.max(action.size.width, COMPARE_MIN_WIDTH), COMPARE_MAX_WIDTH),
+            height:
+              action.size.height === null ? null : Math.max(action.size.height, COMPARE_MIN_HEIGHT),
+          },
+        },
+      };
     case 'matrixAxis':
       return {
         ...state,

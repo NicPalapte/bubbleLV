@@ -13,7 +13,7 @@ import { attributeLabel } from '../attributes';
 import { formatEuro, formatNumber } from '../format';
 import { merkmaleOf } from '../relate/similarity';
 import { canonicalUnit, unitLabel } from '../units';
-import type { PositionSummary } from '../../types/lvNode';
+import type { LVNode, PositionSummary } from '../../types/lvNode';
 
 export interface CompareRow {
   key: string;
@@ -135,4 +135,23 @@ export function compareRows(positions: readonly PositionSummary[]): CompareRow[]
     rows.push({ key, label: attributeLabel(key), values, differs: !allEqual(values) });
   }
   return rows;
+}
+
+/**
+ * Zahl der Zeilen, in denen sich die Spalten unterscheiden — für die
+ * Kopfzeilen von Ansicht und Fenster (WP-N, WP-R R3). Hier und nicht in der
+ * Komponente: sonst zählte jede Kopfzeile selbst, und die zweite zählte
+ * irgendwann anders.
+ */
+export function diffCount(nodes: readonly LVNode[]): number {
+  return compareRows(comparedPositions(nodes)).filter((row) => row.differs).length;
+}
+
+/**
+ * Die Positionen hinter den Spalten. Im Vergleich stehen nur Positionsknoten;
+ * ein Knoten ohne Position hätte keine Merkmale und fällt hier weg, statt die
+ * Zeilen um eine leere Spalte zu verschieben.
+ */
+export function comparedPositions(nodes: readonly LVNode[]): PositionSummary[] {
+  return nodes.flatMap((node) => (node.position === null ? [] : [node.position]));
 }
