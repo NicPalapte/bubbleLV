@@ -48,6 +48,14 @@ function WithLv({
       <button type="button" onClick={() => dispatch(filter)}>
         filtern
       </button>
+      {/* Der Sprung aus dem Graphen (WP-R, R2): Gruppe aufklappen und ins
+          Fenster holen. */}
+      <button
+        type="button"
+        onClick={() => dispatch({ type: 'openCluster', id: lv.relations.clusters[0].id })}
+      >
+        zur ersten Gruppe springen
+      </button>
       {children}
     </>
   );
@@ -236,3 +244,19 @@ describe('SimilarView · Gruppe in den Vergleich', () => {
 function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
+
+describe('SimilarView · Sprung aus dem Graphen', () => {
+  it('holt eine aufgeklappte Gruppe ins Fenster', () => {
+    // jsdom kennt scrollIntoView nicht — ohne Ersatz bliebe der Sprung ungeprüft.
+    const geholt: HTMLElement[] = [];
+    Element.prototype.scrollIntoView = function scroll(this: HTMLElement): void {
+      geholt.push(this);
+    };
+    renderView();
+    fireEvent.click(screen.getByRole('button', { name: 'zur ersten Gruppe springen' }));
+    const gruppe = lv.relations.clusters[0];
+    expect(geholt).toHaveLength(1);
+    // Die Mitgliederliste steht offen — ein Sprung, der nur scrollt, zeigt nichts.
+    expect(geholt[0].textContent).toContain(gruppe.label.slice(0, 20));
+  });
+});

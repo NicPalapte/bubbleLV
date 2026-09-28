@@ -74,6 +74,15 @@ export interface GraphViewState {
    * rendern. Erst beim Verlassen der Ansicht wandert er hierher.
    */
   viewport: Viewport | null;
+  /**
+   * Hervorgehobene Ähnlichkeitsgruppe (WP-R, R2) — ihre Mitglieder treten
+   * hervor, alles andere tritt zurück. `null` = keine.
+   *
+   * Reiner Anzeigezustand des Graphen: er fasst Filter, Suche und Auswahl
+   * nicht an (.claude/CLAUDE.md#frontend). Ein Ansichtswechsel lässt ihn
+   * stehen, ein neuer Import verwirft ihn mit dem ganzen Zustand.
+   */
+  highlightCluster: string | null;
 }
 
 export interface TableViewState {
@@ -134,6 +143,13 @@ export interface SimilarViewState {
   sort: ClusterSort;
   /** Aufgeklappte Gruppen — welche Mitgliederlisten offen stehen. */
   openClusters: ReadonlySet<string>;
+  /**
+   * Gruppe, die die Ansicht einmalig ins Fenster holen soll (WP-R, R2) — das
+   * Gegenstück zu `check.revealRule`. Ohne dieses Merkzeichen landete ein
+   * Sprung aus dem Graphen am gemerkten Scrollstand, irgendwo in einer nach
+   * Größe sortierten Liste. Die Ansicht setzt es nach dem Scrollen zurück.
+   */
+  revealCluster: string | null;
 }
 
 export interface ViewState {
@@ -158,6 +174,8 @@ export type ViewAction =
   | { type: 'focusGroupBy'; value: FocusGroupBy }
   /** Graph-Ausschnitt sichern — beim Verlassen der Ansicht, nicht je Frame. */
   | { type: 'graphViewport'; viewport: Viewport | null }
+  /** Ähnlichkeitsgruppe hervorheben; `null` hebt die Hervorhebung auf. */
+  | { type: 'highlightCluster'; id: string | null }
   | { type: 'tableSort'; key: string }
   | { type: 'tableScope'; scope: TableScope }
   | { type: 'tableColumns'; columns: ColumnConfig | null }
@@ -173,6 +191,10 @@ export type ViewAction =
   | { type: 'clusterMinMembers'; value: number }
   | { type: 'clusterSort'; value: ClusterSort }
   | { type: 'toggleClusterOpen'; id: string }
+  /** Gruppe gezielt aufklappen und ins Fenster holen — der Sprung aus dem Graphen. */
+  | { type: 'openCluster'; id: string }
+  /** Die Ansicht hat die Gruppe ins Fenster geholt; das Merkzeichen ist verbraucht. */
+  | { type: 'clusterRevealed' }
   | { type: 'viewScroll'; view: ViewMode; top: number }
   /** Info-Panels vergrößern/verkleinern; `height` nur von der Karte genutzt. */
   | { type: 'panelSize'; size: PanelSize }
@@ -195,7 +217,13 @@ export const INITIAL_VIEW_STATE: ViewState = {
   mode: 'overview',
   // Einstieg ist der ganze Graph: er ordnet die Treffer ins LV ein. Die
   // Isolation ist der zweite Blick, einen Knopfdruck entfernt (Issue #60).
-  graph: { sizeMode: 'count', focus: 'structure', groupBy: 'abschnitt', viewport: null },
+  graph: {
+    sizeMode: 'count',
+    focus: 'structure',
+    groupBy: 'abschnitt',
+    viewport: null,
+    highlightCluster: null,
+  },
   table: { sort: { key: 'oz', dir: 1 }, scope: 'node', columns: null },
   matrix: {
     rowFacetId: DEFAULT_MATRIX_AXES.row,
@@ -203,7 +231,7 @@ export const INITIAL_VIEW_STATE: ViewState = {
     measure: 'anzahl',
   },
   check: { openRules: new Set(), revealRule: null },
-  similar: { minMembers: 2, sort: 'groesse', openClusters: new Set() },
+  similar: { minMembers: 2, sort: 'groesse', openClusters: new Set(), revealCluster: null },
   compare: { onlyDiffs: false },
   scroll: NO_SCROLL,
   panelSize: DEFAULT_PANEL_SIZE,
@@ -224,6 +252,9 @@ export function viewStateForNewLv(state: ViewState): ViewState {
       focus: state.graph.focus,
       groupBy: state.graph.groupBy,
       viewport: null,
+      // Die Gruppen der alten Datei gibt es nicht mehr — eine gemerkte ID
+      // zeigte ins Leere.
+      highlightCluster: null,
     },
     // Achsen und Zellwert der Matrix sind eine Vorliebe, kein Fachdatum: die
     // Facettenliste ist für jede Datei dieselbe.
@@ -234,6 +265,7 @@ export function viewStateForNewLv(state: ViewState): ViewState {
       minMembers: state.similar.minMembers,
       sort: state.similar.sort,
       openClusters: new Set(),
+      revealCluster: null,
     },
     panelSize: state.panelSize,
     cardPos: state.cardPos,
@@ -259,6 +291,9 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
       return { ...state, graph: { ...state.graph, groupBy: action.value } };
     case 'graphViewport':
       return { ...state, graph: { ...state.graph, viewport: action.viewport } };
+    case 'highlightCluster':
+      if (state.graph.highlightCluster === action.id) return state;
+      return { ...state, graph: { ...state.graph, highlightCluster: action.id } };
     case 'tableSort': {
       const { sort } = state.table;
       const dir: 1 | -1 = sort.key === action.key ? ((sort.dir * -1) as 1 | -1) : 1;
@@ -301,6 +336,13 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
       if (!openClusters.delete(action.id)) openClusters.add(action.id);
       return { ...state, similar: { ...state.similar, openClusters } };
     }
+    case 'openCluster': {
+      const openClusters = new Set(state.similar.openClusters).add(action.id);
+      return { ...state, similar: { ...state.similar, openClusters, revealCluster: action.id } };
+    }
+    case 'clusterRevealed':
+      if (state.similar.revealCluster === null) return state;
+      return { ...state, similar: { ...state.similar, revealCluster: null } };
     case 'viewScroll':
       if (state.scroll[action.view] === action.top) return state;
       return { ...state, scroll: { ...state.scroll, [action.view]: action.top } };

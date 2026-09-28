@@ -7,16 +7,21 @@
 // richtigen Zeile, nur weit außerhalb des sichtbaren Bereichs.
 
 import { useCallback } from 'react';
-import { jumpActions } from '../../lib/navigate/jump';
+import { jumpActions, type JumpOptions } from '../../lib/navigate/jump';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 
-export function useJumpToPosition(): (positionId: string) => void {
+/**
+ * `options` reicht bis zu `jumpActions` durch — `stayInView` für Aufrufer, die
+ * nur die Auswahl weitersetzen wollen, ohne die Ansicht zu wechseln (WP-R, R2:
+ * „zur nächsten ähnlichen" im Graphen).
+ */
+export function useJumpToPosition(): (positionId: string, options?: JumpOptions) => void {
   const { parents } = useViewer();
   const dispatch = useViewerDispatch();
   return useCallback(
-    (positionId: string): void => {
+    (positionId: string, options?: JumpOptions): void => {
       const parent = parents.get(positionId) ?? null;
-      for (const action of jumpActions(positionId, parent?.id ?? null)) dispatch(action);
+      for (const action of jumpActions(positionId, parent?.id ?? null, options)) dispatch(action);
     },
     [parents, dispatch],
   );

@@ -19,7 +19,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
 } from 'react';
-import { BubbleNode, CloudDisc, CloudHalo, ClusterNode } from './BubbleNode';
+import { BubbleNode, CloudDisc, CloudHalo, ClusterNode, type GroupMark } from './BubbleNode';
 import { GraphControls } from './GraphControls';
 import { SelectionCard } from './SelectionCard';
 import {
@@ -101,9 +101,10 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
     parents: treeParents,
     quantities,
     hints,
+    clusters,
   } = useViewer();
   const dispatch = useViewerDispatch();
-  const { sizeMode } = graph;
+  const { sizeMode, highlightCluster } = graph;
 
   const isolated = focus !== undefined;
   /** Nur der ganze Graph nimmt den zuletzt verlassenen Ausschnitt wieder auf. */
@@ -337,10 +338,34 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
     [cull],
   );
 
+  // Mitglieder der hervorgehobenen Ähnlichkeitsgruppe (WP-R, R2). Die Gruppe
+  // steht fertig im Zustand — hier wird nur nachgeschlagen, nicht gerechnet.
+  const highlighted = useMemo<ReadonlySet<string> | null>(() => {
+    if (highlightCluster === null) return null;
+    for (const cluster of clusters.values()) {
+      if (cluster.id === highlightCluster) return new Set(cluster.positionIds);
+    }
+    return null;
+  }, [highlightCluster, clusters]);
+
   // Markierungen an Positionen (WP-R, R1) erscheinen erst, wenn die Bubble
   // groß genug für einen Ring ist. Positionen sind alle gleich groß (Issue #41),
   // also fällt die Entscheidung einmal für den ganzen Graphen.
   const showMarks = marksVisible(view.k);
+
+  /**
+   * Gruppen-Markierung einer Position (WP-R, R2): leise für jedes Mitglied
+   * irgendeiner Gruppe, kräftig für die der hervorgehobenen. Dieselbe
+   * Zoom-Schwelle wie beim Hinweis-Ring.
+   */
+  const groupMark = useCallback(
+    (id: string): GroupMark | undefined => {
+      if (!showMarks || !clusters.has(id)) return undefined;
+      if (highlighted === null) return 'leise';
+      return highlighted.has(id) ? 'hervor' : 'leise';
+    },
+    [showMarks, clusters, highlighted],
+  );
 
   // Detailstufe: zu kleine Wolken werden als eine Fläche gezeichnet. Ohne das
   // hingen bei 10k Positionen zehntausende Kreise im DOM.
@@ -402,7 +427,7 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
   }, [placed, parents, inView]);
 
   // ── Hover-Spotlight: Pfad zur Wurzel + gesamter Teilbaum.
-  const spotlight = useMemo(() => {
+  const hoverSpotlight = useMemo(() => {
     if (hoveredNodeId === null) return null;
     const entry = placed.get(hoveredNodeId);
     if (entry === undefined) return null;
@@ -421,6 +446,31 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
     if (entry.node !== null) descend(entry.node);
     return connected;
   }, [hoveredNodeId, placed, parents, openNodes]);
+
+  /**
+   * Hervorgehobene Ähnlichkeitsgruppe (WP-R, R2): ihre Mitglieder **und** die
+   * Pfade zu ihnen bleiben hell — ohne die Pfade hingen die Bubbles in einem
+   * grauen Baum, dessen Zusammenhang nicht mehr zu sehen wäre.
+   */
+  const clusterSpotlight = useMemo(() => {
+    if (highlighted === null) return null;
+    const on = new Set<string>();
+    for (const id of highlighted) {
+      let current: LVNode | null = placed.get(id)?.node ?? null;
+      if (current === null) on.add(id);
+      while (current !== null) {
+        on.add(current.id);
+        current = parents.get(current.id) ?? null;
+      }
+    }
+    return on;
+  }, [highlighted, placed, parents]);
+
+  /**
+   * Eine Dämpfung, nicht zwei: das Überfahren mit der Maus ist flüchtig und
+   * gewinnt, solange es andauert; danach steht die Gruppe wieder da.
+   */
+  const spotlight = hoverSpotlight ?? clusterSpotlight;
 
   const toggleCollapse = useCallback(
     (id: string): void => dispatch({ type: 'toggleExpanded', id }),
@@ -807,6 +857,35 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
   // eine Ebene.
   const cardNode = selectedPosition ?? selectedNode;
 
+  /**
+   * Escape hebt die hervorgehobene Ähnlichkeitsgruppe auf (WP-R, R2).
+   *
+   * Am `window` in der Capture-Phase, wie die Popover selbst: ein React-Handler
+   * am Canvas sähe die Taste nie, solange eine Karte offen ist — `useDismiss`
+   * stoppt sie dort mit `stopImmediatePropagation` — und er verlangte obendrein
+   * den Tastaturfokus auf dem Canvas.
+   *
+   * **Gestaffelt, nicht gleichzeitig:** solange eine Karte oder ein Dialog offen
+   * steht, gehört Escape dem. Erst der nächste Druck hebt die Gruppe auf — eine
+   * Taste, eine Ebene. Der Listener steht dafür selbst still, statt sich auf die
+   * Reihenfolge des Einhängens zu verlassen: die Kommandopalette hängt ihren
+   * Listener erst beim Öffnen ein, also nach diesem, und würde sonst von ihm
+   * überholt.
+   */
+  useEffect(() => {
+    if (highlightCluster === null || cardNode !== null) return;
+    const onEscape = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape') return;
+      // Palette und Melde-Fenster sind Dialoge; solange einer offen ist,
+      // schließt Escape ihn und sonst nichts.
+      if (document.querySelector('[role="dialog"]') !== null) return;
+      event.stopImmediatePropagation();
+      dispatch({ type: 'highlightCluster', id: null });
+    };
+    window.addEventListener('keydown', onEscape, true);
+    return () => window.removeEventListener('keydown', onEscape, true);
+  }, [highlightCluster, cardNode, dispatch]);
+
   return (
     <div
       ref={wrapRef}
@@ -917,6 +996,7 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
                 subLabel={metric?.subLabel ?? ''}
                 cloudRadius={clouds.get(entry.id)?.radius}
                 hint={showMarks ? hints.get(entry.id)?.severity : undefined}
+                group={groupMark(entry.id)}
               />
             );
           })}

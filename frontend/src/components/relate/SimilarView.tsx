@@ -20,7 +20,7 @@
 // **Beschreibung, keine Bewertung:** ein Ausreißer ist eine Beobachtung über
 // die Datei („fällt aus dem Rahmen seiner Gruppe"), kein Preisurteil.
 
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { ClusterCard, type VisibleCluster } from './ClusterCard';
 import { EmptyState } from '../ui/EmptyState';
 import { BlockLabel } from '../ui/PanelHeader';
@@ -66,6 +66,21 @@ export function SimilarView() {
     dispatch({ type: 'setViewMode', mode: 'compare' });
   };
   const [attachScroll, onScroll] = useScrollMemory('similar');
+
+  // Sprung aus dem Graphen (WP-R, R2): die aufgeklappte Gruppe ins Fenster
+  // holen — dieselbe Mechanik wie bei der Prüfung (CheckView). `useScrollMemory`
+  // stellt beim Einhängen den gemerkten Stand her; dieser Effekt läuft danach
+  // und überschreibt ihn gezielt für diesen einen Sprung.
+  const cards = useRef(new Map<string, HTMLElement>());
+  const attachCard = useCallback((id: string, node: HTMLElement | null): void => {
+    if (node === null) cards.current.delete(id);
+    else cards.current.set(id, node);
+  }, []);
+  useEffect(() => {
+    if (similar.revealCluster === null) return;
+    cards.current.get(similar.revealCluster)?.scrollIntoView({ block: 'start' });
+    dispatch({ type: 'clusterRevealed' });
+  }, [similar.revealCluster, dispatch]);
 
   const relations = lv?.relations ?? null;
   const hasPrices = (lv?.summary.unitPrice ?? null) !== null;
@@ -149,14 +164,15 @@ export function SimilarView() {
         )}
 
         {visible.map((entry) => (
-          <ClusterCard
-            key={entry.cluster.id}
-            entry={entry}
-            open={similar.openClusters.has(entry.cluster.id)}
-            onToggle={() => dispatch({ type: 'toggleClusterOpen', id: entry.cluster.id })}
-            onJump={jumpTo}
-            onCompare={() => vergleichen(entry.members.map((node) => node.id))}
-          />
+          <div key={entry.cluster.id} ref={(node) => attachCard(entry.cluster.id, node)}>
+            <ClusterCard
+              entry={entry}
+              open={similar.openClusters.has(entry.cluster.id)}
+              onToggle={() => dispatch({ type: 'toggleClusterOpen', id: entry.cluster.id })}
+              onJump={jumpTo}
+              onCompare={() => vergleichen(entry.members.map((node) => node.id))}
+            />
+          </div>
         ))}
 
         {relations.clusters.length > 0 && (
