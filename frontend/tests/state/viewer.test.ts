@@ -383,15 +383,26 @@ describe('viewerReducer · Vergleichsfenster über dem Graphen', () => {
     expect(zuKlein.view.compare.windowSize.height).toBe(COMPARE_MIN_HEIGHT);
   });
 
-  it('holt ein geschlossenes Fenster zurück, sobald eine Position dazukommt', () => {
-    // Wer den Vergleich erweitert, will das Ergebnis sehen — sonst wirkt der
-    // Strg-Klick, als hätte er nichts getan.
-    const zu = viewerReducer(loadedState(), { type: 'compareWindow', open: false });
-    expect(zu.view.compare.windowOpen).toBe(false);
+  it('geht erst mit der zweiten Position auf', () => {
+    // Eine Spalte allein ist noch kein Vergleich — das Fenster wartet.
+    const eine = viewerReducer(loadedState(), { type: 'toggleCompare', positionId: POS });
+    expect(eine.view.compare.windowOpen).toBe(false);
+    const zwei = viewerReducer(eine, { type: 'toggleCompare', positionId: POS2 });
+    expect(zwei.view.compare.windowOpen).toBe(true);
+  });
 
-    const dazu = viewerReducer(zu, { type: 'toggleCompare', positionId: POS });
-    expect(dazu.view.compare.windowOpen).toBe(true);
-    expect(dazu.selection.compare).toContain(POS);
+  it('bleibt beim Herausnehmen offen, bis der Vergleich leer ist', () => {
+    // Wer im Fenster aussortiert, will das Fenster behalten (Owner in PR #86).
+    const zwei = viewerReducer(
+      viewerReducer(loadedState(), { type: 'toggleCompare', positionId: POS }),
+      { type: 'toggleCompare', positionId: POS2 },
+    );
+    const eine = viewerReducer(zwei, { type: 'toggleCompare', positionId: POS2 });
+    expect(eine.selection.compare).toEqual([POS]);
+    expect(eine.view.compare.windowOpen).toBe(true);
+
+    const keine = viewerReducer(eine, { type: 'toggleCompare', positionId: POS });
+    expect(keine.view.compare.windowOpen).toBe(false);
   });
 
   it('bleibt zu, wenn eine Position nur herausgenommen wird', () => {
@@ -423,7 +434,7 @@ describe('viewerReducer · Vergleichsfenster über dem Graphen', () => {
     expect(geleert.selection.compare).toHaveLength(0);
   });
 
-  it('behält Ort und Größe über einen neuen Import, öffnet aber wieder', () => {
+  it('behält Ort und Größe über einen neuen Import, aber nicht den offenen Stand', () => {
     const gezogen = viewerReducer(base, {
       type: 'compareWindowSize',
       size: { width: 700, height: 420 },
@@ -437,9 +448,9 @@ describe('viewerReducer · Vergleichsfenster über dem Graphen', () => {
     const geladen = loadedState(zu);
     expect(geladen.view.compare.windowSize).toEqual({ width: 700, height: 420 });
     expect(geladen.view.compare.windowPos).toEqual({ right: 200, top: 48 });
-    // Die neue Datei fängt ohne Vergleich an; ein noch zugeklapptes Fenster
-    // wäre eine Erinnerung an die alte.
-    expect(geladen.view.compare.windowOpen).toBe(true);
+    // Die neue Datei fängt ohne Vergleich an — das Fenster kommt wie immer mit
+    // der zweiten Position.
+    expect(geladen.view.compare.windowOpen).toBe(false);
   });
 
   it('lässt „nur Unterschiede" und die Fenstermaße nebeneinander stehen', () => {

@@ -184,4 +184,53 @@ describe('Vergleich', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'Vergleich' }));
     expect(screen.getByLabelText('Suche')).toHaveValue('Beton');
   });
+
+  it('nimmt per Rechtsklick in der Tabelle in den Vergleich — mit der angewählten', async () => {
+    await ladeTabelle();
+    fireEvent.click(tabellenzeilen()[0]);
+    fireEvent.contextMenu(tabellenzeilen()[1]);
+    fireEvent.click(screen.getByRole('button', { name: /^Mit .+ vergleichen$/ }));
+    // Das Menü schließt nach der Wahl.
+    expect(screen.queryByRole('group', { name: /^Position / })).toBeNull();
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Vergleich' }));
+    expect(kopfzeile()).toContain('2 Positionen nebeneinander');
+  });
+
+  it('bietet in der Tabelle „Aus dem Vergleich nehmen" an, wenn die Zeile schon drin ist', async () => {
+    await ladeTabelle();
+    fireEvent.click(tabellenzeilen()[0], { ctrlKey: true });
+    fireEvent.contextMenu(tabellenzeilen()[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Aus dem Vergleich nehmen' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Vergleich' }));
+    expect(screen.getByText(/Keine Position im Vergleich/)).toBeInTheDocument();
+  });
+
+  it('schließt das Menü in der Tabelle beim Scrollen und mit Escape', async () => {
+    await ladeTabelle();
+    fireEvent.contextMenu(tabellenzeilen()[0]);
+    expect(screen.getByRole('group', { name: /^Position / })).toBeInTheDocument();
+    fireEvent.scroll(screen.getByRole('grid', { name: 'Positionen' }));
+    expect(screen.queryByRole('group', { name: /^Position / })).toBeNull();
+
+    fireEvent.contextMenu(tabellenzeilen()[0]);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('group', { name: /^Position / })).toBeNull();
+  });
+
+  it('nimmt per Rechtsklick im Baum in den Vergleich, nur an Positionen', async () => {
+    await ladeTabelle();
+    fireEvent.click(screen.getByRole('button', { name: 'Alle aufklappen' }));
+    const zeilen = within(screen.getByRole('tree')).getAllByRole('treeitem');
+    // Abschnitte tragen `aria-expanded` und bekommen kein Menü.
+    const abschnitt = zeilen.find((zeile) => zeile.hasAttribute('aria-expanded'));
+    fireEvent.contextMenu(abschnitt as HTMLElement);
+    expect(screen.queryByRole('group', { name: /^Position / })).toBeNull();
+
+    const position = zeilen.find((zeile) => !zeile.hasAttribute('aria-expanded'));
+    fireEvent.contextMenu(position as HTMLElement);
+    fireEvent.click(screen.getByRole('button', { name: 'Zum Vergleich hinzufügen' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Vergleich' }));
+    expect(kopfzeile()).toContain('1 Position nebeneinander');
+  });
 });

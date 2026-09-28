@@ -81,10 +81,9 @@ export function CompareWindow() {
   });
 
   const gezeigt = comparePositions.slice(0, MAX_COMPARE_COLUMNS);
-  // Eine Spalte ist kein Vergleich — dann bleibt das Fenster weg, statt eine
-  // Position ohne Gegenstück zu zeigen. Der Strg-Klick hat trotzdem gewirkt:
-  // die Position steht im Vergleich und die Ansicht „Vergleich" sagt das.
-  if (!windowOpen || gezeigt.length < 2) return null;
+  // Ob es dasteht, entscheidet `windowOpen` (state/viewer.ts): auf ab zwei
+  // Positionen, beim Aussortieren offen bis zur letzten Spalte.
+  if (!windowOpen || gezeigt.length === 0) return null;
 
   const wartend = comparePositions.length - gezeigt.length;
   const unterschiede = diffCount(gezeigt);
@@ -154,6 +153,14 @@ export function CompareWindow() {
           </button>
         </div>
       </div>
+
+      {/* Nach dem Aussortieren kann eine Spalte übrig sein — dann steht da,
+          wie die nächste dazukommt, statt eines Vergleichs ohne Gegenstück. */}
+      {gezeigt.length === 1 && (
+        <p className="shrink-0 border-b border-line2 px-[10px] py-[4px] font-sans text-[11px] leading-[1.4] text-dim">
+          Eine Position — mit Strg-Klick oder Rechtsklick kommt die nächste dazu.
+        </p>
+      )}
 
       {/* Ab drei Spalten ein Vorschlag, kein Zwang: die Spalten bleiben im
           Fenster stehen und lassen sich durch Scrollen erreichen. */}

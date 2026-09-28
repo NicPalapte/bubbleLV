@@ -22,7 +22,7 @@ import {
 import { BubbleNode, CloudDisc, CloudHalo, ClusterNode, type GroupMark } from './BubbleNode';
 import { GraphControls } from './GraphControls';
 import { SelectionCard } from './SelectionCard';
-import { CompareMenu } from './CompareMenu';
+import { CompareMenu } from '../compare/CompareMenu';
 import { CompareWindow } from '../compare/CompareWindow';
 import {
   CLOUD_LOD_MIN,
@@ -1038,18 +1038,21 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
       {menuEntry !== undefined && menuNode !== null && (
         <CompareMenu
           node={menuNode}
-          left={Math.min(
-            Math.max(0, view.tx + menuEntry.cx * view.k + menuRadius * view.k + 6),
-            Math.max(0, w - COMPARE_MENU_WIDTH - 8),
-          )}
-          top={Math.min(Math.max(0, view.ty + menuEntry.cy * view.k - 10), Math.max(0, h - 80))}
+          placement={{
+            kind: 'canvas',
+            left: Math.min(
+              Math.max(0, view.tx + menuEntry.cx * view.k + menuRadius * view.k + 6),
+              Math.max(0, w - COMPARE_MENU_WIDTH - 8),
+            ),
+            top: Math.min(Math.max(0, view.ty + menuEntry.cy * view.k - 10), Math.max(0, h - 80)),
+          }}
           onClose={closeMenu}
         />
       )}
 
       {/* Vergleich als Fenster über dem Graphen (WP-R, R3). Entscheidet selbst,
-          ob es dasteht: erst ab zwei Positionen im Vergleich und nur, solange
-          es nicht weggeklickt wurde. */}
+          ob es dasteht: auf ab zwei Positionen im Vergleich, offen bis die
+          letzte herausgenommen oder das Fenster weggeklickt ist. */}
       <CompareWindow />
 
       <GraphControls

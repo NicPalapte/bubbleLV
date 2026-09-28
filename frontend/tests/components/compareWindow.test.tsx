@@ -191,15 +191,22 @@ describe('Vergleichsfenster im Graphen', () => {
     expect(fenster()).not.toBeNull();
   });
 
-  it('nimmt eine Spalte über ihr ✕ aus dem Vergleich und verschwindet dabei', async () => {
-    // Von drei auf zwei bleibt das Fenster; von zwei auf eins ist es kein
-    // Vergleich mehr.
+  it('bleibt beim Herausnehmen über das Spalten-✕ offen, bis keine Spalte mehr da ist', async () => {
+    // Wer im Fenster aussortiert, will das Fenster behalten (Owner in PR #86).
     await imGraphenMit(2);
     const spalten = within(fenster() as HTMLElement).getAllByRole('button', {
       name: /aus dem Vergleich nehmen$/,
     });
     expect(spalten).toHaveLength(2);
     fireEvent.click(spalten[0]);
+
+    const panel = fenster() as HTMLElement;
+    expect(panel).not.toBeNull();
+    expect(within(panel).getByText(/VERGLEICH · 1 POS\./)).toBeInTheDocument();
+    // Eine Spalte allein: das Fenster sagt, wie die nächste dazukommt.
+    expect(within(panel).getByText(/kommt die nächste dazu/)).toBeInTheDocument();
+
+    fireEvent.click(within(panel).getByRole('button', { name: /aus dem Vergleich nehmen$/ }));
     expect(fenster()).toBeNull();
   });
 
@@ -240,7 +247,8 @@ describe('Vergleichsfenster im Graphen', () => {
 
     fireEvent.contextMenu(punkte[1]);
     fireEvent.click(screen.getByRole('button', { name: 'Aus dem Vergleich nehmen' }));
-    expect(fenster()).toBeNull();
+    // Herausnehmen lässt das Fenster stehen — mit der verbliebenen Spalte.
+    expect(within(fenster() as HTMLElement).getByText(/VERGLEICH · 1 POS\./)).toBeInTheDocument();
   });
 
   it('schließt das Rechtsklick-Menü mit Escape, ohne etwas zu ändern', async () => {

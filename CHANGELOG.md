@@ -17,8 +17,11 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 - **Klick, dann Strg-Klick.** Ist schon eine Position angewählt, nimmt der erste
   Strg-Klick sie gleich mit in den Vergleich — zwei Positionen, ein Strg-Klick. Das gilt
   auch in Tabelle und Baum.
-- **Rechtsklick auf eine Bubble** bietet „Zum Vergleich hinzufügen" an (bzw. „Mit …
-  vergleichen" oder „Aus dem Vergleich nehmen") — der Weg ohne Strg-Taste.
+- **Rechtsklick auf eine Position** — als Bubble im Graphen oder als Zeile in Tabelle
+  und Baum — bietet „Zum Vergleich hinzufügen" an (bzw. „Mit … vergleichen" oder „Aus
+  dem Vergleich nehmen"). Der Weg ohne Strg-Taste.
+- **Aussortieren im Fenster:** Wer Spalten herausnimmt, behält das Fenster — auch mit
+  nur noch einer Position. Es geht erst zu, wenn der Vergleich leer ist.
 - **Dieselben Zeilen wie die Ansicht „Vergleich".** Auch „Nur Unterschiede" ist
   derselbe Schalter: was du im Fenster umstellst, steht in der Ansicht genauso.
 - **Fenster verschieben und aufziehen** wie die Auswahlkarte — am Griff oben, Größe

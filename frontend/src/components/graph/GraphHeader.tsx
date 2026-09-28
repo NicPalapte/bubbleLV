@@ -98,7 +98,7 @@ export function GraphHeader({ root }: { root: LVNode }) {
   // daneben, weil es dasselbe ist: ein Zustand des Graphen, den man wieder
   // loswerden bzw. zurückholen muss.
   const verglichen = comparePositions.length;
-  const vergleichZurueck = !compareOpen && verglichen >= 2;
+  const vergleichZurueck = !compareOpen && verglichen >= 1;
 
   const lots = root.children.length;
   const sections = root.children.reduce((total, lot) => total + lot.children.length, 0);

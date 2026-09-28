@@ -184,23 +184,30 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
       return selection === state.selection ? state : { ...state, selection };
     }
 
-    // Vergleich ändern: die Auswahl wandert in `selectionState`, und ein
-    // zugeklapptes Vergleichsfenster im Graphen kommt zurück (WP-R, R3) — wer
-    // eine Position dazunimmt, will das Ergebnis sehen. Deshalb nicht im Block
-    // darüber: diese Aktionen berühren zwei Zustände.
+    // Vergleich ändern: die Auswahl wandert in `selectionState`, das Fenster
+    // über dem Graphen folgt (WP-R, R3). Deshalb nicht im Block darüber: diese
+    // Aktionen berühren zwei Zustände.
     //
-    // **Nur wenn der Vergleich gewachsen ist.** `toggleCompare` nimmt auch
-    // heraus, und `clearCompare` leert ganz: ein Fenster, das nach dem
-    // Herausnehmen von selbst wiederkommt, macht das bewusste ✕ rückgängig.
+    // - **Auf** erst, wenn der Vergleich wächst und dabei zwei Positionen
+    //   erreicht — eine Spalte allein ist noch kein Vergleich. Wächst er, geht
+    //   auch ein weggeklicktes Fenster wieder auf: wer dazunimmt, will sehen.
+    // - **Offen bleiben** beim Herausnehmen, auch bis auf eine Spalte (Owner in
+    //   PR #86): wer im Fenster aussortiert, will das Fenster behalten. Ein
+    //   bewusstes ✕ bleibt ebenso stehen.
+    // - **Zu** erst, wenn nichts mehr im Vergleich steht.
     case 'toggleCompare':
     case 'setCompare':
     case 'clearCompare': {
       const selection = selectionReducer(state.selection, action, state.lv?.tree ?? null);
       if (selection === state.selection) return state;
+      const count = selection.compare.length;
+      const grew = count > state.selection.compare.length;
       const view =
-        selection.compare.length > state.selection.compare.length
+        grew && count >= 2
           ? viewReducer(state.view, { type: 'compareWindow', open: true })
-          : state.view;
+          : count === 0
+            ? viewReducer(state.view, { type: 'compareWindow', open: false })
+            : state.view;
       return { ...state, selection, view };
     }
 

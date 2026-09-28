@@ -122,14 +122,12 @@ export interface CompareViewState {
   /** Nur Zeilen zeigen, in denen sich die Spalten unterscheiden (WP-N). */
   onlyDiffs: boolean;
   /**
-   * Fenster über dem Graphen offen (WP-R, R3). Es erscheint erst, wenn
-   * mindestens zwei Positionen im Vergleich stehen — ein Vergleich mit einer
-   * Spalte ist keiner.
+   * Fenster über dem Graphen offen (WP-R, R3). Geht auf, sobald der Vergleich
+   * auf zwei Positionen wächst, bleibt beim Herausnehmen offen — auch mit einer
+   * Spalte — und geht erst zu, wenn der Vergleich leer ist (state/viewer.ts).
    *
    * Geschlossen heißt **nicht** „Auswahl weg": die Positionen bleiben im
-   * Vergleich, die Kopfzeile des Graphen bietet das Fenster wieder an. Ein
-   * weiterer Strg-Klick holt es von selbst zurück (state/viewer.ts) — wer den
-   * Vergleich erweitert, will ihn sehen.
+   * Vergleich, die Kopfzeile des Graphen bietet das Fenster wieder an.
    */
   windowOpen: boolean;
   /** Eigener Ort und eigene Größe — nicht die der Info-Panels. */
@@ -271,7 +269,8 @@ export const INITIAL_VIEW_STATE: ViewState = {
   similar: { minMembers: 2, sort: 'groesse', openClusters: new Set(), revealCluster: null },
   compare: {
     onlyDiffs: false,
-    windowOpen: true,
+    // Ein leerer Vergleich hat kein Fenster — es geht mit der zweiten Position auf.
+    windowOpen: false,
     windowPos: DEFAULT_COMPARE_POS,
     windowSize: DEFAULT_COMPARE_SIZE,
   },
