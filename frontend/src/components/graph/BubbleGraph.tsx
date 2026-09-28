@@ -22,6 +22,7 @@ import {
 import { BubbleNode, CloudDisc, CloudHalo, ClusterNode, type GroupMark } from './BubbleNode';
 import { GraphControls } from './GraphControls';
 import { SelectionCard } from './SelectionCard';
+import { CompareMenu } from './CompareMenu';
 import { CompareWindow } from '../compare/CompareWindow';
 import {
   CLOUD_LOD_MIN,
@@ -858,6 +859,17 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
   // eine Ebene.
   const cardNode = selectedPosition ?? selectedNode;
 
+  // Rechtsklick-Menü an einer Positions-Bubble (PR #86). Nur die ID steht im
+  // State; der Ort wird je Render aus dem Ausschnitt gerechnet, damit das Menü
+  // beim Zoomen an der Bubble bleibt. Verschwindet die Bubble (Filter,
+  // Zuklappen), verschwindet das Menü mit.
+  const [menuId, setMenuId] = useState<string | null>(null);
+  const closeMenu = useCallback(() => setMenuId(null), []);
+  const menuEntry = menuId === null ? undefined : placed.get(menuId);
+  const menuNode = menuEntry?.node ?? null;
+  const menuRadius =
+    menuEntry === undefined ? 0 : (metrics.get(menuEntry.id)?.radius ?? RADII.position);
+
   /**
    * Escape hebt die hervorgehobene Ähnlichkeitsgruppe auf (WP-R, R2).
    *
@@ -993,6 +1005,7 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
                 onHover={(id) => dispatch({ type: 'hover', id })}
                 onClick={(event) => activateNode(node, event.ctrlKey || event.metaKey)}
                 onDoubleClick={() => fitTo(entry.id)}
+                onContextMenu={node.kind === 'position' ? () => setMenuId(entry.id) : undefined}
                 radius={radius}
                 subLabel={metric?.subLabel ?? ''}
                 cloudRadius={clouds.get(entry.id)?.radius}
@@ -1020,6 +1033,18 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
       )}
 
       {cardNode !== null && <SelectionCard node={cardNode} onClose={closeCard} />}
+
+      {menuEntry !== undefined && menuNode !== null && (
+        <CompareMenu
+          node={menuNode}
+          left={Math.min(
+            Math.max(0, view.tx + menuEntry.cx * view.k + menuRadius * view.k + 6),
+            Math.max(0, w - 228),
+          )}
+          top={Math.min(Math.max(0, view.ty + menuEntry.cy * view.k - 10), Math.max(0, h - 80))}
+          onClose={closeMenu}
+        />
+      )}
 
       {/* Vergleich als Fenster über dem Graphen (WP-R, R3). Entscheidet selbst,
           ob es dasteht: erst ab zwei Positionen im Vergleich und nur, solange

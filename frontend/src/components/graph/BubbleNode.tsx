@@ -40,6 +40,8 @@ interface CommonProps {
   onClick: (event: { ctrlKey: boolean; metaKey: boolean }) => void;
   /** Doppelklick: Ausschnitt auf diesen Knoten und seinen Teilbaum einpassen. */
   onDoubleClick?: () => void;
+  /** Rechtsklick: Menü „Zum Vergleich" (PR #86). Ohne Handler das Browser-Menü. */
+  onContextMenu?: () => void;
 }
 
 interface BubbleProps extends CommonProps {
@@ -250,6 +252,7 @@ export function BubbleNode(props: BubbleProps) {
     onHover,
     onClick,
     onDoubleClick,
+    onContextMenu,
     radius,
     subLabel,
     cloudRadius,
@@ -285,6 +288,12 @@ export function BubbleNode(props: BubbleProps) {
     onDoubleClick: (event: { stopPropagation: () => void }) => {
       event.stopPropagation();
       onDoubleClick?.();
+    },
+    onContextMenu: (event: { stopPropagation: () => void; preventDefault: () => void }) => {
+      if (onContextMenu === undefined) return;
+      event.preventDefault();
+      event.stopPropagation();
+      onContextMenu();
     },
   };
 

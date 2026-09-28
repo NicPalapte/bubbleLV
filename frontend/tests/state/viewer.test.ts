@@ -456,6 +456,44 @@ describe('viewerReducer · Vergleichsfenster über dem Graphen', () => {
   });
 });
 
+describe('viewerReducer · Strg-Klick nach normalem Klick (PR #86)', () => {
+  const POS = 'position:001.001.0010';
+  const POS2 = 'position:001.001.0020';
+  const POS3 = 'position:001.001.0030';
+  const angewaehlt = (): ViewerState =>
+    viewerReducer(loadedState(), { type: 'selectPosition', nodeId: null, positionId: POS });
+
+  it('nimmt die angewählte Position mit in einen leeren Vergleich', () => {
+    // Klick auf A, Strg-Klick auf B: das sind zwei Positionen, nicht eine.
+    const state = viewerReducer(angewaehlt(), { type: 'toggleCompare', positionId: POS2 });
+    expect(state.selection.compare).toEqual([POS, POS2]);
+    expect(state.view.compare.windowOpen).toBe(true);
+  });
+
+  it('nimmt die angewählte Position nicht doppelt auf', () => {
+    const state = viewerReducer(angewaehlt(), { type: 'toggleCompare', positionId: POS });
+    expect(state.selection.compare).toEqual([POS]);
+  });
+
+  it('fasst einen bestehenden Vergleich nicht an', () => {
+    // Steht schon ein Vergleich, wurde er bewusst zusammengestellt — die
+    // Auswahl schiebt sich dann nicht ungefragt hinein.
+    const mitVergleich = viewerReducer(loadedState(), { type: 'toggleCompare', positionId: POS2 });
+    const angewaehltDanach = viewerReducer(mitVergleich, {
+      type: 'selectPosition',
+      nodeId: null,
+      positionId: POS,
+    });
+    const state = viewerReducer(angewaehltDanach, { type: 'toggleCompare', positionId: POS3 });
+    expect(state.selection.compare).toEqual([POS2, POS3]);
+  });
+
+  it('nimmt ohne Auswahl nur die geklickte Position', () => {
+    const state = viewerReducer(loadedState(), { type: 'toggleCompare', positionId: POS2 });
+    expect(state.selection.compare).toEqual([POS2]);
+  });
+});
+
 describe('viewerReducer · Prüfregeln', () => {
   it('schaltet eine Regel stumm und wieder an — unabhängig von der Ansicht', () => {
     const muted = viewerReducer(base, { type: 'toggleRule', id: 'V1' });

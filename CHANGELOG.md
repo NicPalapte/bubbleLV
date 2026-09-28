@@ -14,6 +14,11 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 - **Zwei Bubbles mit Strg-Klick, und der Vergleich steht da.** Er öffnet sich als
   Fenster über dem Graphen — kein Ansichtswechsel, die Bubbles bleiben sichtbar, und
   eine dritte Position kommt mit dem nächsten Strg-Klick dazu.
+- **Klick, dann Strg-Klick.** Ist schon eine Position angewählt, nimmt der erste
+  Strg-Klick sie gleich mit in den Vergleich — zwei Positionen, ein Strg-Klick. Das gilt
+  auch in Tabelle und Baum.
+- **Rechtsklick auf eine Bubble** bietet „Zum Vergleich hinzufügen" an (bzw. „Mit …
+  vergleichen" oder „Aus dem Vergleich nehmen") — der Weg ohne Strg-Taste.
 - **Dieselben Zeilen wie die Ansicht „Vergleich".** Auch „Nur Unterschiede" ist
   derselbe Schalter: was du im Fenster umstellst, steht in der Ansicht genauso.
 - **Fenster verschieben und aufziehen** wie die Auswahlkarte — am Griff oben, Größe

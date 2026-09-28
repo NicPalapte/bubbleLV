@@ -65,6 +65,16 @@ async function imGraphenMit(anzahl: number): Promise<void> {
   fireEvent.click(screen.getByRole('radio', { name: 'Graph' }));
 }
 
+/** Wechselt in den Graphen, klappt alles auf und liefert die Positions-Bubbles. */
+function positionsImGraphen(): NodeListOf<Element> {
+  fireEvent.click(screen.getByRole('radio', { name: 'Graph' }));
+  // Positionen erscheinen erst unter offenen Abschnitten, und der Ausschnitt
+  // muss sie danach auch zeigen.
+  fireEvent.click(screen.getByTitle('Alles ausklappen'));
+  fireEvent.click(screen.getByTitle('Alles einpassen'));
+  return document.querySelectorAll('[data-tier="position"]');
+}
+
 function fenster(): HTMLElement | null {
   return screen.queryByRole('group', { name: /Fenster über dem Graphen/ });
 }
@@ -202,5 +212,44 @@ describe('Vergleichsfenster im Graphen', () => {
       { key: 'ArrowLeft' },
     );
     expect((fenster() as HTMLElement).style.width).not.toBe(vorher);
+  });
+
+  it('öffnet mit Klick und dann Strg-Klick — die angewählte Position zählt mit', async () => {
+    // Der Weg aus dem Owner-Kommentar in PR #86: erst eine Position ganz normal
+    // anklicken, dann die nächste mit Strg dazunehmen.
+    await ladeTabelle();
+    const punkte = positionsImGraphen();
+    expect(punkte.length).toBeGreaterThan(1);
+    fireEvent.click(punkte[0]);
+    expect(fenster()).toBeNull();
+    fireEvent.click(punkte[1], { ctrlKey: true });
+    expect(within(fenster() as HTMLElement).getByText(/VERGLEICH · 2 POS\./)).toBeInTheDocument();
+  });
+
+  it('nimmt per Rechtsklick-Menü in den Vergleich und wieder heraus', async () => {
+    await ladeTabelle();
+    const punkte = positionsImGraphen();
+    fireEvent.click(punkte[0]);
+
+    // Mit angewählter Position sagt das Menü, womit verglichen wird.
+    fireEvent.contextMenu(punkte[1]);
+    fireEvent.click(screen.getByRole('button', { name: /^Mit .+ vergleichen$/ }));
+    expect(within(fenster() as HTMLElement).getByText(/VERGLEICH · 2 POS\./)).toBeInTheDocument();
+    // Das Menü schließt nach der Wahl.
+    expect(screen.queryByRole('button', { name: /vergleichen$/ })).toBeNull();
+
+    fireEvent.contextMenu(punkte[1]);
+    fireEvent.click(screen.getByRole('button', { name: 'Aus dem Vergleich nehmen' }));
+    expect(fenster()).toBeNull();
+  });
+
+  it('schließt das Rechtsklick-Menü mit Escape, ohne etwas zu ändern', async () => {
+    await ladeTabelle();
+    const punkte = positionsImGraphen();
+    fireEvent.contextMenu(punkte[0]);
+    expect(screen.getByRole('button', { name: 'Zum Vergleich hinzufügen' })).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('button', { name: 'Zum Vergleich hinzufügen' })).toBeNull();
+    expect(fenster()).toBeNull();
   });
 });

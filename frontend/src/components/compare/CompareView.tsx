@@ -55,8 +55,9 @@ export function CompareView() {
             )}
           </p>
           <p className="mt-[4px] font-sans text-[11.5px] leading-[1.5] text-dim">
-            Mit Strg- bzw. Cmd-Klick in Tabelle, Baum oder Graph kommt eine Position dazu. Markiert
-            ist, was sich unterscheidet.
+            Mit Strg- bzw. Cmd-Klick in Tabelle, Baum oder Graph kommt eine Position dazu — eine
+            vorher angewählte gleich mit. Im Graphen geht es auch per Rechtsklick. Markiert ist, was
+            sich unterscheidet.
           </p>
           {comparePositions.length > 0 && (
             <div className="mt-[10px] flex flex-wrap items-center gap-[12px]">
