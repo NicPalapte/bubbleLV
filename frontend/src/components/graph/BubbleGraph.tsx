@@ -27,6 +27,7 @@ import { CompareWindow } from '../compare/CompareWindow';
 import {
   CLOUD_LOD_MIN,
   CLOUD_LOD_PX,
+  COMPARE_MENU_WIDTH,
   MAX_ZOOM,
   MIN_ZOOM,
   RADII,
@@ -878,15 +879,15 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
    * stoppt sie dort mit `stopImmediatePropagation` — und er verlangte obendrein
    * den Tastaturfokus auf dem Canvas.
    *
-   * **Gestaffelt, nicht gleichzeitig:** solange eine Karte oder ein Dialog offen
-   * steht, gehört Escape dem. Erst der nächste Druck hebt die Gruppe auf — eine
+   * **Gestaffelt, nicht gleichzeitig:** solange eine Karte, das Rechtsklick-Menü
+   * oder ein Dialog offen steht, gehört Escape dem. Erst der nächste Druck hebt die Gruppe auf — eine
    * Taste, eine Ebene. Der Listener steht dafür selbst still, statt sich auf die
    * Reihenfolge des Einhängens zu verlassen: die Kommandopalette hängt ihren
    * Listener erst beim Öffnen ein, also nach diesem, und würde sonst von ihm
    * überholt.
    */
   useEffect(() => {
-    if (highlightCluster === null || cardNode !== null) return;
+    if (highlightCluster === null || cardNode !== null || menuId !== null) return;
     const onEscape = (event: KeyboardEvent): void => {
       if (event.key !== 'Escape') return;
       // Palette und Melde-Fenster sind Dialoge; solange einer offen ist,
@@ -897,7 +898,7 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
     };
     window.addEventListener('keydown', onEscape, true);
     return () => window.removeEventListener('keydown', onEscape, true);
-  }, [highlightCluster, cardNode, dispatch]);
+  }, [highlightCluster, cardNode, menuId, dispatch]);
 
   return (
     <div
@@ -1039,7 +1040,7 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
           node={menuNode}
           left={Math.min(
             Math.max(0, view.tx + menuEntry.cx * view.k + menuRadius * view.k + 6),
-            Math.max(0, w - 228),
+            Math.max(0, w - COMPARE_MENU_WIDTH - 8),
           )}
           top={Math.min(Math.max(0, view.ty + menuEntry.cy * view.k - 10), Math.max(0, h - 80))}
           onClose={closeMenu}

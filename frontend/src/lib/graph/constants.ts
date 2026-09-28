@@ -223,3 +223,10 @@ export function tierOf(node: LVNode, depth: number): Tier {
   if (depth === 3) return 'subsection';
   return 'group';
 }
+
+/**
+ * Breite des Rechtsklick-Menüs an einer Positions-Bubble (px). Fest statt
+ * `minWidth`: der Graph hält das Menü damit im Canvas, ohne es zu messen —
+ * eine lange OZ bricht um, statt über den Rand zu ragen.
+ */
+export const COMPARE_MENU_WIDTH = 220;

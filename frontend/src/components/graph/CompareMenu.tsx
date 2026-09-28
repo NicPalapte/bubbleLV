@@ -12,6 +12,7 @@
 import { useRef } from 'react';
 import { useDismiss } from '../common/useDismiss';
 import { PopoverHead, PopoverRow } from '../ui/Popover';
+import { COMPARE_MENU_WIDTH } from '../../lib/graph/constants';
 import { graphOverlayProps } from '../../lib/graph/overlay';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { LVNode } from '../../types/lvNode';
@@ -66,7 +67,7 @@ export function CompareMenu({ node, left, top, onClose }: CompareMenuProps) {
         left,
         top,
         zIndex: 7,
-        minWidth: 220,
+        width: COMPARE_MENU_WIDTH,
         background: 'var(--white)',
         border: '1px solid var(--line2)',
         boxShadow: 'var(--shadow-popover)',

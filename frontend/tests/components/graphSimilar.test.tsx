@@ -346,6 +346,26 @@ describe('Muster im Graphen', () => {
     expect(screen.getByTestId('hervorgehoben')).toHaveTextContent('');
   });
 
+  it('gibt Escape zuerst dem Rechtsklick-Menü und erst dann der Gruppe', () => {
+    // Eine Taste, eine Ebene — auch mit offenem Menü. Der Graph hält seinen
+    // Listener dafür selbst still, statt sich auf die Reihenfolge des
+    // Einhängens zu verlassen (Review in PR #86).
+    const { container } = renderGraph();
+    fireEvent.click(screen.getAllByRole('button', { name: 'ÄHNLICHE ZEIGEN' })[0]);
+    fireEvent.keyDown(window, { key: 'Escape' }); // schließt die Karte
+
+    const punkt = container.querySelector('[data-tier="position"]') as Element;
+    fireEvent.contextMenu(punkt);
+    expect(screen.getByRole('group', { name: /^Position / })).toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('group', { name: /^Position / })).toBeNull();
+    expect(screen.getByTestId('hervorgehoben')).not.toHaveTextContent('');
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.getByTestId('hervorgehoben')).toHaveTextContent('');
+  });
+
   it('lässt das Muster beim Rauszoomen weg — wie den Hinweis-Ring', () => {
     const { container } = renderGraph();
     for (let step = 0; step < 14; step += 1) {
