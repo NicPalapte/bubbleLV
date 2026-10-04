@@ -111,6 +111,20 @@ describe('masse', () => {
   it('liefert ohne Maß keinen Key', () => {
     expect(extractMasse('Reinigen der Oberfläche.').attributes).toEqual({});
   });
+
+  it('bleibt bei sehr langen Ziffernfolgen schnell (Issue #89)', () => {
+    // Ohne Anker vor der Zahl probiert die Regex jede Startstelle der Ziffernfolge
+    // neu: 40.000 Ziffern brauchten rund 11 s. Die Grenze ist großzügig gewählt.
+    const start = performance.now();
+    const { attributes } = extractMasse(`Wand ${'1'.repeat(50_000)} und weiter`);
+    expect(performance.now() - start).toBeLessThan(500);
+    expect(attributes).toEqual({});
+  });
+
+  it('erkennt die nachgestellte Schreibweise auch nach Dezimalzahl und Satzzeichen', () => {
+    expect(extractMasse('Platte, 3,5 cm dick.').attributes.dicke).toBe('3,5 cm');
+    expect(extractMasse('Beton C30/37; 20 cm dick.').attributes.dicke).toBe('20 cm');
+  });
 });
 
 describe('material', () => {

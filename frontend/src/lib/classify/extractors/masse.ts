@@ -38,9 +38,16 @@ function formula(letters: string, einheit: string): RegExp {
   return new RegExp(`\\b(?:${letters})\\s*[:=]\\s*${ZAHL}\\s*${einheit}\\b`, 'gi');
 }
 
-/** Nachgestellte Schreibweise: "30 cm dick", "4 m hoch". */
+/**
+ * Nachgestellte Schreibweise: "30 cm dick", "4 m hoch".
+ *
+ * Der Anker vor der Zahl ist nötig: ohne ihn startet die Suche an jeder Ziffer einer
+ * langen Ziffernfolge neu (quadratische Laufzeit, 40.000 Ziffern ≈ 11 s). Die Zahl darf
+ * weder mitten in einer Zahl ("1" von "12") noch hinter "Ziffer + Komma/Punkt"
+ * ("3" von "1,3") beginnen.
+ */
 function suffixed(einheit: string, words: string): RegExp {
-  return new RegExp(`${ZAHL}\\s*${einheit}\\s*(?:${words})\\b`, 'gi');
+  return new RegExp(`(?<!\\d)(?<!\\d[.,])${ZAHL}\\s*${einheit}\\s*(?:${words})\\b`, 'gi');
 }
 
 interface MassRegel {
