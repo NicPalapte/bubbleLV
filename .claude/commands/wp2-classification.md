@@ -22,8 +22,9 @@ Ruleset hinzu, ohne den Klassifizierer umzubauen.
      [`docs/domain/reference/stlb-bau-leistungsbereiche.csv`](../../docs/domain/reference/stlb-bau-leistungsbereiche.csv)
      (Spalten `lb_nummer`, `lb_bezeichnung`, `keywords`,
      `quelle_version`; beim Start geladen, nicht hartkodiert) →
-     `attributes.gewerk_lb`, `attributes.gewerk`, (`positionsart` bleibt Heuristik, nicht Katalog). **Kein Treffer** (Katalog leer oder
-     Text ohne STLB-Bezug) → Fallback auf `position_kind.py`.
+     `attributes.gewerk_lb`, `attributes.gewerk`. `attributes.positionsart` kommt nicht aus
+     dem Katalog, sondern aus der Heuristik (`position_kind.py`). **Kein Treffer** (Katalog
+     leer oder Text ohne STLB-Bezug) → Fallback auf `position_kind.py`.
    - `position_kind.py`: Fallback-Erkennung Bauteil vs. Nicht-Bauteil
      (`personal | planung | baustelleneinrichtung | nebenleistung | sonstige`) anhand
      Stichworten/Einheit → `attributes.positionsart`, nur wenn Stufe 0 keinen LB-Treffer
