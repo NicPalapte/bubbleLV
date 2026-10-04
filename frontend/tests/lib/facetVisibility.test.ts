@@ -20,6 +20,15 @@ describe('isFacetVisible', () => {
     expect(isFacetVisible(FACETS_BY_ID.get('material')!, MIT_WERTEN)).toBe(true);
   });
 
+  it('zeigt Material trotzdem, solange ein Wert gewählt ist', () => {
+    // Ein Teilen-Link kann `f.material=Beton` setzen, bevor es eine Liste gibt. Ein
+    // aktiver, aber unsichtbarer Filter versteckt Treffer ohne erkennbaren Grund.
+    const material = FACETS_BY_ID.get('material')!;
+    expect(isFacetVisible(material, OHNE_WERTE, true)).toBe(true);
+    expect(isFacetVisible(material, undefined, true)).toBe(true);
+    expect(isFacetVisible(material, OHNE_WERTE, false)).toBe(false);
+  });
+
   it('lässt alle anderen Filter auch ohne Werte stehen', () => {
     // Ein leerer „Exposition"-Filter sagt etwas: dieses LV nennt keine. Nur Material
     // fehlt aus einem Grund, der nicht an der Datei liegt (fehlende Referenzliste).

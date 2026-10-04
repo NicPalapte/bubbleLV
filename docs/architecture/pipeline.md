@@ -315,9 +315,10 @@ Regeln für die Meldungen (`lib/pipeline/messages.ts`):
 - **Immer Deutsch, nie Systemtext.** Der Text eines `<parsererror>` oder eines
   unerwarteten Fehlers („Maximum call stack size exceeded") steht nicht in der Meldung;
   bei unerwarteten Fehlern erscheint immer `UNEXPECTED_FAILURE`.
-- **Fertiger Satz = Punkt am Ende.** Eine Meldung, die mit einem Punkt endet, bleibt
-  unverändert („Die Datei x.x83 ist leer."). Bruchstücke ohne Punkt bekommen von
-  `describeFailure` den Hinweis zu ihrer Fehlerart.
+- **Fertiger Satz = `complete`.** Ein Fehler mit `complete: true` trägt schon seinen
+  nächsten Schritt („Die Datei x.x83 ist leer.") und bleibt unverändert. Die
+  Kennzeichnung steht im Fehler, nicht im letzten Zeichen des Texts. Alle anderen sind
+  Bruchstücke und bekommen von `describeFailure` den Hinweis zu ihrer Fehlerart.
 - **Vor dem Parsen geprüft** (`LVLoadError` aus `loadLv`): Dateityp (Endung `.x81`–`.x86`
   oder `.xml`) und Größe (`MAX_FILE_BYTES`), jeweils bevor die Datei gelesen wird.
 

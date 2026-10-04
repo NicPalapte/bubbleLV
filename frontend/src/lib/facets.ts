@@ -150,10 +150,16 @@ export function facetOptionLabel(facet: Facet, value: string): string {
   return facet.optionLabel === undefined ? value : facet.optionLabel(value);
 }
 
-/** Soll für diese Facette ein Filterknopf stehen? `counts` sind ihre Werte im geladenen LV. */
+/**
+ * Soll für diese Facette ein Filterknopf stehen? `counts` sind ihre Werte im
+ * geladenen LV, `selected` sagt, ob gerade ein Wert gewählt ist. Ein gewählter
+ * Filter bleibt immer sichtbar: Ein Teilen-Link kann ihn setzen, ohne dass es Werte
+ * gibt, und ein unsichtbarer aktiver Filter versteckt Treffer ohne erkennbaren Grund.
+ */
 export function isFacetVisible(
   facet: Facet,
   counts: ReadonlyMap<string, number> | undefined,
+  selected = false,
 ): boolean {
-  return facet.hideWhenEmpty !== true || (counts?.size ?? 0) > 0;
+  return facet.hideWhenEmpty !== true || selected || (counts?.size ?? 0) > 0;
 }

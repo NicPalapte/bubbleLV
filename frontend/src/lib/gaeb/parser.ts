@@ -71,15 +71,14 @@ function parseXmlDocument(xml: string, filename: string): Document {
   // Browser und jsdom melden XML-Fehler nicht als Exception, sondern über ein
   // <parsererror>-Ersatzdokument. Dessen Text ist Englisch und je Browser anders;
   // er bleibt als `cause` für die Fehlersuche erhalten, steht aber nicht in der
-  // Meldung. Die endet mit einem Punkt und gilt damit als fertiger Satz
-  // (pipeline/messages.ts, describeFailure).
+  // Meldung. Sie ist ein fertiger Satz (`complete`, siehe gaeb/errors.ts).
   const failure = doc.getElementsByTagName('parsererror')[0];
   if (failure !== undefined) {
     const detail = (failure.textContent ?? '').replace(/\s+/g, ' ').trim();
     throw new GAEBParseError(
       `${filename || 'Datei'} ist kein wohlgeformtes XML. ` +
         'Die Datei ist beschädigt oder kein GAEB-DA-XML.',
-      { cause: new Error(detail) },
+      { cause: new Error(detail), complete: true },
     );
   }
   return doc;
@@ -214,6 +213,7 @@ function parseCategory(ctgy: Element, parentPath: string[]): ParsedSection {
     throw new GAEBValidationError(
       `Das Leistungsverzeichnis ist zu tief verschachtelt (mehr als ${MAX_SECTION_DEPTH} ` +
         'Abschnittsebenen). Die Datei ist vermutlich beschädigt.',
+      { complete: true },
     );
   }
   const path = [...parentPath, ctgy.getAttribute('RNoPart') ?? ''];
@@ -291,7 +291,9 @@ export class XmlGaebParser implements GaebParser {
     // sonst nur „kaputt", und die Nutzerin sucht den Fehler in der Datei statt
     // im Export.
     if (xml.trim() === '') {
-      throw new GAEBParseError(`Die Datei${filename === '' ? '' : ` ${filename}`} ist leer.`);
+      throw new GAEBParseError(`Die Datei${filename === '' ? '' : ` ${filename}`} ist leer.`, {
+        complete: true,
+      });
     }
     const doc = parseXmlDocument(xml, filename);
     const root = doc.documentElement;

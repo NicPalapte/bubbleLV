@@ -99,7 +99,11 @@ export function TopBar() {
   const filterItems: OverflowItem[] = useMemo(() => {
     if (!loaded) return [];
     const facetItems: OverflowItem[] = FACETS.filter((facet) =>
-      isFacetVisible(facet, summary.facets.get(facet.id)),
+      isFacetVisible(
+        facet,
+        summary.facets.get(facet.id),
+        (filters.facets[facet.id]?.size ?? 0) > 0,
+      ),
     ).map((facet) => ({
       key: facet.id,
       active: (filters.facets[facet.id]?.size ?? 0) > 0,
