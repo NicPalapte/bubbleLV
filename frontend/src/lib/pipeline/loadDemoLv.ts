@@ -17,7 +17,7 @@
 
 import angebotUrl from '../../assets/demo/bubble-demo-angebot.x84?url';
 import musterUrl from '../../assets/demo/bvbs-gaeb-musterdatei.x83?url';
-import { loadLvFromBytes, LVLoadError } from './loadLv';
+import { loadLvFromBytes, LVLoadError, type LoadOptions } from './loadLv';
 import type { LoadedLV } from './runPipeline';
 
 export interface DemoLv {
@@ -61,7 +61,7 @@ export function demoLvById(id: string): DemoLv | undefined {
  *
  * @throws {LVLoadError} mit verständlicher Meldung für die UI.
  */
-export async function loadDemoLv(demo: DemoLv): Promise<LoadedLV> {
+export async function loadDemoLv(demo: DemoLv, options: LoadOptions = {}): Promise<LoadedLV> {
   let bytes: ArrayBuffer;
   try {
     const response = await fetch(demo.url);
@@ -73,5 +73,5 @@ export async function loadDemoLv(demo: DemoLv): Promise<LoadedLV> {
       'Das Demo-LV konnte nicht geladen werden. Bitte die Seite neu laden oder eine eigene Datei wählen.',
     );
   }
-  return loadLvFromBytes(bytes, demo.fileName);
+  return loadLvFromBytes(bytes, demo.fileName, options);
 }

@@ -22,6 +22,51 @@ export class LVLoadError extends Error {
   }
 }
 
+/**
+ * Größte Datei, die Bubble liest (Issue #93). 10.000 Positionen sind rund 5 MB
+ * XML; 50 MB sind damit gut das Neunfache des Richtwerts in docs/scope.md. Der
+ * XML-Parser läuft im Haupt-Thread, eine größere Datei würde die Oberfläche
+ * dort lange blockieren.
+ */
+export const MAX_FILE_BYTES = 50 * 1024 * 1024;
+
+/** Dateiendungen von GAEB DA XML (X81–X86) und das allgemeine `.xml`, ohne Punkt. */
+export const GAEB_ENDUNGEN = ['x81', 'x82', 'x83', 'x84', 'x85', 'x86', 'xml'] as const;
+
+export interface LoadOptions {
+  /** Wird für Hinweise gerufen, die das Laden nicht scheitern lassen (Issue #95). */
+  onNotice?: (message: string) => void;
+}
+
+const WORKER_AUSFALL_HINWEIS =
+  'Der Hintergrundprozess ist ausgefallen. Die Datei wurde stattdessen direkt berechnet. ' +
+  'Das Ergebnis ist vollständig, nur das Laden dauert länger.';
+
+function formatMegabytes(bytes: number): string {
+  return (bytes / (1024 * 1024)).toFixed(1).replace('.', ',');
+}
+
+/** Größe prüfen, bevor die Datei gelesen oder geparst wird. */
+function pruefeGroesse(bytes: number, fileName: string): void {
+  if (bytes <= MAX_FILE_BYTES) return;
+  throw new LVLoadError(
+    'size',
+    `${fileName} ist zu groß (${formatMegabytes(bytes)} MB). ` +
+      `Bubble liest Dateien bis ${MAX_FILE_BYTES / (1024 * 1024)} MB.`,
+  );
+}
+
+/** Dateityp prüfen: der Dialog filtert nach Endung, Drag & Drop nicht. */
+function pruefeDateityp(fileName: string): void {
+  const endung = /\.([^./\\]+)$/.exec(fileName)?.[1].toLowerCase() ?? null;
+  if (endung !== null && (GAEB_ENDUNGEN as readonly string[]).includes(endung)) return;
+  throw new LVLoadError(
+    'dateityp',
+    `${fileName}: Dateityp ${endung === null ? 'ohne Endung' : `„.${endung}"`} wird nicht ` +
+      'gelesen. Erwartet wird GAEB DA XML (.x81 bis .x86 oder .xml, z. B. .x83).',
+  );
+}
+
 /** Ab dieser Größe lohnt der Worker-Umweg inkl. structuredClone des Drafts. */
 const WORKER_THRESHOLD_POSITIONS = 500;
 
@@ -47,23 +92,43 @@ function createWorker(): Worker | null {
   }
 }
 
-function classifyInWorker(draft: LVDraft, fileName: string): Promise<LoadedLV> | null {
+function classifyInWorker(
+  draft: LVDraft,
+  fileName: string,
+  onNotice: ((message: string) => void) | undefined,
+): Promise<LoadedLV> | null {
   const worker = createWorker();
   if (worker === null) return null;
 
   return new Promise<LoadedLV>((resolve, reject) => {
+    // Der Worker kann nach einem Ausfall noch ein zweites Ereignis melden
+    // (z. B. erst `messageerror`, dann `error`); gerechnet wird nur einmal.
+    let ausgefallen = false;
+    const rechneWeiter = (): void => {
+      if (ausgefallen) return;
+      ausgefallen = true;
+      worker.terminate();
+      // Der Worker konnte nicht starten/laufen oder seine Antwort nicht
+      // zustellen — synchron zu Ende rechnen, statt den Import scheitern zu
+      // lassen, und es sagen: die Wartezeit ist sonst unerklärlich.
+      onNotice?.(WORKER_AUSFALL_HINWEIS);
+      try {
+        resolve(classifyAndBuild(draft, fileName));
+      } catch (error) {
+        reject(error);
+      }
+    };
     worker.onmessage = (event: MessageEvent<PipelineResponse>) => {
+      if (ausgefallen) return;
       worker.terminate();
       const response = event.data;
       if (response.ok) resolve(response.result);
       else reject(new LVLoadError(response.code, describeFailure(response)));
     };
-    worker.onerror = () => {
-      worker.terminate();
-      // Der Worker konnte nicht starten/laufen — synchron zu Ende rechnen,
-      // statt den Import scheitern zu lassen.
-      resolve(classifyAndBuild(draft, fileName));
-    };
+    worker.onerror = rechneWeiter;
+    // Die Antwort ließ sich nicht deserialisieren: ohne diesen Handler bliebe
+    // der Import für immer im Ladezustand hängen.
+    worker.onmessageerror = rechneWeiter;
     const request: PipelineRequest = { draft, fileName };
     worker.postMessage(request);
   });
@@ -76,13 +141,22 @@ function classifyInWorker(draft: LVDraft, fileName: string): Promise<LoadedLV> |
  *
  * @throws {LVLoadError} mit verständlicher Meldung für die UI.
  */
-export async function loadLvFromBytes(bytes: ArrayBuffer, fileName: string): Promise<LoadedLV> {
+export async function loadLvFromBytes(
+  bytes: ArrayBuffer,
+  fileName: string,
+  options: LoadOptions = {},
+): Promise<LoadedLV> {
+  pruefeGroesse(bytes.byteLength, fileName);
   // Messpunkt „erste Ansicht": alles von den Rohbytes bis zum fertigen Baum
   // (docs/scope.md, Ziel < 5 s bei ~10k Positionen).
-  return measureAsync('LV laden', () => parseClassifyBuild(bytes, fileName));
+  return measureAsync('LV laden', () => parseClassifyBuild(bytes, fileName, options));
 }
 
-async function parseClassifyBuild(bytes: ArrayBuffer, fileName: string): Promise<LoadedLV> {
+async function parseClassifyBuild(
+  bytes: ArrayBuffer,
+  fileName: string,
+  options: LoadOptions,
+): Promise<LoadedLV> {
   let draft: LVDraft;
   try {
     // Bytes, nicht Text — das Encoding steht in der XML-Deklaration.
@@ -94,7 +168,7 @@ async function parseClassifyBuild(bytes: ArrayBuffer, fileName: string): Promise
 
   try {
     if (countPositions(draft) >= WORKER_THRESHOLD_POSITIONS) {
-      const viaWorker = classifyInWorker(draft, fileName);
+      const viaWorker = classifyInWorker(draft, fileName, options.onNotice);
       if (viaWorker !== null) return await viaWorker;
     }
     return classifyAndBuild(draft, fileName);
@@ -110,6 +184,10 @@ async function parseClassifyBuild(bytes: ArrayBuffer, fileName: string): Promise
  *
  * @throws {LVLoadError} mit verständlicher Meldung für die UI.
  */
-export async function loadLv(file: File): Promise<LoadedLV> {
-  return loadLvFromBytes(await file.arrayBuffer(), file.name);
+export async function loadLv(file: File, options: LoadOptions = {}): Promise<LoadedLV> {
+  // Beides vor dem Lesen: eine zu große Datei soll gar nicht erst in den
+  // Speicher kommen, und ein falscher Dateityp keine Parser-Meldung erzeugen.
+  pruefeDateityp(file.name);
+  pruefeGroesse(file.size, file.name);
+  return loadLvFromBytes(await file.arrayBuffer(), file.name, options);
 }

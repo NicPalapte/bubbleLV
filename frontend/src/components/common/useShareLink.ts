@@ -12,7 +12,7 @@
 // Ein Fragment verlässt den Browser nie (docs/decisions/0023).
 
 import { useEffect, useRef } from 'react';
-import { decodeShared, sharedHash, type SharedState } from '../../lib/share/urlState';
+import { decodeSharedChecked, sharedHash, type SharedState } from '../../lib/share/urlState';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 
 /** Wartezeit vor dem Schreiben — Tippen in der Suche soll nicht je Zeichen schreiben. */
@@ -46,8 +46,8 @@ export function useShareLink(): void {
       return;
     }
 
-    const shared = decodeShared(window.location.hash);
     if (window.location.hash === '' || window.location.hash === '#') return;
+    const { state: shared, verworfen } = decodeSharedChecked(window.location.hash);
 
     // Die OZ im Link zeigt auf eine Position **dieser** Datei. Findet sie sich
     // nicht, gilt der Rest des Links trotzdem — ein Link aus einer anderen
@@ -59,6 +59,19 @@ export function useShareLink(): void {
     }
     const nodeId = positionId === null ? null : (parents.get(positionId)?.id ?? null);
     dispatch({ type: 'applyShared', shared, nodeId, positionId });
+
+    // Was am Link nicht passte, nicht still verschlucken (Issue #95): sonst
+    // wundert sich jemand über den leeren Standardzustand, ohne zu erfahren,
+    // dass der Link die Ursache ist.
+    if (shared.oz !== null && positionId === null && !verworfen.includes('Auswahl')) {
+      verworfen.push('Auswahl');
+    }
+    if (verworfen.length > 0) {
+      dispatch({
+        type: 'notice',
+        message: `Der Link passt nur teilweise zu dieser Datei. Ignoriert: ${verworfen.join(', ')}.`,
+      });
+    }
   }, [lv, index, parents, dispatch]);
 
   // ── Schreiben ────────────────────────────────────────────────────────────

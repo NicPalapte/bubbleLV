@@ -25,14 +25,26 @@ export function toPipelineError(error: unknown): PipelineFailure {
   if (error instanceof GAEBVersionError) return { code: 'version', message: error.message };
   if (error instanceof GAEBValidationError) return { code: 'validation', message: error.message };
   if (error instanceof GAEBParseError) return { code: 'parse', message: error.message };
-  return {
-    code: 'unknown',
-    message: error instanceof Error ? error.message : 'Unbekannter Fehler beim Laden der Datei',
-  };
+  // Der Systemtext eines unerwarteten Fehlers („Maximum call stack size exceeded")
+  // hilft niemandem beim Laden einer Datei und ist Englisch. Die Meldung bleibt
+  // deshalb immer dieselbe deutsche.
+  return { code: 'unknown', message: UNEXPECTED_FAILURE };
 }
 
-/** Fehlermeldung für die UI — Ursache zuerst, dann was zu tun ist. */
+/** Meldung für einen Fehler, den keine der eigenen Fehlerklassen beschreibt. */
+export const UNEXPECTED_FAILURE =
+  'Beim Lesen der Datei ist ein unerwarteter Fehler aufgetreten. ' +
+  'Bitte die Datei erneut laden oder prüfen, ob sie sich in der Ausschreibungssoftware öffnen lässt.';
+
+/**
+ * Fehlermeldung für die UI — Ursache zuerst, dann was zu tun ist.
+ *
+ * Eine Meldung, die mit einem Punkt endet, ist ein fertiger Satz mit eigenem
+ * nächsten Schritt („Die Datei x.x83 ist leer.") und bleibt unverändert. Alle
+ * anderen sind Bruchstücke und bekommen den Hinweis zu ihrer Fehlerart.
+ */
 export function describeFailure(failure: PipelineFailure): string {
+  if (failure.message.endsWith('.')) return failure.message;
   switch (failure.code) {
     case 'version':
       return `${failure.message}. Bitte die Datei aus der Ausschreibungssoftware in einer unterstützten GAEB-Version exportieren.`;

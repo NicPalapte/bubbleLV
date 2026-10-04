@@ -69,12 +69,17 @@ function parseXmlDocument(xml: string, filename: string): Document {
   }
 
   // Browser und jsdom melden XML-Fehler nicht als Exception, sondern über ein
-  // <parsererror>-Ersatzdokument.
+  // <parsererror>-Ersatzdokument. Dessen Text ist Englisch und je Browser anders;
+  // er bleibt als `cause` für die Fehlersuche erhalten, steht aber nicht in der
+  // Meldung. Die endet mit einem Punkt und gilt damit als fertiger Satz
+  // (pipeline/messages.ts, describeFailure).
   const failure = doc.getElementsByTagName('parsererror')[0];
   if (failure !== undefined) {
     const detail = (failure.textContent ?? '').replace(/\s+/g, ' ').trim();
     throw new GAEBParseError(
-      `${filename || 'Datei'} ist kein wohlgeformtes XML${detail === '' ? '' : `: ${detail}`}`,
+      `${filename || 'Datei'} ist kein wohlgeformtes XML. ` +
+        'Die Datei ist beschädigt oder kein GAEB-DA-XML.',
+      { cause: new Error(detail) },
     );
   }
   return doc;
@@ -196,7 +201,21 @@ function collectBody(body: Element, path: string[]): BodyContent {
   return { sections, positions };
 }
 
+/**
+ * Obergrenze für verschachtelte Abschnitte. Reale LVs gliedern in wenigen Ebenen
+ * (Los, Gewerk, Titel, Untertitel); der Parser ruft sich je Ebene selbst auf, und
+ * ein Dokument mit tausenden Ebenen würde sonst den Aufrufstapel sprengen
+ * („Maximum call stack size exceeded").
+ */
+const MAX_SECTION_DEPTH = 100;
+
 function parseCategory(ctgy: Element, parentPath: string[]): ParsedSection {
+  if (parentPath.length >= MAX_SECTION_DEPTH) {
+    throw new GAEBValidationError(
+      `Das Leistungsverzeichnis ist zu tief verschachtelt (mehr als ${MAX_SECTION_DEPTH} ` +
+        'Abschnittsebenen). Die Datei ist vermutlich beschädigt.',
+    );
+  }
   const path = [...parentPath, ctgy.getAttribute('RNoPart') ?? ''];
   const body = firstByLocal(ctgy, 'BoQBody');
   const content: BodyContent =
@@ -267,7 +286,14 @@ function readClient(award: Element): string | null {
 
 export class XmlGaebParser implements GaebParser {
   parse(input: GaebInput, filename = ''): ParsedLV {
-    const doc = parseXmlDocument(decodeXml(input), filename);
+    const xml = decodeXml(input);
+    // Eine leere Datei soll als leer gemeldet werden: der XML-Parser nennt sie
+    // sonst nur „kaputt", und die Nutzerin sucht den Fehler in der Datei statt
+    // im Export.
+    if (xml.trim() === '') {
+      throw new GAEBParseError(`Die Datei${filename === '' ? '' : ` ${filename}`} ist leer.`);
+    }
+    const doc = parseXmlDocument(xml, filename);
     const root = doc.documentElement;
 
     if (root === null || root.localName !== 'GAEB') {

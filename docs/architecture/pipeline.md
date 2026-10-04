@@ -310,6 +310,23 @@ Rohpositionen bestimmen kann (Skalierung Richtung ~10k Positionen).
 Upload-Komponente gefangen und als Fehlermeldung angezeigt (z. B. Version nicht
 unterstützt). Keine `console.log`-Debugging-Ausgaben im produktiven Pfad.
 
+Regeln für die Meldungen (`lib/pipeline/messages.ts`):
+
+- **Immer Deutsch, nie Systemtext.** Der Text eines `<parsererror>` oder eines
+  unerwarteten Fehlers („Maximum call stack size exceeded") steht nicht in der Meldung;
+  bei unerwarteten Fehlern erscheint immer `UNEXPECTED_FAILURE`.
+- **Fertiger Satz = Punkt am Ende.** Eine Meldung, die mit einem Punkt endet, bleibt
+  unverändert („Die Datei x.x83 ist leer."). Bruchstücke ohne Punkt bekommen von
+  `describeFailure` den Hinweis zu ihrer Fehlerart.
+- **Vor dem Parsen geprüft** (`LVLoadError` aus `loadLv`): Dateityp (Endung `.x81`–`.x86`
+  oder `.xml`) und Größe (`MAX_FILE_BYTES`), jeweils bevor die Datei gelesen wird.
+
+**Hinweise** sind keine Fehler: das LV ist geladen, aber etwas lief anders als erwartet
+(zweite Datei beim Drop ignoriert, Teile eines Teilen-Links passten nicht, Worker
+ausgefallen und direkt weitergerechnet). Sie stehen in `ViewerState.notices` und
+erscheinen in der schließbaren Hinweisleiste unter den Filtern (`NoticeBar`); ein neuer
+Import oder „LV schließen" verwirft sie.
+
 ## Bewusst nicht im MVP
 
 Zuständigkeit/Bearbeiter-Zuweisung — ohne Server/Persistenz kein sinnvoller Mehrwert
