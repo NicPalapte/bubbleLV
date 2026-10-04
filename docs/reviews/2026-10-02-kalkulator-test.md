@@ -192,7 +192,7 @@ mit `role="alert"`. Danach lässt sich ohne Neuladen sofort eine Demo oder weite
 | 0 Treffer im Überblick | Karte „SUMME: **keine Preise** — Diese Datei führt keine Preise", Karte „OHNE MENGE" statt „OHNE PREIS" | **Fehler**: falsche Aussage bei Datei mit Preisen |
 | ungültiger Teilen-Link | siehe oben | **gut**: nie Absturz |
 | Reload nach Laden | Startseite, Hinweis steht schon vorab auf der Seite | **gut** |
-| Worker-Fehler | Worker-Datei im Browser blockiert, 9.500 Pos. laden: App rechnet im Hauptthread weiter, Ergebnis nach ca. 2 s, keine Meldung, kein Konsolenfehler | **gut** (Rückfall im Code vorhanden) |
+| Worker-Fehler | Worker-Datei im Browser blockiert, 9.500 Pos. laden: App rechnet im Hauptthread weiter, Ergebnis nach ca. 2 s, keine Meldung, kein Konsolenfehler | **mittel**: Der Rückfall funktioniert (gut), aber die Meldung fehlt. Siehe N8 im Code-Review und Issue #95 |
 
 Konsole: in keinem Lauf Errors oder Warnings.
 Netzwerk: nur GET auf die eigene Adresse (Seite, JS, CSS, Schriften, Worker, Favicon). Kein POST,
