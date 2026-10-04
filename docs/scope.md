@@ -135,15 +135,20 @@ Norm-Verweis, jeder Hinweis mit Sprung zur Fundstelle.
 Alle Ansichten arbeiten auf **derselben gefilterten Menge** und **derselben Auswahl**.
 Wechseln heißt: anderer Blick auf dasselbe, nie Neuanfang.
 
+> **Stand 2026-10-04:** Es gibt nur noch Überblick, Graph und Tabelle
+> ([0031](decisions/0031-drei-ansichten.md)). Die Zeilen zu Matrix, Ähnlichkeit und
+> Vergleich unten sind durchgestrichen und gelten nicht mehr.
+
 | Ansicht | Zeigt | Anwendungsfall | Stand |
 |---|---|---|---|
 | **Überblick** | Kennzahlen, Treemap nach Gewerk/Abschnitt, Pareto („20 % der Positionen = 80 % der Summe") | UC-1, UC-4 | neu |
 | **Graph** | Struktur und Verortung als Bubble-Graph | UC-1 | vorhanden, Umbau offen |
 | **Tabelle** | alle Spalten, Gruppierung, Summen | UC-2, UC-4 | vorhanden |
-| **Matrix** | Heatmap Gewerk/Bauteiltyp × Merkmal, Zellen nach Anzahl/Menge/Summe | UC-3, UC-4 | neu |
-| **Ähnlichkeit** | Gruppen inhaltlich ähnlicher Positionen, Dubletten, Varianten, Ausreißer | UC-3 | neu |
-| **Vergleich** | 2–5 Positionen nebeneinander, Unterschiede in Text und Merkmalen markiert | UC-5 | neu |
-| **Prüfung** | Liste aller Hinweise aus VOB-Check und Flags, gruppiert nach Regel | UC-2, UC-6 | neu |
+| ~~Matrix~~ | entfernt, siehe [0031](decisions/0031-drei-ansichten.md) | – | entfernt |
+| ~~Ähnlichkeit~~ | entfernt; später ggf. als Fenster über dem Graphen | – | zurückgestellt |
+| ~~Vergleich~~ | entfernt; später ggf. als Fenster über dem Graphen | – | zurückgestellt |
+| **Prüfung** | Karte im Überblick: Hinweise aus VOB-Check und Flags, gruppiert nach Regel | UC-2, UC-6 | im Überblick |
+| **Import-Log** | Karte im Überblick: fehlende Einheiten/Mengen, nicht klassifizierte Positionen, doppelte OZ | UC-6 | neu |
 | **Eigenschaften** | Details der gewählten Position mit hervorgehobenem Langtext | UC-5 | vorhanden |
 
 Der Bubble-Graph ist damit **nicht mehr „der Kern"**, sondern eine von mehreren

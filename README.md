@@ -20,9 +20,9 @@ Zum Ausprobieren ohne eigene Datei liegen **zwei Demo-LVs** bei (Startseite):
 ein daraus aufgebautes Angebot (x84) mit erfundenen Preisen
 ([Details](docs/decisions/0014-demo-lv-mit-preisen.md)).
 
-Acht gleichrangige Ansichten teilen sich **einen** Filterzustand: Überblick · Graph ·
-Tabelle · Matrix · Ähnlichkeit · Vergleich · Prüfung · Eigenschaften. Ansicht wechseln
-heißt: anderer Blick auf dasselbe, nie Neuanfang.
+Drei Ansichten teilen sich **einen** Filterzustand: Überblick (mit Prüfung und Import-Log) ·
+Graph · Tabelle (mit Eigenschaften). Ansicht wechseln heißt: anderer Blick auf dasselbe,
+nie Neuanfang.
 
 Bubble kalkuliert nicht und schreibt nichts zurück — das bleibt **iTwo**.
 
@@ -128,7 +128,7 @@ einen Stelle.
 
 ## Scope
 
-Frontend-only: GAEB laden → klassifizieren → prüfen → in acht gleichrangigen Ansichten
+Frontend-only: GAEB laden → klassifizieren → prüfen → in drei Ansichten
 verstehen. Kein Server, kein Login, keine Persistenz über die Session hinaus.
 
 **Bewusst draußen:** mehrere Dateien gleichzeitig (Versionsvergleich, x83+x84

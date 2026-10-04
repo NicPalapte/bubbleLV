@@ -1,4 +1,4 @@
-// Ansicht „Prüfung" (WP-K). Geprüft werden die Zusagen aus
+// Karte „Prüfung" im Überblick (WP-K). Geprüft werden die Zusagen aus
 // docs/domain/vob-pruefungen.md: jede Regel nennt ihren Verweis, ein nicht
 // bestätigter Verweis ist als solcher markiert, jede Regel ist einzeln
 // abschaltbar, und eine inaktive Regel verschwindet nicht, sondern nennt ihren
@@ -6,7 +6,7 @@
 
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { CheckView } from '../../src/components/check/CheckView';
+import { CheckCard } from '../../src/components/overview/CheckCard';
 import { ViewerProvider } from '../../src/state/ViewerProvider';
 import { useViewerDispatch } from '../../src/state/viewer';
 import type { ViewerAction } from '../../src/state/viewer';
@@ -52,7 +52,7 @@ function renderView() {
   const result = render(
     <ViewerProvider>
       <WithLv>
-        <CheckView />
+        <CheckCard />
       </WithLv>
     </ViewerProvider>,
   );
@@ -72,7 +72,7 @@ function sectionOf(id: string): HTMLElement {
   return heading.closest('section') as HTMLElement;
 }
 
-describe('CheckView', () => {
+describe('CheckCard', () => {
   it('zeigt jede angemeldete Regel, auch die inaktiven', () => {
     renderView();
     for (const rule of lv.check.rules) {

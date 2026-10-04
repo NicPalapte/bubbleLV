@@ -6,7 +6,7 @@ import { useMemo } from 'react';
 import { SegmentedControl } from '../ui/SegmentedControl';
 import { SIZE_MODES } from '../../lib/graph/constants';
 import { FOCUS_GROUP_LABELS, type FocusGroupBy } from '../../lib/graph/focusTree';
-import { formatCount, truncate } from '../../lib/format';
+import { formatCount } from '../../lib/format';
 import { useViewer, useViewerDispatch, type GraphFocus, type SizeModeId } from '../../state/viewer';
 import type { MatchIndex } from '../../lib/tree/matchCounts';
 import type { LVNode } from '../../types/lvNode';
@@ -47,16 +47,12 @@ function imFilter(ids: Iterable<string>, groesse: number, matches: MatchIndex): 
 export function GraphHeader({ root }: { root: LVNode }) {
   const {
     view: {
-      graph: { sizeMode, focus: focusMode, groupBy, highlightCluster },
-      compare: { windowOpen: compareOpen },
+      graph: { sizeMode, focus: focusMode, groupBy },
     },
-    comparePositions,
     matches,
     focus,
     quantities,
     hints,
-    clusters,
-    lv,
   } = useViewer();
   const dispatch = useViewerDispatch();
 
@@ -70,36 +66,6 @@ export function GraphHeader({ root }: { root: LVNode }) {
   // Legende und Zahl in einem: der Ring an der Bubble braucht eine Erklärung,
   // und wie viele Positionen ihn tragen, will man ohnehin wissen (WP-R).
   const hintCount = useMemo(() => imFilter(hints.keys(), hints.size, matches), [hints, matches]);
-  // Dasselbe für den gestrichelten Ring der Ähnlichkeit (WP-R, R2).
-  const gruppiert = useMemo(
-    () => imFilter(clusters.keys(), clusters.size, matches),
-    [clusters, matches],
-  );
-
-  // Hervorgehobene Ähnlichkeitsgruppe (WP-R, R2): Wer sie eingeschaltet hat,
-  // muss sie auch wieder loswerden — ohne diese Zeile bliebe nur Escape, und
-  // das findet niemand von selbst.
-  const hervorgehoben =
-    highlightCluster === null
-      ? null
-      : (lv?.relations.clusters.find((cluster) => cluster.id === highlightCluster) ?? null);
-
-  // Mitglieder der hervorgehobenen Gruppe, die der Filter durchlässt — dieselbe
-  // Zählung wie bei den Legenden daneben. Eine ungefilterte Zahl neben einer
-  // gefilterten wäre ein Widerspruch im selben Atemzug.
-  const sichtbareMitglieder =
-    hervorgehoben === null
-      ? 0
-      : imFilter(hervorgehoben.positionIds, hervorgehoben.positionIds.length, matches);
-
-  // Weggeklicktes Vergleichsfenster (WP-R, R3): ohne diese Zeile wäre der
-  // Vergleich nur noch über den Ansichtswechsel erreichbar — die Positionen
-  // stehen ja weiter darin, unsichtbar. Dieselbe Stelle wie die Hervorhebung
-  // daneben, weil es dasselbe ist: ein Zustand des Graphen, den man wieder
-  // loswerden bzw. zurückholen muss.
-  const verglichen = comparePositions.length;
-  const vergleichZurueck = !compareOpen && verglichen >= 1;
-
   const lots = root.children.length;
   const sections = root.children.reduce((total, lot) => total + lot.children.length, 0);
   // x83-Dateien führen keine Einheitspreise — der Größenmodus "Gesamtpreis"
@@ -135,55 +101,6 @@ export function GraphHeader({ root }: { root: LVNode }) {
           )}
           {' · GRÖSSE'}
         </span>
-        {hervorgehoben !== null && (
-          <button
-            type="button"
-            onClick={() => dispatch({ type: 'highlightCluster', id: null })}
-            title="Hervorhebung der Ähnlichkeitsgruppe aufheben (oder Escape)"
-            className="inline-flex max-w-[280px] cursor-pointer items-center gap-[6px] border border-line bg-white px-[7px] py-[2px] font-mono text-[9px] tracking-[0.6px] text-ink hover:text-blue focus-visible:text-blue"
-          >
-            <span className="truncate">
-              ÄHNLICHE: {truncate(hervorgehoben.label, 28).toUpperCase()} ·{' '}
-              {formatCount(sichtbareMitglieder)}
-              {/* Blendet der Filter Mitglieder aus, steht die volle Gruppengröße
-                  dahinter: im Graphen treten nur die durchgelassenen hervor,
-                  aber die Gruppe ist größer — beides ist eine Information. */}
-              {sichtbareMitglieder < hervorgehoben.positionIds.length &&
-                ` VON ${formatCount(hervorgehoben.positionIds.length)}`}
-            </span>
-            <span aria-hidden="true">✕</span>
-          </button>
-        )}
-        {hervorgehoben === null && gruppiert > 0 && (
-          <span
-            className="inline-flex items-center gap-[4px] font-mono text-[9px] tracking-[0.6px] text-mute"
-            title="Gestrichelter Ring an der Bubble: zu dieser Position gibt es ähnliche. Er erscheint, sobald du nah genug herangezoomt hast."
-          >
-            <svg width="12" height="12" aria-hidden="true">
-              <circle cx="6" cy="6" r="2.2" fill="var(--bub-position-line)" />
-              <circle
-                cx="6"
-                cy="6"
-                r="4.8"
-                fill="none"
-                stroke="var(--line2)"
-                strokeWidth="1"
-                strokeDasharray="1.5 2.5"
-              />
-            </svg>
-            {formatCount(gruppiert)} MIT ÄHNLICHEN
-          </span>
-        )}
-        {vergleichZurueck && (
-          <button
-            type="button"
-            onClick={() => dispatch({ type: 'compareWindow', open: true })}
-            title="Das Vergleichsfenster wieder über dem Graphen zeigen"
-            className="inline-flex cursor-pointer items-center gap-[6px] border border-line bg-white px-[7px] py-[2px] font-mono text-[9px] tracking-[0.6px] text-ink hover:text-blue focus-visible:text-blue"
-          >
-            VERGLEICH · {formatCount(verglichen)} POS. ZEIGEN
-          </button>
-        )}
         {hintCount > 0 && (
           <span
             className="inline-flex items-center gap-[4px] font-mono text-[9px] tracking-[0.6px] text-mute"

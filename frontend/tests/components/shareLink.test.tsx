@@ -48,11 +48,14 @@ describe('Geteilter Link · schreiben', () => {
 
   it('schreibt Ansicht und Suche in die Adresszeile', async () => {
     await ladeApp();
-    fireEvent.click(screen.getByRole('radio', { name: 'Matrix' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Tabelle' }));
     fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'Beton' } });
 
-    await waitFor(() => expect(fragment()).toContain('v=matrix'));
-    expect(fragment()).toContain('q=Beton');
+    // Die Suche ist entprellt und kommt später in die Adresszeile als die Ansicht.
+    await waitFor(() => {
+      expect(fragment()).toContain('v=table');
+      expect(fragment()).toContain('q=Beton');
+    });
   });
 
   it('schreibt den Pfad nicht weg', async () => {
@@ -99,11 +102,14 @@ describe('Geteilter Link · lesen', () => {
   });
 
   it('übergeht eine OZ, die es in dieser Datei nicht gibt — der Rest des Links gilt', async () => {
-    setzeFragment('#v=matrix~p=999.999.9999.gibt-es-nicht');
+    setzeFragment('#v=table~p=999.999.9999.gibt-es-nicht');
     await ladeApp();
 
     await waitFor(() =>
-      expect(screen.getByRole('radio', { name: 'Matrix' })).toHaveAttribute('aria-checked', 'true'),
+      expect(screen.getByRole('radio', { name: 'Tabelle' })).toHaveAttribute(
+        'aria-checked',
+        'true',
+      ),
     );
   });
 

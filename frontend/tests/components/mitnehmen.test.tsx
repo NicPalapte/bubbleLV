@@ -323,7 +323,7 @@ describe('Drucken', () => {
     fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'Beton' } });
     // Die Suche ist entprellt: erst wenn der Überblick die Bezugsgröße nennt,
     // ist der Filter wirklich aktiv.
-    await screen.findByText(/im aktuellen Filter/);
+    await screen.findAllByText(/im aktuellen Filter/);
 
     act(() => {
       window.dispatchEvent(new Event('beforeprint'));
