@@ -51,8 +51,11 @@ describe('Geteilter Link · schreiben', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'Tabelle' }));
     fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'Beton' } });
 
-    await waitFor(() => expect(fragment()).toContain('v=table'));
-    expect(fragment()).toContain('q=Beton');
+    // Die Suche ist entprellt und kommt später in die Adresszeile als die Ansicht.
+    await waitFor(() => {
+      expect(fragment()).toContain('v=table');
+      expect(fragment()).toContain('q=Beton');
+    });
   });
 
   it('schreibt den Pfad nicht weg', async () => {
