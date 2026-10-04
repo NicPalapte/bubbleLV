@@ -13,26 +13,63 @@ export interface PipelineRequest {
   fileName: string;
 }
 
-export type PipelineResponse =
-  { ok: true; result: LoadedLV } | { ok: false; code: PipelineErrorCode; message: string };
+export type PipelineResponse = { ok: true; result: LoadedLV } | ({ ok: false } & PipelineFailure);
 
 export interface PipelineFailure {
   code: PipelineErrorCode;
   message: string;
+  /** Fertiger Satz mit eigenem nächsten Schritt: `describeFailure` ergänzt nichts. */
+  complete?: boolean;
+  /**
+   * Technische Ursache für die Fehlersuche, nie für die Anzeige. Ein Text statt
+   * eines Error-Objekts, weil Exception-Klassen die Worker-Grenze nicht überleben
+   * (structuredClone, siehe Kopfkommentar).
+   */
+  detail?: string;
+}
+
+/** Ursache als Text: „RangeError: Maximum call stack size exceeded". */
+function describeCause(error: unknown): string {
+  return error instanceof Error ? `${error.name}: ${error.message}` : String(error);
 }
 
 export function toPipelineError(error: unknown): PipelineFailure {
-  if (error instanceof GAEBVersionError) return { code: 'version', message: error.message };
-  if (error instanceof GAEBValidationError) return { code: 'validation', message: error.message };
-  if (error instanceof GAEBParseError) return { code: 'parse', message: error.message };
+  if (error instanceof GAEBVersionError) {
+    return { code: 'version', message: error.message, complete: error.complete };
+  }
+  if (error instanceof GAEBValidationError) {
+    return { code: 'validation', message: error.message, complete: error.complete };
+  }
+  if (error instanceof GAEBParseError) {
+    return { code: 'parse', message: error.message, complete: error.complete };
+  }
+  // Der Systemtext eines unerwarteten Fehlers („Maximum call stack size exceeded")
+  // hilft niemandem beim Laden einer Datei und ist Englisch. Die Meldung bleibt
+  // deshalb immer dieselbe deutsche.
   return {
     code: 'unknown',
-    message: error instanceof Error ? error.message : 'Unbekannter Fehler beim Laden der Datei',
+    message: UNEXPECTED_FAILURE,
+    complete: true,
+    detail: describeCause(error),
   };
 }
 
-/** Fehlermeldung für die UI — Ursache zuerst, dann was zu tun ist. */
+/** Meldung für einen Fehler, den keine der eigenen Fehlerklassen beschreibt. */
+export const UNEXPECTED_FAILURE =
+  'Beim Lesen der Datei ist ein unerwarteter Fehler aufgetreten. ' +
+  'Bitte die Datei erneut laden oder prüfen, ob sie sich in der Ausschreibungssoftware öffnen lässt.';
+
+/**
+ * Fehlermeldung für die UI — Ursache zuerst, dann was zu tun ist.
+ *
+ * Eine Meldung mit `complete` ist ein fertiger Satz mit eigenem nächsten Schritt
+ * („Die Datei x.x83 ist leer.") und bleibt unverändert. Alle anderen sind
+ * Bruchstücke und bekommen den Hinweis zu ihrer Fehlerart. Die Kennzeichnung kommt
+ * aus dem Fehler selbst; aus dem letzten Zeichen des Texts würde sie erraten, und
+ * ein Dateiname wie „LV." brächte das durcheinander.
+ */
 export function describeFailure(failure: PipelineFailure): string {
+  if (failure.complete === true) return failure.message;
   switch (failure.code) {
     case 'version':
       return `${failure.message}. Bitte die Datei aus der Ausschreibungssoftware in einer unterstützten GAEB-Version exportieren.`;

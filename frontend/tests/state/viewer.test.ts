@@ -560,3 +560,51 @@ describe('viewerReducer · ohne geladenes LV', () => {
     expect(buildTree(DRAFT).children.length).toBe(1);
   });
 });
+
+describe('Hinweise (Issues #94, #95)', () => {
+  it('beginnt ohne Hinweis', () => {
+    expect(base.notices).toEqual([]);
+  });
+
+  it('sammelt Hinweise, ohne denselben Text doppelt zu zeigen', () => {
+    let state = viewerReducer(base, { type: 'notice', message: 'Eins' });
+    state = viewerReducer(state, { type: 'notice', message: 'Zwei' });
+    state = viewerReducer(state, { type: 'notice', message: 'Eins' });
+    expect(state.notices).toEqual(['Eins', 'Zwei']);
+  });
+
+  it('schließt alle Hinweise auf einmal', () => {
+    const state = viewerReducer(viewerReducer(base, { type: 'notice', message: 'Eins' }), {
+      type: 'dismissNotices',
+    });
+    expect(state.notices).toEqual([]);
+  });
+
+  it('bringt die Hinweise des Ladevorgangs mit dem neuen LV an', () => {
+    const state = viewerReducer(base, {
+      type: 'loaded',
+      lv: classifyAndBuild(DRAFT, 'test.x83'),
+      notices: ['Nur eine Datei'],
+    });
+    expect(state.notices).toEqual(['Nur eine Datei']);
+  });
+
+  it('verwirft alte Hinweise bei einem neuen Import und beim Schließen', () => {
+    const mitHinweis = viewerReducer(loadedState(), { type: 'notice', message: 'Alt' });
+    expect(viewerReducer(mitHinweis, { type: 'loading' }).notices).toEqual([]);
+    expect(viewerReducer(mitHinweis, { type: 'clear' }).notices).toEqual([]);
+    const neu = viewerReducer(mitHinweis, {
+      type: 'loaded',
+      lv: classifyAndBuild(DRAFT, 'neu.x83'),
+    });
+    expect(neu.notices).toEqual([]);
+  });
+
+  it('lässt Filter, Auswahl und Ansicht unberührt', () => {
+    const vorher = loadedState();
+    const nachher = viewerReducer(vorher, { type: 'notice', message: 'Hinweis' });
+    expect(nachher.filter).toBe(vorher.filter);
+    expect(nachher.selection).toBe(vorher.selection);
+    expect(nachher.view).toBe(vorher.view);
+  });
+});

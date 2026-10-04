@@ -310,6 +310,28 @@ Rohpositionen bestimmen kann (Skalierung Richtung ~10k Positionen).
 Upload-Komponente gefangen und als Fehlermeldung angezeigt (z. B. Version nicht
 unterstützt). Keine `console.log`-Debugging-Ausgaben im produktiven Pfad.
 
+Regeln für die Meldungen (`lib/pipeline/messages.ts`):
+
+- **Immer Deutsch, nie Systemtext.** Der Text eines `<parsererror>` oder eines
+  unerwarteten Fehlers („Maximum call stack size exceeded") steht nicht in der Meldung;
+  bei unerwarteten Fehlern erscheint immer `UNEXPECTED_FAILURE`.
+- **Fertiger Satz = `complete`.** Ein Fehler mit `complete: true` trägt schon seinen
+  nächsten Schritt („Die Datei x.x83 ist leer.") und bleibt unverändert. Die
+  Kennzeichnung steht im Fehler, nicht im letzten Zeichen des Texts. Alle anderen sind
+  Bruchstücke und bekommen von `describeFailure` den Hinweis zu ihrer Fehlerart.
+- **Die Ursache geht nicht verloren.** Bei unerwarteten Fehlern steht sie als Text in
+  `PipelineFailure.detail` (übersteht die Worker-Grenze), hängt als `cause` am
+  `LVLoadError` und geht mit `console.error` in die Konsole, wie bei einem Absturz
+  (`ErrorBoundary`). In der Meldung steht sie nicht.
+- **Vor dem Parsen geprüft** (`LVLoadError` aus `loadLv`): Dateityp (Endung `.x81`–`.x86`
+  oder `.xml`) und Größe (`MAX_FILE_BYTES`), jeweils bevor die Datei gelesen wird.
+
+**Hinweise** sind keine Fehler: das LV ist geladen, aber etwas lief anders als erwartet
+(zweite Datei beim Drop ignoriert, Teile eines Teilen-Links passten nicht, Worker
+ausgefallen und direkt weitergerechnet). Sie stehen in `ViewerState.notices` und
+erscheinen in der schließbaren Hinweisleiste unter den Filtern (`NoticeBar`); ein neuer
+Import oder „LV schließen" verwirft sie.
+
 ## Bewusst nicht im MVP
 
 Zuständigkeit/Bearbeiter-Zuweisung — ohne Server/Persistenz kein sinnvoller Mehrwert

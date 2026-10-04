@@ -69,6 +69,13 @@ Mittel dazu: flacher Positions-Index statt Baum-Traversierung bei jedem Render,
 Aggregation im Web Worker, Virtualisierung in der Tabelle, Level-of-Detail und Culling
 im Graphen.
 
+**Obergrenze: 50 MB je Datei** (`MAX_FILE_BYTES` in `lib/pipeline/loadLv.ts`). 10.000
+Positionen sind rund 5 MB XML, 50 MB liegen also beim Neunfachen des Richtwerts. Der
+XML-Parser läuft im Haupt-Thread; eine größere Datei würde die Oberfläche dort lange
+blockieren. Darüber lehnt Bubble die Datei **vor dem Lesen** mit einer Meldung ab, die
+die Grenze nennt. Zusätzlich gilt eine Obergrenze von 100 verschachtelten Abschnitten;
+reale LVs gliedern in wenigen Ebenen.
+
 ### 3 · Klassifizieren und Hervorheben
 
 Die Klassifizierung bleibt hinter der austauschbaren TS-Schnittstelle

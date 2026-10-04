@@ -205,6 +205,21 @@ const OVERSCAN_PX = 240;
 /** Höhe, mit der ohne messbare Zeile gerechnet wird (Fallback vor der Messung). */
 const UNMEASURED = 0;
 
+/**
+ * Zeilen, die vor der Messung höchstens gezeichnet werden (Issue #98). Der erste
+ * Frame hat noch keine Fensterhöhe, also kein Fenster — früher hieß das „alle
+ * Zeilen": bei rund 9.500 Positionen ca. 200.000 DOM-Knoten, die sofort nach der
+ * Messung wieder abgebaut wurden (7 bis 14 s beim Ansichtswechsel).
+ *
+ * Die Messung braucht keine einzige Zeile: Zeilen- und Kopfhöhe kommen aus den
+ * unsichtbaren Messzeilen. Der unvermessene Frame wird zudem nie gemalt, die
+ * Messung läuft im Layout-Effekt davor. Klein ist er deshalb mit Absicht: 200
+ * statt 40 Zeilen kosteten bei 9.500 Positionen noch rund 100 ms Layout je
+ * Ansichtswechsel. In jsdom, das nie misst, bleibt die Tabelle dauerhaft in
+ * diesem Zustand.
+ */
+export const UNMEASURED_ROWS = 40;
+
 function GroupHeadRow({ head, style }: { head: ReactNode; style?: CSSProperties }) {
   return (
     <div
@@ -451,10 +466,10 @@ export function DataTable<T>({
     return widest;
   };
 
-  // Ohne gemessenes Layout (jsdom in Tests, erster Frame) wird alles gezeichnet
-  // — wie in Tree.tsx (Issue #23).
+  // Ohne gemessenes Layout (jsdom in Tests, erster Frame) gibt es kein Fenster:
+  // gezeichnet wird dann nur der Anfang, begrenzt auf UNMEASURED_ROWS.
   let first = 0;
-  let last = rows.length;
+  let last = Math.min(rows.length, UNMEASURED_ROWS);
   if (measured) {
     const from = Math.max(0, scrollTop - OVERSCAN_PX);
     const to = scrollTop + viewport + OVERSCAN_PX;

@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { GAEBParseError, GAEBValidationError, GAEBVersionError } from '../../src/lib/gaeb/errors';
 import { getGaebParser } from '../../src/lib/gaeb/parser';
 import type { ParsedLV, ParsedPosition, ParsedSection } from '../../src/lib/gaeb/types';
+import { gaebVerschachtelt } from '../support/gaebXml';
 
 const parser = getGaebParser();
 
@@ -175,6 +176,57 @@ describe('XmlGaebParser · Fehlerfälle', () => {
 
   it('wirft GAEBParseError bei nicht wohlgeformtem XML', () => {
     expect(() => parser.parse('<GAEB><Award></GAEB>', 'kaputt.x83')).toThrow(GAEBParseError);
+  });
+
+  it('meldet eine leere Datei als leer, nicht als kaputtes XML (Issue #92)', () => {
+    for (const leer of ['', '  \n\t ', new Uint8Array(0), new ArrayBuffer(0)]) {
+      let fehler: unknown = null;
+      try {
+        parser.parse(leer, 'leer.x83');
+      } catch (error) {
+        fehler = error;
+      }
+      expect(fehler).toBeInstanceOf(GAEBParseError);
+      expect((fehler as Error).message).toBe('Die Datei leer.x83 ist leer.');
+    }
+  });
+
+  it('zeigt bei kaputtem XML keinen englischen Systemtext (Issue #92)', () => {
+    // Der Text im <parsererror> stammt aus dem Browser bzw. jsdom und ist
+    // Englisch und je Browser anders. Er gehört nicht in die Meldung.
+    let fehler: unknown = null;
+    try {
+      parser.parse('<GAEB><Award></GAEB>', 'kaputt.x83');
+    } catch (error) {
+      fehler = error;
+    }
+    expect((fehler as Error).message).toBe(
+      'kaputt.x83 ist kein wohlgeformtes XML. Die Datei ist beschädigt oder kein GAEB-DA-XML.',
+    );
+  });
+
+  it('lehnt zu tief verschachtelte Abschnitte mit deutscher Meldung ab (Issue #92)', () => {
+    // Vorher löste eine sehr tiefe Verschachtelung (ca. 5.000 Ebenen) einen RangeError
+    // aus („Maximum call stack size exceeded"). 300 Ebenen reichen für die Grenze von
+    // 100; mehr würde nur das XML-Einlesen von jsdom verlangsamen (quadratisch).
+    let fehler: unknown = null;
+    try {
+      parser.parse(gaebVerschachtelt(300), 'tief.x83');
+    } catch (error) {
+      fehler = error;
+    }
+    expect(fehler).toBeInstanceOf(GAEBValidationError);
+    expect((fehler as Error).message).toMatch(/zu tief verschachtelt/);
+  });
+
+  it('nimmt genau 100 Ebenen noch an und lehnt die 101. ab', () => {
+    expect(() => parser.parse(gaebVerschachtelt(100), 'grenze.x83')).not.toThrow();
+    expect(() => parser.parse(gaebVerschachtelt(101), 'drueber.x83')).toThrow(GAEBValidationError);
+  });
+
+  it('liest ein realistisch tiefes LV weiterhin', () => {
+    const lv = parser.parse(gaebVerschachtelt(40), 'tief-genug.x83');
+    expect(lv.lots.length).toBeGreaterThan(0);
   });
 
   it('wirft GAEBValidationError bei fremdem Wurzelelement', () => {

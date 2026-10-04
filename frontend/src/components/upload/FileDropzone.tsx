@@ -8,11 +8,17 @@ import { useCallback, useRef, useState } from 'react';
 import { Chip } from '../ui/Chip';
 import { BubbleLogo } from '../ui/BubbleLogo';
 import { DEMO_LVS, loadDemoLv, type DemoLv } from '../../lib/pipeline/loadDemoLv';
-import { loadLv, LVLoadError } from '../../lib/pipeline/loadLv';
+import { GAEB_ENDUNGEN } from '../../lib/gaeb';
+import { loadLv, LVLoadError, MAX_FILE_BYTES } from '../../lib/pipeline/loadLv';
+import { UNEXPECTED_FAILURE } from '../../lib/pipeline/messages';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { LoadedLV } from '../../lib/pipeline/runPipeline';
 
-const ACCEPT = '.x81,.x82,.x83,.x84,.x85,.x86,.xml,.X81,.X82,.X83,.X84,.X85,.X86,.XML';
+// Der Dateidialog unterscheidet Groß- und Kleinschreibung der Endung je nach System.
+const ACCEPT = GAEB_ENDUNGEN.flatMap((endung) => [`.${endung}`, `.${endung.toUpperCase()}`]).join(
+  ',',
+);
+const MAX_MB = MAX_FILE_BYTES / (1024 * 1024);
 
 export function FileDropzone() {
   const { loading, error } = useViewer();
@@ -23,36 +29,59 @@ export function FileDropzone() {
   // Ablage nie verlassen hat — deshalb wird gezählt statt geschaltet.
   const dragDepth = useRef(0);
 
-  /** Ein Ladeweg, eine Fehlerbehandlung — Datei wie Demo-LV. */
+  /**
+   * Ein Ladeweg, eine Fehlerbehandlung — Datei wie Demo-LV. `load` bekommt eine
+   * Funktion, mit der es Hinweise melden kann; sie erscheinen nach dem Laden in
+   * der Hinweisleiste, weil die Startseite dann verschwunden ist.
+   */
   const run = useCallback(
-    async (load: () => Promise<LoadedLV>): Promise<void> => {
+    async (
+      load: (onNotice: (message: string) => void) => Promise<LoadedLV>,
+      vorab: readonly string[] = [],
+    ): Promise<void> => {
       dispatch({ type: 'loading' });
+      const notices = [...vorab];
       try {
-        dispatch({ type: 'loaded', lv: await load() });
+        const lv = await load((message) => notices.push(message));
+        dispatch({ type: 'loaded', lv, notices });
       } catch (cause) {
-        const message =
-          cause instanceof LVLoadError
-            ? cause.message
-            : cause instanceof Error
-              ? cause.message
-              : 'Unbekannter Fehler beim Laden der Datei';
-        dispatch({ type: 'error', message });
+        // Ein erwarteter Fehler (leere Datei, falsches Format …) erklärt sich selbst.
+        // Ein unerwarteter ist ein Bug: seine Ursache steht am Fehler und gehört in
+        // die Konsole, genau wie bei einem Absturz (ErrorBoundary). Die UI zeigt
+        // trotzdem nur den deutschen Satz; der Systemtext wäre Englisch.
+        if (!(cause instanceof LVLoadError) || cause.code === 'unknown') {
+          console.error('Unerwarteter Fehler beim Laden:', cause);
+        }
+        dispatch({
+          type: 'error',
+          message: cause instanceof LVLoadError ? cause.message : UNEXPECTED_FAILURE,
+        });
       }
     },
     [dispatch],
   );
 
-  const handleFile = useCallback(
-    async (file: File | undefined): Promise<void> => {
+  const handleFiles = useCallback(
+    async (files: FileList | null | undefined): Promise<void> => {
+      const file = files?.[0];
       if (file === undefined) return;
-      await run(() => loadLv(file));
+      // Mehr als eine Datei: die erste wird gelesen, und es wird gesagt (Issue #94).
+      // Ein Versionsvergleich oder Merge ist laut docs/scope.md bewusst draußen.
+      const vorab =
+        files !== undefined && files !== null && files.length > 1
+          ? [
+              `Es wurden ${files.length} Dateien abgelegt. Gelesen wird nur „${file.name}". ` +
+                'Es wird immer nur eine Datei gelesen.',
+            ]
+          : [];
+      await run((onNotice) => loadLv(file, { onNotice }), vorab);
     },
     [run],
   );
 
   const openDemo = (demo: DemoLv): void => {
     if (loading) return;
-    void run(() => loadDemoLv(demo));
+    void run((onNotice) => loadDemoLv(demo, { onNotice }));
   };
 
   const openDialog = (): void => {
@@ -124,7 +153,7 @@ export function FileDropzone() {
           // Während ein Import läuft, würde eine zweite Datei den ersten Lauf
           // überholen und das Ergebnis wäre nicht mehr vorhersagbar.
           if (loading) return;
-          void handleFile(event.dataTransfer.files[0]);
+          void handleFiles(event.dataTransfer.files);
         }}
         onClick={openDialog}
         aria-busy={loading}
@@ -140,8 +169,8 @@ export function FileDropzone() {
           GAEB-Datei hierher ziehen
         </div>
         <div className="max-w-[420px] font-mono text-[10.5px] leading-[1.6] text-mute">
-          GAEB DA XML (X81–X86), Versionen 3.0 bis 3.3. Die Datei wird ausschließlich im Browser
-          verarbeitet — nichts wird hochgeladen, nichts gespeichert.
+          GAEB DA XML (X81–X86), Versionen 3.0 bis 3.3, bis {MAX_MB} MB. Die Datei wird
+          ausschließlich im Browser verarbeitet — nichts wird hochgeladen, nichts gespeichert.
         </div>
         {/*
           Der Klick auf die Fläche ist eine Mausbequemlichkeit; die bedienbare
@@ -181,7 +210,7 @@ export function FileDropzone() {
           className="hidden"
           aria-label="GAEB-Datei auswählen"
           onChange={(event) => {
-            void handleFile(event.target.files?.[0]);
+            void handleFiles(event.target.files);
             // Zurücksetzen, damit dieselbe Datei erneut gewählt werden kann.
             event.target.value = '';
           }}

@@ -74,6 +74,11 @@ export interface ViewerState {
   lv: LoadedLV | null;
   loading: boolean;
   error: string | null;
+  /**
+   * Hinweise zum geladenen LV (Issues #94, #95): etwas lief anders als erwartet,
+   * aber die Datei ist da. Anders als `error` verdrängen sie die Ansicht nicht.
+   */
+  notices: readonly string[];
   filter: FilterState;
   selection: SelectionState;
   view: ViewState;
@@ -84,7 +89,10 @@ type LvAction =
   | { type: 'loading' }
   /** Zustand aus einem geteilten Link (WP-P, Schritt 2, lib/share/urlState.ts). */
   | { type: 'applyShared'; shared: SharedState; nodeId: string | null; positionId: string | null }
-  | { type: 'loaded'; lv: LoadedLV }
+  | { type: 'loaded'; lv: LoadedLV; notices?: readonly string[] }
+  /** Hinweis anhängen; derselbe Text erscheint nicht doppelt. */
+  | { type: 'notice'; message: string }
+  | { type: 'dismissNotices' }
   | { type: 'error'; message: string }
   | { type: 'clear' }
   /** Knoten wählen und gezielt in die Tabelle wechseln (Tabellensymbol im Graphen). */
@@ -97,6 +105,7 @@ export const INITIAL_VIEWER_STATE: ViewerState = {
   lv: null,
   loading: false,
   error: null,
+  notices: [],
   filter: INITIAL_FILTER_STATE,
   selection: INITIAL_SELECTION_STATE,
   view: INITIAL_VIEW_STATE,
@@ -107,13 +116,14 @@ export const INITIAL_VIEWER_STATE: ViewerState = {
 export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerState {
   switch (action.type) {
     case 'loading':
-      return { ...state, loading: true, error: null };
+      return { ...state, loading: true, error: null, notices: [] };
     case 'loaded':
       // Ein neuer Import ersetzt den kompletten Session-Zustand
       // (docs/architecture/data-model.md#re-import-in-derselben-session).
       return {
         ...INITIAL_VIEWER_STATE,
         lv: action.lv,
+        notices: action.notices ?? [],
         filter: { ...INITIAL_FILTER_STATE, hideMode: state.filter.hideMode },
         selection: selectionForTree(action.lv.tree),
         view: viewStateForNewLv(state.view),
@@ -140,6 +150,12 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
         view: viewReducer(state.view, { type: 'setViewMode', mode: shared.view }),
       };
     }
+    case 'notice':
+      return state.notices.includes(action.message)
+        ? state
+        : { ...state, notices: [...state.notices, action.message] };
+    case 'dismissNotices':
+      return state.notices.length === 0 ? state : { ...state, notices: [] };
     case 'error':
       return { ...state, loading: false, error: action.message };
     case 'clear':

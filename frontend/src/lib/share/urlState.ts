@@ -109,17 +109,29 @@ function bereich(text: string): Range | null {
   return [a, b];
 }
 
+/** Ergebnis von `decodeSharedChecked`: der Zustand und was am Link nicht passte. */
+export interface CheckedShared {
+  state: SharedState;
+  /** Deutsche Namen der verworfenen Teile, in der Reihenfolge des Links. */
+  verworfen: string[];
+}
+
 /**
  * Fragment → Zustand. **Alles wird geprüft**: ein Link kann von irgendwoher
  * kommen, und ein unbekannter Ansichtsname oder eine erfundene Facette darf
  * die App nicht in einen Zustand bringen, den ihre Oberfläche nicht kennt.
- * Was nicht passt, fällt weg; der Rest des Links gilt trotzdem.
+ * Was nicht passt, fällt weg; der Rest des Links gilt trotzdem — und
+ * `verworfen` nennt, was wegfiel, damit die Oberfläche es sagen kann (Issue #95).
+ *
+ * Teile ohne `=` zählen nicht als verworfen: ein fremder Anker wie `#abschnitt`
+ * ist kein Teilen-Link, und die App hat nichts zu melden.
  */
-export function decodeShared(fragment: string): SharedState {
+export function decodeSharedChecked(fragment: string): CheckedShared {
   const roh = fragment.startsWith('#') ? fragment.slice(1) : fragment;
-  if (roh === '') return EMPTY_SHARED;
+  if (roh === '') return { state: EMPTY_SHARED, verworfen: [] };
 
   const state: SharedState = { ...EMPTY_SHARED, facets: {} };
+  const verworfen: string[] = [];
   for (const teil of roh.split(TEIL)) {
     const trenner = teil.indexOf('=');
     if (trenner < 0) continue;
@@ -128,40 +140,55 @@ export function decodeShared(fragment: string): SharedState {
 
     if (schluessel === 'v') {
       const view = VIEWS.find((kandidat) => kandidat === wert);
-      if (view !== undefined) state.view = view;
+      if (view === undefined) verworfen.push('Ansicht');
+      else state.view = view;
       continue;
     }
     if (schluessel === 'q') {
-      state.search = dec(wert) ?? '';
+      const suche = dec(wert);
+      if (suche === null) verworfen.push('Suche');
+      state.search = suche ?? '';
       continue;
     }
     if (schluessel === 'm') {
       state.menge = bereich(wert);
+      if (state.menge === null) verworfen.push('Mengenbereich');
       continue;
     }
     if (schluessel === 'h') {
       const mode = HIDE_MODES.find((kandidat) => kandidat === wert);
-      if (mode !== undefined) state.hideMode = mode;
+      if (mode === undefined) verworfen.push('Umgang mit Nicht-Treffern');
+      else state.hideMode = mode;
       continue;
     }
     if (schluessel === 'p') {
-      const oz = dec(wert) ?? '';
-      state.oz = oz === '' ? null : oz;
+      const oz = dec(wert);
+      if (oz === null) verworfen.push('Auswahl');
+      state.oz = oz === null || oz === '' ? null : oz;
       continue;
     }
     if (schluessel.startsWith('f.')) {
       const facetId = schluessel.slice(2);
       // Eine Facette, die es nicht gibt, ist kein Filter, sondern ein Tippfehler
       // oder ein Link aus einer anderen Fassung — sie fällt weg.
-      if (!FACETS_BY_ID.has(facetId)) continue;
-      const values = wert
-        .split(WERT)
-        .map(dec)
-        .filter((value): value is string => value !== null && value !== '');
+      if (!FACETS_BY_ID.has(facetId)) {
+        verworfen.push(`Filter „${facetId}"`);
+        continue;
+      }
+      const teile = wert.split(WERT).map(dec);
+      const values = teile.filter((value): value is string => value !== null && value !== '');
+      // Ein Wert mit defekter Kodierung ist ein beschädigter Link; ein leerer
+      // (`f.x=`) ist dagegen nur ein leerer Filter und nichts zu melden.
+      if (teile.includes(null)) verworfen.push(`Filter „${facetId}"`);
       if (values.length > 0) state.facets[facetId] = values;
     }
   }
-  return state;
+  return { state, verworfen };
+}
+
+/** Wie `decodeSharedChecked`, nur der Zustand — für alle, die nichts melden. */
+export function decodeShared(fragment: string): SharedState {
+  return decodeSharedChecked(fragment).state;
 }
 
 /**

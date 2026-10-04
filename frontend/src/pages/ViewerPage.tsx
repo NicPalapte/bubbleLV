@@ -11,6 +11,7 @@ import { Profiler, useCallback, useEffect, useState, type ReactNode } from 'reac
 import { CheckView } from '../components/check/CheckView';
 import { CompareView } from '../components/compare/CompareView';
 import { FilterStrip } from '../components/filter/FilterStrip';
+import { NoticeBar } from '../components/layout/NoticeBar';
 import { BubbleGraph } from '../components/graph/BubbleGraph';
 import { GraphHeader } from '../components/graph/GraphHeader';
 import { PropertiesPanel } from '../components/layout/PropertiesPanel';
@@ -83,6 +84,7 @@ export function ViewerPage() {
         <header>
           <TopBar />
           <FilterStrip />
+          <NoticeBar />
         </header>
 
         {/*

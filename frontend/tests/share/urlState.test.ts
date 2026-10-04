@@ -5,6 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   decodeShared,
+  decodeSharedChecked,
   encodeShared,
   EMPTY_SHARED,
   sharedHash,
@@ -113,5 +114,44 @@ describe('Was im Link steht', () => {
     );
     expect(fragment).toContain('DIN EN 1992-1-1');
     expect(fragment).toContain('C30/37');
+  });
+});
+
+describe('decodeSharedChecked (Issue #95)', () => {
+  it('meldet nichts, wenn der ganze Link passt', () => {
+    const { state, verworfen } = decodeSharedChecked('#v=matrix~q=Beton~p=001.002');
+    expect(state.view).toBe('matrix');
+    expect(verworfen).toEqual([]);
+  });
+
+  it('meldet jeden verworfenen Teil mit deutschem Namen', () => {
+    const { verworfen } = decodeSharedChecked(
+      '#v=nope~q=%~m=5,1~h=weg~p=%~f.gibtsnicht=a~f.gewerk=%E0%A4%A',
+    );
+    expect(verworfen).toEqual([
+      'Ansicht',
+      'Suche',
+      'Mengenbereich',
+      'Umgang mit Nicht-Treffern',
+      'Auswahl',
+      'Filter „gibtsnicht"',
+      'Filter „gewerk"',
+    ]);
+  });
+
+  it('behält den passenden Rest des Links trotzdem', () => {
+    const { state, verworfen } = decodeSharedChecked('#v=nope~q=Beton');
+    expect(state.view).toBe('overview');
+    expect(state.search).toBe('Beton');
+    expect(verworfen).toEqual(['Ansicht']);
+  });
+
+  it('übergeht Teile ohne „=" still: ein fremder Anker ist kein Teilen-Link', () => {
+    expect(decodeSharedChecked('#abschnitt-3').verworfen).toEqual([]);
+  });
+
+  it('liefert denselben Zustand wie decodeShared', () => {
+    const fragment = '#v=table~q=a%20b~m=1,2~h=hide';
+    expect(decodeSharedChecked(fragment).state).toEqual(decodeShared(fragment));
   });
 });
