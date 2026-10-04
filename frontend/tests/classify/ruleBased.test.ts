@@ -6,11 +6,11 @@ import type { ClassifierInput } from '../../src/lib/classify';
 /** Referenzkatalog mit gepflegten Stichworten — so, wie ihn ein Maintainer füllt. */
 const CATALOG = parseStlbCsv(
   [
-    'lb_nummer,lb_bezeichnung,positionsart_default,keywords,quelle_version',
-    '000,"Baustelleneinrichtungen, Sicherheitseinrichtungen",baustelleneinrichtung,baustelleneinrichtung,2023',
-    '012,Mauerarbeiten,,mauerarbeiten|mauerwerk,2023',
-    '013,"Beton- und Stahlbetonarbeiten",,betonarbeiten|stahlbetonarbeiten,2023',
-    '091,Stundenlohnarbeiten,personal,stundenlohnarbeiten,2023',
+    'lb_nummer,lb_bezeichnung,keywords,quelle_version',
+    '000,"Baustelleneinrichtungen, Sicherheitseinrichtungen",baustelleneinrichtung,2023',
+    '012,Mauerarbeiten,mauerarbeiten|mauerwerk,2023',
+    '013,"Beton- und Stahlbetonarbeiten",betonarbeiten|stahlbetonarbeiten,2023',
+    '091,Stundenlohnarbeiten,stundenlohnarbeiten,2023',
   ].join('\n'),
 );
 

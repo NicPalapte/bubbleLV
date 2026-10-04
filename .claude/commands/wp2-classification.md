@@ -20,10 +20,9 @@ Ruleset hinzu, ohne den Klassifizierer umzubauen.
    - `stlb_match.py`: matcht `short_text`/`long_text` gegen die vom Maintainer
      gepflegte Referenztabelle
      [`docs/domain/reference/stlb-bau-leistungsbereiche.csv`](../../docs/domain/reference/stlb-bau-leistungsbereiche.csv)
-     (Spalten `lb_nummer`, `lb_bezeichnung`, `positionsart_default`, `keywords`,
+     (Spalten `lb_nummer`, `lb_bezeichnung`, `keywords`,
      `quelle_version`; beim Start geladen, nicht hartkodiert) →
-     `attributes.gewerk_lb`, `attributes.gewerk`, und `attributes.positionsart` sofern
-     `positionsart_default` für den LB gesetzt ist. **Kein Treffer** (Katalog leer oder
+     `attributes.gewerk_lb`, `attributes.gewerk`, (`positionsart` bleibt Heuristik, nicht Katalog). **Kein Treffer** (Katalog leer oder
      Text ohne STLB-Bezug) → Fallback auf `position_kind.py`.
    - `position_kind.py`: Fallback-Erkennung Bauteil vs. Nicht-Bauteil
      (`personal | planung | baustelleneinrichtung | nebenleistung | sonstige`) anhand
