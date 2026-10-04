@@ -115,11 +115,20 @@ describe('masse', () => {
   it('bleibt bei sehr langen Ziffernfolgen schnell (Issue #89)', () => {
     // Ohne Anker vor der Zahl probiert die Regex jede Startstelle der Ziffernfolge
     // neu: 40.000 Ziffern brauchten rund 11 s.
-    const start = performance.now();
-    const { attributes } = extractMasse(`Wand ${'1'.repeat(50_000)} und weiter`);
-    // Die Grenze ist großzügig, damit ein langsamer CI-Runner den Test nicht rot färbt.
-    expect(performance.now() - start).toBeLessThan(2000);
-    expect(attributes).toEqual({});
+    // Gemessen sind alle Formen 1-2 ms. Die Grenze ist großzügig, damit ein langsamer
+    // CI-Runner den Test nicht rot färbt; der Fehler brauchte Sekunden.
+    const formen = {
+      ziffern: '1'.repeat(50_000),
+      komma: '1,'.repeat(25_000),
+      punkt: '1.'.repeat(25_000),
+      dezimal: '1,5 '.repeat(15_000),
+    };
+    for (const [name, text] of Object.entries(formen)) {
+      const start = performance.now();
+      const { attributes } = extractMasse(`Wand ${text} und weiter`);
+      expect(performance.now() - start, name).toBeLessThan(2000);
+      expect(attributes, name).toEqual({});
+    }
   });
 
   it('liest eine Aufzählung ohne Leerzeichen nicht als Dezimalzahl', () => {
