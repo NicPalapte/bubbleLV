@@ -78,6 +78,8 @@ export function buildImportLog(index: PositionIndex): ImportLog {
     }
     if (position.shortText.trim() === '' && position.longText.trim() === '') ohneText.push(id);
 
+    // Eine fehlende OZ ist keine doppelte: sonst meldeten zwei leere OZ einen Fehlalarm.
+    if (position.oz.trim() === '') continue;
     const first = seenOz.get(position.oz);
     if (first === undefined) seenOz.set(position.oz, id);
     else {

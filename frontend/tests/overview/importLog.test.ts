@@ -70,6 +70,11 @@ describe('buildImportLog', () => {
     expect(new Set(entry?.positionIds).size).toBe(3);
   });
 
+  it('meldet leere Ordnungszahlen nicht als doppelt', () => {
+    const log = logOf([position(''), position('')]);
+    expect(log.entries.find((e) => e.kind === 'doppelteOz')).toBeUndefined();
+  });
+
   it('erkennt Positionen ganz ohne Text', () => {
     const log = logOf([position('01.01.0010', { shortText: '', longText: ' ' })]);
     expect(log.entries.find((e) => e.kind === 'ohneText')?.positionIds).toHaveLength(1);
