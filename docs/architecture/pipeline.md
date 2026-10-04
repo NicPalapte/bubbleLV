@@ -319,6 +319,10 @@ Regeln für die Meldungen (`lib/pipeline/messages.ts`):
   nächsten Schritt („Die Datei x.x83 ist leer.") und bleibt unverändert. Die
   Kennzeichnung steht im Fehler, nicht im letzten Zeichen des Texts. Alle anderen sind
   Bruchstücke und bekommen von `describeFailure` den Hinweis zu ihrer Fehlerart.
+- **Die Ursache geht nicht verloren.** Bei unerwarteten Fehlern steht sie als Text in
+  `PipelineFailure.detail` (übersteht die Worker-Grenze), hängt als `cause` am
+  `LVLoadError` und geht mit `console.error` in die Konsole, wie bei einem Absturz
+  (`ErrorBoundary`). In der Meldung steht sie nicht.
 - **Vor dem Parsen geprüft** (`LVLoadError` aus `loadLv`): Dateityp (Endung `.x81`–`.x86`
   oder `.xml`) und Größe (`MAX_FILE_BYTES`), jeweils bevor die Datei gelesen wird.
 

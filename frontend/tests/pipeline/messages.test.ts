@@ -19,7 +19,21 @@ describe('toPipelineError', () => {
     expect(failure.message).toMatch(/unerwartet/);
   });
 
+  it('hebt die Ursache unerwarteter Fehler als Text auf (Review auf PR 114)', () => {
+    // Die UI zeigt nur den deutschen Satz; die Ursache bleibt für die Fehlersuche
+    // erhalten — als Text, damit sie die Worker-Grenze (postMessage) übersteht.
+    const failure = toPipelineError(new RangeError('Maximum call stack size exceeded'));
+    expect(failure.detail).toBe('RangeError: Maximum call stack size exceeded');
+    expect(failure.message).not.toContain('Maximum');
+  });
+
+  it('übersteht structuredClone, wie beim Weg aus dem Worker', () => {
+    const failure = toPipelineError(new TypeError('x ist nicht definiert'));
+    expect(structuredClone(failure)).toEqual(failure);
+  });
+
   it('kommt auch mit Nicht-Fehlern zurecht', () => {
+    expect(toPipelineError('irgendwas').detail).toBe('irgendwas');
     expect(toPipelineError('irgendwas').message).toMatch(/unerwartet/);
     expect(toPipelineError(null).code).toBe('unknown');
   });

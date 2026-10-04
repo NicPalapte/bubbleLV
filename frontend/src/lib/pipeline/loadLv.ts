@@ -5,6 +5,7 @@
 import {
   describeFailure,
   toPipelineError,
+  type PipelineFailure,
   type PipelineRequest,
   type PipelineResponse,
 } from './messages';
@@ -16,11 +17,24 @@ import type { LVDraft } from '../../types/lvDraft';
 export class LVLoadError extends Error {
   readonly code: string;
 
-  constructor(code: string, message: string) {
-    super(message);
+  constructor(code: string, message: string, options?: ErrorOptions) {
+    super(message, options);
     this.name = 'LVLoadError';
     this.code = code;
   }
+}
+
+/**
+ * Fehler für die UI aus einem Pipeline-Fehler. Die technische Ursache hängt als
+ * `cause` daran: die UI zeigt sie nicht, die Fehlersuche braucht sie.
+ */
+function toLoadError(failure: PipelineFailure, cause?: unknown): LVLoadError {
+  const ursache = cause ?? (failure.detail === undefined ? undefined : new Error(failure.detail));
+  return new LVLoadError(
+    failure.code,
+    describeFailure(failure),
+    ursache === undefined ? undefined : { cause: ursache },
+  );
 }
 
 /**
@@ -121,7 +135,7 @@ function classifyInWorker(
       worker.terminate();
       const response = event.data;
       if (response.ok) resolve(response.result);
-      else reject(new LVLoadError(response.code, describeFailure(response)));
+      else reject(toLoadError(response));
     };
     worker.onerror = rechneWeiter;
     // Die Antwort ließ sich nicht deserialisieren: ohne diesen Handler bliebe
@@ -160,8 +174,7 @@ async function parseClassifyBuild(
     // Bytes, nicht Text — das Encoding steht in der XML-Deklaration.
     draft = parseToDraft(bytes, fileName);
   } catch (error) {
-    const failure = toPipelineError(error);
-    throw new LVLoadError(failure.code, describeFailure(failure));
+    throw toLoadError(toPipelineError(error), error);
   }
 
   try {
@@ -172,8 +185,7 @@ async function parseClassifyBuild(
     return classifyAndBuild(draft, fileName);
   } catch (error) {
     if (error instanceof LVLoadError) throw error;
-    const failure = toPipelineError(error);
-    throw new LVLoadError(failure.code, describeFailure(failure));
+    throw toLoadError(toPipelineError(error), error);
   }
 }
 

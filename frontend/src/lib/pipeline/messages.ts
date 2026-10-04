@@ -20,6 +20,17 @@ export interface PipelineFailure {
   message: string;
   /** Fertiger Satz mit eigenem nächsten Schritt: `describeFailure` ergänzt nichts. */
   complete?: boolean;
+  /**
+   * Technische Ursache für die Fehlersuche, nie für die Anzeige. Ein Text statt
+   * eines Error-Objekts, weil Exception-Klassen die Worker-Grenze nicht überleben
+   * (structuredClone, siehe Kopfkommentar).
+   */
+  detail?: string;
+}
+
+/** Ursache als Text: „RangeError: Maximum call stack size exceeded". */
+function describeCause(error: unknown): string {
+  return error instanceof Error ? `${error.name}: ${error.message}` : String(error);
 }
 
 export function toPipelineError(error: unknown): PipelineFailure {
@@ -35,7 +46,12 @@ export function toPipelineError(error: unknown): PipelineFailure {
   // Der Systemtext eines unerwarteten Fehlers („Maximum call stack size exceeded")
   // hilft niemandem beim Laden einer Datei und ist Englisch. Die Meldung bleibt
   // deshalb immer dieselbe deutsche.
-  return { code: 'unknown', message: UNEXPECTED_FAILURE, complete: true };
+  return {
+    code: 'unknown',
+    message: UNEXPECTED_FAILURE,
+    complete: true,
+    detail: describeCause(error),
+  };
 }
 
 /** Meldung für einen Fehler, den keine der eigenen Fehlerklassen beschreibt. */

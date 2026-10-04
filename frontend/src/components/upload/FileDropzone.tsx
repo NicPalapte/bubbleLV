@@ -45,8 +45,13 @@ export function FileDropzone() {
         const lv = await load((message) => notices.push(message));
         dispatch({ type: 'loaded', lv, notices });
       } catch (cause) {
-        // Nur die eigenen, deutschen Meldungen zeigen: der Text eines
-        // unerwarteten Fehlers wäre Englisch und hilft niemandem.
+        // Ein erwarteter Fehler (leere Datei, falsches Format …) erklärt sich selbst.
+        // Ein unerwarteter ist ein Bug: seine Ursache steht am Fehler und gehört in
+        // die Konsole, genau wie bei einem Absturz (ErrorBoundary). Die UI zeigt
+        // trotzdem nur den deutschen Satz; der Systemtext wäre Englisch.
+        if (!(cause instanceof LVLoadError) || cause.code === 'unknown') {
+          console.error('Unerwarteter Fehler beim Laden:', cause);
+        }
         dispatch({
           type: 'error',
           message: cause instanceof LVLoadError ? cause.message : UNEXPECTED_FAILURE,
