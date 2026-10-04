@@ -6,7 +6,7 @@ Stand: Branch `claude/admiring-lamport-k6mn6o`. Nichts am Code geändert, nichts
 
 - Die App hält ihre Kernzusagen ein: kein Server, kein Request mit Fachdaten, kein Storage.
 - Gemessen: 10.000 Positionen laufen weit unter den Zielwerten.
-- Ein echter Fehler bei Effizienz/Sicherheit: eine Regex im Maß-Extraktor wird bei langen Ziffernfolgen quadratisch langsam (40.000 Ziffern = 11 s).
+- Ein echter Fehler bei Effizienz/Sicherheit: eine Regex im Maß-Extraktor wird bei langen Ziffernfolgen quadratisch langsam (40.000 Ziffern = 11 s). Inzwischen behoben (#89).
 - Fehlermeldungen sind meistens gut. Lücken: kein Größenlimit, englische Technik-Texte bei leerer Datei, Export ohne Fehlermeldung, Teilen-Link verwirft Fehler still.
 - Dopplungen: kleine Wortlisten- und Hilfsfunktions-Dopplungen. Die Filterlogik selbst ist sauber an einer Stelle.
 
@@ -15,7 +15,7 @@ Stand: Branch `claude/admiring-lamport-k6mn6o`. Nichts am Code geändert, nichts
 | Bereich | Ampel | Grund in einem Satz |
 | --- | --- | --- |
 | Dopplungen | gelb | Filterlogik sauber; Wortlisten und zwei Hilfsfunktionen doppelt |
-| Effizienz | gelb | Zielwerte klar erreicht; eine quadratische Regex |
+| Effizienz | gelb | Zielwerte klar erreicht; eine quadratische Regex (inzwischen behoben, #89) |
 | Sicherheit | gelb | Kein XSS, keine Datenabflüsse; CSV-Schutz vorhanden; Regex-DoS, 5 Dev-Warnungen, Workflow-Härtung offen |
 | Fehlermeldungen | gelb | Alle drei Exceptions erreichen die UI; Lücken bei Größe, Export, Teilen-Link |
 
@@ -81,6 +81,7 @@ Keine.
 ### Mittel
 
 **M1. Quadratische Regex bei langen Ziffernfolgen**
+- Status: **behoben** in 8913ec1 (#89). Anker vor der Zahl, Test in `extractors.test.ts`. Die Messwerte unten zeigen den Stand vor dem Fix.
 - Datei: `frontend/src/lib/classify/extractors/masse.ts:42-44` (`suffixed`), Aufruf über `REGELN`.
 - Problem: `suffixed()` baut `\d+(?:[.,]\d+)?\s*(?:mm|cm|dm|m)\s*(?:…)\b` ohne Anker vor der Zahl. Bei einer langen Ziffernfolge ohne Einheit startet der Treffer an jeder Stelle neu und liest bis zum Ende. Das ist quadratisch.
 - Beleg (gemessen, jsdom, ein Langtext mit n Ziffern):
@@ -157,6 +158,7 @@ Keine.
 - Nicht doppelt (geprüft): `classify/keywords.ts` (Besonderheiten je Position) und `graph/keywords.ts` (ein Anzeigewort pro Bubble aus dem Kurztext) haben nichts gemeinsam außer dem Namen. Zur Klarheit sollte `graph/keywords.ts` umbenannt werden, z. B. `bubbleLabel.ts`.
 
 **N4. Wortliste `bestand` trifft Teilwörter**
+- Status: **behoben** in 8913ec1 (#90). "Bestandteil" ist ausgenommen, Komposita treffen weiter. Test in `tests/classify/keywords.test.ts`. Der Beleg unten zeigt den Stand vor dem Fix.
 - Datei: `frontend/src/lib/classify/keywords.ts:25` (und die Suche über `text.all.includes`, Zeile 38).
 - Problem: Der Treffer ist ein Teilstring-Vergleich. "Bestandteile" setzt die Besonderheit "Bestand".
 - Beleg (gemessen): Eingabe "Alle Bestandteile der Anlage" ergibt `["Bestand"]`.
@@ -207,8 +209,7 @@ Keine.
   - `loadLv`/`LVLoadError` über den Worker-Pfad (nur `loadDemoLv` ist getestet, `tests/pipeline/loadDemoLv.test.ts:59`)
   - die Fehleranzeige in `FileDropzone` beim Drop
   - fehlschlagenden Download
-  - Regex mit sehr langen Eingaben (siehe M1)
-- Vorschlag: Je ein Test zu M1, M3, M4, N6.
+- Vorschlag: Je ein Test zu M3, M4, N6. Der Test zu M1 existiert seit 8913ec1.
 
 ## Geprüft ohne Befund
 
