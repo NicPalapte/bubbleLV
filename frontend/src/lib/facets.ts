@@ -15,6 +15,12 @@ export interface Facet {
   /** Anzeigename eines Werts, falls er vom Rohwert abweicht. */
   optionLabel?(value: string): string;
   sortValues?(values: string[]): string[];
+  /**
+   * Kein Filterknopf, solange es keine Werte gibt. Nur für Merkmale, die aus einer
+   * Referenzliste kommen und leer bleiben, wenn die Liste fehlt — nicht für Merkmale,
+   * bei denen „kein Wert" eine Aussage über die Datei ist.
+   */
+  hideWhenEmpty?: boolean;
 }
 
 const POSITIONSART_LABELS: Record<string, string> = {
@@ -96,6 +102,10 @@ export const FACETS: readonly Facet[] = [
     id: 'material',
     label: 'Material',
     get: (p) => attrStrings(p.attributes, 'material'),
+    // Die Werte kommen nur aus der Materialliste im STLB-Katalog
+    // (classify/extractors/material.ts, docs/decisions/0011). Fehlt die, wäre der
+    // Knopf ein Dropdown mit „Keine Werte" und ohne Erklärung (Issue #99).
+    hideWhenEmpty: true,
   },
   {
     id: 'fristen',
@@ -138,4 +148,12 @@ export const FACETS_BY_ID: ReadonlyMap<string, Facet> = new Map(
 
 export function facetOptionLabel(facet: Facet, value: string): string {
   return facet.optionLabel === undefined ? value : facet.optionLabel(value);
+}
+
+/** Soll für diese Facette ein Filterknopf stehen? `counts` sind ihre Werte im geladenen LV. */
+export function isFacetVisible(
+  facet: Facet,
+  counts: ReadonlyMap<string, number> | undefined,
+): boolean {
+  return facet.hideWhenEmpty !== true || (counts?.size ?? 0) > 0;
 }

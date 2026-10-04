@@ -36,6 +36,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0027 | [Versionsnummer, Changelog und „Über diese App"](0027-versionsnummer-und-ueber-diese-app.md) | akzeptiert | 2026-09-24 |
 | 0028 | [Zwei Leisten, „Mitnehmen" in die Befehle](0028-zwei-leisten-und-befehle.md)                 | akzeptiert | 2026-09-24 |
 | 0029 | [Markierungen im Graphen: Ringe und Muster](0029-markierungen-im-graphen.md)                 | akzeptiert | 2026-09-25 |
+| 0030 | [Material-Filter ausblenden, bis die Liste geprüft ist](0030-material-filter-ausblenden.md)  | akzeptiert | 2026-10-04 |
 
 ## Wann schreibe ich eine neue Datei?
 

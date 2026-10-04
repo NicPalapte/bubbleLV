@@ -1,0 +1,56 @@
+stichwort,materialgruppe,pruefhinweis,status
+beton,Beton und Zement,,entwurf
+stahlbeton,Beton und Zement,,entwurf
+spannbeton,Beton und Zement,,entwurf
+leichtbeton,Beton und Zement,,entwurf
+faserbeton,Beton und Zement,,entwurf
+zement,Beton und Zement,,entwurf
+mauermörtel,Mörtel und Putz,,entwurf
+putzmörtel,Mörtel und Putz,,entwurf
+zementestrich,Estrich,,entwurf
+calciumsulfatestrich,Estrich,,entwurf
+gipsputz,Mörtel und Putz,,entwurf
+kalkputz,Mörtel und Putz,,entwurf
+zementputz,Mörtel und Putz,,entwurf
+kalksandstein,Mauerwerk,,entwurf
+porenbeton,Mauerwerk,,entwurf
+hochlochziegel,Mauerwerk,,entwurf
+ziegel,Mauerwerk,trifft auch Dachziegel und Mauerziegel,entwurf
+klinker,Mauerwerk,,entwurf
+naturstein,Naturstein,,entwurf
+betonstahl,Stahl und Metall,,entwurf
+bewehrungsstahl,Stahl und Metall,,entwurf
+baustahl,Stahl und Metall,,entwurf
+stahl,Stahl und Metall,trifft als Teilwort auch Stahlbeton und Stahlbau; das längere Stichwort gewinnt,entwurf
+edelstahl,Stahl und Metall,,entwurf
+aluminium,Stahl und Metall,,entwurf
+kupfer,Stahl und Metall,,entwurf
+titanzink,Stahl und Metall,,entwurf
+holz,Holz,trifft auch Holzbau und Holzfenster; zu allgemein für einen Wert pro Position?,entwurf
+brettschichtholz,Holz,,entwurf
+brettsperrholz,Holz,,entwurf
+konstruktionsvollholz,Holz,,entwurf
+mineralwolle,Dämmstoffe,,entwurf
+steinwolle,Dämmstoffe,,entwurf
+glaswolle,Dämmstoffe,,entwurf
+polystyrol,Dämmstoffe,,entwurf
+polyurethan,Dämmstoffe,,entwurf
+schaumglas,Dämmstoffe,,entwurf
+holzfaserdämm,Dämmstoffe,Wortstamm: trifft Holzfaserdämmplatte und Holzfaserdämmung,entwurf
+bitumen,Abdichtung,trifft auch Bitumenbahn und Polymerbitumen,entwurf
+polymerbitumen,Abdichtung,,entwurf
+kunststoffbahn,Abdichtung,,entwurf
+epdm,Abdichtung,,entwurf
+gipskarton,Trockenbau,,entwurf
+gipsplatte,Trockenbau,,entwurf
+fliesen,Beläge,trifft auch Fliesenarbeiten; ist das ein Material oder eine Tätigkeit?,entwurf
+feinsteinzeug,Beläge,,entwurf
+parkett,Beläge,,entwurf
+linoleum,Beläge,,entwurf
+isolierglas,Glas,,entwurf
+kies,Erdstoffe,trifft auch Kiesbett und Kiesfilter,entwurf
+schotter,Erdstoffe,,entwurf
+splitt,Erdstoffe,,entwurf
+oberboden,Erdstoffe,,entwurf
+mutterboden,Erdstoffe,,entwurf
+gussasphalt,Asphalt,,entwurf

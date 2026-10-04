@@ -11,7 +11,7 @@ import { FacetButton } from '../filter/FacetButton';
 import { FilterOverflowRow, type OverflowItem } from '../filter/FilterOverflowRow';
 import { RangeButton } from '../filter/RangeButton';
 import { SegmentedControl } from '../ui/SegmentedControl';
-import { FACETS } from '../../lib/facets';
+import { FACETS, isFacetVisible } from '../../lib/facets';
 import { EMPTY_SUMMARY } from '../../lib/index/summary';
 import { countActiveFilters } from '../../lib/matchPos';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
@@ -98,7 +98,9 @@ export function TopBar() {
 
   const filterItems: OverflowItem[] = useMemo(() => {
     if (!loaded) return [];
-    const facetItems: OverflowItem[] = FACETS.map((facet) => ({
+    const facetItems: OverflowItem[] = FACETS.filter((facet) =>
+      isFacetVisible(facet, summary.facets.get(facet.id)),
+    ).map((facet) => ({
       key: facet.id,
       active: (filters.facets[facet.id]?.size ?? 0) > 0,
       node: (
