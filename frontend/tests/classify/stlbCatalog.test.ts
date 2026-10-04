@@ -20,29 +20,26 @@ describe('STLB-Bau-Referenzkatalog', () => {
   });
 
   it('leitet Stichworte aus der Bezeichnung ab, solange die Spalte leer ist', () => {
-    const catalog = getStlbCatalog();
-    expect(catalog.find((lb) => lb.lbNummer === '013')?.keywords).toEqual(['betonarbeiten']);
-    // Kein Kompositum auf -arbeiten/-anlagen → kein abgeleitetes Stichwort.
-    expect(catalog.find((lb) => lb.lbNummer === '069')?.keywords).toEqual([]);
+    const catalog = parseStlbCsv(
+      [
+        'lb_nummer,lb_bezeichnung,keywords,quelle_version',
+        '013,Betonarbeiten,,',
+        // Kein Kompositum auf -arbeiten/-anlagen → kein abgeleitetes Stichwort.
+        '069,Aufzüge,,',
+      ].join('\n'),
+    );
+    expect(catalog[0].keywords).toEqual(['betonarbeiten']);
+    expect(catalog[1].keywords).toEqual([]);
   });
 
   it('nimmt explizite Stichworte aus der CSV, pipe-getrennt', () => {
     const csv = [
-      'lb_nummer,lb_bezeichnung,positionsart_default,keywords,quelle_version',
-      '091,Stundenlohnarbeiten,personal,stundenlohn|regiestunde,2023',
+      'lb_nummer,lb_bezeichnung,keywords,quelle_version',
+      '091,Stundenlohnarbeiten,stundenlohn|regiestunde,2023',
     ].join('\n');
     const [entry] = parseStlbCsv(csv);
     expect(entry.keywords).toEqual(['stundenlohn', 'regiestunde']);
-    expect(entry.positionsartDefault).toBe('personal');
     expect(entry.quelleVersion).toBe('2023');
-  });
-
-  it('ignoriert eine unbekannte Positionsart statt sie zu übernehmen', () => {
-    const csv = [
-      'lb_nummer,lb_bezeichnung,positionsart_default,keywords,quelle_version',
-      '999,Phantasiearbeiten,quatsch,,',
-    ].join('\n');
-    expect(parseStlbCsv(csv)[0].positionsartDefault).toBeNull();
   });
 
   it('liefert bei leerer Referenz keinen Treffer', () => {
@@ -52,9 +49,9 @@ describe('STLB-Bau-Referenzkatalog', () => {
   it('bevorzugt das längste passende Stichwort', () => {
     const catalog = parseStlbCsv(
       [
-        'lb_nummer,lb_bezeichnung,positionsart_default,keywords,quelle_version',
-        '013,Betonarbeiten,,betonarbeiten,',
-        '017,Stahlbauarbeiten,,stahlbetonarbeiten,',
+        'lb_nummer,lb_bezeichnung,keywords,quelle_version',
+        '013,Betonarbeiten,betonarbeiten,',
+        '017,Stahlbauarbeiten,stahlbetonarbeiten,',
       ].join('\n'),
     );
     expect(matchStlb('stahlbetonarbeiten wand', catalog)?.lb.lbNummer).toBe('017');

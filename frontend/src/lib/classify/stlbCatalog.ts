@@ -6,15 +6,12 @@
 // hält beide Dateien deckungsgleich.
 
 import catalogCsv from './data/stlb-bau-leistungsbereiche.csv?raw';
-import { isPositionsart, type Positionsart } from './types';
 import { parseCsv, splitList } from '../csv';
 
 export interface StlbLeistungsbereich {
   /** LB-Nummer, z. B. "013" — stabiler Ruleset-Key (nicht die Bezeichnung). */
   lbNummer: string;
   lbBezeichnung: string;
-  /** Nur gesetzt, wenn der LB eindeutig nicht-physisch ist. */
-  positionsartDefault: Positionsart | null;
   /** Stichworte für den Textabgleich, kleingeschrieben. */
   keywords: string[];
   quelleVersion: string | null;
@@ -41,14 +38,12 @@ export function parseStlbCsv(csv: string): StlbLeistungsbereich[] {
     const lbBezeichnung = row.get('lb_bezeichnung');
     if (lbNummer === '' || lbBezeichnung === '') continue;
 
-    const rawDefault = row.get('positionsart_default');
     const explicit = splitList(row.get('keywords'));
     const rawVersion = row.get('quelle_version');
 
     entries.push({
       lbNummer,
       lbBezeichnung,
-      positionsartDefault: isPositionsart(rawDefault) ? rawDefault : null,
       keywords: explicit.length > 0 ? explicit : derivedKeywords(lbBezeichnung),
       quelleVersion: rawVersion === '' ? null : rawVersion,
     });

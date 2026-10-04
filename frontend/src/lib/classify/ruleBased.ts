@@ -55,9 +55,9 @@ function matchHeadings(
 }
 
 /**
- * Ein LB-Treffer ohne `positionsart_default` gilt laut Katalog vorläufig als
- * "bauteil" — die Heuristik darf aber weiterhin eine eindeutig nicht-physische
- * Position (Stundenlohn, Planung) aus diesem LB herausziehen.
+ * Ein LB-Treffer im Positionstext gilt vorläufig als "bauteil" — die Heuristik darf
+ * aber weiterhin eine eindeutig nicht-physische Position (Stundenlohn, Planung)
+ * aus diesem LB herausziehen.
  */
 function refineWithLbHit(text: NormalizedItem): Positionsart {
   const heuristic = detectPositionsart(text);
@@ -95,8 +95,7 @@ export class RuleBasedClassifier implements Classifier {
     // eine Position unter „Betonarbeiten" steht, macht sie noch nicht zum
     // Bauteil (dort stehen auch Vorhaltung und Stundenlohn).
     const positionsart: Positionsart =
-      match?.lb.positionsartDefault ??
-      (own === null ? detectPositionsart(text) : refineWithLbHit(text));
+      own === null ? detectPositionsart(text) : refineWithLbHit(text);
 
     // ── Gewerkeunabhängige Extraktoren: Normen, Maße, Material, Platzhalter,
     //    Verweise, Fristen — samt Fundstelle im Langtext.
