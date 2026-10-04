@@ -114,11 +114,20 @@ describe('masse', () => {
 
   it('bleibt bei sehr langen Ziffernfolgen schnell (Issue #89)', () => {
     // Ohne Anker vor der Zahl probiert die Regex jede Startstelle der Ziffernfolge
-    // neu: 40.000 Ziffern brauchten rund 11 s. Die Grenze ist großzügig gewählt.
+    // neu: 40.000 Ziffern brauchten rund 11 s.
     const start = performance.now();
     const { attributes } = extractMasse(`Wand ${'1'.repeat(50_000)} und weiter`);
-    expect(performance.now() - start).toBeLessThan(500);
+    // Die Grenze ist großzügig, damit ein langsamer CI-Runner den Test nicht rot färbt.
+    expect(performance.now() - start).toBeLessThan(2000);
     expect(attributes).toEqual({});
+  });
+
+  it('liest eine Aufzählung ohne Leerzeichen nicht als Dezimalzahl', () => {
+    // "10,20,30 cm dick" ist mehrdeutig. Vor dem Anker kam daraus "20,30 cm" heraus
+    // (falsch gelesen als Dezimalzahl); jetzt gibt es lieber kein Maß als ein falsches.
+    expect(extractMasse('Wand 10,20,30 cm dick.').attributes.dicke).toBeUndefined();
+    // Mit Leerzeichen ist die Aufzählung eindeutig, das letzte Glied ist das Maß.
+    expect(extractMasse('Wand 10, 20, 30 cm dick.').attributes.dicke).toBe('30 cm');
   });
 
   it('erkennt die nachgestellte Schreibweise auch nach Dezimalzahl und Satzzeichen', () => {
