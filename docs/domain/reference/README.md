@@ -4,25 +4,26 @@ Strukturierte Normdaten, die vom Maintainer aus einer lizenzierten/offiziellen Q
 gepflegt werden — nicht vom Modell erfunden oder aus dem Internet geraten (siehe
 [`../README.md`](../README.md)).
 
-| Datei | Inhalt | Quelle |
-|---|---|---|
-| [`stlb-bau-leistungsbereiche.csv`](stlb-bau-leistungsbereiche.csv) | STLB-Bau-Leistungsbereiche (LB-Nummer, Bezeichnung, Match-Stichworte) für die Klassifizierung (WP-2) | STLB-Bau-Lizenz/-Export des Maintainers |
-| [`pruefregeln.csv`](pruefregeln.csv) | Je Prüfregel: Status und Norm-Verweis (WP-K) | [`../vob-pruefungen.md`](../vob-pruefungen.md) |
-| [`risiko-formulierungen.csv`](risiko-formulierungen.csv) | Formulierungen, die ein Risiko auf den AN schieben — Regel V4 | Owner |
-| [`hersteller-produktnamen.csv`](hersteller-produktnamen.csv) | Hersteller-/Produktnamen — Regel V3 | Owner |
-| [`vob-nebenleistungen.csv`](vob-nebenleistungen.csv) | Nebenleistungen je ATV — Regeln V8, V9 | VOB/C des Owners |
-| [`einheiten-gruppen.csv`](einheiten-gruppen.csv) | Einheiten, die dasselbe bedeuten („Stk" = „Stück") | Owner |
-| [`entwuerfe/material-entwurf.csv`](entwuerfe/material-entwurf.csv) | **Entwurf, nicht geladen:** Materialstichworte für den Filter „Material". Von Claude vorgeschlagen, fachlich ungeprüft. Ablauf: [`../../setup/materialliste.md`](../../setup/materialliste.md) | Entwurf, Owner prüft |
-| [`entwuerfe/stlb-keywords-entwurf.csv`](entwuerfe/stlb-keywords-entwurf.csv) | **Entwurf, nicht geladen:** Stichworte je STLB-Leistungsbereich. Von Claude vorgeschlagen, fachlich ungeprüft. Ablauf: [`../../setup/stlb-keywords.md`](../../setup/stlb-keywords.md) | Entwurf, Owner prüft |
+| Datei                                                                        | Inhalt                                                                                                                                                                                         | Quelle                                         |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| [`stlb-bau-leistungsbereiche.csv`](stlb-bau-leistungsbereiche.csv)           | STLB-Bau-Leistungsbereiche (LB-Nummer, Bezeichnung, Match-Stichworte) für die Klassifizierung (WP-2)                                                                                           | STLB-Bau-Lizenz/-Export des Maintainers        |
+| [`wortlisten-uebersicht.md`](wortlisten-uebersicht.md)                       | Alle Wortlisten aus dem Code (Positionsart, Bauteiltyp, Steinarten) mit Fundstelle, zum Prüfen. Aus dem Code erzeugt, Stand 2026-10-04                                                         | Code                                           |
+| [`pruefregeln.csv`](pruefregeln.csv)                                         | Je Prüfregel: Status und Norm-Verweis (WP-K)                                                                                                                                                   | [`../vob-pruefungen.md`](../vob-pruefungen.md) |
+| [`risiko-formulierungen.csv`](risiko-formulierungen.csv)                     | Formulierungen, die ein Risiko auf den AN schieben — Regel V4                                                                                                                                  | Owner                                          |
+| [`hersteller-produktnamen.csv`](hersteller-produktnamen.csv)                 | Hersteller-/Produktnamen — Regel V3                                                                                                                                                            | Owner                                          |
+| [`vob-nebenleistungen.csv`](vob-nebenleistungen.csv)                         | Nebenleistungen je ATV — Regeln V8, V9                                                                                                                                                         | VOB/C des Owners                               |
+| [`einheiten-gruppen.csv`](einheiten-gruppen.csv)                             | Einheiten, die dasselbe bedeuten („Stk" = „Stück")                                                                                                                                             | Owner                                          |
+| [`entwuerfe/material-entwurf.csv`](entwuerfe/material-entwurf.csv)           | **Entwurf, nicht geladen:** Materialstichworte für den Filter „Material". Von Claude vorgeschlagen, fachlich ungeprüft. Ablauf: [`../../setup/materialliste.md`](../../setup/materialliste.md) | Entwurf, Owner prüft                           |
+| [`entwuerfe/stlb-keywords-entwurf.csv`](entwuerfe/stlb-keywords-entwurf.csv) | **Entwurf, nicht geladen:** Stichworte je STLB-Leistungsbereich. Von Claude vorgeschlagen, fachlich ungeprüft. Ablauf: [`../../setup/stlb-keywords.md`](../../setup/stlb-keywords.md)          | Entwurf, Owner prüft                           |
 
 ## `pruefregeln.csv` — Status je Regel
 
-| Spalte | Bedeutung |
-|---|---|
-| `regel_id` | ID aus [`../vob-pruefungen.md`](../vob-pruefungen.md), z. B. `V1` |
-| `status` | `bestaetigt` · `zu_bestaetigen` · `aus` |
-| `norm_verweis` | Wortlaut, den die Oberfläche anzeigt |
-| `quelle_version` | Fassung, aus der der Verweis stammt |
+| Spalte           | Bedeutung                                                         |
+| ---------------- | ----------------------------------------------------------------- |
+| `regel_id`       | ID aus [`../vob-pruefungen.md`](../vob-pruefungen.md), z. B. `V1` |
+| `status`         | `bestaetigt` · `zu_bestaetigen` · `aus`                           |
+| `norm_verweis`   | Wortlaut, den die Oberfläche anzeigt                              |
+| `quelle_version` | Fassung, aus der der Verweis stammt                               |
 
 - **`bestaetigt`** — der Owner hat Inhalt und Absatz-Nummer geprüft. Die Oberfläche
   zeigt den Verweis ohne Zusatz.
