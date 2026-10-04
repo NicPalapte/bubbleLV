@@ -70,6 +70,12 @@ describe('buildImportLog', () => {
     expect(new Set(entry?.positionIds).size).toBe(3);
   });
 
+  it('nennt doppelte OZ in Dokumentreihenfolge', () => {
+    const log = logOf([position('A'), position('B'), position('B'), position('A')]);
+    const ids = log.entries.find((e) => e.kind === 'doppelteOz')?.positionIds ?? [];
+    expect(ids.map((id) => id.split(':').pop())).toEqual(['A', 'B', 'B', 'A']);
+  });
+
   it('meldet leere Ordnungszahlen nicht als doppelt', () => {
     const log = logOf([position(''), position('')]);
     expect(log.entries.find((e) => e.kind === 'doppelteOz')).toBeUndefined();

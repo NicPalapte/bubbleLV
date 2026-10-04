@@ -49,9 +49,10 @@ export function buildImportLog(index: PositionIndex): ImportLog {
   const ohneGewerk: string[] = [];
   const ohneBauteiltyp: string[] = [];
   const ohneText: string[] = [];
-  const doppelteOz: string[] = [];
-  const seenOz = new Map<string, string>();
-  const reportedOz = new Set<string>();
+  // Als Positionsnummern gesammelt: das erste Vorkommen kommt erst mit dem zweiten
+  // dazu, die Liste soll aber in Dokumentreihenfolge stehen.
+  const doppelteSlots = new Set<number>();
+  const seenOz = new Map<string, number>();
 
   let hasPrices = false;
   for (let i = 0; i < index.size; i++) {
@@ -81,13 +82,14 @@ export function buildImportLog(index: PositionIndex): ImportLog {
     // Eine fehlende OZ ist keine doppelte: sonst meldeten zwei leere OZ einen Fehlalarm.
     if (position.oz.trim() === '') continue;
     const first = seenOz.get(position.oz);
-    if (first === undefined) seenOz.set(position.oz, id);
+    if (first === undefined) seenOz.set(position.oz, i);
     else {
-      if (!reportedOz.has(position.oz)) doppelteOz.push(first);
-      reportedOz.add(position.oz);
-      doppelteOz.push(id);
+      doppelteSlots.add(first);
+      doppelteSlots.add(i);
     }
   }
+
+  const doppelteOz = [...doppelteSlots].sort((a, b) => a - b).map((slot) => index.nodes[slot].id);
 
   const entries: LogEntry[] = [];
   const add = (
