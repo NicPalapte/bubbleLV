@@ -9,6 +9,7 @@ import {
   type PipelineResponse,
 } from './messages';
 import { classifyAndBuild, parseToDraft, type LoadedLV } from './runPipeline';
+import { fileExtension, isGaebExtension } from '../gaeb';
 import { measureAsync } from '../perf';
 import type { LVDraft } from '../../types/lvDraft';
 
@@ -29,9 +30,6 @@ export class LVLoadError extends Error {
  * dort lange blockieren.
  */
 export const MAX_FILE_BYTES = 50 * 1024 * 1024;
-
-/** Dateiendungen von GAEB DA XML (X81–X86) und das allgemeine `.xml`, ohne Punkt. */
-export const GAEB_ENDUNGEN = ['x81', 'x82', 'x83', 'x84', 'x85', 'x86', 'xml'] as const;
 
 export interface LoadOptions {
   /** Wird für Hinweise gerufen, die das Laden nicht scheitern lassen (Issue #95). */
@@ -58,8 +56,8 @@ function pruefeGroesse(bytes: number, fileName: string): void {
 
 /** Dateityp prüfen: der Dialog filtert nach Endung, Drag & Drop nicht. */
 function pruefeDateityp(fileName: string): void {
-  const endung = /\.([^./\\]+)$/.exec(fileName)?.[1].toLowerCase() ?? null;
-  if (endung !== null && (GAEB_ENDUNGEN as readonly string[]).includes(endung)) return;
+  const endung = fileExtension(fileName);
+  if (isGaebExtension(endung)) return;
   throw new LVLoadError(
     'dateityp',
     `${fileName}: Dateityp ${endung === null ? 'ohne Endung' : `„.${endung}"`} wird nicht ` +

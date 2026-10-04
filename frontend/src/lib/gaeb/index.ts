@@ -4,5 +4,6 @@
 export { GAEBParseError, GAEBValidationError, GAEBVersionError } from './errors';
 export { getGaebParser } from './parser';
 export type { GaebInput, GaebParser } from './parser';
+export { fileExtension, GAEB_ENDUNGEN, isGaebExtension } from './extensions';
 export { mapToLvDraft } from './mapToLvDraft';
 export type { GaebItemType, ParsedLot, ParsedLV, ParsedPosition, ParsedSection } from './types';
