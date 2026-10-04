@@ -8,7 +8,12 @@
 
 import { allMatches, type NormalizedItem } from './text';
 
-const MARKER: ReadonlyArray<{ label: string; keywords: readonly string[] }> = [
+const MARKER: ReadonlyArray<{
+  label: string;
+  keywords: readonly string[];
+  /** Wörter, die das Stichwort als Teilstring enthalten, aber etwas anderes meinen. */
+  ausser?: readonly string[];
+}> = [
   { label: 'WU-Beton', keywords: ['wu-beton', 'wu beton', 'wasserundurchlässig'] },
   { label: 'Sichtbeton', keywords: ['sichtbeton'] },
   { label: 'Fertigteil', keywords: ['fertigteil', 'halbfertigteil', 'elementdecke'] },
@@ -22,7 +27,13 @@ const MARKER: ReadonlyArray<{ label: string; keywords: readonly string[] }> = [
   // unverwandte Wörter ("kompakt", "Verpackung").
   { label: 'Schadstoff', keywords: ['asbest', 'schadstoff', 'kontaminiert'] },
   { label: 'Winterbau', keywords: ['winterbau', 'frostschutz', 'beheizung'] },
-  { label: 'Bestand', keywords: ['bestand', 'altbau', 'bestandsbauteil'] },
+  // "bestand" bleibt Teilstring (Komposita: "Bestandswand", "Bestandes"); nur
+  // "Bestandteil" ist kein Bestandsbau.
+  {
+    label: 'Bestand',
+    keywords: ['bestand', 'altbau', 'bestandsbauteil'],
+    ausser: ['bestandteil'],
+  },
 ];
 
 /** Zementarten nach DIN EN 197-1, z. B. "CEM III/A". */
@@ -35,7 +46,11 @@ function upper(values: string[]): string[] {
 export function extractKeywords(text: NormalizedItem): string[] {
   const found = new Set<string>();
   for (const entry of MARKER) {
-    if (entry.keywords.some((keyword) => text.all.includes(keyword))) found.add(entry.label);
+    const haystack = (entry.ausser ?? []).reduce(
+      (acc, wort) => acc.replaceAll(wort, ' '),
+      text.all,
+    );
+    if (entry.keywords.some((keyword) => haystack.includes(keyword))) found.add(entry.label);
   }
   for (const zement of upper(allMatches(text.all, ZEMENT))) found.add(zement);
   return [...found];

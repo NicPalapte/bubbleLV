@@ -111,6 +111,38 @@ describe('masse', () => {
   it('liefert ohne Maß keinen Key', () => {
     expect(extractMasse('Reinigen der Oberfläche.').attributes).toEqual({});
   });
+
+  it('bleibt bei sehr langen Ziffernfolgen schnell (Issue #89)', () => {
+    // Ohne Anker vor der Zahl probiert die Regex jede Startstelle der Ziffernfolge
+    // neu: 40.000 Ziffern brauchten rund 11 s.
+    // Gemessen sind alle Formen 1-2 ms. Die Grenze ist großzügig, damit ein langsamer
+    // CI-Runner den Test nicht rot färbt; der Fehler brauchte Sekunden.
+    const formen = {
+      ziffern: '1'.repeat(50_000),
+      komma: '1,'.repeat(25_000),
+      punkt: '1.'.repeat(25_000),
+      dezimal: '1,5 '.repeat(15_000),
+    };
+    for (const [name, text] of Object.entries(formen)) {
+      const start = performance.now();
+      const { attributes } = extractMasse(`Wand ${text} und weiter`);
+      expect(performance.now() - start, name).toBeLessThan(2000);
+      expect(attributes, name).toEqual({});
+    }
+  });
+
+  it('liest eine Aufzählung ohne Leerzeichen nicht als Dezimalzahl', () => {
+    // "10,20,30 cm dick" ist mehrdeutig. Vor dem Anker kam daraus "20,30 cm" heraus
+    // (falsch gelesen als Dezimalzahl); jetzt gibt es lieber kein Maß als ein falsches.
+    expect(extractMasse('Wand 10,20,30 cm dick.').attributes.dicke).toBeUndefined();
+    // Mit Leerzeichen ist die Aufzählung eindeutig, das letzte Glied ist das Maß.
+    expect(extractMasse('Wand 10, 20, 30 cm dick.').attributes.dicke).toBe('30 cm');
+  });
+
+  it('erkennt die nachgestellte Schreibweise auch nach Dezimalzahl und Satzzeichen', () => {
+    expect(extractMasse('Platte, 3,5 cm dick.').attributes.dicke).toBe('3,5 cm');
+    expect(extractMasse('Beton C30/37; 20 cm dick.').attributes.dicke).toBe('20 cm');
+  });
 });
 
 describe('material', () => {
