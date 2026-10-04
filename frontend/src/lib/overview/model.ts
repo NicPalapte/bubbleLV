@@ -11,13 +11,13 @@
 // statt Nullwerte zu zeigen (WP-L, Schritt 4).
 
 import { attrString } from '../attributes';
+import { NO_GEWERK } from '../facets';
 import { headingOf } from '../tree/heading';
 import { canonicalUnit, unitLabel } from '../units';
 import type { PositionIndex } from '../index/positionIndex';
 import type { LVNode } from '../../types/lvNode';
 
-/** Sammelname für Positionen, denen die Klassifizierung kein Gewerk zuordnet. */
-export const NO_GEWERK = 'Ohne Gewerk';
+export { NO_GEWERK };
 
 /** Womit die Treemap misst. */
 export type Measure = 'preis' | 'anzahl';
@@ -66,7 +66,7 @@ export interface TreemapGroup {
   label: string;
   value: number;
   count: number;
-  /** `false` für die Sammelkachel „Weitere Gewerke" und „Ohne Gewerk". */
+  /** `false` für die Sammelkachel „Weitere Gewerke". */
   filterable: boolean;
   cells: TreemapCell[];
 }
@@ -266,11 +266,11 @@ export function buildOverview({ index, mask, parents }: OverviewInput): Overview
   const groups = trimGroups(
     [...buckets.values()].map((bucket) => ({
       key: bucket.key,
-      label: bucket.key === NO_GEWERK ? 'Ohne Gewerk' : bucket.label,
+      label: bucket.label,
       // Ohne Preise misst die Fläche die Anzahl — sonst stünde überall 0.
       value: measure === 'preis' ? bucket.value : bucket.count,
       count: bucket.count,
-      filterable: bucket.key !== NO_GEWERK,
+      filterable: true,
       cells: trimCells(
         [...bucket.cells.values()].map((cell) => ({
           ...cell,

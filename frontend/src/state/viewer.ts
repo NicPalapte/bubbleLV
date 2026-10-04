@@ -32,7 +32,6 @@ import {
   type ViewState,
 } from './viewState';
 import type { HintIndex } from '../lib/check';
-import type { Cluster } from '../lib/relate';
 import type { ColorScale } from '../lib/colors';
 import type { FocusGraph } from '../lib/graph/focusTree';
 import type { FilteredQuantities } from '../lib/graph/quantities';
@@ -53,22 +52,7 @@ export {
   PANEL_MIN_WIDTH,
   clampPanelWidth,
 } from './viewState';
-export { CLUSTER_MIN_MEMBERS, MAX_COMPARE_COLUMNS } from './viewState';
-export {
-  COMPARE_MAX_WIDTH,
-  COMPARE_MIN_HEIGHT,
-  COMPARE_MIN_WIDTH,
-  DEFAULT_COMPARE_SIZE,
-} from './viewState';
-export type {
-  CardPos,
-  ClusterSort,
-  GraphFocus,
-  PanelSize,
-  SizeModeId,
-  ViewMode,
-  ViewState,
-} from './viewState';
+export type { CardPos, GraphFocus, PanelSize, SizeModeId, ViewMode, ViewState } from './viewState';
 
 export interface ViewerState {
   lv: LoadedLV | null;
@@ -200,56 +184,17 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
       return selection === state.selection ? state : { ...state, selection };
     }
 
-    // Vergleich ändern: die Auswahl wandert in `selectionState`, das Fenster
-    // über dem Graphen folgt (WP-R, R3). Deshalb nicht im Block darüber: diese
-    // Aktionen berühren zwei Zustände.
-    //
-    // - **Auf** erst, wenn der Vergleich wächst und dabei zwei Positionen
-    //   erreicht — eine Spalte allein ist noch kein Vergleich. Wächst er, geht
-    //   auch ein weggeklicktes Fenster wieder auf: wer dazunimmt, will sehen.
-    // - **Offen bleiben** beim Herausnehmen, auch bis auf eine Spalte (Owner in
-    //   PR #86): wer im Fenster aussortiert, will das Fenster behalten. Ein
-    //   bewusstes ✕ bleibt ebenso stehen.
-    // - **Zu** erst, wenn nichts mehr im Vergleich steht.
-    case 'toggleCompare':
-    case 'setCompare':
-    case 'clearCompare': {
-      const selection = selectionReducer(state.selection, action, state.lv?.tree ?? null);
-      if (selection === state.selection) return state;
-      const count = selection.compare.length;
-      const grew = count > state.selection.compare.length;
-      const view =
-        grew && count >= 2
-          ? viewReducer(state.view, { type: 'compareWindow', open: true })
-          : count === 0
-            ? viewReducer(state.view, { type: 'compareWindow', open: false })
-            : state.view;
-      return { ...state, selection, view };
-    }
-
     case 'setViewMode':
     case 'sizeMode':
     case 'graphFocus':
     case 'focusGroupBy':
     case 'graphViewport':
-    case 'highlightCluster':
     case 'tableSort':
     case 'tableScope':
     case 'tableColumns':
-    case 'compareOnlyDiffs':
-    case 'compareWindow':
-    case 'compareWindowPos':
-    case 'compareWindowSize':
-    case 'matrixAxis':
-    case 'matrixMeasure':
     case 'toggleRuleOpen':
     case 'openRule':
     case 'ruleRevealed':
-    case 'clusterMinMembers':
-    case 'clusterSort':
-    case 'toggleClusterOpen':
-    case 'openCluster':
-    case 'clusterRevealed':
     case 'viewScroll':
     case 'panelSize':
     case 'cardPos': {
@@ -304,22 +249,11 @@ export interface ViewerDerived {
    */
   quantities: FilteredQuantities;
   /**
-   * Positionen im Vergleich, in der Reihenfolge ihrer Wahl (WP-N). IDs, die
-   * kein Knoten mehr trägt — etwa nach einem neuen Import — fallen heraus.
-   */
-  comparePositions: readonly LVNode[];
-  /**
    * Hinweise der Prüfregeln, nach Position sortiert (WP-R, R1). Grundlage für
    * den Ring an der Bubble und den Block „Hinweise" in der Auswahlkarte.
    * Abgeschaltete Regeln fehlen darin — ein Filterzustand, alle Ansichten.
    */
   hints: HintIndex;
-  /**
-   * Ähnlichkeitsgruppe je Position (WP-R, R2). Die Gruppen selbst entstehen im
-   * Worker (WP-M); hier steht nur die Umkehrung — „in welcher Gruppe steckt
-   * diese Position?" —, einmal je Import gebaut.
-   */
-  clusters: ReadonlyMap<string, Cluster>;
 }
 
 export type ViewerValue = ViewerState & ViewerDerived;

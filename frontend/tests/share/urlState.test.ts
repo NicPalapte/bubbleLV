@@ -24,7 +24,7 @@ describe('encodeShared / decodeShared', () => {
 
   it('bringt Ansicht, Suche, Facetten, Menge und Auswahl unverändert zurück', () => {
     const vorher = zustand({
-      view: 'matrix',
+      view: 'table',
       search: 'Beton C30/37',
       facets: { gewerk: ['Betonarbeiten', 'Erdarbeiten'], einheit: ['m3'] },
       menge: [10, 500],
@@ -119,9 +119,16 @@ describe('Was im Link steht', () => {
 
 describe('decodeSharedChecked (Issue #95)', () => {
   it('meldet nichts, wenn der ganze Link passt', () => {
-    const { state, verworfen } = decodeSharedChecked('#v=matrix~q=Beton~p=001.002');
-    expect(state.view).toBe('matrix');
+    const { state, verworfen } = decodeSharedChecked('#v=table~q=Beton~p=001.002');
+    expect(state.view).toBe('table');
     expect(verworfen).toEqual([]);
+  });
+
+  it('übergeht die entfernten Ansichten älterer Links und meldet es', () => {
+    const { state, verworfen } = decodeSharedChecked('#v=matrix~q=Beton');
+    expect(state.view).toBe('overview');
+    expect(state.search).toBe('Beton');
+    expect(verworfen).toEqual(['Ansicht']);
   });
 
   it('meldet jeden verworfenen Teil mit deutschem Namen', () => {

@@ -1,6 +1,6 @@
 # 0021 – Matrix: Zählregeln und Farbskala
 
-- **Status:** akzeptiert
+- **Status:** ersetzt durch [0031](0031-drei-ansichten.md)
 - **Datum:** 2026-09-22
 - **Betrifft:** Frontend, Ansicht „Matrix" (WP-O)
 

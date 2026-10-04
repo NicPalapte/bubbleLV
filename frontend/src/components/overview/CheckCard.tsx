@@ -1,5 +1,5 @@
-// Ansicht „Prüfung" (WP-K, Schritt 5): alle Hinweise, nach Regel gruppiert, mit
-// Anzahl, Sprung zur Position und Schalter je Regel.
+// Karte „Prüfung" im Überblick (WP-K, Schritt 5): alle Hinweise, nach Regel
+// gruppiert, mit Anzahl, Sprung zur Position und Schalter je Regel.
 //
 // Ton: **Hinweis, kein Urteil** (docs/domain/vob-pruefungen.md). Deshalb steht
 // über der Liste, was Bubble nicht tut, jede Regel nennt ihren Norm-Verweis, und
@@ -18,11 +18,9 @@
 
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useJumpToPosition } from '../common/useJumpToPosition';
-import { BlockLabel } from '../ui/PanelHeader';
 import { Chip } from '../ui/Chip';
 import { formatCount } from '../../lib/format';
 import { matchCount } from '../../lib/tree/matchCounts';
-import { useScrollMemory } from '../common/useScrollMemory';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { Flag, FlagCategory, RuleStatus } from '../../lib/check';
 import type { LVNode } from '../../types/lvNode';
@@ -143,24 +141,22 @@ function FlagRow({ flag, node, onJump }: { flag: Flag; node: LVNode | null; onJu
   );
 }
 
-export function CheckView() {
+export function CheckCard() {
   const {
     lv,
     nodes,
     filter: { mutedRules },
     view: {
-      check: { openRules, revealRule },
+      overview: { openRules, revealRule },
     },
     matches,
   } = useViewer();
   const dispatch = useViewerDispatch();
   const jumpTo = useJumpToPosition();
-  const [attachScroll, onScroll] = useScrollMemory('check');
 
   // Sprung aus dem Graphen (WP-R, R1): die aufgeklappte Regel ins Fenster
-  // holen. `useScrollMemory` stellt beim Einhängen den gemerkten Stand her —
-  // dieser Effekt läuft danach und überschreibt ihn gezielt für diesen einen
-  // Sprung.
+  // holen. Der Überblick stellt beim Einhängen seinen gemerkten Scrollstand
+  // her — dieser Effekt läuft danach und überschreibt ihn für diesen Sprung.
   const sections = useRef(new Map<string, HTMLElement>());
   const attachSection = useCallback((id: string, node: HTMLElement | null): void => {
     if (node === null) sections.current.delete(id);
@@ -200,21 +196,17 @@ export function CheckView() {
   const toggleOpen = (id: string): void => dispatch({ type: 'toggleRuleOpen', id });
 
   return (
-    <div ref={attachScroll} onScroll={onScroll} className="absolute inset-0 overflow-auto bg-white">
-      <div className="mx-auto max-w-[900px] px-[20px] py-[16px]">
-        <div className="border-b border-line pb-[10px]">
-          <BlockLabel>Prüfung</BlockLabel>
-          <p className="mt-[2px] font-sans text-[13px] text-ink">
-            <span className="font-semibold">{formatCount(gesamt)}</span>{' '}
-            {gesamt === 1 ? 'Hinweis' : 'Hinweise'} aus {sichtbar.length} aktiven Regeln
-            {matches.filtering && <span className="text-dim"> · im aktuellen Filter</span>}
-          </p>
-          <p className="mt-[4px] font-sans text-[11.5px] leading-[1.5] text-dim">
-            Bubble zeigt Stellen, an denen ein Blick lohnt — keine Bewertung und kein Rechtsrat.
-            Jede Regel nennt ihren Verweis und lässt sich abschalten.
-          </p>
-        </div>
-
+    <div>
+      <p className="font-sans text-[13px] text-ink">
+        <span className="font-semibold">{formatCount(gesamt)}</span>{' '}
+        {gesamt === 1 ? 'Hinweis' : 'Hinweise'} aus {sichtbar.length} aktiven Regeln
+        {matches.filtering && <span className="text-dim"> · im aktuellen Filter</span>}
+      </p>
+      <p className="mt-[4px] font-sans text-[11.5px] leading-[1.5] text-dim">
+        Bubble zeigt Stellen, an denen ein Blick lohnt — keine Bewertung und kein Rechtsrat. Jede
+        Regel nennt ihren Verweis und lässt sich abschalten.
+      </p>
+      <div className="mt-[6px] border-t border-grid">
         {check.rules.map((rule) => {
           const flags = byRule.get(rule.id) ?? [];
           const muted = mutedRules.has(rule.id);

@@ -95,10 +95,11 @@ Scopes: `gaeb · classify · tree · viewer · graph · relate · check · front
 **In Scope:** GAEB-Import im Browser (x83 **und** preisführende x84/x86) ·
 Klassifizierung Kurz-/Langtext inkl. Textstellen · Hervorhebung der vier
 Wichtig-Kategorien (Geld/Menge · Risiko · Norm · Frist) · VOB-Check als Hinweis ·
-fachliche Filter · **acht gleichrangige Ansichten** auf einem Filterzustand (Überblick ·
-Graph · Tabelle · Matrix · Ähnlichkeit · Vergleich · Prüfung · Eigenschaften) ·
-Beziehungen zwischen Positionen (Ähnlichkeit, Unterschiede, Ausreißer) · lokaler
-Export/Druck.
+fachliche Filter · **drei gleichrangige Ansichten** auf einem Filterzustand (Überblick
+mit Prüfung und Import-Log · Graph · Tabelle mit Eigenschaften, siehe
+`docs/decisions/0031-drei-ansichten.md`) · Beziehungen zwischen Positionen nur als
+Prüfregel (Ausreißer, G4); Ähnlichkeit/Vergleich als Fenster über dem Graphen sind
+zurückgestellt · lokaler Export/Druck.
 
 **Out of Scope** (ablehnen / vertrösten): Server jeglicher Art, Persistenz über die
 Session hinaus, Auth/SSO, **mehrere Dateien gleichzeitig** (Versionsvergleich,

@@ -1,6 +1,6 @@
 // Ansichts-Gerüst (WP-L): gleichrangige Ansichten auf **einem** Filterzustand —
-// Überblick, Graph im Vollbild, die 3-Spalten-Tabellenansicht (Tree · Tabelle ·
-// Eigenschaften), Ähnlichkeit (WP-M) und Prüfung. Umgeschaltet wird über den Schalter in der
+// Überblick (mit Prüfung und Import-Log), Graph im Vollbild und die
+// 3-Spalten-Tabellenansicht (Tree · Tabelle · Eigenschaften). Umgeschaltet wird über den Schalter in der
 // Kopfleiste; der Wechsel fasst weder Filter noch Auswahl an, und was eine
 // Ansicht sich merkt, steht in `view` (state/viewState.ts).
 //
@@ -8,8 +8,6 @@
 // Klassifizierung → Baum); nichts wird geladen oder persistiert.
 
 import { Profiler, useCallback, useEffect, useState, type ReactNode } from 'react';
-import { CheckView } from '../components/check/CheckView';
-import { CompareView } from '../components/compare/CompareView';
 import { FilterStrip } from '../components/filter/FilterStrip';
 import { NoticeBar } from '../components/layout/NoticeBar';
 import { BubbleGraph } from '../components/graph/BubbleGraph';
@@ -18,10 +16,8 @@ import { PropertiesPanel } from '../components/layout/PropertiesPanel';
 import { ResizeHandle } from '../components/layout/ResizeHandle';
 import { TopBar } from '../components/layout/TopBar';
 import { Tree } from '../components/layout/Tree';
-import { MatrixView } from '../components/matrix/MatrixView';
 import { OverviewView } from '../components/overview/OverviewView';
 import { PrintView } from '../components/print/PrintView';
-import { SimilarView } from '../components/relate/SimilarView';
 import { PositionsTable } from '../components/table/PositionsTable';
 import { FileDropzone } from '../components/upload/FileDropzone';
 import { ErrorBoundary } from '../components/common/ErrorBoundary';
@@ -119,30 +115,6 @@ export function ViewerPage() {
                 gewählt ist — sonst zeichnet der Graph das ganze LV (WP-Q). */}
               <BubbleGraph root={tree} focus={focus ?? undefined} />
               <GraphHeader root={tree} />
-            </main>
-          )}
-
-          {tree !== null && viewMode === 'matrix' && (
-            <main aria-label="Matrix" className="relative flex-1 overflow-hidden bg-white">
-              <MatrixView />
-            </main>
-          )}
-
-          {tree !== null && viewMode === 'similar' && (
-            <main aria-label="Ähnlichkeit" className="relative flex-1 overflow-hidden bg-white">
-              <SimilarView />
-            </main>
-          )}
-
-          {tree !== null && viewMode === 'compare' && (
-            <main aria-label="Vergleich" className="relative flex-1 overflow-hidden bg-white">
-              <CompareView />
-            </main>
-          )}
-
-          {tree !== null && viewMode === 'check' && (
-            <main aria-label="Prüfung" className="relative flex-1 overflow-hidden bg-white">
-              <CheckView />
             </main>
           )}
 
