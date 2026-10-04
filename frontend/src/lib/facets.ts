@@ -53,6 +53,12 @@ function byOrder(order: readonly string[]) {
     });
 }
 
+/**
+ * Sammelwert für Positionen ohne Gewerk. Er ist ein echter Filterwert: nur so
+ * lässt sich „Ohne Gewerk" im Überblick anklicken und in der Topleiste wählen.
+ */
+export const NO_GEWERK = 'Ohne Gewerk';
+
 function single(value: string | null): string[] {
   return value === null ? [] : [value];
 }
@@ -68,7 +74,7 @@ export const FACETS: readonly Facet[] = [
   {
     id: 'gewerk',
     label: 'Gewerk',
-    get: (p) => single(attrString(p.attributes, 'gewerk')),
+    get: (p) => [attrString(p.attributes, 'gewerk') ?? NO_GEWERK],
   },
   {
     id: 'bauteiltyp',

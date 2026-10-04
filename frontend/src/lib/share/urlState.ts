@@ -25,7 +25,7 @@ import { FACETS_BY_ID } from '../facets';
 import type { Range } from '../matchPos';
 
 /** Die Ansichten, die ein Link benennen darf (Werte von `ViewMode`). */
-const VIEWS = ['overview', 'graph', 'table', 'matrix', 'check', 'similar', 'compare'] as const;
+const VIEWS = ['overview', 'graph', 'table'] as const;
 const HIDE_MODES = ['dim', 'hide'] as const;
 
 export interface SharedState {

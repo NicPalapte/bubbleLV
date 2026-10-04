@@ -36,9 +36,9 @@ async function warteAufLv(): Promise<void> {
 }
 
 /** Der Link wird erst nach dem ersten Zeichnen des LV angewendet — darauf warten. */
-async function warteAufMatrix(): Promise<void> {
+async function warteAufTabelle(): Promise<void> {
   await waitFor(() =>
-    expect(screen.getByRole('radio', { name: 'Matrix' })).toHaveAttribute('aria-checked', 'true'),
+    expect(screen.getByRole('radio', { name: 'Tabelle' })).toHaveAttribute('aria-checked', 'true'),
   );
 }
 
@@ -111,12 +111,12 @@ describe('Hinweisleiste: mehrere Dateien (Issue #94)', () => {
 
 describe('Hinweisleiste: Teilen-Link (Issue #95)', () => {
   it('nennt, welche Teile des Links nicht passen', async () => {
-    setzeFragment('#v=matrix~f.gibtsnicht=a~q=Beton');
+    setzeFragment('#v=table~f.gibtsnicht=a~q=Beton');
     render(<App />);
     legeAb(fixtureDatei('gaeb-xml-beispiel.x83'));
     await warteAufLv();
     // Der passende Rest gilt trotzdem.
-    await warteAufMatrix();
+    await warteAufTabelle();
 
     expect(hinweisleiste()).toHaveTextContent('Der Link passt nur teilweise zu dieser Datei');
     expect(hinweisleiste()).toHaveTextContent('Filter „gibtsnicht"');
@@ -131,12 +131,12 @@ describe('Hinweisleiste: Teilen-Link (Issue #95)', () => {
   });
 
   it('meldet nichts bei einem Link, der passt', async () => {
-    setzeFragment('#v=matrix~q=Beton');
+    setzeFragment('#v=table~q=Beton');
     render(<App />);
     legeAb(fixtureDatei('gaeb-xml-beispiel.x83'));
     await warteAufLv();
     // Erst wenn der Link angewendet ist, sagt „kein Hinweis" etwas aus.
-    await warteAufMatrix();
+    await warteAufTabelle();
     expect(hinweisleiste()).toBeNull();
   });
 

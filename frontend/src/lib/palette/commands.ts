@@ -80,10 +80,6 @@ const VIEWS: readonly { mode: ViewMode; label: string }[] = [
   { mode: 'overview', label: 'Überblick' },
   { mode: 'graph', label: 'Graph' },
   { mode: 'table', label: 'Tabelle' },
-  { mode: 'matrix', label: 'Matrix' },
-  { mode: 'similar', label: 'Ähnlichkeit' },
-  { mode: 'compare', label: 'Vergleich' },
-  { mode: 'check', label: 'Prüfung' },
 ];
 
 /**

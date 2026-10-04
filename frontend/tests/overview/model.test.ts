@@ -112,7 +112,7 @@ describe('buildOverview · ohne Preise', () => {
   it('führt unklassifizierte Positionen sichtbar, aber nicht als Gewerk', () => {
     const ohne = model.groups.find((group) => group.key === NO_GEWERK);
     expect(ohne).toBeDefined();
-    expect(ohne?.filterable).toBe(false);
+    expect(ohne?.filterable).toBe(true);
     expect(model.metrics.gewerke).toBeLessThan(model.groups.length + model.metrics.positions);
   });
 

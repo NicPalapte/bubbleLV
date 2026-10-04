@@ -32,6 +32,16 @@ export function UnitTotals({
 
   return (
     <div role="list" aria-label="Mengen je Einheit">
+      {/* Spaltenköpfe: ohne sie ist die Zahl vor „n Pos." nicht als Menge erkennbar. */}
+      <div
+        aria-hidden="true"
+        className="flex items-baseline gap-[8px] pb-[3px] font-mono text-[8px] tracking-[0.6px] text-mute"
+      >
+        <span className="w-[52px] shrink-0">EINHEIT</span>
+        <span className="min-w-0 flex-1" />
+        <span className="w-[110px] shrink-0 text-right">GESAMTMENGE</span>
+        <span className="w-[70px] shrink-0 text-right">POSITIONEN</span>
+      </div>
       {rows.map((unit) => (
         <button
           key={unit.key}
@@ -60,7 +70,7 @@ export function UnitTotals({
             {formatNumber(unit.quantity, 0)}
           </span>
           <span className="w-[70px] shrink-0 text-right font-mono text-[9.5px] text-mute">
-            {formatCount(unit.count)} Pos.
+            {formatCount(unit.count)}
           </span>
         </button>
       ))}

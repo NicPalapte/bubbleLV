@@ -141,109 +141,13 @@ describe('Tabelle · Tastatur', () => {
   });
 });
 
-describe('Matrix · Tastatur', () => {
-  it('bewegt den Fokus mit den Pfeiltasten von Zelle zu Zelle', async () => {
-    await ladeApp();
-    ansicht('Matrix');
-    const raster = screen.getByRole('grid', { name: 'Matrix' });
-
-    const start = raster.querySelector<HTMLButtonElement>('button[data-r][data-c]');
-    expect(start, 'kein filterbares Feld im Raster').not.toBeNull();
-    const zelle = start as HTMLButtonElement;
-    const r = Number(zelle.dataset.r);
-    const c = Number(zelle.dataset.c);
-    zelle.focus();
-
-    // Nachbar in derselben Zeile, sonst in derselben Spalte — je nachdem,
-    // was das Raster dieser Datei hergibt.
-    const rechts = raster.querySelector<HTMLButtonElement>(
-      `button[data-r="${r}"][data-c="${c + 1}"]`,
-    );
-    const unten = raster.querySelector<HTMLButtonElement>(
-      `button[data-r="${r + 1}"][data-c="${c}"]`,
-    );
-    const nachbar = rechts ?? unten;
-    expect(nachbar, 'Raster mit nur einer Zelle').not.toBeNull();
-
-    fireEvent.keyDown(zelle, { key: rechts !== null ? 'ArrowRight' : 'ArrowDown' });
-    expect(document.activeElement).toBe(nachbar);
-
-    // Und wieder zurück.
-    fireEvent.keyDown(nachbar as HTMLButtonElement, {
-      key: rechts !== null ? 'ArrowLeft' : 'ArrowUp',
-    });
-    expect(document.activeElement).toBe(zelle);
-  });
-
-  it('hat genau einen Tab-Stopp — nicht einen je Zelle', async () => {
-    await ladeApp();
-    ansicht('Matrix');
-    const raster = screen.getByRole('grid', { name: 'Matrix' });
-
-    const stopps = () => raster.querySelectorAll('button[data-r][tabindex="0"]');
-    expect(raster.querySelectorAll('button[data-r]').length).toBeGreaterThan(1);
-    expect(stopps()).toHaveLength(1);
-
-    // Der Stopp wandert mit dem Fokus mit: wer das Raster verlässt und
-    // zurückkommt, steht wieder dort, wo er war.
-    const zweite = raster.querySelectorAll<HTMLButtonElement>('button[data-r]')[1];
-    zweite.focus();
-    fireEvent.focus(zweite);
-    expect(stopps()).toHaveLength(1);
-    expect(zweite).toHaveAttribute('tabindex', '0');
-  });
-
-  it('bleibt erreichbar, wenn keine Zelle filterbar ist', async () => {
-    // „Material" und „Zeitbezug" kommen in der Musterdatei nicht vor: beide
-    // Achsen bestehen dann nur aus „Ohne Angabe", und keine Zelle ist ein
-    // Einstieg. Ohne Tab-Stopp fiele das Raster still aus der Reihenfolge.
-    await ladeApp();
-    ansicht('Matrix');
-    const wechsle = (achse: string, facette: string): void => {
-      // Der Filter-Chip in der Kopfleiste heißt genauso — hier zählt der in
-      // der Ansicht.
-      fireEvent.click(
-        within(screen.getByRole('main')).getByRole('button', { name: new RegExp(`${achse} ▾`) }),
-      );
-      const offen = [...document.body.children].filter(
-        (element) => (element as HTMLElement).style.position === 'fixed',
-      );
-      fireEvent.click(
-        within(offen[offen.length - 1] as HTMLElement).getByText(facette, { selector: '*' }),
-      );
-    };
-    wechsle('Gewerk', 'Material');
-    wechsle('Bauteiltyp', 'Zeitbezug');
-
-    const raster = screen.getByRole('grid', { name: 'Matrix' });
-    expect(raster.querySelectorAll('button[data-r]')).toHaveLength(0);
-    expect(raster).toHaveAttribute('tabindex', '0');
-  });
-
-  it('löst eine Zelle mit Enter aus — sie ist eine Schaltfläche', async () => {
-    await ladeApp();
-    ansicht('Matrix');
-    const raster = screen.getByRole('grid', { name: 'Matrix' });
-    const zelle = within(raster).getAllByRole('button')[0];
-
-    // Enter auf einer Schaltfläche ist ein Klick; die Zelle filtert und wechselt.
-    fireEvent.click(zelle);
-    await waitFor(() =>
-      expect(screen.getByRole('radio', { name: 'Tabelle' })).toHaveAttribute(
-        'aria-checked',
-        'true',
-      ),
-    );
-  });
-});
-
 describe('Ohne Maus bedienbar', () => {
-  it('führt aus der Prüfung per Tastatur in die Tabelle', async () => {
+  it('führt aus der Prüfkarte per Tastatur in die Tabelle', async () => {
     // Die Hinweiszeilen sind echte Schaltflächen: mit Tab erreichbar, mit
     // Enter auslösbar. Enter auf einer fokussierten Schaltfläche ist ein
     // Klick — genau das prüft dieser Weg.
     await ladeApp();
-    ansicht('Prüfung');
+    ansicht('Überblick');
     const main = screen.getByRole('main');
     const zeilen = within(main)
       .getAllByRole('button')
@@ -265,7 +169,7 @@ describe('Ohne Maus bedienbar', () => {
   it('macht jede Ansicht mit der Tastatur erreichbar', async () => {
     // Jede Ansicht bietet mindestens einen Bedienpunkt, der den Fokus nimmt.
     await ladeApp();
-    for (const name of ['Prüfung', 'Ähnlichkeit', 'Überblick', 'Tabelle']) {
+    for (const name of ['Überblick', 'Graph', 'Tabelle']) {
       ansicht(name);
       const main = screen.getByRole('main');
       const fokussierbar = main.querySelectorAll(
@@ -273,12 +177,5 @@ describe('Ohne Maus bedienbar', () => {
       );
       expect(fokussierbar.length, `${name}: nichts fokussierbar`).toBeGreaterThan(0);
     }
-
-    // Der Vergleich ist ohne Auswahl leer — er sagt, was zu tun ist, statt
-    // Bedienpunkte anzubieten, die auf nichts zeigen.
-    ansicht('Vergleich');
-    expect(
-      within(screen.getByRole('main')).getByText(/Keine Position im Vergleich/),
-    ).toBeInTheDocument();
   });
 });

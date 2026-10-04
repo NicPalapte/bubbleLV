@@ -28,7 +28,7 @@ async function loadFixture(name: string): Promise<void> {
  * "Graph"; ein Wechsel ändert weder Filter noch Auswahl. Nach dem Import steht
  * der "Überblick" vorn, deshalb schaltet fast jeder Test zuerst um.
  */
-function switchToView(mode: 'Überblick' | 'Graph' | 'Tabelle' | 'Prüfung'): void {
+function switchToView(mode: 'Überblick' | 'Graph' | 'Tabelle'): void {
   fireEvent.click(screen.getByRole('radio', { name: mode }));
 }
 
@@ -91,12 +91,14 @@ describe('Viewer', () => {
 
     fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'Beton' } });
     // Die Suche ist entprellt — der Überblick zeigt an, sobald sie greift.
-    await waitFor(() => expect(screen.getByText(/im aktuellen Filter/)).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getAllByText(/im aktuellen Filter/).length).toBeGreaterThan(0),
+    );
 
-    // In der Prüfung ein Stück scrollen …
-    switchToView('Prüfung');
-    const pruefung = screen.getByRole('main', { name: 'Prüfung' }).firstElementChild as HTMLElement;
-    fireEvent.scroll(pruefung, { target: { scrollTop: 240 } });
+    // Im Überblick ein Stück scrollen …
+    const ueberblick = screen.getByRole('main', { name: 'Überblick' })
+      .firstElementChild as HTMLElement;
+    fireEvent.scroll(ueberblick, { target: { scrollTop: 240 } });
 
     // … in der Tabelle nach Menge sortieren …
     switchToView('Tabelle');
@@ -110,9 +112,9 @@ describe('Viewer', () => {
     );
 
     // … und zurück: Suche, Sortierung und Scrollposition stehen unverändert da.
-    switchToView('Prüfung');
+    switchToView('Überblick');
     expect(
-      (screen.getByRole('main', { name: 'Prüfung' }).firstElementChild as HTMLElement).scrollTop,
+      (screen.getByRole('main', { name: 'Überblick' }).firstElementChild as HTMLElement).scrollTop,
     ).toBe(240);
     expect(screen.getByLabelText('Suche')).toHaveValue('Beton');
 

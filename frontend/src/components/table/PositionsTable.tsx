@@ -16,7 +16,6 @@
 
 import { useMemo, useRef, useState } from 'react';
 import { useDismiss } from '../common/useDismiss';
-import { useCompareMenu } from '../compare/useCompareMenu';
 import { Chip } from '../ui/Chip';
 import { DataTable, type Column } from '../ui/DataTable';
 import { Popover, PopoverHead } from '../ui/Popover';
@@ -309,8 +308,6 @@ export function PositionsTable({ root }: { root: LVNode }) {
     parents,
   } = useViewer();
   const dispatch = useViewerDispatch();
-  // Rechtsklick auf eine Zeile: in den Vergleich (PR #86).
-  const { openMenu, menu } = useCompareMenu();
   // Der Ansichts-Zustand führt den Sortierschlüssel als Zeichenkette: die
   // Spaltenschlüssel kennt nur diese Komponente. Unbekannte Schlüssel fallen
   // unten in `sortValue` auf „kein Wert" zurück, sortieren also stabil.
@@ -447,23 +444,12 @@ export function PositionsTable({ root }: { root: LVNode }) {
         rowKey={(row) => row.node.id}
         selectedKey={selectedPositionId}
         revealKey={selectedPositionId}
-        onPick={(key, event) => {
-          // Strg- bzw. Cmd-Klick sammelt für den Vergleich (WP-N), statt die
-          // Auswahl zu ersetzen.
-          if (event.ctrlKey || event.metaKey) {
-            dispatch({ type: 'toggleCompare', positionId: key });
-            return;
-          }
+        onPick={(key) => {
           dispatch({
             type: 'selectPosition',
             nodeId: root.id,
             positionId: selectedPositionId === key ? null : key,
           });
-        }}
-        onRowContextMenu={(key, event) => {
-          // Nur beim Rechtsklick gesucht, nicht je Zeile vorab.
-          const row = rows.find((candidate) => candidate.node.id === key);
-          if (row !== undefined) openMenu(row.node, event);
         }}
         initialScrollTop={scroll.table}
         onLeave={(top) => dispatch({ type: 'viewScroll', view: 'table', top })}
@@ -476,7 +462,6 @@ export function PositionsTable({ root }: { root: LVNode }) {
         }
         onResize={(key, width) => setColumnConfig(resizeColumn(columnConfig, key, width))}
       />
-      {menu}
     </div>
   );
 }
