@@ -27,5 +27,8 @@
   /* Radius — essentially none. Technical = square. */
   --r-none:0;
   --r-hair:2px;               /* status pill, package swatch */
-  --r-pill:99px;              /* ONLY avatars, count badges, assignee picker */
+  --r-sm:7px;                 /* buttons, segmented controls, inputs */
+  --r-md:10px;                /* menus, popovers, alerts */
+  --r-lg:14px;                /* windows, cards, side panel */
+  --r-pill:99px;              /* chips, pills, avatars, count badges */
 }

@@ -40,7 +40,7 @@ export function GraphControls({
       onClick={swallow}
       className="absolute bottom-[14px] right-[14px] z-[1] flex flex-col items-end gap-[6px]"
     >
-      <div className="inline-flex gap-[6px] shadow-[0_4px_14px_rgba(26,37,51,0.08)]">
+      <div className="inline-flex gap-[6px] shadow-[var(--shadow-sm)]">
         {onCollapseAll !== undefined && (
           <button type="button" title="Alles einklappen" className={BUTTON} onClick={onCollapseAll}>
             ⌄

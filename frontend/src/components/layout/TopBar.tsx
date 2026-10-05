@@ -158,7 +158,10 @@ export function TopBar() {
         {/* Das Logo öffnet „Über diese App": Version, Änderungen, Fehler melden
             (Issue #71). */}
         <div className="flex items-center border-r border-line">
-          <AboutMenu onFehlerMelden={() => setMelden(true)} />
+          <AboutMenu
+            onFehlerMelden={() => setMelden(true)}
+            onAnderesLv={loaded ? () => dispatch({ type: 'clear' }) : undefined}
+          />
         </div>
         {/* Projektkontext: begrenzt und abgeschnitten — reale Projektnamen sind
             lang, und der Ansichtsumschalter daneben darf nicht wandern. */}
@@ -203,44 +206,48 @@ export function TopBar() {
       </div>
 
       {/* Zweite Leiste: Suche und Filter — der Zustand, auf dem alle acht
-          Ansichten arbeiten. */}
-      <div className="relative z-[5] flex h-[42px] shrink-0 items-center gap-[10px] border-b border-line bg-white px-[14px]">
-        <div
-          className="flex w-[280px] shrink-0 items-center gap-[8px] border border-line bg-white px-[10px] py-[4px]"
-          style={{ opacity: loaded ? 1 : 0.45 }}
-        >
-          <span className="text-[12px] text-mute">⌕</span>
-          <input
-            ref={inputRef}
-            value={draft}
-            disabled={!loaded}
-            onChange={(event) => changeSearch(event.target.value)}
-            placeholder="Positionen, OZ, Langtext…"
-            aria-label="Suche"
-            className="flex-1 border-none bg-transparent font-mono text-[11px] text-ink outline-none"
-          />
-          <span className="border border-line px-[5px] font-mono text-[9px] text-mute">/</span>
-        </div>
-        {loaded && (
-          <>
-            <span className="shrink-0 font-mono text-[8px] tracking-[0.6px] text-mute">FILTER</span>
-            <div className="flex min-w-0 flex-1 items-center gap-[6px]">
-              <FilterOverflowRow items={filterItems} />
-            </div>
-            {/*
+          Ansichten arbeiten. Auf der Startseite gibt es nichts zu durchsuchen. */}
+      {loaded && (
+        <div className="relative z-[5] flex h-[42px] shrink-0 items-center gap-[10px] border-b border-line bg-white px-[14px]">
+          <div
+            className="flex w-[280px] shrink-0 items-center gap-[8px] border border-line bg-white px-[10px] py-[4px]"
+            style={{ opacity: loaded ? 1 : 0.45 }}
+          >
+            <span className="text-[12px] text-mute">⌕</span>
+            <input
+              ref={inputRef}
+              value={draft}
+              disabled={!loaded}
+              onChange={(event) => changeSearch(event.target.value)}
+              placeholder="Positionen, OZ, Langtext…"
+              aria-label="Suche"
+              className="flex-1 border-none bg-transparent font-mono text-[11px] text-ink outline-none"
+            />
+            <span className="border border-line px-[5px] font-mono text-[9px] text-mute">/</span>
+          </div>
+          {loaded && (
+            <>
+              <span className="shrink-0 font-mono text-[8px] tracking-[0.6px] text-mute">
+                FILTER
+              </span>
+              <div className="flex min-w-0 flex-1 items-center gap-[6px]">
+                <FilterOverflowRow items={filterItems} />
+              </div>
+              {/*
               Kein Knopf, nur der Hinweis: die Palette trägt seit Issue #80 auch
               Export, Druck und Melden. Ohne diesen Hinweis wäre sie unsichtbar
               — mit Knopf wäre die Leiste wieder voll.
             */}
-            <span
-              className="ml-auto shrink-0 whitespace-nowrap font-mono text-[8px] tracking-[0.6px] text-mute"
-              title="Ansicht wechseln, filtern, zu einer OZ springen, exportieren, drucken, melden"
-            >
-              STRG/CMD + K · BEFEHLE
-            </span>
-          </>
-        )}
-      </div>
+              <span
+                className="ml-auto shrink-0 whitespace-nowrap font-mono text-[8px] tracking-[0.6px] text-mute"
+                title="Ansicht wechseln, filtern, zu einer OZ springen, exportieren, drucken, melden"
+              >
+                STRG/CMD + K · BEFEHLE
+              </span>
+            </>
+          )}
+        </div>
+      )}
 
       {loaded && (
         // Die Palette schweigt, solange das Melde-Fenster offen ist: beide

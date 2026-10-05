@@ -9,11 +9,18 @@
 // „Fehler melden" sitzt ebenfalls hier und nicht mehr im Menü „Mitnehmen":
 // eine Meldung ist kein Export.
 
+//
+// Seit dem neuen Hauptscreen auch hier: „Anderes LV öffnen" und Hell/Dunkel —
+// beides braucht man selten, und die Kopfleiste soll schmal bleiben.
+
 import { useCallback, useRef, useState } from 'react';
 import { BubbleLogo } from '../ui/BubbleLogo';
-import { Popover, PopoverHead, PopoverRow } from '../ui/Popover';
+import { Popover, PopoverRow } from '../ui/Popover';
+import { SegmentedControl } from '../ui/SegmentedControl';
 import { useDismiss } from '../common/useDismiss';
+import { useTheme } from '../common/useTheme';
 import { APP_VERSION, BUILD_ID, buildDate } from '../../lib/version';
+import type { Theme } from '../../lib/theme';
 
 const CHANGELOG_URL = 'https://github.com/NicPalapte/bubbleLV/blob/main/CHANGELOG.md';
 
@@ -23,6 +30,17 @@ export interface AboutMenuProps {
    * solange es offen ist, darf die Kommandopalette nicht dazwischenfunken.
    */
   onFehlerMelden: () => void;
+  /** „Anderes LV öffnen" — zurück zur Startseite. Fehlt, solange kein LV geladen ist. */
+  onAnderesLv?: () => void;
+}
+
+const THEME_OPTIONS = [
+  { value: 'light', label: 'Hell' },
+  { value: 'dark', label: 'Dunkel' },
+] as const;
+
+function Trenner() {
+  return <hr className="mx-[4px] my-[4px] border-0 border-t border-line" />;
 }
 
 /** Zeile ohne Schaltflächen-Verhalten — reine Angabe, nichts zum Anklicken. */
@@ -35,8 +53,9 @@ function Angabe({ label, wert }: { label: string; wert: string }) {
   );
 }
 
-export function AboutMenu({ onFehlerMelden }: AboutMenuProps) {
+export function AboutMenu({ onFehlerMelden, onAnderesLv }: AboutMenuProps) {
   const [open, setOpen] = useState(false);
+  const [theme, chooseTheme] = useTheme();
   const anchorRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   useDismiss(
@@ -63,15 +82,29 @@ export function AboutMenu({ onFehlerMelden }: AboutMenuProps) {
         // niemandem, was sie tut, weder am Bildschirmleser noch im Test.
         aria-label="Über diese App"
         title="Über diese App: Version, Änderungen, Fehler melden"
-        className="flex cursor-pointer items-center gap-[6px] border-none bg-transparent px-[18px] py-[6px] hover:bg-paper"
+        className="mx-[8px] flex cursor-pointer items-center gap-[6px] rounded-[var(--r-sm)] border-none bg-transparent px-[8px] py-[5px] hover:bg-sunken aria-expanded:bg-sunken"
       >
         <BubbleLogo size={22} />
         <span className="font-mono text-[9px] text-mute">▾</span>
       </button>
-      <Popover ref={popoverRef} open={open} width={260} anchorRef={anchorRef}>
-        <PopoverHead>Über diese App</PopoverHead>
-        <Angabe label="Version" wert={`v${APP_VERSION}`} />
-        <Angabe label="Stand" wert={stand} />
+      <Popover ref={popoverRef} open={open} width={272} anchorRef={anchorRef}>
+        <div className="flex flex-col gap-[2px] px-[10px] pb-[8px] pt-[8px]">
+          <span className="font-sans text-[15px] font-bold text-ink">bubble</span>
+          <span className="font-mono text-[10px] text-mute">
+            <span>v{APP_VERSION}</span> · <span>{stand}</span>
+          </span>
+        </div>
+        {onAnderesLv !== undefined && (
+          <PopoverRow
+            onClick={() => {
+              setOpen(false);
+              onAnderesLv();
+            }}
+            title="Dieses LV schließen und ein anderes öffnen"
+          >
+            Anderes LV öffnen
+          </PopoverRow>
+        )}
         <PopoverRow
           onClick={() => {
             // Öffnet GitHub in einem neuen Tab — erst auf Klick, und ohne
@@ -92,6 +125,18 @@ export function AboutMenu({ onFehlerMelden }: AboutMenuProps) {
         >
           Fehler melden
         </PopoverRow>
+        <div className="flex items-center justify-between gap-[8px] px-[10px] py-[4px] text-ink">
+          <span>Design</span>
+          {/* Die Wahl hält bis zum Reload (lib/theme.ts); das Menü bleibt
+              dabei offen, damit man beide Sätze vergleichen kann. */}
+          <SegmentedControl
+            label="Design"
+            options={THEME_OPTIONS}
+            value={theme}
+            onChange={(value) => chooseTheme(value as Theme)}
+          />
+        </div>
+        <Trenner />
         {/*
           Impressum und Datenschutz stehen als Angabe da, nicht als Link ins
           Leere: die Texte brauchen Angaben des Betreibers (Issues #75, #76).

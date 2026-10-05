@@ -191,7 +191,7 @@ export function CommandPalette({ gesperrt = false, onFehlerMelden }: CommandPale
               justifyContent: 'center',
               alignItems: 'flex-start',
               paddingTop: '12vh',
-              background: 'rgba(26,37,51,0.12)',
+              background: 'var(--backdrop)',
             }}
             onMouseDown={(event) => {
               if (event.target === event.currentTarget) setOpen(false);

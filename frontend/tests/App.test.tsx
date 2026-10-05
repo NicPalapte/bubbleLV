@@ -45,7 +45,7 @@ describe('Viewer', () => {
     // tests/pipeline/loadDemoLv.test.ts ab.
     expect(screen.getByRole('button', { name: 'Demo mit Preisen' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Demo ohne Preise' })).toBeInTheDocument();
-    expect(screen.getByText(/Keine eigene Datei zur Hand/)).toBeInTheDocument();
+    expect(screen.getByText('Demo-LV ansehen')).toBeInTheDocument();
   });
 
   it('lädt eine echte GAEB-Datei und zeigt Baum und Filter', async () => {

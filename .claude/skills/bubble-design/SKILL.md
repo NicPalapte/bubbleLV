@@ -16,5 +16,7 @@ build or design, ask some questions, and act as an expert designer who outputs H
 artifacts _or_ production code, depending on the need.
 
 Non-negotiables for this brand: German UI copy in Baubranche vocabulary, IBM Plex Mono as
-the interface font, square corners, hairline borders instead of shadows, one blue accent,
-no icon library (Unicode glyphs only), no emoji, no imagery.
+the interface font, one blue accent, light + dark token sets, rounded floating surfaces
+(windows, cards, menus) with soft shadows over the graph, square table rows, no icon
+library (Unicode glyphs only), no emoji, no imagery. Minimal explanatory text.
+Rules since 2026-10-05: docs/decisions/0031-neuer-look-und-dunkelmodus.md

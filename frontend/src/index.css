@@ -6,37 +6,46 @@
    (colors · typography · spacing · elevation). Die Schriftdateien selbst kommen
    über den <link> in index.html. */
 
-/* ── Farben — kühle Blueprint-Palette, ein blauer Akzent, Amber = Achtung ── */
+/* ── Farben — kühle Blueprint-Palette, ein blauer Akzent, Amber = Achtung.
+   Hell ist der Standard; der dunkle Satz steht unten (Abschnitt „Dunkel") und
+   greift über das System oder den Schalter im Logo-Menü (`data-theme`). ── */
 :root {
-  --paper: #f5f7fa;
-  --panel: #fbfcfd;
+  --paper: #eef2f7;
+  --panel: #f8fafc;
   --white: #ffffff;
+  /* Flächen der schwebenden Fenster über dem Graphen. */
+  --surface: #ffffff;
+  --sunken: #f5f8fb;
+  --glass: rgba(255, 255, 255, 0.8);
+  --glass-strong: rgba(255, 255, 255, 0.93);
 
-  --grid: #e4ecf4;
+  --grid: #e4ebf3;
   --grid2: #d6e0ec;
-  --line: #c9d4e0;
-  --line2: #a9bbcf;
+  --line: #dde5ee;
+  --line2: #c3d0de;
 
-  --ink: #1a2533;
-  --dim: #6b7d92;
+  --ink: #152131;
+  --dim: #5b6d82;
   --mute: #5f7184; /* ≥4.5:1 auf --white und --paper (WCAG AA) */
 
   --blue: #2563eb;
-  --blueS: #dbe7fd;
+  --blueS: #e3ecfe;
   --blueD: #1d4ed8;
   --cyan: #0891b2;
   /* Weiche Tönung zu --cyan, gleiche Helligkeit wie --blueS/--greenS;
      Fundstellen-Markierung „Verweise" (WP-J). */
   --cyanS: #cfeaf2;
 
-  --amber: #d97706;
-  --amberS: #fde8c4;
+  --amber: #c26a05;
+  --amberS: #fdf0d8;
   --greenD: #0f8a4c;
-  --greenS: #cdebd8;
-  --red: #dc2626;
-  --redD: #b91c1c;
+  --greenS: #dcf2e5;
+  --red: #c42525;
+  --redD: #a81d1d;
   /* Weiche Tönung zu --red; Fundstellen-Markierung „Offene Stellen" (WP-J). */
-  --redS: #fbdada;
+  --redS: #fde3e3;
+
+  color-scheme: light;
 }
 
 /* ── Gewerk-Skala — zehn gleichrangige, gedämpfte Töne für Treemap, Legenden
@@ -121,7 +130,8 @@
   --fw-bold: 700;
 }
 
-/* ── Maße — dicht: 4/6/8/12/16 ist die ganze Skala. Radius praktisch 0. ── */
+/* ── Maße — dicht: 4/6/8/12/16 ist die ganze Skala. Schwebende Flächen
+   (Fenster, Karten, Menüs) sind gerundet, Tabellenzeilen und Zellen nicht. ── */
 :root {
   --sp-1: 2px;
   --sp-2: 4px;
@@ -157,21 +167,165 @@
 
   --r-none: 0;
   --r-hair: 2px;
+  --r-sm: 7px;
+  --r-md: 10px;
+  --r-lg: 14px;
   --r-pill: 99px;
 }
 
-/* ── Elevation & Motion — fast flach: Rahmen leisten die Arbeit,
-   genau ein echter Schatten existiert. ── */
+/* ── Elevation & Motion — weiche Schatten heben schwebende Flächen vom Graphen
+   ab; Rahmen bleiben, damit die Kanten auch ohne Schatten lesbar sind. ── */
 :root {
-  --shadow-popover: 0 8px 24px rgba(26, 37, 51, 0.1);
-  --shadow-hairline: 0 1px 0 rgba(26, 37, 51, 0.02);
+  --shadow: 0 1px 2px rgba(21, 33, 49, 0.06), 0 8px 28px rgba(21, 33, 49, 0.1);
+  --shadow-sm: 0 1px 2px rgba(21, 33, 49, 0.06), 0 2px 8px rgba(21, 33, 49, 0.06);
+  --shadow-popover: var(--shadow);
+  --shadow-hairline: 0 1px 0 rgba(21, 33, 49, 0.02);
   --scrim: rgba(255, 255, 255, 0.94);
+  --backdrop: rgba(21, 33, 49, 0.12);
 
   --dur-fast: 0.1s;
   --dur-base: 0.12s;
   --ease: ease;
   --dim-nonmatch: 0.32;
   --dim-section: 0.4;
+}
+
+/* ── Dunkel — derselbe Satz Variablen, abgedunkelt. Greift, wenn das System
+   dunkel eingestellt ist und niemand „Hell" gewählt hat, oder wenn im
+   Logo-Menü „Dunkel" gewählt ist (lib/theme.ts). Die Wahl lebt nur in der
+   Sitzung — kein localStorage (.claude/CLAUDE.md). ── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --paper: #0e141c;
+    --panel: #121a24;
+    --white: #18212d;
+    --surface: #18212d;
+    --sunken: #141c27;
+    --glass: rgba(22, 30, 42, 0.78);
+    --glass-strong: rgba(22, 30, 42, 0.94);
+    --grid: #1a2431;
+    --grid2: #223044;
+    --line: #263345;
+    --line2: #33445a;
+    --ink: #e6edf6;
+    --dim: #9aabbf;
+    --mute: #8d9db1;
+    --blue: #5b8cff;
+    --blueS: #1b2b4d;
+    --blueD: #9dbaff;
+    --cyan: #3fb2cc;
+    --cyanS: #133944;
+    --amber: #f0a03a;
+    --amberS: #3a2a12;
+    --greenD: #3fbf7f;
+    --greenS: #123222;
+    --red: #ff6b6b;
+    --redD: #ff9a9a;
+    --redS: #3d1a1d;
+    --cat-1: #2b4470;
+    --cat-2: #1f4f5c;
+    --cat-3: #1f5148;
+    --cat-4: #284f33;
+    --cat-5: #4a5221;
+    --cat-6: #5c4a1e;
+    --cat-7: #5c3527;
+    --cat-8: #5a2f40;
+    --cat-9: #3e3466;
+    --cat-10: #33404e;
+    --cat-none: #1b2533;
+    --heat-1: #12303a;
+    --heat-2: #164556;
+    --heat-3: #1b5c71;
+    --heat-4: #20768f;
+    --heat-5: #2a92ad;
+    --bub-project: #18212d;
+    --bub-project-line: #e6edf6;
+    --bub-lot: #22406f;
+    --bub-lot-line: #9dbaff;
+    --bub-section: #1d4f5d;
+    --bub-section-line: #5fc6dc;
+    --bub-subsection: #183f4a;
+    --bub-subsection-line: #3fb2cc;
+    --bub-group: #233042;
+    --bub-group-line: #8ea2b8;
+    --bub-position: #6b4a1c;
+    --bub-position-line: #f0a03a;
+    --bub-cluster: #1c2533;
+    --bub-cluster-line: #9aabbf;
+    --bub-edge: #6c7f95;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 30px rgba(0, 0, 0, 0.35);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.25);
+    --shadow-hairline: 0 1px 0 rgba(0, 0, 0, 0.2);
+    --scrim: rgba(22, 30, 42, 0.92);
+    --backdrop: rgba(0, 0, 0, 0.45);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --paper: #0e141c;
+  --panel: #121a24;
+  --white: #18212d;
+  --surface: #18212d;
+  --sunken: #141c27;
+  --glass: rgba(22, 30, 42, 0.78);
+  --glass-strong: rgba(22, 30, 42, 0.94);
+  --grid: #1a2431;
+  --grid2: #223044;
+  --line: #263345;
+  --line2: #33445a;
+  --ink: #e6edf6;
+  --dim: #9aabbf;
+  --mute: #8d9db1;
+  --blue: #5b8cff;
+  --blueS: #1b2b4d;
+  --blueD: #9dbaff;
+  --cyan: #3fb2cc;
+  --cyanS: #133944;
+  --amber: #f0a03a;
+  --amberS: #3a2a12;
+  --greenD: #3fbf7f;
+  --greenS: #123222;
+  --red: #ff6b6b;
+  --redD: #ff9a9a;
+  --redS: #3d1a1d;
+  --cat-1: #2b4470;
+  --cat-2: #1f4f5c;
+  --cat-3: #1f5148;
+  --cat-4: #284f33;
+  --cat-5: #4a5221;
+  --cat-6: #5c4a1e;
+  --cat-7: #5c3527;
+  --cat-8: #5a2f40;
+  --cat-9: #3e3466;
+  --cat-10: #33404e;
+  --cat-none: #1b2533;
+  --heat-1: #12303a;
+  --heat-2: #164556;
+  --heat-3: #1b5c71;
+  --heat-4: #20768f;
+  --heat-5: #2a92ad;
+  --bub-project: #18212d;
+  --bub-project-line: #e6edf6;
+  --bub-lot: #22406f;
+  --bub-lot-line: #9dbaff;
+  --bub-section: #1d4f5d;
+  --bub-section-line: #5fc6dc;
+  --bub-subsection: #183f4a;
+  --bub-subsection-line: #3fb2cc;
+  --bub-group: #233042;
+  --bub-group-line: #8ea2b8;
+  --bub-position: #6b4a1c;
+  --bub-position-line: #f0a03a;
+  --bub-cluster: #1c2533;
+  --bub-cluster-line: #9aabbf;
+  --bub-edge: #6c7f95;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 30px rgba(0, 0, 0, 0.35);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.25);
+  --shadow-hairline: 0 1px 0 rgba(0, 0, 0, 0.2);
+  --scrim: rgba(22, 30, 42, 0.92);
+  --backdrop: rgba(0, 0, 0, 0.45);
+  color-scheme: dark;
 }
 
 /* ── Element-Defaults, aus tokens/base.css ── */
@@ -212,7 +366,7 @@ a:hover {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c9d4e0;
+  background: var(--line2);
   border-radius: 4px;
 }
 
@@ -228,6 +382,219 @@ a:hover {
     linear-gradient(90deg, var(--grid) 1px, transparent 1px);
   background-size: var(--grid-cell) var(--grid-cell);
   background-position: -1px -1px;
+}
+
+/* ── Startseite (components/upload/FileDropzone.tsx) ── */
+.start {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  background: var(--paper);
+  background-image: radial-gradient(var(--grid2) 1px, transparent 1.2px);
+  background-size: 18px 18px;
+}
+
+.start-in {
+  width: min(820px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+}
+
+.start-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.start-tag {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 17px;
+  color: var(--dim);
+}
+
+.start-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.start-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 270px;
+  padding: 24px;
+  text-align: center;
+  border-radius: var(--r-lg);
+  background: var(--glass);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(14px);
+}
+
+.start-card b {
+  font-family: var(--sans);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+
+.start-drop {
+  border: 1.5px dashed var(--line2);
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+
+.start-drop:hover,
+.start-drop.over {
+  border-color: var(--blue);
+  background: var(--blueS);
+}
+
+.start-demo {
+  border: 1px solid var(--line);
+}
+
+.start-sub {
+  font-size: 11.5px;
+  color: var(--dim);
+}
+
+.start-meta {
+  max-width: 320px;
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--mute);
+}
+
+.start-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  margin: 6px 0 2px;
+  padding: 0 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  font-size: 11.5px;
+  cursor: pointer;
+}
+
+.start-btn:hover {
+  border-color: var(--line2);
+}
+
+.start-btn.primary {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: #fff;
+}
+
+.start-btn.primary:hover {
+  background: var(--blueD);
+}
+
+.start-ring {
+  width: 56px;
+  height: 56px;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--blueS);
+  color: var(--blue);
+  font-size: 22px;
+}
+
+.start-art {
+  width: 200px;
+  height: 110px;
+  margin-bottom: 2px;
+}
+
+.start-art .g {
+  stroke-width: 1.2;
+  fill-opacity: 0.1;
+  stroke-opacity: 0.6;
+}
+
+.start-art .g1,
+.start-art .p1 {
+  fill: var(--blue);
+  stroke: var(--blue);
+}
+
+.start-art .g2,
+.start-art .p2 {
+  fill: var(--red);
+  stroke: var(--red);
+}
+
+.start-art .g3,
+.start-art .p3 {
+  fill: var(--greenD);
+  stroke: var(--greenD);
+}
+
+.start-tips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 22px;
+  font-size: 11px;
+  color: var(--dim);
+}
+
+.start-tips li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.start-tip-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--blue);
+  box-shadow: 0 0 0 3px var(--blueS);
+}
+
+.start-tip-ring {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 2px solid var(--amber);
+}
+
+.start-tip-lock {
+  font-size: 9px;
+  color: var(--greenD);
+}
+
+@media (max-width: 640px) {
+  .start-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .start-card {
+    min-height: 0;
+  }
 }
 
 /* Mengen-Bereichsfilter: zwei deckungsgleiche <input type="range"> bilden

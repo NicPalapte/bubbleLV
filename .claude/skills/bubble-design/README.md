@@ -50,29 +50,35 @@ information it isn't there.
   section/position/lot titles, and `Langtext` prose. Sizes are deliberately tiny:
   8px micro-labels, 9px uppercase section labels (letter-spacing .6), 10–11px rows,
   15–18px titles. Uppercase + letterspacing marks *labels*; sentence case marks *content*.
-- **Borders do the work of elevation.** Four line steps (`--grid` → `--line2`).
-  1px solid is the default; 1px **dashed** means "empty / add / reset". Exactly one real
-  shadow exists — `--shadow-popover 0 8px 24px rgba(26,37,51,0.10)` on dropdowns.
-  Floating canvas toolbars use a 94%-white capsule with a hairline shadow instead.
-- **Corner radius: 0.** Two exceptions: `2px` on status pills and package swatches,
-  and full round (`50%`/`99px`) on avatars, count badges and the assignee picker.
-  Cards are not rounded and never have a colored left border *as decoration* — a colored
-  2px left bar is a *meaning* (selection = blue, otherwise the row's Vergabepaket color).
+- **Elevation (since 2026-10-05):** the graph is the stage; everything above it floats.
+  Floating surfaces (top bar, side panel, position card, windows, menus, start cards)
+  get `--shadow` (large) or `--shadow-sm` (capsules, selected segment) plus a 1px
+  `--line` border. Inside a surface, borders still do the work — no nested shadows.
+  1px **dashed** still means "empty / add / reset / drop here".
+- **Corner radius (since 2026-10-05):** `--r-lg 14px` windows, cards, side panel;
+  `--r-md 10px` menus, popovers, alerts; `--r-sm 7px` buttons, segmented controls,
+  inputs; `--r-pill` chips, pills, dock buttons. Table rows, cells and tree rows stay
+  square. Never a colored left border as decoration.
+- **Dark mode:** every color is a variable with a light and a dark value
+  (`tokens/colors.css`). Dark applies via `prefers-color-scheme` unless the user picks
+  Hell/Dunkel in the logo menu (`data-theme` on `<html>`, session only, no storage).
+  Never hard-code a hex color in a component — use a variable.
 - **Selection & hover:** selection = `--blueS` fill + 2px blue left bar + `--blueD` text.
   Hover = a light background change only (`--blueS` on the resize handle, row tint on
   lists). No lift, no scale, no shadow on hover. There is no distinct press state.
 - **Motion:** `.1–.12s ease` on background/border color. That is all. No entrance
   animations, no bounce, no parallax. The only "animation" is the force-directed bubble
   layout settling.
-- **Transparency/blur:** almost none. `rgba(255,255,255,0.94)` behind the over-canvas
-  toolbar; `33` alpha suffix on status-pill borders; `1c` alpha on avatar fills. No
-  backdrop-filter.
+- **Transparency/blur:** floating surfaces over the graph use `--glass` /
+  `--glass-strong` with `backdrop-filter: blur(14px)`. Nothing else is translucent.
+- **Text:** as little explanatory text as possible. Labels, not sentences; the rest
+  must be discoverable by clicking (decision of the owner, 2026-10-05).
 - **Filtering is visual, not destructive:** non-matching items either dim
   (`opacity .32` positions, `.4` sections) or hide, user's choice. Counts render as
   `matching/total` with the matching half in blue.
 - **Density:** the whole scale is 4/6/8/12/16px. Table rows are 9px vertical padding,
   tree rows 4–5px. Panels are 236px (left) and 320px (right), both drag-resizable with
-  a 5px handle, persisted in localStorage.
+  a 5px handle. Sizes live in session state only — never localStorage.
 - **Imagery:** none. There are no photos or illustrations anywhere in the product.
 
 ## Iconography

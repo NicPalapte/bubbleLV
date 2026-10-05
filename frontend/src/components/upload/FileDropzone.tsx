@@ -5,7 +5,6 @@
 // Die Datei verlässt den Browser nie: kein Upload, keine Persistenz.
 
 import { useCallback, useRef, useState } from 'react';
-import { Chip } from '../ui/Chip';
 import { BubbleLogo } from '../ui/BubbleLogo';
 import { DEMO_LVS, loadDemoLv, type DemoLv } from '../../lib/pipeline/loadDemoLv';
 import { GAEB_ENDUNGEN } from '../../lib/gaeb';
@@ -89,142 +88,175 @@ export function FileDropzone() {
     inputRef.current?.click();
   };
 
-  return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center gap-[18px] overflow-auto bg-paper p-[24px]">
-      {/*
-        Einstiegstext für den ersten Besuch (Issue #72). Er steht bewusst
-        **außerhalb** der Ablagefläche: die ist als Ganzes anklickbar, und wer
-        einen Text liest, will dabei keinen Dateidialog öffnen.
+  const ohnePreise = DEMO_LVS.find((demo) => demo.id === 'muster') ?? DEMO_LVS[0];
+  const weitere = DEMO_LVS.filter((demo) => demo !== ohnePreise);
 
-        Die entscheidende Frage beim ersten Mal ist nicht „was kann das", sondern
-        „wo landet meine Datei" — deshalb steht die Antwort hier und nicht in
-        einer Datenschutzerklärung, die niemand aufschlägt.
-      */}
-      <div className="w-full max-w-[540px]">
-        <div className="font-sans text-[15px] font-semibold text-ink">
-          Bubble macht ein Leistungsverzeichnis lesbar.
+  return (
+    <div className="start">
+      <div className="start-in">
+        <div className="start-brand">
+          <BubbleLogo size={40} />
+          <p className="start-tag">Erlebe dein Leistungsverzeichnis wie nie zuvor.</p>
         </div>
-        <dl className="mt-[10px] font-mono text-[10.5px] leading-[1.7] text-mute">
-          <div className="flex gap-[8px]">
-            <dt className="w-[132px] shrink-0 text-dim">Was Bubble tut</dt>
-            <dd>
-              GAEB-Datei lesen, klassifizieren, auf VOB-Punkte hinweisen — acht Ansichten auf einem
-              Filterzustand, dazu Export und Druck.
-            </dd>
-          </div>
-          <div className="mt-[6px] flex gap-[8px]">
-            <dt className="w-[132px] shrink-0 text-dim">Wo die Datei bleibt</dt>
-            <dd>
-              Im Browser. Kein Server, kein Upload, kein Konto. Ein Reload verwirft den Stand.
-            </dd>
-          </div>
-          <div className="mt-[6px] flex gap-[8px]">
-            <dt className="w-[132px] shrink-0 text-dim">Was es nicht ist</dt>
-            <dd>
-              Kein Ersatz für AVA oder Kalkulation. Die Prüfregeln geben Hinweise mit Norm-Verweis,
-              keine Rechtsberatung.
-            </dd>
-          </div>
-          <div className="mt-[6px] flex gap-[8px]">
-            <dt className="w-[132px] shrink-0 text-dim">Tastatur</dt>
-            <dd>
-              Sobald ein LV geladen ist, öffnet <span className="text-ink">Strg/Cmd + K</span> die
-              Befehle: Ansicht wechseln, filtern, zu einer OZ springen, exportieren, drucken,
-              melden.
-            </dd>
-          </div>
-        </dl>
-      </div>
-      <div
-        onDragEnter={(event) => {
-          event.preventDefault();
-          dragDepth.current += 1;
-          if (!loading) setDragging(true);
-        }}
-        onDragOver={(event) => event.preventDefault()}
-        onDragLeave={() => {
-          dragDepth.current = Math.max(0, dragDepth.current - 1);
-          if (dragDepth.current === 0) setDragging(false);
-        }}
-        onDrop={(event) => {
-          event.preventDefault();
-          dragDepth.current = 0;
-          setDragging(false);
-          // Während ein Import läuft, würde eine zweite Datei den ersten Lauf
-          // überholen und das Ergebnis wäre nicht mehr vorhersagbar.
-          if (loading) return;
-          void handleFiles(event.dataTransfer.files);
-        }}
-        onClick={openDialog}
-        aria-busy={loading}
-        className="flex w-full max-w-[540px] flex-col items-center gap-[14px] bg-white px-[32px] py-[44px] text-center"
-        style={{
-          border: `1px dashed ${dragging ? 'var(--blue)' : 'var(--line2)'}`,
-          background: dragging ? 'var(--blueS)' : 'var(--white)',
-          cursor: loading ? 'progress' : 'pointer',
-        }}
-      >
-        <BubbleLogo size={26} />
-        <div className="font-sans text-[15px] font-semibold text-ink">
-          GAEB-Datei hierher ziehen
-        </div>
-        <div className="max-w-[420px] font-mono text-[10.5px] leading-[1.6] text-mute">
-          GAEB DA XML (X81–X86), Versionen 3.0 bis 3.3, bis {MAX_MB} MB. Die Datei wird
-          ausschließlich im Browser verarbeitet — nichts wird hochgeladen, nichts gespeichert.
-        </div>
-        {/*
-          Der Klick auf die Fläche ist eine Mausbequemlichkeit; die bedienbare
-          Schaltfläche ist dieser Chip (fokussierbar, Enter/Leertaste). Sein
-          Klick darf nicht zusätzlich auf der Fläche landen, sonst öffnet sich
-          der Dateidialog zweimal.
-        */}
-        <span
-          className="flex flex-wrap items-center justify-center gap-[8px]"
-          onClick={(event) => event.stopPropagation()}
-        >
-          <Chip on onClick={openDialog}>
-            {loading ? 'Wird gelesen…' : 'Datei auswählen'}
-          </Chip>
-          {DEMO_LVS.map((demo) => (
-            <Chip
-              key={demo.id}
-              onClick={() => openDemo(demo)}
-              title={`${demo.title} — ${demo.hint}`}
-            >
-              {demo.label}
-            </Chip>
-          ))}
-        </span>
-        <div className="max-w-[460px] font-mono text-[10px] leading-[1.6] text-mute">
-          Keine eigene Datei zur Hand? Zwei Demo-LVs stehen bereit:
-          {DEMO_LVS.map((demo) => (
-            <span key={demo.id} className="block">
-              <span className="text-dim">{demo.label}</span> — {demo.hint}
+
+        <div className="start-grid">
+          <div
+            onDragEnter={(event) => {
+              event.preventDefault();
+              dragDepth.current += 1;
+              if (!loading) setDragging(true);
+            }}
+            onDragOver={(event) => event.preventDefault()}
+            onDragLeave={() => {
+              dragDepth.current = Math.max(0, dragDepth.current - 1);
+              if (dragDepth.current === 0) setDragging(false);
+            }}
+            onDrop={(event) => {
+              event.preventDefault();
+              dragDepth.current = 0;
+              setDragging(false);
+              // Während ein Import läuft, würde eine zweite Datei den ersten Lauf
+              // überholen und das Ergebnis wäre nicht mehr vorhersagbar.
+              if (loading) return;
+              void handleFiles(event.dataTransfer.files);
+            }}
+            onClick={openDialog}
+            aria-busy={loading}
+            className={`start-card start-drop${dragging ? ' over' : ''}`}
+            style={{ cursor: loading ? 'progress' : 'pointer' }}
+          >
+            <span className="start-ring" aria-hidden="true">
+              ⇪
             </span>
-          ))}
+            <b>Eigenes LV öffnen</b>
+            <span className="start-sub">GAEB-Datei hierher ziehen</span>
+            {/*
+              Der Klick auf die Fläche ist eine Mausbequemlichkeit; die bedienbare
+              Schaltfläche ist dieser Knopf (fokussierbar, Enter/Leertaste). Sein
+              Klick darf nicht zusätzlich auf der Fläche landen, sonst öffnet sich
+              der Dateidialog zweimal.
+            */}
+            <button
+              type="button"
+              className="start-btn primary"
+              onClick={(event) => {
+                event.stopPropagation();
+                openDialog();
+              }}
+            >
+              {loading ? 'Wird gelesen…' : 'Datei auswählen'}
+            </button>
+            <span className="start-meta">x81 – x86 · xml · bis {MAX_MB} MB</span>
+            <input
+              ref={inputRef}
+              type="file"
+              accept={ACCEPT}
+              className="hidden"
+              aria-label="GAEB-Datei auswählen"
+              onClick={(event) => event.stopPropagation()}
+              onChange={(event) => {
+                void handleFiles(event.target.files);
+                // Zurücksetzen, damit dieselbe Datei erneut gewählt werden kann.
+                event.target.value = '';
+              }}
+            />
+          </div>
+
+          {/*
+            Erste Nutzer sind Bauunternehmer — ihre LVs kommen meist ohne
+            Preise. Deshalb ist die Demo ohne Preise der Hauptknopf.
+          */}
+          <div className="start-card start-demo">
+            <DemoArt />
+            <b>Demo-LV ansehen</b>
+            <span className="start-sub">{ohnePreise.title}</span>
+            <span className="start-meta">{ohnePreise.hint}</span>
+            <span className="flex flex-wrap justify-center gap-[8px]">
+              <button
+                type="button"
+                className="start-btn primary"
+                onClick={() => openDemo(ohnePreise)}
+                title={ohnePreise.hint}
+              >
+                {ohnePreise.label}
+              </button>
+              {weitere.map((demo) => (
+                <button
+                  key={demo.id}
+                  type="button"
+                  className="start-btn"
+                  onClick={() => openDemo(demo)}
+                  title={`${demo.title} — ${demo.hint}`}
+                >
+                  {demo.label}
+                </button>
+              ))}
+            </span>
+          </div>
         </div>
-        <input
-          ref={inputRef}
-          type="file"
-          accept={ACCEPT}
-          className="hidden"
-          aria-label="GAEB-Datei auswählen"
-          onChange={(event) => {
-            void handleFiles(event.target.files);
-            // Zurücksetzen, damit dieselbe Datei erneut gewählt werden kann.
-            event.target.value = '';
-          }}
-        />
+
         {error !== null && (
           <div
             role="alert"
-            className="mt-[6px] w-full border px-[12px] py-[10px] text-left font-mono text-[10.5px] leading-[1.6]"
-            style={{ borderColor: 'var(--red)', background: '#fef2f2', color: 'var(--redD)' }}
+            className="w-full rounded-[var(--r-md)] border px-[12px] py-[10px] text-left font-mono text-[10.5px] leading-[1.6]"
+            style={{ borderColor: 'var(--red)', background: 'var(--redS)', color: 'var(--redD)' }}
           >
             {error}
           </div>
         )}
+
+        {/*
+          Drei Sätze statt einer Anleitung: der Rest erschließt sich in der App.
+          Die Frage „wo landet meine Datei" bleibt beantwortet (Issue #72).
+        */}
+        <ul className="start-tips">
+          <li>
+            <span className="start-tip-dot" aria-hidden="true" />
+            Bubble anklicken öffnet die Details
+          </li>
+          <li>
+            <span className="start-tip-ring" aria-hidden="true" />
+            Hinweise stehen direkt im Graphen
+          </li>
+          <li title="Kein Server, kein Upload, kein Konto. Ein Reload verwirft den Stand.">
+            <span className="start-tip-lock" aria-hidden="true">
+              ●
+            </span>
+            Die Datei bleibt im Browser
+          </li>
+        </ul>
       </div>
     </div>
+  );
+}
+
+/** Kleines Bild auf der Demo-Karte: drei Gruppen mit Positionen, eine mit Hinweis. */
+function DemoArt() {
+  return (
+    <svg className="start-art" viewBox="0 0 220 120" aria-hidden="true">
+      <circle cx="70" cy="62" r="44" className="g g1" />
+      <circle cx="150" cy="48" r="30" className="g g2" />
+      <circle cx="168" cy="98" r="18" className="g g3" />
+      <g className="p1">
+        <circle cx="58" cy="50" r="6" />
+        <circle cx="76" cy="46" r="4" />
+        <circle cx="84" cy="64" r="7" />
+        <circle cx="62" cy="72" r="5" />
+        <circle cx="72" cy="88" r="4" />
+        <circle cx="46" cy="66" r="3.5" />
+        <circle cx="95" cy="80" r="3" />
+      </g>
+      <g className="p2">
+        <circle cx="142" cy="42" r="5" />
+        <circle cx="158" cy="52" r="4" />
+        <circle cx="146" cy="60" r="3" />
+        <circle cx="160" cy="36" r="3" />
+      </g>
+      <g className="p3">
+        <circle cx="164" cy="96" r="3.5" />
+        <circle cx="174" cy="100" r="2.5" />
+      </g>
+      <circle cx="84" cy="64" r="11" fill="none" stroke="var(--amber)" strokeWidth="2" />
+    </svg>
   );
 }
