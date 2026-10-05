@@ -13,6 +13,7 @@ import { BubbleGraph } from '../components/graph/BubbleGraph';
 import { GraphHeader } from '../components/graph/GraphHeader';
 import { TopBar } from '../components/layout/TopBar';
 import { PrintView } from '../components/print/PrintView';
+import { CompareWindow } from '../components/shell/CompareWindow';
 import { GraphDock } from '../components/shell/GraphDock';
 import { KpiCapsule } from '../components/shell/KpiCapsule';
 import { SidePanel } from '../components/shell/SidePanel';
@@ -97,6 +98,7 @@ export function ViewerPage() {
               <KpiCapsule />
               <SidePanel />
               <TableWindow />
+              <CompareWindow />
               <GraphDock />
             </main>
           )}

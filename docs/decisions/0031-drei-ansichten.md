@@ -1,6 +1,7 @@
 # 0031 – Drei Ansichten statt acht
 
-- **Status:** akzeptiert; die drei gleichrangigen Ansichten sind ersetzt durch 0034
+- **Status:** akzeptiert; die drei gleichrangigen Ansichten sind ersetzt durch 0034;
+  den Vergleich holt 0036 als Fenster zurück
 - **Datum:** 2026-10-04
 - **Betrifft:** Frontend, Ansichten, Überblick, Filter „Gewerk"
 

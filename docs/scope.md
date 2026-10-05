@@ -136,8 +136,9 @@ Alle Ansichten arbeiten auf **derselben gefilterten Menge** und **derselben Ausw
 Wechseln heißt: anderer Blick auf dasselbe, nie Neuanfang.
 
 > **Stand 2026-10-04:** Es gibt nur noch Überblick, Graph und Tabelle
-> ([0031](decisions/0031-drei-ansichten.md)). Die Zeilen zu Matrix, Ähnlichkeit und
-> Vergleich unten sind durchgestrichen und gelten nicht mehr.
+> ([0031](decisions/0031-drei-ansichten.md)). Die Zeilen zu Matrix und Ähnlichkeit
+> unten sind durchgestrichen und gelten nicht mehr. Der Vergleich ist seit
+> [0036](decisions/0036-vergleichsfenster.md) als Fenster zurück.
 
 | Ansicht | Zeigt | Anwendungsfall | Stand |
 |---|---|---|---|
@@ -146,7 +147,7 @@ Wechseln heißt: anderer Blick auf dasselbe, nie Neuanfang.
 | **Tabelle** | alle Spalten, Gruppierung, Summen | UC-2, UC-4 | vorhanden |
 | ~~Matrix~~ | entfernt, siehe [0031](decisions/0031-drei-ansichten.md) | – | entfernt |
 | ~~Ähnlichkeit~~ | entfernt; später ggf. als Fenster über dem Graphen | – | zurückgestellt |
-| ~~Vergleich~~ | entfernt; später ggf. als Fenster über dem Graphen | – | zurückgestellt |
+| **Vergleich** | Fenster über dem Graphen, bis zu vier Positionen, siehe [0036](decisions/0036-vergleichsfenster.md) | UC-5 | Fenster |
 | **Prüfung** | Reiter im Seitenfenster: Hinweise aus VOB-Check und Flags, gruppiert nach Regel | UC-2, UC-6 | Seitenfenster |
 | **Import-Log** | Karte im Überblick: fehlende Einheiten/Mengen, nicht klassifizierte Positionen, doppelte OZ | UC-6 | neu |
 | **Eigenschaften** | Details der gewählten Position mit hervorgehobenem Langtext | UC-5 | vorhanden |

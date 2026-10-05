@@ -443,7 +443,12 @@ export function PositionsTable({ root }: { root: LVNode }) {
         rowKey={(row) => row.node.id}
         selectedKey={selectedPositionId}
         revealKey={selectedPositionId}
-        onPick={(key) => {
+        onPick={(key, event) => {
+          // Shift + Klick legt die Position in den Vergleich — wie im Graphen.
+          if (event.shiftKey) {
+            dispatch({ type: 'toggleCompare', positionId: key });
+            return;
+          }
           dispatch({
             type: 'selectPosition',
             nodeId: root.id,

@@ -6,7 +6,12 @@ export interface SelectionState {
   nodeId: string | null;
   positionId: string | null;
   hoveredNodeId: string | null;
+  /** Positionen im Vergleichsfenster, in der Reihenfolge des Dazunehmens. */
+  compare: readonly string[];
 }
+
+/** So viele Positionen passen nebeneinander ins Vergleichsfenster. */
+export const MAX_COMPARE = 4;
 
 export type SelectionAction =
   | { type: 'selectNode'; id: string | null }
@@ -16,12 +21,16 @@ export type SelectionAction =
   | { type: 'back' }
   /** Schwebende Auswahlkarte im Graphen schließen (X, Klick daneben, Escape
    *  auf der Karte) — anders als `back` immer komplett, nie nur eine Ebene. */
-  | { type: 'closeSelection' };
+  | { type: 'closeSelection' }
+  /** Position in den Vergleich nehmen oder wieder heraus; ab MAX_COMPARE bleibt es dabei. */
+  | { type: 'toggleCompare'; positionId: string }
+  | { type: 'clearCompare' };
 
 export const INITIAL_SELECTION_STATE: SelectionState = {
   nodeId: null,
   positionId: null,
   hoveredNodeId: null,
+  compare: [],
 };
 
 export function selectionReducer(state: SelectionState, action: SelectionAction): SelectionState {
@@ -40,6 +49,15 @@ export function selectionReducer(state: SelectionState, action: SelectionAction)
       return state;
     case 'closeSelection':
       return { ...state, nodeId: null, positionId: null };
+    case 'toggleCompare':
+      if (state.compare.includes(action.positionId)) {
+        return { ...state, compare: state.compare.filter((id) => id !== action.positionId) };
+      }
+      return state.compare.length >= MAX_COMPARE
+        ? state
+        : { ...state, compare: [...state.compare, action.positionId] };
+    case 'clearCompare':
+      return state.compare.length === 0 ? state : { ...state, compare: [] };
     default:
       return state;
   }

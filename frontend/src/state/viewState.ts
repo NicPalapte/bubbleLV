@@ -100,6 +100,18 @@ export const DEFAULT_TABLE_SIZE: PanelSize = { width: 900, height: 360 };
  */
 export const DEFAULT_TABLE_POS: CardPos = { right: 16, top: 320 };
 
+/** Vergleichsfenster: oben, links neben der Positionskarte. */
+export const DEFAULT_COMPARE_POS: CardPos = { right: 412, top: 90 };
+export const DEFAULT_COMPARE_SIZE: PanelSize = { width: 640, height: 460 };
+
+/** Größe eines Fensters über dem Graphen (Tabelle, Vergleich) in seinen Grenzen. */
+export function clampWindowSize(size: PanelSize): PanelSize {
+  return {
+    width: Math.min(Math.max(size.width, TABLE_MIN_WIDTH), TABLE_MAX_WIDTH),
+    height: size.height === null ? null : Math.max(size.height, TABLE_MIN_HEIGHT),
+  };
+}
+
 export interface TableWindowState {
   open: boolean;
   pos: CardPos;
@@ -136,6 +148,8 @@ export interface ViewState {
   /** Breite des Seitenfensters; am rechten Rand ziehbar. */
   sideWidth: number;
   tableWindow: TableWindowState;
+  /** Vergleichsfenster: dieselbe Mechanik wie die Tabelle. */
+  compareWindow: TableWindowState;
   graph: GraphViewState;
   table: TableViewState;
   overview: OverviewViewState;
@@ -153,6 +167,9 @@ export type ViewAction =
   | { type: 'tableWindow'; open: boolean }
   | { type: 'tableWindowPos'; pos: CardPos }
   | { type: 'tableWindowSize'; size: PanelSize }
+  | { type: 'compareWindow'; open: boolean }
+  | { type: 'compareWindowPos'; pos: CardPos }
+  | { type: 'compareWindowSize'; size: PanelSize }
   | { type: 'sizeMode'; value: SizeModeId }
   /** Gliederung umschalten — fasst Filter, Suche und Auswahl nie an. */
   | { type: 'graphLayout'; value: GraphLayoutId }
@@ -188,6 +205,7 @@ export const INITIAL_VIEW_STATE: ViewState = {
   side: null,
   sideWidth: SIDE_WIDTH_DEFAULT,
   tableWindow: { open: false, pos: DEFAULT_TABLE_POS, size: DEFAULT_TABLE_SIZE },
+  compareWindow: { open: false, pos: DEFAULT_COMPARE_POS, size: DEFAULT_COMPARE_SIZE },
   // Einstieg ist das LV in seiner Gliederung; „frei" ist der zweite Blick.
   graph: {
     sizeMode: 'quantity',
@@ -218,6 +236,11 @@ export function viewStateForNewLv(state: ViewState): ViewState {
       ...INITIAL_VIEW_STATE.tableWindow,
       pos: state.tableWindow.pos,
       size: state.tableWindow.size,
+    },
+    compareWindow: {
+      ...INITIAL_VIEW_STATE.compareWindow,
+      pos: state.compareWindow.pos,
+      size: state.compareWindow.size,
     },
     sideWidth: state.sideWidth,
     panelSize: state.panelSize,
@@ -258,6 +281,20 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
       return state.tableWindow.open === action.open
         ? state
         : { ...state, tableWindow: { ...state.tableWindow, open: action.open } };
+    case 'compareWindow':
+      return state.compareWindow.open === action.open
+        ? state
+        : { ...state, compareWindow: { ...state.compareWindow, open: action.open } };
+    case 'compareWindowPos': {
+      const { pos } = state.compareWindow;
+      if (pos.right === action.pos.right && pos.top === action.pos.top) return state;
+      return { ...state, compareWindow: { ...state.compareWindow, pos: action.pos } };
+    }
+    case 'compareWindowSize':
+      return {
+        ...state,
+        compareWindow: { ...state.compareWindow, size: clampWindowSize(action.size) },
+      };
     case 'tableWindowPos': {
       // Beim Ziehen kommt jede Mausbewegung hier an; gleiche Lage = kein Render.
       const { pos } = state.tableWindow;
