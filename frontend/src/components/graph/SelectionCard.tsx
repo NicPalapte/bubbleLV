@@ -52,7 +52,7 @@ const EDGE_GAP = 16;
 
 export function SelectionCard({ node, onClose }: SelectionCardProps) {
   const ref = useRef<HTMLDivElement>(null);
-  useDismiss(ref, true, onClose, { ignoreDrag: true });
+  useDismiss(ref, true, onClose, { ignoreDrag: true, yieldToDialogs: true });
 
   const {
     view: { panelSize, cardPos },

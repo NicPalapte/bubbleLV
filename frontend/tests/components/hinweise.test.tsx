@@ -32,14 +32,13 @@ function hinweisleiste(): HTMLElement | null {
 }
 
 async function warteAufLv(): Promise<void> {
-  await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+  await waitFor(() => expect(screen.getByRole('button', { name: '+ Filter' })).toBeInTheDocument());
 }
 
 /** Der Link wird erst nach dem ersten Zeichnen des LV angewendet — darauf warten. */
 async function warteAufMatrix(): Promise<void> {
-  await waitFor(() =>
-    expect(screen.getByRole('radio', { name: 'Matrix' })).toHaveAttribute('aria-checked', 'true'),
-  );
+  // Die Matrix ist eine eigene Fläche — sie steht, sobald der Link greift.
+  await waitFor(() => expect(screen.getByRole('main', { name: 'Matrix' })).toBeInTheDocument());
 }
 
 describe('Ladefehler auf der Startseite (Issues #92, #93)', () => {

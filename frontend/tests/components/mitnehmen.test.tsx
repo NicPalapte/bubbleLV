@@ -61,7 +61,7 @@ async function ladeApp(pfad = resolve(FIXTURE_DIR, 'gaeb-xml-beispiel.x83')): Pr
   fireEvent.change(screen.getByLabelText('GAEB-Datei auswählen'), {
     target: { files: [new File([readFileSync(pfad)], name)] },
   });
-  await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+  await waitFor(() => expect(screen.getByRole('button', { name: '+ Filter' })).toBeInTheDocument());
 }
 
 /** Die Demo-Datei ist die einzige mit Preisen (x84). */
@@ -123,14 +123,18 @@ describe('Mitnehmen', () => {
     expect(dateien[0].text).toContain('Hinweise, keine Urteile');
   });
 
-  it('steht als Befehl bereit, ohne Knopf in der Leiste', async () => {
+  it('steht als Befehl bereit, ohne eigenen Export-Knopf in der Leiste', async () => {
     await ladeApp();
     const leiste = within(screen.getByRole('banner'));
     // Issue #80: keine Export-Knöpfe mehr in der Kopfleiste …
     expect(leiste.queryByRole('button', { name: /Mitnehmen/ })).not.toBeInTheDocument();
-    expect(leiste.queryByRole('button', { name: /^Befehle/ })).not.toBeInTheDocument();
-    // … dafür der Hinweis auf die Taste, sonst fände die Palette niemand.
-    expect(leiste.getByText(/STRG\/CMD \+ K/)).toBeInTheDocument();
+    // … dafür ein Knopf „Befehle", der die Palette öffnet — mit der Taste daneben.
+    const knopf = leiste.getByRole('button', { name: /^Befehle/ });
+    expect(knopf).toHaveTextContent('Strg K');
+    await act(async () => {});
+    fireEvent.click(knopf);
+    expect(screen.getByLabelText('Befehl oder OZ')).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByLabelText('Befehl oder OZ'), { key: 'Escape' });
 
     await oeffnePalette();
     fireEvent.change(screen.getByLabelText('Befehl oder OZ'), { target: { value: 'CSV' } });
@@ -321,9 +325,11 @@ describe('Drucken', () => {
   it('druckt nach einer Suche nur die Treffer', async () => {
     await ladeApp();
     fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'Beton' } });
-    // Die Suche ist entprellt: erst wenn der Überblick die Bezugsgröße nennt,
-    // ist der Filter wirklich aktiv.
-    await screen.findByText(/im aktuellen Filter/);
+    // Die Suche ist entprellt: erst wenn die Kennzahlen „Treffer" statt
+    // „Positionen" zählen, ist der Filter wirklich aktiv.
+    await within(screen.getByRole('group', { name: 'Kennzahlen' })).findByRole('button', {
+      name: /Treffer/,
+    });
 
     act(() => {
       window.dispatchEvent(new Event('beforeprint'));

@@ -88,7 +88,8 @@ describe('Überblick', () => {
     const gewerk = screen.getByTitle(/^Stundenlohnarbeiten ·/);
     fireEvent.click(gewerk);
     expect(screen.getByTestId('facets')).toHaveTextContent('gewerk=Stundenlohnarbeiten');
-    expect(screen.getByTestId('mode')).toHaveTextContent('overview');
+    // Nach dem Laden steht der Graph; der Überblick schwebt nur darüber.
+    expect(screen.getByTestId('mode')).toHaveTextContent('graph');
     // Zweiter Klick nimmt den Filter wieder zurück.
     fireEvent.click(screen.getByTitle(/^Stundenlohnarbeiten ·/));
     expect(screen.getByTestId('facets')).toHaveTextContent('');
@@ -98,7 +99,7 @@ describe('Überblick', () => {
     renderOverview();
     fireEvent.click(screen.getByTitle(/^§ 001\.004 · Betonarbeiten ·/));
     expect(screen.getByTestId('node')).toHaveTextContent('section:001.004');
-    expect(screen.getByTestId('mode')).toHaveTextContent('overview');
+    expect(screen.getByTestId('mode')).toHaveTextContent('graph');
   });
 
   it('filtert per Klick auf eine Einheit', () => {

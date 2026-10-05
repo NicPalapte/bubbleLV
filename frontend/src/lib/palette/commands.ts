@@ -192,8 +192,8 @@ export function buildCommands({
  *
  * Die Auswahl allein genügt nicht: im Überblick, in der Matrix oder in der
  * Prüfung ist eine einzelne Position gar nicht zu sehen, der Sprung bliebe
- * unsichtbar. Deshalb geht er in die Tabelle — außer im Graphen, der die
- * Auswahl selbst als Karte zeigt.
+ * unsichtbar. Im Graphen (dem Hauptscreen) zeigt die Positionskarte die
+ * Auswahl; aus Matrix und Ähnlichkeit geht er in den Graphen mit Tabellenfenster.
  */
 export function positionCommand(node: LVNode, parent: LVNode | null, view: ViewMode): Command {
   const position = node.position;

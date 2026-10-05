@@ -36,7 +36,6 @@ import {
 /** Abstand zum Rand des Canvas, den das Fenster auch aufgezogen frei lässt. */
 const EDGE_GAP = 16;
 
-
 export function CompareWindow() {
   const {
     comparePositions,

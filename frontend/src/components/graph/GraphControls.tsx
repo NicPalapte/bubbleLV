@@ -76,7 +76,6 @@ export function GraphControls({
           1:1
         </button>
       </div>
-
     </div>
   );
 }

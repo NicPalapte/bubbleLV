@@ -16,6 +16,12 @@ export interface UseDismissOptions {
    * ob sich die Maus kaum bewegt hat (Klick) oder nicht (Ziehen).
    */
   ignoreDrag?: boolean;
+  /**
+   * Escape gehört einem offenen Dialog (Melden, Befehle), nicht dieser Fläche.
+   * Für Flächen, die dauerhaft unter Dialogen stehen bleiben — die Auswahlkarte
+   * im Graphen ist seit dem neuen Hauptscreen immer da.
+   */
+  yieldToDialogs?: boolean;
 }
 
 /**
@@ -30,6 +36,7 @@ export function useDismiss(
   options?: UseDismissOptions,
 ): void {
   const ignoreDrag = options?.ignoreDrag === true;
+  const yieldToDialogs = options?.yieldToDialogs === true;
 
   useEffect(() => {
     if (!open) return;
@@ -65,6 +72,7 @@ export function useDismiss(
     // die Capture-Phase, die vorher läuft, plus stopImmediatePropagation.
     const closeOnEscape = (event: KeyboardEvent): void => {
       if (event.key !== 'Escape') return;
+      if (yieldToDialogs && document.querySelector('[role="dialog"]') !== null) return;
       event.stopImmediatePropagation();
       onClose();
     };
@@ -81,5 +89,5 @@ export function useDismiss(
     // `refs` bewusst nicht in den Deps: an der Aufrufstelle stehen oft Array-
     // Literale, über Länge/Inhalt statt Referenz vergleichen wäre hier unnötig,
     // die Refs selbst sind stabile Objekte.
-  }, [open, onClose, ignoreDrag]);
+  }, [open, onClose, ignoreDrag, yieldToDialogs]);
 }

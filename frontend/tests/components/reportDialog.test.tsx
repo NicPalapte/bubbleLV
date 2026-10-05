@@ -47,7 +47,7 @@ async function oeffneMeldung(): Promise<HTMLElement> {
   fireEvent.change(screen.getByLabelText('GAEB-Datei auswählen'), {
     target: { files: [new File([readFileSync(resolve(FIXTURE_DIR, name))], name)] },
   });
-  await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+  await waitFor(() => expect(screen.getByRole('button', { name: '+ Filter' })).toBeInTheDocument());
 
   // Seit Issue #80 sitzt der Weg in „Über diese App" hinter dem Logo.
   fireEvent.click(
@@ -179,10 +179,12 @@ describe('Fehler melden · schließen', () => {
     fireEvent.change(screen.getByLabelText('GAEB-Datei auswählen'), {
       target: { files: [new File([readFileSync(resolve(FIXTURE_DIR, name))], name)] },
     });
-    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: '+ Filter' })).toBeInTheDocument(),
+    );
 
-    // Eine Position wählen — sie steht danach im Eigenschaften-Panel.
-    fireEvent.click(screen.getByRole('radio', { name: 'Tabelle' }));
+    // Eine Position wählen — im Tabellenfenster über dem Graphen.
+    fireEvent.click(screen.getByRole('button', { name: /^▴ Tabelle/ }));
     const grid = screen.getByRole('grid', { name: 'Positionen' });
     fireEvent.keyDown(grid, { key: 'ArrowDown' });
     fireEvent.keyDown(grid, { key: 'Enter' });

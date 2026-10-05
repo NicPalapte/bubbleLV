@@ -1,17 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import App from '../src/App';
 
 const FIXTURE_DIR = resolve(process.cwd(), 'tests/fixtures');
-
-/** Knotenzahl aus der Graph-Steuerung — zeigt, was das Layout angelegt hat. */
-function nodeCount(): number {
-  const label = screen.getByText(/Knoten gezeichnet/);
-  const text = label.parentElement?.textContent ?? '';
-  return Number(text.replace(/[^0-9/]/g, '').split('/')[1] ?? '0');
-}
 
 function fixtureFile(name: string): File {
   return new File([readFileSync(resolve(FIXTURE_DIR, name))], name);
@@ -22,21 +15,68 @@ async function loadFixture(name: string): Promise<void> {
   fireEvent.change(input, { target: { files: [fixtureFile(name)] } });
 }
 
+/** Datei laden und warten, bis die Kopfleiste die Filter anbietet. */
+async function loadAndWait(name = 'gaeb-xml-beispiel.x83'): Promise<void> {
+  render(<App />);
+  await loadFixture(name);
+  await waitFor(() => expect(screen.getByRole('button', { name: '+ Filter' })).toBeInTheDocument());
+}
+
 /**
- * Ansicht über den Schalter in der Kopfleiste wechseln (Issue #30, WP-L) —
- * Baum und Tabelle stehen nur in der Ansicht "Tabelle", der Graph nur in
- * "Graph"; ein Wechsel ändert weder Filter noch Auswahl. Nach dem Import steht
- * der "Überblick" vorn, deshalb schaltet fast jeder Test zuerst um.
+ * Befehl über die Kommandopalette auslösen. Einen Ansichtsumschalter gibt es
+ * nicht mehr: der Graph ist der Hauptscreen, alles andere schwebt darüber.
  */
-function switchToView(mode: 'Überblick' | 'Graph' | 'Tabelle' | 'Prüfung'): void {
-  fireEvent.click(screen.getByRole('radio', { name: mode }));
+async function command(text: string): Promise<void> {
+  // Die Palette hängt ihren Listener in einem Effekt an — erst danach öffnet der Knopf sie.
+  await act(async () => {});
+  fireEvent.click(within(screen.getByRole('banner')).getByRole('button', { name: /^Befehle/ }));
+  fireEvent.change(screen.getByLabelText('Befehl oder OZ'), { target: { value: text } });
+  fireEvent.click(
+    within(screen.getByRole('dialog', { name: 'Kommandopalette' })).getAllByRole('option')[0],
+  );
+}
+
+/** Tabellenfenster über den Knopf unten mittig öffnen. */
+async function openTable(): Promise<HTMLElement> {
+  fireEvent.click(screen.getByRole('button', { name: /^▴ Tabelle/ }));
+  return screen.findByRole('grid', { name: 'Positionen' });
+}
+
+function tableWindow(): HTMLElement | null {
+  return screen.queryByRole('region', { name: 'Tabelle — Fenster über dem Graphen' });
+}
+
+/** Kennzahl über dem Graphen anklicken — sie öffnet ihren Reiter im Seitenfenster. */
+function kpi(name: RegExp): void {
+  fireEvent.click(
+    within(screen.getByRole('group', { name: 'Kennzahlen' })).getByRole('button', { name }),
+  );
+}
+
+/**
+ * Per OZ zur ersten Position springen. Im Graphen bleibt der Sprung dort (die
+ * Karte zeigt die Position); das Tabellenfenster steht danach im Abschnitt
+ * „Baustelleneinrichtung".
+ */
+async function jumpToFirstPosition(): Promise<HTMLElement> {
+  await command('001.001.0010');
+  return openTable();
+}
+
+/** Den Abschnitt „Bauhauptgewerke" auswählen — eine Ebene über der ersten Position. */
+async function selectBauhauptgewerke(): Promise<void> {
+  await jumpToFirstPosition();
+  fireEvent.click(screen.getByRole('button', { name: 'Eine Ebene höher' }));
 }
 
 describe('Viewer', () => {
   it('zeigt vor dem Import die Datei-Ablage und keine Fachdaten', () => {
     render(<App />);
     expect(screen.getByText('GAEB-Datei hierher ziehen')).toBeInTheDocument();
-    expect(screen.getAllByText('Kein LV geladen').length).toBeGreaterThan(0);
+    // Suche, Filter und Kennzahlen gibt es erst mit einer Datei.
+    expect(screen.queryByLabelText('Suche')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '+ Filter' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Kennzahlen' })).not.toBeInTheDocument();
   });
 
   it('bietet zwei Demo-LVs zum Ausprobieren an — mit und ohne Preise', () => {
@@ -48,59 +88,60 @@ describe('Viewer', () => {
     expect(screen.getByText('Demo-LV ansehen')).toBeInTheDocument();
   });
 
-  it('lädt eine echte GAEB-Datei und zeigt Baum und Filter', async () => {
+  it('lädt eine echte GAEB-Datei und zeigt Graph und Filter', async () => {
     render(<App />);
     await loadFixture('gaeb-xml-beispiel.x83');
 
     await waitFor(() =>
       expect(screen.queryByText('GAEB-Datei hierher ziehen')).not.toBeInTheDocument(),
     );
-    expect(screen.getByText('FILTER')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Positionsart/ })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: /Bubble-Graph/ })).toBeInTheDocument();
+    expect(screen.getByText('PROJEKT')).toBeInTheDocument();
 
-    // Der Baum steht nur in der Tabellenansicht (Issue #30).
-    switchToView('Tabelle');
-    expect(screen.getByText(/Übersicht ·/)).toBeInTheDocument();
+    // Die Filter stehen im Seitenfenster hinter „+ Filter".
+    fireEvent.click(screen.getByRole('button', { name: '+ Filter' }));
+    const panel = screen.getByRole('complementary', { name: 'Seitenfenster' });
+    expect(within(panel).getByRole('region', { name: 'Positionsart' })).toBeInTheDocument();
   });
 
-  it('startet nach dem Import im Überblick', async () => {
-    render(<App />);
-    await loadFixture('gaeb-xml-beispiel.x83');
-    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+  it('startet nach dem Import im Graphen, ohne offene Fenster', async () => {
+    await loadAndWait();
 
-    // Der Überblick ordnet das LV ein, bevor man in Graph oder Tabelle geht
-    // (WP-L). Graph und Baum stehen erst nach dem Umschalten da.
-    expect(screen.getByRole('radio', { name: 'Überblick' })).toHaveAttribute(
-      'aria-checked',
+    // Der Graph ist der Hauptscreen (docs/decisions/0032); Seitenfenster und
+    // Tabelle gehen erst auf Wunsch auf.
+    expect(screen.getByRole('main', { name: 'Bubble-Graph' })).toBeInTheDocument();
+    expect(screen.queryByRole('complementary', { name: 'Seitenfenster' })).not.toBeInTheDocument();
+    expect(tableWindow()).not.toBeInTheDocument();
+
+    // Die Kennzahl „Positionen" öffnet den Überblick als Reiter.
+    kpi(/Positionen/);
+    const panel = screen.getByRole('complementary', { name: 'Seitenfenster' });
+    expect(within(panel).getByRole('tab', { name: 'Überblick' })).toHaveAttribute(
+      'aria-selected',
       'true',
     );
-    expect(screen.getByRole('main', { name: 'Überblick' })).toBeInTheDocument();
-    expect(screen.queryByRole('tree')).not.toBeInTheDocument();
-    expect(screen.queryByText(/Knoten gezeichnet/)).not.toBeInTheDocument();
-
-    switchToView('Graph');
-    expect(screen.getByText(/Knoten gezeichnet/)).toBeInTheDocument();
+    expect(within(panel).getByText('28 Positionen')).toBeInTheDocument();
   });
 
   // Abnahme von WP-L: ein Ansichtswechsel ändert weder Filter noch Auswahl,
   // und jede Ansicht steht danach wieder so da, wie man sie verlassen hat.
   it('behält Filter, Sortierung und Scrollposition über den Ansichtswechsel', async () => {
-    render(<App />);
-    await loadFixture('gaeb-xml-beispiel.x83');
-    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+    await loadAndWait();
 
     fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'Beton' } });
-    // Die Suche ist entprellt — der Überblick zeigt an, sobald sie greift.
-    await waitFor(() => expect(screen.getByText(/im aktuellen Filter/)).toBeInTheDocument());
+    // Die Suche ist entprellt — die Kennzahlen zählen „Treffer", sobald sie greift.
+    await within(screen.getByRole('group', { name: 'Kennzahlen' })).findByRole('button', {
+      name: /Treffer/,
+    });
 
     // In der Prüfung ein Stück scrollen …
-    switchToView('Prüfung');
-    const pruefung = screen.getByRole('main', { name: 'Prüfung' }).firstElementChild as HTMLElement;
-    fireEvent.scroll(pruefung, { target: { scrollTop: 240 } });
+    kpi(/Hinweise/);
+    const pruefung = (): HTMLElement =>
+      screen.getByRole('tabpanel').firstElementChild as HTMLElement;
+    fireEvent.scroll(pruefung(), { target: { scrollTop: 240 } });
 
     // … in der Tabelle nach Menge sortieren …
-    switchToView('Tabelle');
-    const table = await screen.findByRole('grid', { name: 'Positionen' });
+    const table = await openTable();
     fireEvent.click(within(table).getByRole('button', { name: /Menge/ }));
     await waitFor(() =>
       expect(within(table).getByRole('columnheader', { name: /Menge/ })).toHaveAttribute(
@@ -109,32 +150,25 @@ describe('Viewer', () => {
       ),
     );
 
-    // … und zurück: Suche, Sortierung und Scrollposition stehen unverändert da.
-    switchToView('Prüfung');
-    expect(
-      (screen.getByRole('main', { name: 'Prüfung' }).firstElementChild as HTMLElement).scrollTop,
-    ).toBe(240);
+    // … Reiter und Fenster wechseln und zurück: Suche, Sortierung und
+    // Scrollposition stehen unverändert da.
+    fireEvent.click(screen.getByRole('tab', { name: 'Überblick' }));
+    fireEvent.click(screen.getByRole('tab', { name: /Prüfung/ }));
+    expect(pruefung().scrollTop).toBe(240);
     expect(screen.getByLabelText('Suche')).toHaveValue('Beton');
 
-    switchToView('Tabelle');
-    const again = await screen.findByRole('grid', { name: 'Positionen' });
+    fireEvent.click(screen.getByRole('button', { name: 'Tabelle schließen' }));
+    const again = await openTable();
     expect(within(again).getByRole('columnheader', { name: /Menge/ })).toHaveAttribute(
       'aria-sort',
       'ascending',
     );
   });
 
-  it('drillt aus dem Baum in die Positionstabelle', async () => {
-    render(<App />);
-    await loadFixture('gaeb-xml-beispiel.x83');
-    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
-    switchToView('Tabelle');
+  it('zeigt die Positionen im Tabellenfenster über dem Graphen', async () => {
+    await loadAndWait();
+    const table = await openTable();
 
-    // Erstes Los aufklappen, dann den ersten Abschnitt wählen.
-    const [lot] = within(screen.getByRole('tree')).getAllByRole('treeitem');
-    fireEvent.click(lot);
-
-    const table = await screen.findByRole('grid', { name: 'Positionen' });
     const headers = within(table)
       .getAllByRole('columnheader')
       .map((cell) => cell.textContent?.trim().replace(/\s+[↑↓]$/, ''));
@@ -143,17 +177,13 @@ describe('Viewer', () => {
     expect(headers).toContain('Bauteiltyp');
     // Erste Position der Beispieldatei ist in der Tabelle sichtbar.
     expect(within(table).getAllByText('001.001.0010').length).toBeGreaterThan(0);
+    // Der Graph bleibt darunter stehen.
+    expect(screen.getByRole('group', { name: /Bubble-Graph/ })).toBeInTheDocument();
   });
 
   it('filtert die Tabelle über die Suche', async () => {
-    render(<App />);
-    await loadFixture('gaeb-xml-beispiel.x83');
-    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
-    switchToView('Tabelle');
-
-    const [lot] = within(screen.getByRole('tree')).getAllByRole('treeitem');
-    fireEvent.click(lot);
-    const table = await screen.findByRole('grid', { name: 'Positionen' });
+    await loadAndWait();
+    const table = await openTable();
     expect(within(table).getAllByText('001.001.0010').length).toBeGreaterThan(0);
 
     fireEvent.change(screen.getByLabelText('Suche'), {
@@ -162,22 +192,15 @@ describe('Viewer', () => {
     await waitFor(() =>
       expect(screen.getByText('Keine Positionen entsprechen den Filtern.')).toBeInTheDocument(),
     );
-    expect(screen.queryByText('001.001.0010')).not.toBeInTheDocument();
+    expect(within(table).queryByText('001.001.0010')).not.toBeInTheDocument();
   });
 
   it('zeigt Filtertreffer des ganzen LV, wenn der Abschnitt keinen hat', async () => {
-    render(<App />);
-    await loadFixture('gaeb-xml-beispiel.x83');
-    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
-    switchToView('Tabelle');
+    await loadAndWait();
 
-    // Bis in den Abschnitt „Baustelleneinrichtung" navigieren.
-    const tree = screen.getByRole('tree');
-    fireEvent.click(within(tree).getAllByRole('treeitem')[0]);
-    fireEvent.click(await within(tree).findByTitle('Bauhauptgewerke'));
-    fireEvent.click(await within(tree).findByTitle('Baustelleneinrichtung'));
-
-    const table = await screen.findByRole('grid', { name: 'Positionen' });
+    // Sprung zur ersten Position: die Tabelle steht im Abschnitt
+    // „Baustelleneinrichtung".
+    const table = await jumpToFirstPosition();
     expect(within(table).getAllByText('001.001.0010').length).toBeGreaterThan(0);
 
     // „Kabel" kommt nur in den Elektroarbeiten vor — im gewählten Abschnitt
@@ -190,16 +213,8 @@ describe('Viewer', () => {
   });
 
   it('gruppiert die Filtertreffer nach Überschriften', async () => {
-    render(<App />);
-    await loadFixture('gaeb-xml-beispiel.x83');
-    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
-    switchToView('Tabelle');
-
-    const tree = screen.getByRole('tree');
-    fireEvent.click(within(tree).getAllByRole('treeitem')[0]);
-    fireEvent.click(await within(tree).findByTitle('Bauhauptgewerke'));
-    fireEvent.click(await within(tree).findByTitle('Baustelleneinrichtung'));
-    await screen.findByRole('grid', { name: 'Positionen' });
+    await loadAndWait();
+    await jumpToFirstPosition();
 
     fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'Beton' } });
 
@@ -216,121 +231,36 @@ describe('Viewer', () => {
     ).toBeInTheDocument();
   });
 
-  it('führt aus der Tabelle mit einem Klick zurück in den Graphen', async () => {
-    render(<App />);
-    await loadFixture('gaeb-xml-beispiel.x83');
-    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
-    switchToView('Tabelle');
-
-    const tree = screen.getByRole('tree');
-    fireEvent.click(within(tree).getAllByRole('treeitem')[0]);
-    fireEvent.click(await within(tree).findByTitle('Bauhauptgewerke'));
-    fireEvent.click(await within(tree).findByTitle('Baustelleneinrichtung'));
+  it('schließt das Tabellenfenster mit einem Klick, der Graph bleibt stehen', async () => {
+    await loadAndWait();
+    await selectBauhauptgewerke();
     await screen.findByRole('grid', { name: 'Positionen' });
 
-    // Drei Ebenen tief — der Umschalter in der Kopfleiste geht trotzdem in
-    // einem Schritt zurück (die Tabelle hat keinen eigenen Graph-Knopf mehr).
-    switchToView('Graph');
+    // Mehrere Ebenen tief — der Knopf am Fenster schließt es in einem Schritt.
+    fireEvent.click(screen.getByRole('button', { name: 'Tabelle schließen' }));
     await waitFor(() =>
       expect(screen.queryByRole('grid', { name: 'Positionen' })).not.toBeInTheDocument(),
     );
-    expect(screen.getByRole('radio', { name: 'Graph' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('group', { name: /Bubble-Graph/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^▴ Tabelle/ })).toBeInTheDocument();
   });
 
-  it('teilt den Aufklapp-Zustand zwischen Baum und Graph (Issue #18)', async () => {
-    render(<App />);
-    await loadFixture('gaeb-xml-beispiel.x83');
-    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+  it('zeigt eine gewählte Position im Graphen als schwebende Karte (Issue #30)', async () => {
+    await loadAndWait();
 
-    // Startzustand im Graphen.
-    switchToView('Graph');
-    const before = nodeCount();
+    // Position in der Tabelle wählen — dieselbe Auswahl treibt die Zeile in
+    // der Tabelle und die schwebende Karte über dem Graphen.
+    const table = await openTable();
+    fireEvent.click(within(table).getAllByText('001.001.0010')[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Tabelle schließen' }));
 
-    // Im Baum aufklappen — Graph und Baum teilen sich denselben Zustand,
-    // auch wenn immer nur einer davon zu sehen ist (Issue #30).
-    switchToView('Tabelle');
-    const tree = screen.getByRole('tree');
-    const section = await within(tree).findByTitle('Bauhauptgewerke');
-    expect(section).toHaveAttribute('aria-expanded', 'false');
-    fireEvent.click(within(section).getByText('▸'));
-    await waitFor(() =>
-      expect(within(tree).getByTitle('Bauhauptgewerke')).toHaveAttribute('aria-expanded', 'true'),
-    );
-
-    // … und der Graph legt beim Zurückwechseln dieselben Knoten an.
-    switchToView('Graph');
-    expect(nodeCount()).toBeGreaterThan(before);
-  });
-
-  it('klappt den Baum mit der Projekt-Bubble zu (Issue #18)', async () => {
-    render(<App />);
-    await loadFixture('gaeb-xml-beispiel.x83');
-    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
-
-    // Klick auf die Projekt-Bubble im Graphen klappt sie zu …
-    switchToView('Graph');
-    fireEvent.click(screen.getByText('PROJEKT'));
-
-    // … der Baum zeigt danach keine Zeilen mehr.
-    switchToView('Tabelle');
-    const tree = screen.getByRole('tree');
-    await waitFor(() => expect(within(tree).queryAllByRole('treeitem')).toHaveLength(0));
-
-    // Die Projektzeile ist der Weg zurück.
-    fireEvent.click(screen.getByText(/Übersicht ·/));
-    await waitFor(() => expect(within(tree).getAllByRole('treeitem').length).toBeGreaterThan(0));
-  });
-
-  it('hält den Aufklapp-Zustand über den Wechsel zwischen Graph und Tabelle (Issue #19/#30)', async () => {
-    render(<App />);
-    await loadFixture('gaeb-xml-beispiel.x83');
-    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
-
-    switchToView('Tabelle');
-    const tree = screen.getByRole('tree');
-    const section = await within(tree).findByTitle('Bauhauptgewerke');
-    fireEvent.click(within(section).getByText('▸'));
-    await waitFor(() =>
-      expect(within(tree).getByTitle('Bauhauptgewerke')).toHaveAttribute('aria-expanded', 'true'),
-    );
-
-    switchToView('Graph');
-    const beforeGraph = nodeCount();
-
-    // Ansicht wechseln und zurück — der Graph wird dabei neu gemountet
-    // (Issue #30: zwei getrennte Modi statt eines Abstechers), zeigt danach
-    // aber denselben Aufklapp-Zustand und damit dieselbe Knotenzahl.
-    switchToView('Tabelle');
-    expect(within(tree).getByTitle('Bauhauptgewerke')).toHaveAttribute('aria-expanded', 'true');
-    switchToView('Graph');
-    expect(nodeCount()).toBe(beforeGraph);
-  });
-
-  it('zeigt eine gewählte Position im Graphen als schwebende Karte statt in der Tabelle (Issue #30)', async () => {
-    render(<App />);
-    await loadFixture('gaeb-xml-beispiel.x83');
-    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
-
-    // Position im Baum wählen — dieselbe Auswahl treibt in der Tabellenansicht
-    // die Zeile/Eigenschaften und im Graphen die schwebende Karte.
-    switchToView('Tabelle');
-    const tree = screen.getByRole('tree');
-    fireEvent.click(within(tree).getAllByRole('treeitem')[0]);
-    fireEvent.click(await within(tree).findByTitle('Bauhauptgewerke'));
-    fireEvent.click(await within(tree).findByTitle('Baustelleneinrichtung'));
-    fireEvent.click(await within(tree).findByText('001.001.0010'));
-
-    switchToView('Graph');
-
-    // Die Karte zeigt die Positionsdetails, die Tabelle bleibt unangetastet.
+    // Die Karte zeigt die Positionsdetails.
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Karte schließen' })).toBeInTheDocument(),
     );
     expect(
       screen.getByText('Baustelleneinrichtung für sämtliche', { exact: false }),
     ).toBeInTheDocument();
-    expect(screen.queryByRole('grid', { name: 'Positionen' })).not.toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: 'Graph' })).toHaveAttribute('aria-checked', 'true');
 
     // Escape schließt die Karte komplett — sie springt nicht auf den
     // übergeordneten Abschnitt zurück, sondern verschwindet in einem Schritt.
@@ -344,19 +274,11 @@ describe('Viewer', () => {
   });
 
   it('zeigt einen gewählten Abschnitt im Graphen ebenfalls als schwebende Karte', async () => {
-    render(<App />);
-    await loadFixture('gaeb-xml-beispiel.x83');
-    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+    await loadAndWait();
 
-    // Abschnitt (kein Positionsblatt) im Baum wählen — dieselbe Auswahl treibt
-    // im Graphen jetzt ebenfalls die schwebende Karte, mit Kennzahlen statt
-    // Positionsdetails.
-    switchToView('Tabelle');
-    const tree = screen.getByRole('tree');
-    fireEvent.click(within(tree).getAllByRole('treeitem')[0]);
-    fireEvent.click(await within(tree).findByTitle('Bauhauptgewerke'));
-
-    switchToView('Graph');
+    // Abschnitt (kein Positionsblatt) wählen — die Karte zeigt dann
+    // Kennzahlen statt Positionsdetails.
+    await selectBauhauptgewerke();
 
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Karte schließen' })).toBeInTheDocument(),
@@ -366,16 +288,10 @@ describe('Viewer', () => {
   });
 
   it('scrollt in der Auswahlkarte, statt den Graphen zu zoomen oder zu ziehen (Issue #47)', async () => {
-    render(<App />);
-    await loadFixture('gaeb-xml-beispiel.x83');
-    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+    await loadAndWait();
+    await selectBauhauptgewerke();
+    fireEvent.click(screen.getByRole('button', { name: 'Tabelle schließen' }));
 
-    switchToView('Tabelle');
-    const tree = screen.getByRole('tree');
-    fireEvent.click(within(tree).getAllByRole('treeitem')[0]);
-    fireEvent.click(await within(tree).findByTitle('Bauhauptgewerke'));
-
-    switchToView('Graph');
     const closeButton = await screen.findByRole('button', { name: 'Karte schließen' });
     const card = closeButton.closest('[data-graph-overlay]');
     expect(card).not.toBeNull();
@@ -404,21 +320,11 @@ describe('Viewer', () => {
     fireEvent.mouseUp(document);
   });
 
-  it('zieht die Info-Panels am Knopf unten links auf — eine Größe für alle Ansichten', async () => {
-    render(<App />);
-    await loadFixture('gaeb-xml-beispiel.x83');
-    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+  it('zieht die Auswahlkarte am Knopf unten links auf', async () => {
+    await loadAndWait();
+    await selectBauhauptgewerke();
+    fireEvent.click(screen.getByRole('button', { name: 'Tabelle schließen' }));
 
-    switchToView('Tabelle');
-    const tree = screen.getByRole('tree');
-    fireEvent.click(within(tree).getAllByRole('treeitem')[0]);
-    fireEvent.click(await within(tree).findByTitle('Bauhauptgewerke'));
-    // Startbreite gilt schon hier — dasselbe Maß wie später im Graphen.
-    expect(screen.getByRole('complementary', { name: 'Eigenschaften' })).toHaveStyle({
-      width: '320px',
-    });
-
-    switchToView('Graph');
     const closeButton = await screen.findByRole('button', { name: 'Karte schließen' });
     const card = closeButton.closest('[data-graph-overlay]') as HTMLElement;
     expect(card.style.width).toBe('320px');
@@ -445,25 +351,13 @@ describe('Viewer', () => {
     // Pfeiltasten am Knopf ändern die Größe ebenfalls — links vergrößert.
     fireEvent.keyDown(handle, { key: 'ArrowLeft' });
     expect(card.style.width).toBe('296px');
-
-    // Und die Breite gilt anschließend auch im Eigenschaften-Panel der Tabelle.
-    switchToView('Tabelle');
-    expect(screen.getByRole('complementary', { name: 'Eigenschaften' })).toHaveStyle({
-      width: '296px',
-    });
   });
 
   it('merkt sich den Ort der Auswahlkarte über den Ansichtswechsel', async () => {
-    render(<App />);
-    await loadFixture('gaeb-xml-beispiel.x83');
-    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+    await loadAndWait();
+    await selectBauhauptgewerke();
+    fireEvent.click(screen.getByRole('button', { name: 'Tabelle schließen' }));
 
-    switchToView('Tabelle');
-    const tree = screen.getByRole('tree');
-    fireEvent.click(within(tree).getAllByRole('treeitem')[0]);
-    fireEvent.click(await within(tree).findByTitle('Bauhauptgewerke'));
-
-    switchToView('Graph');
     const closeButton = await screen.findByRole('button', { name: 'Karte schließen' });
     const card = closeButton.closest('[data-graph-overlay]') as HTMLElement;
     expect(card.style.right).toBe('16px');
@@ -475,9 +369,10 @@ describe('Viewer', () => {
     expect(card.style.right).toBe('116px');
     expect(card.style.top).toBe('66px');
 
-    // Nach dem Ausflug in die Tabelle steht sie wieder dort, nicht in der Ecke.
-    switchToView('Tabelle');
-    switchToView('Graph');
+    // Nach dem Ausflug in die Matrix steht sie wieder dort, nicht in der Ecke.
+    await command('Matrix');
+    await screen.findByRole('main', { name: 'Matrix' });
+    fireEvent.click(screen.getByRole('button', { name: '← Graph' }));
     const wieder = (await screen.findByRole('button', { name: 'Karte schließen' })).closest(
       '[data-graph-overlay]',
     ) as HTMLElement;
@@ -485,111 +380,42 @@ describe('Viewer', () => {
     expect(wieder.style.top).toBe('66px');
   });
 
-  it('schließt mit Escape zuerst das Popover, verlässt danach aber nicht mehr die Tabelle (Issue #30)', async () => {
-    render(<App />);
-    await loadFixture('gaeb-xml-beispiel.x83');
-    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
-    switchToView('Tabelle');
-    await screen.findByRole('grid', { name: 'Positionen' });
+  it('schließt mit Escape zuerst das Popover, nicht das Tabellenfenster (Issue #30)', async () => {
+    await loadAndWait();
+    await openTable();
 
-    // Die Facettenwerte im Popover sind die einzigen Schaltflächen mit
-    // aria-pressed — daran hängt die Prüfung, ob das Popover offen ist.
-    // Der Filter-Chip, nicht der gleichnamige Spaltenkopf der Tabelle.
-    fireEvent.click(screen.getByRole('button', { name: /Positionsart ▾/ }));
-    await waitFor(() =>
-      expect(screen.queryAllByRole('button', { pressed: false }).length).toBeGreaterThan(0),
-    );
+    // Spaltenauswahl als Popover im Tabellenfenster.
+    fireEvent.click(screen.getByRole('button', { name: /Spalten ▾/ }));
+    expect(screen.getByRole('list', { name: 'Spalten' })).toBeInTheDocument();
 
     fireEvent.keyDown(document.body, { key: 'Escape' });
     await waitFor(() =>
-      expect(screen.queryAllByRole('button', { pressed: false })).toHaveLength(0),
+      expect(screen.queryByRole('list', { name: 'Spalten' })).not.toBeInTheDocument(),
     );
     // Die Tabelle steht noch — Escape hat nur das Popover geschlossen.
     expect(screen.getByRole('grid', { name: 'Positionen' })).toBeInTheDocument();
 
-    // Der Ansichtsmodus ist jetzt eine bewusste, dauerhafte Wahl (Issue #30) —
-    // ein zweites Escape wechselt nicht mehr zurück in den Graphen.
+    // Das Fenster ist eine bewusste Wahl — ein zweites Escape schließt es nicht.
     fireEvent.keyDown(document.body, { key: 'Escape' });
     expect(screen.getByRole('grid', { name: 'Positionen' })).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: 'Tabelle' })).toHaveAttribute('aria-checked', 'true');
+    expect(tableWindow()).toBeInTheDocument();
   });
 
-  it('bedient Filter und Baum über echte Schaltflächen (Tastatur)', async () => {
-    render(<App />);
-    await loadFixture('gaeb-xml-beispiel.x83');
-    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+  it('bedient die Filter über echte Schaltflächen (Tastatur)', async () => {
+    await loadAndWait();
+    fireEvent.click(screen.getByRole('button', { name: '+ Filter' }));
+    const panel = screen.getByRole('complementary', { name: 'Seitenfenster' });
 
-    // Umschaltgruppe Größenmodus: benannte Radiogruppe statt klickbarer <span>
-    // — nur im Graphen vorhanden (Issue #30).
-    switchToView('Graph');
-    const sizeModes = screen.getByRole('radiogroup', { name: 'Größe der Bubbles' });
+    // Umschaltgruppe Größenmodus: benannte Radiogruppe statt klickbarer <span>.
+    const sizeModes = within(panel).getByRole('radiogroup', { name: 'Größe der Bubbles' });
     // Anzahl · Gesamtpreis · Menge · Einheitlich (Menge kam mit WP-Q dazu).
     expect(within(sizeModes).getAllByRole('radio').length).toBe(4);
 
-    switchToView('Tabelle');
-
-    // Aufklapp-Dreieck im Baum ist eine benannte Schaltfläche.
-    const tree = screen.getByRole('tree');
-    const section = await within(tree).findByTitle('Bauhauptgewerke');
-    const toggle = within(section).getByRole('button', { name: /Bauhauptgewerke aufklappen/ });
-    fireEvent.click(toggle);
-    await waitFor(() =>
-      expect(within(tree).getByTitle('Bauhauptgewerke')).toHaveAttribute('aria-expanded', 'true'),
-    );
-
     // Facettenwerte sind Schaltflächen mit Auswahlzustand.
-    fireEvent.click(screen.getByRole('button', { name: /Positionsart ▾/ }));
-    const [option] = await waitFor(() => {
-      const rows = screen.getAllByRole('button', { pressed: false });
-      expect(rows.length).toBeGreaterThan(0);
-      return rows;
-    });
+    const facet = within(panel).getByRole('region', { name: 'Positionsart' });
+    const [option] = within(facet).getAllByRole('button', { pressed: false });
     fireEvent.click(option);
     await waitFor(() => expect(option).toHaveAttribute('aria-pressed', 'true'));
-  });
-
-  it('bedient den Baum mit der Tastatur (Issue #28)', async () => {
-    render(<App />);
-    await loadFixture('gaeb-xml-beispiel.x83');
-    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
-    switchToView('Tabelle');
-
-    const tree = screen.getByRole('tree');
-    const activeRow = (): HTMLElement | null => {
-      const id = tree.getAttribute('aria-activedescendant');
-      return id === null ? null : document.getElementById(id);
-    };
-
-    // Der Fokus liegt am Baum, die aktive Zeile hängt an aria-activedescendant.
-    tree.focus();
-    expect(tree).toHaveFocus();
-    expect(activeRow()).toBeNull();
-
-    fireEvent.keyDown(tree, { key: 'ArrowDown' });
-    await waitFor(() => expect(activeRow()).not.toBeNull());
-    expect(activeRow()).toHaveAttribute('aria-level', '1');
-
-    fireEvent.keyDown(tree, { key: 'ArrowDown' });
-    await waitFor(() => expect(activeRow()).toHaveAttribute('aria-level', '2'));
-    expect(activeRow()).toHaveAttribute('aria-expanded', 'false');
-    const section = activeRow();
-
-    // Pfeil rechts klappt auf, Pfeil links wieder zu.
-    fireEvent.keyDown(tree, { key: 'ArrowRight' });
-    await waitFor(() => expect(activeRow()).toHaveAttribute('aria-expanded', 'true'));
-    expect(activeRow()).toBe(section);
-
-    fireEvent.keyDown(tree, { key: 'ArrowDown' });
-    await waitFor(() => expect(activeRow()).toHaveAttribute('aria-level', '3'));
-
-    // Pfeil links steigt aus einer zugeklappten Zeile zum Elternknoten auf.
-    fireEvent.keyDown(tree, { key: 'ArrowLeft' });
-    await waitFor(() => expect(activeRow()).toHaveAttribute('aria-level', '2'));
-
-    // Enter wählt wie ein Klick — die Positionstabelle bleibt offen und
-    // zeigt jetzt den gewählten Abschnitt.
-    fireEvent.keyDown(tree, { key: 'Enter' });
-    await screen.findByRole('grid', { name: 'Positionen' });
   });
 
   it('zeigt eine verständliche Fehlermeldung bei nicht unterstützter GAEB-Version', async () => {
