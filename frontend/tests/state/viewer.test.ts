@@ -124,6 +124,14 @@ describe('viewerReducer · Ansichtsmodus', () => {
     expect(table.view.tableWindow.open).toBe(true);
   });
 
+  it('lässt den Zustand stehen, wenn das Tabellenfenster nicht wirklich wandert', () => {
+    const moved = viewerReducer(base, { type: 'tableWindowPos', pos: { right: 40, top: 200 } });
+    expect(moved.view.tableWindow.pos).toEqual({ right: 40, top: 200 });
+    expect(viewerReducer(moved, { type: 'tableWindowPos', pos: { right: 40, top: 200 } })).toBe(
+      moved,
+    );
+  });
+
   it('begrenzt die Größe des Tabellenfensters nach unten', () => {
     const next = viewerReducer(base, {
       type: 'tableWindowSize',

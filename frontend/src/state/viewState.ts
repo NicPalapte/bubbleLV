@@ -242,8 +242,12 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
       return state.tableWindow.open === action.open
         ? state
         : { ...state, tableWindow: { ...state.tableWindow, open: action.open } };
-    case 'tableWindowPos':
+    case 'tableWindowPos': {
+      // Beim Ziehen kommt jede Mausbewegung hier an; gleiche Lage = kein Render.
+      const { pos } = state.tableWindow;
+      if (pos.right === action.pos.right && pos.top === action.pos.top) return state;
       return { ...state, tableWindow: { ...state.tableWindow, pos: action.pos } };
+    }
     case 'tableWindowSize':
       return {
         ...state,
