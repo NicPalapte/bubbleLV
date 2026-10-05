@@ -226,7 +226,9 @@ Fehler, keine erfundenen LB-Nummern.
 **Ein Abgleich für alle Dimensionen** (`lib/classify/mapping.ts`, `MappingIndex.match`).
 Leistungsbereich, Positionsart, Bauteiltyp, Material, Qualifikation, Planungsart,
 Einrichtungsart und Steinart laufen durch dieselbe Funktion. Je Dimension gibt es einen
-Hauptwert plus Alternativen; bleibt ein Gleichstand, ist das Ergebnis `mehrdeutig`.
+Hauptwert plus Alternativen (`_meta.zuordnung`); bleibt ein Gleichstand, ist das Ergebnis
+`mehrdeutig`. Der Leistungsbereich wertet Kurztext, Langtext und Überschriften in dieser
+Reihenfolge.
 Die Positionsart-Erkennung gewichtet Baustelleneinrichtung vor Personal vor Planung vor
 Nebenleistung, der Bauteiltyp die spezifischeren Begriffe zuerst — beides steht als
 `gewicht` in der Tabelle, nicht im Code. Einheiten (`m²`, `h`) bleiben in

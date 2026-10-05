@@ -284,6 +284,35 @@ trägt `attributes` einen reservierten Meta-Block. Die Facetten-Keys bleiben fla
 Attribute geliefert hat — wichtig, um nachzuvollziehen, welche
 Bauteiltyp/LB-Kombinationen noch keinen eigenen Ruleset haben.
 
+### Alternativen: `_meta.zuordnung`
+
+Passt mehr als ein Wert zu einer Dimension, bleibt das Attribut der **Hauptwert**
+(Filter, Summen und Graph arbeiten damit). Die übrigen Treffer stehen in
+`_meta.zuordnung`, je Attribut-Key (`gewerk`, `positionsart`, `bauteiltyp`):
+
+```jsonc
+"_meta": {
+  "gewerkQuelle": "position",
+  "zuordnung": {
+    "gewerk": {
+      "mehrdeutig": true,
+      "alternativen": [
+        { "code": "004", "label": "Landschaftsbauarbeiten - Pflanzen",
+          "stichwort": "landschaftsbauarbeiten" }
+      ]
+    }
+  }
+}
+```
+
+- `mehrdeutig: true` heißt Gleichstand (gleiches Gewicht, gleiche Wortlänge). Der
+  Hauptwert ist dann nur der erste in der Tabelle `zuordnung.csv`.
+- Ohne Alternativen fehlt der Key ganz; ohne jede Alternative fehlt `zuordnung`.
+- Alternativen kommen nur aus **demselben** Text: Kurztext, sonst Langtext, sonst die
+  nächste Überschrift ([`decisions/0032`](../decisions/0032-zuordnung-per-mappingtabelle.md)).
+- Das Eigenschaften-Panel zeigt sie als Hinweis. Es ist reine Anzeige: Eine Auswahl,
+  die den Hauptwert ändert, gibt es nicht.
+
 ## Re-Import in derselben Session
 
 Ein erneutes Laden einer Datei ersetzt den kompletten Session-Zustand — es gibt keine

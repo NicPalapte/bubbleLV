@@ -117,3 +117,20 @@ bleibt gültig; die Keywords wandern später aus dem STLB-Katalog in die Mapping
   „entwässerungsanlagen" (045/046), „niederspannungsanlagen" (053/054) und
   „bauarbeiten" (096/097). Der Hauptwert ist wie vorher der erste in
   der Tabelle; die Oberfläche zeigt es ab Schritt 3.
+
+## Präzisierung bei der Umsetzung (Schritt 3, 2026-10-05)
+
+- **Kurztext vor Langtext** gilt jetzt für den Leistungsbereich: Kurztext, dann
+  Langtext, dann die Überschriften. Ein Treffer im Kurztext schlägt einen längeren im
+  Langtext. Bei der ausgelieferten Tabelle ändert sich dadurch keine Zuordnung; mit
+  dem Keyword-Entwurf waren es 7 von 4.459 Testpositionen (4 beim Leistungsbereich).
+  Positionsart und Bauteiltyp lesen weiter nur den Kurztext, die übrigen Dimensionen
+  (Qualifikation, Planungsart, Einrichtungsart, Steinart) Kurz- und Langtext zusammen.
+- **Datenmodell:** `_meta.zuordnung` je Attribut-Key (`gewerk`, `positionsart`,
+  `bauteiltyp`) mit `mehrdeutig` und `alternativen`
+  ([`data-model.md`](../architecture/data-model.md)). Der Hauptwert im Attribut bleibt
+  unverändert.
+- **Anzeige:** Das Eigenschaften-Panel zeigt unter „Klassifizierung" den Hauptwert und die
+  Alternativen, bei Gleichstand mit dem Hinweis „mehrdeutig". Es ist **reine Anzeige**.
+  Eine Auswahl, die den Hauptwert ändert, ist eine manuelle Zuweisung und gehört zu den
+  Lernregeln (siehe „Grenzen"), nicht in diesen Schritt.
