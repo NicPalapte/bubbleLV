@@ -37,6 +37,8 @@ interface Row {
   key: string;
   label: string;
   values: readonly (string | null)[];
+  /** Merkmalszeile aus `compareRows`; nur sie wird markiert und gezählt. */
+  feature: boolean;
 }
 
 function amount(position: PositionSummary): string {
@@ -86,10 +88,15 @@ export function CompareWindow() {
 
   if (!compareWindow.open || columns.length === 0) return null;
 
+  // Abschnitt und Hinweise sind Kontext, keine Merkmale: sie stehen oben, werden
+  // aber weder markiert noch gezählt — sonst hätten zwei gleiche Positionen aus
+  // verschiedenen Abschnitten immer „1 Unterschied".
+  const features = compareRows(columns.map(({ position }) => position));
   const rows: Row[] = [
     {
       key: 'abschnitt',
       label: 'Abschnitt',
+      feature: false,
       values: columns.map(({ node }) => {
         const parent = parents.get(node.id) ?? null;
         return parent === null ? null : `${parent.code}  ${parent.label ?? ''}`.trim();
@@ -98,14 +105,16 @@ export function CompareWindow() {
     {
       key: 'hinweise',
       label: 'Hinweise',
+      feature: false,
       values: columns.map(({ node }) => {
-        const found = hints.get(node.id);
-        return found === undefined ? null : [...new Set(found.flags.map((f) => f.id))].join(' · ');
+        const ids = [...new Set(hints.get(node.id)?.flags.map((f) => f.id) ?? [])];
+        return ids.length === 0 ? null : ids.join(' · ');
       }),
     },
-    ...compareRows(columns.map(({ position }) => position)),
+    ...features.map((row) => ({ ...row, feature: true })),
   ];
-  const differing = rows.filter((row) => row.values.some((v) => v !== row.values[0])).length;
+  // Dieselbe Zählung wie `diffCount` (lib/compare/rows.ts): roher Wert, nicht Anzeige.
+  const differing = features.filter((row) => row.differs).length;
   const longTexts = markCommonWords(columns.map(({ position }) => position.longText));
 
   const first = columns[0].node.id;
@@ -250,8 +259,10 @@ export function CompareWindow() {
                   {row.label}
                 </th>
                 {row.values.map((value, i) => {
-                  // Markiert ist, was von der ersten Spalte abweicht — sie ist die Bezugsposition.
-                  const differs = i > 0 && value !== row.values[0];
+                  // Markiert ist, was von der ersten Spalte abweicht — sie ist die
+                  // Bezugsposition. Sehen zwei Werte gerundet gleich aus, zeigt
+                  // `compareRows` schon mehr Stellen; die Anzeige reicht hier also.
+                  const differs = row.feature && i > 0 && value !== row.values[0];
                   return (
                     <td
                       key={columns[i].node.id}

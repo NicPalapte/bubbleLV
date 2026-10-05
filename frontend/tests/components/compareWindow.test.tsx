@@ -97,6 +97,17 @@ describe('CompareWindow', () => {
     expect(within(table).getByText('Ziegel').tagName).toBe('MARK');
   });
 
+  it('zählt nur Merkmale — Abschnitt und Hinweise sind Kontext', () => {
+    // 0010 und 0020 unterscheiden sich nur im Langtext, nicht in den Merkmalen.
+    const fenster = renderWindow([ids[0], ids[1]]) as HTMLElement;
+    expect(within(fenster).queryByText(/Unterschied/)).toHaveTextContent('0 Unterschiede');
+    const table = within(fenster).getByRole('table');
+    for (const label of [/Abschnitt/, /Hinweise/]) {
+      const zellen = within(within(table).getByRole('row', { name: label })).getAllByRole('cell');
+      for (const zelle of zellen) expect(zelle).not.toHaveAttribute('data-differs');
+    }
+  });
+
   it('nimmt eine Position per ✕ heraus und leert alles mit „leeren"', () => {
     const fenster = renderWindow([ids[0], ids[1]]) as HTMLElement;
     fireEvent.click(
