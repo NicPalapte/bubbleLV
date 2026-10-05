@@ -7,14 +7,6 @@ import { useMemo, useReducer, type ReactNode } from 'react';
 import { EMPTY_HINTS, hintsByPosition, type HintIndex } from '../lib/check';
 import { buildColorScale, EMPTY_COLOR_SCALE, type ColorScale } from '../lib/colors';
 import { NO_GEWERK } from '../lib/facets';
-import { effectiveSizeMode } from '../lib/graph/constants';
-import { buildFocusTree, type FocusGraph } from '../lib/graph/focusTree';
-import {
-  NO_QUANTITIES,
-  quantitiesByNode,
-  singleUnit,
-  type FilteredQuantities,
-} from '../lib/graph/quantities';
 import {
   buildPositionIndex,
   EMPTY_POSITION_INDEX,
@@ -76,67 +68,11 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
     return buildColorScale([...values.keys()].filter((key) => key !== NO_GEWERK));
   }, [state.lv]);
 
-  // Bei aktiver Suche/Filterung gehen die Pfade zu den Treffern automatisch auf.
-  // Abgeleitet statt gespeichert: fällt der Filter weg, steht wieder genau der
-  // Aufklapp-Zustand da, den der Nutzer selbst gesetzt hat.
-  const openNodes = useMemo<ReadonlySet<string>>(() => {
-    if (tree === null || !matches.filtering) return state.selection.expanded;
-    return withHits(tree, matches, state.selection.expanded);
-  }, [tree, matches, state.selection.expanded]);
-
-  // Sammel-Bubbles mit Treffern gehen bei aktiver Suche von selbst auf —
-  // dieselbe Ableitung wie `openNodes`, damit der Filter nichts versteckt.
-  const openClusters = useMemo<ReadonlySet<string>>(() => {
-    if (tree === null || !matches.filtering) return state.selection.openClusters;
-    return withHits(tree, matches, state.selection.openClusters);
-  }, [tree, matches, state.selection.openClusters]);
-
-  // Isolation der Treffer (WP-Q): ein synthetischer Baum aus den Treffern,
-  // gebündelt nach Abschnitt, Gewerk oder Bauteiltyp. Entsteht hier und nicht
-  // im Graphen, weil er vom Filter abhängt und nicht vom Ausschnitt — und weil
-  // beide Hälften der geteilten Ansicht denselben brauchen.
-  //
-  // Nur, solange der Graph die aktive Ansicht ist: sonst zahlte jeder
-  // Filterwechsel in Tabelle, Prüfung und Überblick einen Aufschlag für eine
-  // Ansicht, die gar nicht auf dem Schirm steht.
-  const { focus: focusMode, groupBy, sizeMode } = state.view.graph;
-  const graphAktiv = state.view.mode === 'graph';
-
-  // Eine Trefferbitmaske je Filterwechsel — Isolation und Mengen lesen dieselbe.
+  // Trefferbitmaske für den Graphen — `null`, solange nicht gefiltert wird.
   const mask = useMemo<Uint8Array | null>(
-    () => (tree === null || !graphAktiv ? null : filterMask(index, active)),
-    [tree, graphAktiv, index, active],
+    () => (tree === null || !active.filtering ? null : filterMask(index, active)),
+    [tree, index, active],
   );
-
-  // Mengen für den Größenmodus „Menge" (WP-Q, Schritt 4). Die Einheit steht
-  // immer fest — der Umschalter braucht sie, um den Modus zu sperren —, die
-  // Summen je Knoten entstehen erst, wenn der Modus auch gewählt ist.
-  const quantities = useMemo<FilteredQuantities>(() => {
-    if (mask === null) return NO_QUANTITIES;
-    return measure('Mengen', () => {
-      const unit = singleUnit(index, mask);
-      const byNode =
-        sizeMode === 'quantity' && unit !== null
-          ? quantitiesByNode(index, mask, structure.parents)
-          : null;
-      return { unit, byNode };
-    });
-  }, [mask, index, sizeMode, structure.parents]);
-
-  // Nach welchem Maß die Isolation ihre Gruppen ordnet: nach dem, das auch
-  // die Größe der Bubbles bestimmt. Sonst stünde die größte Gruppe vorn,
-  // gemessen an einer Zahl, die der Graph daneben gar nicht mehr zeigt.
-  const sortMode = effectiveSizeMode(sizeMode, {
-    priceless: (tree?.totalPrice ?? 0) === 0,
-    unit: quantities.unit,
-  });
-
-  const focus = useMemo<FocusGraph | null>(() => {
-    if (mask === null || focusMode === 'structure' || !matches.filtering) return null;
-    return measure('Treffer-Isolation', () =>
-      buildFocusTree(index, mask, { groupBy, sizeMode: sortMode, parents: structure.parents }),
-    );
-  }, [mask, focusMode, matches.filtering, index, groupBy, sortMode, structure.parents]);
 
   // Hinweise je Position (WP-R, R1). Hängt am Import und am Regel-Schalter,
   // nicht am Filter: was hier steht, gilt für das ganze LV — der Ring an der
@@ -163,11 +99,8 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
           ? null
           : (structure.nodes.get(state.selection.positionId) ?? null),
       matches,
-      openNodes,
-      openClusters,
+      mask,
       gewerkColors,
-      focus,
-      quantities,
       hints,
     }),
     [
@@ -178,11 +111,8 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
       state.selection.nodeId,
       state.selection.positionId,
       matches,
-      openNodes,
-      openClusters,
+      mask,
       gewerkColors,
-      focus,
-      quantities,
       hints,
     ],
   );
@@ -194,20 +124,4 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
       <ViewerDispatchContext.Provider value={dispatch}>{children}</ViewerDispatchContext.Provider>
     </ViewerStateContext.Provider>
   );
-}
-
-/** Basis-Set plus alle Knoten, unter denen ein Treffer liegt. */
-function withHits(
-  tree: LVNode,
-  matches: MatchIndex,
-  base: ReadonlySet<string>,
-): ReadonlySet<string> {
-  const open = new Set(base);
-  const visit = (node: LVNode): void => {
-    if (node.kind === 'position') return;
-    if ((matches.counts.get(node.id) ?? 0) > 0) open.add(node.id);
-    for (const child of node.children) visit(child);
-  };
-  visit(tree);
-  return open;
 }

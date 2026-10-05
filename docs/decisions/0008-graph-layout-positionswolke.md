@@ -1,6 +1,6 @@
 # 0007 – Positionen als Wolke statt als Ring
 
-- **Status:** akzeptiert
+- **Status:** ersetzt durch 0035
 - **Datum:** 2026-09-11
 - **Betrifft:** Bubble-Graph (`frontend/src/lib/graph/`, `frontend/src/components/graph/`)
 

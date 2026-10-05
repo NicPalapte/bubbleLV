@@ -9,6 +9,25 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.7.0 — 05.10.2026 · Neuer Graph
+
+- **Alles auf einen Blick.** Jeder Abschnitt ist ein Kreis, jede Position ein Punkt
+  darin. Je mehr Positionen, desto größer der Kreis. Lose sind eine gestrichelte Hülle.
+  Aufklappen ist nicht mehr nötig.
+- **Gliederung „nach LV" oder „frei"** im Seitenfenster unter „Filter". „frei" ordnet
+  nach Merkmalen in Zeilen und Spalten, z. B. Einheit × Gewerk. Ein neuer Filter wird
+  von selbst zur Spalte.
+- **Hinweise im Graphen:** Ring am Punkt und ein Schild mit der Regel. Schilder
+  überlappen sich nie. Der Schalter „⚠ Hinweise" unten rechts blendet sie aus.
+- **Größe der Punkte:** gleich, nach Menge (nur innerhalb derselben Einheit) oder nach
+  Preis. Der Schalter sitzt unten rechts.
+- **Linie zur Karte:** Von der gewählten Position führt eine gestrichelte Linie zur
+  Positionskarte.
+- **Legende unten links:** Formen der Positionsarten, Hinweis-Ringe und Gewerk-Farben.
+- **Eigenes Favicon:** das Bubble-Zeichen im Browser-Tab.
+- **Entfallen:** „Alles auf-/zuklappen" und „Treffer isolieren". Beides braucht der
+  neue Graph nicht mehr.
+
 ## 0.6.0 — 05.10.2026 · Der Graph ist der Hauptscreen
 
 - **Neuer Einstieg.** Die Startseite bietet zwei Wege: „Eigenes LV öffnen" (Datei

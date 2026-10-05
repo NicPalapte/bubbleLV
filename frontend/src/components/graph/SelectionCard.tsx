@@ -48,6 +48,8 @@ interface SelectionCardProps {
 
 /** Abstand zum Rand des Canvas, den die Karte auch aufgezogen frei lässt. */
 const EDGE_GAP = 16;
+/** Unten bleibt die Steuerung am Graphen frei: feste Teile bleiben stehen, die Karte weicht. */
+const CONTROLS_SPACE = 52;
 
 export function SelectionCard({ node, onClose }: SelectionCardProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -100,13 +102,14 @@ export function SelectionCard({ node, onClose }: SelectionCardProps) {
     <div
       ref={ref}
       {...graphOverlayProps}
+      data-selection-card=""
       className="ov-window absolute z-[10] flex flex-col overflow-hidden"
       style={{
         right: cardPos.right,
         top: cardPos.top,
         width: panelSize.width,
         height: panelSize.height ?? undefined,
-        maxHeight: `calc(100% - ${cardPos.top + EDGE_GAP}px)`,
+        maxHeight: `calc(100% - ${cardPos.top + EDGE_GAP + CONTROLS_SPACE}px)`,
       }}
     >
       {node.position !== null ? (

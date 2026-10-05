@@ -96,7 +96,8 @@ describe('Viewer', () => {
       expect(screen.queryByText('GAEB-Datei hierher ziehen')).not.toBeInTheDocument(),
     );
     expect(screen.getByRole('group', { name: /Bubble-Graph/ })).toBeInTheDocument();
-    expect(screen.getByText('PROJEKT')).toBeInTheDocument();
+    // Steuerung am Graphen: Größe der Positionen.
+    expect(screen.getByRole('radiogroup', { name: 'Größe der Positionen' })).toBeInTheDocument();
 
     // Die Filter stehen im Seitenfenster hinter „+ Filter".
     fireEvent.click(screen.getByRole('button', { name: '+ Filter' }));
@@ -405,10 +406,10 @@ describe('Viewer', () => {
     fireEvent.click(screen.getByRole('button', { name: '+ Filter' }));
     const panel = screen.getByRole('complementary', { name: 'Seitenfenster' });
 
-    // Umschaltgruppe Größenmodus: benannte Radiogruppe statt klickbarer <span>.
-    const sizeModes = within(panel).getByRole('radiogroup', { name: 'Größe der Bubbles' });
-    // Anzahl · Gesamtpreis · Menge · Einheitlich (Menge kam mit WP-Q dazu).
-    expect(within(sizeModes).getAllByRole('radio').length).toBe(4);
+    // Umschaltgruppe Gliederung: benannte Radiogruppe statt klickbarer <span>.
+    const layouts = within(panel).getByRole('radiogroup', { name: 'Gliederung' });
+    // nach LV · frei
+    expect(within(layouts).getAllByRole('radio').length).toBe(2);
 
     // Facettenwerte sind Schaltflächen mit Auswahlzustand.
     const facet = within(panel).getByRole('region', { name: 'Positionsart' });

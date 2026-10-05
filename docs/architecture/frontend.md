@@ -77,13 +77,16 @@ frontend/
     │   ├── spanCategories.ts         # Farbe und Name je Fundstellen-Kategorie
     │   ├── facets.ts                 # Facetten-Definitionen (dynamische Werte)
     │   ├── colors.ts                 # Gewerk-Farbskala für alle Ansichten (WP-L)
-    │   └── graph/                    # Graph-Engine (aus lv-graph.jsx)
-    │       ├── constants.ts          # Radien, LOD-Schwellen, Größenmodi
-    │       ├── layoutRadial.ts       # Ballon-Layout (Kreis je Elternknoten) + Cluster
+    │   └── graph/                    # Graph-Engine (decisions/0035)
+    │       ├── constants.ts          # Radien, Abstände, LOD-Schwellen
+    │       ├── layoutMap.ts          # Gliederung „nach LV" / „frei" (rein, ohne DOM)
+    │       ├── pack.ts               # Kreispackung (Frontkette)
+    │       ├── sizes.ts              # Größe der Punkte: gleich / Menge je Einheit / Preis
+    │       ├── pins.ts               # Platzsuche der Hinweisschilder
     │       └── culling.ts            # Viewport-Culling
     ├── state/                        # drei getrennte Bereiche, eine Klammer (WP-L)
     │   ├── filterState.ts            # Suche, Facetten, Nicht-Treffer, stumme Regeln
-    │   ├── selectionState.ts         # Auswahl + Aufklapp-Zustand (Tree und Graph)
+    │   ├── selectionState.ts         # Auswahl und Mauszeiger
     │   ├── viewState.ts              # aktive Ansicht + Zustand je Ansicht
     │   ├── viewer.ts                 # Klammer: State, Reducer, Context, Hooks
     │   └── ViewerProvider.tsx        # Provider + abgeleitete Sichten (Trefferindex)
@@ -171,24 +174,15 @@ Beziehungen rechnen gegen ihn, nie gegen den Baum.
 - Begründung und verworfene Wege:
   [`decisions/0010`](../decisions/0010-positions-index-und-aggregate.md).
 
-### Ein Zustand für beide Ansichten
+### Gemeinsame Rechenbasis
 
-Baum und Graph zeigen dieselbe Struktur und laufen deshalb nie auseinander
-(Issue #18). Alles, was beide betrifft, steht **einmal** im Viewer-State bzw. im
-Provider:
+Alles, was mehrere Fenster brauchen, steht **einmal** im Provider:
 
 | Was | Wo | Bemerkung |
 |---|---|---|
-| Aufklapp-Zustand | `state.selection.expanded` (`ReadonlySet<string>`) | offene Knoten; ein Klick im Baum wirkt im Graphen und umgekehrt |
-| aufgelöste Cluster | `state.selection.openClusters` | reine Graph-Darstellung, gleiche Lebensdauer |
 | Positions-Index | `derived.index` (`PositionIndex`) | flache Rechenbasis, einmal je geladenem LV |
-| Trefferzahlen | `derived.matches` (`MatchIndex`) | einmal je Filter-/Suchwechsel, für Baum, Graph und Tabelle |
-| tatsächlich offene Knoten | `derived.openNodes` | `expanded` **plus** die Pfade zu den Treffern, die Suche/Filter automatisch öffnen |
-
-`openNodes` ist abgeleitet statt gespeichert: fällt der Filter weg, steht wieder
-genau der Aufklapp-Zustand da, den der Nutzer selbst gesetzt hat. Nach dem Import
-sind Projekt und Lose offen (`expandedToDepth(tree, 2)`), `Alles einklappen` fällt
-auf die Lose zurück — die Wurzel bleibt offen, sonst wäre der Baum leer.
+| Trefferzahlen | `derived.matches` (`MatchIndex`) | einmal je Filter-/Suchwechsel, für Graph und Tabelle |
+| Trefferbitmaske | `derived.mask` | je Indexeintrag 1/0; `null`, solange nicht gefiltert wird |
 
 ### Drei getrennte Bereiche, eine Klammer (WP-L)
 
@@ -199,8 +193,8 @@ dass ein Ansichtswechsel Filter oder Auswahl anfasst.
 | Bereich | Datei | Inhalt |
 |---|---|---|
 | `filter` | `state/filterState.ts` | Suche, Facetten, Mengenbereich, Nicht-Treffer-Modus, stummgeschaltete Prüfregeln |
-| `selection` | `state/selectionState.ts` | angewählter Knoten/Position, Mauszeiger, Aufklapp-Zustand, offene Sammel-Bubbles |
-| `view` | `state/viewState.ts` | aktive Ansicht plus Zustand **je** Ansicht: Graph-Ausschnitt und Größenmodus, Sortierung/Umfang/Spalten der Tabelle, offene Regeln der Prüfung, Scrollposition je Ansicht, Maße der Info-Panels |
+| `selection` | `state/selectionState.ts` | angewählter Knoten/Position, Mauszeiger |
+| `view` | `state/viewState.ts` | aktive Ansicht plus Zustand **je** Ansicht: Graph-Ausschnitt, Gliederung, Größe und Hinweis-Schalter, Sortierung/Umfang/Spalten der Tabelle, offene Regeln der Prüfung, Scrollposition je Ansicht, Maße der Info-Panels |
 
 `state/viewer.ts` klammert die drei und behandelt selbst nur, was mehr als einen
 Bereich betrifft: `loaded`, `clear`, `openInTable` und `showGraph`. Ändert ein
@@ -316,35 +310,31 @@ die Zeilen mehr als eine Überschrift, stehen sie unter deren Pfad gruppiert.
 
 ## Bubble-Graph (Kern des Produkts)
 
-Portiert aus `lv-graph.jsx` — eine skalierbare Knowledge-Graph-Engine, keine simple
-Kreisgrafik. Eigenschaften, die erhalten bleiben:
+Gliederung und Bildsprache: [`decisions/0035`](../decisions/0035-graph-gliederung.md).
 
-- **Rekursives Baummodell** beliebiger Tiefe (Projekt → Los → Abschnitt →
-  ggf. Unterabschnitt/Gruppe → Position).
-- **Ballon-Layout:** jeder Knoten legt seine Kinder als Kreis um sich selbst.
-  Kreisradius und Winkelanteile folgen der Größe der Teilbäume, die Abstände
-  skalieren damit mit dem LV statt aus einer festen Ring-Tabelle zu kommen.
-  Kinder fächern nur in die Halbebene vom Elternknoten weg auf — dadurch bleibt
-  jeder Teilbaum überschneidungsfrei.
-- **Dichte-abhängiges Rendering** je Tier: Bubble / Punkt / Cluster.
-  **Cluster-Bubble** ab > 24 Geschwistern (`CLUSTER_AT`); ein Klick darauf löst
-  sie in Punkte auf.
-- **Level-of-Detail:** Labels blenden bei sinkendem Zoom aus (Schwellen je `kind`).
-- **Viewport-Culling** (günstiger Bounding-Box-Test) für große LVs (~10k Positionen).
-- **Größenmodi:** `Anz. Positionen` · `Gesamtpreis €` · `Einheitlich`
-  (`SIZE_MODES`). Größe kommt aus den `LVNode`-Aggregaten `position_count` /
-  `total_price`. Der Radius wächst mit der Wurzel des Werts, damit die *Fläche*
-  dem Wert folgt; verglichen wird je Ebene (`sizedRadius`). Haben alle Knoten
-  einer Ebene denselben Wert, bleibt es beim Basisradius. Führt die Datei keine
-  Einheitspreise, ist `Gesamtpreis €` **gesperrt** statt still auf `Anzahl`
-  zurückzufallen — sonst sieht der Knopf gewählt aus und nichts ändert sich.
-- **Drill-in:** Klick auf eine Sammel-Bubble klappt sie auf bzw. zu und wählt sie
-  fürs Eigenschaften-Panel — die Mitte bleibt der Graph, und der Baum klappt
-  mit. In die Tabelle führt das Tabellensymbol an der Bubble; bei Positionen
-  öffnet der Klick direkt die Tabelle. Welche Ansicht vorn steht, ist eigener
-  Zustand (`view.mode`) und wird nicht aus der Auswahl abgeleitet. Zurück in den Graphen führen der
-  `Graph`-Knopf im Tabellenkopf und die Projektzeile im Baum — beide in einem
-  Schritt, unabhängig davon, wie tief man steht.
+- **Layout rein, Zeichnen getrennt:** `layoutMap(index, parents, options)` rechnet
+  Gruppen, Los-Hüllen, Achsen und die Lage jeder Position (`px`/`py` je Indexeintrag).
+  Kein DOM, kein Zoom — testbar und für 10k Positionen in rund 15 ms fertig.
+- **„nach LV":** eine Gruppe je Elternabschnitt einer Position (unterste Ebene), Lose
+  als gestrichelte Hülle. Mit gedämpften Nicht-Treffern hängt das Layout nicht am
+  Filter — der Graph springt beim Tippen nicht.
+- **„frei":** Zeilen × Spalten aus `AXIS_FACETS` (nur einwertige Merkmale). Achsenwerte
+  sind die gewählten Filterwerte, sonst alle Werte mit Treffern.
+- **Kreispackung** (`pack.ts`): Gruppen um den Ursprung, größte innen; die Lose
+  ebenso. Positionen liegen als Sonnenblume im Gruppenkreis — der Abstand ist größer
+  als der größte Punkt, also überdeckt sich nichts.
+- **Detailstufe:** eine Gruppe mit mehr als 8 Positionen, die auf dem Schirm kleiner
+  als `GROUP_LOD_PX` ist, wird als Fläche gezeichnet statt als Punkte.
+- **Viewport-Culling** je Gruppe und je Punkt.
+- **Hinweise:** Ring am Punkt ab `MARK_AT_PX`; Schilder in Bildschirmkoordinaten
+  (`pins.ts`), gierig platziert, „beachten" zuerst. Sie weichen Fenstern
+  (`.ov-glass`, `.ov-window`, `.ov-pill`), Gruppenbeschriftungen und fremden Ringen
+  aus. Schalter: `view.graph.showHints`.
+- **Linie zur Karte:** gestrichelt von der gewählten Position zur linken Kante der
+  Positionskarte (`[data-selection-card]`), ab 760 px Breite.
+- **Klicks:** ein Handler am Weltknoten (`data-slot`, `data-group`) statt einer
+  Funktion je Punkt. Punkt → Positionskarte, Kreis „nach LV" → Karte des Abschnitts,
+  Kreis „frei" → einpassen.
 
 **Beim Port entfernt** (out of scope): die Vergabepaket-Kanten / `nodeVpIds` /
 `positionPakete`-Hover-Overlays und das `genDemoLot`-Demo-Lot (nur als optionales

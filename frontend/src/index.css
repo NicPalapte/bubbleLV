@@ -98,6 +98,26 @@
   --bub-cluster: #eaf0f7;
   --bub-cluster-line: #4a5b70;
   --bub-edge: #6b7d92; /* kräftiger als vorher, damit Kanten vom Raster abheben */
+  /* Graph-Karte (docs/decisions/0035-graph-gliederung.md): Los-Hülle, Gruppenkreis,
+     Gruppe als Fläche (Detailstufe), Punkt ohne Gewerk, Rand der Punkte. */
+  /* Punktfarben im Graphen: die hellen Gewerk-Töne in beiden Themen — auf dunkler
+     Fläche tragen sie als Punkt, die dunklen Flächentöne von --cat-* nicht. */
+  --dot-1: #a9c8f5;
+  --dot-2: #a5dded;
+  --dot-3: #9fd6cb;
+  --dot-4: #a9ddb4;
+  --dot-5: #d7e3a1;
+  --dot-6: #f6d79a;
+  --dot-7: #eeb6a2;
+  --dot-8: #edb7c9;
+  --dot-9: #c9bdee;
+  --dot-10: #bdc9d6;
+  --los-fill: rgba(37, 99, 235, 0.025);
+  --grp-fill: rgba(255, 255, 255, 0.72);
+  --grp-fill-strong: #d9e4f0;
+  --dot-none: #8ea3ba;
+  --dot-line: rgba(21, 33, 49, 0.3);
+  --amberD: #8f4d03;
 }
 
 /* ── Typografie — IBM Plex Mono ist die Interface-Schrift; Space Grotesk
@@ -253,6 +273,12 @@
     --bub-cluster: #1c2533;
     --bub-cluster-line: #9aabbf;
     --bub-edge: #6c7f95;
+    --los-fill: rgba(91, 140, 255, 0.04);
+    --grp-fill: rgba(24, 33, 45, 0.78);
+    --grp-fill-strong: #27374c;
+    --dot-none: #6f86a0;
+    --dot-line: rgba(255, 255, 255, 0.42);
+    --amberD: #f5c27a;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 30px rgba(0, 0, 0, 0.35);
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.25);
     --shadow-hairline: 0 1px 0 rgba(0, 0, 0, 0.2);
@@ -320,6 +346,12 @@
   --bub-cluster: #1c2533;
   --bub-cluster-line: #9aabbf;
   --bub-edge: #6c7f95;
+  --los-fill: rgba(91, 140, 255, 0.04);
+  --grp-fill: rgba(24, 33, 45, 0.78);
+  --grp-fill-strong: #27374c;
+  --dot-none: #6f86a0;
+  --dot-line: rgba(255, 255, 255, 0.42);
+  --amberD: #f5c27a;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 30px rgba(0, 0, 0, 0.35);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.25);
   --shadow-hairline: 0 1px 0 rgba(0, 0, 0, 0.2);
@@ -382,6 +414,36 @@ a:hover {
     linear-gradient(90deg, var(--grid) 1px, transparent 1px);
   background-size: var(--grid-cell) var(--grid-cell);
   background-position: -1px -1px;
+}
+
+/* Beschriftung im Graphen: Gruppen, Achsen der Matrix („frei"). */
+.graph-group-title {
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  fill: var(--ink);
+}
+.graph-group-context,
+.graph-group-meta {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  fill: var(--dim);
+}
+.graph-group-context {
+  fill: var(--mute);
+}
+.graph-axis {
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  fill: var(--ink);
+}
+.graph-axis-key {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  fill: var(--mute);
 }
 
 /* ── Schwebende Flächen über dem Graphen (components/shell/) ── */

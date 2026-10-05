@@ -43,7 +43,7 @@ function ViewTiming({ view, children }: { view: string; children: ReactNode }) {
 }
 
 export function ViewerPage() {
-  const { tree, view, focus } = useViewer();
+  const { tree, view } = useViewer();
   const { mode: viewMode } = view;
   const dispatch = useViewerDispatch();
 
@@ -92,9 +92,7 @@ export function ViewerPage() {
           {tree !== null && viewMode === 'graph' && (
             // Der Graph ist die Bühne; alles andere schwebt darüber.
             <main aria-label="Bubble-Graph" className="relative flex-1 overflow-hidden bg-paper">
-              {/* `focus` steht nur, wenn gefiltert wird und die Isolation
-                gewählt ist — sonst zeichnet der Graph das ganze LV (WP-Q). */}
-              <BubbleGraph root={tree} focus={focus ?? undefined} />
+              <BubbleGraph root={tree} />
               <GraphHeader root={tree} />
               <KpiCapsule />
               <SidePanel />

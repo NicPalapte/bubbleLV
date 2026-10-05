@@ -19,7 +19,6 @@ import {
 } from './filterState';
 import {
   INITIAL_SELECTION_STATE,
-  selectionForTree,
   selectionReducer,
   type SelectionAction,
   type SelectionState,
@@ -32,9 +31,8 @@ import {
   type ViewState,
 } from './viewState';
 import type { HintIndex } from '../lib/check';
+import { AXIS_FACETS } from '../lib/graph/layoutMap';
 import type { ColorScale } from '../lib/colors';
-import type { FocusGraph } from '../lib/graph/focusTree';
-import type { FilteredQuantities } from '../lib/graph/quantities';
 import type { PositionIndex } from '../lib/index/positionIndex';
 import type { ActiveFilters } from '../lib/matchPos';
 import type { LoadedLV } from '../lib/pipeline/runPipeline';
@@ -60,7 +58,7 @@ export {
 } from './viewState';
 export type {
   CardPos,
-  GraphFocus,
+  GraphLayoutId,
   PanelSize,
   SidePanel,
   SizeModeId,
@@ -123,7 +121,7 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
         lv: action.lv,
         notices: action.notices ?? [],
         filter: { ...INITIAL_FILTER_STATE, hideMode: state.filter.hideMode },
-        selection: selectionForTree(action.lv.tree),
+        selection: INITIAL_SELECTION_STATE,
         view: viewStateForNewLv(state.view),
       };
     // Ein geteilter Link (WP-P, Schritt 2): Ansicht, Filter und Auswahl in
@@ -175,8 +173,23 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
       // Auswahl bleibt stehen — der Graph zeigt sie weiter hervorgehoben.
       return { ...state, view: viewReducer(state.view, { type: 'setViewMode', mode: 'graph' }) };
 
+    case 'setFacet': {
+      const filter = filterReducer(state.filter, action);
+      // In „frei" wird ein neuer Filter von selbst zur Spalte — so zeigt die
+      // Matrix sofort, wie sich die Auswahl auf die Zeilen verteilt.
+      const { graph } = state.view;
+      const toColumn =
+        graph.layout === 'frei' &&
+        graph.cols === null &&
+        action.values.size > 0 &&
+        action.facetId !== graph.rows &&
+        AXIS_FACETS.includes(action.facetId);
+      const view = toColumn
+        ? viewReducer(state.view, { type: 'graphCols', value: action.facetId })
+        : state.view;
+      return filter === state.filter && view === state.view ? state : { ...state, filter, view };
+    }
     case 'search':
-    case 'setFacet':
     case 'setMenge':
     case 'resetFilters':
     case 'hideMode':
@@ -188,13 +201,9 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     case 'selectNode':
     case 'selectPosition':
     case 'hover':
-    case 'toggleExpanded':
-    case 'expandAll':
-    case 'collapseAll':
-    case 'toggleCluster':
     case 'back':
     case 'closeSelection': {
-      const selection = selectionReducer(state.selection, action, state.lv?.tree ?? null);
+      const selection = selectionReducer(state.selection, action);
       return selection === state.selection ? state : { ...state, selection };
     }
 
@@ -204,8 +213,10 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     case 'tableWindowPos':
     case 'tableWindowSize':
     case 'sizeMode':
-    case 'graphFocus':
-    case 'focusGroupBy':
+    case 'graphLayout':
+    case 'graphRows':
+    case 'graphCols':
+    case 'graphHints':
     case 'graphViewport':
     case 'tableSort':
     case 'tableScope':
@@ -240,32 +251,10 @@ export interface ViewerDerived {
   selectedPosition: LVNode | null;
   /** Trefferzahlen je Knoten — einmal berechnet für Baum, Graph und Tabelle. */
   matches: MatchIndex;
-  /**
-   * Tatsächlich offene Knoten: der Aufklapp-Zustand plus die Pfade zu den
-   * Treffern, die Suche und Filter automatisch öffnen. Baum und Graph lesen
-   * dasselbe Set, damit sie auch beim Filtern gleich stehen (Issue #18).
-   */
-  openNodes: ReadonlySet<string>;
-  /**
-   * Tatsächlich aufgelöste Sammel-Bubbles: die vom Nutzer geöffneten plus die,
-   * in denen ein Treffer steckt. Sonst bliebe ein Treffer bei aktiver Suche in
-   * einer zugeklappten Sammel-Bubble unsichtbar (Issue #41, G4).
-   */
-  openClusters: ReadonlySet<string>;
+  /** Treffer je Indexeintrag (1 = Treffer); `null`, solange nicht gefiltert wird. */
+  mask: Uint8Array | null;
   /** Eine Gewerk-Farbskala für alle Ansichten (WP-L, Schritt 5). */
   gewerkColors: ColorScale;
-  /**
-   * Isolations-Baum des Graphen (WP-Q): die Treffer, nach Gruppen gebündelt.
-   * `null`, solange nicht gefiltert wird, die Trefferansicht auf `structure`
-   * steht oder kein Treffer übrig bleibt.
-   */
-  focus: FocusGraph | null;
-  /**
-   * Mengen für den Größenmodus „Menge" (WP-Q): die eine Einheit der
-   * gefilterten Menge und — nur wenn der Modus aktiv ist — die Summen je
-   * Knoten. Außerhalb der Graph-Ansicht leer.
-   */
-  quantities: FilteredQuantities;
   /**
    * Hinweise der Prüfregeln, nach Position sortiert (WP-R, R1). Grundlage für
    * den Ring an der Bubble und den Block „Hinweise" in der Auswahlkarte.
