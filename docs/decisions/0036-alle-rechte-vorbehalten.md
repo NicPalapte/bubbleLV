@@ -36,6 +36,5 @@ verändern. Der Owner will die Nutzung vorerst verbieten (Issue #77).
 
 - Wer den Code bis heute unter AGPL bezogen hat, behält diese Rechte für den damaligen
   Stand. Die Änderung gilt für alles ab jetzt.
-- Rechteinhaber steht als `NicPalapte` in `LICENSE`. Owner: bei Bedarf durch den
-  vollen Namen ersetzen.
+- Rechteinhaber in `LICENSE`: Nico Oerter.
 - Neue Laufzeit-Abhängigkeit → erscheint automatisch in `lizenzen.txt`.
