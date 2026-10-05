@@ -50,6 +50,13 @@ describe('markCommonWords', () => {
     expect(unterschiede(spalten[2])).toEqual(['Holz']);
   });
 
+  it('lässt Spalten ohne Langtext außen vor', () => {
+    const [a, leer, b] = markCommonWords(['Wand aus Beton', '', 'Wand aus Ziegel']);
+    expect(leer).toEqual([]);
+    expect(a.filter((p) => !p.common).map((p) => p.text)).toEqual(['Beton']);
+    expect(b.filter((p) => !p.common).map((p) => p.text)).toEqual(['Ziegel']);
+  });
+
   it('gibt den Text einer einzelnen Spalte unmarkiert zurück', () => {
     const [nur] = markCommonWords(['Alleine steht nichts zur Auswahl']);
     expect(unterschiede(nur)).toEqual([]);

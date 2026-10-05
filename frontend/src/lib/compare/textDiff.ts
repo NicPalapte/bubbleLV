@@ -12,7 +12,7 @@
 // eines, das links wortgleich danebensteht. Solche Marken sind Rauschen; wer
 // zwei Positionen vergleicht, sucht das andere Wort, nicht das häufigere.
 //
-// Keine Bibliothek: das hier sind vierzig Zeilen, und eine Abhängigkeit für
+// Keine Bibliothek: das hier sind wenige Zeilen, und eine Abhängigkeit für
 // einen Wortvergleich wäre schwerer zu rechtfertigen als zu pflegen.
 //
 // Anders als `relateTokens` (lib/relate/text.ts) wird hier **nicht** maskiert:
@@ -58,10 +58,12 @@ export function markCommonWords(texts: readonly string[]): DiffPart[][] {
     return [parts[0].map((text) => ({ text, common: true }))];
   }
 
-  const perText = parts.map(wordsOf);
+  // Spalten ohne Langtext zählen nicht mit: sonst wäre nichts gemeinsam, und
+  // eine leere Spalte färbte die Texte aller anderen komplett ein.
+  const filled = parts.map(wordsOf).filter((words) => words.size > 0);
   const common = new Set<string>();
-  for (const word of perText[0]) {
-    if (perText.every((words) => words.has(word))) common.add(word);
+  for (const word of filled[0] ?? []) {
+    if (filled.every((words) => words.has(word))) common.add(word);
   }
 
   return parts.map((words) =>
