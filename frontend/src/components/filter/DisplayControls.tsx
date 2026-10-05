@@ -1,9 +1,10 @@
-// „Darstellung" im Seitenfenster über den Filtern: wie der Graph gliedert und
+// „Visualisierung" im Seitenfenster über den Filtern: wie der Graph gliedert und
 // was mit Nicht-Treffern geschieht (docs/decisions/0035-graph-gliederung.md).
 // Die Größe der Positionen steht unten rechts am Graphen (GraphControls).
 
 import type { ReactNode } from 'react';
 import { SegmentedControl } from '../ui/SegmentedControl';
+import { ChipGroup, ValueChip } from '../ui/ValueChip';
 import { FACETS_BY_ID } from '../../lib/facets';
 import { AXIS_FACETS, type GraphLayoutId } from '../../lib/graph/layoutMap';
 import { useViewer, useViewerDispatch, type HideMode } from '../../state/viewer';
@@ -21,10 +22,13 @@ const HIDE_MODES = [
 /** Kein Wert gewählt — der Knopf „keine Spalten". */
 const NO_COLS = '';
 
+/** Kleine Großbuchstaben-Beschriftung wie im Mockup (`.cap`). */
+export const CAP = 'font-mono text-[9.5px] font-medium uppercase tracking-[0.7px] text-mute';
+
 export function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-[6px]">
-      <span className="font-mono text-[10px] text-dim">{label}</span>
+      <span className={CAP}>{label}</span>
       <div className="flex flex-wrap">{children}</div>
     </div>
   );
@@ -49,7 +53,7 @@ export function DisplayControls() {
   }));
 
   return (
-    <div className="flex flex-col gap-[14px]">
+    <div className="flex flex-col gap-[12px]">
       <Row label="Gliederung">
         <SegmentedControl
           label="Gliederung"
@@ -62,25 +66,40 @@ export function DisplayControls() {
       {layout === 'frei' && (
         <>
           <Row label="Zeilen">
-            <SegmentedControl
-              label="Zeilen"
-              options={axes}
-              value={rows}
-              onChange={(value) => dispatch({ type: 'graphRows', value })}
-            />
+            <ChipGroup label="Zeilen" radio>
+              {axes.map((axis) => (
+                <ValueChip
+                  key={axis.value}
+                  kind="radio"
+                  on={rows === axis.value}
+                  onClick={() => dispatch({ type: 'graphRows', value: axis.value })}
+                >
+                  {axis.label}
+                </ValueChip>
+              ))}
+            </ChipGroup>
           </Row>
           <Row label="Spalten">
-            <SegmentedControl
-              label="Spalten"
-              options={[
-                { value: NO_COLS, label: '—', title: 'Keine Spalten' },
-                ...axes.filter((axis) => axis.value !== rows),
-              ]}
-              value={cols ?? NO_COLS}
-              onChange={(value) =>
-                dispatch({ type: 'graphCols', value: value === NO_COLS ? null : value })
-              }
-            />
+            <ChipGroup label="Spalten" radio>
+              {[{ value: NO_COLS, label: '—' }, ...axes.filter((axis) => axis.value !== rows)].map(
+                (axis) => (
+                  <ValueChip
+                    key={axis.value}
+                    kind="radio"
+                    on={(cols ?? NO_COLS) === axis.value}
+                    title={axis.value === NO_COLS ? 'Keine Spalten' : undefined}
+                    onClick={() =>
+                      dispatch({
+                        type: 'graphCols',
+                        value: axis.value === NO_COLS ? null : axis.value,
+                      })
+                    }
+                  >
+                    {axis.label}
+                  </ValueChip>
+                ),
+              )}
+            </ChipGroup>
           </Row>
         </>
       )}

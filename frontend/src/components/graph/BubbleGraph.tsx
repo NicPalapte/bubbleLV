@@ -24,7 +24,7 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from 'react';
 import { GraphControls } from './GraphControls';
-import { SIDE_PANEL_SPACE } from '../shell/SidePanel';
+import { sidePanelSpace } from '../shell/SidePanel';
 import { SelectionCard } from './SelectionCard';
 import {
   GROUP_GAP,
@@ -114,7 +114,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
       hideMode,
       filters: { facets: selectedFacets },
     },
-    view: { graph, side, panelSize },
+    view: { graph, side, sideWidth, panelSize },
     selectedNode,
     selectedPosition,
   } = useViewer();
@@ -335,7 +335,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
       // Frei bleibt, was die festen Teile und offenen Fenster belegen: oben die
       // Kennzahlen, unten Legende und Steuerung, links das Seitenfenster, rechts die Karte.
       const wide = w > 900;
-      const padL = wide && side !== null ? SIDE_PANEL_SPACE : 32;
+      const padL = wide && side !== null ? sidePanelSpace(sideWidth) : 32;
       const padR = wide && cardOpen ? panelSize.width + 32 : 32;
       const padT = 96;
       const padB = 76;
@@ -350,7 +350,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
         k,
       };
     },
-    [w, h, side, cardOpen, panelSize.width],
+    [w, h, side, sideWidth, cardOpen, panelSize.width],
   );
 
   const fitView = useCallback(() => viewAround(map.bounds, 1.6), [viewAround, map]);
@@ -580,6 +580,25 @@ export function BubbleGraph({ root }: { root: LVNode }) {
           w: width,
           h: (top - 2) * view.k,
         });
+      }
+    }
+
+    // Achsen der Matrix ebenso: ein Schild über „psch" macht die Zeile unlesbar.
+    if (map.axes !== null) {
+      const { axes } = map;
+      const toScreen = (x: number, y: number, width: number): Rect => ({
+        x: x * view.k + view.tx,
+        y: (y - 16) * view.k + view.ty,
+        w: width * view.k,
+        h: 22 * view.k,
+      });
+      for (const row of axes.rows) {
+        const width = row.label.length * SANS_CHAR;
+        blocked.push(toScreen(axes.x0 - 10 - width, row.y + 5, width));
+      }
+      for (const col of axes.cols) {
+        const width = col.label.length * SANS_CHAR;
+        blocked.push(toScreen(col.x - width / 2, axes.y0 - 8, width));
       }
     }
 
@@ -1017,7 +1036,6 @@ export function BubbleGraph({ root }: { root: LVNode }) {
       )}
 
       <GraphControls
-        zoom={k}
         onFit={fit}
         onFitSelection={selectedSlot >= 0 || selectedNode !== null ? fitSelection : undefined}
         onZoom={zoomBy}

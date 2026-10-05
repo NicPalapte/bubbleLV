@@ -95,7 +95,7 @@ export const TABLE_MIN_HEIGHT = 200;
 export const TABLE_MAX_WIDTH = 1600;
 export const DEFAULT_TABLE_SIZE: PanelSize = { width: 900, height: 360 };
 /**
- * Rechts unten: so bleibt links das Seitenfenster frei (`SIDE_PANEL_WIDTH`), und das
+ * Rechts unten: so bleibt links das Seitenfenster frei (`sideWidth`), und das
  * Dock darunter bleibt sichtbar. Die Positionskarte hängt oben rechts darüber.
  */
 export const DEFAULT_TABLE_POS: CardPos = { right: 16, top: 320 };
@@ -119,11 +119,22 @@ export interface OverviewViewState {
   revealRule: string | null;
 }
 
+/** Breite des Seitenfensters: Standard wie im Mockup, ziehbar in diesen Grenzen. */
+export const SIDE_WIDTH_DEFAULT = 340;
+export const SIDE_WIDTH_MIN = 300;
+export const SIDE_WIDTH_MAX = 640;
+
+export function clampSideWidth(width: number): number {
+  return Math.round(Math.min(SIDE_WIDTH_MAX, Math.max(SIDE_WIDTH_MIN, width)));
+}
+
 export interface ViewState {
   /** Immer `graph` — Überblick und Tabelle liegen darüber, siehe `setViewMode`. */
   mode: ViewMode;
   /** Offener Reiter im Seitenfenster; `null` = zu. */
   side: SidePanel | null;
+  /** Breite des Seitenfensters; am rechten Rand ziehbar. */
+  sideWidth: number;
   tableWindow: TableWindowState;
   graph: GraphViewState;
   table: TableViewState;
@@ -138,6 +149,7 @@ export type ViewAction =
   | { type: 'setViewMode'; mode: ViewMode }
   /** Seitenfenster auf einen Reiter öffnen; `null` schließt es. */
   | { type: 'sidePanel'; panel: SidePanel | null }
+  | { type: 'sideWidth'; width: number }
   | { type: 'tableWindow'; open: boolean }
   | { type: 'tableWindowPos'; pos: CardPos }
   | { type: 'tableWindowSize'; size: PanelSize }
@@ -174,6 +186,7 @@ export const INITIAL_VIEW_STATE: ViewState = {
   // (docs/decisions/0034-graph-als-hauptscreen.md).
   mode: 'graph',
   side: null,
+  sideWidth: SIDE_WIDTH_DEFAULT,
   tableWindow: { open: false, pos: DEFAULT_TABLE_POS, size: DEFAULT_TABLE_SIZE },
   // Einstieg ist das LV in seiner Gliederung; „frei" ist der zweite Blick.
   graph: {
@@ -206,6 +219,7 @@ export function viewStateForNewLv(state: ViewState): ViewState {
       pos: state.tableWindow.pos,
       size: state.tableWindow.size,
     },
+    sideWidth: state.sideWidth,
     panelSize: state.panelSize,
     cardPos: state.cardPos,
   };
@@ -236,6 +250,10 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
     }
     case 'sidePanel':
       return state.side === action.panel ? state : { ...state, side: action.panel };
+    case 'sideWidth': {
+      const width = clampSideWidth(action.width);
+      return width === state.sideWidth ? state : { ...state, sideWidth: width };
+    }
     case 'tableWindow':
       return state.tableWindow.open === action.open
         ? state

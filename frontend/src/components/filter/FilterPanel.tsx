@@ -1,12 +1,12 @@
-// Reiter „Filter" im Seitenfenster: oben die Darstellung, darunter die
+// Reiter „Filter" im Seitenfenster: oben die Visualisierung, darunter die
 // Merkmale. Löst die Filterleiste unter der Kopfleiste ab (Issue #80 hatte sie
 // schon in eine eigene Zeile gedrängt); die aktiven Filter stehen als Chips in
 // der Suche (layout/SearchField.tsx).
 
 import { useState } from 'react';
-import { DisplayControls } from './DisplayControls';
+import { CAP, DisplayControls } from './DisplayControls';
 import { RangeButton } from './RangeButton';
-import { PopoverRow } from '../ui/Popover';
+import { ChipGroup, ValueChip } from '../ui/ValueChip';
 import { StatusPill } from '../ui/StatusPill';
 import { FACETS, facetOptionLabel, isFacetVisible, type Facet } from '../../lib/facets';
 import { formatCount } from '../../lib/format';
@@ -15,18 +15,23 @@ import { countActiveFilters } from '../../lib/matchPos';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 
 /** So viele Werte stehen zugeklappt da; der Rest auf „alle zeigen". */
-const SHORT_LIST = 6;
+const SHORT_LIST = 12;
 const EMPTY_COUNTS: ReadonlyMap<string, number> = new Map();
 const EMPTY_SELECTION: ReadonlySet<string> = new Set();
 
-function Heading({ children, right }: { children: string; right?: React.ReactNode }) {
+function Heading({ children, right }: { children: React.ReactNode; right?: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between">
-      <h3 className="m-0 font-sans text-[13px] font-semibold text-ink">{children}</h3>
+    <div className="flex flex-wrap items-baseline justify-between gap-x-[10px] gap-y-[4px]">
+      <h3 className="m-0 inline-flex items-center gap-[8px] font-sans text-[14px] font-bold tracking-[-0.2px] text-ink">
+        {children}
+      </h3>
       {right}
     </div>
   );
 }
+
+const RESET =
+  'cursor-pointer border-none bg-transparent p-0 font-mono text-[9.5px] font-medium uppercase tracking-[0.7px] text-blueD';
 
 function FacetSection({
   facet,
@@ -53,44 +58,41 @@ function FacetSection({
   };
 
   return (
-    <section aria-label={facet.label} className="flex flex-col gap-[2px]">
-      <div className="flex items-center justify-between px-[2px] pb-[2px]">
-        <span className="font-mono text-[10px] text-dim">{facet.label}</span>
+    <section aria-label={facet.label} className="flex flex-col gap-[6px]">
+      <div className="flex items-baseline justify-between">
+        <span className={CAP}>{facet.label}</span>
         {active.size > 0 && (
-          <button
-            type="button"
-            onClick={() => onChange(new Set())}
-            className="cursor-pointer border-none bg-transparent p-0 font-mono text-[10px] text-blue"
-          >
+          <button type="button" onClick={() => onChange(new Set())} className={RESET}>
             zurücksetzen
           </button>
         )}
       </div>
-      {shown.map(([value, count]) => {
-        const label = facetOptionLabel(facet, value);
-        return (
-          <PopoverRow
-            key={value}
-            on={active.has(value)}
-            onClick={() => toggle(value)}
-            checkbox
-            title={label}
-            leading={facet.id === 'status' ? <StatusPill status={value} dotOnly /> : undefined}
-            trailing={<span className="text-mute">{formatCount(count)}</span>}
+      <ChipGroup label={facet.label}>
+        {shown.map(([value, count]) => {
+          const label = facetOptionLabel(facet, value);
+          return (
+            <ValueChip
+              key={value}
+              on={active.has(value)}
+              onClick={() => toggle(value)}
+              title={label}
+              count={count}
+              leading={facet.id === 'status' ? <StatusPill status={value} dotOnly /> : undefined}
+            >
+              {label}
+            </ValueChip>
+          );
+        })}
+        {entries.length > shown.length && (
+          <button
+            type="button"
+            onClick={() => setAll(true)}
+            className="h-[26px] cursor-pointer rounded-[var(--r-pill)] border border-dashed border-line2 bg-transparent px-[10px] font-mono text-[10.5px] text-dim hover:border-blue hover:text-blueD"
           >
-            <span className="truncate">{label}</span>
-          </PopoverRow>
-        );
-      })}
-      {entries.length > shown.length && (
-        <button
-          type="button"
-          onClick={() => setAll(true)}
-          className="cursor-pointer self-start border-none bg-transparent px-[10px] py-[2px] font-mono text-[10px] text-blue"
-        >
-          alle {formatCount(entries.length)} zeigen
-        </button>
-      )}
+            alle {formatCount(entries.length)}
+          </button>
+        )}
+      </ChipGroup>
     </section>
   );
 }
@@ -110,22 +112,20 @@ export function FilterPanel() {
   );
 
   return (
-    <div className="absolute inset-0 overflow-auto px-[14px] py-[14px]">
-      <div className="flex flex-col gap-[12px]">
-        <Heading>Darstellung</Heading>
+    <div className="absolute inset-0 flex flex-col gap-[18px] overflow-auto px-[16px] pb-[18px] pt-[14px]">
+      <section className="flex flex-col gap-[14px]">
+        <Heading>Visualisierung</Heading>
         <DisplayControls />
-      </div>
+      </section>
 
-      <hr className="my-[16px] border-0 border-t border-line" />
-
-      <div className="flex flex-col gap-[14px]">
+      <section className="flex flex-col gap-[14px] border-t border-line pt-[18px]">
         <Heading
           right={
             activeCount > 0 ? (
               <button
                 type="button"
                 onClick={() => dispatch({ type: 'resetFilters' })}
-                className="cursor-pointer border-none bg-transparent p-0 font-mono text-[10px] text-blue"
+                className={RESET}
               >
                 alle zurücksetzen
               </button>
@@ -133,15 +133,22 @@ export function FilterPanel() {
           }
         >
           Filter
+          {activeCount > 0 && (
+            <span className="rounded-[var(--r-pill)] bg-blueS px-[8px] py-[2px] font-mono text-[10px] font-medium text-blueD">
+              {formatCount(activeCount)}
+            </span>
+          )}
         </Heading>
-        <div className="flex items-center gap-[8px]">
-          <span className="font-mono text-[10px] text-dim">Menge</span>
-          <RangeButton
-            label="Menge"
-            bounds={summary.quantity}
-            active={filters.menge}
-            onChange={(range) => dispatch({ type: 'setMenge', range })}
-          />
+        <div className="flex flex-col gap-[6px]">
+          <span className={CAP}>Menge</span>
+          <div className="flex">
+            <RangeButton
+              label="Menge"
+              bounds={summary.quantity}
+              active={filters.menge}
+              onChange={(range) => dispatch({ type: 'setMenge', range })}
+            />
+          </div>
         </div>
         {visible.map((facet) => (
           <FacetSection
@@ -152,7 +159,7 @@ export function FilterPanel() {
             onChange={(values) => dispatch({ type: 'setFacet', facetId: facet.id, values })}
           />
         ))}
-      </div>
+      </section>
     </div>
   );
 }

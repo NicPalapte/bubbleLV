@@ -24,6 +24,11 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 - **Linie zur Karte:** Von der gewählten Position führt eine gestrichelte Linie zur
   Positionskarte.
 - **Legende unten links:** Formen der Positionsarten, Hinweis-Ringe und Gewerk-Farben.
+- **Steuerung unten rechts in einer Leiste:** Zoom, „⚠ Hinweise" und Größe.
+- **Filterfenster wie im Entwurf:** Filterwerte als runde Chips, Zeilen und Spalten
+  brechen um statt überzulaufen. Die Breite lässt sich am rechten Rand ziehen. Das
+  Fenster endet über der Legende.
+- **Runde Suche** in der Kopfleiste.
 - **Eigenes Favicon:** das Bubble-Zeichen im Browser-Tab.
 - **Entfallen:** „Alles auf-/zuklappen" und „Treffer isolieren". Beides braucht der
   neue Graph nicht mehr.

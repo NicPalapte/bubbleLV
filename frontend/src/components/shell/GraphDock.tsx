@@ -11,7 +11,7 @@ export function GraphDock() {
   const shown = matches.filtering ? (matches.counts.get(lv.tree.id) ?? 0) : lv.tree.positionCount;
 
   return (
-    <div className="absolute bottom-[64px] left-1/2 z-[8] flex -translate-x-1/2 gap-[8px] md:bottom-[16px]">
+    <div className="absolute bottom-[64px] left-1/2 z-[8] flex -translate-x-1/2 gap-[8px] lg:bottom-[16px]">
       <button
         type="button"
         onClick={() => dispatch({ type: 'tableWindow', open: true })}

@@ -209,6 +209,7 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
 
     case 'setViewMode':
     case 'sidePanel':
+    case 'sideWidth':
     case 'tableWindow':
     case 'tableWindowPos':
     case 'tableWindowSize':

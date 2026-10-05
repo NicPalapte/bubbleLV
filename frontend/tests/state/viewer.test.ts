@@ -11,6 +11,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { classifyAndBuild } from '../../src/lib/pipeline/runPipeline';
+import { SIDE_WIDTH_MAX, SIDE_WIDTH_MIN } from '../../src/state/viewState';
 import {
   INITIAL_VIEWER_STATE,
   PANEL_MAX_WIDTH,
@@ -58,6 +59,16 @@ function loadedState(state: ViewerState = base): ViewerState {
 }
 
 describe('viewerReducer · Ansichtsmodus', () => {
+  it('hält die Breite des Seitenfensters in ihren Grenzen und über ein neues LV', () => {
+    const wide = viewerReducer(base, { type: 'sideWidth', width: 5000 });
+    expect(wide.view.sideWidth).toBe(SIDE_WIDTH_MAX);
+    const narrow = viewerReducer(base, { type: 'sideWidth', width: 10 });
+    expect(narrow.view.sideWidth).toBe(SIDE_WIDTH_MIN);
+    const set = viewerReducer(base, { type: 'sideWidth', width: 420 });
+    expect(viewerReducer(set, { type: 'sideWidth', width: 420 })).toBe(set);
+    expect(loadedState(set).view.sideWidth).toBe(420);
+  });
+
   it('beginnt im Graphen, ohne offenes Seitenfenster oder Fenster', () => {
     const state = loadedState();
     expect(state.view.mode).toBe('graph');
