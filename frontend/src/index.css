@@ -384,6 +384,34 @@ a:hover {
   background-position: -1px -1px;
 }
 
+/* ── Schwebende Flächen über dem Graphen (components/shell/) ── */
+.ov-glass {
+  background: var(--glass);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(14px);
+}
+
+.ov-window {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow);
+}
+
+.ov-pill {
+  background: var(--glass-strong);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(14px);
+}
+
+.ov-pill:hover {
+  border-color: var(--line2);
+}
+
 /* ── Startseite (components/upload/FileDropzone.tsx) ── */
 .start {
   position: absolute;

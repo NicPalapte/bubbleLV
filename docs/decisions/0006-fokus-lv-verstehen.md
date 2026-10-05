@@ -1,6 +1,7 @@
 # 0006 – Fokus: ein LV vollständig verstehen
 
-- **Status:** akzeptiert
+- **Status:** akzeptiert; der Punkt „Graph ist eine von acht gleichrangigen Ansichten"
+  ist ersetzt durch 0032
 - **Datum:** 2026-09-11
 - **Betrifft:** Produkt-Scope, Frontend, Klassifizierung
 

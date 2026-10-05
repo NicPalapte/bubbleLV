@@ -9,6 +9,24 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.6.0 — 05.10.2026 · Der Graph ist der Hauptscreen
+
+- **Neuer Einstieg.** Die Startseite bietet zwei Wege: „Eigenes LV öffnen" (Datei
+  hineinziehen oder auswählen) und „Demo-LV ansehen".
+- **Der Graph bleibt immer sichtbar.** Überblick, Filter und Prüfung öffnen sich als
+  Seitenfenster links. Tabelle und Vergleich sind Fenster, die du verschieben und in
+  der Größe ändern kannst. Unten mittig holst du sie zurück.
+- **Eine Zeile oben.** Logo-Menü, Datei, Suche, Befehle, „LV schließen". Gesetzte
+  Filter stehen als Chips in der Suche, „+ Filter" öffnet die Auswahl.
+- **Kennzahlen oben links:** Positionen, Abschnitte und Hinweise. Ein Klick öffnet den
+  passenden Reiter.
+- **Hell oder dunkel.** Bubble folgt der Einstellung deines Systems. Im Logo-Menü unter
+  „Design" kannst du umschalten. Die Wahl gilt bis zum Neuladen.
+- **Neuer Look:** gerundete Fenster mit weichem Schatten über dem Graphen.
+- **Matrix und Ähnlichkeit** erreichst du über „Befehle". „← Graph" führt zurück.
+- Entfallen: der Ansichtsumschalter, die Baumspalte und die ganze Ansicht „Vergleich".
+  Die Eigenschaften einer Position zeigt die Karte im Graphen.
+
 ## 0.5.0 — 28.09.2026 · Vergleich über dem Graphen
 
 - **Zwei Bubbles mit Strg-Klick, und der Vergleich steht da.** Er öffnet sich als

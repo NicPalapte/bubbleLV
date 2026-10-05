@@ -59,9 +59,13 @@ export {
   COMPARE_MIN_HEIGHT,
   COMPARE_MIN_WIDTH,
   DEFAULT_COMPARE_SIZE,
+  TABLE_MAX_WIDTH,
+  TABLE_MIN_HEIGHT,
+  TABLE_MIN_WIDTH,
 } from './viewState';
 export type {
   CardPos,
+  SidePanel,
   ClusterSort,
   GraphFocus,
   PanelSize,
@@ -228,6 +232,10 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     }
 
     case 'setViewMode':
+    case 'sidePanel':
+    case 'tableWindow':
+    case 'tableWindowPos':
+    case 'tableWindowSize':
     case 'sizeMode':
     case 'graphFocus':
     case 'focusGroupBy':

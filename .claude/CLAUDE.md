@@ -7,7 +7,7 @@ sichtbar. Das ist die einzige Aufgabe — alles, was nicht dem Verstehen einer g
 Datei dient, gehört nicht in dieses Produkt.
 
 **Reine Frontend-Anwendung** – kein Server, keine Datenbank, kein Login. GAEB-Datei im
-Browser laden, klassifizieren, prüfen und in mehreren gleichrangigen Ansichten
+Browser laden, klassifizieren, prüfen und im Graphen mit Fenstern darüber
 durchsuchen, filtern und vergleichen. Nichts wird gespeichert – die Datei verlässt den
 Browser nie, ein Reload verwirft den Stand.
 
@@ -95,8 +95,9 @@ Scopes: `gaeb · classify · tree · viewer · graph · relate · check · front
 **In Scope:** GAEB-Import im Browser (x83 **und** preisführende x84/x86) ·
 Klassifizierung Kurz-/Langtext inkl. Textstellen · Hervorhebung der vier
 Wichtig-Kategorien (Geld/Menge · Risiko · Norm · Frist) · VOB-Check als Hinweis ·
-fachliche Filter · **acht gleichrangige Ansichten** auf einem Filterzustand (Überblick ·
-Graph · Tabelle · Matrix · Ähnlichkeit · Vergleich · Prüfung · Eigenschaften) ·
+fachliche Filter · **Graph als Hauptscreen** auf einem Filterzustand: Seitenfenster
+(Überblick · Filter · Prüfung), Positionskarte, Tabelle und Vergleich als Fenster
+darüber; Matrix und Ähnlichkeit als eigene Flächen (`docs/decisions/0032-graph-als-hauptscreen.md`) ·
 Beziehungen zwischen Positionen (Ähnlichkeit, Unterschiede, Ausreißer) · lokaler
 Export/Druck.
 
@@ -112,8 +113,9 @@ LLM-Klassifizierung. Details → @docs/scope.md #out-of-scope
   erste Ansicht < 5 s, Filterwechsel < 100 ms, Ansichtswechsel < 200 ms
   (siehe @docs/scope.md). Mittel: flacher Positions-Index statt Baum-Traversierung
   je Render, Aggregation im Web Worker, Virtualisierung, LOD + Culling im Graphen.
-- **Ein Filterzustand, alle Ansichten.** Ein Ansichtswechsel ändert nie Filter, Suche
-  oder Auswahl. Der Graph ist eine Ansicht unter mehreren, kein Sonderfall.
+- **Ein Filterzustand, alle Ansichten.** Ein Ansichtswechsel oder ein Fenster öffnen/
+  schließen ändert nie Filter, Suche oder Auswahl. Der Graph ist der Hauptscreen; Fenster
+  und Seitenfenster liegen darüber (`view.side`, `view.tableWindow`, `view.compare`).
 - **Beziehungen werden einmal beim Laden im Worker berechnet**, nie im Render. Kein
   All-Paare-Vergleich — erst nach Gewerk/Einheit/Bauteiltyp vorgruppieren.
 - **Prüfregeln sind Hinweise, keine Urteile.** Jede Regel nennt ihren Norm-Verweis,

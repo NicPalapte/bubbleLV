@@ -1,39 +1,30 @@
-// Ansichts-Gerüst (WP-L): gleichrangige Ansichten auf **einem** Filterzustand —
-// Überblick, Graph im Vollbild, die 3-Spalten-Tabellenansicht (Tree · Tabelle ·
-// Eigenschaften), Ähnlichkeit (WP-M) und Prüfung. Umgeschaltet wird über den Schalter in der
-// Kopfleiste; der Wechsel fasst weder Filter noch Auswahl an, und was eine
-// Ansicht sich merkt, steht in `view` (state/viewState.ts).
+// Hauptscreen (docs/decisions/0032-graph-als-hauptscreen.md): der Graph füllt
+// die Fläche, alles andere schwebt darüber — Kennzahlen, Seitenfenster
+// (Überblick · Filter · Prüfung), Positionskarte, Tabelle und Vergleich als
+// Fenster. Matrix und Ähnlichkeit sind eigene Flächen, erreichbar über die
+// Befehle. Alles arbeitet auf **einem** Filterzustand; was eine Ansicht sich
+// merkt, steht in `view` (state/viewState.ts).
 //
 // Alle Daten stammen aus der lokalen Pipeline (Datei → Parser →
 // Klassifizierung → Baum); nichts wird geladen oder persistiert.
 
-import { Profiler, useCallback, useEffect, useState, type ReactNode } from 'react';
-import { CheckView } from '../components/check/CheckView';
-import { CompareView } from '../components/compare/CompareView';
-import { FilterStrip } from '../components/filter/FilterStrip';
+import { Profiler, useCallback, useEffect, type ReactNode } from 'react';
 import { NoticeBar } from '../components/layout/NoticeBar';
 import { BubbleGraph } from '../components/graph/BubbleGraph';
 import { GraphHeader } from '../components/graph/GraphHeader';
-import { PropertiesPanel } from '../components/layout/PropertiesPanel';
-import { ResizeHandle } from '../components/layout/ResizeHandle';
 import { TopBar } from '../components/layout/TopBar';
-import { Tree } from '../components/layout/Tree';
 import { MatrixView } from '../components/matrix/MatrixView';
-import { OverviewView } from '../components/overview/OverviewView';
 import { PrintView } from '../components/print/PrintView';
 import { SimilarView } from '../components/relate/SimilarView';
-import { PositionsTable } from '../components/table/PositionsTable';
+import { GraphDock } from '../components/shell/GraphDock';
+import { KpiCapsule } from '../components/shell/KpiCapsule';
+import { SidePanel } from '../components/shell/SidePanel';
+import { TableWindow } from '../components/shell/TableWindow';
 import { FileDropzone } from '../components/upload/FileDropzone';
 import { ErrorBoundary } from '../components/common/ErrorBoundary';
 import { useShareLink } from '../components/common/useShareLink';
 import { PERF_ENABLED, reportViewSwitch } from '../lib/perf';
-import { PANEL_MAX_WIDTH, PANEL_MIN_WIDTH, useViewer, useViewerDispatch } from '../state/viewer';
-
-// Spiegelt --w-tree aus src/index.css (tokens/spacing.css); die Baumspalte ist
-// ziehbar, deshalb braucht der Startwert eine Zahl statt der Variable. Die
-// Breite der Info-Panels steht dagegen im Viewer-Zustand (`panelSize`) — sie
-// gilt gemeinsam für dieses Panel und die Auswahlkarte im Graphen.
-const TREE_WIDTH = 236;
+import { useViewer, useViewerDispatch } from '../state/viewer';
 
 /**
  * Messpunkt „Ansichtswechsel" (docs/scope.md, Ziel < 200 ms): `Profiler` liefert
@@ -55,11 +46,9 @@ function ViewTiming({ view, children }: { view: string; children: ReactNode }) {
 }
 
 export function ViewerPage() {
-  const { tree, selectedNode, view, focus } = useViewer();
-  const { mode: viewMode, panelSize } = view;
+  const { tree, view, focus } = useViewer();
+  const { mode: viewMode } = view;
   const dispatch = useViewerDispatch();
-  const [leftWidth, setLeftWidth] = useState(TREE_WIDTH);
-  const [treeCollapsed, setTreeCollapsed] = useState(false);
 
   // ESC geht eine Ebene zurück — wie im Design.
   // Ansicht, Filter und Auswahl stehen in der Adresszeile — ein Link stellt
@@ -83,7 +72,6 @@ export function ViewerPage() {
       <div className="nur-bildschirm flex h-full flex-col bg-paper">
         <header>
           <TopBar />
-          <FilterStrip />
           <NoticeBar />
         </header>
 
@@ -104,21 +92,17 @@ export function ViewerPage() {
             </main>
           )}
 
-          {tree !== null && viewMode === 'overview' && (
-            <main aria-label="Überblick" className="relative flex-1 overflow-hidden bg-paper">
-              <OverviewView />
-            </main>
-          )}
-
           {tree !== null && viewMode === 'graph' && (
-            // Vollbild-Graph: die Baumspalte entfällt, die Eigenschaften wandern
-            // in die schwebende Positionskarte (PositionCard in BubbleGraph) —
-            // nur die Kopfleiste mit Suche/Filtern bleibt bestehen.
+            // Der Graph ist die Bühne; alles andere schwebt darüber.
             <main aria-label="Bubble-Graph" className="relative flex-1 overflow-hidden bg-paper">
               {/* `focus` steht nur, wenn gefiltert wird und die Isolation
                 gewählt ist — sonst zeichnet der Graph das ganze LV (WP-Q). */}
               <BubbleGraph root={tree} focus={focus ?? undefined} />
               <GraphHeader root={tree} />
+              <KpiCapsule />
+              <SidePanel />
+              <TableWindow />
+              <GraphDock />
             </main>
           )}
 
@@ -131,44 +115,6 @@ export function ViewerPage() {
           {tree !== null && viewMode === 'similar' && (
             <main aria-label="Ähnlichkeit" className="relative flex-1 overflow-hidden bg-white">
               <SimilarView />
-            </main>
-          )}
-
-          {tree !== null && viewMode === 'compare' && (
-            <main aria-label="Vergleich" className="relative flex-1 overflow-hidden bg-white">
-              <CompareView />
-            </main>
-          )}
-
-          {tree !== null && viewMode === 'check' && (
-            <main aria-label="Prüfung" className="relative flex-1 overflow-hidden bg-white">
-              <CheckView />
-            </main>
-          )}
-
-          {tree !== null && viewMode === 'table' && (
-            <main aria-label="LV-Tabelle" className="flex flex-1 overflow-hidden">
-              <Tree
-                width={leftWidth}
-                collapsed={treeCollapsed}
-                onToggleCollapsed={() => setTreeCollapsed((value) => !value)}
-              />
-              {!treeCollapsed && (
-                <ResizeHandle value={leftWidth} onChange={setLeftWidth} min={180} max={460} />
-              )}
-
-              <div className="relative min-w-0 flex-1 overflow-hidden bg-paper">
-                <PositionsTable root={selectedNode ?? tree} />
-              </div>
-
-              <ResizeHandle
-                value={panelSize.width}
-                onChange={(width) => dispatch({ type: 'panelSize', size: { ...panelSize, width } })}
-                min={PANEL_MIN_WIDTH}
-                max={PANEL_MAX_WIDTH}
-                sign={-1}
-              />
-              <PropertiesPanel width={panelSize.width} />
             </main>
           )}
         </ErrorBoundary>

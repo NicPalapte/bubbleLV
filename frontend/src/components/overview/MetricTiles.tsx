@@ -14,7 +14,7 @@ function percent(share: number): string {
 
 function Tile({ label, value, note }: { label: string; value: string; note: string }) {
   return (
-    <div className="min-w-0 flex-1 border border-line bg-white px-[12px] py-[10px]">
+    <div className="min-w-0 flex-1 basis-[150px] rounded-[var(--r-md)] border border-line bg-surface px-[12px] py-[10px]">
       <div className="font-mono text-[9px] uppercase tracking-[0.6px] text-mute">{label}</div>
       <div className="mt-[3px] truncate font-sans text-[18px] font-semibold text-ink" title={value}>
         {value}

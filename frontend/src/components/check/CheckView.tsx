@@ -200,8 +200,8 @@ export function CheckView() {
   const toggleOpen = (id: string): void => dispatch({ type: 'toggleRuleOpen', id });
 
   return (
-    <div ref={attachScroll} onScroll={onScroll} className="absolute inset-0 overflow-auto bg-white">
-      <div className="mx-auto max-w-[900px] px-[20px] py-[16px]">
+    <div ref={attachScroll} onScroll={onScroll} className="absolute inset-0 overflow-auto">
+      <div className="px-[14px] py-[14px]">
         <div className="border-b border-line pb-[10px]">
           <BlockLabel>Prüfung</BlockLabel>
           <p className="mt-[2px] font-sans text-[13px] text-ink">

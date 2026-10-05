@@ -42,11 +42,6 @@ import {
 /** Abstand zum Rand des Canvas, den das Fenster auch aufgezogen frei lässt. */
 const EDGE_GAP = 16;
 
-/**
- * Ab so vielen Spalten wird es im Fenster eng: es schlägt dann die ganze
- * Ansicht vor, statt die Spalten still zusammenzudrücken.
- */
-export const COMPARE_WINDOW_HINT_AT = 3;
 
 export function CompareWindow() {
   const {
@@ -87,7 +82,6 @@ export function CompareWindow() {
 
   const wartend = comparePositions.length - gezeigt.length;
   const unterschiede = diffCount(gezeigt);
-  const eng = gezeigt.length >= COMPARE_WINDOW_HINT_AT;
 
   return (
     <div
@@ -95,14 +89,13 @@ export function CompareWindow() {
       {...graphOverlayProps}
       role="group"
       aria-label="Vergleich — Fenster über dem Graphen"
-      className="absolute z-[9] flex flex-col overflow-hidden border border-line2 bg-white"
+      className="ov-window absolute z-[11] flex flex-col overflow-hidden"
       style={{
         right: windowPos.right,
         top: windowPos.top,
         width: windowSize.width,
         height: windowSize.height ?? undefined,
         maxHeight: `calc(100% - ${windowPos.top + EDGE_GAP}px)`,
-        boxShadow: 'var(--shadow-popover)',
       }}
     >
       <div
@@ -127,20 +120,12 @@ export function CompareWindow() {
             type="button"
             onClick={() => dispatch({ type: 'compareOnlyDiffs', value: !onlyDiffs })}
             aria-pressed={onlyDiffs}
-            title="Nur die Zeilen zeigen, in denen sich die Spalten unterscheiden — gilt auch in der Ansicht „Vergleich“."
+            title="Nur die Zeilen zeigen, in denen sich die Spalten unterscheiden"
             className={`cursor-pointer border bg-white px-[6px] py-[2px] font-mono text-[9px] tracking-[0.6px] hover:text-blue focus-visible:text-blue ${
               onlyDiffs ? 'border-blue text-blue' : 'border-line text-dim'
             }`}
           >
             NUR UNTERSCHIEDE
-          </button>
-          <button
-            type="button"
-            onClick={() => dispatch({ type: 'setViewMode', mode: 'compare' })}
-            title="Denselben Vergleich in ganzer Breite zeigen"
-            className="cursor-pointer border border-line bg-white px-[6px] py-[2px] font-mono text-[9px] tracking-[0.6px] text-dim hover:text-blue focus-visible:text-blue"
-          >
-            GANZE ANSICHT
           </button>
           <button
             type="button"
@@ -159,22 +144,6 @@ export function CompareWindow() {
       {gezeigt.length === 1 && (
         <p className="shrink-0 border-b border-line2 px-[10px] py-[4px] font-sans text-[11px] leading-[1.4] text-dim">
           Eine Position — mit Strg-Klick oder Rechtsklick kommt die nächste dazu.
-        </p>
-      )}
-
-      {/* Ab drei Spalten ein Vorschlag, kein Zwang: die Spalten bleiben im
-          Fenster stehen und lassen sich durch Scrollen erreichen. */}
-      {eng && (
-        <p className="shrink-0 border-b border-line2 px-[10px] py-[4px] font-sans text-[11px] leading-[1.4] text-dim">
-          {formatCount(gezeigt.length)} Spalten sind im Fenster eng —{' '}
-          <button
-            type="button"
-            onClick={() => dispatch({ type: 'setViewMode', mode: 'compare' })}
-            className="cursor-pointer border-none bg-transparent p-0 font-sans text-[11px] text-blue underline"
-          >
-            in der ganzen Ansicht zeigen
-          </button>
-          .
         </p>
       )}
 

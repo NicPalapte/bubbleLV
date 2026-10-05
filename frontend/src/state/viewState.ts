@@ -15,6 +15,14 @@ import type { MatrixMeasure } from '../lib/matrix/model';
 import type { FocusGroupBy } from '../lib/graph/focusTree';
 
 export type ViewMode = 'overview' | 'graph' | 'table' | 'matrix' | 'check' | 'similar' | 'compare';
+/**
+ * Seit dem neuen Hauptscreen (docs/decisions/0032-graph-als-hauptscreen.md)
+ * steht nur noch der Graph als Fläche da; Überblick und Prüfung sind Reiter im
+ * Seitenfenster, Tabelle und Vergleich schweben als Fenster darüber. Matrix und
+ * Ähnlichkeit bleiben eigene Flächen, erreichbar über die Befehle.
+ */
+export type SurfaceMode = 'graph' | 'matrix' | 'similar';
+export type SidePanel = 'overview' | 'filter' | 'check';
 export type SizeModeId = 'count' | 'cost' | 'quantity' | 'uniform';
 /**
  * Was der Graph mit den Treffern macht, solange gefiltert wird (WP-Q, Issue #60):
@@ -183,8 +191,29 @@ export interface SimilarViewState {
   revealCluster: string | null;
 }
 
+/** Ort und Größe des Tabellenfensters über dem Graphen. */
+export const TABLE_MIN_WIDTH = 420;
+export const TABLE_MIN_HEIGHT = 200;
+export const TABLE_MAX_WIDTH = 1600;
+export const DEFAULT_TABLE_SIZE: PanelSize = { width: 900, height: 360 };
+/**
+ * Rechts unten: so bleibt links das Seitenfenster frei (420 px breit), und das
+ * Dock darunter bleibt sichtbar. Die Positionskarte hängt oben rechts darüber.
+ */
+export const DEFAULT_TABLE_POS: CardPos = { right: 16, top: 320 };
+
+export interface TableWindowState {
+  open: boolean;
+  pos: CardPos;
+  size: PanelSize;
+}
+
 export interface ViewState {
+  /** Nie `overview`, `check`, `table` oder `compare` — siehe `setViewMode`. */
   mode: ViewMode;
+  /** Offener Reiter im Seitenfenster; `null` = zu. */
+  side: SidePanel | null;
+  tableWindow: TableWindowState;
   graph: GraphViewState;
   table: TableViewState;
   matrix: MatrixViewState;
@@ -199,6 +228,11 @@ export interface ViewState {
 
 export type ViewAction =
   | { type: 'setViewMode'; mode: ViewMode }
+  /** Seitenfenster auf einen Reiter öffnen; `null` schließt es. */
+  | { type: 'sidePanel'; panel: SidePanel | null }
+  | { type: 'tableWindow'; open: boolean }
+  | { type: 'tableWindowPos'; pos: CardPos }
+  | { type: 'tableWindowSize'; size: PanelSize }
   | { type: 'sizeMode'; value: SizeModeId }
   /** Trefferansicht umschalten — fasst Filter, Suche und Auswahl nie an. */
   | { type: 'graphFocus'; value: GraphFocus }
@@ -247,9 +281,11 @@ const NO_SCROLL: Readonly<Record<ViewMode, number>> = {
 };
 
 export const INITIAL_VIEW_STATE: ViewState = {
-  // Der Überblick ist die Eingangsansicht: er ordnet das LV ein, bevor man in
-  // Graph oder Tabelle geht (docs/implementation-plan.md, WP-L).
-  mode: 'overview',
+  // Der Graph ist der Hauptscreen; alles andere schwebt darüber
+  // (docs/decisions/0032-graph-als-hauptscreen.md).
+  mode: 'graph',
+  side: null,
+  tableWindow: { open: false, pos: DEFAULT_TABLE_POS, size: DEFAULT_TABLE_SIZE },
   // Einstieg ist der ganze Graph: er ordnet die Treffer ins LV ein. Die
   // Isolation ist der zweite Blick, einen Knopfdruck entfernt (Issue #60).
   graph: {
@@ -315,6 +351,11 @@ export function viewStateForNewLv(state: ViewState): ViewState {
       windowPos: state.compare.windowPos,
       windowSize: state.compare.windowSize,
     },
+    tableWindow: {
+      ...INITIAL_VIEW_STATE.tableWindow,
+      pos: state.tableWindow.pos,
+      size: state.tableWindow.size,
+    },
     panelSize: state.panelSize,
     cardPos: state.cardPos,
   };
@@ -327,10 +368,55 @@ export function clampPanelWidth(width: number): number {
 
 export function viewReducer(state: ViewState, action: ViewAction): ViewState {
   switch (action.type) {
-    case 'setViewMode':
-      // Bewusst nur `mode`: Filter, Auswahl und der gemerkte Zustand der
-      // anderen Ansichten bleiben unangetastet.
-      return state.mode === action.mode ? state : { ...state, mode: action.mode };
+    case 'setViewMode': {
+      // Bewusst nur Ansichtszustand: Filter, Auswahl und der gemerkte Zustand
+      // der anderen Ansichten bleiben unangetastet.
+      //
+      // Die früheren Ansichten Überblick, Prüfung, Tabelle und Vergleich leben
+      // jetzt über dem Graphen. Wer sie anfordert (Befehle, Sprünge, alte
+      // Links), bekommt den Graphen mit dem passenden Fenster.
+      const toGraph = (next: ViewState): ViewState =>
+        next.mode === 'graph' ? next : { ...next, mode: 'graph' };
+      switch (action.mode) {
+        case 'overview':
+        case 'check':
+          return toGraph(state.side === action.mode ? state : { ...state, side: action.mode });
+        case 'table':
+          return toGraph(
+            state.tableWindow.open
+              ? state
+              : { ...state, tableWindow: { ...state.tableWindow, open: true } },
+          );
+        case 'compare':
+          return toGraph(
+            state.compare.windowOpen
+              ? state
+              : { ...state, compare: { ...state.compare, windowOpen: true } },
+          );
+        default:
+          return state.mode === action.mode ? state : { ...state, mode: action.mode };
+      }
+    }
+    case 'sidePanel':
+      return state.side === action.panel ? state : { ...state, side: action.panel };
+    case 'tableWindow':
+      return state.tableWindow.open === action.open
+        ? state
+        : { ...state, tableWindow: { ...state.tableWindow, open: action.open } };
+    case 'tableWindowPos':
+      return { ...state, tableWindow: { ...state.tableWindow, pos: action.pos } };
+    case 'tableWindowSize':
+      return {
+        ...state,
+        tableWindow: {
+          ...state.tableWindow,
+          size: {
+            width: Math.min(Math.max(action.size.width, TABLE_MIN_WIDTH), TABLE_MAX_WIDTH),
+            height:
+              action.size.height === null ? null : Math.max(action.size.height, TABLE_MIN_HEIGHT),
+          },
+        },
+      };
     case 'sizeMode':
       return { ...state, graph: { ...state.graph, sizeMode: action.value } };
     case 'graphFocus':

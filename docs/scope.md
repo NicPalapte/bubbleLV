@@ -146,8 +146,10 @@ Wechseln heißt: anderer Blick auf dasselbe, nie Neuanfang.
 | **Prüfung** | Liste aller Hinweise aus VOB-Check und Flags, gruppiert nach Regel | UC-2, UC-6 | neu |
 | **Eigenschaften** | Details der gewählten Position mit hervorgehobenem Langtext | UC-5 | vorhanden |
 
-Der Bubble-Graph ist damit **nicht mehr „der Kern"**, sondern eine von mehreren
-gleichrangigen Ansichten. Er bleibt das Erkennungsmerkmal und die Einstiegsansicht.
+**Seit 2026-10-05** ist der Graph der Hauptscreen; Überblick und Prüfung sind Reiter im
+Seitenfenster, Tabelle, Vergleich und Eigenschaften (Positionskarte) schweben als Fenster
+darüber, Matrix und Ähnlichkeit bleiben eigene Flächen
+([0032](decisions/0032-graph-als-hauptscreen.md)). Der eine Filterzustand gilt weiter.
 
 ### 7 · Beziehungen zwischen Positionen
 

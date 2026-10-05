@@ -207,7 +207,11 @@ Bereich betrifft: `loaded`, `clear`, `openInTable` und `showGraph`. Ändert ein
 Bereich sich nicht, gibt sein Reducer dieselbe Referenz zurück — dann bleibt auch
 der Gesamtzustand identisch und kein Render läuft umsonst.
 
-Der **Ansichtsumschalter** (`setViewMode`) fasst ausschließlich `view.mode` an.
+`setViewMode` fasst nur `view` an. Seit dem neuen Hauptscreen
+([0032](../decisions/0032-graph-als-hauptscreen.md)) bildet es `overview`/`check` auf
+den Graphen mit offenem Seitenfenster (`view.side`) ab, `table` auf das Tabellenfenster
+(`view.tableWindow`) und `compare` auf das Vergleichsfenster; nur `graph`, `matrix` und
+`similar` sind eigene Flächen.
 Weil jede Ansicht ihren Zustand in `view` ablegt statt in lokalem `useState`,
 steht sie nach dem Rückwechsel wieder so da, wie man sie verlassen hat — obwohl
 die Komponente zwischendurch abgebaut war.
