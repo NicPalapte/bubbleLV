@@ -204,7 +204,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
 ==============================================================================
 
-react 19.2.8
+react-dom 19.2.8
 Lizenz: MIT
 
 MIT License
@@ -231,7 +231,7 @@ SOFTWARE.
 
 ==============================================================================
 
-react-dom 19.2.8
+react 19.2.8
 Lizenz: MIT
 
 MIT License
