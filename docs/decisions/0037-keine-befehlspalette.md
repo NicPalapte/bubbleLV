@@ -31,4 +31,5 @@ Seit dem Graphen als Hauptscreen erreicht man alles direkt. Nico braucht sie nic
 ## Folgen
 
 - Für Nico ist kein Handgriff nötig.
-- Zu einer OZ springt man über die Suche.
+- Der direkte Sprung zu einer OZ entfällt. Die Suche filtert auf die OZ, ein Klick im
+  Graphen oder in der Tabelle wählt die Position an.
