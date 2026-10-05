@@ -95,7 +95,7 @@ export const TABLE_MIN_HEIGHT = 200;
 export const TABLE_MAX_WIDTH = 1600;
 export const DEFAULT_TABLE_SIZE: PanelSize = { width: 900, height: 360 };
 /**
- * Rechts unten: so bleibt links das Seitenfenster frei (420 px breit), und das
+ * Rechts unten: so bleibt links das Seitenfenster frei (`SIDE_PANEL_WIDTH`), und das
  * Dock darunter bleibt sichtbar. Die Positionskarte hängt oben rechts darüber.
  */
 export const DEFAULT_TABLE_POS: CardPos = { right: 16, top: 320 };

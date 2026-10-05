@@ -11,6 +11,11 @@ import { formatCount } from '../../lib/format';
 import { countInFilter } from '../../lib/tree/countInFilter';
 import { useViewer, useViewerDispatch, type SidePanel as Panel } from '../../state/viewer';
 
+/** Breite des Seitenfensters; das Tabellenfenster weicht ihr aus. */
+export const SIDE_PANEL_WIDTH = 420;
+/** Linker Rand plus Breite plus Abstand — so viel Platz belegt es links. */
+export const SIDE_PANEL_SPACE = 16 + SIDE_PANEL_WIDTH + 16;
+
 const TABS: ReadonlyArray<{ id: Panel; label: string }> = [
   { id: 'overview', label: 'Überblick' },
   { id: 'filter', label: 'Filter' },
@@ -30,7 +35,8 @@ export function SidePanel() {
   return (
     <aside
       aria-label="Seitenfenster"
-      className="ov-glass absolute bottom-[64px] left-[16px] top-[88px] z-[9] flex w-[420px] max-w-[calc(100%-32px)] flex-col overflow-hidden"
+      style={{ width: SIDE_PANEL_WIDTH }}
+      className="ov-glass absolute bottom-[64px] left-[16px] top-[88px] z-[9] flex max-w-[calc(100%-32px)] flex-col overflow-hidden"
     >
       <div
         role="tablist"
