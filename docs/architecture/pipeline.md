@@ -171,7 +171,7 @@ neue Bauteiltypen/Gewerke inkrementell hinzukommen, ohne den Klassifizierer selb
 ClassifierInput
     │
     ▼
-Stufe 0 — StlbMatch          → attributes.gewerk_lb    (LB-Nummer, z. B. "012")
+Stufe 0 — Leistungsbereich   → attributes.gewerk_lb    (LB-Nummer, z. B. "012")
     │                          attributes.gewerk        (LB-Bezeichnung, Katalog-Anzeigewert)
     │                          attributes.positionsart   (LB-Treffer im Positionstext: Heuristik,
     │                                                     sonst vorläufig "bauteil")
@@ -210,18 +210,27 @@ dient nur dem Stichwortvergleich. Jeder liefert einen geschlossenen
 Vokabularwert als Attribut und den Wortlaut als Span
 ([`data-model.md`](data-model.md#spans)).
 
-**Stufe 0 (`StlbMatch`)** matcht `shortText`/`longText` gegen die vom Maintainer
-gepflegte Referenztabelle
+**Stufe 0 (Leistungsbereich)** gleicht `shortText`/`longText` über die Mappingtabelle
+[`domain/reference/zuordnung.csv`](../domain/reference/zuordnung.csv) ab
+(Dimension `leistungsbereich`, Format siehe
+[`decisions/0032`](../decisions/0032-zuordnung-per-mappingtabelle.md)). Die Namen dazu
+stehen im Katalog
 [`domain/reference/stlb-bau-leistungsbereiche.csv`](../domain/reference/stlb-bau-leistungsbereiche.csv)
-(Spalten: `lb_nummer`, `lb_bezeichnung`, `keywords`,
-`quelle_version` — Format/Herkunft siehe
+(Spalten: `lb_nummer`, `lb_bezeichnung`, `quelle_version`; Herkunft siehe
 [`domain/README.md`](../domain/README.md#stlb-bau-leistungsbereiche-als-primäre-klassifizierungsquelle-wp-2)).
-Die Datei wird als Build-Time-Asset eingebunden (`?raw`-Import, kein `fetch` — die App
-löst zur Laufzeit keine Netzwerk-Requests aus), nicht in TS hartkodiert. Solange die
-CSV keine echten Zeilen enthält, matcht Stufe 0 nie und **jede** Position läuft über
-den Fallback-Pfad — kein Fehler, keine erfundenen LB-Nummern. Zur aktuell leeren
-`keywords`-Spalte und der daraus abgeleiteten Notlösung siehe
-[`domain/README.md`](../domain/README.md#stlb-bau-leistungsbereiche-als-primäre-klassifizierungsquelle-wp-2).
+Beide Dateien werden als Build-Time-Asset eingebunden (`?raw`-Import, kein `fetch` — die
+App löst zur Laufzeit keine Netzwerk-Requests aus), nicht in TS hartkodiert. Ohne
+Zeilen matcht Stufe 0 nie und **jede** Position läuft über den Fallback-Pfad — kein
+Fehler, keine erfundenen LB-Nummern.
+
+**Ein Abgleich für alle Dimensionen** (`lib/classify/mapping.ts`, `MappingIndex.match`).
+Leistungsbereich, Positionsart, Bauteiltyp, Material, Qualifikation, Planungsart,
+Einrichtungsart und Steinart laufen durch dieselbe Funktion. Je Dimension gibt es einen
+Hauptwert plus Alternativen; bleibt ein Gleichstand, ist das Ergebnis `mehrdeutig`.
+Die Positionsart-Erkennung gewichtet Baustelleneinrichtung vor Personal vor Planung vor
+Nebenleistung, der Bauteiltyp die spezifischeren Begriffe zuerst — beides steht als
+`gewicht` in der Tabelle, nicht im Code. Einheiten (`m²`, `h`) bleiben in
+`positionsart.ts`.
 
 **Gewerk aus der Abschnittsüberschrift** ([`decisions/0015`](../decisions/0015-gewerk-aus-der-abschnittsueberschrift.md)).
 In realen LVs steht das Gewerk in der Titel-Überschrift und nicht in jeder

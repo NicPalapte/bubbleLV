@@ -85,3 +85,35 @@ Umsetzung in Schritten, jeder mit Test und Vorher/Nachher-Vergleich:
 
 Ersetzt keine frühere Entscheidung. [`0031`](0031-stlb-katalog-ohne-positionsart.md)
 bleibt gültig; die Keywords wandern später aus dem STLB-Katalog in die Mappingtabelle.
+
+## Präzisierung bei der Umsetzung (Schritt 1 und 2, 2026-10-05)
+
+- **Status:** `bestaetigt` (Owner geprüft), `uebernommen` (aus dem Code übernommen,
+  wirkt, noch nicht geprüft), `entwurf` (wirkt nicht). Jede Zeile aus den früheren
+  Code-Listen steht als `uebernommen` in der Tabelle. Der Owner prüft sie und setzt
+  `bestaetigt`.
+- **Quelle:** zusätzlich `code` für Zeilen aus den früheren Code-Listen.
+- **Randleerzeichen:** `_` am Rand eines Stichworts steht für ein Leerzeichen
+  (`_ks-` trifft „ ks-" nur nach einem Leerzeichen). Das CSV trimmt Felder.
+- **Lernregeln** gelten vor allen anderen Quellen, noch vor dem Gewicht.
+- **Reihenfolge der Bewertung** heute: Fundstelle (Position vor Überschriften), Quelle,
+  Gewicht, Wortlänge, Tabellenreihenfolge. **Kurztext vor Langtext** ist noch nicht
+  umgesetzt: Der Leistungsbereich wird weiter gegen Kurz- und Langtext zusammen
+  geprüft, damit sich das Ergebnis in Schritt 2 nicht ändert. Das kommt mit Schritt 3.
+- **Gewicht** bildet die frühere Reihenfolge nach: Positionsart (Baustelleneinrichtung
+  400, Personal 300, Planung 200, Nebenleistung 100), Bauteiltyp (Bodenplatte 1200 bis
+  Gründung 100), Qualifikation, Planungsart, Einrichtungsart und Steinart nach der
+  früheren Listenreihenfolge.
+- **Dimensionen** zusätzlich zu den vier genannten: `qualifikation`, `planungsart`,
+  `einrichtungsart`, `steinart` (frühere Listen in den Rulesets).
+- **Material ist schon entkoppelt:** Die Spalte `keywords` ist aus dem STLB-Katalog
+  entfernt. Das Material-Vokabular kommt nur aus der Dimension `material` (heute ohne
+  Zeilen, also wie vorher leer).
+- **Bleibt im Code:** Einheiten (`BAUTEIL_UNITS`, `ZEIT_UNITS`), die
+  Ruleset-Registrierungen (Bauteiltypen je LB), `TRAGENDE_BAUTEILTYPEN` und die
+  Schreibweisen für „nicht tragend". Sie sind keine Stichwort-Zuordnung.
+- **Gleichstand heute:** Fünf abgeleitete Stichworte zeigen auf zwei LB:
+  „landschaftsbauarbeiten" (003/004), „wärmeversorgungsanlagen" (040/041),
+  „entwässerungsanlagen" (045/046), „niederspannungsanlagen" (053/054) und
+  „bauarbeiten" (096/097). Der Hauptwert ist wie vorher der erste in
+  der Tabelle; die Oberfläche zeigt es ab Schritt 3.

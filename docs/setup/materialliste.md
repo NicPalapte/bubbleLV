@@ -11,7 +11,7 @@ Kaputtes — der Filter fehlt nur.
 - Bubble erkennt Material nur anhand einer Wortliste (Beton, Mauerwerk, …).
 - Die Liste ist Fachwissen. Eine ungeprüfte Liste im Code wäre eine Aussage, die niemand
   verantwortet. Deshalb hat ADR 0011 sie verworfen.
-- Die Spalte `keywords` im STLB-Katalog ist leer. Damit gibt es keine Wörter.
+- Die Mappingtabelle `docs/domain/reference/zuordnung.csv` hat keine Zeilen für `material`. Damit gibt es keine Wörter.
 
 ## Was jetzt im Repo liegt
 
@@ -33,9 +33,7 @@ Lässt du die Schritte aus: Der Filter bleibt ausgeblendet. Alles andere läuft 
 
 ## Vorsicht beim Einbau
 
-- Die Wörter dürfen **nicht** einfach in die Spalte `keywords` des STLB-Katalogs.
-- Dieselbe Spalte steuert auch die **Gewerk-Erkennung**. „Beton" dort würde nebenbei
-  ändern, welchem Gewerk eine Position zugeordnet wird.
-- Empfehlung: eine eigene Datei nur für Material, getrennt vom Gewerk. Das ist eine
-  Architektur-Entscheidung und bekommt einen Eintrag in `docs/decisions/` (Ergänzung
-  zu ADR 0011).
+- Die Wörter kommen als Zeilen der Dimension `material` in `zuordnung.csv`.
+- Material ist damit **getrennt** von der Gewerk-Erkennung: „Beton" als Material ändert
+  nicht, welchem Gewerk eine Position zugeordnet wird
+  ([`0032`](../decisions/0032-zuordnung-per-mappingtabelle.md)).

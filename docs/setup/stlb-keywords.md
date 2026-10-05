@@ -2,8 +2,9 @@
 
 Diese Seite ist für den Repo-Owner.
 
-**Stand:** Die Spalte `keywords` im Katalog ist leer. Ohne sie erkennt Bubble nur
-Leistungsbereiche, deren Name „…arbeiten" oder „…anlagen" im Text steht.
+**Stand:** Die Mappingtabelle `docs/domain/reference/zuordnung.csv` kennt je Leistungsbereich nur
+ein Wort aus dem Namen. Bubble erkennt deshalb nur Leistungsbereiche, deren Name
+„…arbeiten" oder „…anlagen" im Text steht.
 
 ## Was im Repo liegt
 
@@ -24,7 +25,8 @@ Leistungsbereiche, deren Name „…arbeiten" oder „…anlagen" im Text steht.
 1. **Prüfen.** Streichen, was nicht passt. Ergänzen, was fehlt. Besonders:
    Zeile 087 (Entsorgung) und 084 (Abbruch) – die Wörter stehen oft in Nebensätzen.
 2. **Freigeben.** In `status` bei geprüften Zeilen `entwurf` durch `bestaetigt` ersetzen.
-3. **Bescheid geben.** Dann wird eingebaut.
+3. **Bescheid geben.** Dann wird der Entwurf in die Mappingtabelle `zuordnung.csv`
+   übernommen (Dimension `leistungsbereich`).
 
 Lässt du die Schritte aus: Es ändert sich nichts. Alles läuft wie bisher.
 

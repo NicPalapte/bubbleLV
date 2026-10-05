@@ -118,9 +118,9 @@ Zwei Regeln gelten für alle Extraktoren:
 - **Kein Treffer ⇒ kein Key.** Ein leeres Array würde im Panel als Merkmal
   erscheinen, das es nicht gibt.
 
-`material` wird **ausschließlich** aus der `keywords`-Spalte des
-STLB-Bau-Katalogs gespeist. Solange die Spalte leer ist, liefert der Extraktor
-nichts — der dokumentierte Zustand „Referenzdaten fehlen ⇒ Regel inaktiv, kein
+`material` wird **ausschließlich** aus der Dimension `material` der Mappingtabelle
+(`docs/domain/reference/zuordnung.csv`) gespeist. Solange sie dort keine Zeilen hat,
+liefert der Extraktor nichts — der dokumentierte Zustand „Referenzdaten fehlen ⇒ Regel inaktiv, kein
 Fehler". Eine hier erfundene Baustoffliste wäre eine ungeprüfte Aussage über die
 Domäne.
 
