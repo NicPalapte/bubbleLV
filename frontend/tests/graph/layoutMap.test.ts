@@ -7,7 +7,7 @@ import { FACETS } from '../../src/lib/facets';
 import { groupRadius } from '../../src/lib/graph/constants';
 import { layoutMap, NO_VALUE, type MapOptions } from '../../src/lib/graph/layoutMap';
 import { packCircles } from '../../src/lib/graph/pack';
-import { placePins, type PinAnchor } from '../../src/lib/graph/pins';
+import { MAX_PIN_CANDIDATES, placePins, type PinAnchor } from '../../src/lib/graph/pins';
 import { isPauschal, positionRadii } from '../../src/lib/graph/sizes';
 import { buildPositionIndex } from '../../src/lib/index/positionIndex';
 import { buildTree, indexParents } from '../../src/lib/tree/buildTree';
@@ -309,6 +309,27 @@ describe('Hinweisschilder', () => {
     const pins = placePins([anchor('A', 400, 300), anchor('B', -20, 300)], stage, blocked);
     expect(pins.map((pin) => pin.anchor.id)).toEqual(['A']);
     expect(pins[0].box.y).toBeGreaterThanOrEqual(280);
+  });
+
+  it('legt Schilder am Rand ganz ins Bild', () => {
+    const corners = [anchor('A', 10, 10), anchor('B', 790, 590), anchor('C', 790, 10)];
+    const pins = placePins(corners, stage, []);
+    expect(pins).toHaveLength(3);
+    for (const { box } of pins) {
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.y).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.w).toBeLessThanOrEqual(stage.width);
+      expect(box.y + box.h).toBeLessThanOrEqual(stage.height);
+    }
+  });
+
+  it('prüft höchstens MAX_PIN_CANDIDATES Anker', () => {
+    const big = { width: 100_000, height: 100_000 };
+    const many = Array.from({ length: MAX_PIN_CANDIDATES + 50 }, (_, i) =>
+      anchor(`P${i}`, 100 + (i % 30) * 3000, 100 + Math.floor(i / 30) * 300),
+    );
+    const pins = placePins(many, big, []);
+    expect(pins).toHaveLength(MAX_PIN_CANDIDATES);
   });
 
   it('platziert „beachten" vor den übrigen Hinweisen', () => {
