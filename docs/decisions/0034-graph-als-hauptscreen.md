@@ -1,6 +1,6 @@
 # 0034 – Der Graph ist der Hauptscreen
 
-- **Status:** akzeptiert
+- **Status:** akzeptiert; „Befehle" in der Kopfleiste ersetzt durch 0037
 - **Datum:** 2026-10-05
 - **Betrifft:** Frontend (Kopfleiste, Ansichten, Fenster)
 - **Ersetzt:** 0028 ganz; in 0006 den Punkt „Graph ist eine von acht gleichrangigen

@@ -1,5 +1,5 @@
 // „Mitnehmen" ohne Menü (Issue #80): Export und Druck als Funktionen, die
-// jede Oberfläche auslösen kann — heute die Kommandopalette.
+// jede Oberfläche auslösen kann — heute das Logo-Menü (Entscheidung 0037).
 //
 // **Warum als Hook und nicht als Menü:** die Knöpfe sind aus der Kopfleiste
 // verschwunden, die Funktionen nicht. Hier liegen sie an einer Stelle, unter

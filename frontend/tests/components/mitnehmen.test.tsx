@@ -1,7 +1,7 @@
 // „Mitnehmen": Export, Druck und Melden (WP-P, Schritte 3 und 4).
 //
-// Seit Issue #80 stehen sie nicht mehr als Knöpfe in der Kopfleiste, sondern
-// als Befehle in der Palette (Strg/Cmd + K). Die Zusagen bleiben dieselben:
+// Seit Issue #80 stehen sie nicht mehr als Knöpfe in der Kopfleiste; seit
+// Entscheidung 0037 im Logo-Menü statt in der Befehlspalette. Die Zusagen bleiben dieselben:
 // genau die gefilterte Menge, kein Request, und das Blatt trägt die ganze
 // Liste statt des sichtbaren Fensters.
 import { readFileSync } from 'node:fs';
@@ -67,13 +67,11 @@ async function ladeApp(pfad = resolve(FIXTURE_DIR, 'gaeb-xml-beispiel.x83')): Pr
 /** Die Demo-Datei ist die einzige mit Preisen (x84). */
 const MIT_PREISEN = resolve(process.cwd(), 'src/assets/demo/bubble-demo-angebot.x84');
 
-/**
- * Strg + K auf dem Fenster. Das leere `act` davor ist nötig: der Listener
- * hängt in einem `useEffect`, den React erst **nach** dem Commit ausführt.
- */
-async function oeffnePalette(): Promise<void> {
-  await act(async () => {});
-  fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
+/** Das Logo-Menü „Über diese App" öffnen. */
+function oeffneMenue(): void {
+  fireEvent.click(
+    within(screen.getByRole('banner')).getByRole('button', { name: /Über diese App/ }),
+  );
 }
 
 /** Wartet, bis die Suche aus dem Eingabefeld im Filterzustand angekommen ist. */
@@ -83,11 +81,10 @@ async function warteAufFilter(): Promise<void> {
   });
 }
 
-/** Befehl über die Palette auslösen — so, wie ein Nutzer es täte. */
-async function befehl(name: string): Promise<void> {
-  await oeffnePalette();
-  fireEvent.change(screen.getByLabelText('Befehl oder OZ'), { target: { value: name } });
-  fireEvent.click(screen.getByRole('option', { name: new RegExp(name) }));
+/** Eintrag im Logo-Menü auslösen — so, wie ein Nutzer es täte. */
+function befehl(name: string): void {
+  oeffneMenue();
+  fireEvent.click(screen.getByRole('button', { name: new RegExp(`^${name}`) }));
 }
 
 describe('Mitnehmen', () => {
@@ -99,7 +96,7 @@ describe('Mitnehmen', () => {
     // Befehl die ungefilterte Datei — genau das ist hier die Zusage.
     await warteAufFilter();
 
-    await befehl('Positionen als CSV');
+    befehl('Positionen als CSV');
 
     expect(dateien).toHaveLength(1);
     const [datei] = dateien;
@@ -116,37 +113,33 @@ describe('Mitnehmen', () => {
 
   it('lädt die Hinweise als Markdown', async () => {
     await ladeApp();
-    await befehl('Hinweise als Markdown');
+    befehl('Hinweise als Markdown');
 
     expect(dateien).toHaveLength(1);
     expect(dateien[0].name).toMatch(/-hinweise-\d{4}-\d{2}-\d{2}\.md$/);
     expect(dateien[0].text).toContain('Hinweise, keine Urteile');
   });
 
-  it('steht als Befehl bereit, ohne eigenen Export-Knopf in der Leiste', async () => {
+  it('steht im Logo-Menü, ohne Export- oder Befehle-Knopf in der Leiste', async () => {
     await ladeApp();
     const leiste = within(screen.getByRole('banner'));
     // Issue #80: keine Export-Knöpfe mehr in der Kopfleiste …
     expect(leiste.queryByRole('button', { name: /Mitnehmen/ })).not.toBeInTheDocument();
-    // … dafür ein Knopf „Befehle", der die Palette öffnet — mit der Taste daneben.
-    const knopf = leiste.getByRole('button', { name: /^Befehle/ });
-    expect(knopf).toHaveTextContent('Strg K');
+    // … und keine Befehlspalette mehr (Entscheidung 0037).
+    expect(leiste.queryByRole('button', { name: /^Befehle/ })).not.toBeInTheDocument();
     await act(async () => {});
-    fireEvent.click(knopf);
-    expect(screen.getByLabelText('Befehl oder OZ')).toBeInTheDocument();
-    fireEvent.keyDown(screen.getByLabelText('Befehl oder OZ'), { key: 'Escape' });
+    fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
+    expect(screen.queryByRole('dialog', { name: 'Kommandopalette' })).toBeNull();
 
-    await oeffnePalette();
-    fireEvent.change(screen.getByLabelText('Befehl oder OZ'), { target: { value: 'CSV' } });
-    // Der Treffer steht unter der Gruppe „Mitnehmen" — gesucht wird nach dem
-    // Befehlsnamen, nicht nach der Gruppe.
-    expect(screen.getByRole('option', { name: /Positionen als CSV/ })).toBeInTheDocument();
-    expect(screen.getByText('Mitnehmen')).toBeInTheDocument();
+    oeffneMenue();
+    for (const name of ['Positionen als CSV', 'Hinweise als Markdown', 'Drucken']) {
+      expect(screen.getByRole('button', { name })).toBeInTheDocument();
+    }
   });
 
-  it('öffnet das Melde-Fenster aus der Palette heraus', async () => {
+  it('öffnet das Melde-Fenster aus dem Logo-Menü heraus', async () => {
     await ladeApp();
-    await befehl('Fehler melden');
+    befehl('Fehler melden');
     const fenster = within(screen.getByRole('dialog', { name: 'Fehler melden' }));
     expect(fenster.getByRole('button', { name: /Text kopieren/ })).toBeInTheDocument();
     expect(fenster.getByRole('button', { name: /E-Mail/ })).toBeInTheDocument();
@@ -201,7 +194,7 @@ function lvMit(positionen: readonly PositionDraft[]): LoadedLV {
 describe('Drucken', () => {
   it('druckt die ganze gefilterte Liste, nicht nur das sichtbare Fenster', async () => {
     await ladeApp();
-    await befehl('Drucken');
+    befehl('Drucken');
     expect(window.print).toHaveBeenCalledTimes(1);
 
     // Auf dem Bildschirm gibt es die Druckansicht nicht …
@@ -270,25 +263,14 @@ describe('Drucken', () => {
     expect(fuss).toContain(`von ${zeilen.length} · ${ohneGesamt} ohne Gesamtpreis`);
   });
 
-  it('nimmt die offene Palette nicht mit aufs Blatt', async () => {
+  it('nimmt das offene Menü nicht mit aufs Blatt', async () => {
     await ladeApp();
-    await oeffnePalette();
-    // Die Palette hängt per Portal an <body>, also außerhalb der Hülle, die
-    // beim Drucken zurücktritt — sie braucht die Klasse selbst.
-    const offen = [...document.body.children].filter(
-      (element) => (element as HTMLElement).style.position === 'fixed',
-    );
-    expect(offen).toHaveLength(1);
-    expect(offen[0].className).toContain('nur-bildschirm');
-
-    // Und der Befehl „Drucken" schließt sie, bevor gedruckt wird.
-    fireEvent.change(screen.getByLabelText('Befehl oder OZ'), { target: { value: 'Drucken' } });
-    fireEvent.click(screen.getByRole('option', { name: /Drucken/ }));
+    befehl('Drucken');
+    // Das Menü ist zu, bevor der Browser druckt.
     expect(
-      [...document.body.children].filter(
-        (element) => (element as HTMLElement).style.position === 'fixed',
-      ),
-    ).toHaveLength(0);
+      within(screen.getByRole('banner')).getByRole('button', { name: /Über diese App/ }),
+    ).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('button', { name: 'Drucken' })).toBeNull();
     expect(window.print).toHaveBeenCalledTimes(1);
   });
 

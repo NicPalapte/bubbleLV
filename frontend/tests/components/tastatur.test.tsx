@@ -4,7 +4,7 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import App from '../../src/App';
 
@@ -20,16 +20,24 @@ async function ladeApp(): Promise<void> {
 }
 
 /**
- * Ansicht über die Befehle öffnen — einen Umschalter in der Kopfleiste gibt es
- * nicht mehr. Überblick und Prüfung landen im Seitenfenster, die Tabelle im
- * Fenster über dem Graphen.
+ * Ansicht öffnen, wie ein Nutzer es täte: die Tabelle über den Knopf unten,
+ * Überblick und Prüfung über die Kennzahlen oder — ist das Seitenfenster schon
+ * offen — über dessen Reiter.
  */
-async function ansicht(name: string): Promise<void> {
-  // Die Palette hängt ihren Listener in einem Effekt an — erst danach öffnet der Knopf sie.
-  await act(async () => {});
-  fireEvent.click(within(screen.getByRole('banner')).getByRole('button', { name: /^Befehle/ }));
-  fireEvent.change(screen.getByLabelText('Befehl oder OZ'), { target: { value: name } });
-  fireEvent.click(screen.getAllByRole('option', { name: new RegExp(`^${name}`) })[0]);
+async function ansicht(name: 'Tabelle' | 'Prüfung' | 'Überblick'): Promise<void> {
+  if (name === 'Tabelle') {
+    const knopf = screen.queryByRole('button', { name: /^▴ Tabelle/ });
+    if (knopf !== null) fireEvent.click(knopf);
+    return;
+  }
+  const panel = screen.queryByRole('complementary', { name: 'Seitenfenster' });
+  if (panel !== null) {
+    fireEvent.click(within(panel).getByRole('tab', { name: new RegExp(`^${name}`) }));
+    return;
+  }
+  const kennzahlen = screen.getByRole('group', { name: 'Kennzahlen' });
+  const zahl = name === 'Prüfung' ? /Hinweise/ : /Positionen/;
+  fireEvent.click(within(kennzahlen).getByRole('button', { name: zahl }));
 }
 
 function seitenfenster(): HTMLElement {
@@ -141,17 +149,10 @@ describe('Tabelle · Tastatur', () => {
     fireEvent.keyDown(grid, { key: 'End' });
     const letzte = aktiveZeile(grid);
 
-    // Auswahl über die Kommandopalette — also von außerhalb der Tabelle.
-    // Das leere `act` wartet auf den Effekt, der den Tastatur-Listener der
-    // Palette anhängt; ohne das liefe der Tastendruck manchmal ins Leere.
-    await act(async () => {});
-    fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
-    fireEvent.change(screen.getByLabelText('Befehl oder OZ'), {
-      target: { value: '001.004.0030' },
-    });
-    fireEvent.click(
-      within(screen.getByRole('dialog', { name: 'Kommandopalette' })).getAllByRole('option')[0],
-    );
+    // Auswahl im Graphen — also von außerhalb der Tabelle.
+    const punkt = document.querySelector('[data-slot="5"]');
+    if (punkt === null) throw new Error('Punkt 5 fehlt im Graphen');
+    fireEvent.click(punkt);
 
     await waitFor(() => expect(aktiveZeile(tabelle())).not.toBe(letzte));
     expect(aktiveZeile(tabelle())).toHaveAttribute('aria-selected', 'true');
@@ -180,7 +181,7 @@ describe('Ohne Maus bedienbar', () => {
   it('macht jede Ansicht mit der Tastatur erreichbar', async () => {
     // Jede Ansicht bietet mindestens einen Bedienpunkt, der den Fokus nimmt.
     await ladeApp();
-    const flaechen: ReadonlyArray<[string, () => HTMLElement]> = [
+    const flaechen: ReadonlyArray<['Prüfung' | 'Überblick' | 'Tabelle', () => HTMLElement]> = [
       ['Prüfung', seitenfenster],
       ['Überblick', seitenfenster],
       ['Tabelle', tabellenfenster],

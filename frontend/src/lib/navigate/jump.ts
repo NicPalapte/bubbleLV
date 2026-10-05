@@ -1,9 +1,9 @@
 // Der Sprung auf eine Position — eine Stelle, alle Auslöser.
 //
-// Die Prüfkarte im Überblick und die Auswahlkarte im Graphen springen
-// über `components/common/useJumpToPosition.ts`, die Kommandopalette baut sich
-// daraus einen Befehl (`lib/palette/commands.ts`). Beide rechnen hier, damit
-// „zu einer Position springen" nicht an zwei Stellen leicht verschieden ist.
+// Die Prüfkarte und die Auswahlkarte im Graphen springen über
+// `components/common/useJumpToPosition.ts` und `useJumpToCheck.ts`. Beide
+// rechnen hier, damit „zu einer Position springen" nicht an zwei Stellen leicht
+// verschieden ist.
 
 import type { ViewerAction } from '../../state/viewer';
 

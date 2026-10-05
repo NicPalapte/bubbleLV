@@ -1,12 +1,14 @@
-// Kopfleiste: Logo-Menü, Datei, Suche mit den aktiven Filtern, Befehle.
+// Kopfleiste: Logo-Menü, Datei, Suche mit den aktiven Filtern. Eine
+// Befehlspalette gibt es nicht mehr; Export und Druck stehen im Logo-Menü
+// (docs/decisions/0037-keine-befehlspalette.md).
 // Seit dem neuen Hauptscreen eine schmale Zeile (docs/decisions/0034-graph-als-
 // hauptscreen.md): kein Ansichtsumschalter mehr, die Filter wählt man im
 // Seitenfenster („+ Filter"), hier stehen sie nur als entfernbare Chips.
 
 import { useEffect, useRef, useState } from 'react';
-import { CommandPalette, openCommandPalette } from '../palette/CommandPalette';
 import { ReportDialog } from '../report/ReportDialog';
 import { AboutMenu } from './AboutMenu';
+import { useMitnehmen } from '../common/useMitnehmen';
 import { FACETS, facetOptionLabel } from '../../lib/facets';
 import { formatCount } from '../../lib/format';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
@@ -39,6 +41,7 @@ export function TopBar() {
     view,
   } = useViewer();
   const dispatch = useViewerDispatch();
+  const mitnehmen = useMitnehmen();
   const inputRef = useRef<HTMLInputElement>(null);
   /** „Fehler melden" — das Fenster gehört hierher, nicht ins Menü (WP-P, Schritt 6). */
   const [melden, setMelden] = useState(false);
@@ -114,11 +117,12 @@ export function TopBar() {
   return (
     <>
       <div className="relative z-[5] flex h-[54px] shrink-0 items-center gap-[10px] border-b border-line bg-surface pr-[12px]">
-        {/* Das Logo öffnet „Über diese App": Version, Änderungen, Fehler melden,
-            Design (Issue #71). */}
+        {/* Das Logo öffnet „Über diese App": Version, Änderungen, Export, Druck,
+            Fehler melden, Design (Issue #71). */}
         <AboutMenu
           onFehlerMelden={() => setMelden(true)}
           onAnderesLv={loaded ? () => dispatch({ type: 'clear' }) : undefined}
+          mitnehmen={loaded ? mitnehmen : undefined}
         />
 
         {loaded && (
@@ -202,17 +206,6 @@ export function TopBar() {
             )}
             <button
               type="button"
-              onClick={openCommandPalette}
-              title="Filtern, zu einer OZ springen, exportieren, drucken, melden"
-              className={`${GHOST} hidden lg:inline-flex`}
-            >
-              Befehle
-              <span className="rounded-[4px] border border-line px-[5px] text-[9px] text-mute">
-                Strg K
-              </span>
-            </button>
-            <button
-              type="button"
               onClick={() => dispatch({ type: 'clear' })}
               title="Datei verwerfen, zurück zur Startseite"
               className={`${GHOST} hidden sm:inline-flex`}
@@ -223,12 +216,6 @@ export function TopBar() {
         )}
       </div>
 
-      {loaded && (
-        // Die Palette schweigt, solange das Melde-Fenster offen ist: beide
-        // liegen über der Seite, und zwei Fenster übereinander wären für
-        // niemanden vorhersehbar.
-        <CommandPalette gesperrt={melden} onFehlerMelden={() => setMelden(true)} />
-      )}
       {melden && (
         <ReportDialog
           context={{ view: view.mode, loaded: lv !== null }}
