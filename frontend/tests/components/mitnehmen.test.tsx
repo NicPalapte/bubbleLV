@@ -130,6 +130,8 @@ describe('Mitnehmen', () => {
     await act(async () => {});
     fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
     expect(screen.queryByRole('dialog', { name: 'Kommandopalette' })).toBeNull();
+    // Strg K holt stattdessen die Suche.
+    expect(screen.getByLabelText('Suche')).toHaveFocus();
 
     oeffneMenue();
     for (const name of ['Positionen als CSV', 'Hinweise als Markdown', 'Drucken']) {

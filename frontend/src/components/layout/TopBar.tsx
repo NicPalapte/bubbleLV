@@ -1,6 +1,6 @@
 // Kopfleiste: Logo-Menü, Datei, Suche mit den aktiven Filtern. Eine
-// Befehlspalette gibt es nicht mehr; Export und Druck stehen im Logo-Menü
-// (docs/decisions/0037-keine-befehlspalette.md).
+// Befehlspalette gibt es nicht mehr; Strg K holt die Suche, Export und Druck
+// stehen im Logo-Menü (docs/decisions/0037-keine-befehlspalette.md).
 // Seit dem neuen Hauptscreen eine schmale Zeile (docs/decisions/0034-graph-als-
 // hauptscreen.md): kein Ansichtsumschalter mehr, die Filter wählt man im
 // Seitenfenster („+ Filter"), hier stehen sie nur als entfernbare Chips.
@@ -71,12 +71,15 @@ export function TopBar() {
     );
   };
 
-  // "/" fokussiert die Suche — wie im Design.
+  // "/" und Strg/Cmd + K holen die Suche. Strg K greift auch in Eingabefeldern:
+  // wer es drückt, will suchen; "/" dagegen ist dort ein Zeichen.
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
-      if (event.key !== '/' || event.target instanceof HTMLInputElement) return;
+      const strgK = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k';
+      if (!strgK && (event.key !== '/' || event.target instanceof HTMLInputElement)) return;
       event.preventDefault();
       inputRef.current?.focus();
+      inputRef.current?.select();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);

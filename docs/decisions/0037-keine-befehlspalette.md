@@ -12,7 +12,8 @@ Seit dem Graphen als Hauptscreen erreicht man alles direkt. Nico braucht sie nic
 
 ## Entscheidung
 
-- Knopf „Befehle" und Strg K entfallen. Der Code der Palette ist gelöscht.
+- Knopf „Befehle" und die Palette sind weg, der Code ist gelöscht.
+- Strg K (am Mac Cmd K) und „/" setzen den Cursor in die Suche.
 - „Positionen als CSV", „Hinweise als Markdown" und „Drucken" stehen im Logo-Menü, bei
   „Fehler melden". Sie wirken wie bisher auf die gefilterte Menge.
 

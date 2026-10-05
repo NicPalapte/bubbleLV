@@ -21,7 +21,8 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
   alle Positionen heraus.
 - **Export und Druck im Logo-Menü.** „Positionen als CSV", „Hinweise als Markdown" und
   „Drucken" stehen jetzt unter dem Logo.
-- **Keine Befehlsliste mehr.** Der Knopf „Befehle" und Strg K sind weg.
+- **Keine Befehlsliste mehr.** Der Knopf „Befehle" ist weg. Strg K und „/" setzen den
+  Cursor jetzt direkt in die Suche.
 
 ## 0.7.0 — 05.10.2026 · Neuer Graph
 
