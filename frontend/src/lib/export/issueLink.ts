@@ -15,14 +15,17 @@ import { APP_VERSION, BUILD_ID, buildDate } from '../version';
 const REPO = 'https://github.com/NicPalapte/bubbleLV';
 
 /**
- * Empfänger für den E-Mail-Weg. Leer: dann öffnet der Knopf eine neue Mail
- * **ohne** Adresse, und der Absender trägt sie selbst ein.
- *
- * Hier — und nur hier — steht das Postfach, sobald es eines gibt. Eine Adresse
- * im Quelltext einer öffentlichen App findet jeder Spam-Sammler; solange
- * niemand sie braucht, bleibt sie leer.
+ * Empfänger für den E-Mail-Weg, getarnt: Name und Domain getrennt und
+ * Base64-kodiert. Spam-Sammler suchen nach `name@domain` im Quelltext und im
+ * Bundle; zusammengesetzt wird die Adresse erst beim Klick. Gegen gezieltes
+ * Nachsehen schützt das nicht — der Browser muss die Adresse kennen.
  */
-const MELDE_MAIL = '';
+const MELDE_MAIL_TEILE = ['Y29udGFjdGJ1YmJsZQ==', 'aWNsb3VkLmNvbQ=='] as const;
+
+/** Klartext-Adresse für den `mailto:`-Link. Nie in die Oberfläche schreiben. */
+export function meldeMail(): string {
+  return MELDE_MAIL_TEILE.map((teil) => atob(teil)).join('@');
+}
 
 export interface IssueContext {
   /** Aktive Ansicht — „graph", „matrix" … Kein Inhalt, nur der Modus. */
@@ -98,9 +101,8 @@ export function issueUrl(context: IssueContext, beschreibung = ''): string {
 }
 
 /**
- * Link, der das Mailprogramm mit fertiger Nachricht öffnet. Ohne Empfänger,
- * solange `MELDE_MAIL` leer ist — die Adresse trägt der Absender dann selbst
- * ein. `mailto:` erzeugt keinen Request; es übergibt den Text an das Programm,
+ * Link, der das Mailprogramm mit fertiger Nachricht an `meldeMail()` öffnet.
+ * `mailto:` erzeugt keinen Request; es übergibt den Text an das Programm,
  * das der Rechner für Mail eingerichtet hat.
  */
 export function mailtoUrl(context: IssueContext, beschreibung = ''): string {
@@ -110,5 +112,5 @@ export function mailtoUrl(context: IssueContext, beschreibung = ''): string {
   });
   // `URLSearchParams` kodiert Leerzeichen als „+"; in einem mailto-Text
   // stünde dann wörtlich ein Pluszeichen statt eines Leerzeichens.
-  return `mailto:${MELDE_MAIL}?${params.toString().replace(/\+/g, '%20')}`;
+  return `mailto:${meldeMail()}?${params.toString().replace(/\+/g, '%20')}`;
 }
