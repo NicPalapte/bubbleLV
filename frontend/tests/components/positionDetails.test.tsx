@@ -57,8 +57,7 @@ describe('PositionDetails', () => {
 
   it('zeigt die Klassifizierungs-Badges nicht als Schaltflächen', () => {
     renderPanel();
-    expect(screen.getByText('Bauteil').tagName).toBe('SPAN');
-    // „XC1" steht zweimal: als Badge oben und als Feld in der Klassifizierung.
+    expect(screen.getByText('Bauteil').closest('button')).toBeNull();
     for (const element of screen.getAllByText('XC1')) expect(element.closest('button')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Bauteil' })).toBeNull();
   });

@@ -46,7 +46,7 @@ export interface PanelSize {
   height: number | null;
 }
 
-export const DEFAULT_PANEL_SIZE: PanelSize = { width: 320, height: null };
+export const DEFAULT_PANEL_SIZE: PanelSize = { width: 380, height: null };
 
 /**
  * Ort der schwebenden Auswahlkarte im Graphen, gemessen von der oberen rechten

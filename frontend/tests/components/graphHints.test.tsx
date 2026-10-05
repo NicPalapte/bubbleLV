@@ -6,7 +6,7 @@
 // ohne Fund bekommt keinen leeren Block.
 
 import { readFileSync } from 'node:fs';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { ReactNode } from 'react';
 import { BubbleGraph } from '../../src/components/graph/BubbleGraph';
@@ -97,20 +97,21 @@ describe('HintBlock', () => {
   it('zeigt jede Regel, die an dieser Position etwas gefunden hat', () => {
     expect(MIT_V1).toBeDefined();
     renderBlock(MIT_V1 as string);
-    expect(screen.getByText('Hinweise')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Hinweise' })).toBeInTheDocument();
     expect(screen.getByText(labelOf('V1'))).toBeInTheDocument();
   });
 
   it('nennt dieselbe Zahl Funde, die die Prüfung für diese Position führt', () => {
     const erwartet = hints.get(MIT_V1 as string)?.flags.length ?? 0;
     renderBlock(MIT_V1 as string);
-    expect(screen.getByText(new RegExp(`^${erwartet} aus \\d+ Regeln?$`))).toBeInTheDocument();
+    const block = screen.getByRole('region', { name: 'Hinweise' });
+    expect(within(block).getAllByRole('listitem')).toHaveLength(erwartet);
   });
 
   it('bleibt ganz weg, wo nichts gefunden wurde — keine leere Überschrift', () => {
     expect(hints.has(OHNE_HINWEIS)).toBe(false);
     renderBlock(OHNE_HINWEIS);
-    expect(screen.queryByText('Hinweise')).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Hinweise' })).toBeNull();
   });
 
   it('verschwindet, sobald die Regel in der Prüfung abgeschaltet wird', () => {
@@ -124,7 +125,7 @@ describe('HintBlock', () => {
 
   it('springt in die Prüfkarte, klappt die Regel auf und nimmt die Auswahl mit', () => {
     renderBlock(MIT_V1 as string);
-    fireEvent.click(screen.getAllByRole('button', { name: 'IN DER PRÜFUNG ZEIGEN' })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: 'In der Prüfung zeigen' })[0]);
     // Die Prüfung ist ein Reiter im Seitenfenster über dem Graphen.
     expect(screen.getByTestId('ansicht')).toHaveTextContent('graph');
     expect(screen.getByTestId('seitenfenster')).toHaveTextContent('check');
@@ -134,7 +135,7 @@ describe('HintBlock', () => {
 
   it('merkt die Regel zum Ins-Fenster-Holen vor und verbraucht das Merkzeichen', () => {
     renderBlock(MIT_V1 as string);
-    fireEvent.click(screen.getAllByRole('button', { name: 'IN DER PRÜFUNG ZEIGEN' })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: 'In der Prüfung zeigen' })[0]);
     // Die Prüfansicht selbst ist hier nicht gerendert, also bleibt das
     // Merkzeichen stehen — genau das trägt den Sprung dorthin.
     expect(screen.getByTestId('holt-regel')).toHaveTextContent('V1');
@@ -143,7 +144,7 @@ describe('HintBlock', () => {
   it('klappt die Regel beim zweiten Sprung nicht wieder zu', () => {
     renderBlock(MIT_V1 as string);
     const knopf = (): HTMLElement =>
-      screen.getAllByRole('button', { name: 'IN DER PRÜFUNG ZEIGEN' })[0];
+      screen.getAllByRole('button', { name: 'In der Prüfung zeigen' })[0];
     fireEvent.click(knopf());
     fireEvent.click(knopf());
     expect(screen.getByTestId('offene-regeln').textContent?.split(',')).toContain('V1');

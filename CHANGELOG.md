@@ -26,6 +26,9 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 - **Hell oder dunkel.** Bubble folgt der Einstellung deines Systems. Im Logo-Menü unter
   „Design" kannst du umschalten. Die Wahl gilt bis zum Neuladen.
 - **Neuer Look:** gerundete Fenster mit weichem Schatten über dem Graphen.
+- **Neue Positionskarte:** oben Menge, EP und Positionsart; Hinweise als Kästen;
+  Fundstellen im Langtext mit Anzahl zum Ein- und Ausblenden; Eigenschaften als Tabelle.
+  Fehlt der Preis, steht „–".
 - Entfallen: der Ansichtsumschalter, die Baumspalte, Matrix, Ähnlichkeit und Vergleich.
   Die Eigenschaften einer Position zeigt die Karte im Graphen. Alte Links auf Matrix,
   Ähnlichkeit, Prüfung oder Vergleich öffnen den Graphen mit einem Hinweis.

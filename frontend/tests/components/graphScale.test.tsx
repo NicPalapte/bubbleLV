@@ -102,7 +102,7 @@ describe('Sprung in die Tabelle', () => {
     // Eine Bubble anklicken öffnet die Auswahlkarte (Issue #30) …
     const bubble = screen.getByText('Bauhauptgewerke');
     fireEvent.click(bubble.closest('g') as SVGGElement);
-    const knopf = await screen.findByRole('button', { name: 'IN DER TABELLE ZEIGEN' });
+    const knopf = await screen.findByRole('button', { name: 'In der Tabelle zeigen' });
 
     // … und von dort führt der Knopf in die Tabelle — als Fenster über dem
     // Graphen, auf genau diesen Abschnitt.

@@ -327,14 +327,14 @@ describe('Viewer', () => {
 
     const closeButton = await screen.findByRole('button', { name: 'Karte schließen' });
     const card = closeButton.closest('[data-graph-overlay]') as HTMLElement;
-    expect(card.style.width).toBe('320px');
+    expect(card.style.width).toBe('380px');
     expect(card.style.height).toBe('');
 
     // Die Karte hängt rechts oben: nach links zieht sie breiter, nach unten höher.
     const handle = screen.getByRole('button', { name: 'Info-Panel in der Größe ändern' });
     fireEvent.mouseDown(handle, { clientX: 400, clientY: 300 });
     fireEvent.mouseMove(document, { clientX: 260, clientY: 480 });
-    expect(card.style.width).toBe('460px');
+    expect(card.style.width).toBe('520px');
     expect(card.style.height).toBe('180px');
     fireEvent.mouseUp(document);
 
