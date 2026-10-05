@@ -57,7 +57,7 @@ describe('decodeShared · fremde Links', () => {
   });
 
   it('wirft eine unbekannte Ansicht weg, statt sie zu übernehmen', () => {
-    expect(decodeShared('v=raumschiff').view).toBe('overview');
+    expect(decodeShared('v=raumschiff').view).toBe('graph');
   });
 
   it('wirft eine Facette weg, die es nicht gibt', () => {
@@ -141,7 +141,7 @@ describe('decodeSharedChecked (Issue #95)', () => {
 
   it('behält den passenden Rest des Links trotzdem', () => {
     const { state, verworfen } = decodeSharedChecked('#v=nope~q=Beton');
-    expect(state.view).toBe('overview');
+    expect(state.view).toBe('graph');
     expect(state.search).toBe('Beton');
     expect(verworfen).toEqual(['Ansicht']);
   });

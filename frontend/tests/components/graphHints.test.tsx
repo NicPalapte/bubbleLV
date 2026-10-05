@@ -51,6 +51,7 @@ function Harness({
   const {
     view: {
       mode,
+      side,
       check: { openRules, revealRule },
     },
     selection: { positionId: gewaehlt },
@@ -72,6 +73,7 @@ function Harness({
         Position wählen
       </button>
       <span data-testid="ansicht">{mode}</span>
+      <span data-testid="seitenfenster">{side ?? ''}</span>
       <span data-testid="offene-regeln">{[...openRules].join(',')}</span>
       <span data-testid="holt-regel">{revealRule ?? ''}</span>
       <span data-testid="auswahl">{gewaehlt ?? ''}</span>
@@ -123,7 +125,9 @@ describe('HintBlock', () => {
   it('springt in die Prüfung, klappt die Regel auf und nimmt die Auswahl mit', () => {
     renderBlock(MIT_V1 as string);
     fireEvent.click(screen.getAllByRole('button', { name: 'IN DER PRÜFUNG ZEIGEN' })[0]);
-    expect(screen.getByTestId('ansicht')).toHaveTextContent('check');
+    // Die Prüfung ist ein Reiter im Seitenfenster über dem Graphen.
+    expect(screen.getByTestId('ansicht')).toHaveTextContent('graph');
+    expect(screen.getByTestId('seitenfenster')).toHaveTextContent('check');
     expect(screen.getByTestId('offene-regeln').textContent?.split(',')).toContain('V1');
     expect(screen.getByTestId('auswahl')).toHaveTextContent(MIT_V1 as string);
   });
@@ -161,7 +165,7 @@ describe('Legende im Graph-Kopf', () => {
 
   it('nennt, wie viele Positionen einen Ring tragen', () => {
     renderHeader();
-    expect(screen.getByText(`${hints.size} MIT HINWEIS`)).toBeInTheDocument();
+    expect(screen.getByText(`${hints.size} mit Hinweis`)).toBeInTheDocument();
   });
 
   it('zählt eine abgeschaltete Regel nicht mehr mit', () => {
@@ -171,7 +175,7 @@ describe('Legende im Graph-Kopf', () => {
     // sie ganz aus der Markierung heraus.
     const ohneV2 = hintsByPosition(lv.check, new Set(['V2'])).size;
     expect(ohneV2).toBeLessThan(hints.size);
-    expect(screen.getByText(`${ohneV2} MIT HINWEIS`)).toBeInTheDocument();
+    expect(screen.getByText(`${ohneV2} mit Hinweis`)).toBeInTheDocument();
   });
 });
 

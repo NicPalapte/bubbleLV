@@ -42,7 +42,9 @@ describe('Startseite', () => {
   it('tritt zurück, sobald eine Datei geladen ist, und kommt beim Schließen wieder', async () => {
     render(<App />);
     ladeDatei();
-    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: '+ Filter' })).toBeInTheDocument(),
+    );
     expect(screen.queryByText('Eigenes LV öffnen')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /LV schließen/ }));
@@ -76,7 +78,7 @@ describe('Über diese App', () => {
 
   it('öffnet auch ohne geladene Datei — dann meldet vielleicht gerade jemand das Laden', () => {
     render(<App />);
-    expect(screen.queryByText('FILTER')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '+ Filter' })).not.toBeInTheDocument();
     const panel = within(oeffnePanel());
     expect(panel.getByText(`v${APP_VERSION}`)).toBeInTheDocument();
   });
@@ -99,7 +101,9 @@ describe('Über diese App', () => {
   it('gibt der Kopfleiste den Platz zurück — kein Stand-Schild mehr daneben', async () => {
     render(<App />);
     ladeDatei();
-    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: '+ Filter' })).toBeInTheDocument(),
+    );
     // Der Stand steht im Panel, nicht in der Leiste (Issue #80: kein Platz).
     expect(within(screen.getByRole('banner')).queryByText('BETA')).not.toBeInTheDocument();
     expect(
@@ -130,7 +134,9 @@ describe('Design hinter dem Logo', () => {
     fireEvent.click(banner.getByRole('button', { name: 'Über diese App' }));
 
     ladeDatei();
-    await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: '+ Filter' })).toBeInTheDocument(),
+    );
     fireEvent.click(banner.getByRole('button', { name: 'Über diese App' }));
     fireEvent.click(screen.getByRole('button', { name: 'Anderes LV öffnen' }));
     expect(screen.getByText('Eigenes LV öffnen')).toBeInTheDocument();

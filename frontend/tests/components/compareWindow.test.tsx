@@ -34,14 +34,23 @@ beforeAll(() => {
   };
 });
 
-async function ladeTabelle(): Promise<void> {
+/** Lädt die Musterdatei — danach steht der Graph als Hauptscreen da. */
+async function ladeGraph(): Promise<void> {
   render(<App />);
   const name = 'gaeb-xml-beispiel.x83';
   fireEvent.change(screen.getByLabelText('GAEB-Datei auswählen'), {
     target: { files: [new File([readFileSync(resolve(FIXTURE_DIR, name))], name)] },
   });
-  await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
-  fireEvent.click(screen.getByRole('radio', { name: 'Tabelle' }));
+  await waitFor(() => expect(screen.getByRole('button', { name: '+ Filter' })).toBeInTheDocument());
+}
+
+/** Holt die Tabelle über das Dock als Fenster über den Graphen. */
+function oeffneTabelle(): void {
+  fireEvent.click(screen.getByRole('button', { name: /^▴ Tabelle/ }));
+}
+
+function schliesseTabelle(): void {
+  fireEvent.click(screen.getByRole('button', { name: 'Tabelle schließen' }));
 }
 
 /** Zeilen der Positionstabelle, in der gezeichneten Reihenfolge. */
@@ -53,21 +62,22 @@ function tabellenzeilen(): HTMLElement[] {
 }
 
 /**
- * Lädt die Musterdatei, nimmt `anzahl` Positionen per Strg-Klick in den
- * Vergleich und wechselt in den Graphen — der Weg, den auch ein Strg-Klick auf
- * Bubbles nimmt (beides löst `toggleCompare` aus).
+ * Lädt die Musterdatei und nimmt `anzahl` Positionen per Strg-Klick im
+ * Tabellenfenster in den Vergleich — der Weg, den auch ein Strg-Klick auf
+ * Bubbles nimmt (beides löst `toggleCompare` aus). Danach ist die Tabelle
+ * wieder zu, nur der Graph steht da.
  */
 async function imGraphenMit(anzahl: number): Promise<void> {
-  await ladeTabelle();
+  await ladeGraph();
+  oeffneTabelle();
   for (const zeile of tabellenzeilen().slice(0, anzahl)) {
     fireEvent.click(zeile, { ctrlKey: true });
   }
-  fireEvent.click(screen.getByRole('radio', { name: 'Graph' }));
+  schliesseTabelle();
 }
 
-/** Wechselt in den Graphen, klappt alles auf und liefert die Positions-Bubbles. */
+/** Klappt im Graphen alles auf und liefert die Positions-Bubbles. */
 function positionsImGraphen(): NodeListOf<Element> {
-  fireEvent.click(screen.getByRole('radio', { name: 'Graph' }));
   // Positionen erscheinen erst unter offenen Abschnitten, und der Ausschnitt
   // muss sie danach auch zeigen.
   fireEvent.click(screen.getByTitle('Alles ausklappen'));
@@ -79,39 +89,57 @@ function fenster(): HTMLElement | null {
   return screen.queryByRole('group', { name: /Fenster über dem Graphen/ });
 }
 
+/** Knopf im Dock, der ein geschlossenes Vergleichsfenster zurückholt. */
+function dockVergleich(): HTMLElement | null {
+  return screen.queryByRole('button', { name: /^⇄ Vergleich/ });
+}
+
+function schliesseFenster(): void {
+  fireEvent.click(
+    within(fenster() as HTMLElement).getByRole('button', {
+      name: 'Vergleichsfenster schließen',
+    }),
+  );
+}
+
 describe('Vergleichsfenster im Graphen', () => {
   it('bleibt weg, solange nur eine Position im Vergleich steht', async () => {
-    // Eine Spalte ist kein Vergleich. Der Strg-Klick hat trotzdem gewirkt — das
-    // sagt die Ansicht „Vergleich", nicht ein Fenster mit einer Spalte.
+    // Eine Spalte ist kein Vergleich. Der Strg-Klick hat trotzdem gewirkt —
+    // das sagt der Knopf im Dock, nicht ein Fenster mit einer Spalte.
     await imGraphenMit(1);
     expect(fenster()).toBeNull();
+    expect(dockVergleich()).toHaveTextContent('1');
   });
 
   it('steht ab zwei Positionen über dem Graphen, ohne die Ansicht zu wechseln', async () => {
     await imGraphenMit(2);
     const panel = fenster();
     expect(panel).not.toBeNull();
-    expect(screen.getByRole('radio', { name: 'Graph' })).toBeChecked();
-    // Dieselben Merkmalszeilen wie die Ansicht (CompareBody in beiden).
+    expect(screen.getByRole('main', { name: 'Bubble-Graph' })).toContainElement(panel);
+    // Merkmalszeilen aus CompareBody, eine Spalte je Position.
     expect(within(panel as HTMLElement).getByRole('rowheader', { name: 'MENGE' })).toBeVisible();
     expect(within(panel as HTMLElement).getByText(/VERGLEICH · 2 POS\./)).toBeInTheDocument();
   });
 
-  it('nennt dieselbe Zahl an Unterschieden wie die Ansicht', async () => {
-    // Zwei Zähler, eine Quelle (`diffCount`): driften sie auseinander,
-    // behaupten Fenster und Ansicht Verschiedenes über dieselben Positionen.
+  it('nennt so viele Unterschiede, wie „nur Unterschiede" Zeilen übrig lässt', async () => {
+    // Zwei Wege zur selben Zahl (`diffCount` im Kopf, `differs` je Zeile):
+    // driften sie auseinander, behauptet das Fenster Verschiedenes über
+    // dieselben Positionen.
     await imGraphenMit(2);
-    const kopf =
-      within(fenster() as HTMLElement).getByText(/VERGLEICH · 2 POS\./).textContent ?? '';
-    const imFenster = /· (\d+) UNTERSCHIEDE/.exec(kopf)?.[1] ?? '0';
+    const panel = fenster() as HTMLElement;
+    const kopf = within(panel).getByText(/VERGLEICH · 2 POS\./).textContent ?? '';
+    const imKopf = Number(/· (\d+) UNTERSCHIEDE/.exec(kopf)?.[1] ?? '0');
 
-    fireEvent.click(screen.getByRole('radio', { name: 'Vergleich' }));
-    expect(screen.getAllByText(/nebeneinander/)[0]?.textContent ?? '').toContain(
-      `${imFenster} Unterschiede`,
-    );
+    const alle = within(panel).getAllByRole('row').length;
+    fireEvent.click(within(panel).getByRole('button', { name: 'NUR UNTERSCHIEDE' }));
+    const zeilen = within(panel).queryAllByRole('row');
+    expect(zeilen).toHaveLength(imKopf);
+    expect(zeilen.length).toBeLessThan(alle);
+    // Was stehen bleibt, ist auch als Unterschied markiert.
+    for (const zeile of zeilen) expect(zeile.getAttribute('data-differs')).toBe('true');
   });
 
-  it('schaltet „nur Unterschiede" um und nimmt den Stand in die Ansicht mit', async () => {
+  it('schaltet „nur Unterschiede" um und behält den Stand über das Schließen', async () => {
     await imGraphenMit(2);
     const schalter = within(fenster() as HTMLElement).getByRole('button', {
       name: 'NUR UNTERSCHIEDE',
@@ -120,75 +148,94 @@ describe('Vergleichsfenster im Graphen', () => {
     fireEvent.click(schalter);
     expect(schalter).toHaveAttribute('aria-pressed', 'true');
 
-    // Ein Zustand, beide Orte: in der Ansicht steht der Umschalter jetzt auf
-    // „Nur Unterschiede".
-    fireEvent.click(screen.getByRole('radio', { name: 'Vergleich' }));
-    expect(screen.getByRole('radio', { name: 'Nur Unterschiede' })).toBeChecked();
+    // Der Stand liegt im Ansichtszustand, nicht im Fenster: zu und wieder auf
+    // steht er noch.
+    schliesseFenster();
+    fireEvent.click(dockVergleich() as HTMLElement);
+    expect(
+      within(fenster() as HTMLElement).getByRole('button', { name: 'NUR UNTERSCHIEDE' }),
+    ).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('führt mit „ganze Ansicht" in die Ansicht „Vergleich"', async () => {
-    await imGraphenMit(2);
-    fireEvent.click(
-      within(fenster() as HTMLElement).getByRole('button', { name: 'GANZE ANSICHT' }),
-    );
-    expect(screen.getByRole('radio', { name: 'Vergleich' })).toBeChecked();
-  });
-
-  it('schlägt ab drei Spalten die ganze Ansicht vor', async () => {
+  it('zeigt auch drei Spalten im Fenster — ohne Verweis auf eine andere Ansicht', async () => {
     await imGraphenMit(3);
     const panel = fenster() as HTMLElement;
-    expect(within(panel).getByText(/Spalten sind im Fenster eng/)).toBeInTheDocument();
-    fireEvent.click(within(panel).getByRole('button', { name: 'in der ganzen Ansicht zeigen' }));
-    expect(screen.getByRole('radio', { name: 'Vergleich' })).toBeChecked();
+    expect(within(panel).getByText(/VERGLEICH · 3 POS\./)).toBeInTheDocument();
+    expect(
+      within(panel).getAllByRole('button', { name: /aus dem Vergleich nehmen$/ }),
+    ).toHaveLength(3);
+    expect(within(panel).queryByRole('button', { name: 'GANZE ANSICHT' })).toBeNull();
   });
 
-  it('macht bei zwei Spalten keinen Vorschlag — da ist nichts eng', async () => {
-    await imGraphenMit(2);
-    expect(screen.queryByText(/Spalten sind im Fenster eng/)).toBeNull();
+  it('zeigt fünf nebeneinander und benennt die übrigen', async () => {
+    await imGraphenMit(6);
+    const panel = fenster() as HTMLElement;
+    // Mehr als fünf Spalten sind nicht mehr lesbar — die sechste wird nicht
+    // weggeworfen, sondern benannt.
+    const kopf = within(panel).getByText(/VERGLEICH ·/).textContent ?? '';
+    expect(kopf).toContain('VERGLEICH · 5 POS.');
+    expect(kopf).toContain('1 WARTEN');
+    expect(
+      within(panel).getAllByRole('button', { name: /aus dem Vergleich nehmen$/ }),
+    ).toHaveLength(5);
   });
 
   it('schließt das Fenster, ohne den Vergleich zu verwerfen', async () => {
     await imGraphenMit(2);
-    fireEvent.click(
-      within(fenster() as HTMLElement).getByRole('button', {
-        name: 'Vergleichsfenster schließen',
-      }),
-    );
+    schliesseFenster();
     expect(fenster()).toBeNull();
 
     // Die Positionen stehen weiter im Vergleich — sonst wäre das ✕ ein
     // verstecktes „Auswahl leeren".
-    fireEvent.click(screen.getByRole('radio', { name: 'Vergleich' }));
-    expect(screen.getAllByText(/nebeneinander/)[0]?.textContent ?? '').toContain('2 Positionen');
+    expect(dockVergleich()).toHaveTextContent('2');
   });
 
-  it('bietet das geschlossene Fenster in der Kopfzeile des Graphen wieder an', async () => {
-    // Ohne diesen Weg zurück wäre der Vergleich nach dem ✕ nur noch über den
-    // Ansichtswechsel erreichbar, obwohl die Positionen weiter darin stehen.
+  it('bietet das geschlossene Fenster im Dock unter dem Graphen wieder an', async () => {
+    // Ohne diesen Weg zurück wäre der Vergleich nach dem ✕ unerreichbar,
+    // obwohl die Positionen weiter darin stehen.
     await imGraphenMit(2);
-    fireEvent.click(
-      within(fenster() as HTMLElement).getByRole('button', {
-        name: 'Vergleichsfenster schließen',
-      }),
-    );
-    fireEvent.click(screen.getByRole('button', { name: /^VERGLEICH · 2 POS\. ZEIGEN$/ }));
+    expect(dockVergleich()).toBeNull();
+    schliesseFenster();
+    fireEvent.click(dockVergleich() as HTMLElement);
     expect(fenster()).not.toBeNull();
-    expect(screen.queryByRole('button', { name: /ZEIGEN$/ })).toBeNull();
+    expect(dockVergleich()).toBeNull();
   });
 
   it('holt ein geschlossenes Fenster zurück, sobald eine Position dazukommt', async () => {
     await imGraphenMit(2);
-    fireEvent.click(
-      within(fenster() as HTMLElement).getByRole('button', {
-        name: 'Vergleichsfenster schließen',
-      }),
-    );
+    schliesseFenster();
     expect(fenster()).toBeNull();
 
-    fireEvent.click(screen.getByRole('radio', { name: 'Tabelle' }));
+    oeffneTabelle();
     fireEvent.click(tabellenzeilen()[2], { ctrlKey: true });
-    fireEvent.click(screen.getByRole('radio', { name: 'Graph' }));
     expect(fenster()).not.toBeNull();
+  });
+
+  it('führt aus jeder Spalte zurück in die Tabelle', async () => {
+    await imGraphenMit(2);
+    expect(screen.queryByRole('grid', { name: 'Positionen' })).toBeNull();
+    fireEvent.click(
+      within(fenster() as HTMLElement).getAllByRole('button', { name: 'IN DER TABELLE' })[0],
+    );
+    // Die Tabelle kommt als Fenster dazu, der Vergleich bleibt stehen.
+    expect(
+      screen.getByRole('region', { name: 'Tabelle — Fenster über dem Graphen' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('grid', { name: 'Positionen' })).toBeInTheDocument();
+    expect(fenster()).not.toBeNull();
+  });
+
+  it('lässt den Filter unangetastet', async () => {
+    await ladeGraph();
+    fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'Beton' } });
+    await waitFor(() => expect(screen.getByLabelText('Suche')).toHaveValue('Beton'));
+    oeffneTabelle();
+    const zeilen = tabellenzeilen();
+    expect(zeilen.length).toBeGreaterThan(1);
+    fireEvent.click(zeilen[0], { ctrlKey: true });
+    fireEvent.click(zeilen[1], { ctrlKey: true });
+    expect(fenster()).not.toBeNull();
+    expect(screen.getByLabelText('Suche')).toHaveValue('Beton');
   });
 
   it('bleibt beim Herausnehmen über das Spalten-✕ offen, bis keine Spalte mehr da ist', async () => {
@@ -224,7 +271,7 @@ describe('Vergleichsfenster im Graphen', () => {
   it('öffnet mit Klick und dann Strg-Klick — die angewählte Position zählt mit', async () => {
     // Der Weg aus dem Owner-Kommentar in PR #86: erst eine Position ganz normal
     // anklicken, dann die nächste mit Strg dazunehmen.
-    await ladeTabelle();
+    await ladeGraph();
     const punkte = positionsImGraphen();
     expect(punkte.length).toBeGreaterThan(1);
     fireEvent.click(punkte[0]);
@@ -234,7 +281,7 @@ describe('Vergleichsfenster im Graphen', () => {
   });
 
   it('nimmt per Rechtsklick-Menü in den Vergleich und wieder heraus', async () => {
-    await ladeTabelle();
+    await ladeGraph();
     const punkte = positionsImGraphen();
     fireEvent.click(punkte[0]);
 
@@ -252,7 +299,7 @@ describe('Vergleichsfenster im Graphen', () => {
   });
 
   it('schließt das Rechtsklick-Menü mit Escape, ohne etwas zu ändern', async () => {
-    await ladeTabelle();
+    await ladeGraph();
     const punkte = positionsImGraphen();
     fireEvent.contextMenu(punkte[0]);
     expect(screen.getByRole('button', { name: 'Zum Vergleich hinzufügen' })).toBeInTheDocument();

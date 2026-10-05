@@ -1,11 +1,12 @@
 // Trefferansicht des Graphen (WP-Q, Schritt 1 und 2; Issue #60): Filter und
 // Suche bilden eigene Gruppen-Bubbles, und zwischen dem gesamten Graphen und
 // der Isolation lässt sich umschalten — ohne dass Filter, Suche oder Auswahl
-// davon etwas mitbekommen.
+// davon etwas mitbekommen. Die Umschalter stehen seit dem Graph-Hauptscreen im
+// Seitenfenster unter „Filter" → „Darstellung".
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeAll, describe, expect, it } from 'vitest';
 import App from '../../src/App';
 
@@ -37,8 +38,9 @@ async function loadAndShowGraph(): Promise<void> {
   fireEvent.change(input, {
     target: { files: [new File([readFileSync(resolve(FIXTURE_DIR, name))], name)] },
   });
-  await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
-  fireEvent.click(screen.getByRole('radio', { name: 'Graph' }));
+  await waitFor(() => expect(screen.getByRole('button', { name: '+ Filter' })).toBeInTheDocument());
+  // Der Graph ist der Hauptscreen; die Umschalter liegen im Reiter „Filter".
+  fireEvent.click(screen.getByRole('button', { name: '+ Filter' }));
 }
 
 /** Suchbegriff setzen und warten, bis die entprellte Suche greift. */
@@ -49,7 +51,7 @@ async function search(value: string): Promise<void> {
 
 /** In die Isolation schalten — Einstieg ist der ganze Graph. */
 function isolieren(): void {
-  fireEvent.click(screen.getByRole('radio', { name: 'ISOLATION' }));
+  fireEvent.click(screen.getByRole('radio', { name: 'nur Treffer' }));
 }
 
 /** Beschriftungen im Canvas — die Kopfleiste zählt hier bewusst nicht mit. */
@@ -73,15 +75,15 @@ describe('Trefferansicht im Graphen', () => {
 
     // Einstieg ist der ganze Graph — das Los steht da, keine Trefferzahl.
     expect(graphText()).toContain('LOS');
-    expect(screen.queryByText(/TREFFER IN \d+ GRUPPEN/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Treffer in \d+ Gruppen/)).not.toBeInTheDocument();
 
     isolieren();
-    expect(screen.getByText(/TREFFER IN \d+ GRUPPEN/)).toBeInTheDocument();
+    expect(screen.getByText(/Treffer in \d+ Gruppen/)).toBeInTheDocument();
     expect(graphText()).toContain('TREFFER');
     expect(graphText()).not.toContain('LOS');
 
     // …und zurück zum gesamten Graphen: das Los steht wieder da.
-    fireEvent.click(screen.getByRole('radio', { name: 'GESAMTER GRAPH' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'im LV' }));
     expect(graphText()).toContain('LOS');
     expect(graphText()).not.toContain('TREFFER');
   });
@@ -90,13 +92,13 @@ describe('Trefferansicht im Graphen', () => {
     await loadAndShowGraph();
     await search('Beton');
     isolieren();
-    const treffer = screen.getByText(/TREFFER IN \d+ GRUPPEN/).textContent;
+    const treffer = screen.getByText(/Treffer in \d+ Gruppen/).textContent;
 
-    fireEvent.click(screen.getByRole('radio', { name: 'GESAMTER GRAPH' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'im LV' }));
     expect(screen.getByLabelText('Suche')).toHaveValue('Beton');
-    fireEvent.click(screen.getByRole('radio', { name: 'ISOLATION' }));
+    isolieren();
     expect(screen.getByLabelText('Suche')).toHaveValue('Beton');
-    expect(screen.getByText(/TREFFER IN \d+ GRUPPEN/).textContent).toBe(treffer);
+    expect(screen.getByText(/Treffer in \d+ Gruppen/).textContent).toBe(treffer);
   });
 
   it('bündelt auf Wunsch nach Gewerk statt nach Abschnitt', async () => {
@@ -105,10 +107,10 @@ describe('Trefferansicht im Graphen', () => {
     isolieren();
     expect(graphText()).toContain('nach Abschnitt');
 
-    fireEvent.click(screen.getByRole('radio', { name: 'GEWERK' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Gewerk' }));
     // Dieselben Treffer, andere Bündelung — die Wurzel sagt, welche.
     expect(graphText()).toContain('nach Gewerk');
-    expect(screen.getByText(/TREFFER IN \d+ GRUPPEN/)).toBeInTheDocument();
+    expect(screen.getByText(/Treffer in \d+ Gruppen/)).toBeInTheDocument();
     expect(screen.getByLabelText('Suche')).toHaveValue('Beton');
   });
 
@@ -117,22 +119,22 @@ describe('Trefferansicht im Graphen', () => {
     await search('zzz-kein-treffer-zzz');
 
     // Im gesamten Graphen steht die Aussage schlicht da.
-    expect(screen.getByText(/KEINE TREFFER$/)).toBeInTheDocument();
+    expect(screen.getByText(/^Keine Treffer$/)).toBeInTheDocument();
 
     // In der Isolation gibt es nichts zu isolieren — der Graph zeigt weiter
-    // das ganze LV, und die Kopfleiste sagt warum.
+    // das ganze LV, und der Hinweis über dem Graphen sagt warum.
     isolieren();
-    expect(screen.getByText(/KEINE TREFFER — NICHTS ZU ISOLIEREN/)).toBeInTheDocument();
-    expect(screen.queryByText(/TREFFER IN \d+ GRUPPEN/)).not.toBeInTheDocument();
+    expect(screen.getByText('Keine Treffer — nichts zu isolieren')).toBeInTheDocument();
+    expect(screen.queryByText(/Treffer in \d+ Gruppen/)).not.toBeInTheDocument();
     expect(graphText()).toContain('LOS');
   });
 
   it('zeigt den Umschalter „Nicht-Treffer" nur, wo er etwas bewirkt', async () => {
     await loadAndShowGraph();
-    // Die Filterleiste erscheint erst mit einer gesetzten Facette.
-    fireEvent.click(screen.getByRole('button', { name: /Einheit ▾/ }));
-    fireEvent.click(await screen.findByTitle('m³'));
-    fireEvent.keyDown(document.body, { key: 'Escape' });
+    // Ohne Filter gibt es keine Nicht-Treffer.
+    expect(screen.queryByRole('radiogroup', { name: 'Nicht-Treffer' })).not.toBeInTheDocument();
+    const einheit = within(screen.getByRole('region', { name: 'Einheit' }));
+    fireEvent.click(einheit.getByTitle('m³'));
 
     // Im ganzen Graphen entscheidet er, ob Nicht-Treffer gedämpft oder
     // weggelassen werden.
@@ -142,12 +144,8 @@ describe('Trefferansicht im Graphen', () => {
     isolieren();
     expect(screen.queryByRole('radiogroup', { name: 'Nicht-Treffer' })).not.toBeInTheDocument();
 
-    // Der Überblick rechnet ohnehin nur mit Treffern.
-    fireEvent.click(screen.getByRole('radio', { name: 'Überblick' }));
-    expect(screen.queryByRole('radiogroup', { name: 'Nicht-Treffer' })).not.toBeInTheDocument();
-
-    // In der Tabelle blendet der Baum aus bzw. dämpft — dort steht er wieder.
-    fireEvent.click(screen.getByRole('radio', { name: 'Tabelle' }));
+    // Zurück im ganzen LV steht er wieder.
+    fireEvent.click(screen.getByRole('radio', { name: 'im LV' }));
     expect(screen.getByRole('radiogroup', { name: 'Nicht-Treffer' })).toBeInTheDocument();
   });
 

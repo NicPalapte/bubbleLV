@@ -70,6 +70,9 @@ function Harness({ positionId, children }: { positionId: string; children?: Reac
       <button type="button" onClick={() => dispatch({ type: 'setViewMode', mode: 'graph' })}>
         in den Graphen
       </button>
+      <button type="button" onClick={() => dispatch({ type: 'setViewMode', mode: 'matrix' })}>
+        in die Matrix
+      </button>
       <button
         type="button"
         onClick={() => dispatch({ type: 'search', value: 'zzz-kein-treffer-zzz' })}
@@ -107,7 +110,10 @@ function renderBlock(positionId: string, imGraphen = true) {
     </ViewerProvider>,
   );
   fireEvent.click(screen.getByRole('button', { name: 'laden' }));
-  if (imGraphen) fireEvent.click(screen.getByRole('button', { name: 'in den Graphen' }));
+  // Nach dem Laden steht der Graph vorn; „außerhalb" heißt eine der übrigen
+  // Flächen — hier die Matrix.
+  const ziel = imGraphen ? 'in den Graphen' : 'in die Matrix';
+  fireEvent.click(screen.getByRole('button', { name: ziel }));
   return result;
 }
 
@@ -205,16 +211,16 @@ describe('Graph-Kopf', () => {
 
   it('nennt, wie viele Positionen Geschwister haben', () => {
     renderHeader();
-    expect(screen.getByText(`${clusters.size} MIT ÄHNLICHEN`)).toBeInTheDocument();
+    expect(screen.getByText(`${clusters.size} mit Ähnlichen`)).toBeInTheDocument();
   });
 
   it('zählt im aktuellen Filter, nicht über das ganze LV', () => {
     // Ein Filterzustand, alle Ansichten (.claude/CLAUDE.md): eine Zahl für das
     // ganze LV neben einem Graphen, der nur eine Teilmenge zeigt, wäre falsch.
     renderHeader();
-    expect(screen.getByText(`${clusters.size} MIT ÄHNLICHEN`)).toBeInTheDocument();
+    expect(screen.getByText(`${clusters.size} mit Ähnlichen`)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'filtern' }));
-    expect(screen.queryByText(/MIT ÄHNLICHEN/)).toBeNull();
+    expect(screen.queryByText(/mit Ähnlichen/)).toBeNull();
   });
 
   it('nennt im Chip die sichtbaren Mitglieder und die volle Gruppengröße', () => {
@@ -223,22 +229,22 @@ describe('Graph-Kopf', () => {
     renderHeader();
     fireEvent.click(screen.getAllByRole('button', { name: 'ÄHNLICHE ZEIGEN' })[0]);
     // Ohne Filter: nur die Gesamtzahl, ohne „von".
-    expect(screen.getByRole('button', { name: /^ÄHNLICHE:/ }).textContent).toContain(`· ${gesamt}`);
+    expect(screen.getByRole('button', { name: /^Ähnliche:/ }).textContent).toContain(`· ${gesamt}`);
 
     fireEvent.click(screen.getByRole('button', { name: 'auf ein Mitglied filtern' }));
-    const beschriftung = screen.getByRole('button', { name: /^ÄHNLICHE:/ }).textContent ?? '';
-    expect(beschriftung).toContain(`VON ${gesamt}`);
+    const beschriftung = screen.getByRole('button', { name: /^Ähnliche:/ }).textContent ?? '';
+    expect(beschriftung).toContain(`von ${gesamt}`);
     expect(beschriftung).not.toContain(`· ${gesamt} `);
   });
 
   it('bietet eine Schaltfläche, die die Hervorhebung wieder aufhebt', () => {
     renderHeader();
     fireEvent.click(screen.getByRole('button', { name: 'ÄHNLICHE ZEIGEN' }));
-    const aufheben = screen.getByRole('button', { name: /^ÄHNLICHE:/ });
+    const aufheben = screen.getByRole('button', { name: /^Ähnliche:/ });
     fireEvent.click(aufheben);
     expect(screen.getByTestId('hervorgehoben')).toHaveTextContent('');
     // Danach steht die Legende wieder da.
-    expect(screen.getByText(`${clusters.size} MIT ÄHNLICHEN`)).toBeInTheDocument();
+    expect(screen.getByText(`${clusters.size} mit Ähnlichen`)).toBeInTheDocument();
   });
 });
 

@@ -1,13 +1,10 @@
 // Der Vergleich selbst: Spaltenkopf, Merkmalszeilen, Langtext (WP-N).
 //
-// Herausgezogen aus `CompareView` (WP-R, R3), weil das Fenster über dem
-// Graphen dasselbe zeigt. **Dieselbe Komponente, nicht eine zweite
-// Darstellung** — sonst behaupteten Ansicht und Fenster irgendwann
-// Verschiedenes über dieselben Positionen.
+// Herausgezogen aus der früheren Ansicht „Vergleich" (WP-R, R3); heute zeigt
+// sie nur noch das Fenster über dem Graphen.
 //
-// Was hier nicht steht: Kopfzeile, Zähler und Schalter. Die sind an beiden
-// Orten verschieden (ganze Ansicht gegen schwebendes Fenster) und gehören
-// deshalb dorthin, nicht hierher.
+// Was hier nicht steht: Kopfzeile, Zähler und Schalter — die gehören zum
+// Fenster (CompareWindow).
 
 import { BlockLabel } from '../ui/PanelHeader';
 import { EmptyState } from '../ui/EmptyState';

@@ -1,16 +1,10 @@
 // Vergleich als Fenster über dem Graphen (WP-R, R3).
 //
-// Warum ein Fenster und nicht der Sprung in die Ansicht „Vergleich": zwei
-// Bubbles mit Strg-Klick nebeneinanderzustellen ist eine Frage, die im Graphen
-// entsteht — „was unterscheidet die beiden?". Der Ansichtswechsel nimmt dafür
-// den Zusammenhang weg, in dem die Frage aufkam, und der Rückweg kostet einen
-// zweiten Wechsel. Das Fenster liegt über dem Graphen, die Bubbles bleiben
-// sichtbar, die Auswahl bleibt erweiterbar.
-//
-// **Dieselben Merkmalszeilen wie die Ansicht** — `CompareBody` steckt in
-// beiden. Auch `onlyDiffs` ist derselbe Zustand: was hier umgestellt wird,
-// steht in der Ansicht genauso. Zwei Vergleiche, die Verschiedenes über
-// dieselben Positionen behaupten, wären das eigentliche Problem.
+// Warum ein Fenster: zwei Bubbles mit Strg-Klick nebeneinanderzustellen ist
+// eine Frage, die im Graphen entsteht — „was unterscheidet die beiden?". Das
+// Fenster liegt über dem Graphen, die Bubbles bleiben sichtbar, die Auswahl
+// bleibt erweiterbar. Seit dem neuen Hauptscreen ist es der einzige Vergleich
+// (docs/decisions/0032-graph-als-hauptscreen.md).
 //
 // Ort und Größe liegen im Ansichtszustand (`view.compare.windowPos/Size`),
 // nicht hier: sie überleben Schließen, Ansichtswechsel und den nächsten

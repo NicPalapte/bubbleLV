@@ -1,11 +1,12 @@
 // Ansicht „Matrix" (WP-O) in der App. Geprüft werden die beiden Zusagen aus
 // dem Plan: Achsen und Zellwert lassen sich umschalten, ohne den Filter zu
 // verlieren, und ein Klick auf eine Zelle führt zur passenden gefilterten
-// Menge in der Tabelle.
+// Menge in der Tabelle. Seit dem Graph-Hauptscreen erreicht man die Matrix über
+// die Befehle („Befehle" oder Strg + K).
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import App from '../../src/App';
 import { MatrixView } from '../../src/components/matrix/MatrixView';
@@ -17,24 +18,38 @@ import type { LVDraft } from '../../src/types/lvDraft';
 
 const FIXTURE_DIR = resolve(process.cwd(), 'tests/fixtures');
 
+/**
+ * Befehl über den Knopf „Befehle" auslösen. Das leere `act` lässt den Listener
+ * der Palette (ein `useEffect`) erst hängen — sonst läuft der Klick ins Leere.
+ */
+async function befehl(eingabe: string, zeile: RegExp): Promise<void> {
+  await act(async () => {});
+  fireEvent.click(within(screen.getByRole('banner')).getByRole('button', { name: /^Befehle/ }));
+  fireEvent.change(screen.getByLabelText('Befehl oder OZ'), { target: { value: eingabe } });
+  const palette = within(screen.getByRole('dialog', { name: 'Kommandopalette' }));
+  const treffer = palette
+    .getAllByRole('option')
+    .find((option) => zeile.test(option.textContent ?? ''));
+  expect(treffer).toBeDefined();
+  fireEvent.click(treffer as HTMLElement);
+}
+
 async function ladeMatrix(): Promise<void> {
   render(<App />);
   const name = 'gaeb-xml-beispiel.x83';
   fireEvent.change(screen.getByLabelText('GAEB-Datei auswählen'), {
     target: { files: [new File([readFileSync(resolve(FIXTURE_DIR, name))], name)] },
   });
-  await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
-  fireEvent.click(screen.getByRole('radio', { name: 'Matrix' }));
+  await waitFor(() => expect(screen.getByRole('button', { name: '+ Filter' })).toBeInTheDocument());
+  await befehl('Matrix', /^Matrix/);
+  await waitFor(() => expect(screen.getByRole('main', { name: 'Matrix' })).toBeInTheDocument());
 }
 
 function raster(): HTMLElement {
   return screen.getByRole('grid', { name: 'Matrix' });
 }
 
-/**
- * Die Ansicht selbst. Nötig, weil die Filterleiste darüber dieselben
- * Facettennamen trägt — „Bauteiltyp ▾" gibt es dort wie hier.
- */
+/** Die Ansicht selbst — die Kopfleiste darüber trägt eigene Knöpfe. */
 function ansicht() {
   return within(screen.getByRole('main', { name: 'Matrix' }));
 }
@@ -42,7 +57,7 @@ function ansicht() {
 /**
  * Das offene Popover. Es hängt per Portal direkt an <body> und ist die einzige
  * fest positionierte Fläche dort — über den Text zu suchen ginge daneben, weil
- * Achsenwahl, Filterleiste und Eigenschaften dieselben Facettennamen tragen.
+ * Achsenwahl und Kopfzeile dieselben Facettennamen tragen.
  */
 function popover() {
   const flaechen = [...document.body.children].filter(
@@ -51,9 +66,9 @@ function popover() {
   return within(flaechen[flaechen.length - 1] as HTMLElement);
 }
 
-/** Die Filterleiste der Kopfzeile — dort stehen die gesetzten Facetten. */
-function filterleiste() {
-  return within(screen.getByRole('banner'));
+/** Eine Facette im Reiter „Filter" des Seitenfensters. */
+function facette(label: string) {
+  return within(screen.getByRole('region', { name: label }));
 }
 
 /** Zellen mit Inhalt — die leeren sind keine Schaltflächen. */
@@ -127,14 +142,14 @@ describe('Matrix', () => {
     const [gewerk, bauteiltyp] = beschriftung.split(',')[0].split(' × ');
     fireEvent.click(zelle);
 
-    // Die Tabelle steht vorn …
-    expect(screen.getByRole('radio', { name: 'Tabelle' })).toHaveAttribute('aria-checked', 'true');
+    // Der Graph steht vorn, die Tabelle als Fenster darüber …
+    expect(
+      screen.getByRole('region', { name: 'Tabelle — Fenster über dem Graphen' }),
+    ).toBeInTheDocument();
     // … und beide Facetten stehen als Filter, mit genau dem Wert der Zelle.
-    fireEvent.click(filterleiste().getByRole('button', { name: /Gewerk ▾/ }));
-    expect(popover().getByTitle(gewerk)).toHaveAttribute('aria-pressed', 'true');
-    fireEvent.keyDown(document.body, { key: 'Escape' });
-    fireEvent.click(filterleiste().getByRole('button', { name: /Bauteiltyp ▾/ }));
-    expect(popover().getByTitle(bauteiltyp)).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: '+ Filter' }));
+    expect(facette('Gewerk').getByTitle(gewerk)).toHaveAttribute('aria-pressed', 'true');
+    expect(facette('Bauteiltyp').getByTitle(bauteiltyp)).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('macht aus „Ohne Angabe" keinen Einstieg, den es nicht gibt', async () => {
@@ -157,10 +172,9 @@ describe('Matrix', () => {
     // Die Musterdatei mischt Einheiten — m³ und Stück ergäben zusammen nichts.
     expect(menge).toBeDisabled();
 
-    // Auf eine Einheit gefiltert steht die Menge zur Wahl …
-    fireEvent.click(filterleiste().getByRole('button', { name: /Einheit ▾/ }));
-    fireEvent.click(popover().getByTitle('m³'));
-    fireEvent.keyDown(document.body, { key: 'Escape' });
+    // Auf eine Einheit gefiltert steht die Menge zur Wahl — der Filter kommt
+    // hier über die Befehle, das Seitenfenster gehört zum Graphen.
+    await befehl('Einheit m³', /^Einheit m³/);
     await waitFor(() => expect(ansicht().getByRole('radio', { name: 'Menge' })).toBeEnabled());
 
     fireEvent.click(ansicht().getByRole('radio', { name: 'Menge' }));

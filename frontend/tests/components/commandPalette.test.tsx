@@ -15,7 +15,7 @@ async function ladeApp(): Promise<void> {
   fireEvent.change(screen.getByLabelText('GAEB-Datei auswählen'), {
     target: { files: [new File([readFileSync(resolve(FIXTURE_DIR, name))], name)] },
   });
-  await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+  await waitFor(() => expect(screen.getByRole('button', { name: '+ Filter' })).toBeInTheDocument());
 }
 
 function palette(): HTMLElement {
@@ -56,13 +56,17 @@ describe('Kommandopalette · öffnen und schließen', () => {
     expect(screen.queryByRole('dialog', { name: 'Kommandopalette' })).toBeNull();
   });
 
-  it('hat keinen Knopf mehr, aber die Leiste nennt die Taste', async () => {
+  it('kommt auch über den Knopf „Befehle", der die Taste nennt', async () => {
     await ladeApp();
     const leiste = within(screen.getByRole('banner'));
-    // Issue #80: die Kopfleiste ist zu eng für Dauer-Knöpfe …
-    expect(leiste.queryByRole('button', { name: /^Befehle/ })).not.toBeInTheDocument();
-    // … ohne Hinweis fände die Palette aber niemand, der sie nicht kennt.
-    expect(leiste.getByText(/STRG\/CMD \+ K/)).toBeInTheDocument();
+    const knopf = leiste.getByRole('button', { name: /^Befehle/ });
+    // Ohne Hinweis fände die Tastenkombination niemand, der sie nicht kennt.
+    expect(knopf).toHaveTextContent('Strg K');
+
+    // Der Listener hängt in einem `useEffect` — siehe `strgK`.
+    await act(async () => {});
+    fireEvent.click(knopf);
+    expect(feld()).toHaveFocus();
   });
 
   it('beginnt jedes Mal leer', async () => {
@@ -82,9 +86,7 @@ describe('Kommandopalette · Ansicht wechseln', () => {
     tippe('Matrix');
     fireEvent.keyDown(palette(), { key: 'Enter' });
 
-    await waitFor(() =>
-      expect(screen.getByRole('radio', { name: 'Matrix' })).toHaveAttribute('aria-checked', 'true'),
-    );
+    await waitFor(() => expect(screen.getByRole('main', { name: 'Matrix' })).toBeInTheDocument());
     // Und die Palette ist danach weg.
     expect(screen.queryByRole('dialog', { name: 'Kommandopalette' })).toBeNull();
   });
@@ -109,17 +111,17 @@ describe('Kommandopalette · Filter setzen', () => {
     const beschriftung = zeile.textContent ?? '';
     fireEvent.click(zeile);
 
-    // Der gesetzte Filter steht danach in der Kopfleiste.
+    // Der gesetzte Filter steht danach als Chip in der Suche der Kopfleiste.
+    expect(beschriftung).toMatch(/^Einheit /);
     await waitFor(() => {
       const leiste = within(screen.getByRole('banner'));
-      expect(leiste.getByRole('button', { name: /Einheit/ })).toHaveTextContent(/\d/);
+      expect(leiste.getAllByRole('button', { name: / entfernen$/ })).toHaveLength(1);
     });
-    expect(beschriftung).toContain('Einheit');
   });
 });
 
 describe('Kommandopalette · zu einer Position springen', () => {
-  it('findet die Position über ihre OZ und öffnet sie in der Tabelle', async () => {
+  it('findet die Position über ihre OZ und wählt sie im Graphen aus', async () => {
     await ladeApp();
     await strgK();
     tippe('001.004.0030');
@@ -128,13 +130,12 @@ describe('Kommandopalette · zu einer Position springen', () => {
     expect(zeile).toHaveTextContent('001.004.0030');
     fireEvent.click(zeile);
 
-    await waitFor(() =>
-      expect(screen.getByRole('radio', { name: 'Tabelle' })).toHaveAttribute(
-        'aria-checked',
-        'true',
-      ),
-    );
-    expect(screen.getAllByText('001.004.0030').length).toBeGreaterThan(0);
+    // Der Graph zeigt die Auswahl selbst als Karte — kein Wechsel in die Tabelle.
+    await waitFor(() => expect(screen.getAllByText('001.004.0030').length).toBeGreaterThan(0));
+    expect(screen.getByRole('main', { name: 'Bubble-Graph' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('region', { name: 'Tabelle — Fenster über dem Graphen' }),
+    ).not.toBeInTheDocument();
   });
 
   it('sagt es, wenn nichts passt, statt eine leere Liste zu zeigen', async () => {

@@ -1,5 +1,8 @@
-// Ansicht „Vergleich" (WP-N): Positionen sammeln, nebeneinanderlegen,
-// Unterschiede sehen — und wieder zurück in den Zusammenhang.
+// Vergleich sammeln (WP-N): Positionen aus Tabelle, Graph und Ähnlichkeit in
+// den Vergleich legen. Seit dem neuen Hauptscreen gibt es keine eigene Ansicht
+// „Vergleich" mehr — was gesammelt ist, steht im Fenster über dem Graphen oder,
+// solange es weniger als zwei sind, als Zähler im Dock darunter. Das Fenster
+// selbst prüft compareWindow.test.tsx.
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -27,21 +30,15 @@ beforeAll(() => {
   };
 });
 
+/** Lädt die Musterdatei und holt die Tabelle als Fenster über den Graphen. */
 async function ladeTabelle(): Promise<void> {
   render(<App />);
   const name = 'gaeb-xml-beispiel.x83';
   fireEvent.change(screen.getByLabelText('GAEB-Datei auswählen'), {
     target: { files: [new File([readFileSync(resolve(FIXTURE_DIR, name))], name)] },
   });
-  await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
-  fireEvent.click(screen.getByRole('radio', { name: 'Tabelle' }));
-}
-
-/** Die Kopfzeile der Ansicht als Text — Zahl und Wort stehen getrennt im Markup. */
-function kopfzeile(): string {
-  // Bei mehr als fünf gewählten Positionen steht „nebeneinander" zweimal.
-  // Der äußere Absatz kommt in der Dokumentreihenfolge zuerst und enthält beides.
-  return screen.getAllByText(/nebeneinander/)[0]?.textContent ?? '';
+  await waitFor(() => expect(screen.getByRole('button', { name: '+ Filter' })).toBeInTheDocument());
+  fireEvent.click(screen.getByRole('button', { name: /^▴ Tabelle/ }));
 }
 
 /** Zeilen der Positionstabelle, in der gezeichneten Reihenfolge. */
@@ -52,85 +49,48 @@ function tabellenzeilen(): HTMLElement[] {
     .filter((row) => row.getAttribute('aria-selected') !== null);
 }
 
-describe('Vergleich', () => {
-  it('steht leer da, solange nichts gewählt ist', async () => {
+function fenster(): HTMLElement | null {
+  return screen.queryByRole('group', { name: /Vergleich — Fenster über dem Graphen/ });
+}
+
+/**
+ * Wie viele Positionen im Vergleich stehen: aus dem Kopf des Fensters, sonst
+ * aus dem Knopf im Dock, sonst keine.
+ */
+function imVergleich(): number {
+  const panel = fenster();
+  if (panel !== null) {
+    const kopf = within(panel).getByText(/VERGLEICH ·/).textContent ?? '';
+    return Number(/VERGLEICH · (\d+) POS\./.exec(kopf)?.[1] ?? '-1');
+  }
+  const dock = screen.queryByRole('button', { name: /^⇄ Vergleich/ });
+  if (dock === null) return 0;
+  return Number(/(\d+)/.exec(dock.textContent ?? '')?.[1] ?? '-1');
+}
+
+describe('Vergleich sammeln', () => {
+  it('steht nirgends, solange nichts gewählt ist', async () => {
     await ladeTabelle();
-    fireEvent.click(screen.getByRole('radio', { name: 'Vergleich' }));
-    expect(screen.getByText(/Keine Position im Vergleich/)).toBeInTheDocument();
+    expect(fenster()).toBeNull();
+    expect(screen.queryByRole('button', { name: /^⇄ Vergleich/ })).toBeNull();
   });
 
-  it('sammelt Positionen per Strg-Klick und legt sie nebeneinander', async () => {
+  it('sammelt Positionen per Strg-Klick in der Tabelle und legt sie nebeneinander', async () => {
     await ladeTabelle();
     const [erste, zweite] = tabellenzeilen();
     fireEvent.click(erste, { ctrlKey: true });
+    expect(imVergleich()).toBe(1);
     fireEvent.click(zweite, { ctrlKey: true });
-
-    fireEvent.click(screen.getByRole('radio', { name: 'Vergleich' }));
-    expect(kopfzeile()).toContain('2 Positionen nebeneinander');
+    expect(imVergleich()).toBe(2);
     // Eine Zeile je Merkmal, eine Spalte je Position.
-    expect(screen.getByRole('rowheader', { name: 'MENGE' })).toBeInTheDocument();
-  });
-
-  it('zeigt auf Wunsch nur die Zeilen, die sich unterscheiden', async () => {
-    await ladeTabelle();
-    const [erste, zweite] = tabellenzeilen();
-    fireEvent.click(erste, { ctrlKey: true });
-    fireEvent.click(zweite, { ctrlKey: true });
-    fireEvent.click(screen.getByRole('radio', { name: 'Vergleich' }));
-
-    const alle = screen.getAllByRole('row').length;
-    fireEvent.click(screen.getByRole('radio', { name: 'Nur Unterschiede' }));
-    const nurDiffs = screen.getAllByRole('row').length;
-    expect(nurDiffs).toBeLessThan(alle);
-    // Was stehen bleibt, ist auch als Unterschied markiert.
-    for (const row of screen.getAllByRole('row')) {
-      expect(row.getAttribute('data-differs')).toBe('true');
-    }
-  });
-
-  it('nimmt eine Position auf Klick wieder heraus', async () => {
-    await ladeTabelle();
-    const [erste, zweite] = tabellenzeilen();
-    fireEvent.click(erste, { ctrlKey: true });
-    fireEvent.click(zweite, { ctrlKey: true });
-    fireEvent.click(screen.getByRole('radio', { name: 'Vergleich' }));
-
-    fireEvent.click(screen.getAllByRole('button', { name: /aus dem Vergleich nehmen/ })[0]);
-    expect(kopfzeile()).toContain('1 Position nebeneinander');
     expect(
-      screen.getByText(/Eine zweite Position macht daraus einen Vergleich/),
+      within(fenster() as HTMLElement).getByRole('rowheader', { name: 'MENGE' }),
     ).toBeInTheDocument();
-  });
-
-  it('führt aus jeder Spalte zurück in die Tabelle', async () => {
-    await ladeTabelle();
-    fireEvent.click(tabellenzeilen()[0], { ctrlKey: true });
-    fireEvent.click(screen.getByRole('radio', { name: 'Vergleich' }));
-
-    fireEvent.click(screen.getAllByRole('button', { name: 'IN DER TABELLE' })[0]);
-    expect(screen.getByRole('radio', { name: 'Tabelle' })).toHaveAttribute('aria-checked', 'true');
-    expect(screen.getByRole('grid', { name: 'Positionen' })).toBeInTheDocument();
-  });
-
-  it('sammelt auch per Strg-Klick im Baum', async () => {
-    await ladeTabelle();
-    // Positionen stehen im Baum erst unter einem aufgeklappten Abschnitt.
-    fireEvent.click(screen.getByRole('button', { name: 'Alle aufklappen' }));
-    const baum = screen.getByRole('tree');
-    // Positionszeilen sind die Blätter — sie tragen kein `aria-expanded`.
-    const position = within(baum)
-      .getAllByRole('treeitem')
-      .find((zeile) => !zeile.hasAttribute('aria-expanded'));
-    expect(position).toBeDefined();
-    fireEvent.click(position as HTMLElement, { ctrlKey: true });
-
-    fireEvent.click(screen.getByRole('radio', { name: 'Vergleich' }));
-    expect(kopfzeile()).toContain('1 Position nebeneinander');
   });
 
   it('sammelt auch per Strg-Klick im Graphen', async () => {
     await ladeTabelle();
-    fireEvent.click(screen.getByRole('radio', { name: 'Graph' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Tabelle schließen' }));
     // Positionen erscheinen erst unter offenen Abschnitten, und der Ausschnitt
     // muss sie danach auch zeigen.
     fireEvent.click(screen.getByTitle('Alles ausklappen'));
@@ -138,51 +98,32 @@ describe('Vergleich', () => {
     const punkte = document.querySelectorAll('[data-tier="position"]');
     expect(punkte.length).toBeGreaterThan(0);
     fireEvent.click(punkte[0], { ctrlKey: true });
-
-    fireEvent.click(screen.getByRole('radio', { name: 'Vergleich' }));
-    expect(kopfzeile()).toContain('1 Position nebeneinander');
+    expect(imVergleich()).toBe(1);
   });
 
   it('legt eine ganze Gruppe der Ähnlichkeit auf einmal nebeneinander', async () => {
     await ladeTabelle();
-    fireEvent.click(screen.getByRole('radio', { name: 'Ähnlichkeit' }));
-    const knopf = screen.getAllByRole('button', { name: 'VERGLEICHEN' })[0];
-    expect(knopf).toBeDefined();
-    fireEvent.click(knopf);
-
-    // Der Knopf wechselt selbst in die Ansicht — der Weg von „diese hängen
-    // zusammen" zu „worin unterscheiden sie sich" ist ein Klick.
-    expect(screen.getByRole('radio', { name: 'Vergleich' })).toHaveAttribute(
-      'aria-checked',
-      'true',
+    // Die Ähnlichkeit ist eine eigene Fläche, erreichbar über die Befehle.
+    fireEvent.click(within(screen.getByRole('banner')).getByRole('button', { name: /^Befehle/ }));
+    fireEvent.change(screen.getByLabelText('Befehl oder OZ'), {
+      target: { value: 'Ähnlichkeit' },
+    });
+    fireEvent.keyDown(screen.getByRole('dialog', { name: 'Kommandopalette' }), { key: 'Enter' });
+    await waitFor(() =>
+      expect(screen.getByRole('main', { name: 'Ähnlichkeit' })).toBeInTheDocument(),
     );
-    const spalten = screen.getAllByRole('button', { name: /aus dem Vergleich nehmen/ }).length;
+    fireEvent.click(screen.getAllByRole('button', { name: 'VERGLEICHEN' })[0]);
+
+    // Der Knopf führt selbst zurück in den Graphen, mit offenem Fenster — der
+    // Weg von „diese hängen zusammen" zu „worin unterscheiden sie sich" ist
+    // ein Klick.
+    expect(screen.getByRole('main', { name: 'Bubble-Graph' })).toBeInTheDocument();
+    const spalten = within(fenster() as HTMLElement).getAllByRole('button', {
+      name: /aus dem Vergleich nehmen/,
+    }).length;
     expect(spalten).toBeGreaterThan(1);
     expect(spalten).toBeLessThanOrEqual(5);
-    expect(kopfzeile()).toContain(`${spalten} Positionen nebeneinander`);
-  });
-
-  it('zeigt fünf nebeneinander und benennt die übrigen', async () => {
-    await ladeTabelle();
-    const zeilen = tabellenzeilen().slice(0, 6);
-    expect(zeilen).toHaveLength(6);
-    for (const zeile of zeilen) fireEvent.click(zeile, { ctrlKey: true });
-
-    fireEvent.click(screen.getByRole('radio', { name: 'Vergleich' }));
-    // Mehr als fünf Spalten sind nicht mehr lesbar — die sechste wird nicht
-    // weggeworfen, sondern benannt.
-    expect(kopfzeile()).toContain('5 Positionen nebeneinander');
-    expect(kopfzeile()).toContain('1 weitere gewählt');
-    expect(screen.getAllByRole('button', { name: /aus dem Vergleich nehmen/ })).toHaveLength(5);
-  });
-
-  it('lässt den Filter und die Auswahl unangetastet', async () => {
-    await ladeTabelle();
-    fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'Beton' } });
-    await waitFor(() => expect(screen.getByLabelText('Suche')).toHaveValue('Beton'));
-    fireEvent.click(tabellenzeilen()[0], { ctrlKey: true });
-    fireEvent.click(screen.getByRole('radio', { name: 'Vergleich' }));
-    expect(screen.getByLabelText('Suche')).toHaveValue('Beton');
+    expect(imVergleich()).toBe(spalten);
   });
 
   it('nimmt per Rechtsklick in der Tabelle in den Vergleich — mit der angewählten', async () => {
@@ -192,18 +133,16 @@ describe('Vergleich', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Mit .+ vergleichen$/ }));
     // Das Menü schließt nach der Wahl.
     expect(screen.queryByRole('group', { name: /^Position / })).toBeNull();
-
-    fireEvent.click(screen.getByRole('radio', { name: 'Vergleich' }));
-    expect(kopfzeile()).toContain('2 Positionen nebeneinander');
+    expect(imVergleich()).toBe(2);
   });
 
   it('bietet in der Tabelle „Aus dem Vergleich nehmen" an, wenn die Zeile schon drin ist', async () => {
     await ladeTabelle();
     fireEvent.click(tabellenzeilen()[0], { ctrlKey: true });
+    expect(imVergleich()).toBe(1);
     fireEvent.contextMenu(tabellenzeilen()[0]);
     fireEvent.click(screen.getByRole('button', { name: 'Aus dem Vergleich nehmen' }));
-    fireEvent.click(screen.getByRole('radio', { name: 'Vergleich' }));
-    expect(screen.getByText(/Keine Position im Vergleich/)).toBeInTheDocument();
+    expect(imVergleich()).toBe(0);
   });
 
   it('schließt das Menü in der Tabelle beim Scrollen und mit Escape', async () => {
@@ -216,21 +155,5 @@ describe('Vergleich', () => {
     fireEvent.contextMenu(tabellenzeilen()[0]);
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(screen.queryByRole('group', { name: /^Position / })).toBeNull();
-  });
-
-  it('nimmt per Rechtsklick im Baum in den Vergleich, nur an Positionen', async () => {
-    await ladeTabelle();
-    fireEvent.click(screen.getByRole('button', { name: 'Alle aufklappen' }));
-    const zeilen = within(screen.getByRole('tree')).getAllByRole('treeitem');
-    // Abschnitte tragen `aria-expanded` und bekommen kein Menü.
-    const abschnitt = zeilen.find((zeile) => zeile.hasAttribute('aria-expanded'));
-    fireEvent.contextMenu(abschnitt as HTMLElement);
-    expect(screen.queryByRole('group', { name: /^Position / })).toBeNull();
-
-    const position = zeilen.find((zeile) => !zeile.hasAttribute('aria-expanded'));
-    fireEvent.contextMenu(position as HTMLElement);
-    fireEvent.click(screen.getByRole('button', { name: 'Zum Vergleich hinzufügen' }));
-    fireEvent.click(screen.getByRole('radio', { name: 'Vergleich' }));
-    expect(kopfzeile()).toContain('1 Position nebeneinander');
   });
 });

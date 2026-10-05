@@ -4,11 +4,11 @@
 // auf Gruppen ab n Mitgliedern — und der gemeinsame Filterzustand gilt auch
 // hier.
 
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { SimilarView } from '../../src/components/relate/SimilarView';
-import { CompareView } from '../../src/components/compare/CompareView';
+import { CompareWindow } from '../../src/components/compare/CompareWindow';
 import { classifyAndBuild, runPipeline } from '../../src/lib/pipeline/runPipeline';
 import { ViewerProvider } from '../../src/state/ViewerProvider';
 import { useViewerDispatch } from '../../src/state/viewer';
@@ -225,7 +225,9 @@ describe('SimilarView · Gruppe in den Vergleich', () => {
       <ViewerProvider>
         <WithLv datei={grosseGruppe} filter={SUCHE_OHNE_TREFFER}>
           <SimilarView />
-          <CompareView />
+          {/* Der Vergleich steht als Fenster über dem Graphen — dasselbe
+              Fenster, das der Knopf hier öffnet. */}
+          <CompareWindow />
         </WithLv>
       </ViewerProvider>,
     );
@@ -234,9 +236,10 @@ describe('SimilarView · Gruppe in den Vergleich', () => {
 
     // Fünf Spalten stehen nebeneinander, die übrigen zwei sind genannt —
     // nicht weggeworfen.
-    const kopf = screen.getAllByText(/nebeneinander/)[0]?.textContent ?? '';
-    expect(kopf).toContain('5 Positionen nebeneinander');
-    expect(kopf).toContain('2 weitere gewählt');
+    const fenster = screen.getByRole('group', { name: /Fenster über dem Graphen/ });
+    const kopf = within(fenster).getByText(/VERGLEICH ·/).textContent ?? '';
+    expect(kopf).toContain('VERGLEICH · 5 POS.');
+    expect(kopf).toContain('2 WARTEN');
     expect(screen.getAllByRole('button', { name: /aus dem Vergleich nehmen/ })).toHaveLength(5);
   });
 });
