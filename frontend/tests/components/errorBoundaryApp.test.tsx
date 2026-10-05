@@ -1,8 +1,8 @@
 // Auffangnetz im echten App-Aufbau (Issue #73). Die Einzeltests in
 // errorBoundary.test.tsx prüfen die Grenze mit einer Test-Komponente; hier
-// hängt sie da, wo sie im Produkt hängt — mit geladener Datei, Filterzeile und
-// Ansichtsschalter. Die Zusage: stürzt nur der Graph ab, bleibt der Rest
-// bedienbar, und der Meldetext trägt nichts aus der Datei.
+// hängt sie da, wo sie im Produkt hängt — mit geladener Datei, Kopfleiste und
+// Befehlen. Die Zusage: stürzt nur der Graph ab, bleibt der Rest bedienbar,
+// und der Meldetext trägt nichts aus der Datei.
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -42,13 +42,13 @@ async function ladeUndStuerzeAb(): Promise<HTMLElement> {
   fireEvent.change(screen.getByLabelText('GAEB-Datei auswählen'), {
     target: { files: [new File([readFileSync(resolve(FIXTURE_DIR, FIXTURE))], FIXTURE)] },
   });
-  await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
-  fireEvent.click(screen.getByRole('radio', { name: 'Graph' }));
+  await waitFor(() => expect(screen.getByRole('button', { name: '+ Filter' })).toBeInTheDocument());
+  // Der Graph ist der Hauptscreen — er stürzt gleich nach dem Laden ab.
   return screen.findByRole('alert');
 }
 
 describe('Absturz einer Ansicht in der App', () => {
-  it('lässt Kopfleiste, Filter und die anderen Ansichten stehen', async () => {
+  it('lässt Kopfleiste und Filter stehen', async () => {
     const seite = await ladeUndStuerzeAb();
     expect(within(seite).getByText(/Diese Ansicht ist abgestürzt/)).toBeInTheDocument();
     expect(within(seite).getByText(new RegExp(MELDUNG))).toBeInTheDocument();
@@ -56,11 +56,7 @@ describe('Absturz einer Ansicht in der App', () => {
     // Die innere Grenze hat gegriffen, nicht die äußere.
     expect(screen.queryByText(/Bubble ist abgestürzt/)).not.toBeInTheDocument();
     expect(screen.getByRole('banner')).toBeInTheDocument();
-    expect(screen.getByText('FILTER')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('radio', { name: 'Tabelle' }));
-    expect(await screen.findByRole('grid', { name: 'Positionen' })).toBeInTheDocument();
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '+ Filter' })).toBeInTheDocument();
   });
 
   it('führt ohne Neuladen der Seite zurück in die Ansicht', async () => {
@@ -71,7 +67,7 @@ describe('Absturz einer Ansicht in der App', () => {
     expect(await screen.findByText('Graph steht wieder')).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     // Die Datei ist noch da — nichts musste neu hineingezogen werden.
-    expect(screen.getByText('FILTER')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '+ Filter' })).toBeInTheDocument();
   });
 
   it('meldet von der Fehlerseite aus ohne Inhalt aus der Datei', async () => {

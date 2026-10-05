@@ -147,12 +147,13 @@ Wechseln heißt: anderer Blick auf dasselbe, nie Neuanfang.
 | ~~Matrix~~ | entfernt, siehe [0031](decisions/0031-drei-ansichten.md) | – | entfernt |
 | ~~Ähnlichkeit~~ | entfernt; später ggf. als Fenster über dem Graphen | – | zurückgestellt |
 | ~~Vergleich~~ | entfernt; später ggf. als Fenster über dem Graphen | – | zurückgestellt |
-| **Prüfung** | Karte im Überblick: Hinweise aus VOB-Check und Flags, gruppiert nach Regel | UC-2, UC-6 | im Überblick |
+| **Prüfung** | Reiter im Seitenfenster: Hinweise aus VOB-Check und Flags, gruppiert nach Regel | UC-2, UC-6 | Seitenfenster |
 | **Import-Log** | Karte im Überblick: fehlende Einheiten/Mengen, nicht klassifizierte Positionen, doppelte OZ | UC-6 | neu |
 | **Eigenschaften** | Details der gewählten Position mit hervorgehobenem Langtext | UC-5 | vorhanden |
 
-Der Bubble-Graph ist damit **nicht mehr „der Kern"**, sondern eine von mehreren
-gleichrangigen Ansichten. Er bleibt das Erkennungsmerkmal und die Einstiegsansicht.
+**Seit 2026-10-05** ist der Graph der Hauptscreen; Überblick (mit Import-Log) und Prüfung
+sind Reiter im Seitenfenster, Tabelle und Eigenschaften (Positionskarte) schweben als
+Fenster darüber ([0034](decisions/0034-graph-als-hauptscreen.md)). Der eine Filterzustand gilt weiter.
 
 ### 7 · Beziehungen zwischen Positionen
 

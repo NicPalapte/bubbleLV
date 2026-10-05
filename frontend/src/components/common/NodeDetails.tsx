@@ -1,73 +1,80 @@
-// Abschnitts-/Los-/Projektdetails — dieselben Design-System-Bausteine wie
-// PositionDetails. Eigenständige Datei, damit sowohl das Eigenschaften-Panel
-// (Tabellenansicht) als auch die schwebende Auswahlkarte im Graphen (Issue #30)
-// dieselbe Darstellung nutzen, statt sie zu duplizieren. Ursprünglich Teil von
-// `PropertiesPanel.tsx`.
+// Karte für Abschnitt, Los oder Projekt — dieselben Bausteine wie die
+// Positionskarte (CardParts.tsx): Kopf, Kennzahlen, Unterknoten.
 
-import { Block } from './PositionDetails';
-import { PanelHeader } from '../ui/PanelHeader';
-import { PropField, PropGrid } from '../ui/PropField';
+import { CardHead, GroupPill, PropTable, Section, StatRow } from './CardParts';
 import { formatCount, formatEuro } from '../../lib/format';
+import { useViewer } from '../../state/viewer';
+import type { ReactNode } from 'react';
 import type { LVNode } from '../../types/lvNode';
 
 export function NodeDetails({
   node,
   onClose,
+  grip,
 }: {
   node: LVNode;
-  /** Nur die schwebende Karte im Graphen (Issue #30) braucht eine Schließen-Schaltfläche. */
+  /** Nur die schwebende Karte im Graphen braucht eine Schließen-Schaltfläche. */
   onClose?: () => void;
+  grip?: ReactNode;
 }) {
-  const eyebrow = node.kind === 'lot' ? 'Los' : node.kind === 'project' ? 'Projekt' : 'Abschnitt';
+  const { lv } = useViewer();
+  const kind = node.kind === 'lot' ? 'Los' : node.kind === 'project' ? 'Projekt' : 'Abschnitt';
   const children = node.children.filter((child) => child.kind !== 'position');
   const positions = node.children.filter((child) => child.kind === 'position');
-  const averagePrice = node.positionCount === 0 ? 0 : node.totalPrice / node.positionCount;
+  const priced = (lv?.tree.totalPrice ?? 0) > 0;
+
+  const rows: Array<readonly [string, string]> = [
+    ['Unterknoten', formatCount(children.length)],
+    ['Direkte Positionen', formatCount(positions.length)],
+  ];
+  if (priced && node.positionCount > 0) {
+    rows.push(['∅ GP je Position', formatEuro(node.totalPrice / node.positionCount)]);
+  }
 
   return (
     <>
-      <PanelHeader
-        eyebrow={node.code === '' ? eyebrow : `${eyebrow} · ${node.code}`}
-        title={node.label ?? 'Ohne Bezeichnung'}
-        right={
-          onClose === undefined ? undefined : (
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Karte schließen"
-              className="cursor-pointer border-none bg-transparent px-[2px] font-mono text-[13px] leading-none text-dim"
-            >
-              ✕
-            </button>
-          )
+      <CardHead
+        grip={grip}
+        meta={
+          <>
+            {node.code !== '' && (
+              <span className="shrink-0 font-mono text-[11px] text-dim">{node.code}</span>
+            )}
+            <GroupPill color="var(--line2)">{kind}</GroupPill>
+          </>
         }
+        title={node.label ?? 'Ohne Bezeichnung'}
+        onClose={onClose}
       />
-
-      <div className="flex-1 overflow-auto">
-        <Block title="Kennzahlen">
-          <PropGrid>
-            <PropField label="Unterknoten" value={formatCount(children.length)} />
-            <PropField label="Direkte Positionen" value={formatCount(positions.length)} />
-            <PropField label="Positionen gesamt" value={formatCount(node.positionCount)} />
-            <PropField label="Gesamtpreis" value={formatEuro(node.totalPrice, 0)} />
-            <PropField label="∅ GP je Position" value={formatEuro(averagePrice)} />
-          </PropGrid>
-        </Block>
-
+      <StatRow
+        stats={[
+          { label: 'Positionen', value: formatCount(node.positionCount) },
+          priced
+            ? { label: 'Summe', value: formatEuro(node.totalPrice, 0) }
+            : { label: 'Summe', value: '–', empty: true },
+        ]}
+      />
+      <div className="flex min-h-0 flex-1 flex-col gap-[16px] overflow-auto px-[16px] pb-[16px] pt-[14px]">
+        <Section title="Kennzahlen">
+          <PropTable rows={rows} />
+        </Section>
         {children.length > 0 && (
-          <Block title="Unterknoten">
-            {children.map((child) => (
-              <div
-                key={child.id}
-                className="flex items-center gap-[8px] border-b border-grid py-[5px] font-mono text-[10.5px]"
-              >
-                <span className="w-[52px] shrink-0 text-mute">{child.code}</span>
-                <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-ink">
-                  {child.label ?? 'Ohne Bezeichnung'}
-                </span>
-                <span className="text-dim">{formatCount(child.positionCount)}</span>
-              </div>
-            ))}
-          </Block>
+          <Section title="Unterknoten">
+            <ul className="m-0 flex list-none flex-col p-0">
+              {children.map((child) => (
+                <li
+                  key={child.id}
+                  className="flex items-center gap-[8px] border-b border-line py-[6px] font-mono text-[10.5px] last:border-b-0"
+                >
+                  <span className="w-[52px] shrink-0 text-mute">{child.code}</span>
+                  <span className="min-w-0 flex-1 truncate text-ink">
+                    {child.label ?? 'Ohne Bezeichnung'}
+                  </span>
+                  <span className="text-dim">{formatCount(child.positionCount)}</span>
+                </li>
+              ))}
+            </ul>
+          </Section>
         )}
       </div>
     </>

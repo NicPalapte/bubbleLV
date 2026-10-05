@@ -1,12 +1,18 @@
-/* Bubble — Elevation & motion. Almost flat: borders do the work, one shadow exists. */
+/* Bubble — Elevation & motion. Floating surfaces over the graph carry a soft shadow;
+   inside a surface, borders do the work. Dark values: tokens/colors.css. */
 :root{
-  --shadow-popover:0 8px 24px rgba(26,37,51,0.10);  /* the only real shadow */
-  --shadow-hairline:0 1px 0 rgba(26,37,51,0.02);    /* floating canvas toolbar */
-  --scrim:rgba(255,255,255,0.94);                   /* over-canvas capsule bg */
+  --shadow:0 1px 2px rgba(21,33,49,.06),0 8px 28px rgba(21,33,49,.10);    /* windows, cards */
+  --shadow-sm:0 1px 2px rgba(21,33,49,.06),0 2px 8px rgba(21,33,49,.06);  /* capsules */
+  --shadow-popover:var(--shadow);
+  --shadow-hairline:0 1px 0 rgba(21,33,49,0.02);
+  --scrim:rgba(255,255,255,0.94);
+  --backdrop:rgba(21,33,49,.12);                                           /* behind dialogs */
+  --glass:rgba(255,255,255,.80);
+  --glass-strong:rgba(255,255,255,.93);
 
-  --dur-fast:.1s;    /* hover backgrounds */
-  --dur-base:.12s;   /* chip state change */
-  --ease:ease;       /* no custom curves, no bounce */
-  --dim-nonmatch:.32;  /* filtered-out position */
-  --dim-section:.4;    /* filtered-out section / empty group */
+  --dur-fast:.1s;
+  --dur-base:.12s;
+  --ease:ease;
+  --dim-nonmatch:.32;
+  --dim-section:.4;
 }

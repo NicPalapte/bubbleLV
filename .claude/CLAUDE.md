@@ -7,8 +7,8 @@ sichtbar. Das ist die einzige Aufgabe — alles, was nicht dem Verstehen einer g
 Datei dient, gehört nicht in dieses Produkt.
 
 **Reine Frontend-Anwendung** – kein Server, keine Datenbank, kein Login. GAEB-Datei im
-Browser laden, klassifizieren, prüfen und in mehreren gleichrangigen Ansichten
-durchsuchen, filtern und vergleichen. Nichts wird gespeichert – die Datei verlässt den
+Browser laden, klassifizieren, prüfen und im Graphen mit Fenstern darüber
+durchsuchen und filtern. Nichts wird gespeichert – die Datei verlässt den
 Browser nie, ein Reload verwirft den Stand.
 
 Vollständige Projekt-/Ordnerbeschreibung: @README.md
@@ -66,7 +66,7 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
   **keine** Fixture-Daten, **kein** `localStorage` für Fachdaten
 - `matchPos` ist die einzige Quelle für Filter-/Suchlogik
 - Tree und Bubble-Graph konsumieren **denselben** rekursiven `LVNode`-Baum
-- Alle Ansichten arbeiten auf derselben gefilterten Menge und derselben Auswahl;
+- Graph, Seitenfenster und Fenster arbeiten auf derselben gefilterten Menge und derselben Auswahl;
   Zustand getrennt in `filterState` / `selectionState` / `viewState`
 
 ## Code-Style
@@ -95,11 +95,12 @@ Scopes: `gaeb · classify · tree · viewer · graph · relate · check · front
 **In Scope:** GAEB-Import im Browser (x83 **und** preisführende x84/x86) ·
 Klassifizierung Kurz-/Langtext inkl. Textstellen · Hervorhebung der vier
 Wichtig-Kategorien (Geld/Menge · Risiko · Norm · Frist) · VOB-Check als Hinweis ·
-fachliche Filter · **drei gleichrangige Ansichten** auf einem Filterzustand (Überblick
-mit Prüfung und Import-Log · Graph · Tabelle mit Eigenschaften, siehe
-`docs/decisions/0031-drei-ansichten.md`) · Beziehungen zwischen Positionen nur als
-Prüfregel (Ausreißer, G4); Ähnlichkeit/Vergleich als Fenster über dem Graphen sind
-zurückgestellt · lokaler Export/Druck.
+fachliche Filter · **Graph als Hauptscreen** auf einem Filterzustand: Seitenfenster
+(Überblick mit Import-Log · Filter · Prüfung), Positionskarte und Tabelle als Fenster
+darüber (`docs/decisions/0034-graph-als-hauptscreen.md`) · Beziehungen zwischen
+Positionen nur als Prüfregel (Ausreißer, G4) · lokaler Export/Druck. Matrix, Ähnlichkeit
+und Vergleich sind entfernt; Ähnlichkeit/Vergleich kommen ggf. später als Fenster über dem
+Graphen zurück (`docs/decisions/0031-drei-ansichten.md`).
 
 **Out of Scope** (ablehnen / vertrösten): Server jeglicher Art, Persistenz über die
 Session hinaus, Auth/SSO, **mehrere Dateien gleichzeitig** (Versionsvergleich,
@@ -109,12 +110,13 @@ Status-**Änderung**, EP-Kalkulation, Excel-/Manuell-Import, Multi-Tenant, GAEB-
 LLM-Klassifizierung. Details → @docs/scope.md #out-of-scope
 
 ## Kritische Constraints
-- **~10k Positionen** müssen flüssig laufen — in *jeder* Ansicht. Messbare Zielwerte:
-  erste Ansicht < 5 s, Filterwechsel < 100 ms, Ansichtswechsel < 200 ms
+- **~10k Positionen** müssen flüssig laufen — im Graphen und in jedem Fenster. Messbare
+  Zielwerte: erste Ansicht < 5 s, Filterwechsel < 100 ms, Fenster öffnen < 200 ms
   (siehe @docs/scope.md). Mittel: flacher Positions-Index statt Baum-Traversierung
   je Render, Aggregation im Web Worker, Virtualisierung, LOD + Culling im Graphen.
-- **Ein Filterzustand, alle Ansichten.** Ein Ansichtswechsel ändert nie Filter, Suche
-  oder Auswahl. Der Graph ist eine Ansicht unter mehreren, kein Sonderfall.
+- **Ein Filterzustand für Graph und Fenster.** Ein Fenster oder Reiter öffnen/
+  schließen ändert nie Filter, Suche oder Auswahl. Der Graph ist der Hauptscreen; Fenster
+  und Seitenfenster liegen darüber (`view.side`, `view.tableWindow`).
 - **Beziehungen werden einmal beim Laden im Worker berechnet**, nie im Render. Kein
   All-Paare-Vergleich — erst nach Gewerk/Einheit/Bauteiltyp vorgruppieren.
 - **Prüfregeln sind Hinweise, keine Urteile.** Jede Regel nennt ihren Norm-Verweis,

@@ -1,23 +1,15 @@
-// Kopfleiste: Logo, Projektkontext, Suche, Facetten-Buttons. Portiert aus
-// `TopBar` in design/claude-design/lv-main.jsx (Breadcrumb-Dropdowns entfallen —
-// es gibt genau ein geladenes LV je Session).
+// Kopfleiste: Logo-Menü, Datei, Suche mit den aktiven Filtern, Befehle.
+// Seit dem neuen Hauptscreen eine schmale Zeile (docs/decisions/0034-graph-als-
+// hauptscreen.md): kein Ansichtsumschalter mehr, die Filter wählt man im
+// Seitenfenster („+ Filter"), hier stehen sie nur als entfernbare Chips.
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { CommandPalette } from '../palette/CommandPalette';
+import { useEffect, useRef, useState } from 'react';
+import { CommandPalette, openCommandPalette } from '../palette/CommandPalette';
 import { ReportDialog } from '../report/ReportDialog';
 import { AboutMenu } from './AboutMenu';
-import { Chip } from '../ui/Chip';
-import { FacetButton } from '../filter/FacetButton';
-import { FilterOverflowRow, type OverflowItem } from '../filter/FilterOverflowRow';
-import { RangeButton } from '../filter/RangeButton';
-import { SegmentedControl } from '../ui/SegmentedControl';
-import { FACETS, isFacetVisible } from '../../lib/facets';
-import { EMPTY_SUMMARY } from '../../lib/index/summary';
-import { countActiveFilters } from '../../lib/matchPos';
+import { FACETS, facetOptionLabel } from '../../lib/facets';
+import { formatCount } from '../../lib/format';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
-
-const EMPTY_SELECTION: Set<string> = new Set();
-const EMPTY_COUNTS: ReadonlyMap<string, number> = new Map();
 
 /**
  * Wartezeit, bevor eine Eingabe zum Filter wird. Ein Suchlauf zieht Baum, Graph
@@ -28,16 +20,17 @@ const EMPTY_COUNTS: ReadonlyMap<string, number> = new Map();
  */
 const SEARCH_DEBOUNCE_MS = 250;
 
-/**
- * Drei Ansichten auf einem Filterzustand: Überblick, Graph, Tabelle. Der
- * Umschalter ändert **nur** die Ansicht — Filter, Suche und Auswahl bleiben,
- * wo sie sind.
- */
-const VIEW_MODES = [
-  { value: 'overview', label: 'Überblick', title: 'Kennzahlen, Treemap, Prüfung, Import-Log' },
-  { value: 'graph', label: 'Graph', title: 'Bubble-Graph, Vollbild' },
-  { value: 'table', label: 'Tabelle', title: 'Baum, Tabelle und Eigenschaften' },
-] as const;
+/** So viele Filter-Chips passen in die Suche; der Rest steht als „+N". */
+const MAX_CHIPS = 2;
+
+interface ActiveChip {
+  key: string;
+  label: string;
+  remove: () => void;
+}
+
+const GHOST =
+  'inline-flex h-[32px] shrink-0 cursor-pointer items-center gap-[6px] rounded-[var(--r-sm)] border-none bg-transparent px-[10px] font-mono text-[11px] text-dim hover:bg-sunken hover:text-ink';
 
 export function TopBar() {
   const {
@@ -86,154 +79,146 @@ export function TopBar() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  const activeCount = countActiveFilters(filters);
   const loaded = lv !== null;
-  // Facetten-Zähler und Wertebereiche liegen fertig im geladenen LV (WP-I) —
-  // die Knöpfe rechnen nichts mehr im Render.
-  const summary = lv?.summary ?? EMPTY_SUMMARY;
 
-  const filterItems: OverflowItem[] = useMemo(() => {
-    if (!loaded) return [];
-    const facetItems: OverflowItem[] = FACETS.filter((facet) =>
-      isFacetVisible(
-        facet,
-        summary.facets.get(facet.id),
-        (filters.facets[facet.id]?.size ?? 0) > 0,
-      ),
-    ).map((facet) => ({
-      key: facet.id,
-      active: (filters.facets[facet.id]?.size ?? 0) > 0,
-      node: (
-        <FacetButton
-          facet={facet}
-          counts={summary.facets.get(facet.id) ?? EMPTY_COUNTS}
-          active={filters.facets[facet.id] ?? EMPTY_SELECTION}
-          onChange={(values) => dispatch({ type: 'setFacet', facetId: facet.id, values })}
-        />
-      ),
-    }));
-    const items: OverflowItem[] = [
-      ...facetItems,
-      {
-        key: 'menge',
-        active: filters.menge !== null,
-        node: (
-          <RangeButton
-            label="Menge"
-            bounds={summary.quantity}
-            active={filters.menge}
-            onChange={(range) => dispatch({ type: 'setMenge', range })}
-          />
-        ),
-      },
-    ];
-    if (activeCount > 0) {
-      items.push({
-        key: 'reset',
-        node: (
-          <Chip dashed onClick={() => dispatch({ type: 'resetFilters' })}>
-            ✕ {activeCount} zurücksetzen
-          </Chip>
-        ),
+  const chips: ActiveChip[] = [];
+  for (const facet of FACETS) {
+    const selected = filters.facets[facet.id];
+    if (selected === undefined || selected.size === 0) continue;
+    const values =
+      facet.sortValues === undefined
+        ? [...selected].sort((a, b) => a.localeCompare(b, 'de'))
+        : facet.sortValues([...selected]);
+    for (const value of values) {
+      chips.push({
+        key: `${facet.id}:${value}`,
+        label: facetOptionLabel(facet, value),
+        remove: () => {
+          const next = new Set(selected);
+          next.delete(value);
+          dispatch({ type: 'setFacet', facetId: facet.id, values: next });
+        },
       });
     }
-    return items;
-  }, [loaded, summary, filters, activeCount, dispatch]);
+  }
+  if (filters.menge !== null) {
+    const [low, high] = filters.menge;
+    chips.push({
+      key: 'menge',
+      label: `Menge ${formatCount(low)}–${formatCount(high)}`,
+      remove: () => dispatch({ type: 'setMenge', range: null }),
+    });
+  }
+  const filterOpen = view.side === 'filter';
 
   return (
     <>
-      {/*
-        Zwei Leisten statt einer (Issue #80). In einer Zeile teilten sich Logo,
-        Projekt, Suche, sieben Ansichten, dreizehn Facetten und drei Knöpfe den
-        Platz — gemessen bei 1440 px passte kein einziger Facetten-Knopf mehr
-        hinein, und selbst das Wort „FILTER" wurde abgeschnitten.
-        Oben steht, **wo** man ist und **was** man ansieht; unten, **wonach**
-        gesucht und gefiltert wird.
-      */}
-      <div className="relative z-[5] flex h-[46px] shrink-0 items-stretch border-b border-line bg-white">
-        {/* Das Logo öffnet „Über diese App": Version, Änderungen, Fehler melden
-            (Issue #71). */}
-        <div className="flex items-center border-r border-line">
-          <AboutMenu onFehlerMelden={() => setMelden(true)} />
-        </div>
-        {/* Projektkontext: begrenzt und abgeschnitten — reale Projektnamen sind
-            lang, und der Ansichtsumschalter daneben darf nicht wandern. */}
-        <div className="flex max-w-[420px] shrink items-center gap-[8px] overflow-hidden border-r border-line px-[16px] font-mono text-[10px] text-dim">
-          {loaded ? (
-            <>
-              <span className="truncate text-ink" title={lv.projectName ?? lv.fileName}>
-                {lv.projectName ?? lv.fileName}
-              </span>
-              {lv.client !== null && (
-                <>
-                  <span className="text-line2">/</span>
-                  <span className="truncate" title={lv.client}>
-                    {lv.client}
-                  </span>
-                </>
-              )}
-            </>
-          ) : (
-            <span className="text-mute">Kein LV geladen</span>
-          )}
-        </div>
-        {loaded && (
-          <div className="flex min-w-0 flex-1 items-center overflow-x-auto px-[12px]">
-            <SegmentedControl
-              label="Ansicht"
-              options={VIEW_MODES}
-              value={view.mode}
-              onChange={(value) =>
-                dispatch({ type: 'setViewMode', mode: value as typeof view.mode })
-              }
-            />
-          </div>
-        )}
-        {loaded && (
-          <div className="ml-auto flex items-center border-l border-line px-[14px]">
-            <Chip onClick={() => dispatch({ type: 'clear' })} title="LV schließen und neu laden">
-              ✕ LV schließen
-            </Chip>
-          </div>
-        )}
-      </div>
+      <div className="relative z-[5] flex h-[54px] shrink-0 items-center gap-[10px] border-b border-line bg-surface pr-[12px]">
+        {/* Das Logo öffnet „Über diese App": Version, Änderungen, Fehler melden,
+            Design (Issue #71). */}
+        <AboutMenu
+          onFehlerMelden={() => setMelden(true)}
+          onAnderesLv={loaded ? () => dispatch({ type: 'clear' }) : undefined}
+        />
 
-      {/* Zweite Leiste: Suche und Filter — der Zustand, auf dem alle acht
-          Ansichten arbeiten. */}
-      <div className="relative z-[5] flex h-[42px] shrink-0 items-center gap-[10px] border-b border-line bg-white px-[14px]">
-        <div
-          className="flex w-[280px] shrink-0 items-center gap-[8px] border border-line bg-white px-[10px] py-[4px]"
-          style={{ opacity: loaded ? 1 : 0.45 }}
-        >
-          <span className="text-[12px] text-mute">⌕</span>
-          <input
-            ref={inputRef}
-            value={draft}
-            disabled={!loaded}
-            onChange={(event) => changeSearch(event.target.value)}
-            placeholder="Positionen, OZ, Langtext…"
-            aria-label="Suche"
-            className="flex-1 border-none bg-transparent font-mono text-[11px] text-ink outline-none"
-          />
-          <span className="border border-line px-[5px] font-mono text-[9px] text-mute">/</span>
-        </div>
         {loaded && (
           <>
-            <span className="shrink-0 font-mono text-[8px] tracking-[0.6px] text-mute">FILTER</span>
-            <div className="flex min-w-0 flex-1 items-center gap-[6px]">
-              <FilterOverflowRow items={filterItems} />
+            {/* Datei: begrenzt und abgeschnitten — reale Projektnamen sind lang. */}
+            <div className="hidden min-w-0 max-w-[300px] shrink flex-col border-l border-line pl-[12px] leading-tight md:flex">
+              <b
+                className="truncate font-sans text-[13px] font-semibold text-ink"
+                title={lv.projectName ?? lv.fileName}
+              >
+                {lv.projectName ?? lv.fileName}
+              </b>
+              <span className="truncate font-mono text-[10px] text-mute" title={lv.fileName}>
+                {lv.fileName}
+                {lv.client !== null && ` · ${lv.client}`}
+              </span>
             </div>
-            {/*
-              Kein Knopf, nur der Hinweis: die Palette trägt seit Issue #80 auch
-              Export, Druck und Melden. Ohne diesen Hinweis wäre sie unsichtbar
-              — mit Knopf wäre die Leiste wieder voll.
-            */}
-            <span
-              className="ml-auto shrink-0 whitespace-nowrap font-mono text-[8px] tracking-[0.6px] text-mute"
-              title="Ansicht wechseln, filtern, zu einer OZ springen, exportieren, drucken, melden"
+
+            <div className="mx-auto flex h-[38px] min-w-0 max-w-[640px] flex-1 items-center gap-[6px] overflow-hidden rounded-[var(--r-md)] border border-line bg-sunken pl-[10px] pr-[4px] focus-within:border-blue">
+              <span className="text-[13px] text-mute" aria-hidden="true">
+                ⌕
+              </span>
+              {chips.slice(0, MAX_CHIPS).map((chip) => (
+                <span
+                  key={chip.key}
+                  className="inline-flex max-w-[160px] shrink-0 items-center gap-[4px] rounded-[var(--r-pill)] border border-line bg-surface py-[2px] pl-[8px] pr-[4px] font-mono text-[10px] text-ink"
+                >
+                  <span className="truncate">{chip.label}</span>
+                  <button
+                    type="button"
+                    className="cursor-pointer border-none bg-transparent p-0 text-[11px] leading-none text-mute hover:text-ink"
+                    onClick={chip.remove}
+                    aria-label={`${chip.label} entfernen`}
+                  >
+                    ✕
+                  </button>
+                </span>
+              ))}
+              {chips.length > MAX_CHIPS && (
+                <button
+                  type="button"
+                  onClick={() => dispatch({ type: 'sidePanel', panel: 'filter' })}
+                  className="shrink-0 cursor-pointer whitespace-nowrap border-none bg-transparent p-0 font-mono text-[10px] text-blue"
+                >
+                  +{formatCount(chips.length - MAX_CHIPS)} weitere
+                </button>
+              )}
+              <input
+                ref={inputRef}
+                value={draft}
+                onChange={(event) => changeSearch(event.target.value)}
+                placeholder="Positionen, OZ, Langtext durchsuchen"
+                aria-label="Suche"
+                className="min-w-[80px] flex-1 border-none bg-transparent font-mono text-[11.5px] text-ink outline-none"
+              />
+              <span className="rounded-[4px] border border-line px-[5px] font-mono text-[9px] text-mute">
+                /
+              </span>
+              <button
+                type="button"
+                aria-pressed={filterOpen}
+                onClick={() => dispatch({ type: 'sidePanel', panel: filterOpen ? null : 'filter' })}
+                className={`h-[30px] shrink-0 cursor-pointer whitespace-nowrap rounded-[var(--r-sm)] border px-[10px] font-mono text-[11px] ${
+                  filterOpen || chips.length > 0
+                    ? 'border-blue bg-blueS text-blueD'
+                    : 'border-line bg-surface text-ink hover:border-line2'
+                }`}
+              >
+                + Filter
+              </button>
+            </div>
+
+            {view.mode !== 'graph' && (
+              <button
+                type="button"
+                onClick={() => dispatch({ type: 'showGraph' })}
+                className={GHOST}
+              >
+                ← Graph
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={openCommandPalette}
+              title="Filtern, zu einer OZ springen, exportieren, drucken, melden"
+              className={`${GHOST} hidden lg:inline-flex`}
             >
-              STRG/CMD + K · BEFEHLE
-            </span>
+              Befehle
+              <span className="rounded-[4px] border border-line px-[5px] text-[9px] text-mute">
+                Strg K
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => dispatch({ type: 'clear' })}
+              title="Datei verwerfen, zurück zur Startseite"
+              className={`${GHOST} hidden sm:inline-flex`}
+            >
+              LV schließen
+            </button>
           </>
         )}
       </div>

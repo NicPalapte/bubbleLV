@@ -1,181 +1,65 @@
-// Kopfzeile über dem Graphen: Kennzahlen + Umschalter für den Größenmodus und
-// für die Trefferansicht (WP-Q, Issue #60). Portiert aus `CenterHint` in
-// design/claude-design/lv-main.jsx.
+// Was der Graph gerade zeigt, in zwei kleinen Teilen: oben mittig ein Hinweis,
+// solange gefiltert wird; unten links die Legende der Ringe. Größe und
+// Trefferansicht stehen seit dem neuen Hauptscreen im Seitenfenster unter
+// „Filter" (filter/DisplayControls.tsx).
 
 import { useMemo } from 'react';
-import { SegmentedControl } from '../ui/SegmentedControl';
-import { SIZE_MODES } from '../../lib/graph/constants';
-import { FOCUS_GROUP_LABELS, type FocusGroupBy } from '../../lib/graph/focusTree';
 import { formatCount } from '../../lib/format';
-import { useViewer, useViewerDispatch, type GraphFocus, type SizeModeId } from '../../state/viewer';
-import type { MatchIndex } from '../../lib/tree/matchCounts';
+import { countInFilter } from '../../lib/tree/countInFilter';
+import { useViewer } from '../../state/viewer';
 import type { LVNode } from '../../types/lvNode';
-
-const FOCUS_OPTIONS: ReadonlyArray<{ value: GraphFocus; label: string; title: string }> = [
-  {
-    value: 'structure',
-    label: 'GESAMTER GRAPH',
-    title: 'Das ganze LV zeigen, Treffer darin hervorheben.',
-  },
-  {
-    value: 'isolate',
-    label: 'ISOLATION',
-    title: 'Nur die Treffer zeigen, neu gebündelt — alles andere tritt weg.',
-  },
-];
-
-const GROUP_OPTIONS: readonly FocusGroupBy[] = ['abschnitt', 'gewerk', 'bauteiltyp'];
-
-/**
- * Zahl für eine Legende in der Kopfzeile, **im aktuellen Filter** gezählt.
- *
- * Ohne Filter ist es schlicht die Größe der Menge; mit Filter zählen nur die
- * Positionen, die er durchlässt — sonst stünde hier eine Zahl für das ganze LV,
- * während im Graphen daneben eine Teilmenge steht (.claude/CLAUDE.md: ein
- * Filterzustand, alle Ansichten).
- *
- * Eine Stelle für alle Legenden: als zweite Schleife daneben driftete die
- * nächste Zahl wieder ab.
- */
-function imFilter(ids: Iterable<string>, groesse: number, matches: MatchIndex): number {
-  if (!matches.filtering) return groesse;
-  let count = 0;
-  for (const id of ids) if ((matches.counts.get(id) ?? 0) > 0) count += 1;
-  return count;
-}
 
 export function GraphHeader({ root }: { root: LVNode }) {
   const {
     view: {
-      graph: { sizeMode, focus: focusMode, groupBy },
+      graph: { focus: focusMode },
     },
     matches,
     focus,
-    quantities,
     hints,
   } = useViewer();
-  const dispatch = useViewerDispatch();
 
-  // Filter ohne Treffer: dann gibt es nichts zu isolieren, und der Graph zeigt
-  // weiter das ganze LV — gedämpft bzw. ausgeblendet, je nach Modus. Das muss
-  // dastehen, sonst behauptet der Umschalter „Isolation", während das volle LV
-  // auf dem Schirm steht.
   const treffer = matches.counts.get(root.id) ?? 0;
   const keineTreffer = matches.filtering && treffer === 0;
 
-  // Legende und Zahl in einem: der Ring an der Bubble braucht eine Erklärung,
-  // und wie viele Positionen ihn tragen, will man ohnehin wissen (WP-R).
-  const hintCount = useMemo(() => imFilter(hints.keys(), hints.size, matches), [hints, matches]);
-  const lots = root.children.length;
-  const sections = root.children.reduce((total, lot) => total + lot.children.length, 0);
-  // x83-Dateien führen keine Einheitspreise — der Größenmodus "Gesamtpreis"
-  // wäre dann für das ganze LV 0 (docs/implementation-plan.md, WP-D). Die
-  // Option wird deshalb gesperrt statt still auf "Anzahl" zurückzufallen: sonst
-  // sieht der Knopf gewählt aus und im Graphen ändert sich nichts.
-  const priceless = root.totalPrice === 0;
+  const hintCount = useMemo(
+    () => countInFilter(hints.keys(), hints.size, matches),
+    [hints, matches],
+  );
+
+  const note = keineTreffer
+    ? `Keine Treffer${focusMode === 'isolate' ? ' — nichts zu isolieren' : ''}`
+    : focus !== null
+      ? `${formatCount(focus.hitCount)} Treffer in ${formatCount(focus.groupCount)} Gruppen`
+      : null;
 
   return (
-    <div className="pointer-events-none absolute left-0 right-0 top-[14px] z-[1] flex justify-center px-[14px]">
-      <div
-        className="pointer-events-auto inline-flex max-w-full flex-wrap items-center justify-center gap-x-[12px] gap-y-[6px] border border-line py-[5px] pl-[14px] pr-[6px]"
-        style={{ background: 'var(--scrim)', boxShadow: 'var(--shadow-hairline)' }}
-      >
-        <span className="font-mono text-[9px] tracking-[0.6px] text-mute">
-          {formatCount(lots)} LOSE · {formatCount(sections)} ABSCHNITTE ·{' '}
-          {formatCount(root.positionCount)} POS.
-          {focus !== null && (
-            <>
-              {' · '}
-              <span className="text-ink">
-                {formatCount(focus.hitCount)} TREFFER IN {formatCount(focus.groupCount)} GRUPPEN
-              </span>
-            </>
-          )}
-          {keineTreffer && (
-            <>
-              {' · '}
-              <span className="text-ink">
-                KEINE TREFFER{focusMode === 'isolate' ? ' — NICHTS ZU ISOLIEREN' : ''}
-              </span>
-            </>
-          )}
-          {' · GRÖSSE'}
-        </span>
-        {hintCount > 0 && (
+    <>
+      {note !== null && (
+        <div className="pointer-events-none absolute left-1/2 top-[16px] z-[7] flex -translate-x-1/2 gap-[8px]">
+          <span className="ov-pill inline-flex h-[32px] items-center px-[14px] font-mono text-[11px] text-dim">
+            {note}
+          </span>
+        </div>
+      )}
+
+      {hintCount > 0 && (
+        <div
+          aria-label="Legende"
+          className="ov-pill absolute bottom-[16px] left-[16px] z-[7] hidden items-center gap-[14px] px-[14px] py-[8px] font-mono text-[10px] text-dim md:flex"
+        >
           <span
-            className="inline-flex items-center gap-[4px] font-mono text-[9px] tracking-[0.6px] text-mute"
-            title="Ring an der Bubble: an dieser Position hat mindestens eine Prüfregel etwas gefunden. Er erscheint, sobald du nah genug herangezoomt hast."
+            className="inline-flex items-center gap-[6px]"
+            title="Ring an der Bubble: eine Prüfregel hat etwas gefunden. Sichtbar ab etwas Zoom."
           >
             <svg width="12" height="12" aria-hidden="true">
               <circle cx="6" cy="6" r="2.2" fill="var(--bub-position-line)" />
               <circle cx="6" cy="6" r="4.6" fill="none" stroke="var(--amber)" strokeWidth="1.2" />
             </svg>
-            {formatCount(hintCount)} MIT HINWEIS
+            {formatCount(hintCount)} mit Hinweis
           </span>
-        )}
-        <SegmentedControl
-          label="Größe der Bubbles"
-          options={SIZE_MODES.map((mode) => {
-            // Ein Modus, der für die geladene Datei bzw. den aktuellen Filter
-            // nichts aussagt, wird gesperrt statt still auf „Anzahl"
-            // zurückzufallen: sonst sieht der Knopf gewählt aus und im Graphen
-            // ändert sich nichts.
-            const gesperrt =
-              (mode.id === 'cost' && priceless) ||
-              (mode.id === 'quantity' && quantities.unit === null);
-            const grund =
-              mode.id === 'cost'
-                ? 'Diese Datei führt keine Einheitspreise — Größe nach Gesamtpreis ist hier ohne Aussage.'
-                : 'Mengen lassen sich nur innerhalb einer Einheit vergleichen. Filtere auf eine Einheit, dann greift dieser Modus.';
-            const beschriftung =
-              mode.id === 'quantity' && quantities.unit !== null
-                ? `${mode.short} ${quantities.unit}`
-                : mode.short;
-            return {
-              value: mode.id,
-              label: gesperrt ? `${mode.short} ·—` : beschriftung,
-              disabled: gesperrt,
-              title: gesperrt ? grund : mode.label,
-            };
-          })}
-          value={sizeMode}
-          onChange={(value) => dispatch({ type: 'sizeMode', value: value as SizeModeId })}
-        />
-
-        {/* Die Trefferansicht steht nur zur Wahl, solange es Treffer zu zeigen
-            gibt — ohne Filter zeigt der Graph immer die Struktur. */}
-        {matches.filtering && (
-          <>
-            <span className="font-mono text-[9px] tracking-[0.6px] text-mute">TREFFER</span>
-            <SegmentedControl
-              label="Trefferansicht"
-              options={FOCUS_OPTIONS.map((option) => ({
-                value: option.value,
-                label: option.label,
-                title: option.title,
-              }))}
-              value={focusMode}
-              onChange={(value) => dispatch({ type: 'graphFocus', value: value as GraphFocus })}
-            />
-          </>
-        )}
-
-        {matches.filtering && focusMode !== 'structure' && (
-          <>
-            <span className="font-mono text-[9px] tracking-[0.6px] text-mute">BÜNDELN NACH</span>
-            <SegmentedControl
-              label="Treffer bündeln nach"
-              options={GROUP_OPTIONS.map((id) => ({
-                value: id,
-                label: FOCUS_GROUP_LABELS[id].toUpperCase(),
-                title: `Treffer nach ${FOCUS_GROUP_LABELS[id]} bündeln`,
-              }))}
-              value={groupBy}
-              onChange={(value) => dispatch({ type: 'focusGroupBy', value: value as FocusGroupBy })}
-            />
-          </>
-        )}
-      </div>
-    </div>
+        </div>
+      )}
+    </>
   );
 }

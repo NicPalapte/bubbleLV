@@ -44,9 +44,14 @@ function mitId(liste: Command[], id: string): Command {
 }
 
 describe('buildCommands · Ansicht', () => {
-  it('bietet jede der drei Ansichten an', () => {
+  it('bietet die drei Ansichten und den Reiter „Prüfung" an', () => {
     const ansichten = befehle().filter((command) => command.group === 'Ansicht');
-    expect(ansichten.map((command) => command.label)).toEqual(['Überblick', 'Graph', 'Tabelle']);
+    expect(ansichten.map((command) => command.label)).toEqual([
+      'Überblick',
+      'Graph',
+      'Tabelle',
+      'Prüfung',
+    ]);
   });
 
   it('wechselt die Ansicht und lässt Filter und Auswahl in Ruhe', () => {

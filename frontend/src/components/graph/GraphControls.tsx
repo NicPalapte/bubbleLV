@@ -1,13 +1,9 @@
-// Schwebende Canvas-Steuerung: Zoom, Einpassen, Alles einklappen, Knotenzähler.
+// Schwebende Canvas-Steuerung: Zoom, Einpassen, Alles ein- und ausklappen.
 // Portiert aus `CanvasControls` in design/claude-design/lv-graph.jsx
 // (Demo-Datensatz-Schalter entfällt — kein Fixture-Pfad im Produktivbetrieb).
 
-import { formatCount } from '../../lib/format';
-
 interface GraphControlsProps {
   zoom: number;
-  nodeCount: number;
-  renderCount: number;
   onFit: () => void;
   /** Auf die aktuelle Auswahl einpassen; ohne Auswahl ist der Knopf gesperrt. */
   onFitSelection?: () => void;
@@ -19,12 +15,10 @@ interface GraphControlsProps {
 }
 
 const BUTTON =
-  'inline-flex h-[28px] min-w-[28px] cursor-pointer select-none items-center justify-center border border-line bg-white px-[8px] font-mono text-[11px] leading-none text-ink';
+  'inline-flex h-[30px] min-w-[30px] cursor-pointer select-none items-center justify-center rounded-[var(--r-sm)] border-none bg-transparent px-[8px] font-mono text-[11px] leading-none text-ink hover:bg-sunken';
 
 export function GraphControls({
   zoom,
-  nodeCount,
-  renderCount,
   onFit,
   onFitSelection,
   onReset,
@@ -38,9 +32,9 @@ export function GraphControls({
     <div
       onMouseDown={swallow}
       onClick={swallow}
-      className="absolute bottom-[14px] right-[14px] z-[1] flex flex-col items-end gap-[6px]"
+      className="absolute bottom-[16px] right-[16px] z-[1] flex flex-col items-end gap-[6px]"
     >
-      <div className="inline-flex gap-[6px] shadow-[0_4px_14px_rgba(26,37,51,0.08)]">
+      <div className="ov-pill inline-flex gap-[2px] p-[3px]">
         {onCollapseAll !== undefined && (
           <button type="button" title="Alles einklappen" className={BUTTON} onClick={onCollapseAll}>
             ⌄
@@ -81,14 +75,6 @@ export function GraphControls({
         >
           1:1
         </button>
-      </div>
-
-      <div
-        className="inline-flex items-center gap-[8px] border border-grid px-[10px] py-[4px] font-mono text-[9px] text-mute"
-        style={{ background: 'var(--scrim)', boxShadow: 'var(--shadow-hairline)' }}
-      >
-        <span className="text-ink">{formatCount(renderCount)}</span>
-        <span>/ {formatCount(nodeCount)} Knoten gezeichnet</span>
       </div>
     </div>
   );

@@ -385,19 +385,18 @@ export function PositionsTable({ root }: { root: LVNode }) {
         className="flex min-w-0 shrink-0 items-center gap-[10px] overflow-hidden border-b border-line bg-panel px-[12px] font-mono text-[10px] text-dim"
         style={{ height: 'var(--h-view-head)' }}
       >
-        <button
-          type="button"
-          onClick={() =>
-            parent === null
-              ? dispatch({ type: 'showGraph' })
-              : dispatch({ type: 'selectNode', id: parent.id })
-          }
-          title={parent === null ? 'Zurück zum Graphen' : 'Eine Ebene höher'}
-          aria-label={parent === null ? 'Zurück zum Graphen' : 'Eine Ebene höher'}
-          className="shrink-0 cursor-pointer border-none bg-transparent px-[4px] font-mono text-[13px] leading-none text-blue"
-        >
-          ←
-        </button>
+        {/* Auf LV-Ebene gibt es nichts darüber; das Fenster schließt sein eigenes ✕. */}
+        {parent !== null && (
+          <button
+            type="button"
+            onClick={() => dispatch({ type: 'selectNode', id: parent.id })}
+            title="Eine Ebene höher"
+            aria-label="Eine Ebene höher"
+            className="shrink-0 cursor-pointer border-none bg-transparent px-[4px] font-mono text-[13px] leading-none text-blue"
+          >
+            ←
+          </button>
+        )}
         {scopeRoot.code !== '' && (
           <span className="shrink-0 tracking-[0.6px] text-mute">§ {scopeRoot.code}</span>
         )}

@@ -7,6 +7,9 @@ export default {
     extend: {
       colors: {
         paper: 'var(--paper)',
+        white: 'var(--white)',
+        surface: 'var(--surface)',
+        sunken: 'var(--sunken)',
         panel: 'var(--panel)',
         grid: 'var(--grid)',
         grid2: 'var(--grid2)',

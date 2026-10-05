@@ -14,6 +14,13 @@ import type { ColumnConfig } from '../lib/table/columns';
 import type { FocusGroupBy } from '../lib/graph/focusTree';
 
 export type ViewMode = 'overview' | 'graph' | 'table';
+/**
+ * Seit dem neuen Hauptscreen (docs/decisions/0034-graph-als-hauptscreen.md)
+ * steht nur noch der Graph als Fläche da: Überblick und Prüfung sind Reiter im
+ * Seitenfenster, die Tabelle schwebt als Fenster darüber. `mode` bleibt
+ * deshalb immer `graph` — siehe `setViewMode`.
+ */
+export type SidePanel = 'overview' | 'filter' | 'check';
 export type SizeModeId = 'count' | 'cost' | 'quantity' | 'uniform';
 /**
  * Was der Graph mit den Treffern macht, solange gefiltert wird (WP-Q, Issue #60):
@@ -39,7 +46,7 @@ export interface PanelSize {
   height: number | null;
 }
 
-export const DEFAULT_PANEL_SIZE: PanelSize = { width: 320, height: null };
+export const DEFAULT_PANEL_SIZE: PanelSize = { width: 380, height: null };
 
 /**
  * Ort der schwebenden Auswahlkarte im Graphen, gemessen von der oberen rechten
@@ -82,6 +89,23 @@ export interface TableViewState {
   columns: ColumnConfig | null;
 }
 
+/** Ort und Größe des Tabellenfensters über dem Graphen. */
+export const TABLE_MIN_WIDTH = 420;
+export const TABLE_MIN_HEIGHT = 200;
+export const TABLE_MAX_WIDTH = 1600;
+export const DEFAULT_TABLE_SIZE: PanelSize = { width: 900, height: 360 };
+/**
+ * Rechts unten: so bleibt links das Seitenfenster frei (`SIDE_PANEL_WIDTH`), und das
+ * Dock darunter bleibt sichtbar. Die Positionskarte hängt oben rechts darüber.
+ */
+export const DEFAULT_TABLE_POS: CardPos = { right: 16, top: 320 };
+
+export interface TableWindowState {
+  open: boolean;
+  pos: CardPos;
+  size: PanelSize;
+}
+
 /** Überblick: aufgeklappte Prüfregeln und das Sprungziel aus dem Graphen. */
 export interface OverviewViewState {
   /** Aufgeklappte Regeln — welche Fundlisten offen stehen. */
@@ -96,7 +120,11 @@ export interface OverviewViewState {
 }
 
 export interface ViewState {
+  /** Immer `graph` — Überblick und Tabelle liegen darüber, siehe `setViewMode`. */
   mode: ViewMode;
+  /** Offener Reiter im Seitenfenster; `null` = zu. */
+  side: SidePanel | null;
+  tableWindow: TableWindowState;
   graph: GraphViewState;
   table: TableViewState;
   overview: OverviewViewState;
@@ -108,6 +136,11 @@ export interface ViewState {
 
 export type ViewAction =
   | { type: 'setViewMode'; mode: ViewMode }
+  /** Seitenfenster auf einen Reiter öffnen; `null` schließt es. */
+  | { type: 'sidePanel'; panel: SidePanel | null }
+  | { type: 'tableWindow'; open: boolean }
+  | { type: 'tableWindowPos'; pos: CardPos }
+  | { type: 'tableWindowSize'; size: PanelSize }
   | { type: 'sizeMode'; value: SizeModeId }
   /** Trefferansicht umschalten — fasst Filter, Suche und Auswahl nie an. */
   | { type: 'graphFocus'; value: GraphFocus }
@@ -135,9 +168,11 @@ const NO_SCROLL: Readonly<Record<ViewMode, number>> = {
 };
 
 export const INITIAL_VIEW_STATE: ViewState = {
-  // Der Überblick ist die Eingangsansicht: er ordnet das LV ein, bevor man in
-  // Graph oder Tabelle geht (docs/implementation-plan.md, WP-L).
-  mode: 'overview',
+  // Der Graph ist der Hauptscreen; alles andere schwebt darüber
+  // (docs/decisions/0034-graph-als-hauptscreen.md).
+  mode: 'graph',
+  side: null,
+  tableWindow: { open: false, pos: DEFAULT_TABLE_POS, size: DEFAULT_TABLE_SIZE },
   // Einstieg ist der ganze Graph: er ordnet die Treffer ins LV ein. Die
   // Isolation ist der zweite Blick, einen Knopfdruck entfernt (Issue #60).
   graph: {
@@ -168,6 +203,11 @@ export function viewStateForNewLv(state: ViewState): ViewState {
       groupBy: state.graph.groupBy,
       viewport: null,
     },
+    tableWindow: {
+      ...INITIAL_VIEW_STATE.tableWindow,
+      pos: state.tableWindow.pos,
+      size: state.tableWindow.size,
+    },
     panelSize: state.panelSize,
     cardPos: state.cardPos,
   };
@@ -180,10 +220,46 @@ export function clampPanelWidth(width: number): number {
 
 export function viewReducer(state: ViewState, action: ViewAction): ViewState {
   switch (action.type) {
-    case 'setViewMode':
-      // Bewusst nur `mode`: Filter, Auswahl und der gemerkte Zustand der
-      // anderen Ansichten bleiben unangetastet.
-      return state.mode === action.mode ? state : { ...state, mode: action.mode };
+    case 'setViewMode': {
+      // Bewusst nur Ansichtszustand: Filter, Auswahl und der gemerkte Zustand
+      // der anderen Ansichten bleiben unangetastet.
+      //
+      // Überblick und Tabelle leben über dem Graphen. Wer sie anfordert
+      // (Befehle, Sprünge, Links), bekommt den Graphen mit dem passenden Fenster.
+      const next =
+        action.mode === 'overview'
+          ? state.side === 'overview'
+            ? state
+            : { ...state, side: 'overview' as const }
+          : action.mode === 'table' && !state.tableWindow.open
+            ? { ...state, tableWindow: { ...state.tableWindow, open: true } }
+            : state;
+      return next.mode === 'graph' ? next : { ...next, mode: 'graph' };
+    }
+    case 'sidePanel':
+      return state.side === action.panel ? state : { ...state, side: action.panel };
+    case 'tableWindow':
+      return state.tableWindow.open === action.open
+        ? state
+        : { ...state, tableWindow: { ...state.tableWindow, open: action.open } };
+    case 'tableWindowPos': {
+      // Beim Ziehen kommt jede Mausbewegung hier an; gleiche Lage = kein Render.
+      const { pos } = state.tableWindow;
+      if (pos.right === action.pos.right && pos.top === action.pos.top) return state;
+      return { ...state, tableWindow: { ...state.tableWindow, pos: action.pos } };
+    }
+    case 'tableWindowSize':
+      return {
+        ...state,
+        tableWindow: {
+          ...state.tableWindow,
+          size: {
+            width: Math.min(Math.max(action.size.width, TABLE_MIN_WIDTH), TABLE_MAX_WIDTH),
+            height:
+              action.size.height === null ? null : Math.max(action.size.height, TABLE_MIN_HEIGHT),
+          },
+        },
+      };
     case 'sizeMode':
       return { ...state, graph: { ...state.graph, sizeMode: action.value } };
     case 'graphFocus':

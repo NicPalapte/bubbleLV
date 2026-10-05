@@ -39,8 +39,11 @@ export interface SharedState {
   oz: string | null;
 }
 
+// Der Graph ist der Hauptscreen (docs/decisions/0034-graph-als-hauptscreen.md) —
+// ein Link ohne Ansicht öffnet ihn. Links mit `overview` oder `table` lesen sich
+// weiter; der Reducer öffnet dann das passende Fenster.
 export const EMPTY_SHARED: SharedState = {
-  view: 'overview',
+  view: 'graph',
   search: '',
   facets: {},
   menge: null,

@@ -40,6 +40,14 @@ function istPaletteTaste(event: KeyboardEvent): boolean {
   return (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k';
 }
 
+const OPEN_EVENT = 'bubble:palette';
+
+/** Öffnet die Palette von außen (Knopf „Befehle"). */
+// eslint-disable-next-line react-refresh/only-export-components -- kleiner Auslöser, gehört zur Palette
+export function openCommandPalette(): void {
+  window.dispatchEvent(new Event(OPEN_EVENT));
+}
+
 export interface CommandPaletteProps {
   /**
    * Gesperrt, solange ein anderes Fenster über der Seite liegt (Melden). Zwei
@@ -73,8 +81,19 @@ export function CommandPalette({ gesperrt = false, onFehlerMelden }: CommandPale
       setAktiv(0);
       setOpen((offen) => !offen);
     };
+    // Der Knopf „Befehle" in der Kopfleiste öffnet dieselbe Palette.
+    const onOpen = (): void => {
+      if (gesperrt) return;
+      setQuery('');
+      setAktiv(0);
+      setOpen(true);
+    };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener(OPEN_EVENT, onOpen);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener(OPEN_EVENT, onOpen);
+    };
   }, [gesperrt]);
 
   // Der Fokus gehört beim Öffnen ins Eingabefeld — die Palette ist eine
@@ -191,7 +210,7 @@ export function CommandPalette({ gesperrt = false, onFehlerMelden }: CommandPale
               justifyContent: 'center',
               alignItems: 'flex-start',
               paddingTop: '12vh',
-              background: 'rgba(26,37,51,0.12)',
+              background: 'var(--backdrop)',
             }}
             onMouseDown={(event) => {
               if (event.target === event.currentTarget) setOpen(false);

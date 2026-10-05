@@ -102,8 +102,43 @@ describe('viewerReducer · expandAll', () => {
 });
 
 describe('viewerReducer · Ansichtsmodus', () => {
-  it('beginnt im Überblick — er ordnet das LV ein, bevor man tiefer geht', () => {
-    expect(loadedState().view.mode).toBe('overview');
+  it('beginnt im Graphen, ohne offenes Seitenfenster oder Fenster', () => {
+    const state = loadedState();
+    expect(state.view.mode).toBe('graph');
+    expect(state.view.side).toBeNull();
+    expect(state.view.tableWindow.open).toBe(false);
+  });
+
+  it('öffnet Überblick und Prüfung als Reiter im Seitenfenster über dem Graphen', () => {
+    const overview = viewerReducer(base, { type: 'setViewMode', mode: 'overview' });
+    expect(overview.view.mode).toBe('graph');
+    expect(overview.view.side).toBe('overview');
+    const check = viewerReducer(overview, { type: 'sidePanel', panel: 'check' });
+    expect(check.view.side).toBe('check');
+    expect(viewerReducer(check, { type: 'sidePanel', panel: null }).view.side).toBeNull();
+  });
+
+  it('öffnet die Tabelle als Fenster über dem Graphen', () => {
+    const table = viewerReducer(base, { type: 'setViewMode', mode: 'table' });
+    expect(table.view.mode).toBe('graph');
+    expect(table.view.tableWindow.open).toBe(true);
+  });
+
+  it('lässt den Zustand stehen, wenn das Tabellenfenster nicht wirklich wandert', () => {
+    const moved = viewerReducer(base, { type: 'tableWindowPos', pos: { right: 40, top: 200 } });
+    expect(moved.view.tableWindow.pos).toEqual({ right: 40, top: 200 });
+    expect(viewerReducer(moved, { type: 'tableWindowPos', pos: { right: 40, top: 200 } })).toBe(
+      moved,
+    );
+  });
+
+  it('begrenzt die Größe des Tabellenfensters nach unten', () => {
+    const next = viewerReducer(base, {
+      type: 'tableWindowSize',
+      size: { width: 10, height: 10 },
+    });
+    expect(next.view.tableWindow.size.width).toBeGreaterThanOrEqual(420);
+    expect(next.view.tableWindow.size.height).toBeGreaterThanOrEqual(200);
   });
 
   it('wählt einen Knoten an, ohne den Ansichtsmodus zu wechseln', () => {
@@ -112,9 +147,9 @@ describe('viewerReducer · Ansichtsmodus', () => {
     expect(next.view.mode).toBe(base.view.mode);
   });
 
-  it('wechselt nur mit `openInTable` in die Tabelle', () => {
+  it('öffnet mit `openInTable` das Tabellenfenster und wählt den Knoten an', () => {
     const next = viewerReducer(base, { type: 'openInTable', id: 'section:001' });
-    expect(next.view.mode).toBe('table');
+    expect(next.view.tableWindow.open).toBe(true);
     expect(next.selection.nodeId).toBe('section:001');
   });
 
@@ -129,21 +164,21 @@ describe('viewerReducer · Ansichtsmodus', () => {
     expect(next.selection.positionId).toBe('position:001.0010');
   });
 
-  it('wechselt den Ansichtsmodus gezielt mit `setViewMode`', () => {
-    const next = viewerReducer(base, { type: 'setViewMode', mode: 'table' });
-    expect(next.view.mode).toBe('table');
+  it('bleibt mit `setViewMode` immer im Graphen', () => {
+    const next = viewerReducer(base, { type: 'setViewMode', mode: 'overview' });
     expect(viewerReducer(next, { type: 'setViewMode', mode: 'graph' }).view.mode).toBe('graph');
   });
 
   it('behält den Ansichtsmodus beim Abwählen des Knotens', () => {
     const table = viewerReducer(base, { type: 'openInTable', id: 'section:001' });
-    expect(viewerReducer(table, { type: 'selectNode', id: null }).view.mode).toBe('table');
+    const next = viewerReducer(table, { type: 'selectNode', id: null });
+    expect(next.view).toBe(table.view);
   });
 
   it('nimmt mit `back` nur die Auswahl zurück, nicht den Ansichtsmodus', () => {
     const table = viewerReducer(base, { type: 'openInTable', id: 'section:001' });
     const back = viewerReducer(table, { type: 'back' });
-    expect(back.view.mode).toBe('table');
+    expect(back.view).toBe(table.view);
     expect(back.selection.nodeId).toBeNull();
     // Ohne Auswahl ändert ein weiteres `back` nichts mehr.
     expect(viewerReducer(back, { type: 'back' }).selection).toBe(back.selection);
@@ -198,14 +233,15 @@ describe('viewerReducer · Ansichtswechsel lässt Filter und Auswahl in Ruhe', (
     state = viewerReducer(state, { type: 'tableSort', key: 'quantity' });
 
     const before = state;
-    const roundTrip = ['graph', 'overview', 'table'] as const;
+    const roundTrip = ['overview', 'table'] as const;
     for (const mode of roundTrip) state = viewerReducer(state, { type: 'setViewMode', mode });
 
     expect(state.filter).toBe(before.filter);
     expect(state.selection).toBe(before.selection);
     expect(state.view.scroll.table).toBe(640);
     expect(state.view.table.sort).toEqual({ key: 'quantity', dir: 1 });
-    expect(state.view.mode).toBe('table');
+    expect(state.view.mode).toBe('graph');
+    expect(state.view.tableWindow.open).toBe(true);
   });
 
   it('merkt sich den Graph-Ausschnitt und gibt ihn beim Rückwechsel wieder her', () => {

@@ -88,7 +88,7 @@ export function ReportDialog({ context, vorbelegung = '', onClose }: ReportDialo
         justifyContent: 'center',
         alignItems: 'flex-start',
         paddingTop: '8vh',
-        background: 'rgba(26,37,51,0.12)',
+        background: 'var(--backdrop)',
       }}
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();

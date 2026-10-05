@@ -134,6 +134,13 @@ export function buildCommands({
       actions: [{ type: 'setViewMode', mode }],
     });
   }
+  // Die Prüfung ist keine Ansicht, sondern ein Reiter im Seitenfenster.
+  commands.push({
+    id: 'side:check',
+    group: 'Ansicht',
+    label: 'Prüfung',
+    actions: [{ type: 'sidePanel', panel: 'check' }],
+  });
 
   for (const [facetId, values] of summary.facets) {
     const facet = FACETS_BY_ID.get(facetId);
@@ -188,8 +195,8 @@ export function buildCommands({
  *
  * Die Auswahl allein genügt nicht: im Überblick, in der Matrix oder in der
  * Prüfung ist eine einzelne Position gar nicht zu sehen, der Sprung bliebe
- * unsichtbar. Deshalb geht er in die Tabelle — außer im Graphen, der die
- * Auswahl selbst als Karte zeigt.
+ * unsichtbar. Im Graphen (dem Hauptscreen) zeigt die Positionskarte die
+ * Auswahl; aus Matrix und Ähnlichkeit geht er in den Graphen mit Tabellenfenster.
  */
 export function positionCommand(node: LVNode, parent: LVNode | null, view: ViewMode): Command {
   const position = node.position;

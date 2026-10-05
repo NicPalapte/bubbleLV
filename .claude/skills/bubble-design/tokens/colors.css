@@ -1,31 +1,33 @@
 /* Bubble — Color. Cool blue-grey blueprint palette; one blue accent, amber = attention. */
 :root{
   /* Surfaces */
-  --paper:#f5f7fa;   /* app background / canvas */
-  --panel:#fbfcfd;   /* zebra rows, sub-toolbars, inset blocks */
+  --paper:#eef2f7;   /* app background / canvas */
+  --panel:#f8fafc;   /* zebra rows, sub-toolbars, inset blocks */
   --white:#ffffff;   /* panels, tables, popovers */
+  --surface:#ffffff; /* floating windows and cards over the graph */
+  --sunken:#f5f8fb;  /* segmented-control track, hover rows */
 
   /* Lines — four steps, thinnest to strongest */
-  --grid:#e4ecf4;    /* hairline row dividers, blueprint grid */
+  --grid:#e4ebf3;    /* hairline row dividers, blueprint grid */
   --grid2:#d6e0ec;   /* dotted canvas pattern, dashed placeholders */
-  --line:#c9d4e0;    /* default 1px border */
-  --line2:#a9bbcf;   /* emphasised border, popover edge, dividers */
+  --line:#dde5ee;    /* default 1px border */
+  --line2:#c3d0de;   /* emphasised border, popover edge, dividers */
 
   /* Text */
-  --ink:#1a2533;     /* primary */
-  --dim:#6b7d92;     /* secondary / values */
+  --ink:#152131;     /* primary */
+  --dim:#5b6d82;     /* secondary / values */
   --mute:#5f7184;    /* labels, counts, disabled — ≥4.5:1 auf --white und --paper (WCAG AA) */
 
   /* Accent — blue is selection + interaction, never decoration */
   --blue:#2563eb;
-  --blueS:#dbe7fd;   /* selected row / active chip background */
+  --blueS:#e3ecfe;   /* selected row / active chip background */
   --blueD:#1d4ed8;   /* text on --blueS */
   --cyan:#0891b2;    /* second accent: gradients, BIM role */
 
   /* Semantic */
-  --amber:#d97706;  --amberS:#fde8c4;   /* offen / needs attention */
-  --greenD:#0f8a4c; --greenS:#cdebd8;   /* geprüft / günstigstes Angebot */
-  --red:#dc2626;    --redD:#b91c1c;     /* abgelaufen, +% über Schätzung */
+  --amber:#c26a05;  --amberS:#fdf0d8;   /* offen / needs attention */
+  --greenD:#0f8a4c; --greenS:#dcf2e5;   /* geprüft / günstigstes Angebot */
+  --red:#c42525;    --redD:#a81d1d;   --redS:#fde3e3;     /* abgelaufen, +% über Schätzung */
 
   /* Team / role identity colors (avatars) */
   --member-pl:#2563eb;
@@ -46,3 +48,21 @@
   --border-strong:var(--line2);
   --border-hairline:var(--grid);
 }
+
+/* Dark — same variables, darker values. Applies with the system setting unless the
+   user picked "Hell", or when "Dunkel" is picked in the logo menu (data-theme).
+   The app (frontend/src/index.css) also darkens --cat-*, --heat-*, --bub-*. */
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#0e141c; --panel:#121a24; --white:#18212d; --surface:#18212d; --sunken:#141c27;
+  --grid:#1a2431; --grid2:#223044; --line:#263345; --line2:#33445a;
+  --ink:#e6edf6; --dim:#9aabbf; --mute:#8d9db1;
+  --blue:#5b8cff; --blueS:#1b2b4d; --blueD:#9dbaff; --cyan:#3fb2cc;
+  --amber:#f0a03a; --amberS:#3a2a12; --greenD:#3fbf7f; --greenS:#123222;
+  --red:#ff6b6b; --redD:#ff9a9a; --redS:#3d1a1d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0e141c; --panel:#121a24; --white:#18212d; --surface:#18212d; --sunken:#141c27;
+  --grid:#1a2431; --grid2:#223044; --line:#263345; --line2:#33445a;
+  --ink:#e6edf6; --dim:#9aabbf; --mute:#8d9db1;
+  --blue:#5b8cff; --blueS:#1b2b4d; --blueD:#9dbaff; --cyan:#3fb2cc;
+  --amber:#f0a03a; --amberS:#3a2a12; --greenD:#3fbf7f; --greenS:#123222;
+  --red:#ff6b6b; --redD:#ff9a9a; --redS:#3d1a1d; color-scheme:dark}

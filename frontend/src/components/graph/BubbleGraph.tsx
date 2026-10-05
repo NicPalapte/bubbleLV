@@ -938,8 +938,6 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
 
       <GraphControls
         zoom={view.k}
-        nodeCount={placed.size}
-        renderCount={visibleNodes.length}
         onFit={fit}
         onFitSelection={selectionId === null ? undefined : fitSelection}
         onReset={() => setView({ tx: w / 2, ty: h / 2, k: 0.7 })}

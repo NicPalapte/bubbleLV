@@ -64,7 +64,7 @@ Gliederungen (z. B. DIN 276) wären eigene Referenzdateien.
 eine Zeile je STLB-Bau-LB mit Spalten `lb_nummer`, `lb_bezeichnung`,
 `keywords` (Pipe-getrennte Stichworte für den Text-Abgleich) und `quelle_version`
 (Version/Stand des STLB-Bau-Katalogs, aus dem die Zeile stammt). Die frühere Spalte
-`positionsart_default` entfällt ([`0031`](../decisions/0031-stlb-katalog-ohne-positionsart.md)). Solange diese Datei
+`positionsart_default` entfällt ([`0032`](../decisions/0032-stlb-katalog-ohne-positionsart.md)). Solange diese Datei
 nur das Format, aber keine echten LB-Zeilen enthält, bleibt die Zuordnung offen — der
 Klassifizierer fällt dann für jede Position auf die heuristische Positionsart-/
 Bauteiltyp-Erkennung zurück (kein Fehler, siehe `architecture/pipeline.md`).

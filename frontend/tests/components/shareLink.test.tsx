@@ -31,12 +31,23 @@ async function ladeDatei(name: string): Promise<void> {
   fireEvent.change(screen.getByLabelText('GAEB-Datei auswählen'), {
     target: { files: [new File([readFileSync(resolve(FIXTURE_DIR, name))], name)] },
   });
-  await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+  await waitFor(() => expect(screen.getByRole('button', { name: '+ Filter' })).toBeInTheDocument());
 }
 
 async function ladeApp(name = 'gaeb-xml-beispiel.x83'): Promise<void> {
   render(<App />);
   await ladeDatei(name);
+}
+
+/** Suche setzen und warten, bis sie (entprellt) in der Adresszeile steht. */
+async function sucheBeton(): Promise<void> {
+  fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'Beton' } });
+  await waitFor(() => expect(fragment()).toContain('q=Beton'));
+}
+
+/** Tabellenfenster über dem Graphen. */
+function tabellenfenster(): HTMLElement | null {
+  return screen.queryByRole('region', { name: 'Tabelle — Fenster über dem Graphen' });
 }
 
 describe('Geteilter Link · schreiben', () => {
@@ -46,16 +57,12 @@ describe('Geteilter Link · schreiben', () => {
     expect(fragment()).toBe('');
   });
 
-  it('schreibt Ansicht und Suche in die Adresszeile', async () => {
+  it('schreibt die Suche in die Adresszeile — die Ansicht bleibt draußen', async () => {
+    // Der Graph ist der Hauptscreen; ein offenes Fenster ist keine Ansicht.
     await ladeApp();
-    fireEvent.click(screen.getByRole('radio', { name: 'Tabelle' }));
-    fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'Beton' } });
-
-    // Die Suche ist entprellt und kommt später in die Adresszeile als die Ansicht.
-    await waitFor(() => {
-      expect(fragment()).toContain('v=table');
-      expect(fragment()).toContain('q=Beton');
-    });
+    fireEvent.click(screen.getByRole('button', { name: /^▴ Tabelle/ }));
+    await sucheBeton();
+    expect(fragment()).not.toContain('v=');
   });
 
   it('schreibt den Pfad nicht weg', async () => {
@@ -63,8 +70,7 @@ describe('Geteilter Link · schreiben', () => {
     // „#…" würde ihn verwerfen.
     window.history.replaceState(null, '', '/pr-preview/pr-65/');
     await ladeApp();
-    fireEvent.click(screen.getByRole('radio', { name: 'Graph' }));
-    await waitFor(() => expect(fragment()).toContain('v=graph'));
+    await sucheBeton();
     expect(window.location.pathname).toBe('/pr-preview/pr-65/');
   });
 });
@@ -74,23 +80,27 @@ describe('Geteilter Link · lesen', () => {
     setzeFragment('#v=table~q=Beton~f.einheit=m3');
     await ladeApp();
 
+    // Ein alter Link auf die Tabelle öffnet den Graphen mit dem Tabellenfenster.
+    await waitFor(() => expect(tabellenfenster()).toBeInTheDocument());
+    expect(screen.getByRole('main', { name: 'Bubble-Graph' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Suche')).toHaveValue('Beton');
+    // Die Facette steht als gesetzter Filter im Reiter „Filter".
+    fireEvent.click(screen.getByRole('button', { name: '+ Filter' }));
+    const einheit = within(screen.getByRole('region', { name: 'Einheit' }));
+    expect(einheit.getByTitle('m³')).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('öffnet einen Link auf den Überblick als Reiter im Seitenfenster', async () => {
+    setzeFragment('#v=overview');
+    await ladeApp();
+
     await waitFor(() =>
-      expect(screen.getByRole('radio', { name: 'Tabelle' })).toHaveAttribute(
-        'aria-checked',
+      expect(screen.getByRole('tab', { name: 'Überblick' })).toHaveAttribute(
+        'aria-selected',
         'true',
       ),
     );
-    expect(screen.getByLabelText('Suche')).toHaveValue('Beton');
-    // Die Facette steht als gesetzter Filter in der Leiste.
-    const leiste = within(screen.getByRole('banner'));
-    fireEvent.click(leiste.getByRole('button', { name: /Einheit ▾/ }));
-    const popover = [...document.body.children].filter(
-      (element) => (element as HTMLElement).style.position === 'fixed',
-    );
-    expect(within(popover[popover.length - 1] as HTMLElement).getByTitle('m³')).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
+    expect(screen.getByRole('main', { name: 'Bubble-Graph' })).toBeInTheDocument();
   });
 
   it('wählt die Position aus der OZ des Links', async () => {
@@ -105,23 +115,17 @@ describe('Geteilter Link · lesen', () => {
     setzeFragment('#v=table~p=999.999.9999.gibt-es-nicht');
     await ladeApp();
 
-    await waitFor(() =>
-      expect(screen.getByRole('radio', { name: 'Tabelle' })).toHaveAttribute(
-        'aria-checked',
-        'true',
-      ),
-    );
+    await waitFor(() => expect(tabellenfenster()).toBeInTheDocument());
   });
 
   it('macht aus einem kaputten Link keinen kaputten Zustand', async () => {
     setzeFragment('#v=raumschiff~f.erfunden=xyz~m=viel,mehr');
     await ladeApp();
 
-    // Der Überblick ist die Eingangsansicht — der Link hat nichts geändert.
-    expect(screen.getByRole('radio', { name: 'Überblick' })).toHaveAttribute(
-      'aria-checked',
-      'true',
-    );
+    // Der Graph ist die Eingangsansicht, ohne Fenster — der Link hat nichts geändert.
+    expect(screen.getByRole('main', { name: 'Bubble-Graph' })).toBeInTheDocument();
+    expect(screen.queryByRole('complementary', { name: 'Seitenfenster' })).toBeNull();
+    expect(tabellenfenster()).toBeNull();
     expect(screen.getByLabelText('Suche')).toHaveValue('');
   });
 });
@@ -129,7 +133,8 @@ describe('Geteilter Link · lesen', () => {
 describe('Was im Link steht', () => {
   it('trägt weder Dateinamen noch Projektnamen — und keine Position ohne Auswahl', async () => {
     await ladeApp();
-    fireEvent.click(screen.getByRole('radio', { name: 'Tabelle' }));
+    fireEvent.click(screen.getByRole('button', { name: /^▴ Tabelle/ }));
+    expect(tabellenfenster()).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'Beton' } });
     await waitFor(() => expect(fragment()).toContain('q=Beton'));
 
@@ -150,21 +155,14 @@ describe('Geteilter Link · zweite Datei', () => {
     // Filter gehören zu einer Datei, die gar nicht mehr offen ist.
     setzeFragment('#v=table~q=Beton');
     await ladeApp();
-    await waitFor(() =>
-      expect(screen.getByRole('radio', { name: 'Tabelle' })).toHaveAttribute(
-        'aria-checked',
-        'true',
-      ),
-    );
+    await waitFor(() => expect(tabellenfenster()).toBeInTheDocument());
 
     fireEvent.click(screen.getByRole('button', { name: /LV schließen/ }));
     await waitFor(() => expect(screen.getByLabelText('GAEB-Datei auswählen')).toBeVisible());
     await ladeDatei('sample.X83');
 
-    expect(screen.getByRole('radio', { name: 'Überblick' })).toHaveAttribute(
-      'aria-checked',
-      'true',
-    );
+    expect(screen.getByRole('main', { name: 'Bubble-Graph' })).toBeInTheDocument();
+    expect(tabellenfenster()).toBeNull();
     expect(screen.getByLabelText('Suche')).toHaveValue('');
     // Die Adresszeile wird leer — je nach Weg sofort beim Import oder nach der
     // Entprellung des Schreibens.
@@ -173,8 +171,7 @@ describe('Geteilter Link · zweite Datei', () => {
 
   it('räumt die Adresszeile, wenn das LV geschlossen wird', async () => {
     await ladeApp();
-    fireEvent.click(screen.getByRole('radio', { name: 'Graph' }));
-    await waitFor(() => expect(fragment()).toContain('v=graph'));
+    await sucheBeton();
 
     fireEvent.click(screen.getByRole('button', { name: /LV schließen/ }));
     await waitFor(() => expect(fragment()).toBe(''));
@@ -192,12 +189,7 @@ describe('Geteilter Link · Wettlauf mit dem Dateidialog', () => {
     expect(fragment()).toBe('#v=table~q=Beton');
 
     await ladeDatei('gaeb-xml-beispiel.x83');
-    await waitFor(() =>
-      expect(screen.getByRole('radio', { name: 'Tabelle' })).toHaveAttribute(
-        'aria-checked',
-        'true',
-      ),
-    );
+    await waitFor(() => expect(tabellenfenster()).toBeInTheDocument());
     expect(screen.getByLabelText('Suche')).toHaveValue('Beton');
   });
 });

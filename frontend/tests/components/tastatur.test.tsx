@@ -16,11 +16,28 @@ async function ladeApp(): Promise<void> {
   fireEvent.change(screen.getByLabelText('GAEB-Datei auswählen'), {
     target: { files: [new File([readFileSync(resolve(FIXTURE_DIR, name))], name)] },
   });
-  await waitFor(() => expect(screen.getByText('FILTER')).toBeInTheDocument());
+  await waitFor(() => expect(screen.getByRole('button', { name: '+ Filter' })).toBeInTheDocument());
 }
 
-function ansicht(name: string): void {
-  fireEvent.click(screen.getByRole('radio', { name }));
+/**
+ * Ansicht über die Befehle öffnen — einen Umschalter in der Kopfleiste gibt es
+ * nicht mehr. Überblick und Prüfung landen im Seitenfenster, die Tabelle im
+ * Fenster über dem Graphen.
+ */
+async function ansicht(name: string): Promise<void> {
+  // Die Palette hängt ihren Listener in einem Effekt an — erst danach öffnet der Knopf sie.
+  await act(async () => {});
+  fireEvent.click(within(screen.getByRole('banner')).getByRole('button', { name: /^Befehle/ }));
+  fireEvent.change(screen.getByLabelText('Befehl oder OZ'), { target: { value: name } });
+  fireEvent.click(screen.getAllByRole('option', { name: new RegExp(`^${name}`) })[0]);
+}
+
+function seitenfenster(): HTMLElement {
+  return screen.getByRole('complementary', { name: 'Seitenfenster' });
+}
+
+function tabellenfenster(): HTMLElement {
+  return screen.getByRole('region', { name: 'Tabelle — Fenster über dem Graphen' });
 }
 
 function tabelle(): HTMLElement {
@@ -36,7 +53,7 @@ function aktiveZeile(grid: HTMLElement): HTMLElement | null {
 describe('Tabelle · Tastatur', () => {
   it('nimmt den Fokus und führt eine aktive Zeile mit den Pfeiltasten', async () => {
     await ladeApp();
-    ansicht('Tabelle');
+    await ansicht('Tabelle');
     const grid = tabelle();
     expect(grid).toHaveAttribute('tabindex', '0');
 
@@ -53,7 +70,7 @@ describe('Tabelle · Tastatur', () => {
 
   it('springt mit Home und End an Anfang und Ende', async () => {
     await ladeApp();
-    ansicht('Tabelle');
+    await ansicht('Tabelle');
     const grid = tabelle();
 
     fireEvent.keyDown(grid, { key: 'End' });
@@ -66,7 +83,7 @@ describe('Tabelle · Tastatur', () => {
 
   it('wählt die aktive Zeile erst mit Enter aus', async () => {
     await ladeApp();
-    ansicht('Tabelle');
+    await ansicht('Tabelle');
     const grid = tabelle();
 
     fireEvent.keyDown(grid, { key: 'ArrowDown' });
@@ -84,7 +101,7 @@ describe('Tabelle · Tastatur', () => {
     // Leeres Filterergebnis: es gibt keine aktive Zeile, die den Fokusring
     // übernehmen könnte — dann muss der des Browsers stehen bleiben.
     await ladeApp();
-    ansicht('Tabelle');
+    await ansicht('Tabelle');
     fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'gibtesnichtimlv' } });
     // Die Suche ist entprellt — warten, bis die Tabelle wirklich leer ist.
     await waitFor(() =>
@@ -101,7 +118,7 @@ describe('Tabelle · Tastatur', () => {
 
   it('sortiert mit Enter im Spaltenkopf, ohne nebenbei eine Zeile zu wählen', async () => {
     await ladeApp();
-    ansicht('Tabelle');
+    await ansicht('Tabelle');
     const grid = tabelle();
     const kopf = within(grid).getAllByRole('columnheader')[0];
     const knopf = within(kopf).getByRole('button');
@@ -119,7 +136,7 @@ describe('Tabelle · Tastatur', () => {
   it('führt die Tastatur an die Auswahl, die von außen kommt', async () => {
     // Sonst springt der nächste Pfeiltastendruck an eine ganz andere Stelle.
     await ladeApp();
-    ansicht('Tabelle');
+    await ansicht('Tabelle');
     const grid = tabelle();
     fireEvent.keyDown(grid, { key: 'End' });
     const letzte = aktiveZeile(grid);
@@ -147,9 +164,8 @@ describe('Ohne Maus bedienbar', () => {
     // Enter auslösbar. Enter auf einer fokussierten Schaltfläche ist ein
     // Klick — genau das prüft dieser Weg.
     await ladeApp();
-    ansicht('Überblick');
-    const main = screen.getByRole('main');
-    const zeilen = within(main)
+    await ansicht('Prüfung');
+    const zeilen = within(seitenfenster())
       .getAllByRole('button')
       .filter((knopf) => /\d{3}\.\d{3}\.\d{4}/.test(knopf.textContent ?? ''));
     if (zeilen.length === 0) return; // Fixture ohne Hinweise — nichts zu prüfen.
@@ -158,21 +174,20 @@ describe('Ohne Maus bedienbar', () => {
     expect(document.activeElement).toBe(zeilen[0]);
     fireEvent.click(zeilen[0]);
 
-    await waitFor(() =>
-      expect(screen.getByRole('radio', { name: 'Tabelle' })).toHaveAttribute(
-        'aria-checked',
-        'true',
-      ),
-    );
+    await waitFor(() => expect(tabellenfenster()).toBeInTheDocument());
   });
 
   it('macht jede Ansicht mit der Tastatur erreichbar', async () => {
     // Jede Ansicht bietet mindestens einen Bedienpunkt, der den Fokus nimmt.
     await ladeApp();
-    for (const name of ['Überblick', 'Graph', 'Tabelle']) {
-      ansicht(name);
-      const main = screen.getByRole('main');
-      const fokussierbar = main.querySelectorAll(
+    const flaechen: ReadonlyArray<[string, () => HTMLElement]> = [
+      ['Prüfung', seitenfenster],
+      ['Überblick', seitenfenster],
+      ['Tabelle', tabellenfenster],
+    ];
+    for (const [name, flaeche] of flaechen) {
+      await ansicht(name);
+      const fokussierbar = flaeche().querySelectorAll(
         'button:not([disabled]), [tabindex="0"], input, select',
       );
       expect(fokussierbar.length, `${name}: nichts fokussierbar`).toBeGreaterThan(0);

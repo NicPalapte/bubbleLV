@@ -1,4 +1,4 @@
-# 0031 – STLB-Katalog ohne Spalte `positionsart_default`
+# 0032 – STLB-Katalog ohne Spalte `positionsart_default`
 
 - **Status:** akzeptiert
 - **Datum:** 2026-10-04

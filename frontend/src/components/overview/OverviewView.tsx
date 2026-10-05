@@ -1,6 +1,6 @@
-// Ansicht „Überblick" (WP-L, Schritt 3) — die Eingangsansicht: Kennzahlen,
-// Treemap nach Gewerk und Abschnitt, Pareto, Mengen je Einheit, Prüfung und
-// Import-Log.
+// Reiter „Überblick" im Seitenfenster (WP-L, Schritt 3): Kennzahlen, Treemap
+// nach Gewerk und Abschnitt, Pareto, Mengen je Einheit und Import-Log. Die
+// Prüfung hat einen eigenen Reiter (shell/SidePanel.tsx).
 //
 // **Ein Filterzustand, alle Ansichten** (.claude/CLAUDE.md): gerechnet wird
 // über der gefilterten Menge, dieselbe, die Tabelle und Graph zeigen. Ohne
@@ -10,7 +10,6 @@
 // nie über den Baum und nie im Render (WP-I).
 
 import { useMemo } from 'react';
-import { CheckCard } from './CheckCard';
 import { ImportLogCard } from './ImportLogCard';
 import { MetricTiles } from './MetricTiles';
 import { ParetoCard } from './ParetoCard';
@@ -37,7 +36,7 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <section className="min-w-0 flex-1 border border-line bg-white px-[14px] py-[12px]">
+    <section className="min-w-0 flex-1 basis-[300px] rounded-[var(--r-md)] border border-line bg-surface px-[14px] py-[12px]">
       <BlockLabel right={note}>{title}</BlockLabel>
       {children}
     </section>
@@ -88,11 +87,10 @@ export function OverviewView() {
   };
 
   return (
-    <div ref={attachScroll} onScroll={onScroll} className="absolute inset-0 overflow-auto bg-paper">
-      <div className="mx-auto flex max-w-[1180px] flex-col gap-[12px] px-[20px] py-[16px]">
+    <div ref={attachScroll} onScroll={onScroll} className="absolute inset-0 overflow-auto">
+      <div className="flex flex-col gap-[12px] px-[14px] py-[14px]">
         <div>
-          <BlockLabel>Überblick</BlockLabel>
-          <p className="mt-[2px] font-sans text-[13px] font-semibold text-ink">
+          <p className="m-0 font-sans text-[13px] font-semibold text-ink">
             {formatPositions(metrics.positions)}
             {metrics.filtering && (
               <span className="font-normal text-dim">
@@ -141,14 +139,9 @@ export function OverviewView() {
           </Card>
         </div>
 
-        <div className="flex flex-wrap gap-[12px]">
-          <Card title="Prüfung" note="Hinweis, kein Urteil">
-            <CheckCard />
-          </Card>
-          <Card title="Import-Log" note="ganze Datei">
-            <ImportLogCard />
-          </Card>
-        </div>
+        <Card title="Import-Log" note="ganze Datei">
+          <ImportLogCard />
+        </Card>
       </div>
     </div>
   );

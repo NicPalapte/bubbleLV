@@ -52,7 +52,21 @@ export {
   PANEL_MIN_WIDTH,
   clampPanelWidth,
 } from './viewState';
-export type { CardPos, GraphFocus, PanelSize, SizeModeId, ViewMode, ViewState } from './viewState';
+export {
+  DEFAULT_TABLE_SIZE,
+  TABLE_MAX_WIDTH,
+  TABLE_MIN_HEIGHT,
+  TABLE_MIN_WIDTH,
+} from './viewState';
+export type {
+  CardPos,
+  GraphFocus,
+  PanelSize,
+  SidePanel,
+  SizeModeId,
+  ViewMode,
+  ViewState,
+} from './viewState';
 
 export interface ViewerState {
   lv: LoadedLV | null;
@@ -185,6 +199,10 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     }
 
     case 'setViewMode':
+    case 'sidePanel':
+    case 'tableWindow':
+    case 'tableWindowPos':
+    case 'tableWindowSize':
     case 'sizeMode':
     case 'graphFocus':
     case 'focusGroupBy':
