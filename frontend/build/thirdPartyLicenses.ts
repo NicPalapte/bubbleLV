@@ -94,9 +94,15 @@ export function thirdPartyLicenses(root: string): Plugin {
     name: 'bubble-third-party-licenses',
     // Im Dev-Server dieselbe Datei, damit der Link im Logo-Menü auch dort trägt.
     configureServer(server) {
-      server.middlewares.use('/lizenzen.txt', (_req, res) => {
-        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-        res.end(`${collectThirdParty(root)}\n`);
+      // Gleicher Pfad wie in der App: BASE_URL + Dateiname (PR-Previews laufen unter Unterpfad).
+      server.middlewares.use(`${server.config.base}lizenzen.txt`, (_req, res, next) => {
+        try {
+          const text = collectThirdParty(root);
+          res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+          res.end(`${text}\n`);
+        } catch (err) {
+          next(err);
+        }
       });
     },
     generateBundle() {
