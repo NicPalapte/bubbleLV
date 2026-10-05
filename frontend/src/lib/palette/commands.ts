@@ -80,10 +80,6 @@ const VIEWS: readonly { mode: ViewMode; label: string }[] = [
   { mode: 'overview', label: 'Überblick' },
   { mode: 'graph', label: 'Graph' },
   { mode: 'table', label: 'Tabelle' },
-  { mode: 'matrix', label: 'Matrix' },
-  { mode: 'similar', label: 'Ähnlichkeit' },
-  { mode: 'compare', label: 'Vergleich' },
-  { mode: 'check', label: 'Prüfung' },
 ];
 
 /**
@@ -138,6 +134,13 @@ export function buildCommands({
       actions: [{ type: 'setViewMode', mode }],
     });
   }
+  // Die Prüfung ist keine Ansicht, sondern ein Reiter im Seitenfenster.
+  commands.push({
+    id: 'side:check',
+    group: 'Ansicht',
+    label: 'Prüfung',
+    actions: [{ type: 'sidePanel', panel: 'check' }],
+  });
 
   for (const [facetId, values] of summary.facets) {
     const facet = FACETS_BY_ID.get(facetId);

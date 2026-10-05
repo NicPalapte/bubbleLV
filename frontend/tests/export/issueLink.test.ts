@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { issueBody, issueUrl } from '../../src/lib/export/issueLink';
+import { issueBody, issueUrl, mailtoUrl, meldeMail } from '../../src/lib/export/issueLink';
 import { buildPositionIndex } from '../../src/lib/index/positionIndex';
 import { runPipeline } from '../../src/lib/pipeline/runPipeline';
 
@@ -68,5 +68,20 @@ describe('issueUrl', () => {
     // abgeschickt (docs/decisions/0017-keine-nutzungsmessung.md).
     expect(url.startsWith('https://github.com/NicPalapte/bubbleLV/issues/new?')).toBe(true);
     expect(url).toContain('labels=bug');
+  });
+});
+
+describe('Melde-Adresse', () => {
+  it('steht nicht im Klartext im Quelltext', () => {
+    // Spam-Sammler suchen nach `name@domain`; die Adresse darf nur getarnt
+    // im Code stehen und erst beim Klick zusammengesetzt werden.
+    const quelle = readFileSync('src/lib/export/issueLink.ts', 'utf8');
+    expect(quelle).not.toMatch(/[\w.+-]+@[\w-]+\.[a-z]{2,}/i);
+    expect(meldeMail()).toMatch(/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/);
+  });
+
+  it('kommt im mailto-Link an', () => {
+    const url = mailtoUrl({ view: 'graph', loaded: false });
+    expect(url.startsWith(`mailto:${meldeMail()}?`)).toBe(true);
   });
 });

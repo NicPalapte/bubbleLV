@@ -1,5 +1,5 @@
 // Prüfung im Graph (WP-R, R1): der Ring an der Bubble, der Block „Hinweise" in
-// den Positionsdetails und der Sprung von dort in die Ansicht „Prüfung".
+// den Positionsdetails und der Sprung von dort in die Prüfkarte des Überblicks.
 //
 // Die Zusage, an der das hängt: **dieselbe Zahl wie in der Prüfung**. Eine
 // abgeschaltete Regel darf im Graphen nicht weitermarkieren, und eine Position
@@ -52,7 +52,7 @@ function Harness({
     view: {
       mode,
       side,
-      check: { openRules, revealRule },
+      overview: { openRules, revealRule },
     },
     selection: { positionId: gewaehlt },
   } = useViewer();
@@ -122,7 +122,7 @@ describe('HintBlock', () => {
     expect(screen.queryByText(labelOf('V1'))).toBeNull();
   });
 
-  it('springt in die Prüfung, klappt die Regel auf und nimmt die Auswahl mit', () => {
+  it('springt in die Prüfkarte, klappt die Regel auf und nimmt die Auswahl mit', () => {
     renderBlock(MIT_V1 as string);
     fireEvent.click(screen.getAllByRole('button', { name: 'IN DER PRÜFUNG ZEIGEN' })[0]);
     // Die Prüfung ist ein Reiter im Seitenfenster über dem Graphen.

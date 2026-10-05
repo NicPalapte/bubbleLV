@@ -244,9 +244,14 @@ Ebenso leer: Herstellerliste (V3) und Nebenleistungs-Listen (V8, V9).
 
 ## WP-L · Ansichts-Gerüst und Überblick · `feat(viewer)`
 
-**Ziel:** Acht gleichrangige Ansichten auf einem Filterzustand — und die erste neue.
+**Ziel:** Mehrere gleichrangige Ansichten auf einem Filterzustand — und die erste neue.
 
-**Umgesetzt.** Vier von acht Ansichten stehen: Überblick · Graph · Tabelle · Prüfung.
+> **Geändert am 2026-10-04:** Der Plan sah acht Ansichten vor. Es bleiben drei: Überblick
+> (mit Prüfung und Import-Log) · Graph · Tabelle. Matrix, Ähnlichkeit und Vergleich sind
+> entfernt, siehe [`0031`](decisions/0031-drei-ansichten.md). Die Abschnitte der
+> entfernten Ansichten unten beschreiben den früheren Stand.
+
+**Umgesetzt (früherer Stand).** Vier von acht Ansichten standen: Überblick · Graph · Tabelle · Prüfung.
 
 Schritte:
 

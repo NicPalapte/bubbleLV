@@ -25,7 +25,7 @@ import { FACETS_BY_ID } from '../facets';
 import type { Range } from '../matchPos';
 
 /** Die Ansichten, die ein Link benennen darf (Werte von `ViewMode`). */
-const VIEWS = ['overview', 'graph', 'table', 'matrix', 'check', 'similar', 'compare'] as const;
+const VIEWS = ['overview', 'graph', 'table'] as const;
 const HIDE_MODES = ['dim', 'hide'] as const;
 
 export interface SharedState {
@@ -39,9 +39,9 @@ export interface SharedState {
   oz: string | null;
 }
 
-// Der Graph ist der Hauptscreen (docs/decisions/0032-graph-als-hauptscreen.md) —
-// ein Link ohne Ansicht öffnet ihn. Alte Links mit `overview`, `table`, `check`
-// oder `compare` lesen sich weiter; der Reducer öffnet dann das passende Fenster.
+// Der Graph ist der Hauptscreen (docs/decisions/0034-graph-als-hauptscreen.md) —
+// ein Link ohne Ansicht öffnet ihn. Links mit `overview` oder `table` lesen sich
+// weiter; der Reducer öffnet dann das passende Fenster.
 export const EMPTY_SHARED: SharedState = {
   view: 'graph',
   search: '',

@@ -4,7 +4,7 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import App from '../../src/App';
 
@@ -39,17 +39,10 @@ async function ladeApp(name = 'gaeb-xml-beispiel.x83'): Promise<void> {
   await ladeDatei(name);
 }
 
-/**
- * Matrix über die Befehle öffnen — der Graph ist der Hauptscreen, die Matrix
- * eine eigene Fläche. Das leere `act` lässt den Listener der Palette (ein
- * `useEffect`) erst hängen.
- */
-async function zeigeMatrix(): Promise<void> {
-  await act(async () => {});
-  fireEvent.click(within(screen.getByRole('banner')).getByRole('button', { name: /^Befehle/ }));
-  fireEvent.change(screen.getByLabelText('Befehl oder OZ'), { target: { value: 'Matrix' } });
-  fireEvent.keyDown(screen.getByRole('dialog', { name: 'Kommandopalette' }), { key: 'Enter' });
-  await waitFor(() => expect(screen.getByRole('main', { name: 'Matrix' })).toBeInTheDocument());
+/** Suche setzen und warten, bis sie (entprellt) in der Adresszeile steht. */
+async function sucheBeton(): Promise<void> {
+  fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'Beton' } });
+  await waitFor(() => expect(fragment()).toContain('q=Beton'));
 }
 
 /** Tabellenfenster über dem Graphen. */
@@ -64,13 +57,12 @@ describe('Geteilter Link · schreiben', () => {
     expect(fragment()).toBe('');
   });
 
-  it('schreibt Ansicht und Suche in die Adresszeile', async () => {
+  it('schreibt die Suche in die Adresszeile — die Ansicht bleibt draußen', async () => {
+    // Der Graph ist der Hauptscreen; ein offenes Fenster ist keine Ansicht.
     await ladeApp();
-    await zeigeMatrix();
-    fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'Beton' } });
-
-    await waitFor(() => expect(fragment()).toContain('v=matrix'));
-    expect(fragment()).toContain('q=Beton');
+    fireEvent.click(screen.getByRole('button', { name: /^▴ Tabelle/ }));
+    await sucheBeton();
+    expect(fragment()).not.toContain('v=');
   });
 
   it('schreibt den Pfad nicht weg', async () => {
@@ -78,8 +70,7 @@ describe('Geteilter Link · schreiben', () => {
     // „#…" würde ihn verwerfen.
     window.history.replaceState(null, '', '/pr-preview/pr-65/');
     await ladeApp();
-    await zeigeMatrix();
-    await waitFor(() => expect(fragment()).toContain('v=matrix'));
+    await sucheBeton();
     expect(window.location.pathname).toBe('/pr-preview/pr-65/');
   });
 });
@@ -99,15 +90,12 @@ describe('Geteilter Link · lesen', () => {
     expect(einheit.getByTitle('m³')).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it.each([
-    ['overview', 'Überblick'],
-    ['check', 'Prüfung'],
-  ])('öffnet einen alten Link auf „%s" als Reiter im Seitenfenster', async (view, reiter) => {
-    setzeFragment(`#v=${view}`);
+  it('öffnet einen Link auf den Überblick als Reiter im Seitenfenster', async () => {
+    setzeFragment('#v=overview');
     await ladeApp();
 
     await waitFor(() =>
-      expect(screen.getByRole('tab', { name: new RegExp(`^${reiter}`) })).toHaveAttribute(
+      expect(screen.getByRole('tab', { name: 'Überblick' })).toHaveAttribute(
         'aria-selected',
         'true',
       ),
@@ -124,10 +112,10 @@ describe('Geteilter Link · lesen', () => {
   });
 
   it('übergeht eine OZ, die es in dieser Datei nicht gibt — der Rest des Links gilt', async () => {
-    setzeFragment('#v=matrix~p=999.999.9999.gibt-es-nicht');
+    setzeFragment('#v=table~p=999.999.9999.gibt-es-nicht');
     await ladeApp();
 
-    await waitFor(() => expect(screen.getByRole('main', { name: 'Matrix' })).toBeInTheDocument());
+    await waitFor(() => expect(tabellenfenster()).toBeInTheDocument());
   });
 
   it('macht aus einem kaputten Link keinen kaputten Zustand', async () => {
@@ -183,8 +171,7 @@ describe('Geteilter Link · zweite Datei', () => {
 
   it('räumt die Adresszeile, wenn das LV geschlossen wird', async () => {
     await ladeApp();
-    await zeigeMatrix();
-    await waitFor(() => expect(fragment()).toContain('v=matrix'));
+    await sucheBeton();
 
     fireEvent.click(screen.getByRole('button', { name: /LV schließen/ }));
     await waitFor(() => expect(fragment()).toBe(''));

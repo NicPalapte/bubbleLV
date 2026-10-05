@@ -11,17 +11,15 @@
 // erreichen kann (.claude/CLAUDE.md#kritische-constraints).
 
 import type { ColumnConfig } from '../lib/table/columns';
-import type { MatrixMeasure } from '../lib/matrix/model';
 import type { FocusGroupBy } from '../lib/graph/focusTree';
 
-export type ViewMode = 'overview' | 'graph' | 'table' | 'matrix' | 'check' | 'similar' | 'compare';
+export type ViewMode = 'overview' | 'graph' | 'table';
 /**
- * Seit dem neuen Hauptscreen (docs/decisions/0032-graph-als-hauptscreen.md)
- * steht nur noch der Graph als Fläche da; Überblick und Prüfung sind Reiter im
- * Seitenfenster, Tabelle und Vergleich schweben als Fenster darüber. Matrix und
- * Ähnlichkeit bleiben eigene Flächen, erreichbar über die Befehle.
+ * Seit dem neuen Hauptscreen (docs/decisions/0034-graph-als-hauptscreen.md)
+ * steht nur noch der Graph als Fläche da: Überblick und Prüfung sind Reiter im
+ * Seitenfenster, die Tabelle schwebt als Fenster darüber. `mode` bleibt
+ * deshalb immer `graph` — siehe `setViewMode`.
  */
-export type SurfaceMode = 'graph' | 'matrix' | 'similar';
 export type SidePanel = 'overview' | 'filter' | 'check';
 export type SizeModeId = 'count' | 'cost' | 'quantity' | 'uniform';
 /**
@@ -82,15 +80,6 @@ export interface GraphViewState {
    * rendern. Erst beim Verlassen der Ansicht wandert er hierher.
    */
   viewport: Viewport | null;
-  /**
-   * Hervorgehobene Ähnlichkeitsgruppe (WP-R, R2) — ihre Mitglieder treten
-   * hervor, alles andere tritt zurück. `null` = keine.
-   *
-   * Reiner Anzeigezustand des Graphen: er fasst Filter, Suche und Auswahl
-   * nicht an (.claude/CLAUDE.md#frontend). Ein Ansichtswechsel lässt ihn
-   * stehen, ein neuer Import verwirft ihn mit dem ganzen Zustand.
-   */
-  highlightCluster: string | null;
 }
 
 export interface TableViewState {
@@ -98,97 +87,6 @@ export interface TableViewState {
   scope: TableScope;
   /** `null` = unveränderte Standardspalten; die Tabelle kennt ihre Vorgabe. */
   columns: ColumnConfig | null;
-}
-
-/**
- * So viele Positionen passen im Vergleich nebeneinander, ohne unlesbar zu
- * werden (WP-N). Die Auswahl selbst wird davon **nicht** begrenzt: die Ansicht
- * zeigt die ersten und sagt, wie viele warten.
- */
-export const MAX_COMPARE_COLUMNS = 5;
-
-/**
- * Maße des Vergleichsfensters über dem Graphen (WP-R, R3). Weiter als die
- * Info-Panels, weil hier mehrere Spalten nebeneinander stehen: fünf Spalten à
- * 200 px passen in kein Panel-Maß. Schmaler als 360 px wird die zweite Spalte
- * unlesbar.
- */
-export const COMPARE_MIN_WIDTH = 360;
-export const COMPARE_MAX_WIDTH = 900;
-export const COMPARE_MIN_HEIGHT = 200;
-
-/**
- * Startort links neben der Auswahlkarte (die hängt bei `right: 16`) und unter
- * der Kopfzeile des Graphen: beide können gleichzeitig dastehen, und ein
- * Fenster, das Karte oder Kennzahlen verdeckt, sieht wie ein Fehler aus.
- * Verschieben geht trotzdem — auch übereinander.
- */
-export const DEFAULT_COMPARE_POS: CardPos = { right: 360, top: 60 };
-export const DEFAULT_COMPARE_SIZE: PanelSize = { width: 560, height: 360 };
-
-export interface CompareViewState {
-  /** Nur Zeilen zeigen, in denen sich die Spalten unterscheiden (WP-N). */
-  onlyDiffs: boolean;
-  /**
-   * Fenster über dem Graphen offen (WP-R, R3). Geht auf, sobald der Vergleich
-   * auf zwei Positionen wächst, bleibt beim Herausnehmen offen — auch mit einer
-   * Spalte — und geht erst zu, wenn der Vergleich leer ist (state/viewer.ts).
-   *
-   * Geschlossen heißt **nicht** „Auswahl weg": die Positionen bleiben im
-   * Vergleich, die Kopfzeile des Graphen bietet das Fenster wieder an.
-   */
-  windowOpen: boolean;
-  /** Eigener Ort und eigene Größe — nicht die der Info-Panels. */
-  windowPos: CardPos;
-  windowSize: PanelSize;
-}
-
-/** Standardachsen der Matrix — die beiden Facetten, die ein LV am ehesten ordnen. */
-export const DEFAULT_MATRIX_AXES = { row: 'gewerk', col: 'bauteiltyp' } as const;
-
-export interface MatrixViewState {
-  /** Facetten-IDs der beiden Achsen (lib/facets.ts). */
-  rowFacetId: string;
-  colFacetId: string;
-  measure: MatrixMeasure;
-}
-
-export interface CheckViewState {
-  /** Aufgeklappte Regeln — welche Fundlisten offen stehen. */
-  openRules: ReadonlySet<string>;
-  /**
-   * Regel, die die Ansicht einmalig ins Fenster holen soll (WP-R, R1). Ein
-   * Sprung aus dem Graphen klappt die Regel auf — ohne dieses Merkzeichen
-   * landete er am gemerkten Scrollstand, also meist weit über ihr. Die Ansicht
-   * setzt es nach dem Scrollen zurück; es überlebt keinen zweiten Blick.
-   */
-  revealRule: string | null;
-}
-
-/** Wonach die Ansicht „Ähnlichkeit" ihre Gruppen ordnet. */
-export type ClusterSort = 'groesse' | 'streuung' | 'aehnlichkeit';
-
-/** Auswahl des Reglers „ab n Mitgliedern" (WP-M, Schritt 5). */
-export const CLUSTER_MIN_MEMBERS = [2, 3, 5, 10] as const;
-
-export interface SimilarViewState {
-  /**
-   * Nur Gruppen ab dieser Mitgliederzahl anzeigen. Der Regler sitzt bewusst in
-   * der Ansicht und nicht im globalen Filter: `matchPos` entscheidet je
-   * Position aus der Position selbst, die Cluster-Zugehörigkeit entsteht erst
-   * danach (docs/decisions/0016-aehnlichkeit-und-cluster.md).
-   */
-  minMembers: number;
-  sort: ClusterSort;
-  /** Aufgeklappte Gruppen — welche Mitgliederlisten offen stehen. */
-  openClusters: ReadonlySet<string>;
-  /**
-   * Gruppe, die die Ansicht einmalig ins Fenster holen soll (WP-R, R2) — das
-   * Gegenstück zu `check.revealRule`. Ohne dieses Merkzeichen landete ein
-   * Sprung aus dem Graphen am gemerkten Scrollstand, irgendwo in einer nach
-   * Größe sortierten Liste. Die Ansicht setzt es nach dem Scrollen zurück.
-   */
-  revealCluster: string | null;
 }
 
 /** Ort und Größe des Tabellenfensters über dem Graphen. */
@@ -208,18 +106,28 @@ export interface TableWindowState {
   size: PanelSize;
 }
 
+/** Überblick: aufgeklappte Prüfregeln und das Sprungziel aus dem Graphen. */
+export interface OverviewViewState {
+  /** Aufgeklappte Regeln — welche Fundlisten offen stehen. */
+  openRules: ReadonlySet<string>;
+  /**
+   * Regel, die die Ansicht einmalig ins Fenster holen soll (WP-R, R1). Ein
+   * Sprung aus dem Graphen klappt die Regel auf — ohne dieses Merkzeichen
+   * landete er am gemerkten Scrollstand, also meist weit über ihr. Die Ansicht
+   * setzt es nach dem Scrollen zurück; es überlebt keinen zweiten Blick.
+   */
+  revealRule: string | null;
+}
+
 export interface ViewState {
-  /** Nie `overview`, `check`, `table` oder `compare` — siehe `setViewMode`. */
+  /** Immer `graph` — Überblick und Tabelle liegen darüber, siehe `setViewMode`. */
   mode: ViewMode;
   /** Offener Reiter im Seitenfenster; `null` = zu. */
   side: SidePanel | null;
   tableWindow: TableWindowState;
   graph: GraphViewState;
   table: TableViewState;
-  matrix: MatrixViewState;
-  check: CheckViewState;
-  similar: SimilarViewState;
-  compare: CompareViewState;
+  overview: OverviewViewState;
   /** Scrollposition je Ansicht — sie überlebt den Wechsel (WP-L, Abnahme). */
   scroll: Readonly<Record<ViewMode, number>>;
   panelSize: PanelSize;
@@ -239,31 +147,14 @@ export type ViewAction =
   | { type: 'focusGroupBy'; value: FocusGroupBy }
   /** Graph-Ausschnitt sichern — beim Verlassen der Ansicht, nicht je Frame. */
   | { type: 'graphViewport'; viewport: Viewport | null }
-  /** Ähnlichkeitsgruppe hervorheben; `null` hebt die Hervorhebung auf. */
-  | { type: 'highlightCluster'; id: string | null }
   | { type: 'tableSort'; key: string }
   | { type: 'tableScope'; scope: TableScope }
   | { type: 'tableColumns'; columns: ColumnConfig | null }
-  /** Achse der Matrix umstellen; die andere bleibt, wo sie ist. */
-  | { type: 'matrixAxis'; axis: 'row' | 'col'; facetId: string }
-  | { type: 'matrixMeasure'; value: MatrixMeasure }
   | { type: 'toggleRuleOpen'; id: string }
   /** Regel gezielt aufklappen — der Sprung aus dem Graphen soll sie offen finden. */
   | { type: 'openRule'; id: string }
   /** Die Ansicht hat die Regel ins Fenster geholt; das Merkzeichen ist verbraucht. */
   | { type: 'ruleRevealed' }
-  | { type: 'compareOnlyDiffs'; value: boolean }
-  /** Vergleichsfenster über dem Graphen öffnen bzw. schließen. */
-  | { type: 'compareWindow'; open: boolean }
-  | { type: 'compareWindowPos'; pos: CardPos }
-  | { type: 'compareWindowSize'; size: PanelSize }
-  | { type: 'clusterMinMembers'; value: number }
-  | { type: 'clusterSort'; value: ClusterSort }
-  | { type: 'toggleClusterOpen'; id: string }
-  /** Gruppe gezielt aufklappen und ins Fenster holen — der Sprung aus dem Graphen. */
-  | { type: 'openCluster'; id: string }
-  /** Die Ansicht hat die Gruppe ins Fenster geholt; das Merkzeichen ist verbraucht. */
-  | { type: 'clusterRevealed' }
   | { type: 'viewScroll'; view: ViewMode; top: number }
   /** Info-Panels vergrößern/verkleinern; `height` nur von der Karte genutzt. */
   | { type: 'panelSize'; size: PanelSize }
@@ -274,15 +165,11 @@ const NO_SCROLL: Readonly<Record<ViewMode, number>> = {
   overview: 0,
   graph: 0,
   table: 0,
-  matrix: 0,
-  check: 0,
-  similar: 0,
-  compare: 0,
 };
 
 export const INITIAL_VIEW_STATE: ViewState = {
   // Der Graph ist der Hauptscreen; alles andere schwebt darüber
-  // (docs/decisions/0032-graph-als-hauptscreen.md).
+  // (docs/decisions/0034-graph-als-hauptscreen.md).
   mode: 'graph',
   side: null,
   tableWindow: { open: false, pos: DEFAULT_TABLE_POS, size: DEFAULT_TABLE_SIZE },
@@ -293,23 +180,9 @@ export const INITIAL_VIEW_STATE: ViewState = {
     focus: 'structure',
     groupBy: 'abschnitt',
     viewport: null,
-    highlightCluster: null,
   },
   table: { sort: { key: 'oz', dir: 1 }, scope: 'node', columns: null },
-  matrix: {
-    rowFacetId: DEFAULT_MATRIX_AXES.row,
-    colFacetId: DEFAULT_MATRIX_AXES.col,
-    measure: 'anzahl',
-  },
-  check: { openRules: new Set(), revealRule: null },
-  similar: { minMembers: 2, sort: 'groesse', openClusters: new Set(), revealCluster: null },
-  compare: {
-    onlyDiffs: false,
-    // Ein leerer Vergleich hat kein Fenster — es geht mit der zweiten Position auf.
-    windowOpen: false,
-    windowPos: DEFAULT_COMPARE_POS,
-    windowSize: DEFAULT_COMPARE_SIZE,
-  },
+  overview: { openRules: new Set(), revealRule: null },
   scroll: NO_SCROLL,
   panelSize: DEFAULT_PANEL_SIZE,
   cardPos: DEFAULT_CARD_POS,
@@ -329,27 +202,6 @@ export function viewStateForNewLv(state: ViewState): ViewState {
       focus: state.graph.focus,
       groupBy: state.graph.groupBy,
       viewport: null,
-      // Die Gruppen der alten Datei gibt es nicht mehr — eine gemerkte ID
-      // zeigte ins Leere.
-      highlightCluster: null,
-    },
-    // Achsen und Zellwert der Matrix sind eine Vorliebe, kein Fachdatum: die
-    // Facettenliste ist für jede Datei dieselbe.
-    matrix: state.matrix,
-    // Regler und Sortierung der Ähnlichkeit sind eine Vorliebe, kein Fachdatum
-    // — die aufgeklappten Gruppen der alten Datei fallen dagegen weg.
-    similar: {
-      minMembers: state.similar.minMembers,
-      sort: state.similar.sort,
-      openClusters: new Set(),
-      revealCluster: null,
-    },
-    // Ort und Größe des Vergleichsfensters sind ebenfalls eine Vorliebe; was
-    // darin stand, gehörte zur alten Datei und fällt mit der Auswahl weg.
-    compare: {
-      ...INITIAL_VIEW_STATE.compare,
-      windowPos: state.compare.windowPos,
-      windowSize: state.compare.windowSize,
     },
     tableWindow: {
       ...INITIAL_VIEW_STATE.tableWindow,
@@ -372,30 +224,17 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
       // Bewusst nur Ansichtszustand: Filter, Auswahl und der gemerkte Zustand
       // der anderen Ansichten bleiben unangetastet.
       //
-      // Die früheren Ansichten Überblick, Prüfung, Tabelle und Vergleich leben
-      // jetzt über dem Graphen. Wer sie anfordert (Befehle, Sprünge, alte
-      // Links), bekommt den Graphen mit dem passenden Fenster.
-      const toGraph = (next: ViewState): ViewState =>
-        next.mode === 'graph' ? next : { ...next, mode: 'graph' };
-      switch (action.mode) {
-        case 'overview':
-        case 'check':
-          return toGraph(state.side === action.mode ? state : { ...state, side: action.mode });
-        case 'table':
-          return toGraph(
-            state.tableWindow.open
-              ? state
-              : { ...state, tableWindow: { ...state.tableWindow, open: true } },
-          );
-        case 'compare':
-          return toGraph(
-            state.compare.windowOpen
-              ? state
-              : { ...state, compare: { ...state.compare, windowOpen: true } },
-          );
-        default:
-          return state.mode === action.mode ? state : { ...state, mode: action.mode };
-      }
+      // Überblick und Tabelle leben über dem Graphen. Wer sie anfordert
+      // (Befehle, Sprünge, Links), bekommt den Graphen mit dem passenden Fenster.
+      const next =
+        action.mode === 'overview'
+          ? state.side === 'overview'
+            ? state
+            : { ...state, side: 'overview' as const }
+          : action.mode === 'table' && !state.tableWindow.open
+            ? { ...state, tableWindow: { ...state.tableWindow, open: true } }
+            : state;
+      return next.mode === 'graph' ? next : { ...next, mode: 'graph' };
     }
     case 'sidePanel':
       return state.side === action.panel ? state : { ...state, side: action.panel };
@@ -425,9 +264,6 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
       return { ...state, graph: { ...state.graph, groupBy: action.value } };
     case 'graphViewport':
       return { ...state, graph: { ...state.graph, viewport: action.viewport } };
-    case 'highlightCluster':
-      if (state.graph.highlightCluster === action.id) return state;
-      return { ...state, graph: { ...state.graph, highlightCluster: action.id } };
     case 'tableSort': {
       const { sort } = state.table;
       const dir: 1 | -1 = sort.key === action.key ? ((sort.dir * -1) as 1 | -1) : 1;
@@ -437,65 +273,18 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
       return { ...state, table: { ...state.table, scope: action.scope } };
     case 'tableColumns':
       return { ...state, table: { ...state.table, columns: action.columns } };
-    case 'compareOnlyDiffs':
-      return { ...state, compare: { ...state.compare, onlyDiffs: action.value } };
-    case 'compareWindow':
-      return state.compare.windowOpen === action.open
-        ? state
-        : { ...state, compare: { ...state.compare, windowOpen: action.open } };
-    case 'compareWindowPos':
-      return { ...state, compare: { ...state.compare, windowPos: action.pos } };
-    case 'compareWindowSize':
-      return {
-        ...state,
-        compare: {
-          ...state.compare,
-          // Gemeinsame Grenzen wie bei den Info-Panels, aber eigene Zahlen.
-          windowSize: {
-            width: Math.min(Math.max(action.size.width, COMPARE_MIN_WIDTH), COMPARE_MAX_WIDTH),
-            height:
-              action.size.height === null ? null : Math.max(action.size.height, COMPARE_MIN_HEIGHT),
-          },
-        },
-      };
-    case 'matrixAxis':
-      return {
-        ...state,
-        matrix:
-          action.axis === 'row'
-            ? { ...state.matrix, rowFacetId: action.facetId }
-            : { ...state.matrix, colFacetId: action.facetId },
-      };
-    case 'matrixMeasure':
-      return { ...state, matrix: { ...state.matrix, measure: action.value } };
     case 'toggleRuleOpen': {
-      const openRules = new Set(state.check.openRules);
+      const openRules = new Set(state.overview.openRules);
       if (!openRules.delete(action.id)) openRules.add(action.id);
-      return { ...state, check: { ...state.check, openRules } };
+      return { ...state, overview: { ...state.overview, openRules } };
     }
     case 'openRule': {
-      const openRules = new Set(state.check.openRules).add(action.id);
-      return { ...state, check: { openRules, revealRule: action.id } };
+      const openRules = new Set(state.overview.openRules).add(action.id);
+      return { ...state, overview: { openRules, revealRule: action.id } };
     }
     case 'ruleRevealed':
-      if (state.check.revealRule === null) return state;
-      return { ...state, check: { ...state.check, revealRule: null } };
-    case 'clusterMinMembers':
-      return { ...state, similar: { ...state.similar, minMembers: action.value } };
-    case 'clusterSort':
-      return { ...state, similar: { ...state.similar, sort: action.value } };
-    case 'toggleClusterOpen': {
-      const openClusters = new Set(state.similar.openClusters);
-      if (!openClusters.delete(action.id)) openClusters.add(action.id);
-      return { ...state, similar: { ...state.similar, openClusters } };
-    }
-    case 'openCluster': {
-      const openClusters = new Set(state.similar.openClusters).add(action.id);
-      return { ...state, similar: { ...state.similar, openClusters, revealCluster: action.id } };
-    }
-    case 'clusterRevealed':
-      if (state.similar.revealCluster === null) return state;
-      return { ...state, similar: { ...state.similar, revealCluster: null } };
+      if (state.overview.revealRule === null) return state;
+      return { ...state, overview: { ...state.overview, revealRule: null } };
     case 'viewScroll':
       if (state.scroll[action.view] === action.top) return state;
       return { ...state, scroll: { ...state.scroll, [action.view]: action.top } };

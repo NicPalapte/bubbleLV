@@ -23,9 +23,9 @@ import type { Span } from '../../src/lib/classify';
 
 const CATALOG = parseStlbCsv(
   [
-    'lb_nummer,lb_bezeichnung,positionsart_default,keywords,quelle_version',
-    '013,"Beton- und Stahlbetonarbeiten",,betonarbeiten|stahlbeton|bewehrungsstahl,2023',
-    '012,Mauerarbeiten,,mauerarbeiten|kalksandstein,2023',
+    'lb_nummer,lb_bezeichnung,keywords,quelle_version',
+    '013,"Beton- und Stahlbetonarbeiten",betonarbeiten|stahlbeton|bewehrungsstahl,2023',
+    '012,Mauerarbeiten,mauerarbeiten|kalksandstein,2023',
   ].join('\n'),
 );
 

@@ -173,8 +173,7 @@ ClassifierInput
     ▼
 Stufe 0 — StlbMatch          → attributes.gewerk_lb    (LB-Nummer, z. B. "012")
     │                          attributes.gewerk        (LB-Bezeichnung, Katalog-Anzeigewert)
-    │                          attributes.positionsart   (aus LB-Katalog: positionsart_default,
-    │                                                     falls der LB eindeutig nicht-physisch ist,
+    │                          attributes.positionsart   (LB-Treffer im Positionstext: Heuristik,
     │                                                     sonst vorläufig "bauteil")
     │
     ├── kein LB-Treffer im Positionstext ──► Überschriften der übergeordneten
@@ -214,7 +213,7 @@ Vokabularwert als Attribut und den Wortlaut als Span
 **Stufe 0 (`StlbMatch`)** matcht `shortText`/`longText` gegen die vom Maintainer
 gepflegte Referenztabelle
 [`domain/reference/stlb-bau-leistungsbereiche.csv`](../domain/reference/stlb-bau-leistungsbereiche.csv)
-(Spalten: `lb_nummer`, `lb_bezeichnung`, `positionsart_default`, `keywords`,
+(Spalten: `lb_nummer`, `lb_bezeichnung`, `keywords`,
 `quelle_version` — Format/Herkunft siehe
 [`domain/README.md`](../domain/README.md#stlb-bau-leistungsbereiche-als-primäre-klassifizierungsquelle-wp-2)).
 Die Datei wird als Build-Time-Asset eingebunden (`?raw`-Import, kein `fetch` — die App

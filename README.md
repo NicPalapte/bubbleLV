@@ -20,10 +20,9 @@ Zum Ausprobieren ohne eigene Datei liegen **zwei Demo-LVs** bei (Startseite):
 ein daraus aufgebautes Angebot (x84) mit erfundenen Preisen
 ([Details](docs/decisions/0014-demo-lv-mit-preisen.md)).
 
-Der Graph ist der Hauptscreen. Darüber schweben Überblick, Filter und Prüfung im
-Seitenfenster, dazu Positionskarte, Tabelle und Vergleich als Fenster. Matrix und
-Ähnlichkeit sind eigene Flächen. Alles teilt sich **einen** Filterzustand
-([Details](docs/decisions/0032-graph-als-hauptscreen.md)).
+Der Graph ist der Hauptscreen. Darüber schweben Überblick (mit Import-Log), Filter und
+Prüfung im Seitenfenster, dazu Positionskarte und Tabelle als Fenster. Alles teilt sich
+**einen** Filterzustand ([Details](docs/decisions/0034-graph-als-hauptscreen.md)).
 
 Bubble kalkuliert nicht und schreibt nichts zurück — das bleibt **iTwo**.
 

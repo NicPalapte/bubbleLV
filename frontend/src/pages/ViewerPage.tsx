@@ -1,8 +1,7 @@
-// Hauptscreen (docs/decisions/0032-graph-als-hauptscreen.md): der Graph füllt
+// Hauptscreen (docs/decisions/0034-graph-als-hauptscreen.md): der Graph füllt
 // die Fläche, alles andere schwebt darüber — Kennzahlen, Seitenfenster
-// (Überblick · Filter · Prüfung), Positionskarte, Tabelle und Vergleich als
-// Fenster. Matrix und Ähnlichkeit sind eigene Flächen, erreichbar über die
-// Befehle. Alles arbeitet auf **einem** Filterzustand; was eine Ansicht sich
+// (Überblick · Filter · Prüfung), Positionskarte und Tabelle als Fenster.
+// Alles arbeitet auf **einem** Filterzustand; was eine Ansicht sich
 // merkt, steht in `view` (state/viewState.ts).
 //
 // Alle Daten stammen aus der lokalen Pipeline (Datei → Parser →
@@ -13,9 +12,7 @@ import { NoticeBar } from '../components/layout/NoticeBar';
 import { BubbleGraph } from '../components/graph/BubbleGraph';
 import { GraphHeader } from '../components/graph/GraphHeader';
 import { TopBar } from '../components/layout/TopBar';
-import { MatrixView } from '../components/matrix/MatrixView';
 import { PrintView } from '../components/print/PrintView';
-import { SimilarView } from '../components/relate/SimilarView';
 import { GraphDock } from '../components/shell/GraphDock';
 import { KpiCapsule } from '../components/shell/KpiCapsule';
 import { SidePanel } from '../components/shell/SidePanel';
@@ -103,18 +100,6 @@ export function ViewerPage() {
               <SidePanel />
               <TableWindow />
               <GraphDock />
-            </main>
-          )}
-
-          {tree !== null && viewMode === 'matrix' && (
-            <main aria-label="Matrix" className="relative flex-1 overflow-hidden bg-white">
-              <MatrixView />
-            </main>
-          )}
-
-          {tree !== null && viewMode === 'similar' && (
-            <main aria-label="Ähnlichkeit" className="relative flex-1 overflow-hidden bg-white">
-              <SimilarView />
             </main>
           )}
         </ErrorBoundary>

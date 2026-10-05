@@ -44,15 +44,12 @@ function mitId(liste: Command[], id: string): Command {
 }
 
 describe('buildCommands · Ansicht', () => {
-  it('bietet jede der sieben Ansichten an', () => {
+  it('bietet die drei Ansichten und den Reiter „Prüfung" an', () => {
     const ansichten = befehle().filter((command) => command.group === 'Ansicht');
     expect(ansichten.map((command) => command.label)).toEqual([
       'Überblick',
       'Graph',
       'Tabelle',
-      'Matrix',
-      'Ähnlichkeit',
-      'Vergleich',
       'Prüfung',
     ]);
   });
@@ -60,8 +57,8 @@ describe('buildCommands · Ansicht', () => {
   it('wechselt die Ansicht und lässt Filter und Auswahl in Ruhe', () => {
     // Ein Ansichtswechsel ändert nie Filter, Suche oder Auswahl
     // (.claude/CLAUDE.md#kritische-constraints).
-    expect(mitId(befehle(), 'view:matrix').actions).toEqual([
-      { type: 'setViewMode', mode: 'matrix' },
+    expect(mitId(befehle(), 'view:table').actions).toEqual([
+      { type: 'setViewMode', mode: 'table' },
     ]);
   });
 
@@ -133,7 +130,7 @@ describe('positionCommand', () => {
   const node = index.nodes[0];
 
   it('wählt die Position und geht in die Tabelle — sonst bliebe der Sprung unsichtbar', () => {
-    const command = positionCommand(node, null, 'matrix');
+    const command = positionCommand(node, null, 'overview');
     expect(command.actions).toEqual([
       { type: 'selectPosition', nodeId: null, positionId: node.id },
       { type: 'setViewMode', mode: 'table' },

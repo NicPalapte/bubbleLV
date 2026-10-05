@@ -27,18 +27,20 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0018 | [Treffer im Graphen: isolieren oder im Ganzen zeigen](0018-graph-treffer-isolation.md)       | akzeptiert | 2026-09-22 |
 | 0019 | [Mengen im Graphen nur innerhalb einer Einheit](0019-mengen-nur-je-einheit.md)               | akzeptiert | 2026-09-22 |
 | 0020 | [Langtext-Vergleich: Wortmenge statt Teilfolge](0020-langtext-vergleich-ohne-bibliothek.md)  | akzeptiert | 2026-09-22 |
-| 0021 | [Matrix: Zählregeln und Farbskala](0021-matrix-zaehlregeln.md)                               | akzeptiert | 2026-09-22 |
+| 0021 | [Matrix: Zählregeln und Farbskala](0021-matrix-zaehlregeln.md)                               | ersetzt durch 0031 | 2026-09-22 |
 | 0022 | [Export, Druck und Fehlermeldung ohne Request](0022-export-und-druck-ohne-request.md)        | akzeptiert | 2026-09-22 |
 | 0023 | [Ansicht, Filter und Auswahl im URL-Fragment](0023-zustand-im-url-fragment.md)               | akzeptiert | 2026-09-22 |
 | 0024 | [Fehler melden ohne GitHub-Konto](0024-fehler-melden-ohne-konto.md)                          | akzeptiert | 2026-09-23 |
 | 0025 | [Typecheck läuft auch über die Tests](0025-typecheck-ueber-die-tests.md)                     | akzeptiert | 2026-09-23 |
 | 0026 | [Ein Absturz zeigt eine Seite, keine weiße Fläche](0026-absturz-auffangnetz.md)              | akzeptiert | 2026-09-23 |
 | 0027 | [Versionsnummer, Changelog und „Über diese App"](0027-versionsnummer-und-ueber-diese-app.md) | akzeptiert | 2026-09-24 |
-| 0028 | [Zwei Leisten, „Mitnehmen" in die Befehle](0028-zwei-leisten-und-befehle.md)                 | ersetzt durch 0032 | 2026-09-24 |
+| 0028 | [Zwei Leisten, „Mitnehmen" in die Befehle](0028-zwei-leisten-und-befehle.md)                 | ersetzt durch 0034 | 2026-09-24 |
 | 0029 | [Markierungen im Graphen: Ringe und Muster](0029-markierungen-im-graphen.md)                 | akzeptiert | 2026-09-25 |
 | 0030 | [Material-Filter ausblenden, bis die Liste geprüft ist](0030-material-filter-ausblenden.md)  | akzeptiert | 2026-10-04 |
-| 0031 | [Neuer Look und Dunkelmodus](0031-neuer-look-und-dunkelmodus.md)                            | akzeptiert | 2026-10-05 |
-| 0032 | [Der Graph ist der Hauptscreen](0032-graph-als-hauptscreen.md)                               | akzeptiert | 2026-10-05 |
+| 0031 | [Drei Ansichten statt acht](0031-drei-ansichten.md)                                          | teilweise ersetzt durch 0034 | 2026-10-04 |
+| 0032 | [STLB-Katalog ohne Spalte `positionsart_default`](0032-stlb-katalog-ohne-positionsart.md)    | akzeptiert | 2026-10-04 |
+| 0033 | [Neuer Look und Dunkelmodus](0033-neuer-look-und-dunkelmodus.md)                            | akzeptiert | 2026-10-05 |
+| 0034 | [Der Graph ist der Hauptscreen](0034-graph-als-hauptscreen.md)                               | akzeptiert | 2026-10-05 |
 
 ## Wann schreibe ich eine neue Datei?
 

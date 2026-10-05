@@ -54,21 +54,24 @@ pauschal anzunehmen.
 Die Klassifizierung (siehe
 [`architecture/pipeline.md`](../architecture/pipeline.md#klassifizierung))
 matcht Kurz-/Langtext **direkt gegen die STLB-Bau-Leistungsbereiche (LB)** — nicht erst
-gegen ein internes Freitext-Gewerk-Vokabular. Das liefert `gewerk`/`gewerk_lb` **und**,
-für die eindeutig nicht-physischen LBs (z. B. Baustelleneinrichtung), direkt
-`positionsart` — beides normbasiert statt erfunden.
+gegen ein internes Freitext-Gewerk-Vokabular. Das liefert `gewerk`/`gewerk_lb` —
+normbasiert statt erfunden. Der LB ist die Zuordnung von Abschnitt oder Position; die
+`positionsart` kommt nicht aus dem Katalog, sondern aus der Heuristik. Weitere
+Gliederungen (z. B. DIN 276) wären eigene Referenzdateien.
 
 **Referenzdaten (vom Maintainer bereitzustellen, nicht zu erfinden):**
 [`reference/stlb-bau-leistungsbereiche.csv`](reference/stlb-bau-leistungsbereiche.csv) —
 eine Zeile je STLB-Bau-LB mit Spalten `lb_nummer`, `lb_bezeichnung`,
-`positionsart_default` (nur gesetzt für eindeutig nicht-Bauteil-LBs, sonst leer),
 `keywords` (Pipe-getrennte Stichworte für den Text-Abgleich) und `quelle_version`
-(Version/Stand des STLB-Bau-Katalogs, aus dem die Zeile stammt). Solange diese Datei
+(Version/Stand des STLB-Bau-Katalogs, aus dem die Zeile stammt). Die frühere Spalte
+`positionsart_default` entfällt ([`0032`](../decisions/0032-stlb-katalog-ohne-positionsart.md)). Solange diese Datei
 nur das Format, aber keine echten LB-Zeilen enthält, bleibt die Zuordnung offen — der
 Klassifizierer fällt dann für jede Position auf die heuristische Positionsart-/
 Bauteiltyp-Erkennung zurück (kein Fehler, siehe `architecture/pipeline.md`).
 
-**Stand: LB-Zeilen vorhanden, `keywords` noch leer.** Solange die Spalte leer ist,
+**Stand: LB-Zeilen vorhanden, `keywords` noch leer** (Vorschlag zur Prüfung:
+[`entwuerfe/stlb-keywords-entwurf.csv`](reference/entwuerfe/stlb-keywords-entwurf.csv),
+Ablauf: [`setup/stlb-keywords.md`](../setup/stlb-keywords.md)). Solange die Spalte leer ist,
 leitet der Klassifizierer je LB ein Stichwort aus der **Katalog-Bezeichnung selbst**
 ab — bewusst eng: nur eigenständige Komposita auf `-arbeiten`/`-anlagen`
 („Estricharbeiten", „Kälteanlagen"). Kürzere Wortstämme („Beton", „Fenster") sind in

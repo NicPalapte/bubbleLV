@@ -6,7 +6,7 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '../../src/App';
 
@@ -48,7 +48,7 @@ async function ladeUndStuerzeAb(): Promise<HTMLElement> {
 }
 
 describe('Absturz einer Ansicht in der App', () => {
-  it('lässt Kopfleiste, Filter und die anderen Ansichten stehen', async () => {
+  it('lässt Kopfleiste und Filter stehen', async () => {
     const seite = await ladeUndStuerzeAb();
     expect(within(seite).getByText(/Diese Ansicht ist abgestürzt/)).toBeInTheDocument();
     expect(within(seite).getByText(new RegExp(MELDUNG))).toBeInTheDocument();
@@ -57,15 +57,6 @@ describe('Absturz einer Ansicht in der App', () => {
     expect(screen.queryByText(/Bubble ist abgestürzt/)).not.toBeInTheDocument();
     expect(screen.getByRole('banner')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '+ Filter' })).toBeInTheDocument();
-
-    // Eine andere Fläche über die Befehle — sie beginnt mit einem frischen Netz.
-    // Die Palette hängt ihren Listener in einem Effekt an; darauf warten.
-    await act(async () => {});
-    fireEvent.click(within(screen.getByRole('banner')).getByRole('button', { name: /^Befehle/ }));
-    fireEvent.change(screen.getByLabelText('Befehl oder OZ'), { target: { value: 'Matrix' } });
-    fireEvent.click(screen.getByRole('option', { name: /^Matrix/ }));
-    expect(await screen.findByRole('main', { name: 'Matrix' })).toBeInTheDocument();
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it('führt ohne Neuladen der Seite zurück in die Ansicht', async () => {

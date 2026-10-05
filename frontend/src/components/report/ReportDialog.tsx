@@ -181,7 +181,7 @@ export function ReportDialog({ context, vorbelegung = '', onClose }: ReportDialo
               onClick={() => {
                 window.location.href = mailtoUrl(context, beschreibung);
               }}
-              title="Öffnet eine neue Mail; die Adresse trägst du selbst ein"
+              title="Öffnet eine neue Mail an das Bubble-Team"
             >
               ✉ Als E-Mail öffnen
             </Chip>

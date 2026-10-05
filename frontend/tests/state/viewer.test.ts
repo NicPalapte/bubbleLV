@@ -13,10 +13,6 @@ import { describe, expect, it } from 'vitest';
 import { classifyAndBuild } from '../../src/lib/pipeline/runPipeline';
 import { buildTree } from '../../src/lib/tree/buildTree';
 import {
-  COMPARE_MAX_WIDTH,
-  COMPARE_MIN_HEIGHT,
-  COMPARE_MIN_WIDTH,
-  DEFAULT_COMPARE_SIZE,
   INITIAL_VIEWER_STATE,
   PANEL_MAX_WIDTH,
   PANEL_MIN_HEIGHT,
@@ -117,22 +113,15 @@ describe('viewerReducer · Ansichtsmodus', () => {
     const overview = viewerReducer(base, { type: 'setViewMode', mode: 'overview' });
     expect(overview.view.mode).toBe('graph');
     expect(overview.view.side).toBe('overview');
-    const check = viewerReducer(overview, { type: 'setViewMode', mode: 'check' });
+    const check = viewerReducer(overview, { type: 'sidePanel', panel: 'check' });
     expect(check.view.side).toBe('check');
     expect(viewerReducer(check, { type: 'sidePanel', panel: null }).view.side).toBeNull();
   });
 
-  it('öffnet Tabelle und Vergleich als Fenster über dem Graphen', () => {
+  it('öffnet die Tabelle als Fenster über dem Graphen', () => {
     const table = viewerReducer(base, { type: 'setViewMode', mode: 'table' });
     expect(table.view.mode).toBe('graph');
     expect(table.view.tableWindow.open).toBe(true);
-    const compare = viewerReducer(table, { type: 'setViewMode', mode: 'compare' });
-    expect(compare.view.mode).toBe('graph');
-    expect(compare.view.compare.windowOpen).toBe(true);
-    // Matrix bleibt eine eigene Fläche.
-    expect(viewerReducer(compare, { type: 'setViewMode', mode: 'matrix' }).view.mode).toBe(
-      'matrix',
-    );
   });
 
   it('begrenzt die Größe des Tabellenfensters nach unten', () => {
@@ -167,9 +156,8 @@ describe('viewerReducer · Ansichtsmodus', () => {
     expect(next.selection.positionId).toBe('position:001.0010');
   });
 
-  it('wechselt den Ansichtsmodus gezielt mit `setViewMode`', () => {
-    const next = viewerReducer(base, { type: 'setViewMode', mode: 'similar' });
-    expect(next.view.mode).toBe('similar');
+  it('bleibt mit `setViewMode` immer im Graphen', () => {
+    const next = viewerReducer(base, { type: 'setViewMode', mode: 'overview' });
     expect(viewerReducer(next, { type: 'setViewMode', mode: 'graph' }).view.mode).toBe('graph');
   });
 
@@ -237,7 +225,7 @@ describe('viewerReducer · Ansichtswechsel lässt Filter und Auswahl in Ruhe', (
     state = viewerReducer(state, { type: 'tableSort', key: 'quantity' });
 
     const before = state;
-    const roundTrip = ['matrix', 'check', 'overview', 'similar', 'table'] as const;
+    const roundTrip = ['overview', 'table'] as const;
     for (const mode of roundTrip) state = viewerReducer(state, { type: 'setViewMode', mode });
 
     expect(state.filter).toBe(before.filter);
@@ -381,166 +369,6 @@ describe('viewerReducer · Größe und Ort der Info-Panels', () => {
   });
 });
 
-describe('viewerReducer · Vergleichsfenster über dem Graphen', () => {
-  const POS = 'position:001.001.0010';
-  const POS2 = 'position:001.001.0020';
-
-  it('hält Größe und Ort getrennt von den Info-Panels', () => {
-    // Zwei Flächen, zwei Maße: das Fenster zeigt mehrere Spalten und ist
-    // deshalb breiter als jedes Info-Panel. Eine gemeinsame Zahl hieße, dass
-    // das Aufziehen des einen das andere verstellt.
-    const state = viewerReducer(base, {
-      type: 'compareWindowSize',
-      size: { width: 800, height: 500 },
-    });
-    expect(state.view.compare.windowSize).toEqual({ width: 800, height: 500 });
-    expect(state.view.panelSize).toEqual(base.view.panelSize);
-
-    const verschoben = viewerReducer(state, {
-      type: 'compareWindowPos',
-      pos: { right: 220, top: 90 },
-    });
-    expect(verschoben.view.compare.windowPos).toEqual({ right: 220, top: 90 });
-    expect(verschoben.view.cardPos).toEqual(base.view.cardPos);
-  });
-
-  it('hält Breite und Höhe in den eigenen Grenzen', () => {
-    const zuGross = viewerReducer(base, {
-      type: 'compareWindowSize',
-      size: { width: 5000, height: 4000 },
-    });
-    expect(zuGross.view.compare.windowSize.width).toBe(COMPARE_MAX_WIDTH);
-
-    const zuKlein = viewerReducer(base, {
-      type: 'compareWindowSize',
-      size: { width: 10, height: 10 },
-    });
-    expect(zuKlein.view.compare.windowSize.width).toBe(COMPARE_MIN_WIDTH);
-    expect(zuKlein.view.compare.windowSize.height).toBe(COMPARE_MIN_HEIGHT);
-  });
-
-  it('geht erst mit der zweiten Position auf', () => {
-    // Eine Spalte allein ist noch kein Vergleich — das Fenster wartet.
-    const eine = viewerReducer(loadedState(), { type: 'toggleCompare', positionId: POS });
-    expect(eine.view.compare.windowOpen).toBe(false);
-    const zwei = viewerReducer(eine, { type: 'toggleCompare', positionId: POS2 });
-    expect(zwei.view.compare.windowOpen).toBe(true);
-  });
-
-  it('bleibt beim Herausnehmen offen, bis der Vergleich leer ist', () => {
-    // Wer im Fenster aussortiert, will das Fenster behalten (Owner in PR #86).
-    const zwei = viewerReducer(
-      viewerReducer(loadedState(), { type: 'toggleCompare', positionId: POS }),
-      { type: 'toggleCompare', positionId: POS2 },
-    );
-    const eine = viewerReducer(zwei, { type: 'toggleCompare', positionId: POS2 });
-    expect(eine.selection.compare).toEqual([POS]);
-    expect(eine.view.compare.windowOpen).toBe(true);
-
-    const keine = viewerReducer(eine, { type: 'toggleCompare', positionId: POS });
-    expect(keine.view.compare.windowOpen).toBe(false);
-  });
-
-  it('bleibt zu, wenn eine Position nur herausgenommen wird', () => {
-    // Das ✕ am Fenster ist eine Entscheidung. Herausnehmen ist kein neuer
-    // Vergleich — käme das Fenster dabei zurück, machte es die Entscheidung
-    // rückgängig, ohne dass etwas dazugekommen wäre.
-    const zwei = viewerReducer(
-      viewerReducer(loadedState(), { type: 'toggleCompare', positionId: POS }),
-      { type: 'toggleCompare', positionId: POS2 },
-    );
-    const zu = viewerReducer(zwei, { type: 'compareWindow', open: false });
-
-    const weniger = viewerReducer(zu, { type: 'toggleCompare', positionId: POS2 });
-    expect(weniger.selection.compare).toEqual([POS]);
-    expect(weniger.view.compare.windowOpen).toBe(false);
-
-    // Dazunehmen holt es weiter zurück.
-    const wieder = viewerReducer(weniger, { type: 'toggleCompare', positionId: POS2 });
-    expect(wieder.view.compare.windowOpen).toBe(true);
-  });
-
-  it('lässt es beim Leeren des Vergleichs zu, wie es war', () => {
-    // „Auswahl leeren" ist keine Bitte, ein weggeklicktes Fenster zu öffnen —
-    // es hätte ohnehin nichts zu zeigen.
-    const mitAuswahl = viewerReducer(loadedState(), { type: 'toggleCompare', positionId: POS });
-    const zu = viewerReducer(mitAuswahl, { type: 'compareWindow', open: false });
-    const geleert = viewerReducer(zu, { type: 'clearCompare' });
-    expect(geleert.view.compare.windowOpen).toBe(false);
-    expect(geleert.selection.compare).toHaveLength(0);
-  });
-
-  it('behält Ort und Größe über einen neuen Import, aber nicht den offenen Stand', () => {
-    const gezogen = viewerReducer(base, {
-      type: 'compareWindowSize',
-      size: { width: 700, height: 420 },
-    });
-    const verschoben = viewerReducer(gezogen, {
-      type: 'compareWindowPos',
-      pos: { right: 200, top: 48 },
-    });
-    const zu = viewerReducer(verschoben, { type: 'compareWindow', open: false });
-
-    const geladen = loadedState(zu);
-    expect(geladen.view.compare.windowSize).toEqual({ width: 700, height: 420 });
-    expect(geladen.view.compare.windowPos).toEqual({ right: 200, top: 48 });
-    // Die neue Datei fängt ohne Vergleich an — das Fenster kommt wie immer mit
-    // der zweiten Position.
-    expect(geladen.view.compare.windowOpen).toBe(false);
-  });
-
-  it('lässt „nur Unterschiede" und die Fenstermaße nebeneinander stehen', () => {
-    // Beides steckt im selben Ast des Zustands — ohne Zusammenführen hätte die
-    // eine Aktion die andere überschrieben.
-    const mitMass = viewerReducer(base, {
-      type: 'compareWindowSize',
-      size: { width: 640, height: 300 },
-    });
-    const mitSchalter = viewerReducer(mitMass, { type: 'compareOnlyDiffs', value: true });
-    expect(mitSchalter.view.compare.onlyDiffs).toBe(true);
-    expect(mitSchalter.view.compare.windowSize).toEqual({ width: 640, height: 300 });
-    expect(mitSchalter.view.compare.windowSize).not.toEqual(DEFAULT_COMPARE_SIZE);
-  });
-});
-
-describe('viewerReducer · Strg-Klick nach normalem Klick (PR #86)', () => {
-  const POS = 'position:001.001.0010';
-  const POS2 = 'position:001.001.0020';
-  const POS3 = 'position:001.001.0030';
-  const angewaehlt = (): ViewerState =>
-    viewerReducer(loadedState(), { type: 'selectPosition', nodeId: null, positionId: POS });
-
-  it('nimmt die angewählte Position mit in einen leeren Vergleich', () => {
-    // Klick auf A, Strg-Klick auf B: das sind zwei Positionen, nicht eine.
-    const state = viewerReducer(angewaehlt(), { type: 'toggleCompare', positionId: POS2 });
-    expect(state.selection.compare).toEqual([POS, POS2]);
-    expect(state.view.compare.windowOpen).toBe(true);
-  });
-
-  it('nimmt die angewählte Position nicht doppelt auf', () => {
-    const state = viewerReducer(angewaehlt(), { type: 'toggleCompare', positionId: POS });
-    expect(state.selection.compare).toEqual([POS]);
-  });
-
-  it('fasst einen bestehenden Vergleich nicht an', () => {
-    // Steht schon ein Vergleich, wurde er bewusst zusammengestellt — die
-    // Auswahl schiebt sich dann nicht ungefragt hinein.
-    const mitVergleich = viewerReducer(loadedState(), { type: 'toggleCompare', positionId: POS2 });
-    const angewaehltDanach = viewerReducer(mitVergleich, {
-      type: 'selectPosition',
-      nodeId: null,
-      positionId: POS,
-    });
-    const state = viewerReducer(angewaehltDanach, { type: 'toggleCompare', positionId: POS3 });
-    expect(state.selection.compare).toEqual([POS2, POS3]);
-  });
-
-  it('nimmt ohne Auswahl nur die geklickte Position', () => {
-    const state = viewerReducer(loadedState(), { type: 'toggleCompare', positionId: POS2 });
-    expect(state.selection.compare).toEqual([POS2]);
-  });
-});
-
 describe('viewerReducer · Prüfregeln', () => {
   it('schaltet eine Regel stumm und wieder an — unabhängig von der Ansicht', () => {
     const muted = viewerReducer(base, { type: 'toggleRule', id: 'V1' });
@@ -554,41 +382,15 @@ describe('viewerReducer · Prüfregeln', () => {
 
   it('merkt sich getrennt davon, welche Fundliste aufgeklappt ist', () => {
     const open = viewerReducer(base, { type: 'toggleRuleOpen', id: 'V1' });
-    expect(open.view.check.openRules.has('V1')).toBe(true);
+    expect(open.view.overview.openRules.has('V1')).toBe(true);
     expect(open.filter.mutedRules.size).toBe(0);
   });
 });
 
 // Der Baum wird für die Aktionen gebraucht, die alles auf- oder zuklappen —
 // ohne geladenes LV dürfen sie nichts tun statt zu stolpern.
-describe('viewerReducer · Ähnlichkeit', () => {
-  it('merkt sich Regler, Sortierung und aufgeklappte Gruppen über den Wechsel', () => {
-    let state = viewerReducer(loadedState(), { type: 'setViewMode', mode: 'similar' });
-    state = viewerReducer(state, { type: 'clusterMinMembers', value: 5 });
-    state = viewerReducer(state, { type: 'clusterSort', value: 'streuung' });
-    state = viewerReducer(state, {
-      type: 'toggleClusterOpen',
-      id: 'cluster:position:001.001.0010',
-    });
-
-    const zurueck = viewerReducer(viewerReducer(state, { type: 'setViewMode', mode: 'table' }), {
-      type: 'setViewMode',
-      mode: 'similar',
-    });
-    expect(zurueck.view.similar.minMembers).toBe(5);
-    expect(zurueck.view.similar.sort).toBe('streuung');
-    expect(zurueck.view.similar.openClusters.has('cluster:position:001.001.0010')).toBe(true);
-  });
-
-  it('behält Regler und Sortierung beim Import, wirft aber die Gruppen weg', () => {
-    let state = viewerReducer(loadedState(), { type: 'clusterMinMembers', value: 3 });
-    state = viewerReducer(state, { type: 'toggleClusterOpen', id: 'cluster:alt' });
-    const neu = loadedState(state);
-    expect(neu.view.similar.minMembers).toBe(3);
-    expect(neu.view.similar.openClusters.size).toBe(0);
-  });
-});
-
+// Der Baum wird für die Aktionen gebraucht, die alles auf- oder zuklappen —
+// ohne geladenes LV dürfen sie nichts tun statt zu stolpern.
 describe('viewerReducer · ohne geladenes LV', () => {
   it('lässt `expandAll` und `collapseAll` wirkungslos', () => {
     expect(viewerReducer(base, { type: 'expandAll' })).toBe(base);

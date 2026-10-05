@@ -72,7 +72,7 @@ describe('Kommandopalette · öffnen und schließen', () => {
   it('beginnt jedes Mal leer', async () => {
     await ladeApp();
     await strgK();
-    tippe('Matrix');
+    tippe('Graph');
     fireEvent.keyDown(palette(), { key: 'Escape' });
     await strgK();
     expect(feld()).toHaveValue('');
@@ -83,10 +83,15 @@ describe('Kommandopalette · Ansicht wechseln', () => {
   it('wechselt mit Enter in die getippte Ansicht', async () => {
     await ladeApp();
     await strgK();
-    tippe('Matrix');
+    tippe('Überblick');
     fireEvent.keyDown(palette(), { key: 'Enter' });
 
-    await waitFor(() => expect(screen.getByRole('main', { name: 'Matrix' })).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByRole('tab', { name: 'Überblick' })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      ),
+    );
     // Und die Palette ist danach weg.
     expect(screen.queryByRole('dialog', { name: 'Kommandopalette' })).toBeNull();
   });

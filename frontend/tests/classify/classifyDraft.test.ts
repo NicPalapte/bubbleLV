@@ -10,9 +10,9 @@ import type { LVDraft, PositionDraft } from '../../src/types/lvDraft';
 
 const CATALOG = parseStlbCsv(
   [
-    'lb_nummer,lb_bezeichnung,positionsart_default,keywords,quelle_version',
-    '002,Erdarbeiten,,erdarbeiten,2023',
-    '012,Mauerarbeiten,,mauerarbeiten|mauerwerk,2023',
+    'lb_nummer,lb_bezeichnung,keywords,quelle_version',
+    '002,Erdarbeiten,erdarbeiten,2023',
+    '012,Mauerarbeiten,mauerarbeiten|mauerwerk,2023',
   ].join('\n'),
 );
 

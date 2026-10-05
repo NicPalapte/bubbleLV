@@ -96,10 +96,11 @@ Scopes: `gaeb · classify · tree · viewer · graph · relate · check · front
 Klassifizierung Kurz-/Langtext inkl. Textstellen · Hervorhebung der vier
 Wichtig-Kategorien (Geld/Menge · Risiko · Norm · Frist) · VOB-Check als Hinweis ·
 fachliche Filter · **Graph als Hauptscreen** auf einem Filterzustand: Seitenfenster
-(Überblick · Filter · Prüfung), Positionskarte, Tabelle und Vergleich als Fenster
-darüber; Matrix und Ähnlichkeit als eigene Flächen (`docs/decisions/0032-graph-als-hauptscreen.md`) ·
-Beziehungen zwischen Positionen (Ähnlichkeit, Unterschiede, Ausreißer) · lokaler
-Export/Druck.
+(Überblick mit Import-Log · Filter · Prüfung), Positionskarte und Tabelle als Fenster
+darüber (`docs/decisions/0034-graph-als-hauptscreen.md`; Matrix, Ähnlichkeit und Vergleich
+entfernt, `docs/decisions/0031-drei-ansichten.md`) · Beziehungen zwischen Positionen nur
+als Prüfregel (Ausreißer, G4); Ähnlichkeit/Vergleich als Fenster über dem Graphen sind
+zurückgestellt · lokaler Export/Druck.
 
 **Out of Scope** (ablehnen / vertrösten): Server jeglicher Art, Persistenz über die
 Session hinaus, Auth/SSO, **mehrere Dateien gleichzeitig** (Versionsvergleich,

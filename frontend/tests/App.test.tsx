@@ -107,7 +107,7 @@ describe('Viewer', () => {
   it('startet nach dem Import im Graphen, ohne offene Fenster', async () => {
     await loadAndWait();
 
-    // Der Graph ist der Hauptscreen (docs/decisions/0032); Seitenfenster und
+    // Der Graph ist der Hauptscreen (docs/decisions/0034); Seitenfenster und
     // Tabelle gehen erst auf Wunsch auf.
     expect(screen.getByRole('main', { name: 'Bubble-Graph' })).toBeInTheDocument();
     expect(screen.queryByRole('complementary', { name: 'Seitenfenster' })).not.toBeInTheDocument();
@@ -134,11 +134,11 @@ describe('Viewer', () => {
       name: /Treffer/,
     });
 
-    // In der Prüfung ein Stück scrollen …
-    kpi(/Hinweise/);
-    const pruefung = (): HTMLElement =>
+    // Im Überblick ein Stück scrollen …
+    kpi(/Treffer/);
+    const ueberblick = (): HTMLElement =>
       screen.getByRole('tabpanel').firstElementChild as HTMLElement;
-    fireEvent.scroll(pruefung(), { target: { scrollTop: 240 } });
+    fireEvent.scroll(ueberblick(), { target: { scrollTop: 240 } });
 
     // … in der Tabelle nach Menge sortieren …
     const table = await openTable();
@@ -152,9 +152,9 @@ describe('Viewer', () => {
 
     // … Reiter und Fenster wechseln und zurück: Suche, Sortierung und
     // Scrollposition stehen unverändert da.
-    fireEvent.click(screen.getByRole('tab', { name: 'Überblick' }));
     fireEvent.click(screen.getByRole('tab', { name: /Prüfung/ }));
-    expect(pruefung().scrollTop).toBe(240);
+    fireEvent.click(screen.getByRole('tab', { name: 'Überblick' }));
+    expect(ueberblick().scrollTop).toBe(240);
     expect(screen.getByLabelText('Suche')).toHaveValue('Beton');
 
     fireEvent.click(screen.getByRole('button', { name: 'Tabelle schließen' }));
@@ -369,10 +369,9 @@ describe('Viewer', () => {
     expect(card.style.right).toBe('116px');
     expect(card.style.top).toBe('66px');
 
-    // Nach dem Ausflug in die Matrix steht sie wieder dort, nicht in der Ecke.
-    await command('Matrix');
-    await screen.findByRole('main', { name: 'Matrix' });
-    fireEvent.click(screen.getByRole('button', { name: '← Graph' }));
+    // Nach einem Ausflug ins Seitenfenster steht sie wieder dort, nicht in der Ecke.
+    await command('Überblick');
+    fireEvent.click(await screen.findByRole('button', { name: 'Seitenfenster schließen' }));
     const wieder = (await screen.findByRole('button', { name: 'Karte schließen' })).closest(
       '[data-graph-overlay]',
     ) as HTMLElement;

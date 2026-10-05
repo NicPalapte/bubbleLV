@@ -1,9 +1,9 @@
 // Seitenfenster links über dem Graphen: Überblick, Filter, Prüfung. Früher drei
 // eigene Ansichten; jetzt Reiter, damit der Graph immer sichtbar bleibt
-// (docs/decisions/0032-graph-als-hauptscreen.md).
+// (docs/decisions/0034-graph-als-hauptscreen.md).
 
 import { useMemo } from 'react';
-import { CheckView } from '../check/CheckView';
+import { CheckCard } from '../overview/CheckCard';
 import { FilterPanel } from '../filter/FilterPanel';
 import { OverviewView } from '../overview/OverviewView';
 import { ErrorBoundary } from '../common/ErrorBoundary';
@@ -71,7 +71,11 @@ export function SidePanel() {
         <ErrorBoundary key={side} bereich={side} dateiGeladen>
           {side === 'overview' && <OverviewView />}
           {side === 'filter' && <FilterPanel />}
-          {side === 'check' && <CheckView />}
+          {side === 'check' && (
+            <div className="absolute inset-0 overflow-auto px-[14px] py-[14px]">
+              <CheckCard />
+            </div>
+          )}
         </ErrorBoundary>
       </div>
     </aside>

@@ -19,4 +19,4 @@ Non-negotiables for this brand: German UI copy in Baubranche vocabulary, IBM Ple
 the interface font, one blue accent, light + dark token sets, rounded floating surfaces
 (windows, cards, menus) with soft shadows over the graph, square table rows, no icon
 library (Unicode glyphs only), no emoji, no imagery. Minimal explanatory text.
-Rules since 2026-10-05: docs/decisions/0031-neuer-look-und-dunkelmodus.md
+Rules since 2026-10-05: docs/decisions/0033-neuer-look-und-dunkelmodus.md

@@ -208,10 +208,10 @@ Bereich sich nicht, gibt sein Reducer dieselbe Referenz zurück — dann bleibt 
 der Gesamtzustand identisch und kein Render läuft umsonst.
 
 `setViewMode` fasst nur `view` an. Seit dem neuen Hauptscreen
-([0032](../decisions/0032-graph-als-hauptscreen.md)) bildet es `overview`/`check` auf
-den Graphen mit offenem Seitenfenster (`view.side`) ab, `table` auf das Tabellenfenster
-(`view.tableWindow`) und `compare` auf das Vergleichsfenster; nur `graph`, `matrix` und
-`similar` sind eigene Flächen.
+([0034](../decisions/0034-graph-als-hauptscreen.md)) bildet es `overview` auf
+den Graphen mit offenem Seitenfenster (`view.side`) ab und `table` auf das
+Tabellenfenster (`view.tableWindow`); `mode` bleibt immer `graph`. Matrix, Ähnlichkeit
+und Vergleich sind entfernt ([0031](../decisions/0031-drei-ansichten.md)).
 Weil jede Ansicht ihren Zustand in `view` ablegt statt in lokalem `useState`,
 steht sie nach dem Rückwechsel wieder so da, wie man sie verlassen hat — obwohl
 die Komponente zwischendurch abgebaut war.

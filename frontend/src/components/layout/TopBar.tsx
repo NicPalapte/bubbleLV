@@ -1,5 +1,5 @@
 // Kopfleiste: Logo-Menü, Datei, Suche mit den aktiven Filtern, Befehle.
-// Seit dem neuen Hauptscreen eine schmale Zeile (docs/decisions/0032-graph-als-
+// Seit dem neuen Hauptscreen eine schmale Zeile (docs/decisions/0034-graph-als-
 // hauptscreen.md): kein Ansichtsumschalter mehr, die Filter wählt man im
 // Seitenfenster („+ Filter"), hier stehen sie nur als entfernbare Chips.
 

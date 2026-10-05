@@ -1,4 +1,4 @@
-# 0031 – Neuer Look und Dunkelmodus
+# 0033 – Neuer Look und Dunkelmodus
 
 - **Status:** akzeptiert
 - **Datum:** 2026-10-05

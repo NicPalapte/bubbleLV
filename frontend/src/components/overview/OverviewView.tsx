@@ -1,5 +1,6 @@
-// Ansicht „Überblick" (WP-L, Schritt 3) — die Eingangsansicht: Kennzahlen,
-// Treemap nach Gewerk und Abschnitt, Pareto und Mengen je Einheit.
+// Reiter „Überblick" im Seitenfenster (WP-L, Schritt 3): Kennzahlen, Treemap
+// nach Gewerk und Abschnitt, Pareto, Mengen je Einheit und Import-Log. Die
+// Prüfung hat einen eigenen Reiter (shell/SidePanel.tsx).
 //
 // **Ein Filterzustand, alle Ansichten** (.claude/CLAUDE.md): gerechnet wird
 // über der gefilterten Menge, dieselbe, die Tabelle und Graph zeigen. Ohne
@@ -9,6 +10,7 @@
 // nie über den Baum und nie im Render (WP-I).
 
 import { useMemo } from 'react';
+import { ImportLogCard } from './ImportLogCard';
 import { MetricTiles } from './MetricTiles';
 import { ParetoCard } from './ParetoCard';
 import { Treemap } from './Treemap';
@@ -136,6 +138,10 @@ export function OverviewView() {
             />
           </Card>
         </div>
+
+        <Card title="Import-Log" note="ganze Datei">
+          <ImportLogCard />
+        </Card>
       </div>
     </div>
   );

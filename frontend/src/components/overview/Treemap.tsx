@@ -11,6 +11,7 @@
 
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { formatEuro, formatPositions } from '../../lib/format';
+import { NO_GEWERK } from '../../lib/facets';
 import { squarify, type Rect } from '../../lib/overview/treemap';
 import type { ColorScale } from '../../lib/colors';
 import type { Measure, TreemapGroup } from '../../lib/overview/model';
@@ -103,7 +104,8 @@ export function Treemap({
   return (
     <div ref={wrapRef} className="relative border border-line" style={{ height: HEIGHT }}>
       {placed.map(({ group, rect, cells }) => {
-        const color = group.filterable ? colors.of(group.key) : 'var(--cat-none)';
+        const color =
+          group.filterable && group.key !== NO_GEWERK ? colors.of(group.key) : 'var(--cat-none)';
         const active = activeGewerke.has(group.key);
         return (
           <div

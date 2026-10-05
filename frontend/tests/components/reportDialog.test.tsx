@@ -7,6 +7,7 @@ import { resolve } from 'node:path';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '../../src/App';
+import { meldeMail } from '../../src/lib/export/issueLink';
 
 const FIXTURE_DIR = resolve(process.cwd(), 'tests/fixtures');
 
@@ -148,7 +149,9 @@ describe('Fehler melden · die drei Wege', () => {
     fireEvent.click(within(fenster).getByRole('button', { name: /E-Mail/ }));
 
     expect(ziele).toHaveLength(1);
-    expect(ziele[0].startsWith('mailto:?')).toBe(true);
+    // Empfänger gesetzt, aber nicht im Klartext im Test (öffentliches Repo).
+    expect(ziele[0].startsWith(`mailto:${meldeMail()}?`)).toBe(true);
+    expect(meldeMail()).toMatch(/^[^@\s]+@[^@\s]+\.[a-z]+$/);
     expect(decodeURIComponent(ziele[0])).toContain('Druck bricht ab.');
   });
 

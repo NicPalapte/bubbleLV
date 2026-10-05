@@ -5,8 +5,8 @@
 
 import { useMemo, useReducer, type ReactNode } from 'react';
 import { EMPTY_HINTS, hintsByPosition, type HintIndex } from '../lib/check';
-import { clusterByPosition, type Cluster } from '../lib/relate';
 import { buildColorScale, EMPTY_COLOR_SCALE, type ColorScale } from '../lib/colors';
+import { NO_GEWERK } from '../lib/facets';
 import { effectiveSizeMode } from '../lib/graph/constants';
 import { buildFocusTree, type FocusGraph } from '../lib/graph/focusTree';
 import {
@@ -71,7 +71,9 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
   // — damit bekommt dasselbe LV immer dieselben Farben.
   const gewerkColors = useMemo<ColorScale>(() => {
     const values = state.lv?.summary.facets.get('gewerk');
-    return values === undefined ? EMPTY_COLOR_SCALE : buildColorScale(values.keys());
+    if (values === undefined) return EMPTY_COLOR_SCALE;
+    // „Ohne Gewerk" bleibt farblos — es soll kein Gewerk vortäuschen.
+    return buildColorScale([...values.keys()].filter((key) => key !== NO_GEWERK));
   }, [state.lv]);
 
   // Bei aktiver Suche/Filterung gehen die Pfade zu den Treffern automatisch auf.
@@ -136,18 +138,6 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
     );
   }, [mask, focusMode, matches.filtering, index, groupBy, sortMode, structure.parents]);
 
-  // Die gewählten Vergleichs-Positionen als Knoten, in der Reihenfolge der
-  // Wahl. Unbekannte IDs fallen still heraus: nach einem neuen Import zeigt
-  // der Vergleich sonst auf Positionen, die es nicht mehr gibt.
-  const comparePositions = useMemo<readonly LVNode[]>(() => {
-    const out: LVNode[] = [];
-    for (const id of state.selection.compare) {
-      const node = structure.nodes.get(id);
-      if (node !== undefined && node.position !== null) out.push(node);
-    }
-    return out;
-  }, [state.selection.compare, structure.nodes]);
-
   // Hinweise je Position (WP-R, R1). Hängt am Import und am Regel-Schalter,
   // nicht am Filter: was hier steht, gilt für das ganze LV — der Ring an der
   // Bubble verschwindet ohnehin mit der Bubble, sobald der Filter sie ausblendet.
@@ -156,14 +146,6 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
     if (check === null) return EMPTY_HINTS;
     return hintsByPosition(check, state.filter.mutedRules);
   }, [state.lv, state.filter.mutedRules]);
-
-  // Umkehrung der Ähnlichkeits-Cluster (WP-R, R2): Position → ihre Gruppe.
-  // Hängt allein am Import — die Gruppen entstehen im Worker und ändern sich
-  // danach nicht mehr.
-  const clusters = useMemo<ReadonlyMap<string, Cluster>>(() => {
-    const relations = state.lv?.relations ?? null;
-    return relations === null ? new Map() : clusterByPosition(relations);
-  }, [state.lv]);
 
   const derived = useMemo<ViewerDerived>(
     () => ({
@@ -186,9 +168,7 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
       gewerkColors,
       focus,
       quantities,
-      comparePositions,
       hints,
-      clusters,
     }),
     [
       tree,
@@ -203,9 +183,7 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
       gewerkColors,
       focus,
       quantities,
-      comparePositions,
       hints,
-      clusters,
     ],
   );
 

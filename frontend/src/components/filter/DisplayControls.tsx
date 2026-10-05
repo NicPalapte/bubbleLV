@@ -1,7 +1,7 @@
 // „Darstellung" im Seitenfenster: wie der Graph zeigt, was der Filter
 // durchlässt. Stand früher als Kopfzeile über dem Graphen (WP-Q, Issue #60);
 // seit dem neuen Hauptscreen sitzt es über den Filtern, damit die Kopfleiste
-// schmal bleibt (docs/decisions/0032-graph-als-hauptscreen.md).
+// schmal bleibt (docs/decisions/0034-graph-als-hauptscreen.md).
 //
 // Eine Wahl, die für die geladene Datei nichts aussagt, wird gesperrt statt
 // still auf eine andere zurückzufallen: sonst sieht der Knopf gewählt aus und

@@ -1,6 +1,6 @@
 # 0028 – Zwei Leisten, und „Mitnehmen" wandert in die Befehle
 
-- **Status:** ersetzt durch 0032
+- **Status:** ersetzt durch 0034
 - **Datum:** 2026-09-24
 - **Betrifft:** Frontend (Kopfleiste, Kommandopalette), Issue #80
 
