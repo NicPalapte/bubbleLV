@@ -97,10 +97,10 @@ Klassifizierung Kurz-/Langtext inkl. Textstellen · Hervorhebung der vier
 Wichtig-Kategorien (Geld/Menge · Risiko · Norm · Frist) · VOB-Check als Hinweis ·
 fachliche Filter · **Graph als Hauptscreen** auf einem Filterzustand: Seitenfenster
 (Überblick mit Import-Log · Filter · Prüfung), Positionskarte und Tabelle als Fenster
-darüber (`docs/decisions/0034-graph-als-hauptscreen.md`; Matrix, Ähnlichkeit und Vergleich
-entfernt, `docs/decisions/0031-drei-ansichten.md`) · Beziehungen zwischen Positionen nur
-als Prüfregel (Ausreißer, G4); Ähnlichkeit/Vergleich als Fenster über dem Graphen sind
-zurückgestellt · lokaler Export/Druck.
+darüber (`docs/decisions/0034-graph-als-hauptscreen.md`) · Beziehungen zwischen
+Positionen nur als Prüfregel (Ausreißer, G4) · lokaler Export/Druck. Matrix, Ähnlichkeit
+und Vergleich sind entfernt; Ähnlichkeit/Vergleich kommen ggf. später als Fenster über dem
+Graphen zurück (`docs/decisions/0031-drei-ansichten.md`).
 
 **Out of Scope** (ablehnen / vertrösten): Server jeglicher Art, Persistenz über die
 Session hinaus, Auth/SSO, **mehrere Dateien gleichzeitig** (Versionsvergleich,
