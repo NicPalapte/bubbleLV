@@ -4,7 +4,7 @@
 // stehen in der Mappingtabelle (Dimension `bauteiltyp`); das Gewicht dort ist die
 // Priorität, spezifischere Begriffe vor allgemeineren.
 
-import { matchTextOf, type MappingIndex } from './mapping';
+import { matchTextOf, type DimensionMatch, type MappingIndex } from './mapping';
 import type { NormalizedItem } from './text';
 
 /** Bauteiltypen, die tragende Funktion haben können (Basis für `tragend`). */
@@ -21,8 +21,11 @@ export const TRAGENDE_BAUTEILTYPEN: readonly string[] = [
   'Gründung',
 ];
 
-export function detectBauteiltyp(item: NormalizedItem, mapping: MappingIndex): string | null {
+export function detectBauteiltyp(
+  item: NormalizedItem,
+  mapping: MappingIndex,
+): DimensionMatch | null {
   // Nur der benennende Text — der Langtext erwähnt regelmäßig Nachbarbauteile
   // ("mit geböschten Wänden" in einer Erdarbeiten-Position), siehe subjectText().
-  return mapping.match('bauteiltyp', [matchTextOf(item)])?.code ?? null;
+  return mapping.match('bauteiltyp', [matchTextOf(item)]);
 }

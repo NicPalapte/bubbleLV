@@ -2,7 +2,7 @@
 // Einheit. Bewusst klein und nicht-normativ (docs/domain/README.md) — im Zweifel
 // "sonstige" statt raten.
 
-import { matchTextOf, type MappingIndex } from './mapping';
+import { matchTextOf, type DimensionMatch, type MappingIndex } from './mapping';
 import type { NormalizedItem } from './text';
 import { isPositionsart, type Positionsart } from './types';
 
@@ -35,12 +35,25 @@ const ZEIT_UNITS = new Set(['h', 'std', 'std.', 'min', 'd', 'tag', 'wo', 'mon', 
  * Einheiten-Heuristik, weil "Stundenlohnarbeiten … m³" sonst als Bauteil durchginge.
  * Der Abgleich läuft nur auf dem benennenden Text — siehe subjectText().
  */
-export function detectPositionsart(item: NormalizedItem, mapping: MappingIndex): Positionsart {
+export interface PositionsartErgebnis {
+  positionsart: Positionsart;
+  /** Der Stichwort-Treffer, falls er entschieden hat; bei der Einheit `null`. */
+  treffer: DimensionMatch | null;
+}
+
+export function detectPositionsart(
+  item: NormalizedItem,
+  mapping: MappingIndex,
+): PositionsartErgebnis {
   const hit = mapping.match('positionsart', [matchTextOf(item)]);
-  if (hit !== null && isPositionsart(hit.code)) return hit.code;
+  if (hit !== null && isPositionsart(hit.code)) return { positionsart: hit.code, treffer: hit };
 
   const unit = item.unit;
-  if (unit !== null && ZEIT_UNITS.has(unit)) return 'personal';
-  if (unit !== null && BAUTEIL_UNITS.has(unit)) return 'bauteil';
-  return 'sonstige';
+  const byUnit: Positionsart =
+    unit !== null && ZEIT_UNITS.has(unit)
+      ? 'personal'
+      : unit !== null && BAUTEIL_UNITS.has(unit)
+        ? 'bauteil'
+        : 'sonstige';
+  return { positionsart: byUnit, treffer: null };
 }

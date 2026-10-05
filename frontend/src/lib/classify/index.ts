@@ -14,6 +14,8 @@ export type {
   GewerkQuelle,
   Positionsart,
   Span,
+  Zuordnung,
+  ZuordnungAlternative,
 } from './types';
 export { getMapping, MappingIndex, parseMappingCsv } from './mapping';
 export type { Dimension, DimensionMatch, MappingRow } from './mapping';

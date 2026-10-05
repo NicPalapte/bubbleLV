@@ -54,7 +54,7 @@ describe('RuleBasedClassifier — Stufe 0 mit Referenzkatalog', () => {
     expect(attributes.beton).toBe('C20/25');
   });
 
-  it('nutzt den LB-Default für eindeutig nicht-physische Leistungsbereiche', () => {
+  it('erkennt Personal über Stichwort und Einheit, nicht über den Leistungsbereich', () => {
     const { attributes, meta } = classifier.classify(
       input({ shortText: 'Stundenlohnarbeiten Facharbeiter', unit: 'h' }),
     );
@@ -275,5 +275,108 @@ describe('RuleBasedClassifier — Gewerk aus der Abschnittsüberschrift', () => 
 
     expect(attributes.gewerkLb).toBe('012');
     expect(meta.gewerkQuelle).toBe('abschnitt');
+  });
+});
+
+// Ein Treffer ist nicht immer eindeutig: Der Hauptwert bleibt, die Alternativen
+// stehen in `meta.zuordnung`, bei Gleichstand mit dem Kennzeichen `mehrdeutig`
+// (docs/decisions/0032).
+describe('RuleBasedClassifier — Alternativen und Mehrdeutigkeit', () => {
+  const classifier = fixtureClassifier(
+    [
+      'lb_nummer,lb_bezeichnung,keywords,quelle_version',
+      '003,Landschaftsbauarbeiten,landschaftsbauarbeiten,',
+      '004,Landschaftsbauarbeiten - Pflanzen,landschaftsbauarbeiten,',
+      '012,Mauerarbeiten,mauerarbeiten|mauerwerk,',
+      '013,Betonarbeiten,betonarbeiten|stahlbetonarbeiten,',
+    ].join('\n'),
+  );
+
+  it('meldet Gleichstand als mehrdeutig und behält den ersten als Hauptwert', () => {
+    const { attributes, meta } = classifier.classify(
+      input({ shortText: 'Landschaftsbauarbeiten herstellen', unit: 'm2' }),
+    );
+    expect(attributes.gewerkLb).toBe('003');
+    expect(meta.zuordnung?.gewerk).toEqual({
+      mehrdeutig: true,
+      alternativen: [
+        {
+          code: '004',
+          label: 'Landschaftsbauarbeiten - Pflanzen',
+          stichwort: 'landschaftsbauarbeiten',
+        },
+      ],
+    });
+  });
+
+  it('führt eine Alternative auf, auch wenn der Hauptwert klar gewinnt', () => {
+    const { attributes, meta } = classifier.classify(
+      input({ shortText: 'Stahlbetonarbeiten, auch Mauerwerk', unit: 'm2' }),
+    );
+    expect(attributes.gewerkLb).toBe('013');
+    expect(meta.zuordnung?.gewerk?.mehrdeutig).toBe(false);
+    expect(meta.zuordnung?.gewerk?.alternativen.map((alt) => alt.code)).toEqual(['012']);
+  });
+
+  it('lässt `zuordnung` weg, wenn es keine Alternativen gibt', () => {
+    const { meta } = classifier.classify(input({ shortText: 'Mauerwerk herstellen', unit: 'm2' }));
+    expect(meta.zuordnung?.gewerk).toBeUndefined();
+    expect(Object.keys(meta)).not.toContain('zuordnung');
+  });
+
+  it('wertet den Kurztext vor dem Langtext, auch wenn dort ein längeres Stichwort steht', () => {
+    const { attributes, meta } = classifier.classify(
+      input({
+        shortText: 'Mauerwerk herstellen',
+        longText: 'Stahlbetonarbeiten sind nicht Teil dieser Position.',
+        unit: 'm2',
+      }),
+    );
+    expect(attributes.gewerkLb).toBe('012');
+    expect(meta.gewerkQuelle).toBe('position');
+    // Der Langtext wird erst gelesen, wenn der Kurztext nichts hergibt — also keine Alternative.
+    expect(meta.zuordnung?.gewerk).toBeUndefined();
+  });
+
+  it('liest den Langtext, wenn der Kurztext keinen Leistungsbereich nennt', () => {
+    const { attributes, meta } = classifier.classify(
+      input({
+        shortText: 'Wand herstellen',
+        longText: 'Stahlbetonarbeiten nach Plan.',
+        unit: 'm2',
+      }),
+    );
+    expect(attributes.gewerkLb).toBe('013');
+    expect(meta.gewerkQuelle).toBe('position');
+  });
+
+  it('meldet Mehrdeutigkeit auch bei einem Gewerk aus der Überschrift', () => {
+    const { attributes, meta } = classifier.classify(
+      input({
+        shortText: 'Wand herstellen',
+        unit: 'm2',
+        headings: ['Titel 05 Landschaftsbauarbeiten'],
+      }),
+    );
+    expect(attributes.gewerkLb).toBe('003');
+    expect(meta.gewerkQuelle).toBe('abschnitt');
+    expect(meta.zuordnung?.gewerk?.mehrdeutig).toBe(true);
+  });
+
+  it('nennt beim Bauteiltyp die Alternative, nicht aber als mehrdeutig', () => {
+    const { attributes, meta } = classifier.classify(
+      input({ shortText: 'Decke und Wand', unit: 'm2' }),
+    );
+    expect(attributes.bauteiltyp).toBe('Wand');
+    expect(meta.zuordnung?.bauteiltyp?.mehrdeutig).toBe(false);
+    expect(meta.zuordnung?.bauteiltyp?.alternativen.map((alt) => alt.code)).toEqual(['Decke']);
+  });
+
+  it('nennt bei der Positionsart die schwächere Art als Alternative', () => {
+    const { attributes, meta } = classifier.classify(
+      input({ shortText: 'Stundenlohn Polier und Werkplanung', unit: 'h' }),
+    );
+    expect(attributes.positionsart).toBe('personal');
+    expect(meta.zuordnung?.positionsart?.alternativen.map((alt) => alt.code)).toEqual(['planung']);
   });
 });

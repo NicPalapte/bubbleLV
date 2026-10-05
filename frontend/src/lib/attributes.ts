@@ -2,7 +2,7 @@
 // liefert bewusst ein offenes Record (neue Rulesets bringen neue Keys mit), die UI
 // braucht daraus aber verlässliche Strings.
 
-import type { ClassificationMeta, GewerkQuelle, Span } from './classify';
+import type { ClassificationMeta, GewerkQuelle, Span, Zuordnung } from './classify';
 import type { PositionSummary } from '../types/lvNode';
 
 /** Reservierte Keys: Provenance und Fundstellen, nie eine Facette. */
@@ -70,6 +70,36 @@ export function attrBoolean(attributes: Record<string, unknown>, key: string): b
   return typeof value === 'boolean' ? value : null;
 }
 
+/**
+ * Alternativen aus `_meta.zuordnung`. Fremde oder unvollständige Einträge werden
+ * verworfen statt geraten.
+ */
+function parseZuordnung(value: unknown): Record<string, Zuordnung> | undefined {
+  if (value === null || typeof value !== 'object') return undefined;
+  const result: Record<string, Zuordnung> = {};
+  for (const [key, raw] of Object.entries(value as Record<string, unknown>)) {
+    if (raw === null || typeof raw !== 'object') continue;
+    const entry = raw as Record<string, unknown>;
+    if (!Array.isArray(entry.alternativen)) continue;
+    const alternativen = entry.alternativen.flatMap((alt: unknown) => {
+      if (alt === null || typeof alt !== 'object') return [];
+      const a = alt as Record<string, unknown>;
+      return typeof a.code === 'string' && typeof a.label === 'string'
+        ? [
+            {
+              code: a.code,
+              label: a.label,
+              stichwort: typeof a.stichwort === 'string' ? a.stichwort : '',
+            },
+          ]
+        : [];
+    });
+    if (alternativen.length > 0)
+      result[key] = { mehrdeutig: entry.mehrdeutig === true, alternativen };
+  }
+  return Object.keys(result).length > 0 ? result : undefined;
+}
+
 /** Provenance-Block; von den Facetten ignoriert (docs/architecture/data-model.md). */
 export function attrMeta(attributes: Record<string, unknown>): ClassificationMeta | null {
   const meta = attributes._meta;
@@ -77,12 +107,14 @@ export function attrMeta(attributes: Record<string, unknown>): ClassificationMet
   const record = meta as Record<string, unknown>;
   if (typeof record.classifier !== 'string' || typeof record.ruleset !== 'string') return null;
   const quelle = record.gewerkQuelle;
+  const zuordnung = parseZuordnung(record.zuordnung);
   return {
     classifier: record.classifier,
     ruleset: record.ruleset,
     version: typeof record.version === 'number' ? record.version : 0,
     confidence: typeof record.confidence === 'number' ? record.confidence : 0,
     gewerkQuelle: quelle === 'position' || quelle === 'abschnitt' ? (quelle as GewerkQuelle) : null,
+    ...(zuordnung === undefined ? {} : { zuordnung }),
   };
 }
 

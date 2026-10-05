@@ -12,15 +12,15 @@
 import { detectBauteiltyp } from './bauteiltyp';
 import { runExtractors, type ExtractorContext } from './extractors';
 import { extractKeywords } from './keywords';
-import { detectPositionsart } from './positionsart';
+import { detectPositionsart, type PositionsartErgebnis } from './positionsart';
 import { createDefaultRegistry, RulesetRegistry } from './rulesets/registry';
 import type { RulesetContext } from './rulesets/types';
 import {
   getMapping,
-  matchTextOf,
   matchTextOfHeading,
   type DimensionMatch,
   type MappingIndex,
+  type MatchText,
 } from './mapping';
 import { getStlbCatalog, type StlbLeistungsbereich } from './stlbCatalog';
 import { normalize, normalizeItem, type NormalizedItem } from './text';
@@ -31,10 +31,14 @@ import type {
   GewerkQuelle,
   Positionsart,
   Span,
+  Zuordnung,
 } from './types';
 
 const CLASSIFIER_ID = 'rule';
 const VERSION = 1;
+
+/** Texte der Position, in der Reihenfolge der Auswertung: Kurztext, dann Langtext. */
+const POSITION_TEXTE = 2;
 
 interface LeistungsbereichTreffer {
   lb: StlbLeistungsbereich;
@@ -42,8 +46,11 @@ interface LeistungsbereichTreffer {
 }
 
 /**
- * Leistungsbereich: zuerst der Positionstext, danach die Überschriften der
- * übergeordneten Abschnitte. In realen LVs steht das Gewerk regelmäßig nur dort
+ * Leistungsbereich: zuerst der Kurztext, dann der Langtext, danach die
+ * Überschriften der übergeordneten Abschnitte. Ein Treffer im Kurztext schlägt einen
+ * längeren im Langtext — der Kurztext benennt die Position, der Langtext erwähnt
+ * auch Nachbarleistungen.
+ * In realen LVs steht das Gewerk regelmäßig nur dort
  * ("Titel 02 Erdarbeiten") und nicht in jeder Positionszeile — ohne diesen Rückgriff
  * bliebe die Hälfte eines LV ohne Gewerk, obwohl die Datei es sagt.
  *
@@ -57,7 +64,12 @@ function matchLeistungsbereich(
   mapping: MappingIndex,
   catalog: ReadonlyMap<string, StlbLeistungsbereich>,
 ): LeistungsbereichTreffer | null {
-  const texte = [matchTextOf(text), ...headings.map((h) => matchTextOfHeading(normalize(h)))];
+  const texte: MatchText[] = [
+    { kurztext: text.short, alle: text.short },
+    // `kurztext` bleibt leer: eine Zeile, die nur den Kurztext meint, trifft den Langtext nicht.
+    { kurztext: '', alle: text.long },
+    ...headings.map((h) => matchTextOfHeading(normalize(h))),
+  ];
   const match = mapping.match('leistungsbereich', texte);
   const lb = match === null ? undefined : catalog.get(match.code);
   return match === null || lb === undefined ? null : { lb, match };
@@ -68,9 +80,25 @@ function matchLeistungsbereich(
  * aber weiterhin eine eindeutig nicht-physische Position (Stundenlohn, Planung)
  * aus diesem LB herausziehen.
  */
-function refineWithLbHit(text: NormalizedItem, mapping: MappingIndex): Positionsart {
-  const heuristic = detectPositionsart(text, mapping);
-  return heuristic === 'sonstige' ? 'bauteil' : heuristic;
+function refineWithLbHit(text: NormalizedItem, mapping: MappingIndex): PositionsartErgebnis {
+  const ergebnis = detectPositionsart(text, mapping);
+  return ergebnis.positionsart === 'sonstige' ? { ...ergebnis, positionsart: 'bauteil' } : ergebnis;
+}
+
+/** Alternativen eines Treffers für `_meta`; `null`, wenn es keine gibt. */
+function zuordnungOf(
+  match: DimensionMatch | null,
+  labelOf: (code: string) => string = (code) => code,
+): Zuordnung | null {
+  if (match === null || match.alternativen.length === 0) return null;
+  return {
+    mehrdeutig: match.mehrdeutig,
+    alternativen: match.alternativen.map((alt) => ({
+      code: alt.code,
+      label: labelOf(alt.code),
+      stichwort: alt.stichwort,
+    })),
+  };
 }
 
 export interface RuleBasedOptions {
@@ -99,7 +127,7 @@ export class RuleBasedClassifier implements Classifier {
     // ── Stufe 0: Leistungsbereich über die Mappingtabelle. Zuerst der
     //    Positionstext, danach die Überschriften darüber.
     const lbHit = matchLeistungsbereich(text, item.headings ?? [], this.mapping, this.catalog);
-    const own = lbHit !== null && lbHit.match.fundstelle === 0;
+    const own = lbHit !== null && lbHit.match.fundstelle < POSITION_TEXTE;
     const gewerkQuelle: GewerkQuelle | null =
       lbHit === null ? null : own ? 'position' : 'abschnitt';
     const gewerkLb = lbHit === null ? null : lbHit.lb.lbNummer;
@@ -107,9 +135,17 @@ export class RuleBasedClassifier implements Classifier {
     // Die Positionsart verfeinert nur ein Treffer **im Positionstext**: dass
     // eine Position unter „Betonarbeiten" steht, macht sie noch nicht zum
     // Bauteil (dort stehen auch Vorhaltung und Stundenlohn).
-    const positionsart: Positionsart = own
-      ? refineWithLbHit(text, this.mapping)
-      : detectPositionsart(text, this.mapping);
+    const art = own ? refineWithLbHit(text, this.mapping) : detectPositionsart(text, this.mapping);
+    const positionsart: Positionsart = art.positionsart;
+    const zuordnung: Record<string, Zuordnung> = {};
+    const setzeZuordnung = (key: string, value: Zuordnung | null): void => {
+      if (value !== null) zuordnung[key] = value;
+    };
+    setzeZuordnung(
+      'gewerk',
+      zuordnungOf(lbHit?.match ?? null, (code) => this.catalog.get(code)?.lbBezeichnung ?? code),
+    );
+    setzeZuordnung('positionsart', zuordnungOf(art.treffer));
 
     // ── Gewerkeunabhängige Extraktoren: Normen, Maße, Material, Platzhalter,
     //    Verweise, Fristen — samt Fundstelle im Langtext.
@@ -146,11 +182,14 @@ export class RuleBasedClassifier implements Classifier {
         ruleset.id,
         generic.spans,
         gewerkQuelle,
+        zuordnung,
       );
     }
 
     // ── Stufe 1 + 2: Bauteiltyp bestimmen, passendes Ruleset auflösen.
-    const bauteiltyp = detectBauteiltyp(text, this.mapping);
+    const bauteiltypTreffer = detectBauteiltyp(text, this.mapping);
+    const bauteiltyp = bauteiltypTreffer?.code ?? null;
+    setzeZuordnung('bauteiltyp', zuordnungOf(bauteiltypTreffer));
     const ruleset = this.registry.resolve(bauteiltyp, gewerkLb);
     const context: RulesetContext = {
       item,
@@ -165,6 +204,7 @@ export class RuleBasedClassifier implements Classifier {
       ruleset.id,
       generic.spans,
       gewerkQuelle,
+      zuordnung,
     );
   }
 
@@ -173,6 +213,7 @@ export class RuleBasedClassifier implements Classifier {
     rulesetId: string,
     spans: Span[],
     gewerkQuelle: GewerkQuelle | null,
+    zuordnung: Record<string, Zuordnung>,
   ): ClassificationResult {
     return {
       attributes,
@@ -182,6 +223,7 @@ export class RuleBasedClassifier implements Classifier {
         version: VERSION,
         confidence: 1.0,
         gewerkQuelle,
+        ...(Object.keys(zuordnung).length > 0 ? { zuordnung } : {}),
       },
       spans,
     };

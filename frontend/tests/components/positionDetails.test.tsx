@@ -68,4 +68,79 @@ describe('PositionDetails', () => {
     expect(screen.getByText('Langtext')).toBeInTheDocument();
     expect(screen.queryByText(/wichtig/)).toBeNull();
   });
+
+  describe('Alternativen zur Zuordnung', () => {
+    function renderMit(zuordnung: unknown, extra: Record<string, unknown> = {}) {
+      const mit: PositionSummary = {
+        ...position,
+        attributes: {
+          positionsart: 'bauteil',
+          gewerkLb: '003',
+          gewerk: 'Landschaftsbauarbeiten',
+          ...extra,
+          _meta: {
+            classifier: 'rule',
+            ruleset: 'fallback',
+            version: 1,
+            confidence: 1,
+            gewerkQuelle: 'position',
+            zuordnung,
+          },
+        },
+      };
+      return render(
+        <ViewerProvider>
+          <PositionDetails node={{ ...node, position: mit }} position={mit} />
+        </ViewerProvider>,
+      );
+    }
+
+    it('zeigt bei Gleichstand den Hinweis „mehrdeutig" und beide Optionen', () => {
+      renderMit({
+        gewerk: {
+          mehrdeutig: true,
+          alternativen: [
+            {
+              code: '004',
+              label: 'Landschaftsbauarbeiten - Pflanzen',
+              stichwort: 'landschaftsbauarbeiten',
+            },
+          ],
+        },
+      });
+      const block = screen.getByTestId('zuordnung-hinweis');
+      expect(block).toHaveTextContent('GEWERK · MEHRDEUTIG');
+      expect(block).toHaveTextContent('Landschaftsbauarbeiten');
+      expect(block).toHaveTextContent('Landschaftsbauarbeiten - Pflanzen');
+      expect(block).toHaveTextContent('Beide passen gleich gut. Angezeigt wird der erste.');
+    });
+
+    it('zeigt ohne Gleichstand „auch erkannt" und keinen Mehrdeutig-Hinweis', () => {
+      renderMit({
+        gewerk: {
+          mehrdeutig: false,
+          alternativen: [{ code: '012', label: 'Mauerarbeiten', stichwort: 'mauerwerk' }],
+        },
+      });
+      const block = screen.getByTestId('zuordnung-hinweis');
+      expect(block).toHaveTextContent('GEWERK · AUCH ERKANNT');
+      expect(block).not.toHaveTextContent('Beide passen');
+    });
+
+    it('ist reine Anzeige: keine Schaltfläche, nichts zum Anklicken', () => {
+      renderMit({
+        gewerk: {
+          mehrdeutig: true,
+          alternativen: [{ code: '004', label: 'Pflanzen', stichwort: '' }],
+        },
+      });
+      const block = screen.getByTestId('zuordnung-hinweis');
+      expect(block.querySelector('button')).toBeNull();
+    });
+
+    it('zeigt nichts, wenn es keine Alternativen gibt', () => {
+      renderMit(undefined);
+      expect(screen.queryByTestId('zuordnung-hinweis')).toBeNull();
+    });
+  });
 });

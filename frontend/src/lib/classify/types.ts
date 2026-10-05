@@ -21,6 +21,24 @@ export interface ClassifierInput {
 export type GewerkQuelle = 'position' | 'abschnitt';
 
 /** Provenance-Block, landet als `attributes._meta` (docs/architecture/data-model.md). */
+/** Ein Wert, der neben dem Hauptwert ebenfalls gepasst hat. */
+export interface ZuordnungAlternative {
+  code: string;
+  /** Anzeigetext; bei Leistungsbereichen die LB-Bezeichnung, sonst der Code. */
+  label: string;
+  /** Das Stichwort, das ihn ausgelöst hat. */
+  stichwort: string;
+}
+
+/**
+ * Alternativen zu einem Hauptwert (docs/decisions/0032). `mehrdeutig` heißt:
+ * Gleichstand — der Hauptwert ist dann nur der erste in der Tabelle.
+ */
+export interface Zuordnung {
+  mehrdeutig: boolean;
+  alternativen: ZuordnungAlternative[];
+}
+
 export interface ClassificationMeta {
   classifier: string;
   /** Aufgelöster Ruleset-Key oder "fallback". */
@@ -34,6 +52,11 @@ export interface ClassificationMeta {
    * keine Angabe der Position selbst.
    */
   gewerkQuelle: GewerkQuelle | null;
+  /**
+   * Alternativen je Attribut-Key (`gewerk`, `positionsart`, `bauteiltyp`). Der Key
+   * fehlt, wenn es keine gibt. Filter und Summen arbeiten mit dem Hauptwert.
+   */
+  zuordnung?: Record<string, Zuordnung>;
 }
 
 /**

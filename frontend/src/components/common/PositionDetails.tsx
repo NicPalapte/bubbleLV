@@ -15,6 +15,7 @@ import { StatusPill } from '../ui/StatusPill';
 import {
   attributeLabel,
   attrMeta,
+  attrString,
   attrSpans,
   attrStrings,
   displayAttributes,
@@ -24,7 +25,7 @@ import { formatEuro, formatNumber } from '../../lib/format';
 import { keysOfLabel, presentCategories } from '../../lib/spanCategories';
 import { POSITION_STATUS } from '../../lib/status';
 import { useViewer } from '../../state/viewer';
-import type { ClassificationMeta } from '../../lib/classify';
+import type { ClassificationMeta, Zuordnung } from '../../lib/classify';
 import type { LVNode, PositionSummary } from '../../types/lvNode';
 
 /**
@@ -75,6 +76,51 @@ function SpanLegend({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+/**
+ * Alternativen zum angezeigten Hauptwert (docs/decisions/0032). Reine Anzeige: sie
+ * ändert weder die Zuordnung noch einen Filter. Bei Gleichstand steht der
+ * Hinweis „mehrdeutig", weil dann der Hauptwert nur der erste in der Tabelle ist.
+ */
+function ZuordnungHinweis({
+  zuordnung,
+  attributes,
+}: {
+  zuordnung: Record<string, Zuordnung>;
+  attributes: Record<string, unknown>;
+}) {
+  return (
+    <div className="mt-[8px] flex flex-col gap-[6px]" data-testid="zuordnung-hinweis">
+      {Object.entries(zuordnung).map(([key, eintrag]) => (
+        <div key={key}>
+          <div className="font-mono text-[8px] tracking-[0.6px] text-mute">
+            {attributeLabel(key).toUpperCase()}
+            {eintrag.mehrdeutig ? ' · MEHRDEUTIG' : ' · AUCH ERKANNT'}
+          </div>
+          <div className="mt-[3px] flex flex-wrap items-center gap-[5px]">
+            <Chip key="haupt" on static title="Angezeigter Wert">
+              {attrString(attributes, key) ?? '—'}
+            </Chip>
+            {eintrag.alternativen.map((alt) => (
+              <Chip
+                key={alt.code}
+                static
+                title={alt.stichwort === '' ? undefined : `Stichwort: ${alt.stichwort}`}
+              >
+                {alt.label}
+              </Chip>
+            ))}
+          </div>
+          {eintrag.mehrdeutig && (
+            <div className="mt-[3px] font-mono text-[8.5px] text-mute">
+              Beide passen gleich gut. Angezeigt wird der erste.
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
@@ -259,6 +305,9 @@ export function PositionDetails({
               />
             ))}
           </PropGrid>
+          {meta?.zuordnung !== undefined && (
+            <ZuordnungHinweis zuordnung={meta.zuordnung} attributes={position.attributes} />
+          )}
           {meta !== null && (
             <div className="mt-[8px] font-mono text-[8.5px] text-mute">
               {meta.classifier} · Ruleset {meta.ruleset} · v{meta.version}
