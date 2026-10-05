@@ -217,6 +217,20 @@ export function BubbleGraph({ root }: { root: LVNode }) {
     return out;
   }, [hintSlots, map, isHit]);
 
+  /**
+   * Treffer je Gruppe und je Los — einmal je Layout und Filter, nicht bei jedem
+   * Zoom-/Verschiebeschritt. `null` ohne Filter: dann zählt jede Position.
+   */
+  const hitCounts = useMemo(() => {
+    if (mask === null) return null;
+    const groups = new Int32Array(map.groups.length);
+    for (let slot = 0; slot < map.groupOf.length; slot++) {
+      if (map.groupOf[slot] >= 0 && isHit(slot)) groups[map.groupOf[slot]]++;
+    }
+    const hulls = map.hulls.map((hull) => hull.slots.reduce((n, s) => n + (isHit(s) ? 1 : 0), 0));
+    return { groups, hulls };
+  }, [map, mask, isHit]);
+
   const selectedSlot =
     selectedPosition === null ? -1 : (index.slotOf.get(selectedPosition.id) ?? -1);
 
@@ -653,8 +667,8 @@ export function BubbleGraph({ root }: { root: LVNode }) {
           onMouseOver={onWorldOver}
           onMouseLeave={() => setHoverSlot(-1)}
         >
-          {map.hulls.map((hull) => {
-            const hits = filtering ? hull.slots.filter(isHit).length : hull.slots.length;
+          {map.hulls.map((hull, h) => {
+            const hits = hitCounts?.hulls[h] ?? hull.slots.length;
             const width = hull.title.length * 9.4 + 28;
             return (
               <g key={hull.id} data-hull={hull.id} opacity={dimLv && hits === 0 ? 0.4 : 1}>
@@ -732,7 +746,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
 
           {visibleGroups.map(({ group, i }) => {
             const n = group.slots.length;
-            const hits = filtering && layout === 'lv' ? group.slots.filter(isHit).length : n;
+            const hits = layout === 'lv' ? (hitCounts?.groups[i] ?? n) : n;
             const nh = hintsByGroup.get(i) ?? 0;
             const meta =
               (dimLv ? `${formatCount(hits)} / ${formatCount(n)}` : formatCount(n)) +

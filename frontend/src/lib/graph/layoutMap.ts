@@ -300,21 +300,20 @@ function layoutFree(
   const rowValues = axisValues(index, rowFacet, rowIndex, options);
   const colValues = colFacet === null ? [null] : axisValues(index, colFacet, colIndex, options);
 
-  const cells = new Map<string, MapGroup>();
-  const cellGroups: Array<MapGroup & { row: number; col: number }> = [];
-  rowValues.forEach((row, i) =>
-    colValues.forEach((col, j) => {
-      const key = `${row}|${col ?? ''}`;
-      const group = {
-        ...newGroup(key, colFacet === null ? axisLabel(rowFacet, row) : '', []),
-        row: i,
-        col: j,
-      };
-      cells.set(key, group);
-      cellGroups.push(group);
-    }),
-  );
+  // Eine Position kann bei einem Merkmal mehrere Werte haben; sie zählt in der
+  // Zelle des ersten Werts, der auf der Achse steht. Steht keiner darauf (etwa
+  // weil der Filter über einen anderen Wert getroffen hat), kommt ihr erster
+  // Wert als neue Zeile/Spalte dazu — kein Treffer fällt stillschweigend heraus.
+  const pick = (slot: number, facetIndex: number, values: string[]): string => {
+    const own = index.facts[slot].facetValues[facetIndex];
+    const onAxis = own.find((value) => values.includes(value));
+    if (onAxis !== undefined) return onAxis;
+    const value = own[0] ?? NO_VALUE;
+    if (!values.includes(value)) values.push(value);
+    return value;
+  };
 
+  const cells = new Map<string, MapGroup & { row: string; col: string | null }>();
   const rest = newGroup('rest', 'übrige', []);
   rest.rest = true;
   for (let slot = 0; slot < index.size; slot++) {
@@ -322,10 +321,35 @@ function layoutFree(
       if (!options.hide) rest.slots.push(slot);
       continue;
     }
-    const row = valueOf(index, slot, rowIndex);
-    const col = colIndex < 0 ? '' : valueOf(index, slot, colIndex);
-    cells.get(`${row}|${col}`)?.slots.push(slot);
+    const row = pick(slot, rowIndex, rowValues);
+    const col = colFacet === null ? null : pick(slot, colIndex, colValues as string[]);
+    const key = `${row}|${col ?? ''}`;
+    let cell = cells.get(key);
+    if (cell === undefined) {
+      const title = colFacet === null ? axisLabel(rowFacet, row) : '';
+      cell = { ...newGroup(key, title, []), row, col };
+      cells.set(key, cell);
+    }
+    cell.slots.push(slot);
   }
+
+  // Leere Zellen nur für im Filter gewählte Werte: „gewählt, aber nichts drin"
+  // bleibt sichtbar, ohne dass Zeilen × Spalten tausende leere Kreise erzeugen.
+  const rowChosen = options.selected[rowFacet.id];
+  const colChosen = colFacet === null ? undefined : options.selected[colFacet.id];
+  const cellGroups: Array<MapGroup & { row: number; col: number }> = [];
+  rowValues.forEach((row, i) =>
+    colValues.forEach((col, j) => {
+      const key = `${row}|${col ?? ''}`;
+      const found = cells.get(key);
+      const chosen =
+        (rowChosen?.has(row) ?? false) || (col !== null && (colChosen?.has(col) ?? false));
+      if (found === undefined && !chosen) return;
+      const group = found ?? newGroup(key, colFacet === null ? axisLabel(rowFacet, row) : '', []);
+      cellGroups.push({ ...group, row: i, col: j });
+    }),
+  );
+
   for (const group of [...cellGroups, rest]) {
     group.r = groupRadius(group.slots.length);
     group.sum = sumLabel(index, group.slots);

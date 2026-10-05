@@ -3,6 +3,7 @@
 // Positionen und Platzsuche der Hinweisschilder.
 
 import { describe, expect, it } from 'vitest';
+import { FACETS } from '../../src/lib/facets';
 import { groupRadius } from '../../src/lib/graph/constants';
 import { layoutMap, NO_VALUE, type MapOptions } from '../../src/lib/graph/layoutMap';
 import { packCircles } from '../../src/lib/graph/pack';
@@ -171,7 +172,9 @@ describe('Gliederung „frei"', () => {
     expect(map.axes?.colKey).toBe('Gewerk');
     const rows = map.axes?.rows.length ?? 0;
     const cols = map.axes?.cols.length ?? 0;
-    expect(map.groups).toHaveLength(rows * cols);
+    // Ohne gewählte Filterwerte nur Zellen mit Positionen — keine leeren Kreise.
+    expect(map.groups.length).toBeLessThan(rows * cols);
+    expect(map.groups.every((group) => group.slots.length > 0)).toBe(true);
     // Jede Zeile steht auf einer Höhe, jede Spalte auf einer Breite.
     const ys = new Set(map.groups.map((group) => group.y));
     const xs = new Set(map.groups.map((group) => group.x));
@@ -197,6 +200,36 @@ describe('Gliederung „frei"', () => {
     expect(dim.groups.find((group) => group.rest)?.slots).toHaveLength(3);
     const hide = layoutMap(index, parents, options({ layout: 'frei', mask, hide: true }));
     expect(hide.groups.some((group) => group.rest)).toBe(false);
+  });
+
+  it('verliert keinen Treffer, auch bei mehreren Werten je Merkmal', () => {
+    // Zweiter Gewerk-Wert an einer Position: der Filter trifft über ihn.
+    const slot = slotOf('02.01.0010');
+    const gewerk = FACETS.findIndex((facet) => facet.id === 'gewerk');
+    const facts = index.facts.map((fact, i) =>
+      i === slot
+        ? {
+            ...fact,
+            facetValues: fact.facetValues.map((values, f) =>
+              f === gewerk ? ['Erdarbeiten', 'Malerarbeiten'] : values,
+            ),
+          }
+        : fact,
+    );
+    const multi = { ...index, facts };
+    const selected = { gewerk: new Set(['Malerarbeiten']) };
+    const mask = maskOf((s) => s === slot);
+    for (const cols of [null, 'einheit']) {
+      const map = layoutMap(
+        multi,
+        parents,
+        options({ layout: 'frei', rows: 'gewerk', cols, mask, selected, hide: true }),
+      );
+      const placed = map.groups.flatMap((group) => group.slots);
+      expect(placed).toEqual([slot]);
+      if (cols === null) expect(map.groups[0].title).toBe('Malerarbeiten');
+      expect(Number.isFinite(map.px[slot])).toBe(true);
+    }
   });
 
   it('führt Positionen ohne Wert unter „ohne Angabe"', () => {
