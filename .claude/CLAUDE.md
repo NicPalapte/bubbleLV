@@ -8,7 +8,7 @@ Datei dient, gehört nicht in dieses Produkt.
 
 **Reine Frontend-Anwendung** – kein Server, keine Datenbank, kein Login. GAEB-Datei im
 Browser laden, klassifizieren, prüfen und im Graphen mit Fenstern darüber
-durchsuchen, filtern und vergleichen. Nichts wird gespeichert – die Datei verlässt den
+durchsuchen und filtern. Nichts wird gespeichert – die Datei verlässt den
 Browser nie, ein Reload verwirft den Stand.
 
 Vollständige Projekt-/Ordnerbeschreibung: @README.md
@@ -66,7 +66,7 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
   **keine** Fixture-Daten, **kein** `localStorage` für Fachdaten
 - `matchPos` ist die einzige Quelle für Filter-/Suchlogik
 - Tree und Bubble-Graph konsumieren **denselben** rekursiven `LVNode`-Baum
-- Alle Ansichten arbeiten auf derselben gefilterten Menge und derselben Auswahl;
+- Graph, Seitenfenster und Fenster arbeiten auf derselben gefilterten Menge und derselben Auswahl;
   Zustand getrennt in `filterState` / `selectionState` / `viewState`
 
 ## Code-Style
@@ -110,11 +110,11 @@ Status-**Änderung**, EP-Kalkulation, Excel-/Manuell-Import, Multi-Tenant, GAEB-
 LLM-Klassifizierung. Details → @docs/scope.md #out-of-scope
 
 ## Kritische Constraints
-- **~10k Positionen** müssen flüssig laufen — in *jeder* Ansicht. Messbare Zielwerte:
-  erste Ansicht < 5 s, Filterwechsel < 100 ms, Ansichtswechsel < 200 ms
+- **~10k Positionen** müssen flüssig laufen — im Graphen und in jedem Fenster. Messbare
+  Zielwerte: erste Ansicht < 5 s, Filterwechsel < 100 ms, Fenster öffnen < 200 ms
   (siehe @docs/scope.md). Mittel: flacher Positions-Index statt Baum-Traversierung
   je Render, Aggregation im Web Worker, Virtualisierung, LOD + Culling im Graphen.
-- **Ein Filterzustand, alle Ansichten.** Ein Ansichtswechsel oder ein Fenster öffnen/
+- **Ein Filterzustand für Graph und Fenster.** Ein Fenster oder Reiter öffnen/
   schließen ändert nie Filter, Suche oder Auswahl. Der Graph ist der Hauptscreen; Fenster
   und Seitenfenster liegen darüber (`view.side`, `view.tableWindow`).
 - **Beziehungen werden einmal beim Laden im Worker berechnet**, nie im Render. Kein
