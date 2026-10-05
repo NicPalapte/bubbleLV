@@ -185,20 +185,31 @@ export function BubbleGraph({ root }: { root: LVNode }) {
     return out;
   }, [lv]);
 
-  /** Positionen mit Hinweis, als Indexeinträge. */
+  /**
+   * Positionen mit Hinweis samt Schildtext — einmal je Datei, nicht je Frame:
+   * die Schilder werden bei jedem Zoom-/Verschiebeschritt neu platziert.
+   */
   const hintSlots = useMemo(() => {
-    const out: number[] = [];
-    for (const id of hints.keys()) {
+    const out: Array<{ slot: number; id: string; label: string; strong: boolean }> = [];
+    for (const [id, found] of hints) {
       const slot = index.slotOf.get(id);
-      if (slot !== undefined) out.push(slot);
+      if (slot === undefined) continue;
+      const flag =
+        found.flags.find((candidate) => candidate.severity === found.severity) ?? found.flags[0];
+      out.push({
+        slot,
+        id,
+        label: `⚠ ${flag.id} · ${ruleLabels.get(flag.id) ?? flag.title}`,
+        strong: found.severity === 'beachten',
+      });
     }
     return out;
-  }, [hints, index]);
+  }, [hints, index, ruleLabels]);
 
   /** Hinweise je Gruppe, für die Kennzeile über dem Kreis. */
   const hintsByGroup = useMemo(() => {
     const out = new Map<number, number>();
-    for (const slot of hintSlots) {
+    for (const { slot } of hintSlots) {
       const group = map.groupOf[slot];
       if (group < 0 || !isHit(slot)) continue;
       out.set(group, (out.get(group) ?? 0) + 1);
@@ -561,23 +572,15 @@ export function BubbleGraph({ root }: { root: LVNode }) {
     let pins: PlacedPin[] = [];
     if (marks) {
       const anchors: PinAnchor[] = [];
-      for (const slot of hintSlots) {
+      for (const { slot, id, label, strong } of hintSlots) {
         if (!isHit(slot) || !Number.isFinite(map.px[slot])) continue;
+        // Außerhalb des Bildes gibt es kein Schild — vor dem Objektbau aussortieren.
+        const sx = map.px[slot] * view.k + view.tx;
+        const sy = map.py[slot] * view.k + view.ty;
+        if (sx <= 0 || sy <= 0 || sx >= w || sy >= h) continue;
         const group = map.groups[map.groupOf[slot]];
         if (group === undefined || isCoarse(group)) continue;
-        const id = index.nodes[slot].id;
-        const found = hints.get(id);
-        if (found === undefined) continue;
-        const flag =
-          found.flags.find((candidate) => candidate.severity === found.severity) ?? found.flags[0];
-        anchors.push({
-          id,
-          sx: map.px[slot] * view.k + view.tx,
-          sy: map.py[slot] * view.k + view.ty,
-          rr: (radii[slot] + 3) * view.k,
-          label: `⚠ ${flag.id} · ${ruleLabels.get(flag.id) ?? flag.title}`,
-          strong: found.severity === 'beachten',
-        });
+        anchors.push({ id, sx, sy, rr: (radii[slot] + 3) * view.k, label, strong });
       }
       pins = placePins(anchors, { width: w, height: h }, blocked);
     }
