@@ -205,7 +205,6 @@ describe('Ring im Graphen', () => {
       </ViewerProvider>,
     );
     fireEvent.click(screen.getByRole('button', { name: 'laden' }));
-    fireEvent.click(screen.getByTitle('Alles ausklappen'));
     return result;
   }
 

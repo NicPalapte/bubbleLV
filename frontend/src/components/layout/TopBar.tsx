@@ -137,19 +137,19 @@ export function TopBar() {
               </span>
             </div>
 
-            <div className="mx-auto flex h-[38px] min-w-0 max-w-[640px] flex-1 items-center gap-[6px] overflow-hidden rounded-[var(--r-md)] border border-line bg-sunken pl-[10px] pr-[4px] focus-within:border-blue">
-              <span className="text-[13px] text-mute" aria-hidden="true">
+            <div className="mx-auto flex h-[36px] min-w-0 max-w-[620px] flex-1 items-center gap-[6px] overflow-hidden rounded-[var(--r-pill)] border border-line bg-surface pl-[12px] pr-[6px] shadow-[var(--shadow-sm)] focus-within:border-blue focus-within:shadow-[0_0_0_3px_var(--blueS)]">
+              <span className="text-[14px] text-mute" aria-hidden="true">
                 ⌕
               </span>
               {chips.slice(0, MAX_CHIPS).map((chip) => (
                 <span
                   key={chip.key}
-                  className="inline-flex max-w-[160px] shrink-0 items-center gap-[4px] rounded-[var(--r-pill)] border border-line bg-surface py-[2px] pl-[8px] pr-[4px] font-mono text-[10px] text-ink"
+                  className="inline-flex h-[24px] max-w-[160px] shrink-0 items-center gap-[6px] rounded-[var(--r-pill)] bg-blueS pl-[9px] pr-[6px] font-mono text-[10.5px] text-blueD"
                 >
                   <span className="truncate">{chip.label}</span>
                   <button
                     type="button"
-                    className="cursor-pointer border-none bg-transparent p-0 text-[11px] leading-none text-mute hover:text-ink"
+                    className="cursor-pointer border-none bg-transparent px-[3px] py-0 text-[10px] leading-none text-blueD opacity-70 hover:opacity-100"
                     onClick={chip.remove}
                     aria-label={`${chip.label} entfernen`}
                   >
@@ -172,19 +172,19 @@ export function TopBar() {
                 onChange={(event) => changeSearch(event.target.value)}
                 placeholder="Positionen, OZ, Langtext durchsuchen"
                 aria-label="Suche"
-                className="min-w-[80px] flex-1 border-none bg-transparent font-mono text-[11.5px] text-ink outline-none"
+                className="min-w-[60px] flex-1 border-none bg-transparent font-mono text-[12px] text-ink outline-none placeholder:text-mute"
               />
-              <span className="rounded-[4px] border border-line px-[5px] font-mono text-[9px] text-mute">
+              <span className="rounded-[5px] border border-line bg-sunken px-[5px] py-[1px] font-mono text-[9.5px] text-mute">
                 /
               </span>
               <button
                 type="button"
                 aria-pressed={filterOpen}
                 onClick={() => dispatch({ type: 'sidePanel', panel: filterOpen ? null : 'filter' })}
-                className={`h-[30px] shrink-0 cursor-pointer whitespace-nowrap rounded-[var(--r-sm)] border px-[10px] font-mono text-[11px] ${
-                  filterOpen || chips.length > 0
-                    ? 'border-blue bg-blueS text-blueD'
-                    : 'border-line bg-surface text-ink hover:border-line2'
+                className={`inline-flex h-[26px] shrink-0 cursor-pointer items-center whitespace-nowrap rounded-[var(--r-pill)] border px-[10px] font-mono text-[10.5px] ${
+                  filterOpen
+                    ? 'border-solid border-blue bg-blueS text-blueD'
+                    : 'border-dashed border-line2 bg-transparent text-dim hover:border-solid hover:border-blue hover:bg-blueS hover:text-blueD'
                 }`}
               >
                 + Filter

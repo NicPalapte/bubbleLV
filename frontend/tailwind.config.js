@@ -24,6 +24,7 @@ export default {
         cyan: 'var(--cyan)',
         amber: 'var(--amber)',
         amberS: 'var(--amberS)',
+        amberD: 'var(--amberD)',
         greenD: 'var(--greenD)',
         greenS: 'var(--greenS)',
         red: 'var(--red)',

@@ -1,16 +1,12 @@
 // WP-F: Der Graph muss Richtung ~10k Positionen tragen. Geprüft wird die Engine
-// (Layout, Dichte-Klassifizierung, Culling) — nicht das Rendering.
+// (Layout, Größe, Culling) — nicht das Rendering.
 
 import { describe, expect, it } from 'vitest';
-import { sizeModeById, tierOf } from '../../src/lib/graph/constants';
 import { cullBounds, isInView } from '../../src/lib/graph/culling';
-import {
-  allExpanded,
-  classifyChildren,
-  expandedToDepth,
-  layoutRadial,
-} from '../../src/lib/graph/layoutRadial';
-import { buildTree } from '../../src/lib/tree/buildTree';
+import { layoutMap, type MapOptions } from '../../src/lib/graph/layoutMap';
+import { positionRadii } from '../../src/lib/graph/sizes';
+import { buildPositionIndex } from '../../src/lib/index/positionIndex';
+import { buildTree, indexParents } from '../../src/lib/tree/buildTree';
 import type { LVDraft, PositionDraft, SectionDraft } from '../../src/types/lvDraft';
 
 /** 1 Los × 10 Abschnitte × 10 Unterabschnitte × 100 Positionen = 10 000 Positionen. */
@@ -50,74 +46,90 @@ function syntheticDraft(): LVDraft {
 
 const tree = buildTree(syntheticDraft());
 
+const index = buildPositionIndex(tree);
+const parents = indexParents(tree);
+
+function options(overrides: Partial<MapOptions> = {}): MapOptions {
+  return {
+    layout: 'lv',
+    rows: 'einheit',
+    cols: null,
+    radii: positionRadii(index, 'quantity'),
+    mask: null,
+    hide: false,
+    selected: {},
+    ...overrides,
+  };
+}
+
 describe('Graph-Engine bei ~10k Positionen', () => {
   it('aggregiert den Baum vollständig', () => {
     expect(tree.positionCount).toBe(10_000);
     expect(tree.totalPrice).toBe(1_000_000);
   });
 
-  it('zeichnet im Standardzustand nur die oberen Ebenen', () => {
-    const { nodes } = layoutRadial(tree, expandedToDepth(tree, 2));
-    // Projekt + Los + 10 Abschnitte ist die Obergrenze; die 10 000 Positionen
-    // bleiben eingeklappt.
-    expect(nodes.size).toBeLessThan(50);
+  it('macht jeden Abschnitt der untersten Ebene zu einer Gruppe', () => {
+    const map = layoutMap(index, parents, options());
+    expect(map.groups).toHaveLength(100);
+    expect(map.groups.every((group) => group.slots.length === 100)).toBe(true);
+    // Das eine Los wird zur Hülle um alle Gruppen.
+    expect(map.hulls).toHaveLength(1);
+    expect(map.hulls[0].slots).toHaveLength(10_000);
   });
 
-  it('legt die Positionen eines Unterabschnitts als Wolke statt als Sammelknoten', () => {
-    const { nodes, clouds } = layoutRadial(tree, allExpanded(tree));
-    const subsection = tree.children[0].children[0].children[0];
-    expect(classifyChildren(subsection.children)).toBe('cloud');
-    // Kein zweiter Knoten neben dem Abschnitt (Issue #46) …
-    expect(nodes.has(`cluster:${subsection.id}`)).toBe(false);
-    // … stattdessen liegen alle 100 Positionen in seiner Wolke.
-    expect(clouds.get(subsection.id)?.count).toBe(100);
-    expect(nodes.get(subsection.children[0].id)?.cloudOf).toBe(subsection.id);
+  it('nennt die Ebene darüber als Beschriftung am Kreis', () => {
+    const map = layoutMap(index, parents, options());
+    const group = map.groups.find((candidate) => candidate.nodeId !== null);
+    expect(group?.context).toMatch(/Abschnitt \d+/);
   });
 
-  it('platziert bei aufgeklappten Ebenen in vertretbarer Zeit', () => {
+  it('platziert alle Positionen in vertretbarer Zeit', () => {
     const started = performance.now();
-    const { nodes } = layoutRadial(tree, allExpanded(tree));
-    expect(nodes.size).toBeGreaterThan(100);
+    const map = layoutMap(index, parents, options());
     expect(performance.now() - started).toBeLessThan(1000);
+    expect(map.px.every(Number.isFinite)).toBe(true);
+  });
+
+  it('lässt keine zwei Gruppen einander überdecken', () => {
+    const { groups } = layoutMap(index, parents, options());
+    for (let i = 0; i < groups.length; i++) {
+      for (let j = i + 1; j < groups.length; j++) {
+        const a = groups[i];
+        const b = groups[j];
+        expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeGreaterThanOrEqual(a.r + b.r - 0.01);
+      }
+    }
+  });
+
+  it('hält jede Position in ihrem Gruppenkreis', () => {
+    const map = layoutMap(index, parents, options());
+    for (const group of map.groups) {
+      for (const slot of group.slots) {
+        const distance = Math.hypot(map.px[slot] - group.x, map.py[slot] - group.y);
+        expect(distance).toBeLessThanOrEqual(group.r);
+      }
+    }
   });
 
   it('reduziert die Zeichenmenge durch Viewport-Culling deutlich', () => {
-    const { nodes, extent } = layoutRadial(tree, allExpanded(tree));
+    const map = layoutMap(index, parents, options());
     const count = (tx: number, ty: number, k: number): number => {
       const bounds = cullBounds({ tx, ty, k, width: 1200, height: 800 });
       let visible = 0;
-      for (const node of nodes.values()) if (isInView(bounds, node.cx, node.cy, 40)) visible++;
+      for (let slot = 0; slot < index.size; slot++) {
+        if (isInView(bounds, map.px[slot], map.py[slot], 8)) visible++;
+      }
       return visible;
     };
-
-    // Zoomstufe relativ zur Ausdehnung: der Graph ragt knapp über den Rand.
-    const k = 1600 / (2 * extent);
-    const overview = count(600, 400, k);
-    const zoomedIn = count(600, 400, k * 4);
+    const { x0, x1 } = map.bounds;
+    const k = 1200 / (x1 - x0);
+    const tx = -x0 * k;
+    const overview = count(tx, 400, k);
+    const zoomedIn = count(600 - ((x0 + x1) / 2) * k * 4, 400, k * 4);
     expect(overview).toBeGreaterThan(0);
-    expect(overview).toBeLessThan(nodes.size);
-    // Weiter hineinzoomen zeigt weniger Knoten …
+    // Weiter hineinzoomen zeigt weniger Positionen …
     expect(zoomedIn).toBeLessThan(overview);
-    // … und ein weit weggeschobener Viewport gar keine.
+    // … und ein weit weggeschobener Ausschnitt gar keine.
     expect(count(-100_000, -100_000, k)).toBe(0);
-  });
-
-  it('leitet die Anzeige-Ebene aus Knotenart und Tiefe ab', () => {
-    const lot = tree.children[0];
-    const section = lot.children[0];
-    const subsection = section.children[0];
-    expect(tierOf(tree, 0)).toBe('project');
-    expect(tierOf(lot, 1)).toBe('lot');
-    expect(tierOf(section, 2)).toBe('section');
-    expect(tierOf(subsection, 3)).toBe('subsection');
-    expect(tierOf(subsection.children[0], 4)).toBe('position');
-  });
-
-  it('liefert je Größenmodus den passenden Aggregatwert', () => {
-    // Zweites Argument: die Mengen je Knoten. Nur der Modus „Menge" liest sie,
-    // die drei hier geprüften nicht — deshalb `null`.
-    expect(sizeModeById('count').get(tree, null)).toBe(10_000);
-    expect(sizeModeById('cost').get(tree, null)).toBe(1_000_000);
-    expect(sizeModeById('uniform').get(tree, null)).toBe(1);
   });
 });

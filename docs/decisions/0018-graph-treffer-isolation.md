@@ -1,6 +1,6 @@
 # 0018 – Treffer im Graphen: isolieren oder im Ganzen zeigen
 
-- **Status:** akzeptiert
+- **Status:** ersetzt durch 0035
 - **Datum:** 2026-09-22
 - **Betrifft:** Frontend, Bubble-Graph, Issues #51 und #60
 

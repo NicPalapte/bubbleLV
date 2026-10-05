@@ -14,7 +14,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0005 | [Preview nur bei Code-Änderungen](0005-preview-nur-bei-code.md)                              | akzeptiert | 2026-09-10 |
 | 0006 | [Fokus: ein LV vollständig verstehen](0006-fokus-lv-verstehen.md)                            | akzeptiert | 2026-09-11 |
 | 0007 | [Previews werden beim Deploy aufgeräumt](0007-previews-im-deploy-aufraeumen.md)              | akzeptiert | 2026-09-11 |
-| 0008 | [Positionen als Wolke statt als Ring](0008-graph-layout-positionswolke.md)                   | akzeptiert | 2026-09-11 |
+| 0008 | [Positionen als Wolke statt als Ring](0008-graph-layout-positionswolke.md)                   | ersetzt durch 0035 | 2026-09-11 |
 | 0009 | [Demo-LV in der App](0009-demo-lv.md)                                                        | akzeptiert | 2026-09-11 |
 | 0010 | [Positions-Index und vorberechnete Aggregate](0010-positions-index-und-aggregate.md)         | akzeptiert | 2026-09-14 |
 | 0011 | [Extraktoren und Fundstellen im Langtext](0011-extraktoren-und-fundstellen.md)               | akzeptiert | 2026-09-14 |
@@ -24,7 +24,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0015 | [Gewerk aus der Abschnittsüberschrift erben](0015-gewerk-aus-der-abschnittsueberschrift.md)  | akzeptiert | 2026-09-16 |
 | 0016 | [Ähnliche Positionen: wie Bubble sie findet](0016-aehnlichkeit-und-cluster.md)               | akzeptiert | 2026-09-16 |
 | 0017 | [Keine Nutzungsmessung, nur ein Melde-Knopf](0017-keine-nutzungsmessung.md)                  | akzeptiert | 2026-09-21 |
-| 0018 | [Treffer im Graphen: isolieren oder im Ganzen zeigen](0018-graph-treffer-isolation.md)       | akzeptiert | 2026-09-22 |
+| 0018 | [Treffer im Graphen: isolieren oder im Ganzen zeigen](0018-graph-treffer-isolation.md)       | ersetzt durch 0035 | 2026-09-22 |
 | 0019 | [Mengen im Graphen nur innerhalb einer Einheit](0019-mengen-nur-je-einheit.md)               | akzeptiert | 2026-09-22 |
 | 0020 | [Langtext-Vergleich: Wortmenge statt Teilfolge](0020-langtext-vergleich-ohne-bibliothek.md)  | akzeptiert | 2026-09-22 |
 | 0021 | [Matrix: Zählregeln und Farbskala](0021-matrix-zaehlregeln.md)                               | ersetzt durch 0031 | 2026-09-22 |
@@ -41,6 +41,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0032 | [STLB-Katalog ohne Spalte `positionsart_default`](0032-stlb-katalog-ohne-positionsart.md)    | akzeptiert | 2026-10-04 |
 | 0033 | [Neuer Look und Dunkelmodus](0033-neuer-look-und-dunkelmodus.md)                            | akzeptiert | 2026-10-05 |
 | 0034 | [Der Graph ist der Hauptscreen](0034-graph-als-hauptscreen.md)                               | akzeptiert | 2026-10-05 |
+| 0035 | [Graph: Gliederung „nach LV" oder „frei"](0035-graph-gliederung.md)                     | akzeptiert | 2026-10-05 |
 
 ## Wann schreibe ich eine neue Datei?
 

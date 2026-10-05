@@ -3,7 +3,7 @@
 // Eigenschaften-Spalte — die Eigenschaften zeigt die Positionskarte.
 
 import { useCallback, useRef } from 'react';
-import { SIDE_PANEL_SPACE } from './SidePanel';
+import { sidePanelSpace } from './SidePanel';
 import { useDragResize } from '../common/useDragResize';
 import { PositionsTable } from '../table/PositionsTable';
 import { graphOverlayProps } from '../../lib/graph/overlay';
@@ -24,7 +24,7 @@ export function TableWindow() {
   const {
     tree,
     selectedNode,
-    view: { tableWindow, side },
+    view: { tableWindow, side, sideWidth },
   } = useViewer();
   const dispatch = useViewerDispatch();
   const ref = useRef<HTMLDivElement>(null);
@@ -67,7 +67,7 @@ export function TableWindow() {
         maxWidth:
           side === null
             ? `calc(100% - ${tableWindow.pos.right + EDGE_GAP}px)`
-            : `max(${TABLE_MIN_WIDTH}px, calc(100% - ${tableWindow.pos.right + SIDE_PANEL_SPACE}px))`,
+            : `max(${TABLE_MIN_WIDTH}px, calc(100% - ${tableWindow.pos.right + sidePanelSpace(sideWidth)}px))`,
         maxHeight: `calc(100% - ${tableWindow.pos.top + EDGE_GAP}px)`,
       }}
     >

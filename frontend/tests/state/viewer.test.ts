@@ -11,7 +11,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { classifyAndBuild } from '../../src/lib/pipeline/runPipeline';
-import { buildTree } from '../../src/lib/tree/buildTree';
+import { SIDE_WIDTH_MAX, SIDE_WIDTH_MIN } from '../../src/state/viewState';
 import {
   INITIAL_VIEWER_STATE,
   PANEL_MAX_WIDTH,
@@ -58,50 +58,17 @@ function loadedState(state: ViewerState = base): ViewerState {
   return viewerReducer(state, { type: 'loaded', lv: classifyAndBuild(DRAFT, 'test.x83') });
 }
 
-describe('viewerReducer · expandAll', () => {
-  it('öffnet auch Sammel-Bubbles, damit wirklich alles sichtbar ist (Issue #41)', () => {
-    const many: LVDraft = {
-      ...DRAFT,
-      lots: [
-        {
-          number: '001',
-          label: 'Los 1',
-          sections: [
-            {
-              number: '001.001',
-              label: 'Viele',
-              // Mehr als CLUSTER_AT (40) Unterabschnitte. Positionen taugen
-              // dafür nicht mehr: sie werden nie geclustert, sondern liegen als
-              // Wolke um ihren Abschnitt (WP-41-5, Issue #46).
-              sections: Array.from({ length: 45 }, (_, index) => ({
-                number: `001.001.${String(index + 1).padStart(3, '0')}`,
-                label: `Unter ${index + 1}`,
-                sections: [],
-                positions: [
-                  {
-                    ...DRAFT.lots[0].sections[0].positions[0],
-                    oz: `001.001.${String(index + 1).padStart(3, '0')}.0010`,
-                  },
-                ],
-              })),
-              positions: [],
-            },
-          ],
-        },
-      ],
-    };
-    const state = viewerReducer(base, {
-      type: 'loaded',
-      lv: classifyAndBuild(many, 'viele.x83'),
-    });
-    const next = viewerReducer(state, { type: 'expandAll' });
-    expect(next.selection.openClusters.has('section:001.001')).toBe(true);
-    // „Alles zuklappen" nimmt sie wieder zurück.
-    expect(viewerReducer(next, { type: 'collapseAll' }).selection.openClusters.size).toBe(0);
-  });
-});
-
 describe('viewerReducer · Ansichtsmodus', () => {
+  it('hält die Breite des Seitenfensters in ihren Grenzen und über ein neues LV', () => {
+    const wide = viewerReducer(base, { type: 'sideWidth', width: 5000 });
+    expect(wide.view.sideWidth).toBe(SIDE_WIDTH_MAX);
+    const narrow = viewerReducer(base, { type: 'sideWidth', width: 10 });
+    expect(narrow.view.sideWidth).toBe(SIDE_WIDTH_MIN);
+    const set = viewerReducer(base, { type: 'sideWidth', width: 420 });
+    expect(viewerReducer(set, { type: 'sideWidth', width: 420 })).toBe(set);
+    expect(loadedState(set).view.sideWidth).toBe(420);
+  });
+
   it('beginnt im Graphen, ohne offenes Seitenfenster oder Fenster', () => {
     const state = loadedState();
     expect(state.view.mode).toBe('graph');
@@ -277,73 +244,54 @@ describe('viewerReducer · Ansichtswechsel lässt Filter und Auswahl in Ruhe', (
   });
 });
 
-describe('viewerReducer · Aufklapp-Zustand', () => {
-  it('öffnet nach dem Import Projekt und Lose', () => {
+describe('viewerReducer · Gliederung des Graphen', () => {
+  it('beginnt „nach LV", mit Hinweisen und Größe nach Menge', () => {
     const state = loadedState();
-    const lot = state.lv?.tree.children[0];
-    expect(state.selection.expanded.has('project')).toBe(true);
-    expect(state.selection.expanded.has(lot?.id ?? '')).toBe(true);
-    // Der Abschnitt darunter bleibt zu — sonst stünde sofort das ganze LV da.
-    expect(state.selection.expanded.has(lot?.children[0].id ?? '')).toBe(false);
+    expect(state.view.graph.layout).toBe('lv');
+    expect(state.view.graph.showHints).toBe(true);
+    expect(state.view.graph.sizeMode).toBe('quantity');
   });
 
-  it('schaltet einen Knoten um und lässt ihn mit `open` gezielt offen', () => {
-    const state = loadedState();
-    const section = state.lv?.tree.children[0].children[0].id ?? '';
-
-    const opened = viewerReducer(state, { type: 'toggleExpanded', id: section });
-    expect(opened.selection.expanded.has(section)).toBe(true);
-    expect(
-      viewerReducer(opened, { type: 'toggleExpanded', id: section }).selection.expanded.has(
-        section,
-      ),
-    ).toBe(false);
-    // Ein zweiter Klick auf die Baumzeile darf nicht wieder zuklappen.
-    expect(
-      viewerReducer(opened, {
-        type: 'toggleExpanded',
-        id: section,
-        open: true,
-      }).selection.expanded.has(section),
-    ).toBe(true);
-  });
-
-  it('klappt alles auf und wieder auf die Lose zurück', () => {
-    const state = loadedState();
-    const section = state.lv?.tree.children[0].children[0].id ?? '';
-
-    const all = viewerReducer(state, { type: 'expandAll' });
-    expect(all.selection.expanded.has(section)).toBe(true);
-
-    const none = viewerReducer(all, { type: 'collapseAll' });
-    expect(none.selection.expanded.has(section)).toBe(false);
-    // Die Wurzel bleibt offen, sonst wäre der Baum leer.
-    expect(none.selection.expanded.has('project')).toBe(true);
-  });
-
-  it('behält Aufklapp- und Cluster-Zustand auf dem Weg durch die Tabelle', () => {
-    const state = loadedState();
-    const section = state.lv?.tree.children[0].children[0].id ?? '';
-
-    const opened = viewerReducer(viewerReducer(state, { type: 'toggleExpanded', id: section }), {
-      type: 'toggleCluster',
-      id: section,
+  it('macht in „frei" einen neuen Filter von selbst zur Spalte', () => {
+    const frei = viewerReducer(loadedState(), { type: 'graphLayout', value: 'frei' });
+    const next = viewerReducer(frei, {
+      type: 'setFacet',
+      facetId: 'gewerk',
+      values: new Set(['Betonarbeiten']),
     });
-    const table = viewerReducer(opened, { type: 'openInTable', id: section });
-    const back = viewerReducer(table, { type: 'showGraph' });
-
-    expect(back.selection.expanded).toBe(opened.selection.expanded);
-    expect(back.selection.openClusters.has(section)).toBe(true);
+    expect(next.view.graph.cols).toBe('gewerk');
+    // Eine gesetzte Spalte überschreibt der nächste Filter nicht.
+    const second = viewerReducer(next, {
+      type: 'setFacet',
+      facetId: 'positionsart',
+      values: new Set(['bauteil']),
+    });
+    expect(second.view.graph.cols).toBe('gewerk');
   });
 
-  it('setzt den Aufklapp-Zustand erst mit einem neuen Import zurück', () => {
+  it('lässt „nach LV" beim Filtern unangetastet', () => {
     const state = loadedState();
-    const section = state.lv?.tree.children[0].children[0].id ?? '';
-    const opened = viewerReducer(state, { type: 'toggleExpanded', id: section });
+    const next = viewerReducer(state, {
+      type: 'setFacet',
+      facetId: 'gewerk',
+      values: new Set(['Betonarbeiten']),
+    });
+    expect(next.view).toBe(state.view);
+  });
 
-    const reloaded = loadedState();
-    expect(opened.selection.expanded.has(section)).toBe(true);
-    expect(reloaded.selection.expanded.has(section)).toBe(false);
+  it('nimmt die Spalte weg, wenn die Zeilen dasselbe Merkmal bekommen', () => {
+    const frei = viewerReducer(loadedState(), { type: 'graphCols', value: 'gewerk' });
+    const next = viewerReducer(frei, { type: 'graphRows', value: 'gewerk' });
+    expect(next.view.graph.rows).toBe('gewerk');
+    expect(next.view.graph.cols).toBeNull();
+  });
+
+  it('behält Gliederung und Hinweis-Schalter über einen neuen Import', () => {
+    let state = viewerReducer(loadedState(), { type: 'graphLayout', value: 'frei' });
+    state = viewerReducer(state, { type: 'graphHints', value: false });
+    const reloaded = loadedState(state);
+    expect(reloaded.view.graph.layout).toBe('frei');
+    expect(reloaded.view.graph.showHints).toBe(false);
   });
 });
 
@@ -392,18 +340,6 @@ describe('viewerReducer · Prüfregeln', () => {
     const open = viewerReducer(base, { type: 'toggleRuleOpen', id: 'V1' });
     expect(open.view.overview.openRules.has('V1')).toBe(true);
     expect(open.filter.mutedRules.size).toBe(0);
-  });
-});
-
-// Der Baum wird für die Aktionen gebraucht, die alles auf- oder zuklappen —
-// ohne geladenes LV dürfen sie nichts tun statt zu stolpern.
-// Der Baum wird für die Aktionen gebraucht, die alles auf- oder zuklappen —
-// ohne geladenes LV dürfen sie nichts tun statt zu stolpern.
-describe('viewerReducer · ohne geladenes LV', () => {
-  it('lässt `expandAll` und `collapseAll` wirkungslos', () => {
-    expect(viewerReducer(base, { type: 'expandAll' })).toBe(base);
-    expect(viewerReducer(base, { type: 'collapseAll' })).toBe(base);
-    expect(buildTree(DRAFT).children.length).toBe(1);
   });
 });
 

@@ -1,13 +1,17 @@
-// Bubble-Graph — Kern des Produkts. Konsumiert denselben LVNode-Baum und
-// denselben Aufklapp-Zustand wie die Tree-Spalte (Issue #18). Portiert aus
-// `Bubbles` in design/claude-design/lv-graph.jsx; Vergabepaket-Kanten,
-// Dokument-Knoten und das Demo-Los entfallen (out of scope).
+// Bubble-Graph — der Hauptscreen (docs/decisions/0034-graph-als-hauptscreen.md).
+// Gruppen als Kreise, Positionen als Punkte darin, Lose als gestrichelte Hülle;
+// Gliederung „nach LV" oder „frei" (docs/decisions/0035-graph-gliederung.md).
+// Die Lage rechnet `layoutMap` (rein, ohne DOM); hier wird gezeichnet,
+// verschoben und gezoomt.
 //
 // Lokal bleibt nur der laufende Ausschnitt (Pan/Zoom): er ändert sich beim
 // Ziehen pro Frame und würde als Context-State die ganze Seite neu rendern.
-// Beim Verlassen der Ansicht wandert er einmal in `view.graph.viewport` und
-// steht beim Zurückwechseln wieder genau so da (WP-L). Nur ein neuer Import
-// verwirft ihn — dann passt `fit()` beim Mounten neu ein.
+// Beim Abbau wandert er einmal in `view.graph.viewport`.
+//
+// Über dem Graphen liegen zwei Ebenen in Bildschirmkoordinaten: die
+// Hinweisschilder (lib/graph/pins.ts) und die gestrichelte Linie von der
+// gewählten Bubble zur Positionskarte. Beide brauchen die Lage der Fenster und
+// entstehen deshalb nach dem Zeichnen, nicht im Render.
 
 import {
   useCallback,
@@ -19,31 +23,26 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
 } from 'react';
-import { BubbleNode, CloudDisc, CloudHalo, ClusterNode } from './BubbleNode';
 import { GraphControls } from './GraphControls';
+import { sidePanelSpace } from '../shell/SidePanel';
 import { SelectionCard } from './SelectionCard';
 import {
-  CLOUD_LOD_MIN,
-  CLOUD_LOD_PX,
+  GROUP_GAP,
+  GROUP_LOD_PX,
+  LABEL_MIN_PX,
   MAX_ZOOM,
   MIN_ZOOM,
-  RADII,
-  effectiveSizeMode,
   marksVisible,
-  sizeModeById,
-  sizedRadius,
 } from '../../lib/graph/constants';
 import { cullBounds, isInView } from '../../lib/graph/culling';
-import type { FocusGraph } from '../../lib/graph/focusTree';
-import { isOverlayEvent } from '../../lib/graph/overlay';
-import {
-  layoutRadial,
-  walkParents,
-  type CloudOrder,
-  type PlacedCloud,
-  type PlacedNode,
-} from '../../lib/graph/layoutRadial';
-import { formatCount } from '../../lib/format';
+import { layoutMap, type MapGroup } from '../../lib/graph/layoutMap';
+import { graphOverlayProps, isOverlayEvent } from '../../lib/graph/overlay';
+import { placePins, type PinAnchor, type PlacedPin, type Rect } from '../../lib/graph/pins';
+import { positionRadii } from '../../lib/graph/sizes';
+import { NEUTRAL_COLOR } from '../../lib/colors';
+import { FACETS } from '../../lib/facets';
+import { formatCount, formatNumber } from '../../lib/format';
+import { measure } from '../../lib/perf';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { LVNode } from '../../types/lvNode';
 
@@ -53,196 +52,187 @@ interface View {
   k: number;
 }
 
-interface Metric {
-  radius: number;
-  subLabel: string;
-  missed: boolean;
-}
-
 function clampZoom(value: number): number {
   return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, value));
 }
 
-/**
- * Anteil als Prozentangabe; unter einem halben Prozent als „<1 %". Wer das
- * Ganze ist, bekommt keine Angabe: „100 %" an einem Los, das als einziges im
- * LV steht, ist keine Information.
- */
-function formatShare(share: number): string {
-  if (share >= 0.995) return '';
-  if (share < 0.005) return '<1 %';
-  return `${Math.round(share * 100)} %`;
-}
-
 /** Obergrenze beim Einpassen auf eine Auswahl — eine Position bleibt lesbar, nicht riesig. */
-const FIT_SELECTION_MAX_ZOOM = 2;
+const FIT_SELECTION_MAX_ZOOM = 2.5;
+/** Unter dieser Breite hat die Linie zur Karte keinen Platz. */
+const LEADER_MIN_WIDTH = 760;
+/** Fenster und Leisten über dem Graphen — Schilder weichen ihnen aus. */
+const OVERLAY_SELECTOR = '.ov-glass, .ov-window, .ov-pill';
+const EMPTY_SELECTED: Readonly<Record<string, ReadonlySet<string>>> = {};
+const GEWERK_SLOT = FACETS.findIndex((facet) => facet.id === 'gewerk');
 
-interface BubbleGraphProps {
-  root: LVNode;
-  /**
-   * Isolation der Treffer (WP-Q): statt des LV-Baums zeichnet der Graph den
-   * synthetischen Treffer-Baum. Dieselbe Engine, dieselbe Auswahl — nur Baum,
-   * Trefferzahlen und Aufklapp-Zustand kommen dann von hier statt aus dem
-   * Viewer-Zustand.
-   */
-  focus?: FocusGraph;
+/** Zeichenbreite der Gruppenbeschriftung in Weltkoordinaten (14px Sans, 10,5px Mono). */
+const SANS_CHAR = 8.6;
+const MONO_CHAR = 6.4;
+
+/** Platz für die Beschriftung über einem Kreis: so breit wie der Kreis plus Abstand. */
+function labelWidth(group: MapGroup): number {
+  return 2 * group.r + GROUP_GAP - 12;
 }
 
-export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
+/**
+ * Kürzt eine Beschriftung auf die Breite ihres Kreises. Lange Abschnittsnamen
+ * liefen sonst in die Nachbarn; der volle Text steht im Tooltip und in der Karte.
+ */
+function fitText(text: string, width: number, charWidth: number): string {
+  const max = Math.floor(width / charWidth);
+  return text.length <= max ? text : `${text.slice(0, Math.max(1, max - 1)).trimEnd()}…`;
+}
+
+/** Rahmen um eine Gruppe samt Beschriftung darüber. */
+function groupBox(group: MapGroup): { x0: number; y0: number; x1: number; y1: number } {
+  return {
+    x0: group.x - group.r,
+    y0: group.y - group.r - 40,
+    x1: group.x + group.r,
+    y1: group.y + group.r,
+  };
+}
+
+interface Overlay {
+  pins: PlacedPin[];
+  leader: { d: string; x: number; y: number } | null;
+  key: string;
+}
+
+const NO_OVERLAY: Overlay = { pins: [], leader: null, key: '' };
+
+export function BubbleGraph({ root }: { root: LVNode }) {
   const {
-    filter: { hideMode },
-    selection: { hoveredNodeId },
-    view: { graph },
+    lv,
+    index,
+    parents,
+    mask,
+    matches,
+    hints,
+    gewerkColors,
+    filter: {
+      hideMode,
+      filters: { facets: selectedFacets },
+    },
+    view: { graph, side, sideWidth, panelSize },
     selectedNode,
     selectedPosition,
-    matches: lvMatches,
-    openNodes: lvOpenNodes,
-    openClusters,
-    parents: treeParents,
-    quantities,
-    hints,
   } = useViewer();
   const dispatch = useViewerDispatch();
-  const { sizeMode } = graph;
-
-  const isolated = focus !== undefined;
-  /** Nur der ganze Graph nimmt den zuletzt verlassenen Ausschnitt wieder auf. */
-  const remembers = !isolated;
-  const root = focus?.tree ?? lvRoot;
-  const matches = focus?.matches ?? lvMatches;
-  const openNodes = focus?.openNodes ?? lvOpenNodes;
+  const { layout, rows, cols, sizeMode, showHints } = graph;
 
   const wrapRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
-  // Startwert aus dem Ansichts-Zustand, falls die Ansicht schon einmal offen
-  // war; sonst passt der Graph unten selbst ein.
-  // Die Isolation merkt sich keinen Ausschnitt: ihr Baum wechselt mit jedem
-  // Filterzug, ein gemerkter Ausschnitt zeigte danach ins Leere. Sie passt sich
-  // stattdessen jedes Mal neu ein.
-  const [view, setView] = useState<View>(
-    (remembers ? graph.viewport : null) ?? { tx: 0, ty: 0, k: 0.7 },
-  );
+  const [view, setView] = useState<View>(graph.viewport ?? { tx: 0, ty: 0, k: 0.7 });
 
   // Ausschnitt beim Abbau sichern — einmal, nicht je Frame.
   const viewRef = useRef(view);
   useEffect(() => {
     viewRef.current = view;
   }, [view]);
-  useEffect(() => {
-    if (!remembers) return;
-    return () => dispatch({ type: 'graphViewport', viewport: viewRef.current });
-  }, [dispatch, remembers]);
+  useEffect(() => () => dispatch({ type: 'graphViewport', viewport: viewRef.current }), [dispatch]);
 
   useLayoutEffect(() => {
     const element = wrapRef.current;
     if (element === null) return;
-    const measure = (): void => {
+    const measureSize = (): void => {
       const rect = element.getBoundingClientRect();
       if (rect.width > 0 && rect.height > 0) setSize({ w: rect.width, h: rect.height });
     };
-    measure();
-    const observer = new ResizeObserver(measure);
+    measureSize();
+    const observer = new ResizeObserver(measureSize);
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
-
   const { w, h } = size;
 
-  // Kein eigenes Zentrieren mehr: sobald die Canvas ihre Größe kennt, passt das
-  // Einpassen weiter unten den Ausschnitt ein — ein Effekt, der danach noch
-  // den Ursprung zentrierte, überschrieb genau diesen Ausschnitt.
-
-  const parents = useMemo(() => walkParents(root), [root]);
-
+  // ── Layout
   const filtering = matches.filtering;
-
-  // Im Modus "Ausblenden" fallen Nicht-Treffer ganz aus dem Layout: die
-  // Positionswolke schrumpft dann auf die Treffer, statt Löcher zu lassen.
-  // Im Modus "Dämpfen" bleibt das Layout bewusst stabil, damit der Graph beim
-  // Tippen nicht unter der Maus wegspringt.
-  const skip = useMemo(() => {
-    if (!filtering || hideMode !== 'hide') return undefined;
-    return (node: LVNode): boolean => (matches.counts.get(node.id) ?? 0) === 0;
-  }, [filtering, hideMode, matches]);
-
-  // Ein Maß, das für diese Datei oder diesen Filter nichts aussagt, fällt auf
-  // "Anzahl" zurück — dieselbe Regel, nach der die Isolation ihre Gruppen ordnet
-  // (lib/graph/constants.ts). Gesperrt sind solche Modi ohnehin (GraphHeader).
-  const priceless = lvRoot.totalPrice === 0;
-  const mode = sizeModeById(effectiveSizeMode(sizeMode, { priceless, unit: quantities.unit }));
-  // In der Isolation tragen Wurzel und Gruppen synthetische IDs, die die
-  // Mengenkarte des echten Baums nicht kennt — der Isolations-Baum bringt
-  // seine eigene mit (lib/graph/focusTree.ts).
-  const byNode = focus?.quantities ?? quantities.byNode;
-
-  // Die Wolke eines Abschnitts steht nach Größe — die größte Position innen
-  // (WP-Q, Issue #51). "Anzahl" ordnet nichts, dort bleibt die OZ-Reihenfolge.
-  const cloudOrder = useMemo<CloudOrder | undefined>(() => {
-    if (!mode.ranksPositions) return undefined;
-    return (a, b) => mode.get(b, byNode) - mode.get(a, byNode);
-  }, [mode, byNode]);
-
-  const { nodes: placed, clouds } = useMemo(
-    () => layoutRadial(root, openNodes, openClusters, skip, cloudOrder),
-    [root, openNodes, openClusters, skip, cloudOrder],
+  const hide = filtering && hideMode === 'hide';
+  // „Preis" sagt über eine Datei ohne Einheitspreise nichts — dann gleich groß.
+  const priceless = root.totalPrice === 0;
+  const effectiveSize = sizeMode === 'cost' && priceless ? 'uniform' : sizeMode;
+  const radii = useMemo(() => positionRadii(index, effectiveSize), [index, effectiveSize]);
+  // „nach LV" mit gedämpften Nicht-Treffern hängt nicht am Filter: der Graph
+  // springt beim Tippen nicht unter der Maus weg.
+  const layoutMask = layout === 'frei' || hide ? mask : null;
+  const selected = layout === 'frei' ? selectedFacets : EMPTY_SELECTED;
+  const map = useMemo(
+    () =>
+      measure('Graph-Layout', () =>
+        layoutMap(index, parents, { layout, rows, cols, radii, mask: layoutMask, hide, selected }),
+      ),
+    [index, parents, layout, rows, cols, radii, layoutMask, hide, selected],
   );
 
-  const metrics = useMemo(() => {
-    const map = new Map<string, Metric>();
-    // Je Ebene eigene Spanne — ein Abschnitt wird gegen Abschnitte verglichen,
-    // nicht gegen das Projekt.
-    const rangeByTier = new Map<string, { min: number; max: number }>();
-    for (const entry of placed.values()) {
-      if (entry.node === null) continue;
-      const value = mode.get(entry.node, byNode);
-      const range = rangeByTier.get(entry.tier);
-      if (range === undefined) rangeByTier.set(entry.tier, { min: value, max: value });
-      else {
-        range.min = Math.min(range.min, value);
-        range.max = Math.max(range.max, value);
-      }
+  const colors = useMemo(() => {
+    const out = new Array<string>(index.size);
+    for (let slot = 0; slot < index.size; slot++) {
+      const color = gewerkColors.of(index.facts[slot].facetValues[GEWERK_SLOT]?.[0]);
+      // „Ohne Gewerk" ist auf der Gruppenfläche kaum zu sehen — ein eigener, ruhiger Ton.
+      out[slot] =
+        color === NEUTRAL_COLOR ? 'var(--dot-none)' : color.replace('var(--cat-', 'var(--dot-');
     }
+    return out;
+  }, [index, gewerkColors]);
 
-    // Bezugsgröße für den Anteil: der Wert der Wurzel im selben Maß.
-    const ganzes = mode.get(root, byNode);
+  const isHit = useCallback((slot: number) => mask === null || mask[slot] === 1, [mask]);
 
-    for (const entry of placed.values()) {
-      const node = entry.node;
-      if (node === null) continue;
-      const value = mode.get(node, byNode);
-      const range = rangeByTier.get(entry.tier) ?? { min: value, max: value };
-      // Positionen sind immer gleich groß (Issue #41) — der Größenmodus
-      // vergleicht nur Lose und Abschnitte.
-      const radius =
-        entry.tier === 'position'
-          ? RADII.position
-          : sizedRadius(entry.tier, value, range, mode.uniform);
+  // Regel-ID → Überschrift, für die Schilder.
+  const ruleLabels = useMemo(() => {
+    const out = new Map<string, string>();
+    for (const rule of lv?.check.rules ?? []) out.set(rule.id, rule.label);
+    return out;
+  }, [lv]);
 
-      const hits = matches.counts.get(node.id) ?? 0;
-      // Anteil am Ganzen (WP-Q, Issue #51): beantwortet „welcher Abschnitt
-      // macht den größten Teil aus?" ohne Kopfrechnen. Nicht an der Wurzel
-      // (immer 100 %) und nicht an Positionen (zu kleine Zahlen).
-      const anteil =
-        mode.uniform ||
-        ganzes <= 0 ||
-        value <= 0 ||
-        entry.tier === 'project' ||
-        entry.tier === 'position'
-          ? ''
-          : formatShare(value / ganzes);
-      const valueLabel = mode.uniform ? '' : mode.format(value, quantities.unit);
-      const baseLabel = anteil === '' ? valueLabel : `${valueLabel} · ${anteil}`;
-      const subLabel =
-        filtering && node.kind !== 'position' && hits !== node.positionCount
-          ? `${hits.toLocaleString('de-DE')}/${node.positionCount.toLocaleString('de-DE')}${
-              baseLabel === '' ? '' : ` · ${baseLabel}`
-            }`
-          : baseLabel;
-
-      map.set(entry.id, { radius, subLabel, missed: filtering && hits === 0 });
+  /**
+   * Positionen mit Hinweis samt Schildtext — einmal je Datei, nicht je Frame:
+   * die Schilder werden bei jedem Zoom-/Verschiebeschritt neu platziert.
+   */
+  const hintSlots = useMemo(() => {
+    const out: Array<{ slot: number; id: string; label: string; strong: boolean }> = [];
+    for (const [id, found] of hints) {
+      const slot = index.slotOf.get(id);
+      if (slot === undefined) continue;
+      const flag =
+        found.flags.find((candidate) => candidate.severity === found.severity) ?? found.flags[0];
+      out.push({
+        slot,
+        id,
+        label: `⚠ ${flag.id} · ${ruleLabels.get(flag.id) ?? flag.title}`,
+        strong: found.severity === 'beachten',
+      });
     }
-    return map;
-  }, [placed, root, mode, byNode, quantities.unit, matches, filtering]);
+    return out;
+  }, [hints, index, ruleLabels]);
+
+  /** Hinweise je Gruppe, für die Kennzeile über dem Kreis. */
+  const hintsByGroup = useMemo(() => {
+    const out = new Map<number, number>();
+    for (const { slot } of hintSlots) {
+      const group = map.groupOf[slot];
+      if (group < 0 || !isHit(slot)) continue;
+      out.set(group, (out.get(group) ?? 0) + 1);
+    }
+    return out;
+  }, [hintSlots, map, isHit]);
+
+  /**
+   * Treffer je Gruppe und je Los — einmal je Layout und Filter, nicht bei jedem
+   * Zoom-/Verschiebeschritt. `null` ohne Filter: dann zählt jede Position.
+   */
+  const hitCounts = useMemo(() => {
+    if (mask === null) return null;
+    const groups = new Int32Array(map.groups.length);
+    for (let slot = 0; slot < map.groupOf.length; slot++) {
+      if (map.groupOf[slot] >= 0 && isHit(slot)) groups[map.groupOf[slot]]++;
+    }
+    const hulls = map.hulls.map((hull) => hull.slots.reduce((n, s) => n + (isHit(s) ? 1 : 0), 0));
+    return { groups, hulls };
+  }, [map, mask, isHit]);
+
+  const selectedSlot =
+    selectedPosition === null ? -1 : (index.slotOf.get(selectedPosition.id) ?? -1);
 
   // ── Pan
   const drag = useRef({ on: false, x0: 0, y0: 0, tx0: 0, ty0: 0, moved: false });
@@ -281,12 +271,10 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
 
   const onMouseDown = (event: ReactMouseEvent<HTMLDivElement>): void => {
     if (event.button !== 0) return;
-    // Zug am Scrollbalken oder Text in der Auswahlkarte darf den Graphen
-    // nicht mitziehen (Issue #47).
+    // Zug in einer Karte oder einem Schild darf den Graphen nicht mitziehen (Issue #47).
     if (isOverlayEvent(event.target)) return;
-    // Ein Klick auf eine Bubble (SVG-<g>, nicht fokussierbar) holt sonst nie
-    // den Tastaturfokus auf den Canvas — Browser vererben Fokus nicht an
-    // fokussierbare Vorfahren eines geklickten Kindelements.
+    // Ein Klick auf eine Bubble (SVG, nicht fokussierbar) holt sonst nie den
+    // Tastaturfokus auf den Canvas.
     wrapRef.current?.focus();
     drag.current = {
       on: true,
@@ -309,8 +297,6 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
     const element = wrapRef.current;
     if (element === null) return;
     const onWheel = (event: WheelEvent): void => {
-      // Über einer Überlagerung gehört das Rad ihr: nicht abfangen, damit der
-      // Browser dort normal scrollt (Issue #47).
       if (isOverlayEvent(event.target)) return;
       event.preventDefault();
       const rect = element.getBoundingClientRect();
@@ -327,260 +313,6 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
     return () => element.removeEventListener('wheel', onWheel);
   }, []);
 
-  // ── Viewport-Culling
-  const cull = useMemo(
-    () => cullBounds({ tx: view.tx, ty: view.ty, k: view.k, width: w, height: h }),
-    [view, w, h],
-  );
-  const inView = useCallback(
-    (cx: number, cy: number, r: number): boolean => isInView(cull, cx, cy, r),
-    [cull],
-  );
-
-  // Markierungen an Positionen (WP-R, R1) erscheinen erst, wenn die Bubble
-  // groß genug für einen Ring ist. Positionen sind alle gleich groß (Issue #41),
-  // also fällt die Entscheidung einmal für den ganzen Graphen.
-  const showMarks = marksVisible(view.k);
-
-  // Detailstufe: zu kleine Wolken werden als eine Fläche gezeichnet. Ohne das
-  // hingen bei 10k Positionen zehntausende Kreise im DOM.
-  const lodClouds = useMemo(() => {
-    const out = new Set<string>();
-    for (const cloud of clouds.values()) {
-      if (cloud.count > CLOUD_LOD_MIN && cloud.radius * view.k < CLOUD_LOD_PX) {
-        out.add(cloud.parentId);
-      }
-    }
-    return out;
-  }, [clouds, view.k]);
-
-  const visibleClouds = useMemo(() => {
-    const out: PlacedCloud[] = [];
-    for (const cloud of clouds.values()) {
-      if (!inView(cloud.cx, cloud.cy, cloud.radius)) continue;
-      out.push(cloud);
-    }
-    return out;
-  }, [clouds, inView]);
-
-  const visibleNodes = useMemo(() => {
-    const out: PlacedNode[] = [];
-    for (const entry of placed.values()) {
-      if (entry.cloudOf !== null && lodClouds.has(entry.cloudOf)) continue;
-      const radius = metrics.get(entry.id)?.radius ?? RADII[entry.tier];
-      if (!inView(entry.cx, entry.cy, radius + 24)) continue;
-      out.push(entry);
-    }
-    return out;
-  }, [placed, metrics, inView, lodClouds]);
-
-  // Kanten laufen leicht gebogen von der Eltern- zur Kind-Bubble — die kleine
-  // Auslenkung nimmt dem Fächer die Sternform (Issue #11).
-  const edges = useMemo(() => {
-    const out: Array<{ a: string; b: string; d: string; key: string }> = [];
-    for (const entry of placed.values()) {
-      // Positionen hängen an keiner eigenen Kante — ihre Zugehörigkeit zeigt
-      // der Halo ihrer Wolke (Issue #41, G7).
-      if (entry.cloudOf !== null) continue;
-      const parentId = entry.clusterOf ?? parents.get(entry.id)?.id ?? null;
-      if (parentId === null) continue;
-      const from = placed.get(parentId);
-      if (from === undefined) continue;
-      const midX = (entry.cx + from.cx) / 2;
-      const midY = (entry.cy + from.cy) / 2;
-      const dx = entry.cx - from.cx;
-      const dy = entry.cy - from.cy;
-      if (!inView(midX, midY, Math.hypot(dx, dy) / 2 + 40)) continue;
-      out.push({
-        a: from.id,
-        b: entry.id,
-        key: `${from.id}->${entry.id}`,
-        d: `M${from.cx},${from.cy} Q${midX - dy * 0.06},${midY + dx * 0.06} ${entry.cx},${entry.cy}`,
-      });
-    }
-    return out;
-  }, [placed, parents, inView]);
-
-  // ── Hover-Spotlight: Pfad zur Wurzel + gesamter Teilbaum.
-  const hoverSpotlight = useMemo(() => {
-    if (hoveredNodeId === null) return null;
-    const entry = placed.get(hoveredNodeId);
-    if (entry === undefined) return null;
-    const connected = new Set<string>([entry.id]);
-    const anchorId = entry.clusterOf ?? entry.id;
-    let current: LVNode | null = placed.get(anchorId)?.node ?? null;
-    while (current !== null) {
-      connected.add(current.id);
-      current = parents.get(current.id) ?? null;
-    }
-    const descend = (node: LVNode): void => {
-      connected.add(node.id);
-      if (!openNodes.has(node.id)) return;
-      for (const child of node.children) descend(child);
-    };
-    if (entry.node !== null) descend(entry.node);
-    return connected;
-  }, [hoveredNodeId, placed, parents, openNodes]);
-
-  const spotlight = hoverSpotlight;
-
-  const toggleCollapse = useCallback(
-    (id: string): void => dispatch({ type: 'toggleExpanded', id }),
-    [dispatch],
-  );
-
-  const openNode = useCallback(
-    (node: LVNode): void => {
-      if (node.kind === 'position') {
-        // Öffnet die schwebende Positionskarte über dem Canvas statt in die
-        // Tabelle zu springen (Issue #30) — `selectedPosition` treibt die
-        // Karte in ViewerPage, solange der Graph der aktive Ansichtsmodus ist.
-        // Der Elternknoten kommt aus dem **echten** Baum: in der Isolation ist
-        // der Elternknoten eine Gruppen-Bubble, und die steht in keiner Tabelle.
-        const parent = treeParents.get(node.id) ?? null;
-        dispatch({ type: 'selectPosition', nodeId: parent?.id ?? null, positionId: node.id });
-        return;
-      }
-      // Sammel-Bubbles öffnen bzw. schließen sich im Graphen; die Ansicht
-      // bleibt der Graph (Issue #10).
-      dispatch({ type: 'selectNode', id: node.id });
-      if (node.children.length > 0) toggleCollapse(node.id);
-    },
-    [dispatch, treeParents, toggleCollapse],
-  );
-
-  /** Cluster-Bubble auflösen bzw. wieder zusammenfassen. */
-  const toggleCluster = useCallback(
-    (parentId: string): void => dispatch({ type: 'toggleCluster', id: parentId }),
-    [dispatch],
-  );
-
-  /**
-   * Ausschnitt, der die gegebenen Knoten mit Rand einschließt — reine
-   * Berechnung ohne State, damit sie auch im Render nutzbar ist.
-   */
-  const viewAround = useCallback(
-    (entries: Iterable<PlacedNode>, maxZoom: number): View | null => {
-      let minX = Infinity;
-      let minY = Infinity;
-      let maxX = -Infinity;
-      let maxY = -Infinity;
-      for (const entry of entries) {
-        const r = (metrics.get(entry.id)?.radius ?? RADII[entry.tier]) + 24;
-        minX = Math.min(minX, entry.cx - r);
-        maxX = Math.max(maxX, entry.cx + r);
-        minY = Math.min(minY, entry.cy - r);
-        maxY = Math.max(maxY, entry.cy + r);
-      }
-      if (!Number.isFinite(minX) || w === 0 || h === 0) return null;
-      const boxW = Math.max(1, maxX - minX);
-      const boxH = Math.max(1, maxY - minY);
-      const pad = 50;
-      const k = clampZoom(Math.min(maxZoom, (w - 2 * pad) / boxW, (h - 2 * pad) / boxH));
-      return {
-        tx: w / 2 - ((minX + maxX) / 2) * k,
-        ty: h / 2 - ((minY + maxY) / 2) * k,
-        k,
-      };
-    },
-    [metrics, w, h],
-  );
-
-  const fitView = useCallback(
-    (): View | null => viewAround(placed.values(), MAX_ZOOM),
-    [viewAround, placed],
-  );
-  const fit = useCallback((): void => {
-    const next = fitView();
-    if (next !== null) setView(next);
-  }, [fitView]);
-
-  /**
-   * Ausschnitt auf einen Knoten und seinen gezeichneten Teilbaum einpassen
-   * (Issue #41). Ein einzelner kleiner Knoten würde sonst bis zum Maximalzoom
-   * aufgeblasen — deshalb die Obergrenze.
-   */
-  const fitToView = useCallback(
-    (requestedId: string): View | null => {
-      // Steckt die Auswahl in einem zugeklappten Abschnitt oder einer
-      // Sammel-Bubble, zählt der nächste gezeichnete Vorfahre.
-      let id = requestedId;
-      while (!placed.has(id)) {
-        const parent = parents.get(id);
-        if (parent === undefined || parent === null) return null;
-        id = parent.id;
-      }
-      const start = placed.get(id);
-      if (start === undefined) return null;
-      const entries: PlacedNode[] = [start];
-      const descend = (node: LVNode): void => {
-        for (const child of node.children) {
-          const entry = placed.get(child.id);
-          if (entry === undefined) continue;
-          entries.push(entry);
-          descend(child);
-        }
-        const cluster = placed.get(`cluster:${node.id}`);
-        if (cluster !== undefined) entries.push(cluster);
-      };
-      if (start.node !== null) descend(start.node);
-      return viewAround(entries, FIT_SELECTION_MAX_ZOOM);
-    },
-    [placed, parents, viewAround],
-  );
-  const fitTo = useCallback(
-    (id: string): void => {
-      const next = fitToView(id);
-      if (next !== null) setView(next);
-    },
-    [fitToView],
-  );
-
-  /**
-   * Klick oder Eingabetaste auf eine Bubble. Eine Gruppe der Isolation ist kein
-   * LV-Knoten — sie lässt sich nicht auswählen und nicht auf- oder zuklappen
-   * (ihre Positionen stehen ohnehin offen), wohl aber einpassen.
-   */
-  const isFocusGroup = useCallback(
-    (node: LVNode | null): boolean =>
-      node !== null && focus !== undefined && focus.groupIds.has(node.id),
-    [focus],
-  );
-
-  const activateNode = useCallback(
-    (node: LVNode): void => {
-      if (isFocusGroup(node)) {
-        fitTo(node.id);
-        return;
-      }
-      openNode(node);
-    },
-    [isFocusGroup, fitTo, openNode],
-  );
-
-  // Die Ringradien hängen jetzt an der Größe des LV (Issue #11) — ein fixer
-  // Startzoom passt dafür nicht mehr. Deshalb einmal je Baum einpassen. Steht
-  // beim Mounten schon eine Auswahl (Wechsel Tabelle → Graph), wird auf sie
-  // eingepasst statt auf alles (Issue #41).
-  // Im Render statt im Effekt, wie der Fokus weiter unten
-  // (react.dev/learn/you-might-not-need-an-effect): erst wenn die Canvas
-  // ihre Größe kennt, sonst würde auf 0×0 eingepasst.
-  // Ein gemerkter Ausschnitt gilt als bereits eingepasst: sonst spränge der
-  // Graph beim Zurückwechseln doch wieder auf die Gesamtansicht.
-  const selectionId = selectedPosition?.id ?? selectedNode?.id ?? null;
-  const [fittedRoot, setFittedRoot] = useState<LVNode | null>(
-    remembers && graph.viewport !== null ? root : null,
-  );
-  if (fittedRoot !== root && w > 0 && h > 0) {
-    setFittedRoot(root);
-    const next = (selectionId === null ? null : fitToView(selectionId)) ?? fitView();
-    if (next !== null) setView(next);
-  }
-
-  const fitSelection = useCallback((): void => {
-    if (selectionId !== null) fitTo(selectionId);
-  }, [selectionId, fitTo]);
-
   const zoomBy = useCallback(
     (factor: number): void =>
       setView((current) => {
@@ -595,212 +327,330 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
     [w, h],
   );
 
-  // ── Tastatur: der Graph war bislang ausschließlich mit der Maus bedienbar
-  // (Issue #25). Fokus ist ein einzelner Tab-Stopp am Canvas — wie im Baum
-  // (Tree.tsx, "aria-activedescendant"-Pattern) — statt jeder Bubble einzeln,
-  // sonst müsste man sich durch hunderte Knoten tabben.
-  const [focusedId, setFocusedId] = useState<string | null>(root.id);
-  const [graphFocused, setGraphFocused] = useState(false);
+  // ── Einpassen
+  const cardOpen = selectedPosition !== null || selectedNode !== null;
+  const viewAround = useCallback(
+    (box: { x0: number; y0: number; x1: number; y1: number }, maxZoom: number): View | null => {
+      if (w === 0 || h === 0) return null;
+      // Frei bleibt, was die festen Teile und offenen Fenster belegen: oben die
+      // Kennzahlen, unten Legende und Steuerung, links das Seitenfenster, rechts die Karte.
+      const wide = w > 900;
+      const padL = wide && side !== null ? sidePanelSpace(sideWidth) : 32;
+      const padR = wide && cardOpen ? panelSize.width + 32 : 32;
+      const padT = 96;
+      const padB = 76;
+      const availW = Math.max(80, w - padL - padR);
+      const availH = Math.max(80, h - padT - padB);
+      const boxW = Math.max(1, box.x1 - box.x0);
+      const boxH = Math.max(1, box.y1 - box.y0);
+      const k = clampZoom(Math.min(maxZoom, availW / boxW, availH / boxH));
+      return {
+        tx: padL + availW / 2 - ((box.x0 + box.x1) / 2) * k,
+        ty: padT + availH / 2 - ((box.y0 + box.y1) / 2) * k,
+        k,
+      };
+    },
+    [w, h, side, sideWidth, cardOpen, panelSize.width],
+  );
 
-  // Neue Datei geladen (anderer Baum) — Fokus zurück auf die Wurzel. Im
-  // Render statt im Effekt, sonst zeigte ein Frame lang den Fokus des
-  // vorigen LV (react.dev/learn/you-might-not-need-an-effect).
-  const [focusedRoot, setFocusedRoot] = useState(root);
-  if (focusedRoot !== root) {
-    setFocusedRoot(root);
-    setFocusedId(root.id);
+  const fitView = useCallback(() => viewAround(map.bounds, 1.6), [viewAround, map]);
+  const fit = useCallback((): void => {
+    const next = fitView();
+    if (next !== null) setView(next);
+  }, [fitView]);
+
+  /** Rahmen um eine Auswahl: Position samt Nachbarschaft, oder ein Abschnitt. */
+  const selectionBox = useCallback((): {
+    x0: number;
+    y0: number;
+    x1: number;
+    y1: number;
+  } | null => {
+    if (selectedSlot >= 0 && Number.isFinite(map.px[selectedSlot])) {
+      const x = map.px[selectedSlot];
+      const y = map.py[selectedSlot];
+      return { x0: x - 60, y0: y - 60, x1: x + 60, y1: y + 60 };
+    }
+    if (selectedNode !== null) {
+      const group = map.groups.find((candidate) => candidate.nodeId === selectedNode.id);
+      if (group !== undefined) return groupBox(group);
+      const hull = map.hulls.find((candidate) => candidate.id === selectedNode.id);
+      if (hull !== undefined) {
+        return {
+          x0: hull.x - hull.r,
+          y0: hull.y - hull.r,
+          x1: hull.x + hull.r,
+          y1: hull.y + hull.r,
+        };
+      }
+    }
+    return null;
+  }, [selectedSlot, selectedNode, map]);
+
+  const fitSelection = useCallback((): void => {
+    const box = selectionBox();
+    const next = box === null ? null : viewAround(box, FIT_SELECTION_MAX_ZOOM);
+    if (next !== null) setView(next);
+  }, [selectionBox, viewAround]);
+
+  // Einmal je Layout einpassen, sobald die Canvas ihre Größe kennt — im Render
+  // statt im Effekt (react.dev/learn/you-might-not-need-an-effect). Ein
+  // gemerkter Ausschnitt gilt beim ersten Mal als eingepasst.
+  const [fittedMap, setFittedMap] = useState<typeof map | null>(
+    graph.viewport !== null ? map : null,
+  );
+  // Gedämpfte Filterwechsel lassen das Layout stehen; nur eine neue Lage passt neu ein.
+  if (fittedMap !== map && w > 0 && h > 0) {
+    setFittedMap(map);
+    const next = fitView();
+    if (next !== null) setView(next);
   }
 
-  /** Eltern-ID im Layout — Cluster-Bubbles kennen ihren Elternknoten direkt. */
-  const parentIdOf = useCallback(
-    (entry: PlacedNode): string | null =>
-      entry.tier === 'cluster' ? entry.clusterOf : (parents.get(entry.id)?.id ?? null),
-    [parents],
+  // ── Culling und Detailstufe
+  const cull = useMemo(
+    () => cullBounds({ tx: view.tx, ty: view.ty, k: view.k, width: w, height: h }),
+    [view, w, h],
+  );
+  const marks = showHints && marksVisible(view.k);
+
+  const visibleGroups = useMemo(
+    () =>
+      map.groups
+        .map((group, i) => ({ group, i }))
+        .filter(({ group }) => isInView(cull, group.x, group.y, group.r + 40)),
+    [map, cull],
   );
 
-  /** Geschwister eines Knotens, in der Reihenfolge, in der sie um den
-   *  Elternknoten aufgefächert sind (Winkel) — dieselbe Reihenfolge, in der
-   *  sie auf dem Bildschirm stehen. */
-  const siblingsOf = useCallback(
-    (entry: PlacedNode): PlacedNode[] => {
-      const parentId = parentIdOf(entry);
-      const list: PlacedNode[] = [];
-      for (const candidate of placed.values()) {
-        if (parentIdOf(candidate) === parentId) list.push(candidate);
-      }
-      list.sort((a, b) => a.angle - b.angle);
-      return list;
-    },
-    [placed, parentIdOf],
+  /** Gruppen, die so klein sind, dass ihre Punkte als Fläche gezeichnet werden. */
+  const isCoarse = useCallback(
+    (group: MapGroup) => group.slots.length > 8 && group.r * view.k < GROUP_LOD_PX,
+    [view.k],
   );
 
-  const childrenOf = useCallback(
-    (id: string): PlacedNode[] => {
-      const list: PlacedNode[] = [];
-      for (const candidate of placed.values()) {
-        if (parentIdOf(candidate) === id) list.push(candidate);
-      }
-      list.sort((a, b) => a.angle - b.angle);
-      return list;
+  // ── Klicks: ein Handler am Weltknoten statt einer Funktion je Punkt.
+  const selectSlot = useCallback(
+    (slot: number): void => {
+      const node = index.nodes[slot];
+      const parent = parents.get(node.id) ?? null;
+      dispatch({ type: 'selectPosition', nodeId: parent?.id ?? null, positionId: node.id });
     },
-    [placed, parentIdOf],
+    [index, parents, dispatch],
   );
+
+  const activateGroup = useCallback(
+    (group: MapGroup): void => {
+      if (group.nodeId !== null) dispatch({ type: 'selectNode', id: group.nodeId });
+      else {
+        const next = viewAround(groupBox(group), FIT_SELECTION_MAX_ZOOM);
+        if (next !== null) setView(next);
+      }
+    },
+    [dispatch, viewAround],
+  );
+
+  const onWorldClick = (event: ReactMouseEvent<SVGGElement>): void => {
+    const target = (event.target as Element).closest('[data-slot],[data-group]');
+    if (target === null) return;
+    const slot = target.getAttribute('data-slot');
+    if (slot !== null) {
+      selectSlot(Number(slot));
+      return;
+    }
+    const group = map.groups[Number(target.getAttribute('data-group'))];
+    if (group !== undefined) activateGroup(group);
+  };
+
+  const onWorldDoubleClick = (event: ReactMouseEvent<SVGGElement>): void => {
+    const target = (event.target as Element).closest('[data-group]');
+    const group =
+      target === null ? undefined : map.groups[Number(target.getAttribute('data-group'))];
+    if (group === undefined) return;
+    const next = viewAround(groupBox(group), FIT_SELECTION_MAX_ZOOM);
+    if (next !== null) setView(next);
+  };
+
+  // ── Hover: Kurztext als HTML-Tooltip (SVG-Text bricht nicht um).
+  const [hoverSlot, setHoverSlot] = useState(-1);
+  const onWorldOver = (event: ReactMouseEvent<SVGGElement>): void => {
+    const target = (event.target as Element).closest('[data-slot]');
+    setHoverSlot(target === null ? -1 : Number(target.getAttribute('data-slot')));
+  };
+
+  // ── Tastatur: ein Tab-Stopp am Canvas; Pfeile wandern durch Positionen und Gruppen.
+  const order = useMemo(
+    () => map.groups.map((group) => [...group.slots].sort((a, b) => a - b)),
+    [map],
+  );
+  const [focusSlot, setFocusSlot] = useState(-1);
+  const [graphFocused, setGraphFocused] = useState(false);
 
   const centerOn = useCallback(
-    (cx: number, cy: number): void => {
-      setView((current) => ({
-        ...current,
-        tx: w / 2 - cx * current.k,
-        ty: h / 2 - cy * current.k,
-      }));
+    (slot: number): void => {
+      const x = map.px[slot];
+      const y = map.py[slot];
+      if (!Number.isFinite(x)) return;
+      setView((current) => {
+        const sx = x * current.k + current.tx;
+        const sy = y * current.k + current.ty;
+        if (sx > 40 && sy > 40 && sx < w - 40 && sy < h - 40) return current;
+        return { ...current, tx: w / 2 - x * current.k, ty: h / 2 - y * current.k };
+      });
     },
-    [w, h],
+    [map, w, h],
   );
 
-  /** Fokus setzen und die Bubble in die Mitte holen — wie `revealRow` im Baum. */
-  const focusEntry = useCallback(
-    (entry: PlacedNode): void => {
-      setFocusedId(entry.id);
-      centerOn(entry.cx, entry.cy);
-    },
-    [centerOn],
-  );
-
-  const activate = useCallback(
-    (entry: PlacedNode): void => {
-      if (entry.tier === 'cluster') {
-        if (entry.clusterOf !== null) toggleCluster(entry.clusterOf);
+  const onKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>): void => {
+    if (order.length === 0) return;
+    const current = focusSlot >= 0 ? focusSlot : (order[0]?.[0] ?? -1);
+    const g = current >= 0 ? map.groupOf[current] : 0;
+    const inGroup = order[g] ?? [];
+    const at = inGroup.indexOf(current);
+    let next: number;
+    switch (event.key) {
+      case 'ArrowRight':
+        next = focusSlot < 0 ? current : (inGroup[at + 1] ?? order[g + 1]?.[0] ?? -1);
+        break;
+      case 'ArrowLeft':
+        next = inGroup[at - 1] ?? order[g - 1]?.[order[g - 1].length - 1] ?? -1;
+        break;
+      case 'ArrowDown':
+        next = order[g + 1]?.[0] ?? -1;
+        break;
+      case 'ArrowUp':
+        next = order[g - 1]?.[0] ?? -1;
+        break;
+      case 'Enter':
+      case ' ':
+        event.preventDefault();
+        if (current >= 0) selectSlot(current);
         return;
-      }
-      if (entry.node !== null) activateNode(entry.node);
-    },
-    [toggleCluster, activateNode],
-  );
-
-  const onGraphKeyDown = useCallback(
-    (event: ReactKeyboardEvent<HTMLDivElement>): void => {
-      if (focusedId === null) return;
-      const entry = placed.get(focusedId);
-      if (entry === undefined) return;
-
-      switch (event.key) {
-        case 'ArrowUp':
-        case 'ArrowDown': {
-          event.preventDefault();
-          const siblings = siblingsOf(entry);
-          const index = siblings.findIndex((candidate) => candidate.id === entry.id);
-          if (index < 0) return;
-          const next = siblings[event.key === 'ArrowUp' ? index - 1 : index + 1];
-          if (next !== undefined) focusEntry(next);
-          return;
-        }
-        case 'ArrowRight': {
-          event.preventDefault();
-          if (entry.tier === 'cluster') {
-            if (entry.clusterOf !== null) toggleCluster(entry.clusterOf);
-            return;
-          }
-          const node = entry.node;
-          if (node === null || node.children.length === 0) return;
-          if (!openNodes.has(node.id)) {
-            toggleCollapse(node.id);
-            return;
-          }
-          const firstChild = childrenOf(entry.id)[0];
-          if (firstChild !== undefined) focusEntry(firstChild);
-          return;
-        }
-        case 'ArrowLeft': {
-          event.preventDefault();
-          const node = entry.node;
-          // Eine Gruppe der Isolation steht immer offen und klappt nicht zu.
-          // Ohne diese Ausnahme schluckte der Zweig hier die Taste, und der
-          // Sprung zum Elternknoten darunter käme nie an (WP-Q).
-          if (
-            entry.tier !== 'cluster' &&
-            node !== null &&
-            !isFocusGroup(node) &&
-            node.children.length > 0 &&
-            openNodes.has(node.id)
-          ) {
-            toggleCollapse(node.id);
-            return;
-          }
-          const parentId = parentIdOf(entry);
-          const parentEntry = parentId === null ? undefined : placed.get(parentId);
-          if (parentEntry !== undefined) focusEntry(parentEntry);
-          return;
-        }
-        case 'Enter':
-        case ' ':
-          event.preventDefault();
-          activate(entry);
-          return;
-        case 'f':
-        case 'F':
-          // Auf die Auswahl einpassen, sonst auf den fokussierten Knoten.
-          event.preventDefault();
-          fitTo(selectionId !== null && placed.has(selectionId) ? selectionId : entry.id);
-          return;
-        default:
-          return;
-      }
-    },
-    [
-      focusedId,
-      placed,
-      siblingsOf,
-      childrenOf,
-      parentIdOf,
-      openNodes,
-      isFocusGroup,
-      toggleCollapse,
-      toggleCluster,
-      activate,
-      focusEntry,
-      selectionId,
-      fitTo,
-    ],
-  );
-
-  const focusedEntry = focusedId === null ? undefined : placed.get(focusedId);
-  const focusedLabel = useMemo(() => {
-    if (focusedEntry === undefined) return '';
-    if (focusedEntry.tier === 'cluster') {
-      return `${formatCount(focusedEntry.clusterCount)} weitere Knoten, eingeklappt`;
+      case 'f':
+      case 'F':
+        event.preventDefault();
+        fitSelection();
+        return;
+      default:
+        return;
     }
-    const node = focusedEntry.node;
-    if (node === null) return '';
-    const title = node.label ?? node.code;
-    return node.kind === 'position'
-      ? title
-      : `${title}, ${formatCount(node.positionCount)} Positionen`;
-  }, [focusedEntry]);
+    event.preventDefault();
+    if (next < 0) return;
+    setFocusSlot(next);
+    centerOn(next);
+  };
 
-  // ── Hover-Tooltip: HTML statt SVG-Text, damit der Kurztext vollständig und
-  // mit echtem Zeilenumbruch erscheint (Issue #30) — SVG-<text> kann das
-  // nicht. Tastatur-Fokus zeigt denselben Tooltip, wie schon der Fokusring.
-  const tooltipId = hoveredNodeId ?? (graphFocused ? focusedId : null);
-  const tooltipEntry = tooltipId === null ? undefined : placed.get(tooltipId);
-  const tooltipPosition =
-    tooltipEntry !== undefined && tooltipEntry.tier === 'position'
-      ? (tooltipEntry.node?.position ?? null)
-      : null;
-  const tooltipRadius =
-    tooltipEntry === undefined ? 0 : (metrics.get(tooltipEntry.id)?.radius ?? RADII.position);
-  const tooltipLeft =
-    tooltipEntry === undefined
-      ? 0
-      : view.tx + tooltipEntry.cx * view.k + tooltipRadius * view.k + 10;
-  const tooltipTop = tooltipEntry === undefined ? 0 : view.ty + tooltipEntry.cy * view.k - 14;
+  const focusedLabel =
+    focusSlot >= 0 && focusSlot < index.size
+      ? `${index.positions[focusSlot].oz} ${index.positions[focusSlot].shortText}`
+      : '';
 
-  // Schließt die Karte komplett (X, Klick daneben, Escape) statt nur eine
-  // Ebene zurückzugehen — sonst würde die Positionskarte beim Schließen kurz
-  // auf den übergeordneten Abschnitt zurückspringen, statt zu verschwinden.
-  const closeCard = useCallback(() => dispatch({ type: 'closeSelection' }), [dispatch]);
-  // Positionsauswahl hat Vorrang — sie kann neben einem gewählten Abschnitt
-  // stehen ('selectPosition' setzt beide IDs), die Karte zeigt aber immer nur
-  // eine Ebene.
+  // ── Schilder und Linie zur Karte: nach dem Zeichnen, mit der Lage der Fenster.
+  // Bewusst ohne Abhängigkeitsliste: Fenster wandern, ohne dass sich hier ein Wert
+  // ändert. Die Schleife bricht über `key` ab — gleiche Lage, kein neuer Zustand.
+  const [overlay, setOverlay] = useState<Overlay>(NO_OVERLAY);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useLayoutEffect(() => {
+    const wrap = wrapRef.current;
+    if (wrap === null || w === 0) return;
+    const base = wrap.getBoundingClientRect();
+    const scope = wrap.parentElement ?? wrap;
+    const blocked: Rect[] = [];
+    for (const element of scope.querySelectorAll(OVERLAY_SELECTOR)) {
+      const r = element.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0) continue;
+      blocked.push({
+        x: r.left - base.left - 6,
+        y: r.top - base.top - 6,
+        w: r.width + 12,
+        h: r.height + 12,
+      });
+    }
+    // Gruppenbeschriftungen bleiben lesbar: Schilder legen sich nicht darüber.
+    if (14 * view.k >= LABEL_MIN_PX) {
+      for (const { group } of visibleGroups) {
+        const text = Math.max(
+          group.title.length * SANS_CHAR,
+          group.context.length * MONO_CHAR,
+          120,
+        );
+        const width = Math.min(text, labelWidth(group)) * view.k;
+        const top = group.context === '' ? 36 : 52;
+        blocked.push({
+          x: group.x * view.k + view.tx - width / 2,
+          y: (group.y - group.r - top) * view.k + view.ty,
+          w: width,
+          h: (top - 2) * view.k,
+        });
+      }
+    }
+
+    // Achsen der Matrix ebenso: ein Schild über „psch" macht die Zeile unlesbar.
+    if (map.axes !== null) {
+      const { axes } = map;
+      const toScreen = (x: number, y: number, width: number): Rect => ({
+        x: x * view.k + view.tx,
+        y: (y - 16) * view.k + view.ty,
+        w: width * view.k,
+        h: 22 * view.k,
+      });
+      for (const row of axes.rows) {
+        const width = row.label.length * SANS_CHAR;
+        blocked.push(toScreen(axes.x0 - 10 - width, row.y + 5, width));
+      }
+      for (const col of axes.cols) {
+        const width = col.label.length * SANS_CHAR;
+        blocked.push(toScreen(col.x - width / 2, axes.y0 - 8, width));
+      }
+    }
+
+    let pins: PlacedPin[] = [];
+    if (marks) {
+      const anchors: PinAnchor[] = [];
+      for (const { slot, id, label, strong } of hintSlots) {
+        if (!isHit(slot) || !Number.isFinite(map.px[slot])) continue;
+        // Außerhalb des Bildes gibt es kein Schild — vor dem Objektbau aussortieren.
+        const sx = map.px[slot] * view.k + view.tx;
+        const sy = map.py[slot] * view.k + view.ty;
+        if (sx <= 0 || sy <= 0 || sx >= w || sy >= h) continue;
+        const group = map.groups[map.groupOf[slot]];
+        if (group === undefined || isCoarse(group)) continue;
+        anchors.push({ id, sx, sy, rr: (radii[slot] + 3) * view.k, label, strong });
+      }
+      pins = placePins(anchors, { width: w, height: h }, blocked);
+    }
+
+    let leader: Overlay['leader'] = null;
+    const card = wrap.querySelector('[data-selection-card]');
+    if (
+      card !== null &&
+      selectedSlot >= 0 &&
+      w >= LEADER_MIN_WIDTH &&
+      Number.isFinite(map.px[selectedSlot])
+    ) {
+      const c = card.getBoundingClientRect();
+      const px = map.px[selectedSlot] * view.k + view.tx;
+      const py = map.py[selectedSlot] * view.k + view.ty;
+      const tx = c.left - base.left;
+      const ty = Math.min(Math.max(py, c.top - base.top + 30), c.bottom - base.top - 30);
+      const startX = px + (radii[selectedSlot] + 11) * view.k;
+      if (startX < tx - 10 && (isHit(selectedSlot) || !hide)) {
+        const mx = (startX + tx) / 2;
+        leader = { d: `M${startX},${py} C${mx},${py} ${mx},${ty} ${tx},${ty}`, x: tx, y: ty };
+      }
+    }
+
+    const key =
+      pins
+        .map((pin) => `${pin.anchor.id}@${Math.round(pin.box.x)},${Math.round(pin.box.y)}`)
+        .join(';') + `|${leader?.d ?? ''}`;
+    setOverlay((current) => (current.key === key ? current : { pins, leader, key }));
+  });
+
+  // ── Zeichnen
+  const k = view.k;
+  const labelFits = 14 * k >= LABEL_MIN_PX;
+  const dimLv = layout === 'lv' && filtering && !hide;
+
+  const tooltipSlot = hoverSlot >= 0 ? hoverSlot : graphFocused ? focusSlot : -1;
   const cardNode = selectedPosition ?? selectedNode;
 
   return (
@@ -808,17 +658,15 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
       ref={wrapRef}
       onMouseDown={onMouseDown}
       onClickCapture={onClickCapture}
-      onKeyDown={onGraphKeyDown}
+      onKeyDown={onKeyDown}
       onFocus={() => setGraphFocused(true)}
       onBlur={() => setGraphFocused(false)}
       tabIndex={0}
       role="group"
-      aria-label="Bubble-Graph — mit den Pfeiltasten navigierbar, Eingabetaste öffnet den Knoten"
+      aria-label="Bubble-Graph — Pfeiltasten wandern durch die Positionen, Enter öffnet die Karte"
       className="absolute inset-0 select-none overflow-hidden outline-none"
       style={{ cursor: panning ? 'grabbing' : 'grab' }}
     >
-      {/* Für Screenreader: der Graph ist rein grafisch, der fokussierte
-          Knoten wird stattdessen hier angesagt. */}
       <div aria-live="polite" className="sr-only">
         {graphFocused ? focusedLabel : ''}
       </div>
@@ -831,119 +679,366 @@ export function BubbleGraph({ root: lvRoot, focus }: BubbleGraphProps) {
         </defs>
         <rect width={w} height={h} fill="url(#bubble-grid)" />
 
-        <g transform={`translate(${view.tx},${view.ty}) scale(${view.k})`}>
-          {visibleClouds.map((cloud) =>
-            lodClouds.has(cloud.parentId) ? (
-              <CloudDisc key={cloud.id} cloud={cloud} zoom={view.k} />
-            ) : (
-              <CloudHalo
-                key={cloud.id}
-                cloud={cloud}
-                dimmed={
-                  (spotlight !== null && !spotlight.has(cloud.parentId)) ||
-                  metrics.get(cloud.parentId)?.missed === true
-                }
-              />
-            ),
+        <g
+          transform={`translate(${view.tx},${view.ty}) scale(${k})`}
+          onClick={onWorldClick}
+          onDoubleClick={onWorldDoubleClick}
+          onMouseOver={onWorldOver}
+          onMouseLeave={() => setHoverSlot(-1)}
+        >
+          {map.hulls.map((hull, h) => {
+            const hits = hitCounts?.hulls[h] ?? hull.slots.length;
+            const width = hull.title.length * 9.4 + 28;
+            return (
+              <g key={hull.id} data-hull={hull.id} opacity={dimLv && hits === 0 ? 0.4 : 1}>
+                <circle
+                  cx={hull.x}
+                  cy={hull.y}
+                  r={hull.r}
+                  fill="var(--los-fill)"
+                  stroke="var(--line2)"
+                  strokeWidth={1.5 / Math.max(k, 0.3)}
+                  strokeDasharray="2 6"
+                  strokeLinecap="round"
+                />
+                <rect
+                  x={hull.x - width / 2}
+                  y={hull.y - hull.r - 15}
+                  width={width}
+                  height={30}
+                  rx={15}
+                  fill="var(--surface)"
+                  stroke="var(--line2)"
+                />
+                <text
+                  x={hull.x}
+                  y={hull.y - hull.r + 5}
+                  textAnchor="middle"
+                  fontFamily="var(--sans)"
+                  fontSize={15}
+                  fontWeight={700}
+                  fill="var(--ink)"
+                >
+                  {hull.title}
+                </text>
+              </g>
+            );
+          })}
+
+          {map.axes !== null && (
+            <g aria-label="Achsen">
+              <text x={map.axes.cols[0]?.x ?? 0} y={map.axes.y0 - 34} className="graph-axis-key">
+                {`${map.axes.colKey} →`}
+              </text>
+              {map.axes.cols.map((col) => (
+                <text
+                  key={`c${col.x}`}
+                  x={col.x}
+                  y={map.axes!.y0 - 8}
+                  textAnchor="middle"
+                  className="graph-axis"
+                >
+                  {col.label}
+                </text>
+              ))}
+              <text
+                x={map.axes.x0 - 10}
+                y={map.axes.y0 - 34}
+                textAnchor="end"
+                className="graph-axis-key"
+              >
+                {`${map.axes.rowKey} ↓`}
+              </text>
+              {map.axes.rows.map((row) => (
+                <text
+                  key={`r${row.y}`}
+                  x={map.axes!.x0 - 10}
+                  y={row.y + 5}
+                  textAnchor="end"
+                  className="graph-axis"
+                >
+                  {row.label}
+                </text>
+              ))}
+            </g>
           )}
 
-          {edges.map((edge) => {
-            const dim = spotlight !== null && !spotlight.has(edge.a) && !spotlight.has(edge.b);
+          {visibleGroups.map(({ group, i }) => {
+            const n = group.slots.length;
+            const hits = layout === 'lv' ? (hitCounts?.groups[i] ?? n) : n;
+            const nh = hintsByGroup.get(i) ?? 0;
+            const meta =
+              (dimLv ? `${formatCount(hits)} / ${formatCount(n)}` : formatCount(n)) +
+              ' Pos' +
+              (group.sum === '' ? '' : ` · ${group.sum}`) +
+              (nh > 0 && showHints ? ` · ${formatCount(nh)} ⚠` : '');
+            const coarse = isCoarse(group);
+            const chosen =
+              selectedPosition === null &&
+              selectedNode !== null &&
+              group.nodeId === selectedNode.id;
             return (
-              <path
-                key={edge.key}
-                d={edge.d}
-                fill="none"
-                stroke="var(--bub-edge)"
-                // Auf dem Schirm immer gleich breit — beim Rauszoomen wurden
-                // die Kanten sonst zu Haarlinien (Issue #41).
-                strokeWidth={1.4 / view.k}
-                opacity={dim ? 0.1 : 0.85}
-              />
-            );
-          })}
-
-          {visibleNodes.map((entry) => {
-            const spotlightDim = spotlight !== null && !spotlight.has(entry.id);
-            if (entry.tier === 'cluster') {
-              const sample = entry.clusterOf === null ? null : placed.get(entry.clusterOf);
-              const sampleTier = sample?.node?.children[0]?.kind ?? 'position';
-              return (
-                <ClusterNode
-                  key={entry.id}
-                  placed={entry}
-                  zoom={view.k}
-                  dimmed={spotlightDim}
-                  hovered={hoveredNodeId === entry.id}
-                  focused={graphFocused && focusedId === entry.id}
-                  onHover={(id) => dispatch({ type: 'hover', id })}
-                  onClick={() => {
-                    if (entry.clusterOf !== null) toggleCluster(entry.clusterOf);
-                  }}
-                  onDoubleClick={() => fitTo(entry.id)}
-                  sampleTier={sampleTier}
-                  expanded={entry.clusterOf !== null && openClusters.has(entry.clusterOf)}
+              <g
+                key={group.key}
+                data-group={i}
+                opacity={group.rest ? 0.55 : dimLv && hits === 0 ? 0.35 : 1}
+                style={{ cursor: 'pointer' }}
+              >
+                <circle
+                  cx={group.x}
+                  cy={group.y}
+                  r={group.r}
+                  fill={n === 0 ? 'none' : coarse ? 'var(--grp-fill-strong)' : 'var(--grp-fill)'}
+                  stroke={chosen ? 'var(--blue)' : 'var(--line2)'}
+                  strokeWidth={(chosen ? 2.5 : 1.2) / Math.max(k, 0.3)}
+                  strokeDasharray={n === 0 || group.rest ? '4 4' : undefined}
                 />
-              );
-            }
-
-            const node = entry.node;
-            if (node === null) return null;
-            const metric = metrics.get(entry.id);
-            const missed = metric?.missed === true;
-            const hidden = missed && hideMode === 'hide';
-            const dimmed = spotlightDim || missed;
-
-            const radius = metric?.radius ?? RADII[entry.tier];
-
-            return (
-              <BubbleNode
-                key={entry.id}
-                placed={entry}
-                node={node}
-                zoom={view.k}
-                dimmed={dimmed}
-                hidden={hidden}
-                hovered={hoveredNodeId === entry.id}
-                focused={graphFocused && focusedId === entry.id}
-                onHover={(id) => dispatch({ type: 'hover', id })}
-                onClick={() => activateNode(node)}
-                onDoubleClick={() => fitTo(entry.id)}
-                radius={radius}
-                subLabel={metric?.subLabel ?? ''}
-                cloudRadius={clouds.get(entry.id)?.radius}
-                hint={showMarks ? hints.get(entry.id)?.severity : undefined}
-              />
+                {labelFits && (
+                  <>
+                    {group.context !== '' && (
+                      <text
+                        x={group.x}
+                        y={group.y - group.r - 38}
+                        textAnchor="middle"
+                        className="graph-group-context"
+                      >
+                        {fitText(group.context, labelWidth(group), MONO_CHAR)}
+                      </text>
+                    )}
+                    {group.title !== '' && (
+                      <text
+                        x={group.x}
+                        y={group.y - group.r - 22}
+                        textAnchor="middle"
+                        className="graph-group-title"
+                      >
+                        {fitText(group.title, labelWidth(group), SANS_CHAR)}
+                      </text>
+                    )}
+                    <text
+                      x={group.x}
+                      y={group.y - group.r - 8}
+                      textAnchor="middle"
+                      className="graph-group-meta"
+                    >
+                      {fitText(meta, labelWidth(group), MONO_CHAR)}
+                    </text>
+                  </>
+                )}
+                <title>
+                  {[group.context, group.title, meta].filter((line) => line !== '').join('\n')}
+                </title>
+              </g>
             );
           })}
+
+          {visibleGroups.map(({ group }) =>
+            isCoarse(group)
+              ? null
+              : group.slots.map((slot) => {
+                  const x = map.px[slot];
+                  const y = map.py[slot];
+                  const r = radii[slot];
+                  if (!isInView(cull, x, y, r + 12)) return null;
+                  const hit = isHit(slot);
+                  if (!hit && hide) return null;
+                  const position = index.positions[slot];
+                  const fill = colors[slot];
+                  const hint = marks ? hints.get(index.nodes[slot].id)?.severity : undefined;
+                  const type = position.positionType;
+                  return (
+                    <g
+                      key={slot}
+                      data-slot={slot}
+                      data-tier="position"
+                      opacity={hit ? 1 : 0.22}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      {hint !== undefined && (
+                        <circle
+                          data-hint={hint}
+                          cx={x}
+                          cy={y}
+                          r={r + 3}
+                          fill="none"
+                          stroke={hint === 'beachten' ? 'var(--amber)' : 'var(--mute)'}
+                          strokeWidth={1.8}
+                          strokeDasharray={hint === 'beachten' ? undefined : '3 2'}
+                        />
+                      )}
+                      {type === 'BEDARF' ? (
+                        <circle
+                          cx={x}
+                          cy={y}
+                          r={Math.max(r - 1, 2)}
+                          fill="var(--surface)"
+                          stroke={fill}
+                          strokeWidth={2}
+                        />
+                      ) : type === 'ALTERNATIV' ? (
+                        <rect
+                          x={x - r * 0.8}
+                          y={y - r * 0.8}
+                          width={r * 1.6}
+                          height={r * 1.6}
+                          fill={fill}
+                          stroke="var(--dot-line)"
+                          strokeWidth={0.6}
+                          transform={`rotate(45 ${x} ${y})`}
+                        />
+                      ) : (
+                        <circle
+                          cx={x}
+                          cy={y}
+                          r={r}
+                          fill={fill}
+                          stroke="var(--dot-line)"
+                          strokeWidth={0.6}
+                        />
+                      )}
+                      {type === 'ZULAGENPOSITION' && (
+                        <circle cx={x} cy={y} r={1.6} fill="var(--surface)" />
+                      )}
+                      {slot === selectedSlot && (
+                        <>
+                          <circle
+                            cx={x}
+                            cy={y}
+                            r={r + 6}
+                            fill="none"
+                            stroke="var(--blue)"
+                            strokeWidth={2.5}
+                          />
+                          <circle
+                            cx={x}
+                            cy={y}
+                            r={r + 11}
+                            fill="none"
+                            stroke="var(--blue)"
+                            strokeWidth={1}
+                            opacity={0.35}
+                          />
+                        </>
+                      )}
+                      {graphFocused && slot === focusSlot && (
+                        <circle
+                          cx={x}
+                          cy={y}
+                          r={r + 4}
+                          fill="none"
+                          stroke="var(--ink)"
+                          strokeWidth={1.5}
+                          strokeDasharray="2 2"
+                        />
+                      )}
+                    </g>
+                  );
+                }),
+          )}
         </g>
       </svg>
 
-      {tooltipPosition !== null && (
+      {overlay.leader !== null && (
+        <svg
+          width={w}
+          height={h}
+          className="pointer-events-none absolute inset-0 z-[9]"
+          aria-hidden="true"
+        >
+          <path
+            d={overlay.leader.d}
+            fill="none"
+            stroke="var(--blue)"
+            strokeWidth={1.2}
+            strokeDasharray="4 4"
+            opacity={0.7}
+          />
+          <circle cx={overlay.leader.x} cy={overlay.leader.y} r={3.5} fill="var(--blue)" />
+        </svg>
+      )}
+
+      {overlay.pins.length > 0 && (
+        <svg
+          width={w}
+          height={h}
+          className="pointer-events-none absolute inset-0 z-[7]"
+          aria-label="Hinweise im Graphen"
+        >
+          {overlay.pins.map((pin) => {
+            const strong = pin.anchor.strong;
+            const slot = index.slotOf.get(pin.anchor.id) ?? -1;
+            return (
+              <g
+                key={pin.anchor.id}
+                {...graphOverlayProps}
+                data-pin={pin.anchor.id}
+                className="pointer-events-auto cursor-pointer"
+                onClick={() => {
+                  if (slot >= 0) selectSlot(slot);
+                }}
+              >
+                <line
+                  {...pin.line}
+                  stroke={strong ? 'var(--amber)' : 'var(--mute)'}
+                  strokeWidth={1}
+                />
+                <rect
+                  x={pin.box.x}
+                  y={pin.box.y}
+                  width={pin.box.w}
+                  height={pin.box.h}
+                  rx={11}
+                  fill={strong ? 'var(--amberS)' : 'var(--surface)'}
+                  stroke={strong ? 'var(--amber)' : 'var(--line2)'}
+                />
+                <text
+                  x={pin.box.x + 9}
+                  y={pin.box.y + 15}
+                  fontFamily="var(--mono)"
+                  fontSize={10}
+                  fill={strong ? 'var(--amberD)' : 'var(--dim)'}
+                >
+                  {pin.anchor.label}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      )}
+
+      {tooltipSlot >= 0 && Number.isFinite(map.px[tooltipSlot]) && (
         <div
-          className="pointer-events-none absolute z-[6] max-w-[260px] border border-line2 bg-ink px-[8px] py-[6px] font-mono text-[10px] leading-[1.4] text-white"
+          className="pointer-events-none absolute z-[11] max-w-[260px] rounded-[var(--r-sm)] bg-ink px-[8px] py-[6px] font-mono text-[10px] leading-[1.4] text-white"
           style={{
-            left: Math.min(Math.max(0, tooltipLeft), Math.max(0, w - 268)),
-            top: Math.min(Math.max(0, tooltipTop), Math.max(0, h - 40)),
+            left: Math.min(
+              Math.max(0, view.tx + map.px[tooltipSlot] * k + radii[tooltipSlot] * k + 10),
+              Math.max(0, w - 268),
+            ),
+            top: Math.min(Math.max(0, view.ty + map.py[tooltipSlot] * k - 14), Math.max(0, h - 40)),
             whiteSpace: 'normal',
             wordBreak: 'break-word',
             boxShadow: 'var(--shadow-popover)',
           }}
         >
-          {tooltipPosition.shortText}
+          {index.positions[tooltipSlot].oz} · {index.positions[tooltipSlot].shortText}
+          {index.positions[tooltipSlot].quantity !== null && (
+            <span className="text-white/70">
+              {' · '}
+              {formatNumber(index.positions[tooltipSlot].quantity)}{' '}
+              {index.positions[tooltipSlot].unit ?? ''}
+            </span>
+          )}
         </div>
       )}
 
-      {cardNode !== null && <SelectionCard node={cardNode} onClose={closeCard} />}
+      {cardNode !== null && (
+        <SelectionCard node={cardNode} onClose={() => dispatch({ type: 'closeSelection' })} />
+      )}
 
       <GraphControls
-        zoom={view.k}
         onFit={fit}
-        onFitSelection={selectionId === null ? undefined : fitSelection}
-        onReset={() => setView({ tx: w / 2, ty: h / 2, k: 0.7 })}
+        onFitSelection={selectedSlot >= 0 || selectedNode !== null ? fitSelection : undefined}
         onZoom={zoomBy}
-        onCollapseAll={isolated ? undefined : () => dispatch({ type: 'collapseAll' })}
-        onExpandAll={isolated ? undefined : () => dispatch({ type: 'expandAll' })}
       />
     </div>
   );
