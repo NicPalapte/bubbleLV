@@ -1,0 +1,181 @@
+dimension,code,stichwort,wo,gewicht,quelle,status,hinweis
+leistungsbereich,001,gerüstarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,002,erdarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,003,landschaftsbauarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,004,landschaftsbauarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,005,brunnenbauarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,006,spezialtiefbauarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,007,untertagebauarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,008,wasserhaltungsarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,009,entwässerungskanalarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,010,versickerarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,011,kleinkläranlagen,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,012,mauerarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,013,betonarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,014,betonwerksteinarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,016,holzbauarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,017,stahlbauarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,018,abdichtungsarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,019,kampfmittelräumarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,020,dachdeckungsarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,021,dachabdichtungsarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,022,klempnerarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,023,stuckarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,024,plattenarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,025,estricharbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,027,tischlerarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,028,holzpflasterarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,029,beschlagarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,030,rollladenarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,031,metallbauarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,032,verglasungsarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,033,baureinigungsarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,034,lackierarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,035,korrosionsschutzarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,036,bodenbelagarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,037,tapezierarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,039,trockenbauarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,040,wärmeversorgungsanlagen,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,041,wärmeversorgungsanlagen,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,042,wasseranlagen,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,044,abwasseranlagen,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,045,entwässerungsanlagen,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,046,entwässerungsanlagen,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,047,brandschutzarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,049,feuerlöschanlagen,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,050,erdungsanlagen,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,051,kabelleitungstiefbauarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,052,mittelspannungsanlagen,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,053,niederspannungsanlagen,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,054,niederspannungsanlagen,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,055,ersatzstromversorgungsanlagen,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,059,sicherheitsbeleuchtungsanlagen,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,062,kommunikationsanlagen,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,063,gefahrenmeldeanlagen,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,078,kälteanlagen,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,081,betonerhaltungsarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,084,schadstoffsanierungsarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,085,rohrvortriebsarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,089,verkehrssicherungsarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,091,stundenlohnarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,096,bauarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+leistungsbereich,097,bauarbeiten,alle,100,katalog,uebernommen,aus der LB-Bezeichnung abgeleitet
+positionsart,baustelleneinrichtung,baustelleneinrichtung,kurztext,400,code,uebernommen,
+positionsart,baustelleneinrichtung,baustelle einrichten,kurztext,400,code,uebernommen,
+positionsart,baustelleneinrichtung,baustelle räumen,kurztext,400,code,uebernommen,
+positionsart,baustelleneinrichtung,bauzaun,kurztext,400,code,uebernommen,
+positionsart,baustelleneinrichtung,baustrom,kurztext,400,code,uebernommen,
+positionsart,baustelleneinrichtung,bauwasser,kurztext,400,code,uebernommen,
+positionsart,baustelleneinrichtung,baustellenverkehr,kurztext,400,code,uebernommen,
+positionsart,baustelleneinrichtung,bürocontainer,kurztext,400,code,uebernommen,
+positionsart,baustelleneinrichtung,aufenthaltscontainer,kurztext,400,code,uebernommen,
+positionsart,baustelleneinrichtung,sanitärcontainer,kurztext,400,code,uebernommen,
+positionsart,baustelleneinrichtung,krananlage,kurztext,400,code,uebernommen,
+positionsart,baustelleneinrichtung,turmdrehkran,kurztext,400,code,uebernommen,
+positionsart,baustelleneinrichtung,sicherheitseinrichtung,kurztext,400,code,uebernommen,
+positionsart,personal,stundenlohnarbeit,kurztext,300,code,uebernommen,
+positionsart,personal,stundenlohn,kurztext,300,code,uebernommen,
+positionsart,personal,regiestunde,kurztext,300,code,uebernommen,
+positionsart,personal,regiearbeit,kurztext,300,code,uebernommen,
+positionsart,personal,vorarbeiter,kurztext,300,code,uebernommen,
+positionsart,personal,facharbeiter,kurztext,300,code,uebernommen,
+positionsart,personal,werker,kurztext,300,code,uebernommen,
+positionsart,personal,polier,kurztext,300,code,uebernommen,
+positionsart,personal,bauhelfer,kurztext,300,code,uebernommen,
+positionsart,planung,werkplanung,kurztext,200,code,uebernommen,
+positionsart,planung,werk- und montageplanung,kurztext,200,code,uebernommen,
+positionsart,planung,montageplanung,kurztext,200,code,uebernommen,
+positionsart,planung,ausführungsplanung,kurztext,200,code,uebernommen,
+positionsart,planung,schalplanung,kurztext,200,code,uebernommen,
+positionsart,planung,bewehrungsplanung,kurztext,200,code,uebernommen,
+positionsart,planung,statische berechnung,kurztext,200,code,uebernommen,
+positionsart,planung,statischer nachweis,kurztext,200,code,uebernommen,
+positionsart,planung,standsicherheitsnachweis,kurztext,200,code,uebernommen,
+positionsart,planung,nachweisführung,kurztext,200,code,uebernommen,
+positionsart,planung,gutachten,kurztext,200,code,uebernommen,
+positionsart,planung,bestandsaufnahme,kurztext,200,code,uebernommen,
+positionsart,planung,aufmaß erstellen,kurztext,200,code,uebernommen,
+positionsart,nebenleistung,nebenleistung,kurztext,100,code,uebernommen,
+positionsart,nebenleistung,besondere leistung,kurztext,100,code,uebernommen,
+positionsart,nebenleistung,vorhalten,kurztext,100,code,uebernommen,
+positionsart,nebenleistung,vorhaltung,kurztext,100,code,uebernommen,
+positionsart,nebenleistung,andienung,kurztext,100,code,uebernommen,
+positionsart,nebenleistung,baustellendokumentation,kurztext,100,code,uebernommen,
+positionsart,nebenleistung,schlussreinigung,kurztext,100,code,uebernommen,
+positionsart,nebenleistung,bauendreinigung,kurztext,100,code,uebernommen,
+bauteiltyp,Bodenplatte,bodenplatte,kurztext,1200,code,uebernommen,
+bauteiltyp,Bodenplatte,sohlplatte,kurztext,1200,code,uebernommen,
+bauteiltyp,Bodenplatte,fundamentplatte,kurztext,1200,code,uebernommen,
+bauteiltyp,Fundament,fundament,kurztext,1100,code,uebernommen,
+bauteiltyp,Fundament,streifenfundament,kurztext,1100,code,uebernommen,
+bauteiltyp,Fundament,einzelfundament,kurztext,1100,code,uebernommen,
+bauteiltyp,Unterzug,unterzug,kurztext,1000,code,uebernommen,
+bauteiltyp,Unterzug,überzug,kurztext,1000,code,uebernommen,
+bauteiltyp,Unterzug,randbalken,kurztext,1000,code,uebernommen,
+bauteiltyp,Balken,balken,kurztext,900,code,uebernommen,
+bauteiltyp,Balken,riegel,kurztext,900,code,uebernommen,
+bauteiltyp,Stütze,stütze,kurztext,800,code,uebernommen,
+bauteiltyp,Stütze,pfeiler,kurztext,800,code,uebernommen,
+bauteiltyp,Stütze,säule,kurztext,800,code,uebernommen,
+bauteiltyp,Wand,wand,kurztext,700,code,uebernommen,
+bauteiltyp,Wand,wände,kurztext,700,code,uebernommen,
+bauteiltyp,Wand,mauerwerk,kurztext,700,code,uebernommen,
+bauteiltyp,Wand,schotte,kurztext,700,code,uebernommen,
+bauteiltyp,Decke,decke,kurztext,600,code,uebernommen,
+bauteiltyp,Decke,geschossdecke,kurztext,600,code,uebernommen,
+bauteiltyp,Decke,filigrandecke,kurztext,600,code,uebernommen,
+bauteiltyp,Decke,deckenplatte,kurztext,600,code,uebernommen,
+bauteiltyp,Treppe,treppe,kurztext,500,code,uebernommen,
+bauteiltyp,Treppe,treppenlauf,kurztext,500,code,uebernommen,
+bauteiltyp,Treppe,podest,kurztext,500,code,uebernommen,
+bauteiltyp,Dach,dach,kurztext,400,code,uebernommen,
+bauteiltyp,Dach,dachfläche,kurztext,400,code,uebernommen,
+bauteiltyp,Dach,attika,kurztext,400,code,uebernommen,
+bauteiltyp,Stürze,sturz,kurztext,300,code,uebernommen,
+bauteiltyp,Stürze,stürze,kurztext,300,code,uebernommen,
+bauteiltyp,Bewehrung,bewehrung,kurztext,200,code,uebernommen,
+bauteiltyp,Bewehrung,betonstahl,kurztext,200,code,uebernommen,
+bauteiltyp,Bewehrung,mattenstahl,kurztext,200,code,uebernommen,
+bauteiltyp,Gründung,bohrpfahl,kurztext,100,code,uebernommen,
+bauteiltyp,Gründung,rammpfahl,kurztext,100,code,uebernommen,
+bauteiltyp,Gründung,schlitzwand,kurztext,100,code,uebernommen,
+bauteiltyp,Gründung,spundwand,kurztext,100,code,uebernommen,
+qualifikation,Polier,polier,alle,400,code,uebernommen,
+qualifikation,Vorarbeiter,vorarbeiter,alle,300,code,uebernommen,
+qualifikation,Facharbeiter,facharbeiter,alle,200,code,uebernommen,
+qualifikation,Facharbeiter,geselle,alle,200,code,uebernommen,
+qualifikation,Werker,werker,alle,100,code,uebernommen,
+qualifikation,Werker,bauhelfer,alle,100,code,uebernommen,
+qualifikation,Werker,helfer,alle,100,code,uebernommen,
+planungsart,Statik,statische berechnung,alle,500,code,uebernommen,
+planungsart,Statik,statischer nachweis,alle,500,code,uebernommen,
+planungsart,Statik,standsicherheit,alle,500,code,uebernommen,
+planungsart,Bewehrungsplanung,bewehrungsplanung,alle,400,code,uebernommen,
+planungsart,Bewehrungsplanung,bewehrungsplan,alle,400,code,uebernommen,
+planungsart,Schalplanung,schalplanung,alle,300,code,uebernommen,
+planungsart,Schalplanung,schalplan,alle,300,code,uebernommen,
+planungsart,Werkplanung,werkplanung,alle,200,code,uebernommen,
+planungsart,Werkplanung,ausführungsplanung,alle,200,code,uebernommen,
+planungsart,Werkplanung,montageplanung,alle,200,code,uebernommen,
+planungsart,Gutachten,gutachten,alle,100,code,uebernommen,
+planungsart,Gutachten,bestandsaufnahme,alle,100,code,uebernommen,
+einrichtungsart,Einrichten,einrichten,alle,300,code,uebernommen,
+einrichtungsart,Einrichten,liefern und aufstellen,alle,300,code,uebernommen,
+einrichtungsart,Einrichten,antransport,alle,300,code,uebernommen,
+einrichtungsart,Vorhalten,vorhalten,alle,200,code,uebernommen,
+einrichtungsart,Vorhalten,vorhaltung,alle,200,code,uebernommen,
+einrichtungsart,Räumen,räumen,alle,100,code,uebernommen,
+einrichtungsart,Räumen,abbauen,alle,100,code,uebernommen,
+einrichtungsart,Räumen,abtransport,alle,100,code,uebernommen,
+steinart,Kalksandstein,kalksandstein,alle,500,code,uebernommen,
+steinart,Kalksandstein,_ks-,alle,500,code,uebernommen,
+steinart,Kalksandstein,ks-plan,alle,500,code,uebernommen,
+steinart,Porenbeton,porenbeton,alle,400,code,uebernommen,
+steinart,Porenbeton,gasbeton,alle,400,code,uebernommen,
+steinart,Leichtbetonstein,leichtbetonstein,alle,300,code,uebernommen,
+steinart,Leichtbetonstein,leichtbeton-stein,alle,300,code,uebernommen,
+steinart,Ziegel,ziegel,alle,200,code,uebernommen,
+steinart,Ziegel,hochlochziegel,alle,200,code,uebernommen,
+steinart,Ziegel,klinker,alle,200,code,uebernommen,
+steinart,Betonstein,betonstein,alle,100,code,uebernommen,
+steinart,Betonstein,vollstein aus beton,alle,100,code,uebernommen,

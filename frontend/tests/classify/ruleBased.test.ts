@@ -1,25 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { getClassifier } from '../../src/lib/classify';
-import { parseStlbCsv } from '../../src/lib/classify/stlbCatalog';
+import { fixtureClassifier } from '../support/classifierFixture';
 import type { ClassifierInput } from '../../src/lib/classify';
 
 /** Referenzkatalog mit gepflegten Stichworten — so, wie ihn ein Maintainer füllt. */
-const CATALOG = parseStlbCsv(
-  [
-    'lb_nummer,lb_bezeichnung,keywords,quelle_version',
-    '000,"Baustelleneinrichtungen, Sicherheitseinrichtungen",baustelleneinrichtung,2023',
-    '012,Mauerarbeiten,mauerarbeiten|mauerwerk,2023',
-    '013,"Beton- und Stahlbetonarbeiten",betonarbeiten|stahlbetonarbeiten,2023',
-    '091,Stundenlohnarbeiten,stundenlohnarbeiten,2023',
-  ].join('\n'),
-);
+const CATALOG_CSV = [
+  'lb_nummer,lb_bezeichnung,keywords,quelle_version',
+  '000,"Baustelleneinrichtungen, Sicherheitseinrichtungen",baustelleneinrichtung,2023',
+  '012,Mauerarbeiten,mauerarbeiten|mauerwerk,2023',
+  '013,"Beton- und Stahlbetonarbeiten",betonarbeiten|stahlbetonarbeiten,2023',
+  '091,Stundenlohnarbeiten,stundenlohnarbeiten,2023',
+].join('\n');
 
 function input(partial: Partial<ClassifierInput>): ClassifierInput {
   return { oz: '01.010', shortText: '', longText: '', unit: null, ...partial };
 }
 
 describe('RuleBasedClassifier — Stufe 0 mit Referenzkatalog', () => {
-  const classifier = getClassifier({ catalog: CATALOG });
+  const classifier = fixtureClassifier(CATALOG_CSV);
 
   it('klassifiziert eine Wand aus Stahlbetonarbeiten vollständig', () => {
     const { attributes, meta } = classifier.classify(
@@ -118,7 +115,7 @@ describe('RuleBasedClassifier — Stufe 0 mit Referenzkatalog', () => {
 });
 
 describe('RuleBasedClassifier — Fallback ohne Referenzkatalog', () => {
-  const classifier = getClassifier({ catalog: [] });
+  const classifier = fixtureClassifier('lb_nummer,lb_bezeichnung,keywords,quelle_version');
 
   it('klassifiziert ohne LB-Treffer über die Heuristik, ohne Fehler', () => {
     const { attributes, meta } = classifier.classify(
@@ -202,7 +199,7 @@ describe('RuleBasedClassifier — Fallback ohne Referenzkatalog', () => {
 // der übergeordneten Abschnitte zurück — mit demselben Katalog, und sichtbar
 // als geerbt (`meta.gewerkQuelle`).
 describe('RuleBasedClassifier — Gewerk aus der Abschnittsüberschrift', () => {
-  const classifier = getClassifier({ catalog: CATALOG });
+  const classifier = fixtureClassifier(CATALOG_CSV);
 
   it('erbt den Leistungsbereich, wenn der Positionstext keinen nennt', () => {
     const { attributes, meta } = classifier.classify(

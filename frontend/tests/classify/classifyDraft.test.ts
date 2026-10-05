@@ -4,17 +4,15 @@
 // Funktion (docs/architecture/pipeline.md#ablauf).
 
 import { describe, expect, it } from 'vitest';
-import { classifyDraft, getClassifier } from '../../src/lib/classify';
-import { parseStlbCsv } from '../../src/lib/classify/stlbCatalog';
+import { classifyDraft } from '../../src/lib/classify';
+import { fixtureClassifier } from '../support/classifierFixture';
 import type { LVDraft, PositionDraft } from '../../src/types/lvDraft';
 
-const CATALOG = parseStlbCsv(
-  [
-    'lb_nummer,lb_bezeichnung,keywords,quelle_version',
-    '002,Erdarbeiten,erdarbeiten,2023',
-    '012,Mauerarbeiten,mauerarbeiten|mauerwerk,2023',
-  ].join('\n'),
-);
+const CATALOG_CSV = [
+  'lb_nummer,lb_bezeichnung,keywords,quelle_version',
+  '002,Erdarbeiten,erdarbeiten,2023',
+  '012,Mauerarbeiten,mauerarbeiten|mauerwerk,2023',
+].join('\n');
 
 function position(oz: string, shortText: string): PositionDraft {
   return {
@@ -56,7 +54,7 @@ const DRAFT: LVDraft = {
 };
 
 describe('classifyDraft · Überschriften', () => {
-  const classified = classifyDraft(DRAFT, getClassifier({ catalog: CATALOG }));
+  const classified = classifyDraft(DRAFT, fixtureClassifier(CATALOG_CSV));
   const section = classified.lots[0].sections[0];
 
   it('gibt der Position das Gewerk ihres Titels', () => {

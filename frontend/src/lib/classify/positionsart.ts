@@ -1,64 +1,10 @@
-// Heuristischer Fallback für Stufe 0: Positionsart aus Stichworten/Einheit, wenn
-// der STLB-Referenzkatalog keinen Leistungsbereich liefert. Bewusst klein und
-// nicht-normativ (docs/domain/README.md) — im Zweifel "sonstige" statt raten.
+// Positionsart aus Stichworten (Mappingtabelle, Dimension `positionsart`) und
+// Einheit. Bewusst klein und nicht-normativ (docs/domain/README.md) — im Zweifel
+// "sonstige" statt raten.
 
-import { containsAny, subjectText, type NormalizedItem } from './text';
-import type { Positionsart } from './types';
-
-const BAUSTELLENEINRICHTUNG = [
-  'baustelleneinrichtung',
-  'baustelle einrichten',
-  'baustelle räumen',
-  'bauzaun',
-  'baustrom',
-  'bauwasser',
-  'baustellenverkehr',
-  'bürocontainer',
-  'aufenthaltscontainer',
-  'sanitärcontainer',
-  'krananlage',
-  'turmdrehkran',
-  'sicherheitseinrichtung',
-];
-
-const PERSONAL = [
-  'stundenlohnarbeit',
-  'stundenlohn',
-  'regiestunde',
-  'regiearbeit',
-  'vorarbeiter',
-  'facharbeiter',
-  'werker',
-  'polier',
-  'bauhelfer',
-];
-
-const PLANUNG = [
-  'werkplanung',
-  'werk- und montageplanung',
-  'montageplanung',
-  'ausführungsplanung',
-  'schalplanung',
-  'bewehrungsplanung',
-  'statische berechnung',
-  'statischer nachweis',
-  'standsicherheitsnachweis',
-  'nachweisführung',
-  'gutachten',
-  'bestandsaufnahme',
-  'aufmaß erstellen',
-];
-
-const NEBENLEISTUNG = [
-  'nebenleistung',
-  'besondere leistung',
-  'vorhalten',
-  'vorhaltung',
-  'andienung',
-  'baustellendokumentation',
-  'schlussreinigung',
-  'bauendreinigung',
-];
+import { matchTextOf, type MappingIndex } from './mapping';
+import type { NormalizedItem } from './text';
+import { isPositionsart, type Positionsart } from './types';
 
 /** Einheiten, die auf eine physische Bauleistung deuten (Länge/Fläche/Volumen/Masse/Stück). */
 const BAUTEIL_UNITS = new Set([
@@ -84,17 +30,14 @@ const BAUTEIL_UNITS = new Set([
 const ZEIT_UNITS = new Set(['h', 'std', 'std.', 'min', 'd', 'tag', 'wo', 'mon', 'mt']);
 
 /**
- * Positionsart ohne LB-Treffer bestimmen. Reihenfolge ist Absicht: explizite
- * Stichworte schlagen die Einheiten-Heuristik, weil "Stundenlohnarbeiten … m³"
- * sonst als Bauteil durchginge.
+ * Positionsart bestimmen. Reihenfolge ist Absicht: explizite Stichworte (Gewicht in
+ * der Tabelle: Baustelleneinrichtung, Personal, Planung, Nebenleistung) schlagen die
+ * Einheiten-Heuristik, weil "Stundenlohnarbeiten … m³" sonst als Bauteil durchginge.
+ * Der Abgleich läuft nur auf dem benennenden Text — siehe subjectText().
  */
-export function detectPositionsart(item: NormalizedItem): Positionsart {
-  // Nur der benennende Text — siehe subjectText().
-  const subject = subjectText(item);
-  if (containsAny(subject, BAUSTELLENEINRICHTUNG)) return 'baustelleneinrichtung';
-  if (containsAny(subject, PERSONAL)) return 'personal';
-  if (containsAny(subject, PLANUNG)) return 'planung';
-  if (containsAny(subject, NEBENLEISTUNG)) return 'nebenleistung';
+export function detectPositionsart(item: NormalizedItem, mapping: MappingIndex): Positionsart {
+  const hit = mapping.match('positionsart', [matchTextOf(item)]);
+  if (hit !== null && isPositionsart(hit.code)) return hit.code;
 
   const unit = item.unit;
   if (unit !== null && ZEIT_UNITS.has(unit)) return 'personal';

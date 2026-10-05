@@ -15,6 +15,8 @@ export type {
   Positionsart,
   Span,
 } from './types';
+export { getMapping, MappingIndex, parseMappingCsv } from './mapping';
+export type { Dimension, DimensionMatch, MappingRow } from './mapping';
 export { getStlbCatalog, parseStlbCsv } from './stlbCatalog';
 export type { StlbLeistungsbereich } from './stlbCatalog';
 

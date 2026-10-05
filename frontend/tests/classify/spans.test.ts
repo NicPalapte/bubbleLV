@@ -5,18 +5,16 @@
 // gar nicht.
 
 import { describe, expect, it } from 'vitest';
-import { classifyDraft, getClassifier } from '../../src/lib/classify';
+import { classifyDraft } from '../../src/lib/classify';
+import { fixtureClassifier } from '../support/classifierFixture';
 import { attrSpans, displayAttributes } from '../../src/lib/attributes';
-import { parseStlbCsv } from '../../src/lib/classify/stlbCatalog';
 import { buildTree, collectPositions } from '../../src/lib/tree/buildTree';
 import type { LVDraft, PositionDraft } from '../../src/types/lvDraft';
 
-const CATALOG = parseStlbCsv(
-  [
-    'lb_nummer,lb_bezeichnung,keywords,quelle_version',
-    '013,"Beton- und Stahlbetonarbeiten",betonarbeiten|stahlbeton,2023',
-  ].join('\n'),
-);
+const CATALOG_CSV = [
+  'lb_nummer,lb_bezeichnung,keywords,quelle_version',
+  '013,"Beton- und Stahlbetonarbeiten",betonarbeiten|stahlbeton,2023',
+].join('\n');
 
 const LANGTEXT =
   'Stahlbetonarbeiten: Tragende Wand aus Ortbeton C30/37 nach DIN EN 206, d = 30 cm. ' +
@@ -50,7 +48,7 @@ function draftWith(...positions: PositionDraft[]): LVDraft {
   };
 }
 
-const classifier = getClassifier({ catalog: CATALOG });
+const classifier = fixtureClassifier(CATALOG_CSV);
 
 describe('Fundstellen im Langtext', () => {
   it('liefert das Beispiel aus dem Plan mit korrekter Textstelle', () => {

@@ -1,6 +1,7 @@
 // Regelbasierter Klassifizierer — einzige Implementierung des Classifier-Interfaces
 // im MVP. Orchestriert die Stufen aus docs/architecture/pipeline.md:
-//   Stufe 0 StlbMatch → Extraktoren → Stufe 1 Bauteiltyp → Stufe 2 RulesetRegistry.
+//   Stufe 0 Leistungsbereich → Extraktoren → Stufe 1 Bauteiltyp → Stufe 2 RulesetRegistry.
+// Alle Stichwort-Zuordnungen laufen über die Mappingtabelle (mapping.ts).
 // Nach außen bleibt das ein einziger, synchroner, deterministischer Aufruf.
 //
 // Die gewerkeunabhängigen Extraktoren (WP-J) laufen **vor** den Rulesets: ein
@@ -15,11 +16,13 @@ import { detectPositionsart } from './positionsart';
 import { createDefaultRegistry, RulesetRegistry } from './rulesets/registry';
 import type { RulesetContext } from './rulesets/types';
 import {
-  getStlbCatalog,
-  matchStlb,
-  type StlbLeistungsbereich,
-  type StlbMatch,
-} from './stlbCatalog';
+  getMapping,
+  matchTextOf,
+  matchTextOfHeading,
+  type DimensionMatch,
+  type MappingIndex,
+} from './mapping';
+import { getStlbCatalog, type StlbLeistungsbereich } from './stlbCatalog';
 import { normalize, normalizeItem, type NormalizedItem } from './text';
 import type {
   Classifier,
@@ -33,25 +36,31 @@ import type {
 const CLASSIFIER_ID = 'rule';
 const VERSION = 1;
 
+interface LeistungsbereichTreffer {
+  lb: StlbLeistungsbereich;
+  match: DimensionMatch;
+}
+
 /**
- * Leistungsbereich aus den Überschriften der übergeordneten Abschnitte. In
- * realen LVs steht das Gewerk regelmäßig nur dort ("Titel 02 Erdarbeiten") und
- * nicht in jeder Positionszeile — ohne diesen Rückgriff bliebe die Hälfte eines
- * LV ohne Gewerk, obwohl die Datei es sagt.
+ * Leistungsbereich: zuerst der Positionstext, danach die Überschriften der
+ * übergeordneten Abschnitte. In realen LVs steht das Gewerk regelmäßig nur dort
+ * ("Titel 02 Erdarbeiten") und nicht in jeder Positionszeile — ohne diesen Rückgriff
+ * bliebe die Hälfte eines LV ohne Gewerk, obwohl die Datei es sagt.
  *
  * Die nächstgelegene Überschrift gewinnt: sie beschreibt die Position genauer
- * als das Los darüber. Es wird nichts erfunden — gesucht wird mit demselben
- * Katalog wie im Positionstext, eine Überschrift ohne LB-Treffer liefert nichts.
+ * als das Los darüber. Es wird nichts erfunden — eine Überschrift ohne Treffer
+ * liefert nichts, und ein Code, der nicht im Katalog steht, hat keine Bezeichnung.
  */
-function matchHeadings(
+function matchLeistungsbereich(
+  text: NormalizedItem,
   headings: readonly string[],
-  catalog: StlbLeistungsbereich[],
-): StlbMatch | null {
-  for (const heading of headings) {
-    const hit = matchStlb(normalize(heading), catalog);
-    if (hit !== null) return hit;
-  }
-  return null;
+  mapping: MappingIndex,
+  catalog: ReadonlyMap<string, StlbLeistungsbereich>,
+): LeistungsbereichTreffer | null {
+  const texte = [matchTextOf(text), ...headings.map((h) => matchTextOfHeading(normalize(h)))];
+  const match = mapping.match('leistungsbereich', texte);
+  const lb = match === null ? undefined : catalog.get(match.code);
+  return match === null || lb === undefined ? null : { lb, match };
 }
 
 /**
@@ -59,43 +68,48 @@ function matchHeadings(
  * aber weiterhin eine eindeutig nicht-physische Position (Stundenlohn, Planung)
  * aus diesem LB herausziehen.
  */
-function refineWithLbHit(text: NormalizedItem): Positionsart {
-  const heuristic = detectPositionsart(text);
+function refineWithLbHit(text: NormalizedItem, mapping: MappingIndex): Positionsart {
+  const heuristic = detectPositionsart(text, mapping);
   return heuristic === 'sonstige' ? 'bauteil' : heuristic;
 }
 
 export interface RuleBasedOptions {
   /** Referenzkatalog; Standard ist der mitgelieferte STLB-Bau-Katalog. */
   catalog?: StlbLeistungsbereich[];
+  /** Mappingtabelle; Standard ist die mitgelieferte `zuordnung.csv`. */
+  mapping?: MappingIndex;
   registry?: RulesetRegistry;
 }
 
 export class RuleBasedClassifier implements Classifier {
-  private readonly catalog: StlbLeistungsbereich[];
+  private readonly catalog: ReadonlyMap<string, StlbLeistungsbereich>;
+  private readonly mapping: MappingIndex;
   private readonly registry: RulesetRegistry;
 
   constructor(options: RuleBasedOptions = {}) {
-    this.catalog = options.catalog ?? getStlbCatalog();
+    const catalog = options.catalog ?? getStlbCatalog();
+    this.catalog = new Map(catalog.map((lb) => [lb.lbNummer, lb]));
+    this.mapping = options.mapping ?? getMapping();
     this.registry = options.registry ?? createDefaultRegistry();
   }
 
   classify(item: ClassifierInput): ClassificationResult {
     const text = normalizeItem(item);
 
-    // ── Stufe 0: Leistungsbereich aus dem Referenzkatalog. Zuerst der
+    // ── Stufe 0: Leistungsbereich über die Mappingtabelle. Zuerst der
     //    Positionstext, danach die Überschriften darüber.
-    const own = matchStlb(text.all, this.catalog);
-    const inherited = own === null ? matchHeadings(item.headings ?? [], this.catalog) : null;
-    const match = own ?? inherited;
+    const lbHit = matchLeistungsbereich(text, item.headings ?? [], this.mapping, this.catalog);
+    const own = lbHit !== null && lbHit.match.fundstelle === 0;
     const gewerkQuelle: GewerkQuelle | null =
-      own !== null ? 'position' : inherited !== null ? 'abschnitt' : null;
-    const gewerkLb = match === null ? null : match.lb.lbNummer;
-    const gewerk = match === null ? null : match.lb.lbBezeichnung;
+      lbHit === null ? null : own ? 'position' : 'abschnitt';
+    const gewerkLb = lbHit === null ? null : lbHit.lb.lbNummer;
+    const gewerk = lbHit === null ? null : lbHit.lb.lbBezeichnung;
     // Die Positionsart verfeinert nur ein Treffer **im Positionstext**: dass
     // eine Position unter „Betonarbeiten" steht, macht sie noch nicht zum
     // Bauteil (dort stehen auch Vorhaltung und Stundenlohn).
-    const positionsart: Positionsart =
-      own === null ? detectPositionsart(text) : refineWithLbHit(text);
+    const positionsart: Positionsart = own
+      ? refineWithLbHit(text, this.mapping)
+      : detectPositionsart(text, this.mapping);
 
     // ── Gewerkeunabhängige Extraktoren: Normen, Maße, Material, Platzhalter,
     //    Verweise, Fristen — samt Fundstelle im Langtext.
@@ -104,7 +118,7 @@ export class RuleBasedClassifier implements Classifier {
       longText: item.longText,
       unit: item.unit,
       text,
-      catalog: this.catalog,
+      mapping: this.mapping,
     };
     const generic = runExtractors(extractorContext);
 
@@ -125,6 +139,7 @@ export class RuleBasedClassifier implements Classifier {
         bauteiltyp: null,
         gewerkLb,
         positionsart,
+        mapping: this.mapping,
       };
       return this.result(
         { ...attributes, ...ruleset.extract(context) },
@@ -135,9 +150,16 @@ export class RuleBasedClassifier implements Classifier {
     }
 
     // ── Stufe 1 + 2: Bauteiltyp bestimmen, passendes Ruleset auflösen.
-    const bauteiltyp = detectBauteiltyp(text);
+    const bauteiltyp = detectBauteiltyp(text, this.mapping);
     const ruleset = this.registry.resolve(bauteiltyp, gewerkLb);
-    const context: RulesetContext = { item, text, bauteiltyp, gewerkLb, positionsart };
+    const context: RulesetContext = {
+      item,
+      text,
+      bauteiltyp,
+      gewerkLb,
+      positionsart,
+      mapping: this.mapping,
+    };
     return this.result(
       { ...attributes, bauteiltyp, ...ruleset.extract(context) },
       ruleset.id,

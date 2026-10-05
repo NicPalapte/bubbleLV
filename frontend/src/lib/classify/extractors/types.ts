@@ -15,7 +15,7 @@
 // zusammengezogen) hat andere Indizes. Die Muster tragen deshalb `i` und `\s+`
 // statt sich auf Vornormalisierung zu verlassen.
 
-import type { StlbLeistungsbereich } from '../stlbCatalog';
+import type { MappingIndex } from '../mapping';
 import type { NormalizedItem } from '../text';
 import type { Span } from '../types';
 
@@ -27,8 +27,8 @@ export interface ExtractorContext {
   readonly unit: string | null;
   /** Kleingeschriebene Fassung für Stichwortvergleiche. */
   readonly text: NormalizedItem;
-  /** Referenzkatalog; speist die materialbezogenen Stichworte. */
-  readonly catalog: readonly StlbLeistungsbereich[];
+  /** Mappingtabelle; Dimension `material` speist die Materialstichworte. */
+  readonly mapping: MappingIndex;
 }
 
 export interface ExtractorResult {

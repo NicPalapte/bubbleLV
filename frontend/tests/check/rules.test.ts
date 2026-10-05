@@ -8,9 +8,9 @@
 import { describe, expect, it } from 'vitest';
 import { CHECK_RULES, runChecks } from '../../src/lib/check';
 import type { CheckRule } from '../../src/lib/check';
-import { classifyDraft, getClassifier } from '../../src/lib/classify';
+import { classifyDraft } from '../../src/lib/classify';
+import { fixtureClassifier } from '../support/classifierFixture';
 import { formatEuro } from '../../src/lib/format';
-import { parseStlbCsv } from '../../src/lib/classify/stlbCatalog';
 import { buildPositionIndex } from '../../src/lib/index/positionIndex';
 import { summarize } from '../../src/lib/index/summary';
 import { buildRelations } from '../../src/lib/relate';
@@ -18,15 +18,13 @@ import { buildTree, collectPositions } from '../../src/lib/tree/buildTree';
 import type { CheckResult, RuleStatus } from '../../src/lib/check';
 import type { LVDraft, PositionDraft } from '../../src/types/lvDraft';
 
-const CATALOG = parseStlbCsv(
-  [
-    'lb_nummer,lb_bezeichnung,keywords,quelle_version',
-    '013,"Beton- und Stahlbetonarbeiten",betonarbeiten|stahlbeton,2023',
-    '091,Stundenlohnarbeiten,stundenlohnarbeiten,2023',
-  ].join('\n'),
-);
+const CATALOG_CSV = [
+  'lb_nummer,lb_bezeichnung,keywords,quelle_version',
+  '013,"Beton- und Stahlbetonarbeiten",betonarbeiten|stahlbeton,2023',
+  '091,Stundenlohnarbeiten,stundenlohnarbeiten,2023',
+].join('\n');
 
-const classifier = getClassifier({ catalog: CATALOG });
+const classifier = fixtureClassifier(CATALOG_CSV);
 
 function position(overrides: Partial<PositionDraft>): PositionDraft {
   return {

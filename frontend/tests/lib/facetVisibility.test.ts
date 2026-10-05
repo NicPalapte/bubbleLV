@@ -1,6 +1,6 @@
 // Filter „Material" ist ausgeblendet, solange er keine Werte hat (Issue #99).
-// Die Werte kommen nur aus der Spalte `keywords` des STLB-Katalogs
-// (docs/decisions/0011); ist sie leer, wäre der Knopf ein Dropdown mit
+// Die Werte kommen nur aus der Dimension `material` der Mappingtabelle
+// (docs/decisions/0011, 0032); ist sie leer, wäre der Knopf ein Dropdown mit
 // „Keine Werte" und ohne jede Erklärung.
 
 import { describe, expect, it } from 'vitest';

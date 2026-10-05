@@ -7,27 +7,18 @@ import { describe, expect, it } from 'vitest';
 import { runExtractors } from '../../src/lib/classify/extractors';
 import { findFristen } from '../../src/lib/classify/extractors/fristen';
 import { extractMasse } from '../../src/lib/classify/extractors/masse';
-import {
-  findMaterial,
-  materialExtractor,
-  materialVocabulary,
-} from '../../src/lib/classify/extractors/material';
+import { findMaterial, materialExtractor } from '../../src/lib/classify/extractors/material';
 import { findNormen } from '../../src/lib/classify/extractors/normen';
 import { findPlatzhalter } from '../../src/lib/classify/extractors/platzhalter';
 import { mergeSpans } from '../../src/lib/classify/extractors/spans';
 import { findVerweise } from '../../src/lib/classify/extractors/verweise';
-import { parseStlbCsv } from '../../src/lib/classify/stlbCatalog';
+import { fixtureMapping } from '../support/classifierFixture';
 import { normalizeItem } from '../../src/lib/classify/text';
 import type { ExtractorContext } from '../../src/lib/classify/extractors';
 import type { Span } from '../../src/lib/classify';
 
-const CATALOG = parseStlbCsv(
-  [
-    'lb_nummer,lb_bezeichnung,keywords,quelle_version',
-    '013,"Beton- und Stahlbetonarbeiten",betonarbeiten|stahlbeton|bewehrungsstahl,2023',
-    '012,Mauerarbeiten,mauerarbeiten|kalksandstein,2023',
-  ].join('\n'),
-);
+// Materialstichworte, wie sie die Dimension `material` der Mappingtabelle führt.
+const MATERIAL = ['stahlbeton', 'bewehrungsstahl', 'kalksandstein'];
 
 function context(longText: string, shortText = ''): ExtractorContext {
   return {
@@ -35,7 +26,7 @@ function context(longText: string, shortText = ''): ExtractorContext {
     longText,
     unit: null,
     text: normalizeItem({ shortText, longText, unit: null }),
-    catalog: CATALOG,
+    mapping: fixtureMapping('', MATERIAL),
   };
 }
 
@@ -146,11 +137,9 @@ describe('masse', () => {
 });
 
 describe('material', () => {
-  it('erkennt Materialstichworte des Katalogs, Tätigkeiten dagegen nicht', () => {
-    const vocabulary = materialVocabulary(CATALOG);
-    expect(vocabulary).toContain('stahlbeton');
-    expect(vocabulary).not.toContain('betonarbeiten');
-    expect(vocabulary).not.toContain('mauerarbeiten');
+  it('erkennt Materialstichworte der Mappingtabelle, längste zuerst', () => {
+    const vocabulary = fixtureMapping('', MATERIAL).vocabulary('material');
+    expect(vocabulary).toEqual(['bewehrungsstahl', 'kalksandstein', 'stahlbeton']);
 
     const text = 'Stahlbetonwand mit Bewehrungsstahl B500B.';
     const hits = findMaterial(text, vocabulary);
@@ -158,8 +147,8 @@ describe('material', () => {
     expect(slice(text, { key: 'material', ...hits[0], label: '' })).toBe('Stahlbeton');
   });
 
-  it('bleibt still, solange der Katalog keine Stichworte führt', () => {
-    const leer = { ...context('Stahlbetonwand herstellen.'), catalog: [] };
+  it('bleibt still, solange die Tabelle keine Materialstichworte führt', () => {
+    const leer = { ...context('Stahlbetonwand herstellen.'), mapping: fixtureMapping() };
     expect(materialExtractor.extract(leer)).toEqual({ attributes: {}, spans: [] });
   });
 

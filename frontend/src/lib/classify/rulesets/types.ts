@@ -1,6 +1,7 @@
 // Pluggable Eigenschafts-Extraktion (docs/architecture/pipeline.md#klassifizierung).
 // Nur ruleBased.ts kennt Registry und einzelne Rulesets.
 
+import type { MappingIndex } from '../mapping';
 import type { NormalizedItem } from '../text';
 import type { ClassifierInput, Positionsart } from '../types';
 
@@ -16,6 +17,8 @@ export interface RulesetContext {
   bauteiltyp: string | null;
   gewerkLb: string | null;
   positionsart: Positionsart;
+  /** Mappingtabelle, aus der ein Ruleset seine Stichworte bezieht. */
+  mapping: MappingIndex;
 }
 
 export interface PropertyRuleset {
