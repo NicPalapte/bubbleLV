@@ -23,6 +23,8 @@ import { APP_VERSION, BUILD_ID, buildDate } from '../../lib/version';
 import type { Theme } from '../../lib/theme';
 
 const CHANGELOG_URL = 'https://github.com/NicPalapte/bubbleLV/blob/main/CHANGELOG.md';
+// Liegt neben der App, erzeugt beim Build (frontend/build/thirdPartyLicenses.ts).
+const LIZENZEN_URL = `${import.meta.env.BASE_URL}lizenzen.txt`;
 
 export interface AboutMenuProps {
   /**
@@ -115,6 +117,15 @@ export function AboutMenu({ onFehlerMelden, onAnderesLv }: AboutMenuProps) {
           title="Was sich in dieser Version geändert hat (öffnet GitHub)"
         >
           Was ist neu ↗
+        </PopoverRow>
+        <PopoverRow
+          onClick={() => {
+            window.open(LIZENZEN_URL, '_blank', 'noopener,noreferrer');
+            setOpen(false);
+          }}
+          title="Bubble: alle Rechte vorbehalten. Dazu die Lizenzen der verwendeten Bausteine"
+        >
+          Lizenzen ↗
         </PopoverRow>
         <PopoverRow
           onClick={() => {
