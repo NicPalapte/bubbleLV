@@ -37,7 +37,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0028 | [Zwei Leisten, „Mitnehmen" in die Befehle](0028-zwei-leisten-und-befehle.md)                 | akzeptiert | 2026-09-24 |
 | 0029 | [Markierungen im Graphen: Ringe und Muster](0029-markierungen-im-graphen.md)                 | akzeptiert | 2026-09-25 |
 | 0030 | [Material-Filter ausblenden, bis die Liste geprüft ist](0030-material-filter-ausblenden.md)  | akzeptiert | 2026-10-04 |
-| 0031 | [STLB-Katalog ohne Spalte `positionsart_default`](0031-stlb-katalog-ohne-positionsart.md) | akzeptiert | 2026-10-04 |
+| 0031 | [STLB-Katalog ohne Spalte `positionsart_default`](0031-stlb-katalog-ohne-positionsart.md)    | akzeptiert | 2026-10-04 |
 
 ## Wann schreibe ich eine neue Datei?
 
@@ -88,3 +88,5 @@ Die Gründe. Stichpunkte.
 
 - Was ändert sich im Alltag, was muss der Repo-Owner einmalig tun.
 ```
+
+| 0032 | [Zuordnung per Mappingtabelle, mit Hauptwert und Alternativen](0032-zuordnung-per-mappingtabelle.md) | akzeptiert | 2026-10-05 |
