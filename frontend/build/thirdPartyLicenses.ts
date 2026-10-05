@@ -2,7 +2,7 @@
 // Bundle stecken, mit Version und Lizenztext (docs/decisions/0036-alle-rechte-vorbehalten.md).
 // Quelle ist die package.json — von Hand gepflegt liefe die Liste den Paketen davon.
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import type { Plugin } from 'vite';
 
 interface PackageJson {
@@ -44,22 +44,43 @@ function licenseText(dir: string): string {
   return file === undefined ? '(kein Lizenztext im Paket)' : readFileSync(join(dir, file), 'utf8');
 }
 
+// Wie Node: erst im node_modules des Elternpakets suchen, dann nach oben bis zur
+// Wurzel. npm legt bei Versionskonflikten ein Paket verschachtelt ab.
+function resolvePackage(name: string, fromDir: string, root: string): string {
+  let dir = fromDir;
+  for (;;) {
+    const candidate = join(dir, 'node_modules', name);
+    if (existsSync(join(candidate, 'package.json'))) return candidate;
+    if (dir === root) break;
+    const parent = dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  throw new Error(`Paket ${name} fehlt in node_modules`);
+}
+
 /** Laufzeit-Abhängigkeiten samt ihren eigenen, nach Name sortiert und ohne Doppel. */
 export function collectThirdParty(root: string): string {
   const own = readPackage(root);
+  const visited = new Set<string>();
   const seen = new Map<string, string>();
-  const queue = [...Object.keys(own.dependencies ?? {}), ...BUNDLED_DEV_DEPS];
+  const queue = [...Object.keys(own.dependencies ?? {}), ...BUNDLED_DEV_DEPS].map((name) => ({
+    name,
+    from: root,
+  }));
   while (queue.length > 0) {
-    const name = queue.shift() as string;
-    if (seen.has(name)) continue;
-    const dir = join(root, 'node_modules', name);
-    if (!existsSync(dir)) throw new Error(`Paket ${name} fehlt in node_modules`);
+    const { name, from } = queue.shift() as { name: string; from: string };
+    const dir = resolvePackage(name, from, root);
+    if (visited.has(dir)) continue;
+    visited.add(dir);
     const pkg = readPackage(dir);
+    const key = `${pkg.name}@${pkg.version}`;
     const head = `${pkg.name} ${pkg.version}\nLizenz: ${pkg.license ?? 'unbekannt'}`;
-    seen.set(name, `${head}\n\n${licenseText(dir).trim()}`);
-    if (!BUNDLED_DEV_DEPS.includes(name)) queue.push(...Object.keys(pkg.dependencies ?? {}));
+    seen.set(key, `${head}\n\n${licenseText(dir).trim()}`);
+    if (BUNDLED_DEV_DEPS.includes(name) && from === root) continue;
+    for (const dep of Object.keys(pkg.dependencies ?? {})) queue.push({ name: dep, from: dir });
   }
-  const entries = [...seen.keys()].sort().map((name) => seen.get(name) as string);
+  const entries = [...seen.keys()].sort().map((key) => seen.get(key) as string);
   return [
     'Bubble — Bausteine Dritter und ihre Lizenzen',
     'Bubble selbst: alle Rechte vorbehalten (siehe LICENSE im Repository).',
