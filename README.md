@@ -210,3 +210,14 @@ Die vollständigen Vorgaben für den Coding-Agenten stehen in
   eine Datei je Weichenstellung, Kriterien und Vorlage stehen im Index
 
 Vollständiges PRD: [Notion](https://www.notion.so/35a380b03be5817ba3d4f7a83474320a)
+
+---
+
+## Lizenz
+
+- **Alle Rechte vorbehalten.** Der Code ist öffentlich lesbar, darf aber ohne
+  schriftliche Erlaubnis nicht genutzt, kopiert oder verändert werden
+  ([`LICENSE`](LICENSE)).
+- Fremd-Bausteine (React, Schriften u. a.) behalten ihre eigenen Lizenzen. Der Build
+  legt die Liste als `lizenzen.txt` neben die App; das Logo-Menü verlinkt sie.
+- Begründung: [`docs/decisions/0036-alle-rechte-vorbehalten.md`](docs/decisions/0036-alle-rechte-vorbehalten.md)
