@@ -40,6 +40,13 @@ export function ExternalWindow({
     pendingClose.current = null;
 
     const closed = (): void => closedRef.current();
+    // `pagehide` allein beweist kein Schließen — manche Browser tauschen das
+    // erste `about:blank` noch aus. Zählt nur, wenn das Fenster danach zu ist.
+    const hidden = (): void => {
+      window.setTimeout(() => {
+        if (win.closed) closed();
+      }, 0);
+    };
     const poll = window.setInterval(() => {
       if (win.closed) closed();
     }, CLOSED_POLL_MS);
@@ -51,13 +58,13 @@ export function ExternalWindow({
     const stopTheme = subscribeTheme(() => copyTheme(document, win.document));
     copyTheme(document, win.document);
 
-    win.addEventListener('pagehide', closed);
+    win.addEventListener('pagehide', hidden);
     window.addEventListener('pagehide', closeWithMain);
     return () => {
       window.clearInterval(poll);
       styles.disconnect();
       stopTheme();
-      win.removeEventListener('pagehide', closed);
+      win.removeEventListener('pagehide', hidden);
       window.removeEventListener('pagehide', closeWithMain);
       pendingClose.current = { win, timer: window.setTimeout(() => win.close(), 0) };
     };

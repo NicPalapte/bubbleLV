@@ -155,14 +155,22 @@ describe('Tabelle abkoppeln', () => {
     await vi.waitFor(() => expect(close).toHaveBeenCalled());
   });
 
-  it('schließt die Tabelle, wenn das zweite Fenster von Hand zugeht', () => {
+  it('schließt die Tabelle, wenn das zweite Fenster von Hand zugeht', async () => {
     renderTable(popup);
     abkoppeln();
-    act(() => {
-      popup.dispatchEvent(new Event('pagehide'));
-    });
+    // `pagehide` ohne geschlossenes Fenster (Browser tauscht `about:blank`) zählt nicht.
+    popup.dispatchEvent(new Event('pagehide'));
+    await act(() => new Promise((resolve) => setTimeout(resolve, 10)));
+    expect(
+      within(popup.document.body).getByRole('region', { name: 'Tabelle — eigenes Fenster' }),
+    ).toBeInTheDocument();
+
+    Object.defineProperty(popup, 'closed', { configurable: true, get: () => true });
+    popup.dispatchEvent(new Event('pagehide'));
+    await vi.waitFor(() =>
+      expect(screen.getByRole('button', { name: /▴ Tabelle/ })).toBeInTheDocument(),
+    );
     expect(screen.queryByRole('region', { name: /Tabelle/ })).toBeNull();
-    expect(screen.getByRole('button', { name: /▴ Tabelle/ })).toBeInTheDocument();
   });
 
   it('schließt das zweite Fenster mit, wenn die Hauptseite geht', () => {
