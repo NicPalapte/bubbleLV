@@ -37,6 +37,7 @@ import {
   useViewer,
   useViewerDispatch,
   type CardPos,
+  MAX_COMPARE,
   type PanelSize,
 } from '../../state/viewer';
 import type { LVNode } from '../../types/lvNode';
@@ -51,12 +52,45 @@ const EDGE_GAP = 16;
 /** Unten bleibt die Steuerung am Graphen frei: feste Teile bleiben stehen, die Karte weicht. */
 const CONTROLS_SPACE = 52;
 
+/** „Vergleichen" in der Karte: nimmt die Position dazu und holt das Fenster. */
+function CompareButton({
+  inCompare,
+  full,
+  onClick,
+}: {
+  inCompare: boolean;
+  full: boolean;
+  onClick: () => void;
+}) {
+  const blocked = full && !inCompare;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={blocked}
+      title={
+        blocked
+          ? `Höchstens ${MAX_COMPARE} Positionen im Vergleich`
+          : 'Neben andere Positionen legen (auch Shift + Klick auf einen Punkt)'
+      }
+      className={
+        inCompare || blocked
+          ? `${CARD_BUTTON} disabled:cursor-default disabled:opacity-50`
+          : 'h-[30px] cursor-pointer rounded-[var(--r-sm)] border border-blue bg-blue px-[12px] font-mono text-[10.5px] text-white hover:bg-blueD'
+      }
+    >
+      {inCompare ? '✓ Vergleich' : '⇄ Vergleichen'}
+    </button>
+  );
+}
+
 export function SelectionCard({ node, onClose }: SelectionCardProps) {
   const ref = useRef<HTMLDivElement>(null);
   useDismiss(ref, true, onClose, { ignoreDrag: true, yieldToDialogs: true });
 
   const {
     view: { panelSize, cardPos },
+    selection: { compare },
   } = useViewer();
   const dispatch = useViewerDispatch();
   const jumpToPosition = useJumpToPosition();
@@ -121,6 +155,18 @@ export function SelectionCard({ node, onClose }: SelectionCardProps) {
           Bubble öffnet diese Karte — wer die Zeile im Zusammenhang sehen will,
           kommt von hier aus dorthin. */}
       <div className="flex shrink-0 gap-[8px] border-t border-line px-[16px] py-[10px]">
+        {node.position !== null && (
+          <CompareButton
+            inCompare={compare.includes(node.id)}
+            full={compare.length >= MAX_COMPARE}
+            onClick={() => {
+              if (!compare.includes(node.id)) {
+                dispatch({ type: 'toggleCompare', positionId: node.id });
+              }
+              dispatch({ type: 'compareWindow', open: true });
+            }}
+          />
+        )}
         <button
           type="button"
           onClick={jumpToTable}

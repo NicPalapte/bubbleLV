@@ -83,6 +83,15 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
     return hintsByPosition(check, state.filter.mutedRules);
   }, [state.lv, state.filter.mutedRules]);
 
+  const comparePositions = useMemo<readonly LVNode[]>(
+    () =>
+      state.selection.compare.flatMap((id) => {
+        const node = structure.nodes.get(id);
+        return node === undefined ? [] : [node];
+      }),
+    [state.selection.compare, structure.nodes],
+  );
+
   const derived = useMemo<ViewerDerived>(
     () => ({
       tree,
@@ -98,6 +107,7 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
         state.selection.positionId === null
           ? null
           : (structure.nodes.get(state.selection.positionId) ?? null),
+      comparePositions,
       matches,
       mask,
       gewerkColors,
@@ -110,6 +120,7 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
       active,
       state.selection.nodeId,
       state.selection.positionId,
+      comparePositions,
       matches,
       mask,
       gewerkColors,

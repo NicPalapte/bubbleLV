@@ -1,5 +1,5 @@
 // Tabelle als Fenster über dem Graphen: verschieben am Kopf, Größe am Griff
-// unten links. Ersetzt die frühere Tabellenansicht mit Baum und
+// unten rechts. Ersetzt die frühere Tabellenansicht mit Baum und
 // Eigenschaften-Spalte — die Eigenschaften zeigt die Positionskarte.
 
 import { useCallback, useRef } from 'react';
@@ -46,6 +46,7 @@ export function TableWindow() {
     minHeight: TABLE_MIN_HEIGHT,
     setPos,
     setSize,
+    corner: 'right',
   });
 
   if (!tableWindow.open || tree === null) return null;
@@ -99,10 +100,15 @@ export function TableWindow() {
         {...handles.resize}
         title="Größe ändern — ziehen oder Pfeiltasten"
         aria-label="Tabelle in der Größe ändern"
-        className="absolute bottom-0 left-0 z-[1] inline-flex h-[18px] w-[18px] cursor-sw-resize items-end justify-start border-none bg-transparent p-[3px] text-line2 hover:text-blue focus-visible:text-blue"
+        className="absolute bottom-0 right-0 z-[1] inline-flex h-[18px] w-[18px] cursor-se-resize items-end justify-end border-none bg-transparent p-[3px] text-line2 hover:text-blue focus-visible:text-blue"
       >
         <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
-          <path d="M0 3.5 L8.5 12 M0 8 L4 12" stroke="currentColor" strokeWidth="1.2" fill="none" />
+          <path
+            d="M12 3.5 L3.5 12 M12 8 L8 12"
+            stroke="currentColor"
+            strokeWidth="1.2"
+            fill="none"
+          />
         </svg>
       </button>
     </section>

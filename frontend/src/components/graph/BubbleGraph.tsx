@@ -117,6 +117,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
     view: { graph, side, sideWidth, panelSize },
     selectedNode,
     selectedPosition,
+    selection: { compare },
   } = useViewer();
   const dispatch = useViewerDispatch();
   const { layout, rows, cols, sizeMode, showHints } = graph;
@@ -453,7 +454,12 @@ export function BubbleGraph({ root }: { root: LVNode }) {
     if (target === null) return;
     const slot = target.getAttribute('data-slot');
     if (slot !== null) {
-      selectSlot(Number(slot));
+      // Shift + Klick legt die Position in den Vergleich, statt sie zu wählen.
+      if (event.shiftKey) {
+        dispatch({ type: 'toggleCompare', positionId: index.nodes[Number(slot)].id });
+      } else {
+        selectSlot(Number(slot));
+      }
       return;
     }
     const group = map.groups[Number(target.getAttribute('data-group'))];
@@ -935,6 +941,32 @@ export function BubbleGraph({ root }: { root: LVNode }) {
                   );
                 }),
           )}
+
+          {/* Nummer der Spalte im Vergleich, bildschirmfest neben dem Punkt. */}
+          {compare.map((id, i) => {
+            const slot = index.slotOf.get(id);
+            if (slot === undefined || !Number.isFinite(map.px[slot])) return null;
+            const group = map.groups[map.groupOf[slot]];
+            if (group === undefined || isCoarse(group)) return null;
+            const badge = 7 / k;
+            const cx = map.px[slot] + radii[slot] + badge * 0.6;
+            const cy = map.py[slot] - radii[slot] - badge * 0.6;
+            return (
+              <g key={id} data-compare={i + 1} pointerEvents="none">
+                <circle cx={cx} cy={cy} r={badge} fill="var(--blue)" />
+                <text
+                  x={cx}
+                  y={cy + 3.2 / k}
+                  textAnchor="middle"
+                  fontSize={9 / k}
+                  fontFamily="var(--mono)"
+                  fill="#fff"
+                >
+                  {i + 1}
+                </text>
+              </g>
+            );
+          })}
         </g>
       </svg>
 

@@ -11,14 +11,17 @@
 
 //
 // Seit dem neuen Hauptscreen auch hier: „Anderes LV öffnen" und Hell/Dunkel —
-// beides braucht man selten, und die Kopfleiste soll schmal bleiben.
+// beides braucht man selten, und die Kopfleiste soll schmal bleiben. Seit es
+// keine Befehlspalette mehr gibt, auch Export und Druck (Entscheidung 0038).
 
 import { useCallback, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { BubbleLogo } from '../ui/BubbleLogo';
 import { Popover, PopoverRow } from '../ui/Popover';
 import { SegmentedControl } from '../ui/SegmentedControl';
 import { useDismiss } from '../common/useDismiss';
 import { useTheme } from '../common/useTheme';
+import type { Mitnehmen } from '../common/useMitnehmen';
 import { APP_VERSION, BUILD_ID, buildDate } from '../../lib/version';
 import type { Theme } from '../../lib/theme';
 
@@ -28,12 +31,16 @@ const LIZENZEN_URL = `${import.meta.env.BASE_URL}lizenzen.txt`;
 
 export interface AboutMenuProps {
   /**
-   * „Fehler melden" gewählt. Das Fenster hängt in der Kopfleiste, nicht hier:
-   * solange es offen ist, darf die Kommandopalette nicht dazwischenfunken.
+   * „Fehler melden" gewählt. Das Fenster hängt in der Kopfleiste, nicht hier —
+   * das Menü schließt sich beim Klick.
    */
   onFehlerMelden: () => void;
   /** „Anderes LV öffnen" — zurück zur Startseite. Fehlt, solange kein LV geladen ist. */
   onAnderesLv?: () => void;
+  /** „Tastenkürzel" gewählt; das Fenster hängt wie „Fehler melden" in der Kopfleiste. */
+  onTastenkuerzel: () => void;
+  /** Export und Druck der gefilterten Menge. Fehlt, solange kein LV geladen ist. */
+  mitnehmen?: Mitnehmen;
 }
 
 const THEME_OPTIONS = [
@@ -55,7 +62,12 @@ function Angabe({ label, wert }: { label: string; wert: string }) {
   );
 }
 
-export function AboutMenu({ onFehlerMelden, onAnderesLv }: AboutMenuProps) {
+export function AboutMenu({
+  onFehlerMelden,
+  onTastenkuerzel,
+  onAnderesLv,
+  mitnehmen,
+}: AboutMenuProps) {
   const [open, setOpen] = useState(false);
   const [theme, chooseTheme] = useTheme();
   const anchorRef = useRef<HTMLDivElement>(null);
@@ -65,6 +77,13 @@ export function AboutMenu({ onFehlerMelden, onAnderesLv }: AboutMenuProps) {
     open,
     useCallback(() => setOpen(false), []),
   );
+
+  // Erst schließen, dann wirken: `window.print()` blockiert den Aufbau der
+  // Druckseite, ein offenes Menü stünde sonst mit auf dem Blatt.
+  const nimmMit = (wirkung: () => void): void => {
+    flushSync(() => setOpen(false));
+    wirkung();
+  };
 
   const datum = buildDate();
   const stand = datum === '' ? BUILD_ID : `${BUILD_ID} · ${datum}`;
@@ -107,6 +126,29 @@ export function AboutMenu({ onFehlerMelden, onAnderesLv }: AboutMenuProps) {
             Anderes LV öffnen
           </PopoverRow>
         )}
+        {mitnehmen !== undefined && (
+          <>
+            <PopoverRow
+              onClick={() => nimmMit(mitnehmen.positionenAlsCsv)}
+              title="Die gefilterten Positionen als Tabelle für Excel"
+            >
+              Positionen als CSV
+            </PopoverRow>
+            <PopoverRow
+              onClick={() => nimmMit(mitnehmen.hinweiseAlsMarkdown)}
+              title="Die Hinweise der Prüfung im aktuellen Filter als Textdatei"
+            >
+              Hinweise als Markdown
+            </PopoverRow>
+            <PopoverRow
+              onClick={() => nimmMit(mitnehmen.drucken)}
+              title="Die gefilterten Positionen drucken oder als PDF sichern"
+            >
+              Drucken
+            </PopoverRow>
+            <Trenner />
+          </>
+        )}
         <PopoverRow
           onClick={() => {
             // Öffnet GitHub in einem neuen Tab — erst auf Klick, und ohne
@@ -126,6 +168,15 @@ export function AboutMenu({ onFehlerMelden, onAnderesLv }: AboutMenuProps) {
           title="Bubble: alle Rechte vorbehalten. Dazu die Lizenzen der verwendeten Bausteine"
         >
           Lizenzen ↗
+        </PopoverRow>
+        <PopoverRow
+          onClick={() => {
+            setOpen(false);
+            onTastenkuerzel();
+          }}
+          title="Alle Tasten auf einen Blick (auch mit „?“)"
+        >
+          Tastenkürzel
         </PopoverRow>
         <PopoverRow
           onClick={() => {

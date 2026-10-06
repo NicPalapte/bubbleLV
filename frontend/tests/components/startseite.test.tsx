@@ -5,7 +5,7 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import App from '../../src/App';
 import { issueBody } from '../../src/lib/export/issueLink';
@@ -30,13 +30,11 @@ describe('Startseite', () => {
     expect(screen.getByText('Die Datei bleibt im Browser')).toBeInTheDocument();
   });
 
-  it('zeigt vor dem Laden weder Suche noch Befehle', async () => {
+  it('zeigt vor dem Laden keine Suche und keinen Export', () => {
     render(<App />);
     expect(screen.queryByLabelText('Suche')).toBeNull();
-    // Die Palette hängt am geladenen LV (TopBar: `loaded &&`).
-    await act(async () => {});
-    fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
-    expect(screen.queryByRole('dialog', { name: 'Kommandopalette' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Über diese App/ }));
+    expect(screen.queryByRole('button', { name: 'Positionen als CSV' })).toBeNull();
   });
 
   it('tritt zurück, sobald eine Datei geladen ist, und kommt beim Schließen wieder', async () => {

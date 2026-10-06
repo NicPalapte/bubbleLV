@@ -42,6 +42,7 @@ import type { LVNode } from '../types/lvNode';
 
 export type { FilterState, HideMode } from './filterState';
 export type { SelectionState } from './selectionState';
+export { MAX_COMPARE } from './selectionState';
 export {
   DEFAULT_CARD_POS,
   DEFAULT_PANEL_SIZE,
@@ -198,6 +199,24 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
       return filter === state.filter ? state : { ...state, filter };
     }
 
+    case 'toggleCompare': {
+      const selection = selectionReducer(state.selection, action);
+      if (selection === state.selection) return state;
+      // Dazunehmen holt das Fenster; Herausnehmen lässt es, wie es ist.
+      const added = selection.compare.length > state.selection.compare.length;
+      const view = added
+        ? viewReducer(state.view, { type: 'compareWindow', open: true })
+        : state.view;
+      return { ...state, selection, view };
+    }
+    case 'clearCompare': {
+      const selection = selectionReducer(state.selection, action);
+      const view = viewReducer(state.view, { type: 'compareWindow', open: false });
+      return selection === state.selection && view === state.view
+        ? state
+        : { ...state, selection, view };
+    }
+
     case 'selectNode':
     case 'selectPosition':
     case 'hover':
@@ -213,6 +232,9 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     case 'tableWindow':
     case 'tableWindowPos':
     case 'tableWindowSize':
+    case 'compareWindow':
+    case 'compareWindowPos':
+    case 'compareWindowSize':
     case 'sizeMode':
     case 'graphLayout':
     case 'graphRows':
@@ -250,6 +272,8 @@ export interface ViewerDerived {
   active: ActiveFilters;
   selectedNode: LVNode | null;
   selectedPosition: LVNode | null;
+  /** Positionen im Vergleich, in der Reihenfolge von `selection.compare`. */
+  comparePositions: readonly LVNode[];
   /** Trefferzahlen je Knoten — einmal berechnet für Baum, Graph und Tabelle. */
   matches: MatchIndex;
   /** Treffer je Indexeintrag (1 = Treffer); `null`, solange nicht gefiltert wird. */

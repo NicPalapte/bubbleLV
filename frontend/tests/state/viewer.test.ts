@@ -14,6 +14,7 @@ import { classifyAndBuild } from '../../src/lib/pipeline/runPipeline';
 import { SIDE_WIDTH_MAX, SIDE_WIDTH_MIN } from '../../src/state/viewState';
 import {
   INITIAL_VIEWER_STATE,
+  MAX_COMPARE,
   PANEL_MAX_WIDTH,
   PANEL_MIN_HEIGHT,
   PANEL_MIN_WIDTH,
@@ -388,5 +389,49 @@ describe('Hinweise (Issues #94, #95)', () => {
     expect(nachher.filter).toBe(vorher.filter);
     expect(nachher.selection).toBe(vorher.selection);
     expect(nachher.view).toBe(vorher.view);
+  });
+});
+
+describe('viewerReducer · Vergleich (Entscheidung 0037)', () => {
+  const add = (state: ViewerState, positionId: string): ViewerState =>
+    viewerReducer(state, { type: 'toggleCompare', positionId });
+
+  it('nimmt eine Position dazu und holt dabei das Fenster', () => {
+    const next = add(base, 'a');
+    expect(next.selection.compare).toEqual(['a']);
+    expect(next.view.compareWindow.open).toBe(true);
+  });
+
+  it('nimmt sie mit demselben Schritt wieder heraus, ohne das Fenster zu schließen', () => {
+    const next = add(add(add(base, 'a'), 'b'), 'a');
+    expect(next.selection.compare).toEqual(['b']);
+    expect(next.view.compareWindow.open).toBe(true);
+  });
+
+  it(`hört bei ${MAX_COMPARE} Positionen auf`, () => {
+    let state = base;
+    for (const id of ['a', 'b', 'c', 'd']) state = add(state, id);
+    expect(add(state, 'e')).toBe(state);
+  });
+
+  it('holt ein geschlossenes Fenster nicht beim Herausnehmen zurück', () => {
+    const closed = viewerReducer(add(add(base, 'a'), 'b'), {
+      type: 'compareWindow',
+      open: false,
+    });
+    expect(add(closed, 'a').view.compareWindow.open).toBe(false);
+  });
+
+  it('leert den Vergleich und schließt das Fenster', () => {
+    const next = viewerReducer(add(base, 'a'), { type: 'clearCompare' });
+    expect(next.selection.compare).toEqual([]);
+    expect(next.view.compareWindow.open).toBe(false);
+  });
+
+  it('fasst Filter und Auswahl der Karte nicht an', () => {
+    const searched = viewerReducer(base, { type: 'search', value: 'Beton' });
+    const next = add(searched, 'a');
+    expect(next.filter).toBe(searched.filter);
+    expect(next.selection.positionId).toBe(searched.selection.positionId);
   });
 });

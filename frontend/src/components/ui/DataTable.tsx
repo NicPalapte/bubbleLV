@@ -353,7 +353,7 @@ export function DataTable<T>({
   const rowDomId = useCallback((key: string): string => `${gridId}-${key}`, [gridId]);
 
   const [activeKey, setActiveKey] = useState<string | null>(selectedKey ?? null);
-  // Eine Auswahl von außen (Baum, Graph, Kommandopalette) führt die Tastatur
+  // Eine Auswahl von außen (Graph, Positionskarte, Prüfung) führt die Tastatur
   // mit — sonst spränge der nächste Pfeiltastendruck an eine andere Stelle.
   const [followedSelection, setFollowedSelection] = useState<string | null>(selectedKey ?? null);
   if ((selectedKey ?? null) !== followedSelection) {

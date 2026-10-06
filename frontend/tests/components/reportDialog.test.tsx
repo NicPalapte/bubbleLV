@@ -4,7 +4,7 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '../../src/App';
 import { meldeMail } from '../../src/lib/export/issueLink';
@@ -214,20 +214,6 @@ describe('Fehler melden · schließen', () => {
         selected: true,
       }).length,
     ).toBe(1);
-  });
-});
-
-describe('Fehler melden · nur ein Fenster', () => {
-  it('lässt die Kommandopalette nicht dazwischenfunken', async () => {
-    // Beide liegen über der Seite. Zwei Fenster übereinander wären für
-    // niemanden vorhersehbar — und welches Escape zuerst sieht, hinge an der
-    // Reihenfolge im DOM.
-    await oeffneMeldung();
-    await act(async () => {});
-    fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
-
-    expect(screen.queryByRole('dialog', { name: 'Kommandopalette' })).toBeNull();
-    expect(screen.getByRole('dialog', { name: 'Fehler melden' })).toBeInTheDocument();
   });
 });
 

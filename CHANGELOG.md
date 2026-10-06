@@ -9,6 +9,25 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.8.0 — 05.10.2026 · Vergleich
+
+- **Positionen vergleichen.** Bis zu vier Positionen nebeneinander in einem Fenster über
+  dem Graphen. Was von der ersten Spalte abweicht, ist gelb, im Langtext jedes Wort,
+  das nicht in allen Texten steht.
+- **Dazunehmen** über „⇄ Vergleichen" in der Positionskarte oder mit Shift + Klick auf
+  einen Punkt im Graphen oder eine Zeile in der Tabelle. Unter „Ähnlich" schlägt das
+  Fenster gleichartige Positionen vor.
+- **Fenster zu, Vergleich bleibt.** Unten holt „⇄ Vergleich" es zurück, „leeren" nimmt
+  alle Positionen heraus.
+- **Export und Druck im Logo-Menü.** „Positionen als CSV", „Hinweise als Markdown" und
+  „Drucken" stehen jetzt unter dem Logo.
+- **Keine Befehlsliste mehr.** Der Knopf „Befehle" ist weg. Strg K und „/" setzen den
+  Cursor jetzt direkt in die Suche.
+- **Tastenkürzel nachschlagen.** Im Logo-Menü oder mit „?" öffnet sich eine Übersicht
+  aller Tasten.
+- **Größe unten rechts.** Tabelle und Vergleich zieht man jetzt an der Ecke unten rechts
+  größer.
+
 ## 0.7.0 — 05.10.2026 · Neuer Graph
 
 - **Alles auf einen Blick.** Jeder Abschnitt ist ein Kreis, jede Position ein Punkt

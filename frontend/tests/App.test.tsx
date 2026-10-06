@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import App from '../src/App';
 
@@ -23,17 +23,13 @@ async function loadAndWait(name = 'gaeb-xml-beispiel.x83'): Promise<void> {
 }
 
 /**
- * Befehl über die Kommandopalette auslösen. Einen Ansichtsumschalter gibt es
- * nicht mehr: der Graph ist der Hauptscreen, alles andere schwebt darüber.
+ * Eine Position im Graphen anklicken. Die Punkte stehen in der Reihenfolge des
+ * Positions-Index, also der OZ — Punkt 0 ist die erste Position des LVs.
  */
-async function command(text: string): Promise<void> {
-  // Die Palette hängt ihren Listener in einem Effekt an — erst danach öffnet der Knopf sie.
-  await act(async () => {});
-  fireEvent.click(within(screen.getByRole('banner')).getByRole('button', { name: /^Befehle/ }));
-  fireEvent.change(screen.getByLabelText('Befehl oder OZ'), { target: { value: text } });
-  fireEvent.click(
-    within(screen.getByRole('dialog', { name: 'Kommandopalette' })).getAllByRole('option')[0],
-  );
+function clickPoint(slot: number): void {
+  const point = document.querySelector(`[data-slot="${slot}"]`);
+  if (point === null) throw new Error(`Punkt ${slot} fehlt im Graphen`);
+  fireEvent.click(point);
 }
 
 /** Tabellenfenster über den Knopf unten mittig öffnen. */
@@ -54,12 +50,11 @@ function kpi(name: RegExp): void {
 }
 
 /**
- * Per OZ zur ersten Position springen. Im Graphen bleibt der Sprung dort (die
- * Karte zeigt die Position); das Tabellenfenster steht danach im Abschnitt
- * „Baustelleneinrichtung".
+ * Die erste Position im Graphen anklicken. Der Graph bleibt, die Karte zeigt die
+ * Position; das Tabellenfenster steht danach im Abschnitt „Baustelleneinrichtung".
  */
 async function jumpToFirstPosition(): Promise<HTMLElement> {
-  await command('001.001.0010');
+  clickPoint(0);
   return openTable();
 }
 
@@ -321,6 +316,26 @@ describe('Viewer', () => {
     fireEvent.mouseUp(document);
   });
 
+  it('zieht die Tabelle am Knopf unten rechts auf — die linke Kante bleibt', async () => {
+    await loadAndWait();
+    await openTable();
+    const fenster = tableWindow() as HTMLElement;
+    const right0 = parseFloat(fenster.style.right);
+    const width0 = parseFloat(fenster.style.width);
+
+    const handle = screen.getByRole('button', { name: 'Tabelle in der Größe ändern' });
+    fireEvent.mouseDown(handle, { clientX: 400, clientY: 300 });
+    fireEvent.mouseMove(document, { clientX: 440, clientY: 300 });
+    fireEvent.mouseUp(document);
+    expect(parseFloat(fenster.style.width)).toBe(width0 + 40);
+    expect(parseFloat(fenster.style.right)).toBe(right0 - 40);
+
+    // Pfeil nach rechts vergrößert, nach links verkleinert.
+    fireEvent.keyDown(handle, { key: 'ArrowLeft' });
+    expect(parseFloat(fenster.style.width)).toBe(width0 + 24);
+    expect(parseFloat(fenster.style.right)).toBe(right0 - 24);
+  });
+
   it('zieht die Auswahlkarte am Knopf unten links auf', async () => {
     await loadAndWait();
     await selectBauhauptgewerke();
@@ -371,7 +386,7 @@ describe('Viewer', () => {
     expect(card.style.top).toBe('66px');
 
     // Nach einem Ausflug ins Seitenfenster steht sie wieder dort, nicht in der Ecke.
-    await command('Überblick');
+    kpi(/Positionen/);
     fireEvent.click(await screen.findByRole('button', { name: 'Seitenfenster schließen' }));
     const wieder = (await screen.findByRole('button', { name: 'Karte schließen' })).closest(
       '[data-graph-overlay]',

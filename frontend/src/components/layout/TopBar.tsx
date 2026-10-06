@@ -1,12 +1,15 @@
-// Kopfleiste: Logo-Menü, Datei, Suche mit den aktiven Filtern, Befehle.
+// Kopfleiste: Logo-Menü, Datei, Suche mit den aktiven Filtern. Eine
+// Befehlspalette gibt es nicht mehr; Strg K holt die Suche, Export und Druck
+// stehen im Logo-Menü (docs/decisions/0038-keine-befehlspalette.md).
 // Seit dem neuen Hauptscreen eine schmale Zeile (docs/decisions/0034-graph-als-
 // hauptscreen.md): kein Ansichtsumschalter mehr, die Filter wählt man im
 // Seitenfenster („+ Filter"), hier stehen sie nur als entfernbare Chips.
 
 import { useEffect, useRef, useState } from 'react';
-import { CommandPalette, openCommandPalette } from '../palette/CommandPalette';
 import { ReportDialog } from '../report/ReportDialog';
+import { ShortcutsDialog } from './ShortcutsDialog';
 import { AboutMenu } from './AboutMenu';
+import { useMitnehmen } from '../common/useMitnehmen';
 import { FACETS, facetOptionLabel } from '../../lib/facets';
 import { formatCount } from '../../lib/format';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
@@ -39,9 +42,12 @@ export function TopBar() {
     view,
   } = useViewer();
   const dispatch = useViewerDispatch();
+  const mitnehmen = useMitnehmen();
   const inputRef = useRef<HTMLInputElement>(null);
   /** „Fehler melden" — das Fenster gehört hierher, nicht ins Menü (WP-P, Schritt 6). */
   const [melden, setMelden] = useState(false);
+  /** „Tastenkürzel" aus dem Logo-Menü oder per „?". */
+  const [kuerzel, setKuerzel] = useState(false);
 
   // Das Eingabefeld hängt am lokalen Wert, damit Tippen nie auf den Suchlauf
   // wartet; der Viewer-State folgt verzögert nach.
@@ -68,12 +74,22 @@ export function TopBar() {
     );
   };
 
-  // "/" fokussiert die Suche — wie im Design.
+  // "/" und Strg/Cmd + K holen die Suche. Strg K greift auch in Eingabefeldern:
+  // wer es drückt, will suchen; "/" dagegen ist dort ein Zeichen.
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
-      if (event.key !== '/' || event.target instanceof HTMLInputElement) return;
+      const strgK = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k';
+      const imFeld =
+        event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement;
+      if (event.key === '?' && !imFeld) {
+        event.preventDefault();
+        setKuerzel(true);
+        return;
+      }
+      if (!strgK && (event.key !== '/' || imFeld)) return;
       event.preventDefault();
       inputRef.current?.focus();
+      inputRef.current?.select();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -114,11 +130,13 @@ export function TopBar() {
   return (
     <>
       <div className="relative z-[5] flex h-[54px] shrink-0 items-center gap-[10px] border-b border-line bg-surface pr-[12px]">
-        {/* Das Logo öffnet „Über diese App": Version, Änderungen, Fehler melden,
-            Design (Issue #71). */}
+        {/* Das Logo öffnet „Über diese App": Version, Änderungen, Export, Druck,
+            Fehler melden, Design (Issue #71). */}
         <AboutMenu
           onFehlerMelden={() => setMelden(true)}
+          onTastenkuerzel={() => setKuerzel(true)}
           onAnderesLv={loaded ? () => dispatch({ type: 'clear' }) : undefined}
+          mitnehmen={loaded ? mitnehmen : undefined}
         />
 
         {loaded && (
@@ -202,17 +220,6 @@ export function TopBar() {
             )}
             <button
               type="button"
-              onClick={openCommandPalette}
-              title="Filtern, zu einer OZ springen, exportieren, drucken, melden"
-              className={`${GHOST} hidden lg:inline-flex`}
-            >
-              Befehle
-              <span className="rounded-[4px] border border-line px-[5px] text-[9px] text-mute">
-                Strg K
-              </span>
-            </button>
-            <button
-              type="button"
               onClick={() => dispatch({ type: 'clear' })}
               title="Datei verwerfen, zurück zur Startseite"
               className={`${GHOST} hidden sm:inline-flex`}
@@ -223,12 +230,7 @@ export function TopBar() {
         )}
       </div>
 
-      {loaded && (
-        // Die Palette schweigt, solange das Melde-Fenster offen ist: beide
-        // liegen über der Seite, und zwei Fenster übereinander wären für
-        // niemanden vorhersehbar.
-        <CommandPalette gesperrt={melden} onFehlerMelden={() => setMelden(true)} />
-      )}
+      {kuerzel && <ShortcutsDialog onClose={() => setKuerzel(false)} />}
       {melden && (
         <ReportDialog
           context={{ view: view.mode, loaded: lv !== null }}

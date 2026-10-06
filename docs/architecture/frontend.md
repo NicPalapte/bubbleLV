@@ -204,8 +204,10 @@ der Gesamtzustand identisch und kein Render läuft umsonst.
 `setViewMode` fasst nur `view` an. Seit dem neuen Hauptscreen
 ([0034](../decisions/0034-graph-als-hauptscreen.md)) bildet es `overview` auf
 den Graphen mit offenem Seitenfenster (`view.side`) ab und `table` auf das
-Tabellenfenster (`view.tableWindow`); `mode` bleibt immer `graph`. Matrix, Ähnlichkeit
-und Vergleich sind entfernt ([0031](../decisions/0031-drei-ansichten.md)).
+Tabellenfenster (`view.tableWindow`); `mode` bleibt immer `graph`. Matrix und Ähnlichkeit
+sind entfernt ([0031](../decisions/0031-drei-ansichten.md)); der Vergleich ist ein
+Fenster (`view.compareWindow`, Positionen in `selection.compare`,
+[0037](../decisions/0037-vergleichsfenster.md)).
 Weil jede Ansicht ihren Zustand in `view` ablegt statt in lokalem `useState`,
 steht sie nach dem Rückwechsel wieder so da, wie man sie verlassen hat — obwohl
 die Komponente zwischendurch abgebaut war.
@@ -253,17 +255,19 @@ vollständig zu sehen ist. „Vergleichen" an einer Gruppe legt ihre Mitglieder
 nebeneinander (WP-N) — ungekürzt: gekürzt wird erst in der Ansicht, damit der Rest
 der Gruppe benannt statt weggeworfen wird.
 
-### Ansicht „Vergleich" (WP-N)
+### Vergleichsfenster (WP-N, [0037](../decisions/0037-vergleichsfenster.md))
 
-Bis zu fünf gewählte Positionen nebeneinander, eine Spalte je Position, eine Zeile
-je Merkmal. Die Merkmale kommen aus `merkmaleOf` (`lib/relate/similarity.ts`) —
+Bis zu vier Positionen nebeneinander (`MAX_COMPARE`), eine Spalte je Position, eine
+Zeile je Merkmal (`components/shell/CompareWindow.tsx`). Markiert ist, was von der
+ersten Spalte abweicht. Die Merkmale kommen aus `merkmaleOf` (`lib/relate/similarity.ts`) —
 derselben Funktion, nach der die Ähnlichkeit gruppiert. Unterschiede in Menge und
 Preis entscheidet der **rohe** Wert, nicht die gerundete Anzeige; sehen zwei Werte
 gerundet gleich aus, zeigt die Zeile mehr Nachkommastellen. Der Langtext wird
 wortweise verglichen ([`../decisions/0020`](../decisions/0020-langtext-vergleich-ohne-bibliothek.md)).
 
-Die Auswahl selbst ist **nicht** begrenzt: die Ansicht zeigt die ersten fünf und
-sagt, wie viele warten.
+Dazunehmen: „⇄ Vergleichen" in der Positionskarte, Shift + Klick im Graphen oder in
+der Tabelle, Vorschläge unter „Ähnlich". Ist der Vergleich voll, nimmt
+`toggleCompare` nichts mehr auf.
 
 ### Geteilter Link (WP-P, Schritt 2)
 
