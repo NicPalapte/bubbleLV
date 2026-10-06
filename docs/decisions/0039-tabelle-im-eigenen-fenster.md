@@ -47,5 +47,6 @@ sehen. Bisher lag die Tabelle immer als Fenster über dem Graphen.
 
 - Blockiert der Browser Pop-ups für die Seite, muss Nico sie einmal in der Adressleiste
   erlauben. Sonst bleibt die Tabelle im Hauptfenster.
-- Tastenkürzel der Kopfleiste (Strg K, „/", „?") wirken nur im Hauptfenster. In der
-  Tabelle selbst gelten ihre Tasten wie gewohnt.
+- Tastenkürzel der Kopfleiste (Strg K, „/", „?") und Escape zum Zurücknehmen der Auswahl
+  wirken nur im Hauptfenster. Gewollt: das zweite Fenster zeigt nur die Tabelle. Dort
+  gelten ihre Tasten wie gewohnt, Escape schließt offene Menüs.
