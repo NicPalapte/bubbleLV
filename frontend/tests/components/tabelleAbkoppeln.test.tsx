@@ -121,6 +121,20 @@ describe('Tabelle abkoppeln', () => {
     expect(popup.document.title).toBe('Bubble — Tabelle');
   });
 
+  it('gleicht neue Stile ab, ohne die vorhandenen neu anzulegen', async () => {
+    renderTable(popup);
+    abkoppeln();
+    const vorher = popup.document.head.querySelector('style');
+    const neu = document.createElement('style');
+    neu.id = 'nachgeladen';
+    neu.textContent = '.nachgeladen { color: blue; }';
+    document.head.append(neu);
+    await vi.waitFor(() => expect(popup.document.head.textContent).toContain('.nachgeladen'));
+    expect(popup.document.head.querySelector('style')).toBe(vorher);
+    neu.remove();
+    await vi.waitFor(() => expect(popup.document.head.textContent).not.toContain('.nachgeladen'));
+  });
+
   it('übernimmt Hell/Dunkel aus dem Hauptfenster', () => {
     renderTable(popup);
     abkoppeln();

@@ -5,7 +5,7 @@
 // ↗ löst die Tabelle in ein eigenes Browserfenster, etwa für den zweiten
 // Bildschirm (Entscheidung 0039); ↙ dort holt sie zurück.
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ExternalWindow } from '../common/ExternalWindow';
 import { openExternalWindow, type ExternalHost } from '../common/externalWindowHost';
 import { sidePanelSpace } from './SidePanel';
@@ -65,6 +65,8 @@ export function TableWindow() {
 
   const [popup, setPopup] = useState<ExternalHost | null>(null);
   const [blocked, setBlocked] = useState(false);
+  const blockedTimer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(blockedTimer.current), []);
   const shown = tableWindow.open && tree !== null;
   // Tabelle von woanders zu (Escape, neues LV): das zweite Fenster geht mit.
   if (!shown && popup !== null) setPopup(null);
@@ -75,8 +77,10 @@ export function TableWindow() {
       height: POPUP_HEIGHT,
     });
     if (host === null) {
+      // Ein neuer Klick hält den Hinweis die volle Zeit, kein alter Timer kürzt ab.
+      window.clearTimeout(blockedTimer.current);
       setBlocked(true);
-      window.setTimeout(() => setBlocked(false), BLOCKED_HINT_MS);
+      blockedTimer.current = window.setTimeout(() => setBlocked(false), BLOCKED_HINT_MS);
       return;
     }
     setBlocked(false);

@@ -10,7 +10,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { HostWindowContext } from './hostWindow';
-import { copyStyles, copyTheme, type ExternalHost } from './externalWindowHost';
+import { copyTheme, syncStyles, type ExternalHost } from './externalWindowHost';
 import { subscribeTheme } from '../../lib/theme';
 
 /** Wie oft nachgesehen wird, ob das Fenster zu ist — `pagehide` kommt nicht immer. */
@@ -46,7 +46,7 @@ export function ExternalWindow({
     const closeWithMain = (): void => win.close();
 
     // Nachgeladene oder (im Entwicklungsmodus) geänderte Stile mitnehmen.
-    const styles = new MutationObserver(() => copyStyles(document, win.document));
+    const styles = new MutationObserver(() => syncStyles(document, win.document));
     styles.observe(document.head, { childList: true, subtree: true, characterData: true });
     const stopTheme = subscribeTheme(() => copyTheme(document, win.document));
     copyTheme(document, win.document);
