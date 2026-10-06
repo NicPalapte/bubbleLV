@@ -7,6 +7,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { ReportDialog } from '../report/ReportDialog';
+import { ShortcutsDialog } from './ShortcutsDialog';
 import { AboutMenu } from './AboutMenu';
 import { useMitnehmen } from '../common/useMitnehmen';
 import { FACETS, facetOptionLabel } from '../../lib/facets';
@@ -45,6 +46,8 @@ export function TopBar() {
   const inputRef = useRef<HTMLInputElement>(null);
   /** „Fehler melden" — das Fenster gehört hierher, nicht ins Menü (WP-P, Schritt 6). */
   const [melden, setMelden] = useState(false);
+  /** „Tastenkürzel" aus dem Logo-Menü oder per „?". */
+  const [kuerzel, setKuerzel] = useState(false);
 
   // Das Eingabefeld hängt am lokalen Wert, damit Tippen nie auf den Suchlauf
   // wartet; der Viewer-State folgt verzögert nach.
@@ -76,7 +79,14 @@ export function TopBar() {
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
       const strgK = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k';
-      if (!strgK && (event.key !== '/' || event.target instanceof HTMLInputElement)) return;
+      const imFeld =
+        event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement;
+      if (event.key === '?' && !imFeld) {
+        event.preventDefault();
+        setKuerzel(true);
+        return;
+      }
+      if (!strgK && (event.key !== '/' || imFeld)) return;
       event.preventDefault();
       inputRef.current?.focus();
       inputRef.current?.select();
@@ -124,6 +134,7 @@ export function TopBar() {
             Fehler melden, Design (Issue #71). */}
         <AboutMenu
           onFehlerMelden={() => setMelden(true)}
+          onTastenkuerzel={() => setKuerzel(true)}
           onAnderesLv={loaded ? () => dispatch({ type: 'clear' }) : undefined}
           mitnehmen={loaded ? mitnehmen : undefined}
         />
@@ -219,6 +230,7 @@ export function TopBar() {
         )}
       </div>
 
+      {kuerzel && <ShortcutsDialog onClose={() => setKuerzel(false)} />}
       {melden && (
         <ReportDialog
           context={{ view: view.mode, loaded: lv !== null }}

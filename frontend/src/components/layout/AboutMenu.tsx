@@ -37,6 +37,8 @@ export interface AboutMenuProps {
   onFehlerMelden: () => void;
   /** „Anderes LV öffnen" — zurück zur Startseite. Fehlt, solange kein LV geladen ist. */
   onAnderesLv?: () => void;
+  /** „Tastenkürzel" gewählt; das Fenster hängt wie „Fehler melden" in der Kopfleiste. */
+  onTastenkuerzel: () => void;
   /** Export und Druck der gefilterten Menge. Fehlt, solange kein LV geladen ist. */
   mitnehmen?: Mitnehmen;
 }
@@ -60,7 +62,12 @@ function Angabe({ label, wert }: { label: string; wert: string }) {
   );
 }
 
-export function AboutMenu({ onFehlerMelden, onAnderesLv, mitnehmen }: AboutMenuProps) {
+export function AboutMenu({
+  onFehlerMelden,
+  onTastenkuerzel,
+  onAnderesLv,
+  mitnehmen,
+}: AboutMenuProps) {
   const [open, setOpen] = useState(false);
   const [theme, chooseTheme] = useTheme();
   const anchorRef = useRef<HTMLDivElement>(null);
@@ -161,6 +168,15 @@ export function AboutMenu({ onFehlerMelden, onAnderesLv, mitnehmen }: AboutMenuP
           title="Bubble: alle Rechte vorbehalten. Dazu die Lizenzen der verwendeten Bausteine"
         >
           Lizenzen ↗
+        </PopoverRow>
+        <PopoverRow
+          onClick={() => {
+            setOpen(false);
+            onTastenkuerzel();
+          }}
+          title="Alle Tasten auf einen Blick (auch mit „?“)"
+        >
+          Tastenkürzel
         </PopoverRow>
         <PopoverRow
           onClick={() => {

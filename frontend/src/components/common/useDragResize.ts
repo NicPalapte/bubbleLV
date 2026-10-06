@@ -4,9 +4,10 @@
 // (WP-R, R3) dasselbe braucht. Zwei Kopien derselben Mechanik hätten sich
 // auseinanderentwickelt — beim ersten Fehler in einer von beiden.
 //
-// Die Fläche hängt **rechts oben**: `right`/`top` statt `left`/`top`. Deshalb
-// wächst sie beim Ziehen am Griff unten links nach links und nach unten, und
-// die rechte Kante bleibt stehen.
+// Die Fläche hängt **rechts oben**: `right`/`top` statt `left`/`top`. Am Griff
+// unten links wächst sie nach links und unten, die rechte Kante bleibt stehen.
+// Am Griff unten rechts (`corner: 'right'`, Tabelle und Vergleich) bleibt die
+// linke Kante stehen: Breite und `right` ändern sich dann gemeinsam.
 //
 // Ort und Größe hält der Aufrufer (Viewer-Zustand), nicht dieser Hook: beides
 // soll den Ansichtswechsel überleben, und die Karte teilt ihre Breite mit dem
@@ -47,12 +48,14 @@ export interface DragResizeOptions {
   minHeight: number;
   setPos: (pos: FloatPos) => void;
   setSize: (size: FloatSize) => void;
+  /** Ecke des Größen-Griffs; Standard unten links. */
+  corner?: 'left' | 'right';
 }
 
 export interface DragResizeHandles {
   /** An den Ziehgriff: `<div {...handles.grip} />`. */
   grip: { onMouseDown: (event: ReactMouseEvent<HTMLElement>) => void };
-  /** An den Griff unten links: `<button {...handles.resize} />`. */
+  /** An den Größen-Griff: `<button {...handles.resize} />`. */
   resize: {
     onMouseDown: (event: ReactMouseEvent<HTMLElement>) => void;
     onKeyDown: (event: ReactKeyboardEvent<HTMLElement>) => void;
@@ -65,14 +68,25 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 /**
- * Platz, der der Fläche nach links bzw. nach unten noch bleibt. Gemessen am
+ * Platz, der der Fläche zur Griffseite bzw. nach unten noch bleibt. Gemessen am
  * Canvas, auf dem sie liegt; in Umgebungen ohne Layout (Tests) fällt die
  * Rechnung auf das Fenstermaß zurück, damit die Grenzen sinnvoll bleiben.
  */
-function roomFor(element: HTMLElement, minWidth: number, maxWidth: number, minHeight: number) {
+function roomFor(
+  element: HTMLElement,
+  corner: 'left' | 'right',
+  minWidth: number,
+  maxWidth: number,
+  minHeight: number,
+) {
   const own = element.getBoundingClientRect();
   const canvas = element.offsetParent?.getBoundingClientRect() ?? null;
-  const width = canvas === null ? 0 : own.right - canvas.left - EDGE_GAP;
+  const width =
+    canvas === null
+      ? 0
+      : corner === 'left'
+        ? own.right - canvas.left - EDGE_GAP
+        : canvas.right - own.left - EDGE_GAP;
   const height = canvas === null ? 0 : canvas.bottom - own.top - EDGE_GAP;
   // Ohne Layout (Tests) liefert der Browser lauter Nullen — dann gelten die
   // gemeinsamen Grenzen bzw. das Fenstermaß.
@@ -84,19 +98,41 @@ function roomFor(element: HTMLElement, minWidth: number, maxWidth: number, minHe
 
 export function useDragResize(options: DragResizeOptions): DragResizeHandles {
   const { ref, pos, size, minWidth, maxWidth, minHeight, setPos, setSize } = options;
+  const corner = options.corner ?? 'left';
 
   const drag = useRef({ on: false, x0: 0, y0: 0, right0: 0, top0: 0, width0: size.width });
-  const resize = useRef({ on: false, x0: 0, y0: 0, width0: 0, height0: 0, maxW: 0, maxH: 0 });
+  const resize = useRef({
+    on: false,
+    x0: 0,
+    y0: 0,
+    width0: 0,
+    height0: 0,
+    right0: 0,
+    maxW: 0,
+    maxH: 0,
+  });
+
+  /** Neue Breite setzen; am rechten Griff wandert `right` mit, die linke Kante bleibt. */
+  const applySize = useCallback(
+    (width: number, height: number, width0: number, right0: number): void => {
+      if (corner === 'right') setPos({ right: right0 - (width - width0), top: pos.top });
+      setSize({ width, height });
+    },
+    [corner, setPos, setSize, pos.top],
+  );
 
   useEffect(() => {
     const move = (event: MouseEvent): void => {
       if (resize.current.on) {
         const state = resize.current;
-        // Rechte Kante bleibt stehen: nach links ziehen vergrößert die Breite.
-        setSize({
-          width: clamp(state.width0 - (event.clientX - state.x0), minWidth, state.maxW),
-          height: clamp(state.height0 + (event.clientY - state.y0), minHeight, state.maxH),
-        });
+        const dx = event.clientX - state.x0;
+        // Am linken Griff vergrößert Ziehen nach links, am rechten nach rechts.
+        applySize(
+          clamp(state.width0 + (corner === 'left' ? -dx : dx), minWidth, state.maxW),
+          clamp(state.height0 + (event.clientY - state.y0), minHeight, state.maxH),
+          state.width0,
+          state.right0,
+        );
         return;
       }
       if (!drag.current.on) return;
@@ -120,7 +156,7 @@ export function useDragResize(options: DragResizeOptions): DragResizeHandles {
       window.removeEventListener('mousemove', move);
       window.removeEventListener('mouseup', up);
     };
-  }, [setSize, setPos, minWidth, minHeight]);
+  }, [applySize, setPos, corner, minWidth, minHeight]);
 
   const onGripMouseDown = useCallback(
     (event: ReactMouseEvent<HTMLElement>): void => {
@@ -150,24 +186,27 @@ export function useDragResize(options: DragResizeOptions): DragResizeHandles {
       event.stopPropagation();
       const element = ref.current;
       if (element === null) return;
-      const room = roomFor(element, minWidth, maxWidth, minHeight);
+      const room = roomFor(element, corner, minWidth, maxWidth, minHeight);
       resize.current = {
         on: true,
         x0: event.clientX,
         y0: event.clientY,
         width0: size.width,
         height0: currentHeight(),
+        right0: pos.right,
         maxW: room.width,
         maxH: room.height,
       };
     },
-    [ref, minWidth, maxWidth, minHeight, size.width, currentHeight],
+    [ref, corner, minWidth, maxWidth, minHeight, size.width, pos.right, currentHeight],
   );
 
-  /** Pfeiltasten am Knopf: links/unten vergrößern, rechts/oben verkleinern. */
+  /** Pfeiltasten am Knopf: zur Griffseite und nach unten vergrößern, sonst verkleinern. */
   const onResizeKeyDown = useCallback(
     (event: ReactKeyboardEvent<HTMLElement>): void => {
-      const dw = event.key === 'ArrowLeft' ? KEY_STEP : event.key === 'ArrowRight' ? -KEY_STEP : 0;
+      const grow = corner === 'left' ? 'ArrowLeft' : 'ArrowRight';
+      const shrink = corner === 'left' ? 'ArrowRight' : 'ArrowLeft';
+      const dw = event.key === grow ? KEY_STEP : event.key === shrink ? -KEY_STEP : 0;
       const dh = event.key === 'ArrowDown' ? KEY_STEP : event.key === 'ArrowUp' ? -KEY_STEP : 0;
       if (dw === 0 && dh === 0) return;
       // Sonst wandert der Tastendruck weiter an den Canvas, der mit den
@@ -176,13 +215,15 @@ export function useDragResize(options: DragResizeOptions): DragResizeHandles {
       event.stopPropagation();
       const element = ref.current;
       if (element === null) return;
-      const room = roomFor(element, minWidth, maxWidth, minHeight);
-      setSize({
-        width: clamp(size.width + dw, minWidth, room.width),
-        height: clamp(currentHeight() + dh, minHeight, room.height),
-      });
+      const room = roomFor(element, corner, minWidth, maxWidth, minHeight);
+      applySize(
+        clamp(size.width + dw, minWidth, room.width),
+        clamp(currentHeight() + dh, minHeight, room.height),
+        size.width,
+        pos.right,
+      );
     },
-    [ref, minWidth, maxWidth, minHeight, size.width, currentHeight, setSize],
+    [ref, corner, minWidth, maxWidth, minHeight, size.width, pos.right, currentHeight, applySize],
   );
 
   return {

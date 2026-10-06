@@ -316,6 +316,26 @@ describe('Viewer', () => {
     fireEvent.mouseUp(document);
   });
 
+  it('zieht die Tabelle am Knopf unten rechts auf — die linke Kante bleibt', async () => {
+    await loadAndWait();
+    await openTable();
+    const fenster = tableWindow() as HTMLElement;
+    const right0 = parseFloat(fenster.style.right);
+    const width0 = parseFloat(fenster.style.width);
+
+    const handle = screen.getByRole('button', { name: 'Tabelle in der Größe ändern' });
+    fireEvent.mouseDown(handle, { clientX: 400, clientY: 300 });
+    fireEvent.mouseMove(document, { clientX: 440, clientY: 300 });
+    fireEvent.mouseUp(document);
+    expect(parseFloat(fenster.style.width)).toBe(width0 + 40);
+    expect(parseFloat(fenster.style.right)).toBe(right0 - 40);
+
+    // Pfeil nach rechts vergrößert, nach links verkleinert.
+    fireEvent.keyDown(handle, { key: 'ArrowLeft' });
+    expect(parseFloat(fenster.style.width)).toBe(width0 + 24);
+    expect(parseFloat(fenster.style.right)).toBe(right0 - 24);
+  });
+
   it('zieht die Auswahlkarte am Knopf unten links auf', async () => {
     await loadAndWait();
     await selectBauhauptgewerke();

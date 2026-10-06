@@ -23,6 +23,10 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
   „Drucken" stehen jetzt unter dem Logo.
 - **Keine Befehlsliste mehr.** Der Knopf „Befehle" ist weg. Strg K und „/" setzen den
   Cursor jetzt direkt in die Suche.
+- **Tastenkürzel nachschlagen.** Im Logo-Menü oder mit „?" öffnet sich eine Übersicht
+  aller Tasten.
+- **Größe unten rechts.** Tabelle und Vergleich zieht man jetzt an der Ecke unten rechts
+  größer.
 
 ## 0.7.0 — 05.10.2026 · Neuer Graph
 

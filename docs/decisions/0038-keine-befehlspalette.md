@@ -14,6 +14,7 @@ Seit dem Graphen als Hauptscreen erreicht man alles direkt. Nico braucht sie nic
 
 - Knopf „Befehle" und die Palette sind weg, der Code ist gelöscht.
 - Strg K (am Mac Cmd K) und „/" setzen den Cursor in die Suche.
+- „Tastenkürzel" im Logo-Menü (oder „?") zeigt alle Tasten in einem Fenster.
 - „Positionen als CSV", „Hinweise als Markdown" und „Drucken" stehen im Logo-Menü, bei
   „Fehler melden". Sie wirken wie bisher auf die gefilterte Menge.
 
