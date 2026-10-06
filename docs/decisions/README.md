@@ -42,8 +42,9 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0033 | [Neuer Look und Dunkelmodus](0033-neuer-look-und-dunkelmodus.md)                            | akzeptiert | 2026-10-05 |
 | 0034 | [Der Graph ist der Hauptscreen](0034-graph-als-hauptscreen.md)                               | teilweise ersetzt durch 0037 | 2026-10-05 |
 | 0035 | [Graph: Gliederung „nach LV" oder „frei"](0035-graph-gliederung.md)                     | akzeptiert | 2026-10-05 |
-| 0036 | [Vergleich als Fenster über dem Graphen](0036-vergleichsfenster.md)          | akzeptiert | 2026-10-05 |
-| 0037 | [Keine Befehlspalette mehr](0037-keine-befehlspalette.md)                    | akzeptiert | 2026-10-05 |
+| 0036 | [Alle Rechte vorbehalten statt AGPL](0036-alle-rechte-vorbehalten.md) | akzeptiert | 2026-10-05 |
+| 0037 | [Vergleich als Fenster über dem Graphen](0036-vergleichsfenster.md)          | akzeptiert | 2026-10-05 |
+| 0038 | [Keine Befehlspalette mehr](0037-keine-befehlspalette.md)                    | akzeptiert | 2026-10-05 |
 
 ## Wann schreibe ich eine neue Datei?
 

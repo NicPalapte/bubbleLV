@@ -1,7 +1,9 @@
 /// <reference types="vitest/config" />
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { thirdPartyLicenses } from './build/thirdPartyLicenses.ts';
 
 // Versionsnummer aus der package.json — eine Quelle. Stünde sie zusätzlich im
 // Code, wäre die Anzeige irgendwann eine andere als die des Pakets.
@@ -11,7 +13,7 @@ const { version } = JSON.parse(
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), thirdPartyLicenses(fileURLToPath(new URL('.', import.meta.url)))],
   // Bau-Stand für „Fehler melden" (WP-P): in GitHub Actions steht der Commit
   // in GITHUB_SHA, lokal gibt es keinen — dann „dev". Bewusst kein Aufruf von
   // `git`: der Build darf nicht daran scheitern, dass es kein Repo gibt.
