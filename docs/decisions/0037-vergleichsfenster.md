@@ -1,4 +1,4 @@
-# 0036 – Vergleich als Fenster über dem Graphen
+# 0037 – Vergleich als Fenster über dem Graphen
 
 - **Status:** akzeptiert
 - **Datum:** 2026-10-05

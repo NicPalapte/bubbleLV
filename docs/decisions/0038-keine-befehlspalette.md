@@ -1,4 +1,4 @@
-# 0037 – Keine Befehlspalette mehr
+# 0038 – Keine Befehlspalette mehr
 
 - **Status:** akzeptiert
 - **Datum:** 2026-10-05

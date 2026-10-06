@@ -1,4 +1,4 @@
-// Positionsvergleich als Fenster über dem Graphen (Entscheidung 0036): bis zu
+// Positionsvergleich als Fenster über dem Graphen (Entscheidung 0037): bis zu
 // vier Positionen nebeneinander, Abweichungen zur ersten Spalte markiert.
 
 import { fireEvent, render, screen, within } from '@testing-library/react';

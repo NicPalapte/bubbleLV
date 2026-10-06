@@ -12,7 +12,7 @@
 //
 // Seit dem neuen Hauptscreen auch hier: „Anderes LV öffnen" und Hell/Dunkel —
 // beides braucht man selten, und die Kopfleiste soll schmal bleiben. Seit es
-// keine Befehlspalette mehr gibt, auch Export und Druck (Entscheidung 0037).
+// keine Befehlspalette mehr gibt, auch Export und Druck (Entscheidung 0038).
 
 import { useCallback, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';

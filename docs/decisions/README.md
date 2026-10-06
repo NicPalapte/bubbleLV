@@ -37,14 +37,14 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0028 | [Zwei Leisten, „Mitnehmen" in die Befehle](0028-zwei-leisten-und-befehle.md)                 | ersetzt durch 0034 | 2026-09-24 |
 | 0029 | [Markierungen im Graphen: Ringe und Muster](0029-markierungen-im-graphen.md)                 | akzeptiert | 2026-09-25 |
 | 0030 | [Material-Filter ausblenden, bis die Liste geprüft ist](0030-material-filter-ausblenden.md)  | akzeptiert | 2026-10-04 |
-| 0031 | [Drei Ansichten statt acht](0031-drei-ansichten.md)                                          | teilweise ersetzt durch 0034, 0036 | 2026-10-04 |
+| 0031 | [Drei Ansichten statt acht](0031-drei-ansichten.md)                                          | teilweise ersetzt durch 0034, 0037 | 2026-10-04 |
 | 0032 | [STLB-Katalog ohne Spalte `positionsart_default`](0032-stlb-katalog-ohne-positionsart.md)    | akzeptiert | 2026-10-04 |
 | 0033 | [Neuer Look und Dunkelmodus](0033-neuer-look-und-dunkelmodus.md)                            | akzeptiert | 2026-10-05 |
-| 0034 | [Der Graph ist der Hauptscreen](0034-graph-als-hauptscreen.md)                               | teilweise ersetzt durch 0037 | 2026-10-05 |
+| 0034 | [Der Graph ist der Hauptscreen](0034-graph-als-hauptscreen.md)                               | teilweise ersetzt durch 0038 | 2026-10-05 |
 | 0035 | [Graph: Gliederung „nach LV" oder „frei"](0035-graph-gliederung.md)                     | akzeptiert | 2026-10-05 |
 | 0036 | [Alle Rechte vorbehalten statt AGPL](0036-alle-rechte-vorbehalten.md) | akzeptiert | 2026-10-05 |
-| 0037 | [Vergleich als Fenster über dem Graphen](0036-vergleichsfenster.md)          | akzeptiert | 2026-10-05 |
-| 0038 | [Keine Befehlspalette mehr](0037-keine-befehlspalette.md)                    | akzeptiert | 2026-10-05 |
+| 0037 | [Vergleich als Fenster über dem Graphen](0037-vergleichsfenster.md)          | akzeptiert | 2026-10-05 |
+| 0038 | [Keine Befehlspalette mehr](0038-keine-befehlspalette.md)                    | akzeptiert | 2026-10-05 |
 
 ## Wann schreibe ich eine neue Datei?
 

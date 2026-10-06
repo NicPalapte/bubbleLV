@@ -1,6 +1,6 @@
 // Kopfleiste: Logo-Menü, Datei, Suche mit den aktiven Filtern. Eine
 // Befehlspalette gibt es nicht mehr; Strg K holt die Suche, Export und Druck
-// stehen im Logo-Menü (docs/decisions/0037-keine-befehlspalette.md).
+// stehen im Logo-Menü (docs/decisions/0038-keine-befehlspalette.md).
 // Seit dem neuen Hauptscreen eine schmale Zeile (docs/decisions/0034-graph-als-
 // hauptscreen.md): kein Ansichtsumschalter mehr, die Filter wählt man im
 // Seitenfenster („+ Filter"), hier stehen sie nur als entfernbare Chips.

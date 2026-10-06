@@ -4,7 +4,7 @@
 // über die Wortmenge statt über eine längste gemeinsame Teilfolge: die
 // Unterschiede zwischen zwei Positionstexten sind im LV fast immer Austausche
 // an Ort und Stelle („C25/30" gegen „C30/37", „24 cm" gegen „30 cm"), und die
-// Regel gilt unverändert für drei bis fünf Spalten. Eine Teilfolge müsste dafür
+// Regel gilt unverändert für drei und vier Spalten. Eine Teilfolge müsste dafür
 // paarweise rechnen und hätte bei mehr als zwei Spalten keine klare Antwort.
 //
 // Gezählt wird **nicht**, wie oft ein Wort vorkommt: steht „mit" links zweimal

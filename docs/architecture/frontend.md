@@ -207,7 +207,7 @@ den Graphen mit offenem Seitenfenster (`view.side`) ab und `table` auf das
 Tabellenfenster (`view.tableWindow`); `mode` bleibt immer `graph`. Matrix und Ähnlichkeit
 sind entfernt ([0031](../decisions/0031-drei-ansichten.md)); der Vergleich ist ein
 Fenster (`view.compareWindow`, Positionen in `selection.compare`,
-[0036](../decisions/0036-vergleichsfenster.md)).
+[0037](../decisions/0037-vergleichsfenster.md)).
 Weil jede Ansicht ihren Zustand in `view` ablegt statt in lokalem `useState`,
 steht sie nach dem Rückwechsel wieder so da, wie man sie verlassen hat — obwohl
 die Komponente zwischendurch abgebaut war.
@@ -255,7 +255,7 @@ vollständig zu sehen ist. „Vergleichen" an einer Gruppe legt ihre Mitglieder
 nebeneinander (WP-N) — ungekürzt: gekürzt wird erst in der Ansicht, damit der Rest
 der Gruppe benannt statt weggeworfen wird.
 
-### Vergleichsfenster (WP-N, [0036](../decisions/0036-vergleichsfenster.md))
+### Vergleichsfenster (WP-N, [0037](../decisions/0037-vergleichsfenster.md))
 
 Bis zu vier Positionen nebeneinander (`MAX_COMPARE`), eine Spalte je Position, eine
 Zeile je Merkmal (`components/shell/CompareWindow.tsx`). Markiert ist, was von der

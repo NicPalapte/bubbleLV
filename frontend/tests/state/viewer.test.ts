@@ -392,7 +392,7 @@ describe('Hinweise (Issues #94, #95)', () => {
   });
 });
 
-describe('viewerReducer · Vergleich (Entscheidung 0036)', () => {
+describe('viewerReducer · Vergleich (Entscheidung 0037)', () => {
   const add = (state: ViewerState, positionId: string): ViewerState =>
     viewerReducer(state, { type: 'toggleCompare', positionId });
 

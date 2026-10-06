@@ -98,10 +98,10 @@ Wichtig-Kategorien (Geld/Menge · Risiko · Norm · Frist) · VOB-Check als Hinw
 fachliche Filter · **Graph als Hauptscreen** auf einem Filterzustand: Seitenfenster
 (Überblick mit Import-Log · Filter · Prüfung), Positionskarte, Tabelle und Vergleich
 (max. 4 Positionen) als Fenster darüber (`docs/decisions/0034-graph-als-hauptscreen.md`,
-`docs/decisions/0036-vergleichsfenster.md`) · Beziehungen zwischen Positionen nur als
+`docs/decisions/0037-vergleichsfenster.md`) · Beziehungen zwischen Positionen nur als
 Prüfregel (Ausreißer, G4) · lokaler Export/Druck über das Logo-Menü. Matrix und
 Ähnlichkeit sind entfernt (`docs/decisions/0031-drei-ansichten.md`); keine
-Befehlspalette (`docs/decisions/0037-keine-befehlspalette.md`).
+Befehlspalette (`docs/decisions/0038-keine-befehlspalette.md`).
 
 **Out of Scope** (ablehnen / vertrösten): Server jeglicher Art, Persistenz über die
 Session hinaus, Auth/SSO, **mehrere Dateien gleichzeitig** (Versionsvergleich,

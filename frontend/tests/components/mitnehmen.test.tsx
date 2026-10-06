@@ -1,7 +1,7 @@
 // „Mitnehmen": Export, Druck und Melden (WP-P, Schritte 3 und 4).
 //
 // Seit Issue #80 stehen sie nicht mehr als Knöpfe in der Kopfleiste; seit
-// Entscheidung 0037 im Logo-Menü statt in der Befehlspalette. Die Zusagen bleiben dieselben:
+// Entscheidung 0038 im Logo-Menü statt in der Befehlspalette. Die Zusagen bleiben dieselben:
 // genau die gefilterte Menge, kein Request, und das Blatt trägt die ganze
 // Liste statt des sichtbaren Fensters.
 import { readFileSync } from 'node:fs';
@@ -125,7 +125,7 @@ describe('Mitnehmen', () => {
     const leiste = within(screen.getByRole('banner'));
     // Issue #80: keine Export-Knöpfe mehr in der Kopfleiste …
     expect(leiste.queryByRole('button', { name: /Mitnehmen/ })).not.toBeInTheDocument();
-    // … und keine Befehlspalette mehr (Entscheidung 0037).
+    // … und keine Befehlspalette mehr (Entscheidung 0038).
     expect(leiste.queryByRole('button', { name: /^Befehle/ })).not.toBeInTheDocument();
     await act(async () => {});
     fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
