@@ -125,21 +125,24 @@ function ColumnGrip({
     event.preventDefault();
     event.stopPropagation();
     const x0 = event.clientX;
+    // Das Fenster, in dem der Griff steht — bei abgekoppelter Tabelle das zweite.
+    const doc = event.currentTarget.ownerDocument;
+    const win = doc.defaultView ?? window;
     const move = (moveEvent: MouseEvent): void => {
       onResize(
         Math.min(MAX_COLUMN_WIDTH, Math.max(MIN_COLUMN_WIDTH, width + moveEvent.clientX - x0)),
       );
     };
     const up = (): void => {
-      window.removeEventListener('mousemove', move);
-      window.removeEventListener('mouseup', up);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
+      win.removeEventListener('mousemove', move);
+      win.removeEventListener('mouseup', up);
+      doc.body.style.cursor = '';
+      doc.body.style.userSelect = '';
     };
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-    window.addEventListener('mousemove', move);
-    window.addEventListener('mouseup', up);
+    doc.body.style.cursor = 'col-resize';
+    doc.body.style.userSelect = 'none';
+    win.addEventListener('mousemove', move);
+    win.addEventListener('mouseup', up);
   };
   return (
     <div
@@ -281,7 +284,10 @@ export function DataTable<T>({
     if (element === null) return;
     const measure = (): void => setViewport(element.clientHeight);
     measure();
-    const observer = new ResizeObserver(measure);
+    // Der Beobachter des eigenen Fensters: ein fremder meldet in einem zweiten
+    // Fenster (abgekoppelte Tabelle) nicht zuverlässig.
+    const Observer = element.ownerDocument.defaultView?.ResizeObserver ?? ResizeObserver;
+    const observer = new Observer(measure);
     observer.observe(element);
     return () => observer.disconnect();
   }, []);

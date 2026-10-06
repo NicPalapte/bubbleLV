@@ -208,6 +208,9 @@ Tabellenfenster (`view.tableWindow`); `mode` bleibt immer `graph`. Matrix und Ä
 sind entfernt ([0031](../decisions/0031-drei-ansichten.md)); der Vergleich ist ein
 Fenster (`view.compareWindow`, Positionen in `selection.compare`,
 [0037](../decisions/0037-vergleichsfenster.md)).
+Die Tabelle lässt sich in ein eigenes Browserfenster lösen (`ExternalWindow`, Portal in
+ein `about:blank` derselben App, [0039](../decisions/0039-tabelle-im-eigenen-fenster.md));
+Popover und `useDismiss` hören dort über `useHostWindow` auf das richtige Fenster.
 Weil jede Ansicht ihren Zustand in `view` ablegt statt in lokalem `useState`,
 steht sie nach dem Rückwechsel wieder so da, wie man sie verlassen hat — obwohl
 die Komponente zwischendurch abgebaut war.

@@ -51,7 +51,10 @@ function groups(mod: string): readonly { title: string; items: readonly Kuerzel[
     },
     {
       title: 'Fenster',
-      items: [{ keys: ['← → ↑ ↓'], label: 'Größe ändern, wenn der Griff im Fokus ist' }],
+      items: [
+        { keys: ['← → ↑ ↓'], label: 'Größe ändern, wenn der Griff im Fokus ist' },
+        { keys: ['↗'], label: 'Tabelle in eigenes Fenster, z. B. zweiter Bildschirm' },
+      ],
     },
   ];
 }

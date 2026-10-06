@@ -45,6 +45,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0036 | [Alle Rechte vorbehalten statt AGPL](0036-alle-rechte-vorbehalten.md) | akzeptiert | 2026-10-05 |
 | 0037 | [Vergleich als Fenster über dem Graphen](0037-vergleichsfenster.md)          | akzeptiert | 2026-10-05 |
 | 0038 | [Keine Befehlspalette mehr](0038-keine-befehlspalette.md)                    | akzeptiert | 2026-10-05 |
+| 0039 | [Tabelle im eigenen Fenster](0039-tabelle-im-eigenen-fenster.md)             | akzeptiert | 2026-10-06 |
 
 ## Wann schreibe ich eine neue Datei?
 
