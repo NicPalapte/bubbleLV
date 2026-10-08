@@ -120,6 +120,19 @@ describe('buildOverview · ohne Preise', () => {
     expect(stunden?.cells.map((cell) => cell.label)).toEqual(['Stunde']);
   });
 
+  it('behält die Farbe eines Abschnitts, wenn ein anderer herausgefiltert ist', () => {
+    const ohne001 = new Uint8Array(index.size);
+    for (let slot = 0; slot < index.size; slot++) {
+      ohne001[slot] = index.positions[slot].oz.startsWith('001.') ? 0 : 1;
+    }
+    const gefiltert = buildOverview({ index, mask: ohne001, parents: indexParents(lv.tree) });
+    const rang = (groups: typeof model.groups, key: string) =>
+      groups.find((group) => group.key === key)?.order;
+    expect(rang(gefiltert.groups, 'section:001')).toBeUndefined();
+    expect(rang(gefiltert.groups, 'section:999')).toBe(rang(model.groups, 'section:999'));
+    expect(rang(model.groups, 'section:999')).toBeGreaterThan(0);
+  });
+
   it('nennt statt Pareto die größten Mengen je Einheit, ohne Pauschalen', () => {
     expect(model.largest.length).toBeGreaterThan(0);
     expect(model.largest.some((unit) => unit.key === 'psch')).toBe(false);

@@ -78,7 +78,7 @@ export function LargestQuantities({
             </span>
             {/* Die Einheit steht schon auf dem gewählten Knopf. */}
             <span className="shrink-0 whitespace-nowrap text-right font-mono text-[10px] text-ink">
-              {formatNumber(item.quantity, 0)}
+              {formatNumber(item.quantity)}
             </span>
           </button>
         ))}

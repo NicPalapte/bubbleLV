@@ -167,10 +167,28 @@ interface Bucket {
   cells: Map<string, TreemapCell>;
 }
 
-function bucketOf(buckets: Map<string, Bucket>, key: string, label: string): Bucket {
+/**
+ * Rang jedes Hauptabschnitts in LV-Reihenfolge, über die ganze Datei — nicht
+ * über die Filtermenge, sonst rutschten Farben nach, wenn ein Abschnitt
+ * herausfällt.
+ */
+function sectionOrder(
+  index: OverviewInput['index'],
+  parents: ReadonlyMap<string, LVNode | null>,
+  cache: Map<string, LVNode | null>,
+): Map<string, number> {
+  const order = new Map<string, number>();
+  for (let slot = 0; slot < index.size; slot++) {
+    const key = mainSectionOf(index.nodes[slot], parents, cache)?.id ?? '';
+    if (!order.has(key)) order.set(key, order.size);
+  }
+  return order;
+}
+
+function bucketOf(buckets: Map<string, Bucket>, key: string, label: string, order: number): Bucket {
   const found = buckets.get(key);
   if (found !== undefined) return found;
-  const created: Bucket = { key, label, value: 0, count: 0, order: buckets.size, cells: new Map() };
+  const created: Bucket = { key, label, value: 0, count: 0, order, cells: new Map() };
   buckets.set(key, created);
   return created;
 }
@@ -285,6 +303,7 @@ export function buildOverview({ index, mask, parents }: OverviewInput): Overview
   const prices: number[] = [];
   const mainSections = new Map<string, LVNode | null>();
   const slotsByUnit = new Map<string, number[]>();
+  const orderOf = sectionOrder(index, parents, mainSections);
 
   let positions = 0;
   let totalPrice = 0;
@@ -312,7 +331,9 @@ export function buildOverview({ index, mask, parents }: OverviewInput): Overview
 
     const unitKey = canonicalUnit(position.unit);
     const main = mainSectionOf(node, parents, mainSections);
-    const bucket = bucketOf(buckets, main?.id ?? '', main === null ? NO_SECTION : headingOf(main));
+    const key = main?.id ?? '';
+    const label = main === null ? NO_SECTION : headingOf(main);
+    const bucket = bucketOf(buckets, key, label, orderOf.get(key) ?? buckets.size);
     bucket.count++;
     bucket.value += Number.isFinite(price) ? price : 0;
 
