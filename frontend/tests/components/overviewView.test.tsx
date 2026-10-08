@@ -82,7 +82,8 @@ describe('Überblick', () => {
     expect(screen.getByText('Fläche = Anzahl Positionen')).toBeInTheDocument();
     expect(screen.queryByText(/80 % der Summe/)).not.toBeInTheDocument();
     expect(screen.getByRole('list', { name: 'Größte Mengen in m²' })).toBeInTheDocument();
-    expect(screen.getByRole('list', { name: 'Mengen je Einheit' })).toBeInTheDocument();
+    // Die Einheiten stehen schon in „Größte Mengen", eine zweite Liste entfällt.
+    expect(screen.queryByRole('list', { name: 'Mengen je Einheit' })).toBeNull();
   });
 
   it('zeigt die größten Mengen je Einheit, ohne Pauschalen, und wählt per Klick an', () => {
@@ -113,15 +114,9 @@ describe('Überblick', () => {
     expect(screen.getByTestId('facets')).toHaveTextContent('einheit=m3');
   });
 
-  it('filtert per Klick auf eine Einheit', () => {
-    renderOverview();
-    fireEvent.click(screen.getByTitle(/klicken filtert nach m²/));
-    expect(screen.getByTestId('facets')).toHaveTextContent('einheit=m2');
-  });
-
   it('zählt nur, was der Filter durchlässt', () => {
     renderOverview();
-    fireEvent.click(screen.getByTitle(/klicken filtert nach Stunde/));
+    fireEvent.click(screen.getByTitle(/^§ 999 · Stundenlohnarbeiten · Stunde ·/));
     expect(screen.getByText(/^3 Positionen/)).toBeInTheDocument();
     expect(screen.getByText(/im aktuellen Filter, von 28/)).toBeInTheDocument();
   });
@@ -140,5 +135,13 @@ describe('Überblick · Datei mit Preisen', () => {
     expect(screen.getByRole('img', { name: /Pareto-Kurve/ })).toBeInTheDocument();
     // Statt „Ohne Menge" steht bei Preisen die Preislücke in der Kachel.
     expect(screen.getByText('Ohne Preis')).toBeInTheDocument();
+  });
+
+  it('zeigt die Mengen je Einheit und filtert per Klick auf eine Einheit', () => {
+    renderOverview(priced);
+    expect(screen.getByRole('list', { name: 'Mengen je Einheit' })).toBeInTheDocument();
+    const [knopf] = screen.getAllByTitle(/klicken filtert nach /);
+    fireEvent.click(knopf);
+    expect(screen.getByTestId('facets')).toHaveTextContent(/einheit=/);
   });
 });

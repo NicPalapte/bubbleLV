@@ -1,7 +1,7 @@
 // Reiter „Überblick" im Seitenfenster (WP-L, Schritt 3): Kennzahlen, Treemap
 // nach Hauptabschnitt und Einheit, Pareto (mit Preisen) bzw. größte Mengen
-// (ohne Preise), Mengen je Einheit und Import-Log. Die
-// Prüfung hat einen eigenen Reiter (shell/SidePanel.tsx).
+// (ohne Preise), Mengen je Einheit (nur mit Preisen — ohne Preise stehen die
+// Einheiten schon in „Größte Mengen") und Import-Log. Die Prüfung hat einen eigenen Reiter (shell/SidePanel.tsx).
 //
 // **Ein Filterzustand, alle Ansichten** (.claude/CLAUDE.md): gerechnet wird
 // über der gefilterten Menge, dieselbe, die Tabelle und Graph zeigen. Ohne
@@ -129,9 +129,14 @@ export function OverviewView() {
 
         <div className="flex flex-wrap gap-[12px]">
           {metrics.hasPrices ? (
-            <Card title="Pareto · 80 % der Summe">
-              <ParetoCard pareto={model.pareto} />
-            </Card>
+            <>
+              <Card title="Pareto · 80 % der Summe">
+                <ParetoCard pareto={model.pareto} />
+              </Card>
+              <Card title="Mengen je Einheit" note="absteigend">
+                <UnitTotals units={model.units} active={activeUnits} onPick={pickUnit} />
+              </Card>
+            </>
           ) : (
             <Card title="Größte Mengen" note="je Einheit">
               <LargestQuantities
@@ -141,9 +146,6 @@ export function OverviewView() {
               />
             </Card>
           )}
-          <Card title="Mengen je Einheit" note="absteigend">
-            <UnitTotals units={model.units} active={activeUnits} onPick={pickUnit} />
-          </Card>
         </div>
 
         <Card title="Import-Log" note="ganze Datei">

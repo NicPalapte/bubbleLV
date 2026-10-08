@@ -20,7 +20,8 @@ angefangen mit Beton.
   Positionen, bei Dateien mit Preisen die Summe. Bisher war es Gewerk × Abschnitt.
 - **Ohne Preise statt Pareto:** „Größte Mengen“ zeigt je Einheit die Positionen mit der
   größten Menge. Einheiten werden nie gemischt. Pauschalen fehlen, ihre Menge ist 1.
-  Mit Preisen bleibt Pareto.
+  Mit Preisen bleibt Pareto. Ohne Preise entfällt auch „Mengen je Einheit“, die
+  Einheiten stehen schon in „Größte Mengen“.
 - **Graph:** Die Gliederung „frei“ heißt jetzt „Matrix“. Neue Achse „Abschnitt“ (der
   Abschnitt direkt über der Position, in LV-Reihenfolge).
 - **Mengenfilter:** Der Regler steht direkt im Filterfenster, ohne Knopf davor.

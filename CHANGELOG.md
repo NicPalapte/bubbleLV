@@ -14,7 +14,8 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 - **Verteilung nach Abschnitt und Einheit.** Das Diagramm im Überblick zeigt die
   Hauptabschnitte, darin die Mengeneinheiten. Es braucht keine Gewerk-Erkennung mehr.
 - **Größte Mengen.** Bei LVs ohne Preise steht statt Pareto je Einheit, welche
-  Positionen die größte Menge haben. Ein Klick wählt die Position an.
+  Positionen die größte Menge haben. Ein Klick wählt die Position an. „Mengen je
+  Einheit“ entfällt dann, die Einheiten stehen schon dort.
 - **Matrix.** Die Gliederung „frei“ heißt jetzt „Matrix“ und kann auch nach Abschnitt
   ordnen, etwa Abschnitt × Einheit.
 - **Mengenfilter** steht als Regler direkt im Filterfenster.
