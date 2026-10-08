@@ -176,11 +176,11 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
 
     case 'setFacet': {
       const filter = filterReducer(state.filter, action);
-      // In „frei" wird ein neuer Filter von selbst zur Spalte — so zeigt die
+      // In „Matrix" wird ein neuer Filter von selbst zur Spalte — so zeigt die
       // Matrix sofort, wie sich die Auswahl auf die Zeilen verteilt.
       const { graph } = state.view;
       const toColumn =
-        graph.layout === 'frei' &&
+        graph.layout === 'matrix' &&
         graph.cols === null &&
         action.values.size > 0 &&
         action.facetId !== graph.rows &&

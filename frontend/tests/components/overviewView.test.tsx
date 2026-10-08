@@ -35,6 +35,7 @@ function Probe() {
       <span data-testid="facets">{facets}</span>
       <span data-testid="mode">{view.mode}</span>
       <span data-testid="node">{selection.nodeId ?? '—'}</span>
+      <span data-testid="position">{selection.positionId ?? '—'}</span>
     </div>
   );
 }
@@ -76,30 +77,40 @@ describe('Überblick', () => {
     renderOverview();
     expect(screen.getByText('keine Preise')).toBeInTheDocument();
     expect(screen.queryByText(/^0 €$/)).not.toBeInTheDocument();
-    // Ohne Preise misst die Treemap die Anzahl, und Pareto entfällt mit Grund.
+    // Ohne Preise misst die Treemap die Anzahl, und statt Pareto stehen die
+    // größten Mengen je Einheit.
     expect(screen.getByText('Fläche = Anzahl Positionen')).toBeInTheDocument();
-    expect(screen.getByText(/Ohne Preise lässt sich keine Rangfolge/)).toBeInTheDocument();
-    // Die Mengen übernehmen die Hauptrolle.
+    expect(screen.queryByText(/80 % der Summe/)).not.toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Größte Mengen in m²' })).toBeInTheDocument();
     expect(screen.getByRole('list', { name: 'Mengen je Einheit' })).toBeInTheDocument();
   });
 
-  it('filtert per Klick auf ein Gewerk, ohne die Ansicht zu wechseln', () => {
+  it('zeigt die größten Mengen je Einheit, ohne Pauschalen, und wählt per Klick an', () => {
     renderOverview();
-    const gewerk = screen.getByTitle(/^Stundenlohnarbeiten ·/);
-    fireEvent.click(gewerk);
-    expect(screen.getByTestId('facets')).toHaveTextContent('gewerk=Stundenlohnarbeiten');
-    // Nach dem Laden steht der Graph; der Überblick schwebt nur darüber.
+    const einheiten = screen.getByRole('radiogroup', { name: 'Einheit' });
+    expect(einheiten).not.toHaveTextContent('psch');
+    fireEvent.click(screen.getByRole('radio', { name: /m³/ }));
+    const liste = screen.getByRole('list', { name: 'Größte Mengen in m³' });
+    const zeilen = liste.querySelectorAll('[role="listitem"]');
+    expect(zeilen[0]).toHaveTextContent('001.002.0020');
+    fireEvent.click(zeilen[0]);
+    expect(screen.getByTestId('position')).toHaveTextContent('position:001.002.0020');
     expect(screen.getByTestId('mode')).toHaveTextContent('graph');
-    // Zweiter Klick nimmt den Filter wieder zurück.
-    fireEvent.click(screen.getByTitle(/^Stundenlohnarbeiten ·/));
-    expect(screen.getByTestId('facets')).toHaveTextContent('');
   });
 
-  it('wählt beim Klick auf einen Abschnitt zusätzlich den Abschnitt an', () => {
+  it('gliedert die Verteilung nach Hauptabschnitt — ohne Klassifizierung', () => {
     renderOverview();
-    fireEvent.click(screen.getByTitle(/^§ 001\.004 · Betonarbeiten ·/));
-    expect(screen.getByTestId('node')).toHaveTextContent('section:001.004');
+    fireEvent.click(screen.getByTitle(/^§ 999 · Stundenlohnarbeiten · 3 Positionen$/));
+    expect(screen.getByTestId('node')).toHaveTextContent('section:999');
+    expect(screen.getByTestId('facets')).toHaveTextContent('');
     expect(screen.getByTestId('mode')).toHaveTextContent('graph');
+  });
+
+  it('wählt beim Klick auf eine Einheit im Abschnitt an und filtert die Einheit', () => {
+    renderOverview();
+    fireEvent.click(screen.getByTitle(/^§ 001 · Bauhauptgewerke · m³ ·/));
+    expect(screen.getByTestId('node')).toHaveTextContent('section:001');
+    expect(screen.getByTestId('facets')).toHaveTextContent('einheit=m3');
   });
 
   it('filtert per Klick auf eine Einheit', () => {
@@ -110,7 +121,7 @@ describe('Überblick', () => {
 
   it('zählt nur, was der Filter durchlässt', () => {
     renderOverview();
-    fireEvent.click(screen.getByTitle(/^Stundenlohnarbeiten ·/));
+    fireEvent.click(screen.getByTitle(/klicken filtert nach Stunde/));
     expect(screen.getByText(/^3 Positionen/)).toBeInTheDocument();
     expect(screen.getByText(/im aktuellen Filter, von 28/)).toBeInTheDocument();
   });

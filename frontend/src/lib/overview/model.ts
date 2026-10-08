@@ -7,12 +7,17 @@
 // Tabellenkopf.
 //
 // **Ohne Preise** (x83) trägt die Menge die Aussage: die Treemap misst dann
-// Positionen statt Euro, und die Pareto-Auswertung entfällt ausdrücklich,
-// statt Nullwerte zu zeigen (WP-L, Schritt 4).
+// Positionen statt Euro, und statt Pareto stehen die größten Mengen je Einheit
+// (WP-L, Schritt 4).
+//
+// **Ohne Klassifizierung:** die Verteilung gliedert nach Hauptabschnitt und
+// Einheit — beides steht in jeder Datei. Nach Gewerk zu gliedern hing am
+// Gewerk-Abgleich, der ohne Katalog fast alles in „Ohne Gewerk" legt.
 
 import { attrString } from '../attributes';
 import { NO_GEWERK } from '../facets';
 import { headingOf } from '../tree/heading';
+import { isPauschal } from '../graph/sizes';
 import { canonicalUnit, unitLabel } from '../units';
 import type { PositionIndex } from '../index/positionIndex';
 import type { LVNode } from '../../types/lvNode';
@@ -50,8 +55,16 @@ export interface OverviewMetrics {
   withoutQuantityShare: number;
 }
 
+/** Sammelwert für Positionen ohne Einheit. */
+export const NO_UNIT = 'ohne Einheit';
+/** Sammelgruppe für Positionen, die direkt unter Los oder LV stehen. */
+export const NO_SECTION = 'Ohne Abschnitt';
+
+/** So viele Positionen zeigt „Größte Mengen" je Einheit. */
+export const LARGEST_PER_UNIT = 8;
+
 export interface TreemapCell {
-  /** Knoten-ID des Abschnitts — Sprungziel und Schlüssel zugleich. */
+  /** Einheit (Vergleichsschlüssel wie im Filter) oder `NO_UNIT`. */
   key: string;
   label: string;
   value: number;
@@ -61,14 +74,32 @@ export interface TreemapCell {
 }
 
 export interface TreemapGroup {
-  /** Gewerk-Name; zugleich der Filterwert der Facette `gewerk`. */
+  /** Knoten-ID des Hauptabschnitts — Sprungziel und Schlüssel zugleich. */
   key: string;
   label: string;
   value: number;
   count: number;
-  /** `false` für die Sammelkachel „Weitere Gewerke". */
-  filterable: boolean;
+  /** `false` für die Sammelkachel „Weitere Abschnitte" und „Ohne Abschnitt". */
+  pickable: boolean;
+  /** Stelle im LV — bestimmt die Farbe, damit sie beim Filtern nicht wandert. */
+  order: number;
   cells: TreemapCell[];
+}
+
+export interface LargestPosition {
+  nodeId: string;
+  oz: string;
+  shortText: string;
+  quantity: number;
+}
+
+export interface LargestByUnit {
+  key: string;
+  label: string;
+  /** Positionen dieser Einheit im Filter. */
+  count: number;
+  /** Die größten Mengen, absteigend. */
+  items: LargestPosition[];
 }
 
 export interface ParetoModel {
@@ -94,6 +125,8 @@ export interface OverviewModel {
   groups: TreemapGroup[];
   /** `null`, wenn die Datei keine Preise führt — dann gibt es nichts zu ordnen. */
   pareto: ParetoModel | null;
+  /** Ohne Preise: größte Mengen je Einheit, Einheiten nach Anzahl Positionen. */
+  largest: LargestByUnit[];
   units: UnitTotal[];
 }
 
@@ -105,17 +138,24 @@ function share(part: number, whole: number): number {
 }
 
 /**
- * Abschnitt, unter dem eine Position in Tabelle und Baum steht — ihr direkter
- * Elternknoten. Gleiche Überschrift wie die Gruppenzeile der Tabelle, damit man
- * die Kachel dort wiederfindet.
+ * Hauptabschnitt einer Position: der oberste Abschnitt über ihr, Lose
+ * übersprungen. `null`, wenn sie direkt unter Los oder LV steht.
  */
-function sectionOf(
+function mainSectionOf(
   node: LVNode,
   parents: ReadonlyMap<string, LVNode | null>,
-): { key: string; label: string } {
+  cache: Map<string, LVNode | null>,
+): LVNode | null {
   const parent = parents.get(node.id) ?? null;
-  if (parent === null) return { key: node.id, label: headingOf(node) };
-  return { key: parent.id, label: headingOf(parent) };
+  if (parent === null) return null;
+  const known = cache.get(parent.id);
+  if (known !== undefined) return known;
+  let top: LVNode | null = null;
+  for (let up: LVNode | null = parent; up !== null; up = parents.get(up.id) ?? null) {
+    if (up.kind === 'section') top = up;
+  }
+  cache.set(parent.id, top);
+  return top;
 }
 
 interface Bucket {
@@ -123,15 +163,30 @@ interface Bucket {
   label: string;
   value: number;
   count: number;
+  order: number;
   cells: Map<string, TreemapCell>;
 }
 
 function bucketOf(buckets: Map<string, Bucket>, key: string, label: string): Bucket {
   const found = buckets.get(key);
   if (found !== undefined) return found;
-  const created: Bucket = { key, label, value: 0, count: 0, cells: new Map() };
+  const created: Bucket = { key, label, value: 0, count: 0, order: buckets.size, cells: new Map() };
   buckets.set(key, created);
   return created;
+}
+
+/** Gleiche Einheiten aus mehreren Gruppen zu einer Kachel zusammenlegen. */
+function mergeCells(cells: Iterable<TreemapCell>): TreemapCell[] {
+  const merged = new Map<string, TreemapCell>();
+  for (const cell of cells) {
+    const found = merged.get(cell.key);
+    if (found === undefined) merged.set(cell.key, { ...cell });
+    else {
+      found.value += cell.value;
+      found.count += cell.count;
+    }
+  }
+  return [...merged.values()];
 }
 
 /** Kacheln kürzen: die größten einzeln, der Rest als eine Sammelkachel. */
@@ -142,7 +197,7 @@ function trimCells(cells: Iterable<TreemapCell>): TreemapCell[] {
   const rest = sorted.slice(MAX_CELLS_PER_GROUP - 1);
   kept.push({
     key: `rest:${kept.length}`,
-    label: `Weitere ${rest.length} Abschnitte`,
+    label: `Weitere ${rest.length} Einheiten`,
     value: rest.reduce((sum, cell) => sum + cell.value, 0),
     count: rest.reduce((sum, cell) => sum + cell.count, 0),
     collected: true,
@@ -157,11 +212,12 @@ function trimGroups(groups: TreemapGroup[]): TreemapGroup[] {
   const rest = sorted.slice(MAX_GROUPS - 1);
   kept.push({
     key: 'rest',
-    label: `Weitere ${rest.length} Gewerke`,
+    label: `Weitere ${rest.length} Abschnitte`,
     value: rest.reduce((sum, group) => sum + group.value, 0),
     count: rest.reduce((sum, group) => sum + group.count, 0),
-    filterable: false,
-    cells: trimCells(rest.flatMap((group) => group.cells)),
+    pickable: false,
+    order: -1,
+    cells: trimCells(mergeCells(rest.flatMap((group) => group.cells))),
   });
   return kept;
 }
@@ -192,6 +248,29 @@ function paretoOf(values: readonly number[], total: number): ParetoModel | null 
   return { positions, share: share(positions, sorted.length), curve };
 }
 
+/**
+ * Größte Mengen je Einheit. Nur innerhalb einer Einheit vergleichbar — 300 m²
+ * und 12 m³ in eine Rangfolge zu bringen, wäre eine Scheinaussage.
+ */
+function largestOf(index: PositionIndex, slotsByUnit: Map<string, number[]>): LargestByUnit[] {
+  return [...slotsByUnit]
+    .map(([key, slots]) => ({
+      key,
+      label: unitLabel(key),
+      count: slots.length,
+      items: [...slots]
+        .sort((a, b) => index.quantity[b] - index.quantity[a])
+        .slice(0, LARGEST_PER_UNIT)
+        .map((slot) => ({
+          nodeId: index.nodes[slot].id,
+          oz: index.positions[slot].oz,
+          shortText: index.positions[slot].shortText,
+          quantity: index.quantity[slot],
+        })),
+    }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, 'de'));
+}
+
 export interface OverviewInput {
   index: PositionIndex;
   /** Trefferbitmaske des aktiven Filters; `null` = kein Filter aktiv. */
@@ -204,6 +283,8 @@ export function buildOverview({ index, mask, parents }: OverviewInput): Overview
   const units = new Map<string, UnitTotal>();
   const gewerke = new Set<string>();
   const prices: number[] = [];
+  const mainSections = new Map<string, LVNode | null>();
+  const slotsByUnit = new Map<string, number[]>();
 
   let positions = 0;
   let totalPrice = 0;
@@ -229,25 +310,32 @@ export function buildOverview({ index, mask, parents }: OverviewInput): Overview
       prices.push(price);
     }
 
-    const bucket = bucketOf(buckets, gewerk ?? NO_GEWERK, gewerk ?? NO_GEWERK);
+    const unitKey = canonicalUnit(position.unit);
+    const main = mainSectionOf(node, parents, mainSections);
+    const bucket = bucketOf(buckets, main?.id ?? '', main === null ? NO_SECTION : headingOf(main));
     bucket.count++;
     bucket.value += Number.isFinite(price) ? price : 0;
 
-    const section = sectionOf(node, parents);
-    const cell = bucket.cells.get(section.key) ?? {
-      key: section.key,
-      label: section.label,
+    const cellKey = unitKey ?? NO_UNIT;
+    const cell = bucket.cells.get(cellKey) ?? {
+      key: cellKey,
+      label: unitKey === null ? NO_UNIT : unitLabel(unitKey),
       value: 0,
       count: 0,
       collected: false,
     };
     cell.count++;
     cell.value += Number.isFinite(price) ? price : 0;
-    bucket.cells.set(section.key, cell);
+    bucket.cells.set(cellKey, cell);
 
-    const unitKey = canonicalUnit(position.unit);
     const quantity = index.quantity[slot];
     if (unitKey !== null && Number.isFinite(quantity)) {
+      // Pauschalen haben die Menge 1 — eine Rangfolge darüber sagt nichts.
+      if (!isPauschal(position.unit)) {
+        const unitSlots = slotsByUnit.get(unitKey) ?? [];
+        unitSlots.push(slot);
+        slotsByUnit.set(unitKey, unitSlots);
+      }
       const total = units.get(unitKey) ?? {
         key: unitKey,
         label: unitLabel(unitKey),
@@ -270,7 +358,8 @@ export function buildOverview({ index, mask, parents }: OverviewInput): Overview
       // Ohne Preise misst die Fläche die Anzahl — sonst stünde überall 0.
       value: measure === 'preis' ? bucket.value : bucket.count,
       count: bucket.count,
-      filterable: true,
+      pickable: bucket.key !== '',
+      order: bucket.order,
       cells: trimCells(
         [...bucket.cells.values()].map((cell) => ({
           ...cell,
@@ -284,6 +373,7 @@ export function buildOverview({ index, mask, parents }: OverviewInput): Overview
     measure,
     groups,
     pareto: hasPrices ? paretoOf(prices, totalPrice) : null,
+    largest: hasPrices ? [] : largestOf(index, slotsByUnit),
     units: [...units.values()].sort((a, b) => b.quantity - a.quantity),
     metrics: {
       positions,

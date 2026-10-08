@@ -1,5 +1,6 @@
 // Reiter „Überblick" im Seitenfenster (WP-L, Schritt 3): Kennzahlen, Treemap
-// nach Gewerk und Abschnitt, Pareto, Mengen je Einheit und Import-Log. Die
+// nach Hauptabschnitt und Einheit, Pareto (mit Preisen) bzw. größte Mengen
+// (ohne Preise), Mengen je Einheit und Import-Log. Die
 // Prüfung hat einen eigenen Reiter (shell/SidePanel.tsx).
 //
 // **Ein Filterzustand, alle Ansichten** (.claude/CLAUDE.md): gerechnet wird
@@ -11,6 +12,7 @@
 
 import { useMemo } from 'react';
 import { ImportLogCard } from './ImportLogCard';
+import { LargestQuantities } from './LargestQuantities';
 import { MetricTiles } from './MetricTiles';
 import { ParetoCard } from './ParetoCard';
 import { Treemap } from './Treemap';
@@ -44,7 +46,7 @@ function Card({
 }
 
 export function OverviewView() {
-  const { lv, index, active, matches, nodes, filter, gewerkColors, parents } = useViewer();
+  const { lv, index, active, matches, nodes, filter, parents, selection } = useViewer();
   const dispatch = useViewerDispatch();
   const [attachScroll, onScroll] = useScrollMemory('overview');
 
@@ -69,22 +71,30 @@ export function OverviewView() {
   if (lv === null) return null;
 
   const { metrics } = model;
-  const activeGewerke = filter.filters.facets.gewerk ?? EMPTY_ACTIVE;
   const activeUnits = filter.filters.facets.einheit ?? EMPTY_ACTIVE;
 
-  const pickGewerk = (gewerk: string): void =>
+  const pickUnit = (unit: string): void =>
     dispatch({
       type: 'setFacet',
-      facetId: 'gewerk',
-      values: toggleFacetValue(filter.filters, 'gewerk', gewerk),
+      facetId: 'einheit',
+      values: toggleFacetValue(filter.filters, 'einheit', unit),
     });
 
-  const pickSection = (gewerk: string, sectionId: string): void => {
-    // Filtern **und** den Abschnitt anwählen: der Klick sagt „dieser Block" —
-    // die Ansicht bleibt, wo sie ist.
-    pickGewerk(gewerk);
-    dispatch({ type: 'selectNode', id: sectionId });
+  const pickSection = (sectionId: string): void => dispatch({ type: 'selectNode', id: sectionId });
+
+  const pickSectionUnit = (sectionId: string, unit: string): void => {
+    // Anwählen **und** filtern: der Klick sagt „diese Einheit in diesem
+    // Abschnitt" — die Ansicht bleibt, wo sie ist.
+    pickUnit(unit);
+    pickSection(sectionId);
   };
+
+  const pickPosition = (nodeId: string): void =>
+    dispatch({
+      type: 'selectPosition',
+      nodeId: parents.get(nodeId)?.id ?? null,
+      positionId: nodeId,
+    });
 
   return (
     <div ref={attachScroll} onScroll={onScroll} className="absolute inset-0 overflow-auto">
@@ -104,38 +114,35 @@ export function OverviewView() {
         <MetricTiles metrics={metrics} flags={flags} />
 
         <Card
-          title="Verteilung · Gewerk und Abschnitt"
+          title="Verteilung · Abschnitt und Einheit"
           note={model.measure === 'preis' ? 'Fläche = Summe' : 'Fläche = Anzahl Positionen'}
         >
           <Treemap
             groups={model.groups}
             measure={model.measure}
-            colors={gewerkColors}
-            activeGewerke={activeGewerke}
-            onPickGewerk={pickGewerk}
+            selectedId={selection.nodeId}
+            activeUnits={activeUnits}
             onPickSection={pickSection}
+            onPickUnit={pickSectionUnit}
           />
-          <p className="mt-[6px] font-mono text-[9.5px] text-mute">
-            Klick auf ein Gewerk filtert; Klick auf einen Abschnitt filtert und wählt ihn an.
-          </p>
         </Card>
 
         <div className="flex flex-wrap gap-[12px]">
-          <Card title="Pareto · 80 % der Summe">
-            <ParetoCard pareto={model.pareto} />
-          </Card>
+          {metrics.hasPrices ? (
+            <Card title="Pareto · 80 % der Summe">
+              <ParetoCard pareto={model.pareto} />
+            </Card>
+          ) : (
+            <Card title="Größte Mengen" note="je Einheit">
+              <LargestQuantities
+                units={model.largest}
+                selectedId={selection.positionId}
+                onPick={pickPosition}
+              />
+            </Card>
+          )}
           <Card title="Mengen je Einheit" note="absteigend">
-            <UnitTotals
-              units={model.units}
-              active={activeUnits}
-              onPick={(key) =>
-                dispatch({
-                  type: 'setFacet',
-                  facetId: 'einheit',
-                  values: toggleFacetValue(filter.filters, 'einheit', key),
-                })
-              }
-            />
+            <UnitTotals units={model.units} active={activeUnits} onPick={pickUnit} />
           </Card>
         </div>
 

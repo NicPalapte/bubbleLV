@@ -142,7 +142,7 @@ Wechseln heißt: anderer Blick auf dasselbe, nie Neuanfang.
 
 | Ansicht | Zeigt | Anwendungsfall | Stand |
 |---|---|---|---|
-| **Überblick** | Kennzahlen, Treemap nach Gewerk/Abschnitt, Pareto („20 % der Positionen = 80 % der Summe") | UC-1, UC-4 | neu |
+| **Überblick** | Kennzahlen, Treemap nach Hauptabschnitt/Einheit, Pareto („20 % der Positionen = 80 % der Summe"), ohne Preise größte Mengen je Einheit ([0040](decisions/0040-auswertung-ohne-klassifizierung.md)) | UC-1, UC-4 | neu |
 | **Graph** | Struktur und Verortung als Bubble-Graph | UC-1 | vorhanden, Umbau offen |
 | **Tabelle** | alle Spalten, Gruppierung, Summen | UC-2, UC-4 | vorhanden |
 | ~~Matrix~~ | entfernt, siehe [0031](decisions/0031-drei-ansichten.md) | – | entfernt |

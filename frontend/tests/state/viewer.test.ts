@@ -253,8 +253,8 @@ describe('viewerReducer · Gliederung des Graphen', () => {
     expect(state.view.graph.sizeMode).toBe('quantity');
   });
 
-  it('macht in „frei" einen neuen Filter von selbst zur Spalte', () => {
-    const frei = viewerReducer(loadedState(), { type: 'graphLayout', value: 'frei' });
+  it('macht in „Matrix" einen neuen Filter von selbst zur Spalte', () => {
+    const frei = viewerReducer(loadedState(), { type: 'graphLayout', value: 'matrix' });
     const next = viewerReducer(frei, {
       type: 'setFacet',
       facetId: 'gewerk',
@@ -288,10 +288,10 @@ describe('viewerReducer · Gliederung des Graphen', () => {
   });
 
   it('behält Gliederung und Hinweis-Schalter über einen neuen Import', () => {
-    let state = viewerReducer(loadedState(), { type: 'graphLayout', value: 'frei' });
+    let state = viewerReducer(loadedState(), { type: 'graphLayout', value: 'matrix' });
     state = viewerReducer(state, { type: 'graphHints', value: false });
     const reloaded = loadedState(state);
-    expect(reloaded.view.graph.layout).toBe('frei');
+    expect(reloaded.view.graph.layout).toBe('matrix');
     expect(reloaded.view.graph.showHints).toBe(false);
   });
 });

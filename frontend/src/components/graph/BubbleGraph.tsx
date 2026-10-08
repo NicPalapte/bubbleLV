@@ -1,6 +1,6 @@
 // Bubble-Graph — der Hauptscreen (docs/decisions/0034-graph-als-hauptscreen.md).
 // Gruppen als Kreise, Positionen als Punkte darin, Lose als gestrichelte Hülle;
-// Gliederung „nach LV" oder „frei" (docs/decisions/0035-graph-gliederung.md).
+// Gliederung „nach LV" oder „Matrix" (docs/decisions/0035-graph-gliederung.md).
 // Die Lage rechnet `layoutMap` (rein, ohne DOM); hier wird gezeichnet,
 // verschoben und gezoomt.
 //
@@ -156,8 +156,8 @@ export function BubbleGraph({ root }: { root: LVNode }) {
   const radii = useMemo(() => positionRadii(index, effectiveSize), [index, effectiveSize]);
   // „nach LV" mit gedämpften Nicht-Treffern hängt nicht am Filter: der Graph
   // springt beim Tippen nicht unter der Maus weg.
-  const layoutMask = layout === 'frei' || hide ? mask : null;
-  const selected = layout === 'frei' ? selectedFacets : EMPTY_SELECTED;
+  const layoutMask = layout === 'matrix' || hide ? mask : null;
+  const selected = layout === 'matrix' ? selectedFacets : EMPTY_SELECTED;
   const map = useMemo(
     () =>
       measure('Graph-Layout', () =>

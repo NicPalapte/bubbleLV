@@ -9,6 +9,16 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.10.0 — 08.10.2026 · Auswertung aus dem LV
+
+- **Verteilung nach Abschnitt und Einheit.** Das Diagramm im Überblick zeigt die
+  Hauptabschnitte, darin die Mengeneinheiten. Es braucht keine Gewerk-Erkennung mehr.
+- **Größte Mengen.** Bei LVs ohne Preise steht statt Pareto je Einheit, welche
+  Positionen die größte Menge haben. Ein Klick wählt die Position an.
+- **Matrix.** Die Gliederung „frei“ heißt jetzt „Matrix“ und kann auch nach Abschnitt
+  ordnen, etwa Abschnitt × Einheit.
+- **Mengenfilter** steht als Regler direkt im Filterfenster.
+
 ## 0.9.0 — 06.10.2026 · Zweiter Bildschirm
 
 - **Tabelle im eigenen Fenster.** ↗ im Kopf der Tabelle öffnet sie in einem eigenen

@@ -423,7 +423,7 @@ describe('Viewer', () => {
 
     // Umschaltgruppe Gliederung: benannte Radiogruppe statt klickbarer <span>.
     const layouts = within(panel).getByRole('radiogroup', { name: 'Gliederung' });
-    // nach LV · frei
+    // nach LV · Matrix
     expect(within(layouts).getAllByRole('radio').length).toBe(2);
 
     // Facettenwerte sind Schaltflächen mit Auswahlzustand.
