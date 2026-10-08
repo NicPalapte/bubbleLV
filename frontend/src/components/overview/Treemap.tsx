@@ -1,9 +1,10 @@
-// Treemap nach Gewerk und Abschnitt (WP-L, Schritt 3). Die Fläche einer Kachel
-// entspricht ihrem Anteil — an der Summe, und ohne Preise an der Anzahl.
+// Treemap nach Hauptabschnitt und Einheit (WP-L, Schritt 3). Die Fläche einer
+// Kachel entspricht ihrem Anteil — an der Summe, und ohne Preise an der Anzahl.
+// Beides steht in jeder Datei; eine Klassifizierung braucht es nicht.
 //
-// Klick filtert: ein Gewerk-Kopf setzt die Facette `gewerk`, eine Abschnitts-
-// kachel wählt zusätzlich den Abschnitt an. Der Ansichtsmodus bleibt dabei
-// stehen — ein Filter ist kein Ansichtswechsel (.claude/CLAUDE.md).
+// Klick: ein Abschnittskopf wählt den Abschnitt an, eine Einheitenkachel wählt
+// ihn an und filtert zusätzlich nach der Einheit. Der Ansichtsmodus bleibt
+// dabei stehen — ein Filter ist kein Ansichtswechsel (.claude/CLAUDE.md).
 //
 // Gezeichnet wird mit absolut gesetzten `div`s statt SVG: abgeschnittene
 // Beschriftungen, Titel-Tooltips und Tastaturbedienung kommen damit ohne
@@ -11,16 +12,16 @@
 
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { formatEuro, formatPositions } from '../../lib/format';
-import { NO_GEWERK } from '../../lib/facets';
+import { CATEGORY_COLORS, NEUTRAL_COLOR } from '../../lib/colors';
+import { NO_UNIT } from '../../lib/overview/model';
 import { squarify, type Rect } from '../../lib/overview/treemap';
-import type { ColorScale } from '../../lib/colors';
 import type { Measure, TreemapGroup } from '../../lib/overview/model';
 
 /** Höhe der Karte; die Breite kommt aus dem Platz, den sie bekommt. */
 const HEIGHT = 340;
 /** Ohne gemessene Breite (jsdom, erster Frame) wird mit diesem Wert gerechnet. */
 const FALLBACK_WIDTH = 960;
-/** Kopfstreifen je Gewerk — darunter liegen die Abschnitte. */
+/** Kopfstreifen je Abschnitt — darunter liegen die Einheiten. */
 const HEAD_HEIGHT = 20;
 /** Kleiner als das liest niemand mehr eine Beschriftung. */
 const LABEL_MIN_WIDTH = 54;
@@ -29,11 +30,12 @@ const LABEL_MIN_HEIGHT = 26;
 export interface TreemapProps {
   groups: readonly TreemapGroup[];
   measure: Measure;
-  colors: ColorScale;
-  /** Gerade gefilterte Gewerke — sie stehen hervorgehoben. */
-  activeGewerke: ReadonlySet<string>;
-  onPickGewerk: (gewerk: string) => void;
-  onPickSection: (gewerk: string, sectionId: string) => void;
+  /** Gerade angewählter Knoten — sein Abschnitt steht hervorgehoben. */
+  selectedId: string | null;
+  /** Gerade gefilterte Einheiten — ihre Kacheln stehen hervorgehoben. */
+  activeUnits: ReadonlySet<string>;
+  onPickSection: (sectionId: string) => void;
+  onPickUnit: (sectionId: string, unit: string) => void;
 }
 
 /**
@@ -50,10 +52,10 @@ function describe(label: string, value: number, count: number, measure: Measure)
 export function Treemap({
   groups,
   measure,
-  colors,
-  activeGewerke,
-  onPickGewerk,
+  selectedId,
+  activeUnits,
   onPickSection,
+  onPickUnit,
 }: TreemapProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
@@ -79,8 +81,8 @@ export function Treemap({
         width: entry.rect.width,
         height: Math.max(0, entry.rect.height - HEAD_HEIGHT),
       };
-      // Kachel-Koordinaten relativ zur Gewerk-Fläche: die Abschnitte liegen im
-      // `div` des Gewerks, nicht im äußeren Rahmen.
+      // Kachel-Koordinaten relativ zur Abschnittsfläche: die Einheiten liegen im
+      // `div` des Abschnitts, nicht im äußeren Rahmen.
       const cells = squarify([...entry.item.cells], body).map((cell) => ({
         item: cell.item,
         rect: {
@@ -104,9 +106,10 @@ export function Treemap({
   return (
     <div ref={wrapRef} className="relative border border-line" style={{ height: HEIGHT }}>
       {placed.map(({ group, rect, cells }) => {
-        const color =
-          group.filterable && group.key !== NO_GEWERK ? colors.of(group.key) : 'var(--cat-none)';
-        const active = activeGewerke.has(group.key);
+        const color = group.pickable
+          ? CATEGORY_COLORS[group.order % CATEGORY_COLORS.length]
+          : NEUTRAL_COLOR;
+        const active = selectedId !== null && selectedId === group.key;
         return (
           <div
             key={group.key}
@@ -123,11 +126,9 @@ export function Treemap({
           >
             <button
               type="button"
-              disabled={!group.filterable}
-              onClick={() => onPickGewerk(group.key)}
-              title={`${describe(group.label, group.value, group.count, measure)}${
-                group.filterable ? ' — klicken filtert' : ''
-              }`}
+              disabled={!group.pickable}
+              onClick={() => onPickSection(group.key)}
+              title={describe(group.label, group.value, group.count, measure)}
               className="block w-full cursor-pointer truncate border-none bg-transparent px-[5px] text-left font-mono text-[9.5px] leading-[20px] text-ink disabled:cursor-default"
               style={{ height: HEAD_HEIGHT }}
             >
@@ -137,11 +138,18 @@ export function Treemap({
               <button
                 key={item.key}
                 type="button"
-                disabled={item.collected}
-                onClick={() => onPickSection(group.key, item.key)}
-                title={describe(item.label, item.value, item.count, measure)}
+                disabled={item.collected || item.key === NO_UNIT}
+                onClick={() => onPickUnit(group.key, item.key)}
+                title={`${group.label} · ${describe(item.label, item.value, item.count, measure)}`}
                 className="absolute cursor-pointer overflow-hidden border border-solid border-white bg-white/35 p-[3px] text-left align-top font-mono text-[9px] leading-[1.25] text-ink disabled:cursor-default"
-                style={{ left: cell.x, top: cell.y, width: cell.width, height: cell.height }}
+                style={{
+                  left: cell.x,
+                  top: cell.y,
+                  width: cell.width,
+                  height: cell.height,
+                  outline: activeUnits.has(item.key) ? '2px solid var(--blue)' : undefined,
+                  outlineOffset: -2,
+                }}
               >
                 {cell.width > LABEL_MIN_WIDTH && cell.height > LABEL_MIN_HEIGHT ? (
                   <span className="block truncate">{item.label}</span>

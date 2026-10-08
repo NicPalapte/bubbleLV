@@ -1,11 +1,11 @@
 // Gliederung des Graphen (docs/decisions/0035-graph-gliederung.md): „nach LV"
-// mit Los-Hüllen, „frei" als Matrix aus Merkmalen, Kreispackung, Größe der
+// mit Los-Hüllen, „Matrix" als Matrix aus Merkmalen, Kreispackung, Größe der
 // Positionen und Platzsuche der Hinweisschilder.
 
 import { describe, expect, it } from 'vitest';
 import { FACETS } from '../../src/lib/facets';
 import { groupRadius } from '../../src/lib/graph/constants';
-import { layoutMap, NO_VALUE, type MapOptions } from '../../src/lib/graph/layoutMap';
+import { layoutMap, NO_VALUE, SECTION_AXIS, type MapOptions } from '../../src/lib/graph/layoutMap';
 import { packCircles } from '../../src/lib/graph/pack';
 import { MAX_PIN_CANDIDATES, placePins, type PinAnchor } from '../../src/lib/graph/pins';
 import { isPauschal, positionRadii } from '../../src/lib/graph/sizes';
@@ -153,20 +153,37 @@ describe('Gliederung „nach LV"', () => {
   });
 });
 
-describe('Gliederung „frei"', () => {
+describe('Gliederung „Matrix"', () => {
   it('bildet ohne Spalten eine Gruppe je Wert, Fehlendes als „ohne Angabe"', () => {
-    const map = layoutMap(index, parents, options({ layout: 'frei', rows: 'gewerk' }));
+    const map = layoutMap(index, parents, options({ layout: 'matrix', rows: 'gewerk' }));
     expect(map.axes).toBeNull();
     expect(map.groups.map((group) => group.title).sort()).toEqual(
       ['Betonarbeiten', 'Erdarbeiten', 'Ohne Gewerk'].sort(),
     );
   });
 
+  it('gliedert nach Abschnitt in LV-Reihenfolge, ohne Klassifizierung', () => {
+    const map = layoutMap(
+      index,
+      parents,
+      options({ layout: 'matrix', rows: SECTION_AXIS, cols: 'einheit' }),
+    );
+    expect(map.axes?.rowKey).toBe('Abschnitt');
+    expect(map.axes?.rows.map((row) => row.label)).toEqual([
+      '01.01  Erdarbeiten',
+      '01.02.01  Wände',
+      '02.01  Maler',
+    ]);
+    // Wände: m2 und m3 — zwei Zellen in derselben Zeile.
+    const waende = map.axes?.rows[1].y;
+    expect(map.groups.filter((group) => group.y === waende)).toHaveLength(2);
+  });
+
   it('legt mit Spalten eine Matrix samt Achsen an', () => {
     const map = layoutMap(
       index,
       parents,
-      options({ layout: 'frei', rows: 'einheit', cols: 'gewerk' }),
+      options({ layout: 'matrix', rows: 'einheit', cols: 'gewerk' }),
     );
     expect(map.axes?.rowKey).toBe('Einheit');
     expect(map.axes?.colKey).toBe('Gewerk');
@@ -188,7 +205,7 @@ describe('Gliederung „frei"', () => {
     const map = layoutMap(
       index,
       parents,
-      options({ layout: 'frei', rows: 'einheit', cols: 'gewerk', mask, selected }),
+      options({ layout: 'matrix', rows: 'einheit', cols: 'gewerk', mask, selected }),
     );
     expect(map.axes?.rows.map((row) => row.label)).toEqual(['m²', 'm³']);
     expect(map.groups.some((group) => group.slots.length === 0)).toBe(true);
@@ -196,9 +213,9 @@ describe('Gliederung „frei"', () => {
 
   it('sammelt gedämpfte Nicht-Treffer in „übrige", beim Ausblenden nicht', () => {
     const mask = maskOf((slot) => index.positions[slot].unit === 'm3');
-    const dim = layoutMap(index, parents, options({ layout: 'frei', mask }));
+    const dim = layoutMap(index, parents, options({ layout: 'matrix', mask }));
     expect(dim.groups.find((group) => group.rest)?.slots).toHaveLength(3);
-    const hide = layoutMap(index, parents, options({ layout: 'frei', mask, hide: true }));
+    const hide = layoutMap(index, parents, options({ layout: 'matrix', mask, hide: true }));
     expect(hide.groups.some((group) => group.rest)).toBe(false);
   });
 
@@ -223,7 +240,7 @@ describe('Gliederung „frei"', () => {
       const map = layoutMap(
         multi,
         parents,
-        options({ layout: 'frei', rows: 'gewerk', cols, mask, selected, hide: true }),
+        options({ layout: 'matrix', rows: 'gewerk', cols, mask, selected, hide: true }),
       );
       const placed = map.groups.flatMap((group) => group.slots);
       expect(placed).toEqual([slot]);
@@ -233,7 +250,7 @@ describe('Gliederung „frei"', () => {
   });
 
   it('führt Positionen ohne Wert unter „ohne Angabe"', () => {
-    const map = layoutMap(index, parents, options({ layout: 'frei', rows: 'bauteiltyp' }));
+    const map = layoutMap(index, parents, options({ layout: 'matrix', rows: 'bauteiltyp' }));
     expect(map.groups.map((group) => group.title)).toEqual([NO_VALUE]);
   });
 });

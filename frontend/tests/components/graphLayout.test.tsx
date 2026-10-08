@@ -1,5 +1,5 @@
 // Gliederung des Graphen (docs/decisions/0035-graph-gliederung.md): „nach LV"
-// und „frei" im Seitenfenster unter „Filter" → „Darstellung", Größe und
+// und „Matrix" im Seitenfenster unter „Filter" → „Darstellung", Größe und
 // Hinweise an der Steuerung unten rechts — ohne dass Filter, Suche oder Auswahl
 // davon etwas mitbekommen.
 
@@ -64,14 +64,14 @@ describe('Gliederung im Graphen', () => {
     expect(screen.getByRole('radio', { name: 'nach LV' })).toBeChecked();
     expect(graph().querySelectorAll('[data-group]').length).toBeGreaterThan(1);
     expect(graph().querySelectorAll('[data-tier="position"]').length).toBeGreaterThan(0);
-    // Ohne „frei" gibt es keine Zeilen und Spalten zu wählen.
+    // Ohne „Matrix" gibt es keine Zeilen und Spalten zu wählen.
     expect(screen.queryByRole('radiogroup', { name: 'Zeilen' })).not.toBeInTheDocument();
   });
 
-  it('ordnet „frei" nach Merkmalen und macht einen neuen Filter zur Spalte', async () => {
+  it('ordnet „Matrix" nach Merkmalen und macht einen neuen Filter zur Spalte', async () => {
     await loadAndShowGraph();
     oeffneFilter();
-    fireEvent.click(screen.getByRole('radio', { name: 'frei' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Matrix' }));
     expect(screen.getByRole('radiogroup', { name: 'Zeilen' })).toBeInTheDocument();
     // Zeilen nach Einheit: die Gruppen tragen die Einheit als Titel.
     expect(graphText()).toContain('m³');
@@ -91,7 +91,7 @@ describe('Gliederung im Graphen', () => {
     await loadAndShowGraph();
     oeffneFilter();
     await search('Beton');
-    fireEvent.click(screen.getByRole('radio', { name: 'frei' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Matrix' }));
     expect(screen.getByLabelText('Suche')).toHaveValue('Beton');
     fireEvent.click(screen.getByRole('radio', { name: 'nach LV' }));
     expect(screen.getByLabelText('Suche')).toHaveValue('Beton');

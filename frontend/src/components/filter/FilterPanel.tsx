@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { CAP, DisplayControls } from './DisplayControls';
-import { RangeButton } from './RangeButton';
+import { RangeSlider } from './RangeSlider';
 import { ChipGroup, ValueChip } from '../ui/ValueChip';
 import { StatusPill } from '../ui/StatusPill';
 import { FACETS, facetOptionLabel, isFacetVisible, type Facet } from '../../lib/facets';
@@ -139,17 +139,26 @@ export function FilterPanel() {
             </span>
           )}
         </Heading>
-        <div className="flex flex-col gap-[6px]">
-          <span className={CAP}>Menge</span>
-          <div className="flex">
-            <RangeButton
-              label="Menge"
-              bounds={summary.quantity}
-              active={filters.menge}
-              onChange={(range) => dispatch({ type: 'setMenge', range })}
-            />
-          </div>
-        </div>
+        <RangeSlider
+          label="Menge"
+          bounds={summary.quantity}
+          active={filters.menge}
+          onChange={(range) => dispatch({ type: 'setMenge', range })}
+          renderHead={(isActive) => (
+            <div className="flex items-baseline justify-between">
+              <span className={CAP}>Menge</span>
+              {isActive && (
+                <button
+                  type="button"
+                  onClick={() => dispatch({ type: 'setMenge', range: null })}
+                  className={RESET}
+                >
+                  zurücksetzen
+                </button>
+              )}
+            </div>
+          )}
+        />
         {visible.map((facet) => (
           <FacetSection
             key={facet.id}

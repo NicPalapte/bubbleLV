@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { buildPositionIndex, filterMask } from '../../src/lib/index/positionIndex';
 import { summarize } from '../../src/lib/index/summary';
 import { prepareFilters } from '../../src/lib/matchPos';
-import { buildOverview, MAX_GROUPS, NO_GEWERK } from '../../src/lib/overview/model';
+import { buildOverview, MAX_GROUPS } from '../../src/lib/overview/model';
 import { runPipeline } from '../../src/lib/pipeline/runPipeline';
 import { buildTree } from '../../src/lib/tree/buildTree';
 import { indexParents } from '../../src/lib/tree/buildTree';
@@ -36,7 +36,7 @@ describe('buildOverview · mit Preisen', () => {
     expect(model.metrics.filtering).toBe(false);
   });
 
-  it('verteilt die Summe restlos auf Gewerke und darin auf Abschnitte', () => {
+  it('verteilt die Summe restlos auf Abschnitte und darin auf Einheiten', () => {
     const groups = model.groups.reduce((sum, group) => sum + group.value, 0);
     expect(groups).toBeCloseTo(model.metrics.totalPrice, 6);
     for (const group of model.groups) {
@@ -109,11 +109,37 @@ describe('buildOverview · ohne Preise', () => {
     expect(model.pareto).toBeNull();
   });
 
-  it('führt unklassifizierte Positionen sichtbar, aber nicht als Gewerk', () => {
-    const ohne = model.groups.find((group) => group.key === NO_GEWERK);
-    expect(ohne).toBeDefined();
-    expect(ohne?.filterable).toBe(true);
-    expect(model.metrics.gewerke).toBeLessThan(model.groups.length + model.metrics.positions);
+  it('gliedert nach Hauptabschnitt und Einheit — ohne Klassifizierung', () => {
+    expect(model.groups.map((group) => group.key).sort()).toEqual([
+      'section:001',
+      'section:002',
+      'section:999',
+    ]);
+    const stunden = model.groups.find((group) => group.key === 'section:999');
+    expect(stunden?.pickable).toBe(true);
+    expect(stunden?.cells.map((cell) => cell.label)).toEqual(['Stunde']);
+  });
+
+  it('behält die Farbe eines Abschnitts, wenn ein anderer herausgefiltert ist', () => {
+    const ohne001 = new Uint8Array(index.size);
+    for (let slot = 0; slot < index.size; slot++) {
+      ohne001[slot] = index.positions[slot].oz.startsWith('001.') ? 0 : 1;
+    }
+    const gefiltert = buildOverview({ index, mask: ohne001, parents: indexParents(lv.tree) });
+    const rang = (groups: typeof model.groups, key: string) =>
+      groups.find((group) => group.key === key)?.order;
+    expect(rang(gefiltert.groups, 'section:001')).toBeUndefined();
+    expect(rang(gefiltert.groups, 'section:999')).toBe(rang(model.groups, 'section:999'));
+    expect(rang(model.groups, 'section:999')).toBeGreaterThan(0);
+  });
+
+  it('nennt statt Pareto die größten Mengen je Einheit, ohne Pauschalen', () => {
+    expect(model.largest.length).toBeGreaterThan(0);
+    expect(model.largest.some((unit) => unit.key === 'psch')).toBe(false);
+    for (const unit of model.largest) {
+      const mengen = unit.items.map((item) => item.quantity);
+      expect(mengen).toEqual([...mengen].sort((a, b) => b - a));
+    }
   });
 
   it('trägt die Mengen auch ohne Preise — sie übernehmen die Hauptrolle', () => {
@@ -122,11 +148,11 @@ describe('buildOverview · ohne Preise', () => {
   });
 });
 
-describe('buildOverview · viele Gewerke', () => {
+describe('buildOverview · viele Abschnitte', () => {
   it('fasst alles jenseits der Kachelgrenze zusammen, ohne Summe zu verlieren', () => {
     const count = MAX_GROUPS + 5;
     const draft: LVDraft = {
-      projectName: 'Viele Gewerke',
+      projectName: 'Viele Abschnitte',
       client: null,
       lots: [
         {
@@ -155,8 +181,8 @@ describe('buildOverview · viele Gewerke', () => {
     const { model } = overviewOf(draft);
     expect(model.groups).toHaveLength(MAX_GROUPS);
     const rest = model.groups[model.groups.length - 1];
-    expect(rest.label).toMatch(/Weitere \d+ Gewerke/);
-    expect(rest.filterable).toBe(false);
+    expect(rest.label).toMatch(/Weitere \d+ Abschnitte/);
+    expect(rest.pickable).toBe(false);
     expect(model.groups.reduce((sum, group) => sum + group.value, 0)).toBeCloseTo(
       model.metrics.totalPrice,
       6,

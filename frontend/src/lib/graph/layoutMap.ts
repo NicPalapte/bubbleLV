@@ -4,11 +4,11 @@
 // Anzahl ihrer Positionen folgt; die Positionen liegen als Punkte darin.
 //  - „nach LV": eine Gruppe je Abschnitt der untersten Ebene (der Elternknoten
 //    der Position), die Lose als gestrichelte Hülle darum.
-//  - „frei": Zeilen sind die Werte eines Merkmals, Spalten optional die eines
+//  - „Matrix": Zeilen sind die Werte eines Merkmals, Spalten optional die eines
 //    zweiten — eine Matrix. Ohne Spalten liegen die Gruppen gepackt.
 //
 // Reine Funktion über dem Positions-Index: kein DOM, kein Zoom. Die Gruppenlage
-// hängt nur an Datei, Gliederung, Größe und — beim Ausblenden oder in „frei" —
+// hängt nur an Datei, Gliederung, Größe und — beim Ausblenden oder in „Matrix" —
 // an der Treffermenge, nie am Ausschnitt.
 
 import { GROUP_GAP, HULL_GAP, HULL_PAD, groupRadius } from './constants';
@@ -20,10 +20,10 @@ import { canonicalUnit, unitLabel } from '../units';
 import type { PositionIndex } from '../index/positionIndex';
 import type { LVNode } from '../../types/lvNode';
 
-export type GraphLayoutId = 'lv' | 'frei';
+export type GraphLayoutId = 'lv' | 'matrix';
 
 /**
- * Merkmale, nach denen „frei" gliedern kann: nur solche mit genau einem Wert je
+ * Merkmale, nach denen „Matrix" gliedern kann: nur solche mit genau einem Wert je
  * Position. Bei Normen oder Expositionsklassen stünde eine Position in mehreren
  * Zellen zugleich — der Punkt wäre dann nicht mehr eindeutig.
  */
@@ -36,12 +36,22 @@ export const AXIS_FACETS: readonly string[] = [
   'beton',
 ];
 
+/**
+ * Zeilen/Spalten nach dem Abschnitt der Position (ihr Elternknoten im LV) —
+ * kein Filtermerkmal, sondern die Gliederung der Datei selbst. Braucht keine
+ * Klassifizierung.
+ */
+export const SECTION_AXIS = 'abschnitt';
+
+/** Alle Achsen der Matrix in Anzeigereihenfolge. */
+export const AXIS_IDS: readonly string[] = ['einheit', SECTION_AXIS, ...AXIS_FACETS.slice(1)];
+
 /** Sammelwert für Positionen, denen das Merkmal fehlt. */
 export const NO_VALUE = 'ohne Angabe';
 
 export interface MapOptions {
   layout: GraphLayoutId;
-  /** Facetten-ID der Zeilen bzw. Spalten (nur „frei"). */
+  /** Facetten-ID der Zeilen bzw. Spalten (nur „Matrix"). */
   rows: string;
   cols: string | null;
   /** Radius je Indexeintrag (sizes.ts). */
@@ -50,13 +60,13 @@ export interface MapOptions {
   mask: Uint8Array | null;
   /** Nicht-Treffer fallen aus dem Layout statt gedämpft zu bleiben. */
   hide: boolean;
-  /** Gewählte Filterwerte je Facette — sie bestimmen die Achsen in „frei". */
+  /** Gewählte Filterwerte je Facette — sie bestimmen die Achsen in „Matrix". */
   selected: Readonly<Record<string, ReadonlySet<string>>>;
 }
 
 export interface MapGroup {
   key: string;
-  /** Abschnitt im LV-Baum; in „frei" `null` — die Gruppe ist kein Knoten. */
+  /** Abschnitt im LV-Baum; in „Matrix" `null` — die Gruppe ist kein Knoten. */
   nodeId: string | null;
   /** Titel über dem Kreis; leer in der Matrix, dort tragen die Achsen ihn. */
   title: string;
@@ -69,7 +79,7 @@ export interface MapGroup {
   r: number;
   /** Indexeinträge der Positionen in dieser Gruppe. */
   slots: number[];
-  /** Sammelgruppe der Nicht-Treffer in „frei". */
+  /** Sammelgruppe der Nicht-Treffer in „Matrix". */
   rest: boolean;
 }
 
@@ -256,56 +266,98 @@ function layoutByLv(
   return { groups, hulls };
 }
 
-function facetSlot(id: string): number {
-  return FACETS.findIndex((facet) => facet.id === id);
+/** Eine Achse der Matrix: Merkmal oder Abschnitt, mit Werten je Position. */
+interface Axis {
+  id: string;
+  label: string;
+  /** Werte der Position auf dieser Achse; leer = ohne Angabe. */
+  values(slot: number): readonly string[];
+  valueLabel(value: string): string;
+  sort(values: string[]): string[];
 }
 
-function valueOf(index: PositionIndex, slot: number, facetIndex: number): string {
-  return index.facts[slot].facetValues[facetIndex][0] ?? NO_VALUE;
+function facetAxis(index: PositionIndex, id: string): Axis | null {
+  const facetIndex = FACETS.findIndex((facet) => facet.id === id);
+  if (facetIndex < 0) return null;
+  const facet: Facet = FACETS[facetIndex];
+  return {
+    id,
+    label: facet.label,
+    values: (slot) => index.facts[slot].facetValues[facetIndex],
+    valueLabel: (value) => facetOptionLabel(facet, value),
+    sort: (values) =>
+      facet.sortValues === undefined
+        ? values.sort((a, b) => a.localeCompare(b, 'de'))
+        : facet.sortValues(values),
+  };
+}
+
+function sectionAxis(index: PositionIndex, parents: ReadonlyMap<string, LVNode | null>): Axis {
+  // Reihenfolge wie im LV: der Index steht in Dokumentreihenfolge.
+  const order = new Map<string, number>();
+  const titles = new Map<string, string>();
+  const ofSlot: string[] = [];
+  for (let slot = 0; slot < index.size; slot++) {
+    const parent = parents.get(index.nodes[slot].id) ?? null;
+    const key = parent?.id ?? '';
+    ofSlot.push(key);
+    if (parent !== null && !order.has(key)) {
+      order.set(key, order.size);
+      titles.set(key, nodeTitle(parent));
+    }
+  }
+  return {
+    id: SECTION_AXIS,
+    label: 'Abschnitt',
+    values: (slot) => (ofSlot[slot] === '' ? [] : [ofSlot[slot]]),
+    valueLabel: (value) => titles.get(value) ?? value,
+    sort: (values) => values.sort((a, b) => (order.get(a) ?? 0) - (order.get(b) ?? 0)),
+  };
+}
+
+function axisOf(
+  index: PositionIndex,
+  parents: ReadonlyMap<string, LVNode | null>,
+  id: string,
+): Axis | null {
+  return id === SECTION_AXIS ? sectionAxis(index, parents) : facetAxis(index, id);
+}
+
+function firstValue(axis: Axis, slot: number): string {
+  return axis.values(slot)[0] ?? NO_VALUE;
 }
 
 /** Achsenwerte: gewählte Filterwerte, sonst alle Werte mit Treffern. */
-function axisValues(
-  index: PositionIndex,
-  facet: Facet,
-  facetIndex: number,
-  options: MapOptions,
-): string[] {
-  const chosen = options.selected[facet.id];
+function axisValues(index: PositionIndex, axis: Axis, options: MapOptions): string[] {
+  const chosen = options.selected[axis.id];
   const present = new Set<string>();
   for (let slot = 0; slot < index.size; slot++) {
-    if (isHit(options.mask, slot)) present.add(valueOf(index, slot, facetIndex));
+    if (isHit(options.mask, slot)) present.add(firstValue(axis, slot));
   }
   const values = chosen !== undefined && chosen.size > 0 ? [...chosen] : [...present];
-  const known = values.filter((value) => value !== NO_VALUE);
-  const sorted =
-    facet.sortValues === undefined
-      ? known.sort((a, b) => a.localeCompare(b, 'de'))
-      : facet.sortValues(known);
+  const sorted = axis.sort(values.filter((value) => value !== NO_VALUE));
   return values.includes(NO_VALUE) ? [...sorted, NO_VALUE] : sorted;
 }
 
-function axisLabel(facet: Facet, value: string): string {
-  return value === NO_VALUE ? NO_VALUE : facetOptionLabel(facet, value);
+function axisLabel(axis: Axis, value: string): string {
+  return value === NO_VALUE ? NO_VALUE : axis.valueLabel(value);
 }
 
 function layoutFree(
   index: PositionIndex,
+  rowAxis: Axis,
+  colAxis: Axis | null,
   options: MapOptions,
 ): { groups: MapGroup[]; axes: MapAxes | null } {
-  const rowIndex = facetSlot(options.rows);
-  const rowFacet = FACETS[rowIndex];
-  const colIndex = options.cols === null ? -1 : facetSlot(options.cols);
-  const colFacet = colIndex < 0 ? null : FACETS[colIndex];
-  const rowValues = axisValues(index, rowFacet, rowIndex, options);
-  const colValues = colFacet === null ? [null] : axisValues(index, colFacet, colIndex, options);
+  const rowValues = axisValues(index, rowAxis, options);
+  const colValues = colAxis === null ? [null] : axisValues(index, colAxis, options);
 
   // Eine Position kann bei einem Merkmal mehrere Werte haben; sie zählt in der
   // Zelle des ersten Werts, der auf der Achse steht. Steht keiner darauf (etwa
   // weil der Filter über einen anderen Wert getroffen hat), kommt ihr erster
   // Wert als neue Zeile/Spalte dazu — kein Treffer fällt stillschweigend heraus.
-  const pick = (slot: number, facetIndex: number, values: string[]): string => {
-    const own = index.facts[slot].facetValues[facetIndex];
+  const pick = (slot: number, axis: Axis, values: string[]): string => {
+    const own = axis.values(slot);
     const onAxis = own.find((value) => values.includes(value));
     if (onAxis !== undefined) return onAxis;
     const value = own[0] ?? NO_VALUE;
@@ -321,12 +373,12 @@ function layoutFree(
       if (!options.hide) rest.slots.push(slot);
       continue;
     }
-    const row = pick(slot, rowIndex, rowValues);
-    const col = colFacet === null ? null : pick(slot, colIndex, colValues as string[]);
+    const row = pick(slot, rowAxis, rowValues);
+    const col = colAxis === null ? null : pick(slot, colAxis, colValues as string[]);
     const key = `${row}|${col ?? ''}`;
     let cell = cells.get(key);
     if (cell === undefined) {
-      const title = colFacet === null ? axisLabel(rowFacet, row) : '';
+      const title = colAxis === null ? axisLabel(rowAxis, row) : '';
       cell = { ...newGroup(key, title, []), row, col };
       cells.set(key, cell);
     }
@@ -335,8 +387,8 @@ function layoutFree(
 
   // Leere Zellen nur für im Filter gewählte Werte: „gewählt, aber nichts drin"
   // bleibt sichtbar, ohne dass Zeilen × Spalten tausende leere Kreise erzeugen.
-  const rowChosen = options.selected[rowFacet.id];
-  const colChosen = colFacet === null ? undefined : options.selected[colFacet.id];
+  const rowChosen = options.selected[rowAxis.id];
+  const colChosen = colAxis === null ? undefined : options.selected[colAxis.id];
   const cellGroups: Array<MapGroup & { row: number; col: number }> = [];
   rowValues.forEach((row, i) =>
     colValues.forEach((col, j) => {
@@ -345,7 +397,7 @@ function layoutFree(
       const chosen =
         (rowChosen?.has(row) ?? false) || (col !== null && (colChosen?.has(col) ?? false));
       if (found === undefined && !chosen) return;
-      const group = found ?? newGroup(key, colFacet === null ? axisLabel(rowFacet, row) : '', []);
+      const group = found ?? newGroup(key, colAxis === null ? axisLabel(rowAxis, row) : '', []);
       cellGroups.push({ ...group, row: i, col: j });
     }),
   );
@@ -357,7 +409,7 @@ function layoutFree(
 
   let axes: MapAxes | null = null;
   let groups: MapGroup[];
-  if (colFacet !== null && cellGroups.length > 0) {
+  if (colAxis !== null && cellGroups.length > 0) {
     const maxR = Math.max(...cellGroups.map((group) => group.r));
     const width = 2 * maxR + 70;
     const height = 2 * maxR + 50;
@@ -366,11 +418,11 @@ function layoutFree(
       group.y = group.row * height;
     }
     axes = {
-      rowKey: rowFacet.label,
-      colKey: colFacet.label,
-      rows: rowValues.map((value, i) => ({ label: axisLabel(rowFacet, value), y: i * height })),
+      rowKey: rowAxis.label,
+      colKey: colAxis.label,
+      rows: rowValues.map((value, i) => ({ label: axisLabel(rowAxis, value), y: i * height })),
       cols: colValues.map((value, j) => ({
-        label: value === null ? '' : axisLabel(colFacet, value),
+        label: value === null ? '' : axisLabel(colAxis, value),
         x: j * width,
       })),
       x0: -maxR - 30,
@@ -408,8 +460,10 @@ export function layoutMap(
   let groups: MapGroup[];
   let hulls: MapHull[] = [];
   let axes: MapAxes | null = null;
-  if (options.layout === 'frei' && facetSlot(options.rows) >= 0) {
-    ({ groups, axes } = layoutFree(index, options));
+  const rowAxis = options.layout === 'matrix' ? axisOf(index, parents, options.rows) : null;
+  if (rowAxis !== null) {
+    const colAxis = options.cols === null ? null : axisOf(index, parents, options.cols);
+    ({ groups, axes } = layoutFree(index, rowAxis, colAxis, options));
   } else {
     ({ groups, hulls } = layoutByLv(index, parents, options));
   }

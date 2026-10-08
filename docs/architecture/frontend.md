@@ -49,7 +49,7 @@ frontend/
     │   │   ├── positionIndex.ts      # flacher Positions-Index (Rechenbasis, WP-I)
     │   │   └── summary.ts            # Facetten-Zähler + Wertebereiche, einmal berechnet
     │   ├── overview/                 # Kennzahlen, Treemap-Layout (WP-L)
-    │   │   ├── model.ts              # buildOverview: Kennzahlen, Gruppen, Pareto, Mengen
+    │   │   ├── model.ts              # buildOverview: Kennzahlen, Abschnitt×Einheit, Pareto/größte Mengen
     │   │   └── treemap.ts            # squarified Treemap, reine Funktion
     │   ├── export/                   # CSV, Markdown, Download, Melde-Link (WP-P)
     │   │   ├── positions.ts          # positionsCsv: gefilterte Menge, alle Spalten

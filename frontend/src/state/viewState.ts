@@ -67,9 +67,9 @@ export interface GraphViewState {
   sizeMode: SizeModeId;
   /** Gliederung (docs/decisions/0035-graph-gliederung.md). */
   layout: GraphLayoutId;
-  /** Merkmal der Zeilen in „frei" (Facetten-ID). */
+  /** Merkmal der Zeilen in „Matrix" (Facetten-ID). */
   rows: string;
-  /** Merkmal der Spalten in „frei"; `null` = keine Spalten. */
+  /** Merkmal der Spalten in „Matrix"; `null` = keine Spalten. */
   cols: string | null;
   /** Hinweis-Ringe und -Schilder im Graphen zeigen. */
   showHints: boolean;
@@ -206,7 +206,7 @@ export const INITIAL_VIEW_STATE: ViewState = {
   sideWidth: SIDE_WIDTH_DEFAULT,
   tableWindow: { open: false, pos: DEFAULT_TABLE_POS, size: DEFAULT_TABLE_SIZE },
   compareWindow: { open: false, pos: DEFAULT_COMPARE_POS, size: DEFAULT_COMPARE_SIZE },
-  // Einstieg ist das LV in seiner Gliederung; „frei" ist der zweite Blick.
+  // Einstieg ist das LV in seiner Gliederung; „Matrix" ist der zweite Blick.
   graph: {
     sizeMode: 'quantity',
     layout: 'lv',
