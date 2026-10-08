@@ -9,6 +9,14 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.9.0 — 06.10.2026 · Zweiter Bildschirm
+
+- **Tabelle im eigenen Fenster.** ↗ im Kopf der Tabelle öffnet sie in einem eigenen
+  Browserfenster, etwa für den zweiten Bildschirm. Filter, Suche und Auswahl bleiben mit
+  dem Graphen gleich.
+- **Zurückholen** mit ↙ im Fenster. Schließt man es, ist die Tabelle zu.
+- Blockiert der Browser das Fenster, steht kurz „Pop-up blockiert" im Tabellenkopf.
+
 ## 0.8.0 — 05.10.2026 · Vergleich
 
 - **Positionen vergleichen.** Bis zu vier Positionen nebeneinander in einem Fenster über

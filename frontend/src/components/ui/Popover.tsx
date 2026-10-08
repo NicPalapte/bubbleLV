@@ -27,6 +27,7 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
+import { useHostWindow } from '../common/hostWindow';
 
 /** Luft, die zwischen Popover und Fensterrand bleiben soll. */
 const VIEWPORT_MARGIN = 8;
@@ -65,6 +66,7 @@ export const Popover = forwardRef<HTMLDivElement, PopoverProps>(function Popover
     setHostNode(element);
   }, []);
   const parentHost = useContext(PopoverHostContext);
+  const host = useHostWindow();
 
   // Position folgt dem Anker im Viewport statt einem Elternelement — läuft bei
   // jedem Öffnen sowie bei Resize/Scroll neu, weil ein per Portal gehängtes
@@ -78,7 +80,7 @@ export const Popover = forwardRef<HTMLDivElement, PopoverProps>(function Popover
     const place = (): void => {
       const rect = anchor.getBoundingClientRect();
       const naturalLeft = align === 'right' ? rect.right - element.offsetWidth : rect.left;
-      const maxLeft = window.innerWidth - element.offsetWidth - VIEWPORT_MARGIN;
+      const maxLeft = host.innerWidth - element.offsetWidth - VIEWPORT_MARGIN;
       const left = Math.min(
         Math.max(VIEWPORT_MARGIN, naturalLeft),
         Math.max(VIEWPORT_MARGIN, maxLeft),
@@ -88,13 +90,13 @@ export const Popover = forwardRef<HTMLDivElement, PopoverProps>(function Popover
     };
 
     place();
-    window.addEventListener('resize', place);
-    window.addEventListener('scroll', place, true);
+    host.addEventListener('resize', place);
+    host.addEventListener('scroll', place, true);
     return () => {
-      window.removeEventListener('resize', place);
-      window.removeEventListener('scroll', place, true);
+      host.removeEventListener('resize', place);
+      host.removeEventListener('scroll', place, true);
     };
-  }, [open, align, anchorRef]);
+  }, [open, align, anchorRef, host]);
 
   if (!open) return null;
   return createPortal(
@@ -123,7 +125,7 @@ export const Popover = forwardRef<HTMLDivElement, PopoverProps>(function Popover
         {children}
       </div>
     </PopoverHostContext.Provider>,
-    parentHost ?? document.body,
+    parentHost ?? host.document.body,
   );
 });
 

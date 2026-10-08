@@ -155,6 +155,8 @@ Wechseln heißt: anderer Blick auf dasselbe, nie Neuanfang.
 **Seit 2026-10-05** ist der Graph der Hauptscreen; Überblick (mit Import-Log) und Prüfung
 sind Reiter im Seitenfenster, Tabelle und Eigenschaften (Positionskarte) schweben als
 Fenster darüber ([0034](decisions/0034-graph-als-hauptscreen.md)). Der eine Filterzustand gilt weiter.
+Die Tabelle kann in ein eigenes Browserfenster wandern, etwa auf den zweiten Bildschirm
+([0039](decisions/0039-tabelle-im-eigenen-fenster.md)).
 
 ### 7 · Beziehungen zwischen Positionen
 

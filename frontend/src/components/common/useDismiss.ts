@@ -3,6 +3,7 @@
 // design/claude-design/lv-main.jsx, um Escape ergänzt.
 
 import { useEffect, type RefObject } from 'react';
+import { useHostWindow } from './hostWindow';
 
 /** Mausbewegung zwischen Drücken und Loslassen, ab der es als Ziehen zählt. */
 const DRAG_THRESHOLD = 4;
@@ -37,6 +38,7 @@ export function useDismiss(
 ): void {
   const ignoreDrag = options?.ignoreDrag === true;
   const yieldToDialogs = options?.yieldToDialogs === true;
+  const host = useHostWindow();
 
   useEffect(() => {
     if (!open) return;
@@ -72,22 +74,22 @@ export function useDismiss(
     // die Capture-Phase, die vorher läuft, plus stopImmediatePropagation.
     const closeOnEscape = (event: KeyboardEvent): void => {
       if (event.key !== 'Escape') return;
-      if (yieldToDialogs && document.querySelector('[role="dialog"]') !== null) return;
+      if (yieldToDialogs && host.document.querySelector('[role="dialog"]') !== null) return;
       event.stopImmediatePropagation();
       onClose();
     };
 
-    window.addEventListener('mousedown', onMouseDown);
-    if (ignoreDrag) window.addEventListener('mouseup', onMouseUp);
-    window.addEventListener('keydown', closeOnEscape, true);
+    host.addEventListener('mousedown', onMouseDown);
+    if (ignoreDrag) host.addEventListener('mouseup', onMouseUp);
+    host.addEventListener('keydown', closeOnEscape, true);
     return () => {
-      window.removeEventListener('mousedown', onMouseDown);
-      if (ignoreDrag) window.removeEventListener('mouseup', onMouseUp);
-      window.removeEventListener('keydown', closeOnEscape, true);
+      host.removeEventListener('mousedown', onMouseDown);
+      if (ignoreDrag) host.removeEventListener('mouseup', onMouseUp);
+      host.removeEventListener('keydown', closeOnEscape, true);
     };
 
     // `refs` bewusst nicht in den Deps: an der Aufrufstelle stehen oft Array-
     // Literale, über Länge/Inhalt statt Referenz vergleichen wäre hier unnötig,
     // die Refs selbst sind stabile Objekte.
-  }, [open, onClose, ignoreDrag, yieldToDialogs]);
+  }, [open, onClose, ignoreDrag, yieldToDialogs, host]);
 }

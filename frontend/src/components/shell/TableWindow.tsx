@@ -1,8 +1,13 @@
 // Tabelle als Fenster über dem Graphen: verschieben am Kopf, Größe am Griff
 // unten rechts. Ersetzt die frühere Tabellenansicht mit Baum und
 // Eigenschaften-Spalte — die Eigenschaften zeigt die Positionskarte.
+//
+// ↗ löst die Tabelle in ein eigenes Browserfenster, etwa für den zweiten
+// Bildschirm (Entscheidung 0039); ↙ dort holt sie zurück.
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ExternalWindow } from '../common/ExternalWindow';
+import { openExternalWindow, type ExternalHost } from '../common/externalWindowHost';
 import { sidePanelSpace } from './SidePanel';
 import { useDragResize } from '../common/useDragResize';
 import { PositionsTable } from '../table/PositionsTable';
@@ -19,6 +24,15 @@ import {
 
 /** Abstand zum Rand des Canvas, den das Fenster auch aufgezogen frei lässt. */
 const EDGE_GAP = 16;
+/** Name des zweiten Fensters — ein zweiter Klick übernimmt dasselbe Fenster. */
+const POPUP_NAME = 'bubble-tabelle';
+const POPUP_MIN_WIDTH = 900;
+const POPUP_HEIGHT = 720;
+/** So lange steht der Hinweis, wenn der Browser das Fenster blockiert. */
+const BLOCKED_HINT_MS = 5000;
+
+const ICON_BUTTON =
+  'inline-flex h-[28px] w-[28px] cursor-pointer items-center justify-center rounded-[var(--r-sm)] border-none bg-transparent text-mute hover:bg-sunken hover:text-ink';
 
 export function TableWindow() {
   const {
@@ -49,7 +63,60 @@ export function TableWindow() {
     corner: 'right',
   });
 
-  if (!tableWindow.open || tree === null) return null;
+  const [popup, setPopup] = useState<ExternalHost | null>(null);
+  const [blocked, setBlocked] = useState(false);
+  const blockedTimer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(blockedTimer.current), []);
+  const shown = tableWindow.open && tree !== null;
+  // Tabelle von woanders zu (Escape, neues LV): das zweite Fenster geht mit.
+  if (!shown && popup !== null) setPopup(null);
+
+  const detach = (): void => {
+    const host = openExternalWindow(POPUP_NAME, 'Bubble — Tabelle', {
+      width: Math.max(tableWindow.size.width, POPUP_MIN_WIDTH),
+      height: POPUP_HEIGHT,
+    });
+    if (host === null) {
+      // Ein neuer Klick hält den Hinweis die volle Zeit, kein alter Timer kürzt ab.
+      window.clearTimeout(blockedTimer.current);
+      setBlocked(true);
+      blockedTimer.current = window.setTimeout(() => setBlocked(false), BLOCKED_HINT_MS);
+      return;
+    }
+    setBlocked(false);
+    setPopup(host);
+  };
+  const closedByHand = useCallback((): void => {
+    setPopup(null);
+    dispatch({ type: 'tableWindow', open: false });
+  }, [dispatch]);
+
+  if (!shown) return null;
+
+  if (popup !== null) {
+    return (
+      <ExternalWindow host={popup} onClosed={closedByHand}>
+        <section aria-label="Tabelle — eigenes Fenster" className="flex min-h-0 flex-1 flex-col">
+          <div className="flex h-[38px] shrink-0 items-center gap-[10px] border-b border-line bg-surface pl-[12px] pr-[6px]">
+            <b className="font-sans text-[13px] font-semibold text-ink">Tabelle</b>
+            <span className="flex-1" />
+            <button
+              type="button"
+              onClick={() => setPopup(null)}
+              title="Zurück ins Hauptfenster"
+              aria-label="Tabelle zurück ins Hauptfenster"
+              className={ICON_BUTTON}
+            >
+              ↙
+            </button>
+          </div>
+          <div className="relative min-h-0 flex-1">
+            <PositionsTable root={selectedNode ?? tree} />
+          </div>
+        </section>
+      </ExternalWindow>
+    );
+  }
 
   return (
     <section
@@ -82,12 +149,27 @@ export function TableWindow() {
         </span>
         <b className="font-sans text-[13px] font-semibold text-ink">Tabelle</b>
         <span className="flex-1" />
+        {blocked && (
+          <span role="status" className="font-mono text-[10.5px] text-mute">
+            Pop-up blockiert
+          </span>
+        )}
+        <button
+          type="button"
+          onMouseDown={(event) => event.stopPropagation()}
+          onClick={detach}
+          title="In eigenem Fenster — z. B. auf dem zweiten Bildschirm"
+          aria-label="Tabelle in eigenem Fenster öffnen"
+          className={ICON_BUTTON}
+        >
+          ↗
+        </button>
         <button
           type="button"
           onMouseDown={(event) => event.stopPropagation()}
           onClick={() => dispatch({ type: 'tableWindow', open: false })}
           aria-label="Tabelle schließen"
-          className="inline-flex h-[28px] w-[28px] cursor-pointer items-center justify-center rounded-[var(--r-sm)] border-none bg-transparent text-mute hover:bg-sunken hover:text-ink"
+          className={ICON_BUTTON}
         >
           ✕
         </button>
