@@ -9,6 +9,13 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.11.0 — 10.10.2026 · Farbe nach Abschnitt
+
+- **Punkte nach Abschnitt eingefärbt.** Im Graphen hat jeder Punkt die Farbe seines
+  Hauptabschnitts, wie in der Verteilung im Überblick. Bisher war es das Gewerk, das
+  ohne Katalog meist fehlt.
+- **Legende** nennt in der Matrix die Abschnitte statt der Gewerke.
+
 ## 0.10.0 — 08.10.2026 · Auswertung aus dem LV
 
 - **Verteilung nach Abschnitt und Einheit.** Das Diagramm im Überblick zeigt die

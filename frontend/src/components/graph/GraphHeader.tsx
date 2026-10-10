@@ -1,7 +1,8 @@
 // Was der Graph gerade zeigt, in zwei kleinen Teilen: oben mittig ein Hinweis,
 // wenn der Filter nichts trifft; unten links die Legende — Formen der
-// Positionsarten, Hinweis-Ringe und die Gewerk-Farben der Punkte. Die Legende
-// steht fest; Fenster weichen ihr aus, nicht umgekehrt.
+// Positionsarten, Hinweis-Ringe und in der Matrix die Abschnittsfarben der
+// Punkte (nach LV zeigen die Gruppen den Abschnitt selbst). Die Legende steht
+// fest; Fenster weichen ihr aus, nicht umgekehrt.
 
 import { useEffect, useMemo, useRef } from 'react';
 import { formatCount } from '../../lib/format';
@@ -9,8 +10,8 @@ import { countInFilter } from '../../lib/tree/countInFilter';
 import { useViewer } from '../../state/viewer';
 import type { LVNode } from '../../types/lvNode';
 
-/** So viele Gewerke nennt die Legende; der Rest steht in der Positionskarte. */
-const MAX_GEWERKE = 6;
+/** So viele Abschnitte nennt die Legende; der Rest steht im Überblick. */
+const MAX_SECTIONS = 6;
 
 function Dot({ shape }: { shape: 'normal' | 'bedarf' | 'wahl' | 'zulage' }) {
   return (
@@ -47,11 +48,11 @@ function Ring({ strong }: { strong: boolean }) {
 export function GraphHeader({ root }: { root: LVNode }) {
   const {
     view: {
-      graph: { showHints },
+      graph: { showHints, layout },
     },
     matches,
     hints,
-    gewerkColors,
+    sectionColors,
   } = useViewer();
 
   const keineTreffer = matches.filtering && (matches.counts.get(root.id) ?? 0) === 0;
@@ -79,8 +80,8 @@ export function GraphHeader({ root }: { root: LVNode }) {
     };
   }, []);
 
-  const gewerke = gewerkColors.entries.slice(0, MAX_GEWERKE);
-  const more = gewerkColors.entries.length - gewerke.length;
+  const sections = layout === 'matrix' ? sectionColors.entries.slice(0, MAX_SECTIONS) : [];
+  const more = sections.length === 0 ? 0 : sectionColors.entries.length - sections.length;
 
   return (
     <>
@@ -131,9 +132,9 @@ export function GraphHeader({ root }: { root: LVNode }) {
             </>
           )}
         </div>
-        {gewerke.length > 0 && (
+        {sections.length > 0 && (
           <div className="flex flex-wrap items-center gap-x-[12px] gap-y-[4px]">
-            {gewerke.map(([name, color]) => (
+            {sections.map(([name, color]) => (
               <span
                 key={name}
                 title={name}
@@ -150,7 +151,7 @@ export function GraphHeader({ root }: { root: LVNode }) {
                 <span className="truncate">{name}</span>
               </span>
             ))}
-            {more > 0 && <span className="text-mute">+{formatCount(more)} Gewerke</span>}
+            {more > 0 && <span className="text-mute">+{formatCount(more)} Abschnitte</span>}
           </div>
         )}
       </div>

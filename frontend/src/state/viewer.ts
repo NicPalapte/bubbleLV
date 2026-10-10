@@ -38,6 +38,7 @@ import type { ActiveFilters } from '../lib/matchPos';
 import type { LoadedLV } from '../lib/pipeline/runPipeline';
 import type { SharedState } from '../lib/share/urlState';
 import type { MatchIndex } from '../lib/tree/matchCounts';
+import type { SectionColors } from '../lib/tree/mainSection';
 import type { LVNode } from '../types/lvNode';
 
 export type { FilterState, HideMode } from './filterState';
@@ -280,6 +281,8 @@ export interface ViewerDerived {
   mask: Uint8Array | null;
   /** Eine Gewerk-Farbskala für alle Ansichten (WP-L, Schritt 5). */
   gewerkColors: ColorScale;
+  /** Punktfarbe je Position nach Hauptabschnitt (Entscheidung 0043). */
+  sectionColors: SectionColors;
   /**
    * Hinweise der Prüfregeln, nach Position sortiert (WP-R, R1). Grundlage für
    * den Ring an der Bubble und den Block „Hinweise" in der Auswahlkarte.

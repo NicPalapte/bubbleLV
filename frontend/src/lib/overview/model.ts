@@ -17,6 +17,7 @@
 import { attrString } from '../attributes';
 import { NO_GEWERK } from '../facets';
 import { headingOf } from '../tree/heading';
+import { mainSectionOf, sectionOrder } from '../tree/mainSection';
 import { isPauschal } from '../graph/sizes';
 import { canonicalUnit, unitLabel } from '../units';
 import type { PositionIndex } from '../index/positionIndex';
@@ -137,27 +138,6 @@ function share(part: number, whole: number): number {
   return whole > 0 ? part / whole : 0;
 }
 
-/**
- * Hauptabschnitt einer Position: der oberste Abschnitt über ihr, Lose
- * übersprungen. `null`, wenn sie direkt unter Los oder LV steht.
- */
-function mainSectionOf(
-  node: LVNode,
-  parents: ReadonlyMap<string, LVNode | null>,
-  cache: Map<string, LVNode | null>,
-): LVNode | null {
-  const parent = parents.get(node.id) ?? null;
-  if (parent === null) return null;
-  const known = cache.get(parent.id);
-  if (known !== undefined) return known;
-  let top: LVNode | null = null;
-  for (let up: LVNode | null = parent; up !== null; up = parents.get(up.id) ?? null) {
-    if (up.kind === 'section') top = up;
-  }
-  cache.set(parent.id, top);
-  return top;
-}
-
 interface Bucket {
   key: string;
   label: string;
@@ -165,24 +145,6 @@ interface Bucket {
   count: number;
   order: number;
   cells: Map<string, TreemapCell>;
-}
-
-/**
- * Rang jedes Hauptabschnitts in LV-Reihenfolge, über die ganze Datei — nicht
- * über die Filtermenge, sonst rutschten Farben nach, wenn ein Abschnitt
- * herausfällt.
- */
-function sectionOrder(
-  index: OverviewInput['index'],
-  parents: ReadonlyMap<string, LVNode | null>,
-  cache: Map<string, LVNode | null>,
-): Map<string, number> {
-  const order = new Map<string, number>();
-  for (let slot = 0; slot < index.size; slot++) {
-    const key = mainSectionOf(index.nodes[slot], parents, cache)?.id ?? '';
-    if (!order.has(key)) order.set(key, order.size);
-  }
-  return order;
 }
 
 function bucketOf(buckets: Map<string, Bucket>, key: string, label: string, order: number): Bucket {
