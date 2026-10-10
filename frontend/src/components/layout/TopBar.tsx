@@ -141,15 +141,19 @@ export function TopBar() {
 
         {loaded && (
           <>
+            {/* Einzige h1 der Seite, auch auf schmalen Bildschirmen, wo der
+                sichtbare Titel ausgeblendet ist: Bildschirmleser springen über
+                Überschriften. */}
+            <h1 className="sr-only">{lv.projectName ?? lv.fileName}</h1>
             {/* Datei: begrenzt und abgeschnitten — reale Projektnamen sind lang. */}
             <div className="hidden min-w-0 max-w-[300px] shrink flex-col border-l border-line pl-[12px] leading-tight md:flex">
-              {/* Einzige h1 der Seite: Bildschirmleser springen über Überschriften. */}
-              <h1
-                className="m-0 truncate font-sans text-[13px] font-semibold text-ink"
+              <b
+                aria-hidden="true"
+                className="truncate font-sans text-[13px] font-semibold text-ink"
                 title={lv.projectName ?? lv.fileName}
               >
                 {lv.projectName ?? lv.fileName}
-              </h1>
+              </b>
               <span className="truncate font-mono text-[10px] text-mute" title={lv.fileName}>
                 {lv.fileName}
                 {lv.client !== null && ` · ${lv.client}`}
