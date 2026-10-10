@@ -91,13 +91,16 @@ function TypeMark({ type }: { type: PositionType }) {
   const mark = TYPE_MARKS[type];
   if (mark === undefined) return null;
   return (
-    <span
-      title={mark.title}
-      aria-label={mark.title}
-      className="mr-[6px] inline-block rounded-[var(--r-sm)] border border-line px-[4px] font-mono text-[10px] uppercase text-ink"
-    >
-      {mark.label}
-    </span>
+    <>
+      <span
+        title={mark.title}
+        aria-hidden="true"
+        className="mr-[6px] inline-block rounded-[var(--r-sm)] border border-line px-[4px] font-mono text-[10px] uppercase text-ink"
+      >
+        {mark.label}
+      </span>
+      <span className="sr-only">{mark.title}: </span>
+    </>
   );
 }
 
