@@ -57,7 +57,7 @@ export function SegmentedControl({ options, value, onChange, label }: SegmentedC
               borderRadius: 5,
               cursor: disabled ? 'not-allowed' : 'pointer',
               fontFamily: 'var(--mono)',
-              fontSize: 9.5,
+              fontSize: 10,
               background: on ? 'var(--surface)' : 'transparent',
               boxShadow: on ? 'var(--shadow-sm)' : 'none',
               color: on

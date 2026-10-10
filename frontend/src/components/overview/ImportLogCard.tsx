@@ -93,7 +93,7 @@ export function ImportLogCard() {
                   );
                 })}
                 {entry.positionIds.length > MAX_ROWS && (
-                  <p className="mt-[4px] font-mono text-[9.5px] text-mute">
+                  <p className="mt-[4px] font-mono text-[10px] text-mute">
                     {formatCount(entry.positionIds.length - MAX_ROWS)} weitere
                   </p>
                 )}

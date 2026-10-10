@@ -19,7 +19,7 @@
 
 | Regel | Zustand |
 |---|---|
-| V1, V2, V4, V5, V6, V7 | **umgesetzt und aktiv** |
+| V1, V2, V4, V5, V6, V7, V11 | **umgesetzt und aktiv** |
 | V3, V8, V9, V10 | angemeldet, **inaktiv** — die Referenzdateien sind noch leer |
 | G1, G2, G3 | Kennzahlen ohne Norm-Bezug, aktiv (Kostentreiber, Mengentreiber, uneinheitliche Einheiten) |
 | G4 | Kennzahl ohne Norm-Bezug, aktiv (Einheitspreis fällt aus der Gruppe ähnlicher Positionen, WP-M) |
@@ -57,6 +57,7 @@ muss der Owner bestätigen, bevor sie im UI angezeigt wird.
 | V7 | Offener Platzhalter, den der Bieter ausfüllen muss | kein VOB-Bezug — GAEB-Merkmal (`TextComplement`) | sicher | sofort — Parser liefert es |
 | V8 | Leistung ausgeschrieben, die nach VOB/C **Nebenleistung** ist (Doppelvergütung prüfen) | VOB/C, ATV DIN 18299 Abschnitt 4.1, dazu die Abschnitte 4.1 der gewerkespezifischen ATV (DIN 18300 ff.) | sicher (Struktur) | braucht Zuordnung LB → ATV und die Nebenleistungs-Listen |
 | V9 | Im Text erwähnte **Besondere Leistung** ohne eigene Position | VOB/C, ATV DIN 18299 Abschnitt 4.2 | sicher (Struktur) | Ausbaustufe — schwerer zu erkennen als V8 |
+| V11 | Alternativposition (Wahlposition) im LV | kein Verweis gesetzt — GAEB-Merkmal (`positionType`); ein VOB-Verweis erst nach Bestätigung durch den Owner | sicher (Feld) | sofort — `positionType` liefert das direkt |
 | V10 | Erdarbeiten ohne Angabe von Homogenbereichen | VOB/C, DIN 18300 Abschnitt 0 (Hinweise für das Aufstellen der Leistungsbeschreibung); Homogenbereiche lösen seit der Fassung 2015 die Bodenklassen ab — siehe [`README.md`](README.md#muster-beispiel-din-18300--bodenklassen-vs-homogenbereiche) | sicher (Inhalt), Abschnitts-Nummer zu bestätigen | braucht LB-Erkennung Erdarbeiten |
 
 ## Was der Owner bestätigen muss
@@ -71,7 +72,9 @@ Bevor eine Regel mit `zu bestätigen` im UI erscheint:
 3. **V4, V5, V6:** Sind **§ 7 Abs. 1 Nr. 1–3 VOB/A** korrekt zugeordnet?
 4. **V10:** Welcher Unterabschnitt von **DIN 18300 Abschnitt 0** verlangt die
    Homogenbereich-Angaben genau?
-5. **V3, V8:** Wer liefert die Referenzdaten — Herstellerliste und Nebenleistungs-Listen
+5. **V11:** Gibt es für Alternativpositionen einen VOB-Verweis, der angezeigt werden
+   soll? Bis dahin nennt die Regel nur das GAEB-Merkmal.
+6. **V3, V8:** Wer liefert die Referenzdaten — Herstellerliste und Nebenleistungs-Listen
    je ATV? Ohne sie bleiben beide Regeln inaktiv (wie die `keywords`-Spalte im
    STLB-Katalog, siehe [`README.md`](README.md#stlb-bau-leistungsbereiche-als-primäre-klassifizierungsquelle-wp-2)).
 

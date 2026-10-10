@@ -107,3 +107,29 @@ jobs:
           action: deploy
           pr-number: ${{ env.PR }}
           deploy-commit-message: Deploy preview for PR ${{ env.PR }}
+          # Den Link-Kommentar schreibt der nächste Schritt: die Action findet beim
+          # Kommentar-Ereignis keine PR-Nummer und lässt ihn sonst still weg.
+          comment: false
+
+      # Link als Kommentar in den PR. Gibt es schon einen von früher, wird er
+      # aktualisiert statt einen zweiten anzulegen (Erkennung über die Marke, nur
+      # eigene Kommentare – fremde darf der Workflow nicht ändern).
+      - name: Link in den PR schreiben
+        env:
+          GH_TOKEN: ${{ github.token }}
+          URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/pr-preview/pr-${{ env.PR }}/
+        run: |
+          set -euo pipefail
+          marke='<!-- pr-preview-link -->'
+          stand=$(date -u '+%Y-%m-%d %H:%M')
+          text=$(printf '%s\n🚀 **Preview:** %s\n\nStand %s UTC. Ist erst nach dem GitHub-Pages-Deployment erreichbar (1–2 Minuten).' \
+            "$marke" "$URL" "$stand")
+          alt=$(gh api --paginate "repos/$GITHUB_REPOSITORY/issues/$PR/comments" \
+            --jq "[.[] | select(.user.login == \"github-actions[bot]\" and (.body | startswith(\"$marke\")))][0].id // empty")
+          # --paginate liefert je Seite eine Zeile; die erste genügt.
+          alt=${alt%%$'\n'*}
+          if [ -n "$alt" ]; then
+            gh api --method PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$alt" -f body="$text" > /dev/null
+          else
+            gh api --method POST "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -f body="$text" > /dev/null
+          fi

@@ -194,4 +194,28 @@ describe('Ohne Maus bedienbar', () => {
       expect(fokussierbar.length, `${name}: nichts fokussierbar`).toBeGreaterThan(0);
     }
   });
+
+  // Issue #105: Reiter nach WAI-ARIA — Pfeiltasten wechseln, nur der aktive
+  // Reiter liegt in der Tab-Reihenfolge.
+  it('wechselt die Reiter des Seitenfensters mit den Pfeiltasten', async () => {
+    await ladeApp();
+    await ansicht('Überblick');
+    const reiter = (name: string) =>
+      within(seitenfenster()).getByRole('tab', { name: new RegExp(`^${name}`) });
+    expect(reiter('Überblick')).toHaveAttribute('aria-selected', 'true');
+    expect(reiter('Filter')).toHaveAttribute('tabindex', '-1');
+
+    fireEvent.keyDown(reiter('Überblick'), { key: 'ArrowRight' });
+    expect(reiter('Filter')).toHaveAttribute('aria-selected', 'true');
+    expect(reiter('Filter')).toHaveFocus();
+
+    fireEvent.keyDown(reiter('Filter'), { key: 'ArrowLeft' });
+    fireEvent.keyDown(reiter('Überblick'), { key: 'ArrowLeft' });
+    expect(reiter('Prüfung')).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('gliedert die Seite mit Überschriften', async () => {
+    await ladeApp();
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+  });
 });

@@ -23,7 +23,7 @@ const HIDE_MODES = [
 const NO_COLS = '';
 
 /** Kleine Großbuchstaben-Beschriftung wie im Mockup (`.cap`). */
-export const CAP = 'font-mono text-[9.5px] font-medium uppercase tracking-[0.7px] text-mute';
+export const CAP = 'font-mono text-[10px] font-medium uppercase tracking-[0.7px] text-mute';
 
 export function Row({ label, children }: { label: string; children: ReactNode }) {
   return (

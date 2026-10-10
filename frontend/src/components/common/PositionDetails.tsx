@@ -205,7 +205,7 @@ export function PositionDetails({
                 {keywords.map((keyword) => (
                   <span
                     key={keyword}
-                    className="rounded-[var(--r-pill)] bg-sunken px-[8px] py-[2px] font-mono text-[9.5px] text-dim"
+                    className="rounded-[var(--r-pill)] bg-sunken px-[8px] py-[2px] font-mono text-[10px] text-dim"
                   >
                     {keyword}
                   </span>
@@ -218,7 +218,7 @@ export function PositionDetails({
         <Section title="Eigenschaften">
           <PropTable rows={rows} />
           {meta !== null && (
-            <div className="font-mono text-[9px] text-mute">
+            <div className="font-mono text-[10px] text-mute">
               {meta.classifier} · Ruleset {meta.ruleset} · v{meta.version}
             </div>
           )}

@@ -6,8 +6,8 @@
   --sans:'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
 
   /* Sizes — small and dense. The UI runs 8–12px; only object titles go bigger. */
-  --fs-micro:8px;      /* uppercase eyebrow inside property rows */
-  --fs-label:9px;      /* SECTION LABELS, badges, meta */
+  --fs-micro:10px;     /* uppercase eyebrow inside property rows */
+  --fs-label:10px;     /* SECTION LABELS, badges, meta */
   --fs-meta:10px;      /* chips, dropdown rows, secondary meta */
   --fs-body:10.5px;    /* list rows, task text */
   --fs-row:11px;       /* table cells, tree rows — the workhorse size */

@@ -1,4 +1,4 @@
-// VOB-Regeln V1…V10 (docs/domain/vob-pruefungen.md). Jede Regel findet ein
+// VOB-Regeln V1…V11 (docs/domain/vob-pruefungen.md). Jede Regel findet ein
 // Textmuster oder ein Feld — sie bewertet nicht. Die Norm-Verweise stehen nicht
 // hier, sondern in docs/domain/reference/pruefregeln.csv; dieser Code kennt nur
 // die Regel-ID.
@@ -38,6 +38,32 @@ export const v1Bedarfsposition: CheckRule = {
         severity: 'beachten',
         positionId: context.index.nodes[i].id,
         title: 'Bedarfsposition',
+      });
+    }
+    return flags;
+  },
+};
+
+// ── V11 · Alternativposition ────────────────────────────────────────────────
+// Kein VOB-Verweis, bis der Owner einen bestätigt (Issue #102): die Regel
+// meldet nur, was das Feld `positionType` sagt — wie V7 ein GAEB-Merkmal.
+
+export const v11Alternativposition: CheckRule = {
+  id: 'V11',
+  label: 'Alternativposition',
+  category: 'vob',
+  severity: 'beachten',
+  hint: 'Die Position ist als Alternative ausgewiesen. Ob sie statt der Grundposition beauftragt wird, steht bei Angebotsabgabe nicht fest.',
+  check(context: CheckContext): Flag[] {
+    const flags: Flag[] = [];
+    for (let i = 0; i < context.index.size; i++) {
+      if (context.index.positions[i].positionType !== 'ALTERNATIV') continue;
+      flags.push({
+        id: 'V11',
+        category: 'vob',
+        severity: 'beachten',
+        positionId: context.index.nodes[i].id,
+        title: 'Alternativposition',
       });
     }
     return flags;

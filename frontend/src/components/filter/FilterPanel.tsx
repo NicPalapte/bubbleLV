@@ -22,16 +22,16 @@ const EMPTY_SELECTION: ReadonlySet<string> = new Set();
 function Heading({ children, right }: { children: React.ReactNode; right?: React.ReactNode }) {
   return (
     <div className="flex flex-wrap items-baseline justify-between gap-x-[10px] gap-y-[4px]">
-      <h3 className="m-0 inline-flex items-center gap-[8px] font-sans text-[14px] font-bold tracking-[-0.2px] text-ink">
+      <h2 className="m-0 inline-flex items-center gap-[8px] font-sans text-[14px] font-bold tracking-[-0.2px] text-ink">
         {children}
-      </h3>
+      </h2>
       {right}
     </div>
   );
 }
 
 const RESET =
-  'cursor-pointer border-none bg-transparent p-0 font-mono text-[9.5px] font-medium uppercase tracking-[0.7px] text-blueD';
+  'cursor-pointer border-none bg-transparent p-0 font-mono text-[10px] font-medium uppercase tracking-[0.7px] text-blueD';
 
 function FacetSection({
   facet,

@@ -29,7 +29,7 @@ const EDGE_GAP = 16;
 /** So viele Vorschläge stehen unter „Ähnlich". */
 const MAX_SUGGESTIONS = 5;
 
-const CAP = 'font-mono text-[9.5px] font-medium uppercase tracking-[0.6px] text-mute';
+const CAP = 'font-mono text-[10px] font-medium uppercase tracking-[0.6px] text-mute';
 const LABEL_CELL = `sticky left-0 z-[1] w-[110px] min-w-[110px] border-b border-line bg-sunken px-[12px] py-[8px] text-left align-top ${CAP}`;
 const VALUE_CELL = 'min-w-[200px] border-b border-line px-[12px] py-[8px] align-top';
 
@@ -207,7 +207,7 @@ export function CompareWindow() {
               >
                 + {node.position?.oz}
                 {node.position !== null && amount(node.position) !== '' && (
-                  <span className="text-[9.5px] text-mute">{amount(node.position)}</span>
+                  <span className="text-[10px] text-mute">{amount(node.position)}</span>
                 )}
               </button>
             ))

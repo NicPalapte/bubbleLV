@@ -221,7 +221,7 @@ export function PopoverRow({
             border: `1px solid ${on ? 'var(--blue)' : 'var(--line2)'}`,
             background: on ? 'var(--blue)' : 'var(--white)',
             color: '#fff',
-            fontSize: 9,
+            fontSize: 10,
             lineHeight: 1,
             display: 'inline-flex',
             alignItems: 'center',

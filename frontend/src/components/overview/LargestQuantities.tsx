@@ -59,7 +59,7 @@ export function LargestQuantities({
             className="flex w-full cursor-pointer items-baseline gap-[8px] border-none border-b border-solid border-grid bg-transparent px-0 py-[4px] text-left"
           >
             <span
-              className="w-[92px] shrink-0 truncate font-mono text-[9.5px]"
+              className="w-[92px] shrink-0 truncate font-mono text-[10px]"
               style={{ color: item.nodeId === selectedId ? 'var(--blueD)' : 'var(--dim)' }}
             >
               {item.oz}

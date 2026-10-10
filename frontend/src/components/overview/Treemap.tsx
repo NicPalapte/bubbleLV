@@ -129,7 +129,7 @@ export function Treemap({
               disabled={!group.pickable}
               onClick={() => onPickSection(group.key)}
               title={describe(group.label, group.value, group.count, measure)}
-              className="block w-full cursor-pointer truncate border-none bg-transparent px-[5px] text-left font-mono text-[9.5px] leading-[20px] text-ink disabled:cursor-default"
+              className="block w-full cursor-pointer truncate border-none bg-transparent px-[5px] text-left font-mono text-[10px] leading-[20px] text-ink disabled:cursor-default"
               style={{ height: HEAD_HEIGHT }}
             >
               {rect.width > LABEL_MIN_WIDTH ? group.label : '…'}
@@ -141,7 +141,7 @@ export function Treemap({
                 disabled={item.collected || item.key === NO_UNIT}
                 onClick={() => onPickUnit(group.key, item.key)}
                 title={`${group.label} · ${describe(item.label, item.value, item.count, measure)}`}
-                className="absolute cursor-pointer overflow-hidden border border-solid border-white bg-white/35 p-[3px] text-left align-top font-mono text-[9px] leading-[1.25] text-ink disabled:cursor-default"
+                className="absolute cursor-pointer overflow-hidden border border-solid border-white bg-white/35 p-[3px] text-left align-top font-mono text-[10px] leading-[1.25] text-ink disabled:cursor-default"
                 style={{
                   left: cell.x,
                   top: cell.y,

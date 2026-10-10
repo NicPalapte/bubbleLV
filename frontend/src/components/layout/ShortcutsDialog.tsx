@@ -88,7 +88,7 @@ export function ShortcutsDialog({ onClose }: { onClose: () => void }) {
         <div className="flex flex-col gap-[14px] p-[16px]">
           {groups(modKey()).map((group) => (
             <section key={group.title} aria-label={group.title}>
-              <h3 className="mb-[6px] font-mono text-[9.5px] font-medium uppercase tracking-[0.6px] text-mute">
+              <h3 className="mb-[6px] font-mono text-[10px] font-medium uppercase tracking-[0.6px] text-mute">
                 {group.title}
               </h3>
               <dl className="m-0 flex flex-col gap-[4px]">

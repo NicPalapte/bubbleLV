@@ -44,7 +44,7 @@ export function ValueChip({
       {leading}
       <span className="truncate">{children}</span>
       {count !== undefined && (
-        <span className={`text-[9.5px] ${on ? 'text-blueD' : 'text-mute'}`}>
+        <span className={`text-[10px] ${on ? 'text-blueD' : 'text-mute'}`}>
           {formatCount(count)}
         </span>
       )}

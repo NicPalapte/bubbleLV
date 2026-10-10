@@ -85,7 +85,7 @@ export function GraphControls({ onFit, onFitSelection, onZoom }: GraphControlsPr
           onClick={() => dispatch({ type: 'graphHints', value: !showHints })}
           className={`h-[28px] cursor-pointer whitespace-nowrap rounded-[var(--r-sm)] border px-[10px] font-mono text-[10.5px] ${
             showHints
-              ? 'border-amber bg-amberS text-amber'
+              ? 'border-amber bg-amberS text-amberD'
               : 'border-line bg-sunken text-mute line-through'
           }`}
         >
@@ -94,7 +94,7 @@ export function GraphControls({ onFit, onFitSelection, onZoom }: GraphControlsPr
       )}
 
       <div className="flex items-center gap-[6px]">
-        <span className="pl-[4px] font-mono text-[9px] uppercase tracking-[0.6px] text-mute">
+        <span className="pl-[4px] font-mono text-[10px] uppercase tracking-[0.6px] text-mute">
           Größe
         </span>
         <SegmentedControl

@@ -33,11 +33,11 @@ function Kpi({
       }`}
     >
       <span
-        className={`font-sans text-[17px] font-semibold leading-tight ${warn ? 'text-amber' : 'text-ink'}`}
+        className={`font-sans text-[17px] font-semibold leading-tight ${warn ? 'text-amberD' : 'text-ink'}`}
       >
         {value}
       </span>
-      <span className="font-mono text-[9.5px] uppercase tracking-[0.6px] text-mute">{label}</span>
+      <span className="font-mono text-[10px] uppercase tracking-[0.6px] text-mute">{label}</span>
     </button>
   );
 }

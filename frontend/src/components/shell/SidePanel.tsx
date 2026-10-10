@@ -61,6 +61,22 @@ export function SidePanel() {
     dispatch({ type: 'sideWidth', width: width + step });
   };
 
+  const switchTabByKey = (event: KeyboardEvent<HTMLDivElement>): void => {
+    const current = TABS.findIndex((tab) => tab.id === side);
+    let next: number;
+    if (event.key === 'ArrowRight') next = (current + 1) % TABS.length;
+    else if (event.key === 'ArrowLeft') next = (current - 1 + TABS.length) % TABS.length;
+    else if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = TABS.length - 1;
+    else return;
+    // Nur auf einem Reiter, nicht auf dem Schließen-Knopf in derselben Leiste.
+    if ((event.target as HTMLElement).getAttribute('role') !== 'tab') return;
+    event.preventDefault();
+    const tab = TABS[next];
+    dispatch({ type: 'sidePanel', panel: tab.id });
+    event.currentTarget.querySelector<HTMLElement>(`#side-tab-${tab.id}`)?.focus();
+  };
+
   return (
     <aside
       aria-label="Seitenfenster"
@@ -71,14 +87,21 @@ export function SidePanel() {
     >
       <div
         role="tablist"
+        aria-label="Reiter des Seitenfensters"
+        onKeyDown={switchTabByKey}
         className="flex shrink-0 items-center gap-[2px] border-b border-line p-[6px]"
       >
         {TABS.map((tab) => (
           <button
             key={tab.id}
+            id={`side-tab-${tab.id}`}
             type="button"
             role="tab"
             aria-selected={side === tab.id}
+            aria-controls="side-tabpanel"
+            // Roving tabindex: Tab springt in die Leiste, Pfeiltasten wechseln
+            // den Reiter (WAI-ARIA Tabs, Issue #105).
+            tabIndex={side === tab.id ? 0 : -1}
             onClick={() => dispatch({ type: 'sidePanel', panel: tab.id })}
             className={`flex h-[30px] flex-1 cursor-pointer items-center justify-center gap-[6px] rounded-[var(--r-sm)] border-none px-[8px] font-mono text-[11px] ${
               side === tab.id
@@ -88,7 +111,7 @@ export function SidePanel() {
           >
             {tab.label}
             {tab.id === 'check' && hintCount > 0 && (
-              <span className="rounded-[var(--r-pill)] bg-amberS px-[6px] text-[9.5px] text-amber">
+              <span className="rounded-[var(--r-pill)] bg-amberS px-[6px] text-[10px] text-amberD">
                 {formatCount(hintCount)}
               </span>
             )}
@@ -104,7 +127,12 @@ export function SidePanel() {
         </button>
       </div>
       {/* Eigenes Netz: stürzt ein Reiter ab, bleibt der Graph bedienbar. */}
-      <div role="tabpanel" className="relative min-h-0 flex-1">
+      <div
+        role="tabpanel"
+        id="side-tabpanel"
+        aria-labelledby={`side-tab-${side}`}
+        className="relative min-h-0 flex-1"
+      >
         <ErrorBoundary key={side} bereich={side} dateiGeladen>
           {side === 'overview' && <OverviewView />}
           {side === 'filter' && <FilterPanel />}
