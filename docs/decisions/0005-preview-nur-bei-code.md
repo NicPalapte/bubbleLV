@@ -1,6 +1,6 @@
 # 0005 – Preview nur bei Code-Änderungen
 
-- **Status:** akzeptiert
+- **Status:** ersetzt durch [0042](0042-preview-auf-zuruf.md)
 - **Datum:** 2026-09-10
 - **Betrifft:** CI, Deployment
 - **Ergänzt:** [0002 – Preview-App pro Pull Request](0002-pr-preview.md)

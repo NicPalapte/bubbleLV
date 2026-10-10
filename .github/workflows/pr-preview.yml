@@ -1,7 +1,7 @@
 name: PR-Preview
 
 # Was macht dieser Workflow?
-# Jeder Pull Request bekommt eine eigene, klickbare Version der App unter
+# Ein Pull Request bekommt auf Zuruf eine eigene, klickbare Version der App unter
 #   https://<owner>.github.io/<repo>/pr-preview/pr-<nummer>/
 # Der Link wird automatisch als Kommentar in den PR geschrieben.
 #
@@ -14,36 +14,68 @@ name: PR-Preview
 # Die Previews liegen im Branch `gh-pages` im Ordner `pr-preview/`; der Live-Stand von
 # `main` liegt im Wurzelverzeichnis desselben Branches (siehe deploy-pages.yml).
 #
-# Gebaut wird nur, wenn der Pull Request tatsächlich Code der App anfasst (`paths`
-# unten). Reine Doku-PRs bekommen keine Preview – es gäbe nichts zu sehen, und der
-# Build dauert länger als der ganze Rest des PRs.
+# Gebaut wird nur auf Zuruf: Kommentar `/preview` im Pull Request. Nicht bei jedem Push –
+# die meisten Zwischenstände braucht niemand zum Anklicken, und der Build dauert länger
+# als der ganze Rest der CI. Nach neuen Pushes zeigt die Preview den alten Stand, bis
+# jemand erneut `/preview` schreibt.
 #
 # Einrichtung: docs/setup/ci-und-agenten.md · Begründung: docs/decisions/0002-pr-preview.md
-# und docs/decisions/0005-preview-nur-bei-code.md
+# und docs/decisions/0042-preview-auf-zuruf.md
 
 on:
-  pull_request:
-    types: [opened, reopened, synchronize]
-    # `paths` prüft alle Änderungen des Pull Requests, nicht nur den letzten Push.
-    paths:
-      - 'frontend/**'
-      # Änderungen am Workflow selbst sollen sich testen lassen.
-      - '.github/workflows/pr-preview.yml'
+  issue_comment:
+    types: [created]
 
 permissions:
   contents: write
   pull-requests: write
 
-# Pro Branch nur eine Preview-Aktion gleichzeitig, sonst überschreiben sich Deployments.
-concurrency: preview-${{ github.ref }}
-
 jobs:
   preview:
-    # Nur Branches aus diesem Repo: Fork-PRs dürfen nicht nach gh-pages schreiben.
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    # Nur Kommentare im Pull Request, die mit `/preview` beginnen, und nur von Personen
+    # mit Rechten am Repo – der Build schreibt nach gh-pages.
+    if: >-
+      github.event.issue.pull_request != null &&
+      startsWith(github.event.comment.body, '/preview') &&
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'),
+               github.event.comment.author_association)
     runs-on: ubuntu-latest
+    # Pro PR nur eine Preview-Aktion gleichzeitig, sonst überschreiben sich Deployments.
+    # Die Sperre steht am Job, nicht am Workflow: jeder Kommentar startet den Workflow,
+    # auch der Link-Kommentar der Preview selbst. Am Workflow könnte so ein
+    # übersprungener Lauf eine wartende Preview verdrängen.
+    concurrency: preview-${{ github.event.issue.number }}
+    env:
+      PR: ${{ github.event.issue.number }}
     steps:
+      # Sofortige Rückmeldung am Kommentar (👀), der Build dauert ein paar Minuten.
+      - name: Kommentar bestätigen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST \
+            "repos/$GITHUB_REPOSITORY/issues/comments/${{ github.event.comment.id }}/reactions" \
+            -f content=eyes > /dev/null || echo "Reaktion nicht möglich – Build läuft trotzdem."
+
+      # Ein Kommentar-Ereignis kennt nur die PR-Nummer, nicht den Branch. Den holen wir
+      # nach – und brechen bei Fork-PRs ab: die dürfen nicht nach gh-pages schreiben.
+      - name: PR-Stand bestimmen
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          info=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR")
+          head_repo=$(jq -r '.head.repo.full_name // ""' <<<"$info")
+          if [ "$head_repo" != "$GITHUB_REPOSITORY" ]; then
+            echo "PR kommt aus einem Fork ($head_repo) – keine Preview."
+            exit 1
+          fi
+          echo "sha=$(jq -r '.head.sha' <<<"$info")" >> "$GITHUB_OUTPUT"
+
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pr.outputs.sha }}
 
       - uses: actions/setup-node@v4
         with:
@@ -61,14 +93,17 @@ jobs:
         working-directory: frontend
         run: |
           npm run build -- \
-            --base=/${{ github.event.repository.name }}/pr-preview/pr-${{ github.event.number }}/
+            --base=/${{ github.event.repository.name }}/pr-preview/pr-${{ env.PR }}/
 
       # action: deploy statt des Standards "auto" – der Workflow soll unter keinen
-      # Umständen aufräumen, auch nicht, wenn er künftig auf weitere Events hört.
+      # Umständen aufräumen. pr-number und Commit-Text explizit, weil das
+      # Kommentar-Ereignis keine PR-Nummer an der Stelle trägt, wo die Action sucht.
       - name: Preview veröffentlichen
-        uses: rossjrw/pr-preview-action@v1
+        uses: rossjrw/pr-preview-action@ffa7509e91a3ec8dfc2e5536c4d5c1acdf7a6de9 # v1.8.1
         with:
           source-dir: frontend/dist
           preview-branch: gh-pages
           umbrella-dir: pr-preview
           action: deploy
+          pr-number: ${{ env.PR }}
+          deploy-commit-message: Deploy preview for PR ${{ env.PR }}

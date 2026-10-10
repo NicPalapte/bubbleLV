@@ -5,6 +5,11 @@ on:
     branches: [main]
   pull_request:
 
+# Die CI liest nur den Code und schreibt nichts zurück – deshalb nur Leserechte.
+# Ohne diesen Block liefe sie mit den Standardrechten des Repos.
+permissions:
+  contents: read
+
 jobs:
   frontend:
     runs-on: ubuntu-latest

@@ -163,7 +163,8 @@ Prompts in Workflows):
 ## Automatik im Repo (nicht ohne Rückfrage ändern)
 - `.github/workflows/ci.yml` – Lint, Format, Typecheck, Test, Build bei jedem PR
 - `.github/workflows/claude-review.yml` – Review-Agent, max. 3 automatische Läufe je PR
-- `.github/workflows/pr-preview.yml` – Preview-App je PR unter `pr-preview/pr-<nr>/`
+- `.github/workflows/pr-preview.yml` – Preview-App je PR unter `pr-preview/pr-<nr>/`,
+  nur auf Kommentar `/preview`
 - `.github/workflows/deploy-pages.yml` – `main` → Branch `gh-pages` (Wurzel)
 - `gh-pages` wird ausschließlich von Workflows geschrieben – niemals von Hand committen
 - Der Review-Agent misst am Inhalt dieser Datei; Regeländerungen hier ändern den

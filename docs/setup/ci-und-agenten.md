@@ -7,14 +7,16 @@ Was danach automatisch passiert:
 
 | Wann                     | Was                                                              |
 |--------------------------|------------------------------------------------------------------|
-| Pull Request geöffnet     | App wird gebaut, Preview-Link als Kommentar, Code-Review kommentiert |
-| Push in den Pull Request  | Preview aktualisiert, Review erneut (max. 3× automatisch)          |
+| Pull Request geöffnet     | Code-Review kommentiert                                           |
+| Push in den Pull Request  | Review erneut (max. 3× automatisch)                               |
+| Kommentar `/preview`      | App wird gebaut, Preview-Link als Kommentar                       |
 | Pull Request geschlossen  | nichts – Preview fällt beim nächsten Merge weg                    |
 | Merge nach `main`         | Live-Seite wird neu veröffentlicht                                |
 
-**Preview nur bei Code-Änderungen:** Gebaut wird nur, wenn der Pull Request etwas unter
-`frontend/` ändert. Ein PR, der ausschließlich Doku anfasst, bekommt keinen Preview-Link –
-das ist kein Fehler. Der Review-Agent und die übrige CI laufen weiterhin bei jedem PR.
+**Preview nur auf Zuruf:** Gebaut wird nur, wenn jemand mit Rechten am Repo im Pull
+Request `/preview` kommentiert. Der Kommentar bekommt sofort ein 👀, nach ein paar Minuten
+erscheint der Link. Nach neuen Pushes zeigt die Preview den alten Stand, bis erneut
+`/preview` kommt. Grund: [Entscheidung 0042](../decisions/0042-preview-auf-zuruf.md).
 
 **Previews werden beim Deploy aufgeräumt:** Schließt man einen PR, bleibt seine Preview
 zunächst erreichbar. Sie verschwindet beim nächsten Merge nach `main` – dann übernimmt das
@@ -77,8 +79,8 @@ Nur nötig, falls der Preview-Workflow mit „Permission denied“ abbricht:
 
 ## Schritt 4 – Einmal ausprobieren
 
-1. Kleinen Test-Pull-Request öffnen. Er muss etwas unter `frontend/` ändern, sonst
-   entsteht keine Preview – z. B. eine Zeile in `frontend/src/App.tsx`.
+1. Kleinen Test-Pull-Request öffnen, z. B. eine Zeile in `frontend/src/App.tsx`.
+   Danach im PR `/preview` kommentieren.
 2. Erwartung im PR:
    - Kommentar mit dem Preview-Link (`.../pr-preview/pr-<nummer>/`)
    - Kommentare des Review-Agenten, falls er etwas findet
@@ -92,6 +94,7 @@ Nur nötig, falls der Preview-Workflow mit „Permission denied“ abbricht:
 
 **Noch ein Review anfordern (Budget aufgebraucht)**
 Kommentar in den PR schreiben: `@claude review`. Diese Läufe zählen nicht mit.
+Das wirkt nur, wenn der Kommentar vom Owner oder von eingetragenen Mitarbeitern kommt.
 
 **Zähler zurücksetzen**
 Den Kommentar mit dem Zählerstand löschen. Danach stehen wieder 3 automatische Reviews
@@ -122,7 +125,8 @@ Workflows auf dem starken Modell. Die getroffene Wahl steht im Log des Laufs unt
 | Preview-Workflow: „Permission denied“            | Schreibrechte für Workflows → Schritt 3                       |
 | Live-Seite bleibt auf altem Stand                | Pages-Quelle noch nicht umgestellt → Schritt 2                |
 | Kein Review bei einem PR aus einem fremden Fork  | So gewollt: Fork-PRs bekommen weder Review noch Preview       |
-| Kein Preview-Link am Pull Request                | So gewollt, wenn der PR nur Doku ändert – siehe Tabelle oben  |
+| `@claude review` von Fremden startet nichts      | So gewollt: nur Owner und Mitarbeiter dürfen das auslösen     |
+| Kein Preview-Link am Pull Request                | Erst `/preview` kommentieren – siehe Tabelle oben             |
 | Preview eines geschlossenen PRs noch erreichbar  | So gewollt: sie fällt beim nächsten Merge nach `main` weg     |
 
 Hintergrund und Begründungen: [`docs/decisions/`](../decisions/README.md).
