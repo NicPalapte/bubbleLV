@@ -37,6 +37,7 @@ import {
 } from '../../lib/table/columns';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { LVNode, PositionSummary } from '../../types/lvNode';
+import type { PositionType } from '../../types/lvDraft';
 
 type SortKey =
   'oz' | 'shortText' | 'positionsart' | 'bauteiltyp' | 'beton' | 'unit' | 'quantity' | 'unitPrice';
@@ -80,6 +81,26 @@ function collectRows(scopeRoot: LVNode): Row[] {
   return out;
 }
 
+/** Kürzel für Positionen, die nicht sicher beauftragt werden (Issue #102). */
+const TYPE_MARKS: Partial<Record<PositionType, { label: string; title: string }>> = {
+  ALTERNATIV: { label: 'Alt', title: 'Alternativposition' },
+  BEDARF: { label: 'Bed', title: 'Bedarfsposition' },
+};
+
+function TypeMark({ type }: { type: PositionType }) {
+  const mark = TYPE_MARKS[type];
+  if (mark === undefined) return null;
+  return (
+    <span
+      title={mark.title}
+      aria-label={mark.title}
+      className="mr-[6px] inline-block rounded-[var(--r-sm)] border border-line px-[4px] font-mono text-[10px] uppercase text-ink"
+    >
+      {mark.label}
+    </span>
+  );
+}
+
 /**
  * Alle Spalten mit Pixelbreite. Die Anzeigereihenfolge steht in
  * `DEFAULT_ORDER`: Kennung und Mengengerüst zuerst, dann die Klassifizierung.
@@ -91,7 +112,12 @@ const COLUMNS: ReadonlyArray<Column<Row>> = [
     label: 'Bezeichnung',
     width: 260,
     primary: true,
-    render: (r) => r.position.shortText,
+    render: (r) => (
+      <>
+        <TypeMark type={r.position.positionType} />
+        {r.position.shortText}
+      </>
+    ),
   },
   { key: 'unit', label: 'Einheit', width: 70, render: (r) => r.position.unit ?? '—' },
   {
@@ -156,7 +182,7 @@ const LOCKED_COLUMNS: ReadonlySet<string> = new Set(['oz', 'shortText']);
 const DEFAULT_COLUMN_CONFIG: ColumnConfig = defaultColumnConfig(DEFAULT_ORDER, DEFAULT_WIDTHS);
 
 const ICON_BUTTON =
-  'inline-flex h-[18px] w-[18px] cursor-pointer items-center justify-center border border-line bg-white p-0 font-mono text-[9px] leading-none text-dim disabled:cursor-default disabled:opacity-30';
+  'inline-flex h-[18px] w-[18px] cursor-pointer items-center justify-center border border-line bg-white p-0 font-mono text-[10px] leading-none text-dim disabled:cursor-default disabled:opacity-30';
 
 /** Popover „Spalten": ein-/ausblenden per Kästchen, verschieben per Pfeil. */
 function ColumnPicker({
@@ -225,7 +251,7 @@ function ColumnPicker({
                       border: `1px solid ${shown ? 'var(--blue)' : 'var(--line2)'}`,
                       background: shown ? 'var(--blue)' : 'var(--white)',
                       color: '#fff',
-                      fontSize: 9,
+                      fontSize: 10,
                       lineHeight: 1,
                       display: 'inline-flex',
                       alignItems: 'center',

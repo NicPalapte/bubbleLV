@@ -101,12 +101,12 @@ function RuleMeta({ rule }: { rule: RuleStatus }) {
     <>
       <p className="mt-[4px] font-sans text-[11.5px] leading-[1.5] text-dim">{rule.hint}</p>
       {rule.ruleRef !== '' && (
-        <p className="mt-[3px] font-mono text-[9.5px] text-mute">
+        <p className="mt-[3px] font-mono text-[10px] text-mute">
           {rule.ruleRef}
           {!rule.refConfirmed && (
             <span
               className="ml-[6px] border px-[4px] py-[1px]"
-              style={{ borderColor: 'var(--amber)', color: 'var(--amber)' }}
+              style={{ borderColor: 'var(--amber)', color: 'var(--amberD)' }}
               title="Der Norm-Verweis ist noch nicht bestätigt — siehe docs/domain/vob-pruefungen.md"
             >
               Verweis zu bestätigen
@@ -115,7 +115,7 @@ function RuleMeta({ rule }: { rule: RuleStatus }) {
         </p>
       )}
       {rule.inactiveReason !== null && (
-        <p className="mt-[3px] font-mono text-[9.5px] text-mute">{rule.inactiveReason}</p>
+        <p className="mt-[3px] font-mono text-[10px] text-mute">{rule.inactiveReason}</p>
       )}
     </>
   );

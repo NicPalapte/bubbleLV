@@ -143,12 +143,13 @@ export function TopBar() {
           <>
             {/* Datei: begrenzt und abgeschnitten — reale Projektnamen sind lang. */}
             <div className="hidden min-w-0 max-w-[300px] shrink flex-col border-l border-line pl-[12px] leading-tight md:flex">
-              <b
-                className="truncate font-sans text-[13px] font-semibold text-ink"
+              {/* Einzige h1 der Seite: Bildschirmleser springen über Überschriften. */}
+              <h1
+                className="m-0 truncate font-sans text-[13px] font-semibold text-ink"
                 title={lv.projectName ?? lv.fileName}
               >
                 {lv.projectName ?? lv.fileName}
-              </b>
+              </h1>
               <span className="truncate font-mono text-[10px] text-mute" title={lv.fileName}>
                 {lv.fileName}
                 {lv.client !== null && ` · ${lv.client}`}
@@ -192,7 +193,7 @@ export function TopBar() {
                 aria-label="Suche"
                 className="min-w-[60px] flex-1 border-none bg-transparent font-mono text-[12px] text-ink outline-none placeholder:text-mute"
               />
-              <span className="rounded-[5px] border border-line bg-sunken px-[5px] py-[1px] font-mono text-[9.5px] text-mute">
+              <span className="rounded-[5px] border border-line bg-sunken px-[5px] py-[1px] font-mono text-[10px] text-mute">
                 /
               </span>
               <button

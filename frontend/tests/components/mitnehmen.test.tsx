@@ -111,6 +111,21 @@ describe('Mitnehmen', () => {
     for (const zeile of zeilen) expect(zeile).toMatch(/beton/i);
   });
 
+  // Issue #91: Fehler im Klick-Handler fängt keine ErrorBoundary — ohne
+  // Abfangen sähe niemand, dass keine Datei kam.
+  it('meldet einen gescheiterten Export sichtbar', async () => {
+    await ladeApp();
+    URL.createObjectURL = vi.fn(() => {
+      throw new Error('blockiert');
+    });
+    const log = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    befehl('Positionen als CSV');
+    log.mockRestore();
+
+    const hinweis = screen.getByRole('status', { name: 'Hinweise' });
+    expect(hinweis).toHaveTextContent('Die CSV-Datei konnte nicht erstellt werden');
+  });
+
   it('lädt die Hinweise als Markdown', async () => {
     await ladeApp();
     befehl('Hinweise als Markdown');

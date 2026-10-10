@@ -64,7 +64,7 @@ export function ParetoCard({ pareto }: { pareto: ParetoModel | null }) {
         />
         <path d={pathOf(pareto.curve)} fill="none" stroke="var(--ink)" strokeWidth="0.8" />
       </svg>
-      <p className="mt-[4px] font-mono text-[9.5px] text-mute">
+      <p className="mt-[4px] font-mono text-[10px] text-mute">
         waagerecht: Anteil der Positionen · senkrecht: kumulierte Summe
       </p>
     </>

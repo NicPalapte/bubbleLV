@@ -88,6 +88,19 @@ describe('V1 · Bedarfsposition', () => {
   });
 });
 
+describe('V11 · Alternativposition', () => {
+  it('findet die Alternativposition und nur sie', () => {
+    const result = check(
+      position({ oz: '01.001.0010', positionType: 'NORMAL' }),
+      position({ oz: '01.001.0020', positionType: 'ALTERNATIV' }),
+    );
+    const flags = flagsOf(result, 'V11');
+    expect(flags).toHaveLength(1);
+    expect(flags[0].positionId).toContain('01.001.0020');
+    expect(rule(result, 'V11').active).toBe(true);
+  });
+});
+
 describe('V2 · Stundenlohnarbeiten', () => {
   it('erkennt die Zeiteinheit über die gepflegte Gruppe', () => {
     const result = check(position({ oz: '01.001.0010', unit: 'Std' }));

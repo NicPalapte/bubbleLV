@@ -96,6 +96,7 @@ export function FileDropzone() {
       <div className="start-in">
         <div className="start-brand">
           <BubbleLogo size={40} />
+          <h1 className="sr-only">bubble – LV-Viewer</h1>
           <p className="start-tag">Erlebe dein Leistungsverzeichnis wie nie zuvor.</p>
         </div>
 
@@ -128,7 +129,7 @@ export function FileDropzone() {
             <span className="start-ring" aria-hidden="true">
               ⇪
             </span>
-            <b>Eigenes LV öffnen</b>
+            <h2 className="start-title">Eigenes LV öffnen</h2>
             <span className="start-sub">GAEB-Datei hierher ziehen</span>
             {/*
               Der Klick auf die Fläche ist eine Mausbequemlichkeit; die bedienbare
@@ -168,7 +169,7 @@ export function FileDropzone() {
           */}
           <div className="start-card start-demo">
             <DemoArt />
-            <b>Demo-LV ansehen</b>
+            <h2 className="start-title">Demo-LV ansehen</h2>
             <span className="start-sub">{ohnePreise.title}</span>
             <span className="start-meta">{ohnePreise.hint}</span>
             <span className="flex flex-wrap justify-center gap-[8px]">

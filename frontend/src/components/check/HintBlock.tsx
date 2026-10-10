@@ -46,7 +46,7 @@ function RuleHints({
     >
       <div
         className={`flex flex-wrap items-baseline gap-[6px] font-mono text-[10.5px] font-semibold ${
-          strong ? 'text-amber' : 'text-dim'
+          strong ? 'text-amberD' : 'text-dim'
         }`}
       >
         <span>⚠ {ruleId}</span>
@@ -70,12 +70,12 @@ function RuleHints({
         ))}
       </ul>
       {rule !== undefined && rule.ruleRef !== '' && (
-        <p className="m-0 font-mono text-[9.5px] text-dim">
+        <p className="m-0 font-mono text-[10px] text-dim">
           {rule.ruleRef} · Hinweis, keine Bewertung
           {!rule.refConfirmed && (
             <span
               className="ml-[5px] rounded-[var(--r-sm)] border px-[4px] py-[1px]"
-              style={{ borderColor: 'var(--amber)', color: 'var(--amber)' }}
+              style={{ borderColor: 'var(--amber)', color: 'var(--amberD)' }}
               title="Der Norm-Verweis ist noch nicht bestätigt — siehe docs/domain/vob-pruefungen.md"
             >
               Verweis zu bestätigen

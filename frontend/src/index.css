@@ -25,8 +25,9 @@
   --line2: #c3d0de;
 
   --ink: #152131;
-  --dim: #5b6d82;
-  --mute: #5f7184; /* ≥4.5:1 auf --white und --paper (WCAG AA) */
+  /* Beide ≥5:1 auf allen hellen Flächen inkl. --blueS (WCAG AA, Issue #105). */
+  --dim: #4f6175;
+  --mute: #53657a;
 
   --blue: #2563eb;
   --blueS: #e3ecfe;
@@ -126,8 +127,8 @@
   --mono: 'IBM Plex Mono', ui-monospace, monospace;
   --sans: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
 
-  --fs-micro: 8px;
-  --fs-label: 9px;
+  --fs-micro: 10px; /* Untergrenze lesbarer Schrift (Issue #105) */
+  --fs-label: 10px;
   --fs-meta: 10px;
   --fs-body: 10.5px;
   --fs-row: 11px;
@@ -533,7 +534,9 @@ a:hover {
   backdrop-filter: blur(14px);
 }
 
-.start-card b {
+.start-card b,
+.start-title {
+  margin: 0;
   font-family: var(--sans);
   font-size: 18px;
   font-weight: 600;
@@ -673,7 +676,7 @@ a:hover {
 }
 
 .start-tip-lock {
-  font-size: 9px;
+  font-size: 10px;
   color: var(--greenD);
 }
 

@@ -87,7 +87,7 @@ export function PrintView() {
         {active.filtering ? ` im aktuellen Filter, von ${index.size}` : ''} ·{' '}
         {new Date().toLocaleDateString('de-DE')}
       </p>
-      <table className="w-full border-collapse font-mono text-[9px]">
+      <table className="w-full border-collapse font-mono text-[10px]">
         <thead>
           <tr>
             {kopf.map((head) => (

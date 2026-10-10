@@ -83,6 +83,14 @@ describe('buildOverview · mit Preisen', () => {
     expect(gefiltert.metrics.totalPositions).toBe(model.metrics.positions);
     expect(gefiltert.metrics.totalPrice).toBeLessThan(model.metrics.totalPrice);
   });
+
+  // Issue #97: Preisführung hängt an der Datei, nicht am Filterergebnis.
+  it('behält „mit Preisen", wenn der Filter nichts trifft', () => {
+    const { model: leer } = overviewOf(syntheticDraft(200), 'xyzzy');
+    expect(leer.metrics.positions).toBe(0);
+    expect(leer.metrics.hasPrices).toBe(true);
+    expect(leer.measure).toBe('preis');
+  });
 });
 
 describe('buildOverview · ohne Preise', () => {

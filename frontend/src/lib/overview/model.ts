@@ -296,6 +296,14 @@ export interface OverviewInput {
   parents: ReadonlyMap<string, LVNode | null>;
 }
 
+/** Führt irgendeine Position im LV einen EP? Bricht beim ersten Treffer ab. */
+function fileHasPrices(index: PositionIndex): boolean {
+  for (let slot = 0; slot < index.size; slot++) {
+    if (Number.isFinite(index.unitPrice[slot])) return true;
+  }
+  return false;
+}
+
 export function buildOverview({ index, mask, parents }: OverviewInput): OverviewModel {
   const buckets = new Map<string, Bucket>();
   const units = new Map<string, UnitTotal>();
@@ -369,7 +377,9 @@ export function buildOverview({ index, mask, parents }: OverviewInput): Overview
     }
   }
 
-  const hasPrices = pricedPositions > 0;
+  // Ob die Datei Preise führt, ist eine Eigenschaft der Datei, nicht des Filters
+  // (Issue #97): sonst hieße es bei 0 Treffern „keine Preise".
+  const hasPrices = pricedPositions > 0 || fileHasPrices(index);
   const measure: Measure = hasPrices ? 'preis' : 'anzahl';
 
   const groups = trimGroups(

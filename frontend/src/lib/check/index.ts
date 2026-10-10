@@ -11,6 +11,7 @@ import { g4Preisausreisser } from './rules/ausreisser';
 import { g1Kostentreiber, g2Mengentreiber, g3Einheitenschreibweise } from './rules/treiber';
 import {
   v10Homogenbereiche,
+  v11Alternativposition,
   v1Bedarfsposition,
   v2Stundenlohn,
   v3Produktname,
@@ -38,6 +39,7 @@ export const CHECK_RULES: readonly CheckRule[] = [
   v8Nebenleistung,
   v9BesondereLeistung,
   v10Homogenbereiche,
+  v11Alternativposition,
   g1Kostentreiber,
   g2Mengentreiber,
   g3Einheitenschreibweise,

@@ -106,7 +106,7 @@ export function AboutMenu({
         className="mx-[8px] flex cursor-pointer items-center gap-[6px] rounded-[var(--r-sm)] border-none bg-transparent px-[8px] py-[5px] hover:bg-sunken aria-expanded:bg-sunken"
       >
         <BubbleLogo size={22} />
-        <span className="font-mono text-[9px] text-mute">▾</span>
+        <span className="font-mono text-[10px] text-mute">▾</span>
       </button>
       <Popover ref={popoverRef} open={open} width={272} anchorRef={anchorRef}>
         <div className="flex flex-col gap-[2px] px-[10px] pb-[8px] pt-[8px]">

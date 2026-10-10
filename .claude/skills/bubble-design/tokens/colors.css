@@ -15,8 +15,8 @@
 
   /* Text */
   --ink:#152131;     /* primary */
-  --dim:#5b6d82;     /* secondary / values */
-  --mute:#5f7184;    /* labels, counts, disabled — ≥4.5:1 auf --white und --paper (WCAG AA) */
+  --dim:#4f6175;     /* secondary / values */
+  --mute:#53657a;    /* labels, counts, disabled — ≥5:1 auf allen hellen Flächen (WCAG AA) */
 
   /* Accent — blue is selection + interaction, never decoration */
   --blue:#2563eb;
