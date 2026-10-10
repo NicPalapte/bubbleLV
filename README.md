@@ -149,14 +149,14 @@ Die App ist ein statisches Bundle und wird als GitHub Project Page ausgeliefert:
 | Was                 | Wann                                | Wo                                          |
 |---------------------|-------------------------------------|---------------------------------------------|
 | Live-Stand          | Push auf `main` oder manuell        | `https://nicpalapte.github.io/bubbleLV/`    |
-| Preview je PR       | PR geöffnet / neuer Push            | `.../bubbleLV/pr-preview/pr-<nummer>/`      |
+| Preview je PR       | Kommentar `/preview` im PR          | `.../bubbleLV/pr-preview/pr-<nummer>/`      |
 
 - [`deploy-pages.yml`](.github/workflows/deploy-pages.yml) baut `frontend/` und schreibt
   das Ergebnis in den Branch `gh-pages` (Wurzelverzeichnis). Manuell auslösbar über
   *Actions → Deploy to GitHub Pages → Run workflow*, damit lässt sich auch ein
   Feature-Branch testweise veröffentlichen.
-- [`pr-preview.yml`](.github/workflows/pr-preview.yml) legt zu jedem Pull Request eine
-  eigene Version unter `pr-preview/pr-<nummer>/` ab und postet den Link als Kommentar.
+- [`pr-preview.yml`](.github/workflows/pr-preview.yml) legt auf den Kommentar `/preview`
+  eine eigene Version unter `pr-preview/pr-<nummer>/` ab und postet den Link als Kommentar.
   Aufgeräumt wird hier nicht: Die Preview eines geschlossenen PRs entfernt
   `deploy-pages.yml` beim nächsten Merge nach `main` — er übernimmt dann nur noch die
   Previews der offenen Pull Requests
