@@ -48,11 +48,7 @@ export function MetricTiles({ metrics, flags }: { metrics: OverviewMetrics; flag
           note="Diese Datei führt keine Preise — die Mengen tragen die Aussage."
         />
       )}
-      <Tile
-        label="Abschnitte"
-        value={formatCount(metrics.sections)}
-        note="Hauptabschnitte im LV"
-      />
+      <Tile label="Abschnitte" value={formatCount(metrics.sections)} note="Hauptabschnitte im LV" />
       {metrics.hasPrices ? (
         <Tile
           label="Ohne Preis"
