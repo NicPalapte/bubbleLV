@@ -27,7 +27,7 @@ import { facetOptionLabel, FACETS_BY_ID } from '../../lib/facets';
 import { formatCount, formatEuro, formatNumber } from '../../lib/format';
 import { createPositionFilter } from '../../lib/index/positionIndex';
 import { POSITION_STATUS } from '../../lib/status';
-import { searchSnippet } from '../../lib/searchSnippet';
+import { flat, searchSnippet } from '../../lib/searchSnippet';
 import { headingOf } from '../../lib/tree/heading';
 import {
   defaultColumnConfig,
@@ -121,7 +121,7 @@ function ShortTextCell({ position, query }: { position: PositionSummary; query: 
       <Highlighted text={shortText} query={query} />
       {snippet !== null && (
         <span className="ml-[8px] font-normal text-mute" title="Treffer im Langtext">
-          <Highlighted text={snippet} query={query} />
+          <Highlighted text={snippet} query={flat(query)} />
         </span>
       )}
     </>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { searchSnippet } from '../../src/lib/searchSnippet';
+import { flat, searchSnippet } from '../../src/lib/searchSnippet';
 
 describe('searchSnippet', () => {
   it('liefert null ohne Suche oder ohne Treffer', () => {
@@ -25,5 +25,10 @@ describe('searchSnippet', () => {
   it('findet einen Treffer über Zeilenumbruch oder **-Grenze wie matchPos', () => {
     expect(searchSnippet('Wand aus Sicht\nbeton', 'sicht\nbeton')).toBe('Wand aus Sicht beton');
     expect(searchSnippet('Sicht**beton** SB2', 'sicht**beton')).toBe('Sichtbeton SB2');
+  });
+
+  it('glättet den Suchbegriff wie den Ausschnitt, damit die Markierung passt', () => {
+    expect(flat('sicht**beton')).toBe('sichtbeton');
+    expect(flat('sicht\nbeton')).toBe('sicht beton');
   });
 });

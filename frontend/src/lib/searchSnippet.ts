@@ -6,6 +6,14 @@
 const RADIUS = 40;
 
 /**
+ * Text ohne `**`-Markierungen und mit einfachem Leerraum — so steht der
+ * Ausschnitt da. Wer darin markiert, glättet den Suchbegriff genauso.
+ */
+export function flat(text: string): string {
+  return text.replace(/\*\*/g, '').replace(/\s+/g, ' ');
+}
+
+/**
  * Ausschnitt aus `text` um das erste Vorkommen von `query` (ohne Groß-/
  * Kleinschreibung); gekürzte Ränder enden in „…". Gesucht wird im Rohtext wie
  * in `matchPos`, erst der Ausschnitt wird von Zeilenumbrüchen und
@@ -19,7 +27,6 @@ export function searchSnippet(text: string, query: string, radius = RADIUS): str
   if (at < 0) return null;
   const start = Math.max(0, at - radius);
   const end = Math.min(text.length, at + needle.length + radius);
-  const flat = (part: string): string => part.replace(/\*\*/g, '').replace(/\s+/g, ' ');
   const middle = flat(text.slice(start, end)).trim();
   const head = flat(text.slice(0, start)).trim() !== '' ? '…' : '';
   const tail = flat(text.slice(end)).trim() !== '' ? '…' : '';
