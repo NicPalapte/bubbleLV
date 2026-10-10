@@ -21,4 +21,9 @@ describe('searchSnippet', () => {
   it('glättet Zeilenumbrüche und **-Markierungen', () => {
     expect(searchSnippet('Wand\n\n**Beton** C30/37', 'beton')).toBe('Wand Beton C30/37');
   });
+
+  it('findet einen Treffer über Zeilenumbruch oder **-Grenze wie matchPos', () => {
+    expect(searchSnippet('Wand aus Sicht\nbeton', 'sicht\nbeton')).toBe('Wand aus Sicht beton');
+    expect(searchSnippet('Sicht**beton** SB2', 'sicht**beton')).toBe('Sichtbeton SB2');
+  });
 });
