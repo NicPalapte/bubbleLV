@@ -4,6 +4,12 @@
 
 import { containsAny, subjectText, type NormalizedItem } from './text';
 import type { Positionsart } from './types';
+import {
+  GUTACHTEN_WORTE,
+  STUNDENLOHN_WORTE,
+  VORHALTEN_WORTE,
+  WERKPLANUNG_WORTE,
+} from './vocabulary';
 
 const BAUSTELLENEINRICHTUNG = [
   'baustelleneinrichtung',
@@ -22,10 +28,7 @@ const BAUSTELLENEINRICHTUNG = [
 ];
 
 const PERSONAL = [
-  'stundenlohnarbeit',
-  'stundenlohn',
-  'regiestunde',
-  'regiearbeit',
+  ...STUNDENLOHN_WORTE,
   'vorarbeiter',
   'facharbeiter',
   'werker',
@@ -34,26 +37,22 @@ const PERSONAL = [
 ];
 
 const PLANUNG = [
-  'werkplanung',
+  ...WERKPLANUNG_WORTE,
   'werk- und montageplanung',
-  'montageplanung',
-  'ausführungsplanung',
   'schalplanung',
   'bewehrungsplanung',
   'statische berechnung',
   'statischer nachweis',
   'standsicherheitsnachweis',
   'nachweisführung',
-  'gutachten',
-  'bestandsaufnahme',
+  ...GUTACHTEN_WORTE,
   'aufmaß erstellen',
 ];
 
 const NEBENLEISTUNG = [
   'nebenleistung',
   'besondere leistung',
-  'vorhalten',
-  'vorhaltung',
+  ...VORHALTEN_WORTE,
   'andienung',
   'baustellendokumentation',
   'schlussreinigung',

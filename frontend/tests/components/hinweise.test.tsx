@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '../../src/App';
 import { MAX_FILE_BYTES } from '../../src/lib/pipeline/loadLv';
 
@@ -75,6 +75,23 @@ describe('Ladefehler auf der Startseite (Issues #92, #93)', () => {
     legeAb(fixtureDatei('gaeb-xml-beispiel.x83'));
     await warteAufLv();
     expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('meldet eine beschädigte Datei und bleibt auf der Startseite (Issue #108)', async () => {
+    render(<App />);
+    legeAb(new File(['<GAEB><kaputt'], 'kaputt.x83'));
+    expect(await screen.findByRole('alert')).toHaveTextContent('beschädigt');
+    expect(screen.getByText('GAEB-Datei hierher ziehen')).toBeInTheDocument();
+  });
+
+  it('übergeht eine zweite Datei, solange die erste lädt (Issue #108)', async () => {
+    render(<App />);
+    const zweite = new File([''], 'leer.x83');
+    const gelesen = vi.spyOn(zweite, 'arrayBuffer');
+    legeAb(fixtureDatei('gaeb-xml-beispiel.x83'));
+    legeAb(zweite);
+    await warteAufLv();
+    expect(gelesen).not.toHaveBeenCalled();
   });
 });
 

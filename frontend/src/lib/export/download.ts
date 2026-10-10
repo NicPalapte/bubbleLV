@@ -30,9 +30,14 @@ export function downloadText(fileName: string, text: string, type: DownloadType)
   link.download = fileName;
   // Ohne das Anhängen löst der Klick in Firefox nichts aus.
   document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
+  // Scheitert der Klick (z. B. Download vom Browser blockiert), bleiben sonst ein
+  // verwaister Link im Dokument und der ganze Text im Speicher zurück.
+  try {
+    link.click();
+  } finally {
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
 }
 
 /**
