@@ -49,9 +49,9 @@ export function MetricTiles({ metrics, flags }: { metrics: OverviewMetrics; flag
         />
       )}
       <Tile
-        label="Gewerke"
-        value={formatCount(metrics.gewerke)}
-        note="verschiedene Leistungsbereiche"
+        label="Abschnitte"
+        value={formatCount(metrics.sections)}
+        note="Hauptabschnitte im LV"
       />
       {metrics.hasPrices ? (
         <Tile

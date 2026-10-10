@@ -14,7 +14,6 @@
 // Einheit — beides steht in jeder Datei. Nach Gewerk zu gliedern hing am
 // Gewerk-Abgleich, der ohne Katalog fast alles in „Ohne Gewerk" legt.
 
-import { attrString } from '../attributes';
 import { NO_GEWERK } from '../facets';
 import { headingOf } from '../tree/heading';
 import { mainSectionOf, sectionOrder } from '../tree/mainSection';
@@ -45,8 +44,8 @@ export interface OverviewMetrics {
   hasPrices: boolean;
   /** Summe Menge × EP über die gefilterten Positionen. */
   totalPrice: number;
-  /** Anzahl verschiedener Gewerke im Filter (ohne die unklassifizierten). */
-  gewerke: number;
+  /** Anzahl verschiedener Hauptabschnitte im Filter (Lose übersprungen). */
+  sections: number;
   /** Positionen ohne Einheitspreis — bei Dateien mit Preisen die Lücken. */
   withoutPrice: number;
   /** Anteil davon an `positions` (0…1); 0, wenn nichts im Filter liegt. */
@@ -269,7 +268,6 @@ function fileHasPrices(index: PositionIndex): boolean {
 export function buildOverview({ index, mask, parents }: OverviewInput): OverviewModel {
   const buckets = new Map<string, Bucket>();
   const units = new Map<string, UnitTotal>();
-  const gewerke = new Set<string>();
   const prices: number[] = [];
   const mainSections = new Map<string, LVNode | null>();
   const slotsByUnit = new Map<string, number[]>();
@@ -287,8 +285,6 @@ export function buildOverview({ index, mask, parents }: OverviewInput): Overview
 
     const position = index.positions[slot];
     const node = index.nodes[slot];
-    const gewerk = attrString(position.attributes, 'gewerk');
-    if (gewerk !== null) gewerke.add(gewerk);
 
     const price = index.totalPrice[slot];
     if (Number.isFinite(index.unitPrice[slot])) pricedPositions++;
@@ -374,7 +370,7 @@ export function buildOverview({ index, mask, parents }: OverviewInput): Overview
       filtering: mask !== null,
       hasPrices,
       totalPrice,
-      gewerke: gewerke.size,
+      sections: [...buckets.keys()].filter((key) => key !== '').length,
       withoutPrice,
       withoutPriceShare: share(withoutPrice, positions),
       withoutQuantity,

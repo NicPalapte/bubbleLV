@@ -15,6 +15,8 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
   Hauptabschnitts, wie in der Verteilung im Überblick. Bisher war es das Gewerk, das
   ohne Katalog meist fehlt.
 - **Legende** nennt in der Matrix die Abschnitte statt der Gewerke.
+- **Kachel „Abschnitte“** im Überblick zählt die Hauptabschnitte. Sie ersetzt die Kachel
+  „Gewerke“.
 
 ## 0.10.0 — 08.10.2026 · Auswertung aus dem LV
 

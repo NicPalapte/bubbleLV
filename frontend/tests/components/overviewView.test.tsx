@@ -69,7 +69,10 @@ describe('Überblick', () => {
     renderOverview();
     expect(screen.getByText('28 Positionen')).toBeInTheDocument();
     expect(screen.getByTitle('im ganzen LV')).toBeInTheDocument();
-    expect(screen.getByText('Gewerke')).toBeInTheDocument();
+    // Hauptabschnitte statt Gewerke: die stehen in jeder Datei.
+    const kachel = screen.getByTitle('Hauptabschnitte im LV').parentElement as HTMLElement;
+    expect(kachel).toHaveTextContent(/^Abschnitte3Hauptabschnitte im LV$/);
+    expect(screen.queryByText('Gewerke')).toBeNull();
     expect(screen.getByText('Hinweise')).toBeInTheDocument();
   });
 

@@ -22,6 +22,8 @@ grau.
 - Positionen ohne Abschnitt bleiben grau.
 - Die Legende nennt die Abschnitte nur in der Matrix. Bei „nach LV“ stehen die
   Abschnitte schon als Gruppen im Graphen.
+- Die Kachel „Gewerke“ im Überblick wird zur Kachel „Abschnitte“. Sie zählt die
+  Hauptabschnitte im Filter.
 - Die Töne und ihre Tokens aus 0013 bleiben. Das Gewerk-Etikett in der Positionskarte
   behält die Gewerk-Farbe.
 
@@ -39,4 +41,3 @@ grau.
 ## Folgen
 
 - Bei mehr als zehn Hauptabschnitten teilen sich zwei Abschnitte einen Ton.
-- Die Kachel „Gewerke“ im Überblick hängt weiter am Gewerk.
