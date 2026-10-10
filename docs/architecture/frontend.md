@@ -44,6 +44,7 @@ frontend/
     │   │   └── rulesets/             # Registry + je Ruleset ein Modul
     │   ├── tree/
     │   │   ├── buildTree.ts          # LVDraft → LVNode-Baum
+    │   │   ├── mainSection.ts        # Hauptabschnitt + Farbe (Graph, Überblick)
     │   │   └── matchCounts.ts        # Trefferzahlen je Knoten (Tree + Graph)
     │   ├── index/
     │   │   ├── positionIndex.ts      # flacher Positions-Index (Rechenbasis, WP-I)
@@ -76,7 +77,7 @@ frontend/
     │   ├── perf.ts                   # Messpunkte (nur Konsole, nur Entwicklung)
     │   ├── spanCategories.ts         # Farbe und Name je Fundstellen-Kategorie
     │   ├── facets.ts                 # Facetten-Definitionen (dynamische Werte)
-    │   ├── colors.ts                 # Gewerk-Farbskala für alle Ansichten (WP-L)
+    │   ├── colors.ts                 # Farbtöne für alle Ansichten (WP-L)
     │   └── graph/                    # Graph-Engine (decisions/0035)
     │       ├── constants.ts          # Radien, Abstände, LOD-Schwellen
     │       ├── layoutMap.ts          # Gliederung „nach LV" / „frei" (rein, ohne DOM)

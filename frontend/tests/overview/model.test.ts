@@ -139,6 +139,8 @@ describe('buildOverview · ohne Preise', () => {
     expect(rang(gefiltert.groups, 'section:001')).toBeUndefined();
     expect(rang(gefiltert.groups, 'section:999')).toBe(rang(model.groups, 'section:999'));
     expect(rang(model.groups, 'section:999')).toBeGreaterThan(0);
+    expect(model.metrics.sections).toBe(3);
+    expect(gefiltert.metrics.sections).toBe(2);
   });
 
   it('nennt statt Pareto die größten Mengen je Einheit, ohne Pauschalen', () => {
