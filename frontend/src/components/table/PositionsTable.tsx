@@ -15,6 +15,7 @@
 // kein localStorage.
 
 import { useMemo, useRef, useState } from 'react';
+import { Highlighted } from '../common/Highlighted';
 import { useDismiss } from '../common/useDismiss';
 import { Chip } from '../ui/Chip';
 import { DataTable, type Column } from '../ui/DataTable';
@@ -26,6 +27,7 @@ import { facetOptionLabel, FACETS_BY_ID } from '../../lib/facets';
 import { formatCount, formatEuro, formatNumber } from '../../lib/format';
 import { createPositionFilter } from '../../lib/index/positionIndex';
 import { POSITION_STATUS } from '../../lib/status';
+import { flat, searchSnippet } from '../../lib/searchSnippet';
 import { headingOf } from '../../lib/tree/heading';
 import {
   defaultColumnConfig,
@@ -105,6 +107,28 @@ function TypeMark({ type }: { type: PositionType }) {
 }
 
 /**
+ * Bezeichnungs-Zelle, mit und ohne Suche dieselbe. Trifft die Suche nur den
+ * Langtext, steht dahinter ein Ausschnitt um die Fundstelle — sonst wäre
+ * unklar, warum die Zeile ein Treffer ist (Issue #100).
+ */
+function ShortTextCell({ position, query }: { position: PositionSummary; query: string }) {
+  const { shortText, longText } = position;
+  const snippet =
+    query === '' || shortText.toLowerCase().includes(query) ? null : searchSnippet(longText, query);
+  return (
+    <>
+      <TypeMark type={position.positionType} />
+      <Highlighted text={shortText} query={query} />
+      {snippet !== null && (
+        <span className="ml-[8px] font-normal text-mute" title="Treffer im Langtext">
+          <Highlighted text={snippet} query={flat(query)} />
+        </span>
+      )}
+    </>
+  );
+}
+
+/**
  * Alle Spalten mit Pixelbreite. Die Anzeigereihenfolge steht in
  * `DEFAULT_ORDER`: Kennung und Mengengerüst zuerst, dann die Klassifizierung.
  */
@@ -115,12 +139,7 @@ const COLUMNS: ReadonlyArray<Column<Row>> = [
     label: 'Bezeichnung',
     width: 260,
     primary: true,
-    render: (r) => (
-      <>
-        <TypeMark type={r.position.positionType} />
-        {r.position.shortText}
-      </>
-    ),
+    render: (r) => <ShortTextCell position={r.position} query="" />,
   },
   { key: 'unit', label: 'Einheit', width: 70, render: (r) => r.position.unit ?? '—' },
   {
@@ -173,6 +192,17 @@ const COLUMNS: ReadonlyArray<Column<Row>> = [
     render: () => <StatusPill status={POSITION_STATUS} />,
   },
 ];
+
+/**
+ * Spalten, in denen die Suche den Treffer markiert (Issue #100). Ohne Suche
+ * gilt das `render` aus `COLUMNS`.
+ */
+function searchRender(key: string, query: string): Column<Row>['render'] | undefined {
+  if (query === '') return undefined;
+  if (key === 'oz') return (r) => <Highlighted text={r.position.oz} query={query} />;
+  if (key === 'shortText') return (r) => <ShortTextCell position={r.position} query={query} />;
+  return undefined;
+}
 
 const COLUMNS_BY_KEY = new Map(COLUMNS.map((column) => [column.key, column]));
 const DEFAULT_ORDER: readonly string[] = COLUMNS.map((column) => column.key);
@@ -351,9 +381,11 @@ export function PositionsTable({ root }: { root: LVNode }) {
     () =>
       visibleColumnKeys(columnConfig).flatMap((key) => {
         const column = COLUMNS_BY_KEY.get(key);
-        return column === undefined ? [] : [{ ...column, width: columnConfig.widths[key] }];
+        if (column === undefined) return [];
+        const render = searchRender(key, active.query) ?? column.render;
+        return [{ ...column, render, width: columnConfig.widths[key] }];
       }),
-    [columnConfig],
+    [columnConfig, active.query],
   );
 
   // Eine Prüffunktion je Filterwechsel statt einer Ableitung je Zeile: sie
