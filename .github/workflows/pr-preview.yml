@@ -112,7 +112,8 @@ jobs:
           comment: false
 
       # Link als Kommentar in den PR. Gibt es schon einen von früher, wird er
-      # aktualisiert statt einen zweiten anzulegen (Erkennung über die Marke).
+      # aktualisiert statt einen zweiten anzulegen (Erkennung über die Marke, nur
+      # eigene Kommentare – fremde darf der Workflow nicht ändern).
       - name: Link in den PR schreiben
         env:
           GH_TOKEN: ${{ github.token }}
@@ -124,7 +125,7 @@ jobs:
           text=$(printf '%s\n🚀 **Preview:** %s\n\nStand %s UTC. Ist erst nach dem GitHub-Pages-Deployment erreichbar (1–2 Minuten).' \
             "$marke" "$URL" "$stand")
           alt=$(gh api --paginate "repos/$GITHUB_REPOSITORY/issues/$PR/comments" \
-            --jq "[.[] | select(.body | startswith(\"$marke\"))][0].id // empty")
+            --jq "[.[] | select(.user.login == \"github-actions[bot]\" and (.body | startswith(\"$marke\")))][0].id // empty")
           # --paginate liefert je Seite eine Zeile; die erste genügt.
           alt=${alt%%$'\n'*}
           if [ -n "$alt" ]; then
