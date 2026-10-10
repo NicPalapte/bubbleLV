@@ -158,7 +158,7 @@ export function PositionDetails({
             )}
           </>
         }
-        title={position.shortText}
+        title={<Highlighted text={position.shortText} query={search} />}
         onClose={onClose}
       />
       <StatRow

@@ -15,6 +15,7 @@
 // kein localStorage.
 
 import { useMemo, useRef, useState } from 'react';
+import { Highlighted } from '../common/Highlighted';
 import { useDismiss } from '../common/useDismiss';
 import { Chip } from '../ui/Chip';
 import { DataTable, type Column } from '../ui/DataTable';
@@ -26,6 +27,7 @@ import { facetOptionLabel, FACETS_BY_ID } from '../../lib/facets';
 import { formatCount, formatEuro, formatNumber } from '../../lib/format';
 import { createPositionFilter } from '../../lib/index/positionIndex';
 import { POSITION_STATUS } from '../../lib/status';
+import { searchSnippet } from '../../lib/searchSnippet';
 import { headingOf } from '../../lib/tree/heading';
 import {
   defaultColumnConfig,
@@ -173,6 +175,32 @@ const COLUMNS: ReadonlyArray<Column<Row>> = [
     render: () => <StatusPill status={POSITION_STATUS} />,
   },
 ];
+
+/**
+ * Spalten, in denen die Suche den Treffer markiert (Issue #100). Trifft die
+ * Suche nur den Langtext, steht hinter der Bezeichnung ein Ausschnitt um die
+ * Fundstelle — sonst wäre unklar, warum die Zeile ein Treffer ist.
+ */
+function searchRender(key: string, query: string): Column<Row>['render'] | undefined {
+  if (query === '') return undefined;
+  if (key === 'oz') return (r) => <Highlighted text={r.position.oz} query={query} />;
+  if (key !== 'shortText') return undefined;
+  return (r) => {
+    const { shortText, longText } = r.position;
+    const snippet = shortText.toLowerCase().includes(query) ? null : searchSnippet(longText, query);
+    return (
+      <>
+        <TypeMark type={r.position.positionType} />
+        <Highlighted text={shortText} query={query} />
+        {snippet !== null && (
+          <span className="ml-[8px] font-normal text-mute" title="Treffer im Langtext">
+            <Highlighted text={snippet} query={query} />
+          </span>
+        )}
+      </>
+    );
+  };
+}
 
 const COLUMNS_BY_KEY = new Map(COLUMNS.map((column) => [column.key, column]));
 const DEFAULT_ORDER: readonly string[] = COLUMNS.map((column) => column.key);
@@ -351,9 +379,11 @@ export function PositionsTable({ root }: { root: LVNode }) {
     () =>
       visibleColumnKeys(columnConfig).flatMap((key) => {
         const column = COLUMNS_BY_KEY.get(key);
-        return column === undefined ? [] : [{ ...column, width: columnConfig.widths[key] }];
+        if (column === undefined) return [];
+        const render = searchRender(key, active.query) ?? column.render;
+        return [{ ...column, render, width: columnConfig.widths[key] }];
       }),
-    [columnConfig],
+    [columnConfig, active.query],
   );
 
   // Eine Prüffunktion je Filterwechsel statt einer Ableitung je Zeile: sie

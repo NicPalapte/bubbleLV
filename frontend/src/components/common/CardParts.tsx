@@ -16,7 +16,8 @@ export function CardHead({
   /** Ziehgriff der schwebenden Karte; fehlt, wo nichts zu verschieben ist. */
   grip?: ReactNode;
   meta: ReactNode;
-  title: string;
+  /** Text oder Text mit Suchmarkierung (`Highlighted`). */
+  title: ReactNode;
   onClose?: () => void;
 }) {
   return (
