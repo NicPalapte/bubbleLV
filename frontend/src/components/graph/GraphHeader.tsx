@@ -134,10 +134,10 @@ export function GraphHeader({ root }: { root: LVNode }) {
         </div>
         {sections.length > 0 && (
           <div className="flex flex-wrap items-center gap-x-[12px] gap-y-[4px]">
-            {sections.map(([name, color]) => (
+            {sections.map(({ key, label, color }) => (
               <span
-                key={name}
-                title={name}
+                key={key}
+                title={label}
                 className="inline-flex max-w-[160px] items-center gap-[5px]"
               >
                 <span
@@ -148,7 +148,7 @@ export function GraphHeader({ root }: { root: LVNode }) {
                     boxShadow: 'inset 0 0 0 0.6px var(--dot-line)',
                   }}
                 />
-                <span className="truncate">{name}</span>
+                <span className="truncate">{label}</span>
               </span>
             ))}
             {more > 0 && <span className="text-mute">+{formatCount(more)} Abschnitte</span>}

@@ -55,11 +55,18 @@ export function sectionColor(key: string, order: number): string {
   return key === NO_SECTION_KEY ? NEUTRAL_COLOR : CATEGORY_COLORS[order % CATEGORY_COLORS.length];
 }
 
+export interface SectionColorEntry {
+  /** Knoten-ID — eindeutig, anders als die Überschrift (gleiche Titel in mehreren Losen). */
+  readonly key: string;
+  readonly label: string;
+  readonly color: string;
+}
+
 export interface SectionColors {
   /** Ton je Indexeintrag. */
   readonly bySlot: readonly string[];
-  /** Überschrift und Ton je Hauptabschnitt in LV-Reihenfolge — für die Legende. */
-  readonly entries: ReadonlyArray<readonly [string, string]>;
+  /** Hauptabschnitte in LV-Reihenfolge — für die Legende. */
+  readonly entries: readonly SectionColorEntry[];
 }
 
 export const EMPTY_SECTION_COLORS: SectionColors = { bySlot: [], entries: [] };
@@ -72,7 +79,7 @@ export function buildSectionColors(
   const cache = new Map<string, LVNode | null>();
   const order = sectionOrder(index, parents, cache);
   const bySlot = new Array<string>(index.size);
-  const entries: Array<readonly [string, string]> = [];
+  const entries: SectionColorEntry[] = [];
   const listed = new Set<string>();
   for (let slot = 0; slot < index.size; slot++) {
     const main = mainSectionOf(index.nodes[slot], parents, cache);
@@ -81,7 +88,7 @@ export function buildSectionColors(
     bySlot[slot] = color;
     if (main !== null && !listed.has(key)) {
       listed.add(key);
-      entries.push([headingOf(main), color]);
+      entries.push({ key, label: headingOf(main), color });
     }
   }
   return { bySlot, entries };

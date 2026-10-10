@@ -10,11 +10,12 @@ import { GraphHeader } from '../../src/components/graph/GraphHeader';
 import { CATEGORY_COLORS, NEUTRAL_COLOR } from '../../src/lib/colors';
 import { buildPositionIndex } from '../../src/lib/index/positionIndex';
 import { buildOverview } from '../../src/lib/overview/model';
-import { runPipeline } from '../../src/lib/pipeline/runPipeline';
+import { classifyAndBuild, runPipeline } from '../../src/lib/pipeline/runPipeline';
 import { indexParents } from '../../src/lib/tree/buildTree';
 import { buildSectionColors } from '../../src/lib/tree/mainSection';
 import { ViewerProvider } from '../../src/state/ViewerProvider';
 import { useViewerDispatch } from '../../src/state/viewer';
+import type { LVDraft, PositionDraft } from '../../src/types/lvDraft';
 
 function loadFixture() {
   const bytes = readFileSync('tests/fixtures/gaeb-xml-beispiel.x83');
@@ -39,11 +40,40 @@ describe('Abschnittsfarben', () => {
     expect(colorOf('001.002.0020')).toBe(colorOf('001.001.0010'));
     expect(colorOf('999.001.0010')).not.toBe(colorOf('001.001.0010'));
     expect(colors.bySlot).not.toContain(NEUTRAL_COLOR);
-    expect(colors.entries.map(([name]) => name)).toEqual([
+    expect(colors.entries.map((entry) => entry.label)).toEqual([
       expect.stringMatching(/^§ 001 · /),
       expect.stringMatching(/^§ 002 · /),
       expect.stringMatching(/^§ 999 · /),
     ]);
+  });
+
+  it('hält gleichnamige Abschnitte in zwei Losen auseinander', () => {
+    const position = (oz: string): PositionDraft => ({
+      oz,
+      shortText: `Wand ${oz}`,
+      longText: '',
+      unit: 'm2',
+      quantity: 1,
+      unitPrice: null,
+      positionType: 'NORMAL',
+      attributes: {},
+    });
+    const lot = (number: string) => ({
+      number,
+      label: `Los ${number}`,
+      sections: [
+        { number: '01', label: 'Rohbau', sections: [], positions: [position(`${number}.01.0010`)] },
+      ],
+    });
+    const draft: LVDraft = { projectName: 'Zwei Lose', client: null, lots: [lot('1'), lot('2')] };
+    const zwei = classifyAndBuild(draft, 'zwei-lose.x83');
+    const entries = buildSectionColors(
+      buildPositionIndex(zwei.tree),
+      indexParents(zwei.tree),
+    ).entries;
+    expect(entries.map((entry) => entry.label)).toEqual(['§ 01 · Rohbau', '§ 01 · Rohbau']);
+    expect(new Set(entries.map((entry) => entry.key)).size).toBe(2);
+    expect(entries[0].color).not.toBe(entries[1].color);
   });
 
   it('nimmt denselben Ton wie die Verteilung im Überblick', () => {
