@@ -47,6 +47,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0038 | [Keine Befehlspalette mehr](0038-keine-befehlspalette.md)                    | akzeptiert | 2026-10-05 |
 | 0039 | [Tabelle im eigenen Fenster](0039-tabelle-im-eigenen-fenster.md)             | akzeptiert | 2026-10-06 |
 | 0040 | [Auswertungen aus dem, was im LV steht](0040-auswertung-ohne-klassifizierung.md) | akzeptiert | 2026-10-08 |
+| 0041 | [Workflows: knappe Rechte, Fremd-Actions fest verdrahtet](0041-workflow-rechte-und-pinning.md) | akzeptiert | 2026-10-10 |
 
 ## Wann schreibe ich eine neue Datei?
 

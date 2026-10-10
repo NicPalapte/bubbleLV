@@ -66,7 +66,7 @@ jobs:
       # action: deploy statt des Standards "auto" – der Workflow soll unter keinen
       # Umständen aufräumen, auch nicht, wenn er künftig auf weitere Events hört.
       - name: Preview veröffentlichen
-        uses: rossjrw/pr-preview-action@v1
+        uses: rossjrw/pr-preview-action@ffa7509e91a3ec8dfc2e5536c4d5c1acdf7a6de9 # v1.8.1
         with:
           source-dir: frontend/dist
           preview-branch: gh-pages

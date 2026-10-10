@@ -35,13 +35,19 @@ env:
 jobs:
   review:
     # Fork-PRs sind ausgenommen: dort gibt es keinen Zugriff auf die Secrets.
+    # "@claude review" zählt nur von Personen mit Rechten am Repo (Owner, Mitglied,
+    # Mitarbeiter). Sonst könnte jeder Fremde per Kommentar ein Review mit Secrets
+    # auf beliebigem PR-Code starten. Ob der PR aus einem Fork kommt, steht beim
+    # Kommentar-Auslöser nicht im Ereignis – das prüft der Schritt "Kontext bestimmen".
     if: >-
       (github.event_name == 'pull_request' &&
        github.event.pull_request.draft == false &&
        github.event.pull_request.head.repo.full_name == github.repository) ||
       (github.event_name == 'issue_comment' &&
        github.event.issue.pull_request != null &&
-       contains(github.event.comment.body, '@claude review'))
+       contains(github.event.comment.body, '@claude review') &&
+       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'),
+                github.event.comment.author_association))
     runs-on: ubuntu-latest
     # Pro PR läuft nur ein Review; ein neuer Push bricht das alte ab.
     # Wichtig: Diese Sperre steht am Job und nicht am ganzen Workflow. Jeder
@@ -56,13 +62,26 @@ jobs:
     steps:
       - name: Kontext bestimmen
         id: ctx
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             echo "pr=${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
             echo "manual=false" >> "$GITHUB_OUTPUT"
+            echo "fork=false" >> "$GITHUB_OUTPUT"
           else
-            echo "pr=${{ github.event.issue.number }}" >> "$GITHUB_OUTPUT"
+            pr="${{ github.event.issue.number }}"
+            echo "pr=$pr" >> "$GITHUB_OUTPUT"
             echo "manual=true" >> "$GITHUB_OUTPUT"
+            # Fork-Prüfung für den Kommentar-Auslöser (beim PR-Auslöser macht das das if).
+            head=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$pr" --jq '.head.repo.full_name // ""')
+            if [ "$head" = "$GITHUB_REPOSITORY" ]; then
+              echo "fork=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "fork=true" >> "$GITHUB_OUTPUT"
+              echo "PR kommt aus einem Fork ($head) – kein Review."
+            fi
           fi
 
       # Der Zähler lebt in einem PR-Kommentar statt in einer Datei: sichtbar für den
@@ -75,6 +94,12 @@ jobs:
           HAS_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
         run: |
           set -euo pipefail
+
+          if [ "${{ steps.ctx.outputs.fork }}" = "true" ]; then
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "### Review übersprungen: PR aus einem Fork" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
 
           # Ohne Secret kein Review – der Pull Request soll deswegen aber nicht rot
           # werden, sondern nur einen Hinweis bekommen.
@@ -147,7 +172,7 @@ jobs:
 
       - name: Review durchführen
         if: steps.budget.outputs.run == 'true'
-        uses: anthropics/claude-code-action@v1
+        uses: anthropics/claude-code-action@1d6de8cb0c237e7c15e9e1bdf973826ebae490cc # v1.0.248
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: |

@@ -92,6 +92,7 @@ Nur nötig, falls der Preview-Workflow mit „Permission denied“ abbricht:
 
 **Noch ein Review anfordern (Budget aufgebraucht)**
 Kommentar in den PR schreiben: `@claude review`. Diese Läufe zählen nicht mit.
+Das wirkt nur, wenn der Kommentar vom Owner oder von eingetragenen Mitarbeitern kommt.
 
 **Zähler zurücksetzen**
 Den Kommentar mit dem Zählerstand löschen. Danach stehen wieder 3 automatische Reviews
@@ -122,6 +123,7 @@ Workflows auf dem starken Modell. Die getroffene Wahl steht im Log des Laufs unt
 | Preview-Workflow: „Permission denied“            | Schreibrechte für Workflows → Schritt 3                       |
 | Live-Seite bleibt auf altem Stand                | Pages-Quelle noch nicht umgestellt → Schritt 2                |
 | Kein Review bei einem PR aus einem fremden Fork  | So gewollt: Fork-PRs bekommen weder Review noch Preview       |
+| `@claude review` von Fremden startet nichts      | So gewollt: nur Owner und Mitarbeiter dürfen das auslösen     |
 | Kein Preview-Link am Pull Request                | So gewollt, wenn der PR nur Doku ändert – siehe Tabelle oben  |
 | Preview eines geschlossenen PRs noch erreichbar  | So gewollt: sie fällt beim nächsten Merge nach `main` weg     |
 
