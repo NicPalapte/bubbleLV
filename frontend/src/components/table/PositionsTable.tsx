@@ -107,6 +107,28 @@ function TypeMark({ type }: { type: PositionType }) {
 }
 
 /**
+ * Bezeichnungs-Zelle, mit und ohne Suche dieselbe. Trifft die Suche nur den
+ * Langtext, steht dahinter ein Ausschnitt um die Fundstelle — sonst wäre
+ * unklar, warum die Zeile ein Treffer ist (Issue #100).
+ */
+function ShortTextCell({ position, query }: { position: PositionSummary; query: string }) {
+  const { shortText, longText } = position;
+  const snippet =
+    query === '' || shortText.toLowerCase().includes(query) ? null : searchSnippet(longText, query);
+  return (
+    <>
+      <TypeMark type={position.positionType} />
+      <Highlighted text={shortText} query={query} />
+      {snippet !== null && (
+        <span className="ml-[8px] font-normal text-mute" title="Treffer im Langtext">
+          <Highlighted text={snippet} query={query} />
+        </span>
+      )}
+    </>
+  );
+}
+
+/**
  * Alle Spalten mit Pixelbreite. Die Anzeigereihenfolge steht in
  * `DEFAULT_ORDER`: Kennung und Mengengerüst zuerst, dann die Klassifizierung.
  */
@@ -117,12 +139,7 @@ const COLUMNS: ReadonlyArray<Column<Row>> = [
     label: 'Bezeichnung',
     width: 260,
     primary: true,
-    render: (r) => (
-      <>
-        <TypeMark type={r.position.positionType} />
-        {r.position.shortText}
-      </>
-    ),
+    render: (r) => <ShortTextCell position={r.position} query="" />,
   },
   { key: 'unit', label: 'Einheit', width: 70, render: (r) => r.position.unit ?? '—' },
   {
@@ -177,29 +194,14 @@ const COLUMNS: ReadonlyArray<Column<Row>> = [
 ];
 
 /**
- * Spalten, in denen die Suche den Treffer markiert (Issue #100). Trifft die
- * Suche nur den Langtext, steht hinter der Bezeichnung ein Ausschnitt um die
- * Fundstelle — sonst wäre unklar, warum die Zeile ein Treffer ist.
+ * Spalten, in denen die Suche den Treffer markiert (Issue #100). Ohne Suche
+ * gilt das `render` aus `COLUMNS`.
  */
 function searchRender(key: string, query: string): Column<Row>['render'] | undefined {
   if (query === '') return undefined;
   if (key === 'oz') return (r) => <Highlighted text={r.position.oz} query={query} />;
-  if (key !== 'shortText') return undefined;
-  return (r) => {
-    const { shortText, longText } = r.position;
-    const snippet = shortText.toLowerCase().includes(query) ? null : searchSnippet(longText, query);
-    return (
-      <>
-        <TypeMark type={r.position.positionType} />
-        <Highlighted text={shortText} query={query} />
-        {snippet !== null && (
-          <span className="ml-[8px] font-normal text-mute" title="Treffer im Langtext">
-            <Highlighted text={snippet} query={query} />
-          </span>
-        )}
-      </>
-    );
-  };
+  if (key === 'shortText') return (r) => <ShortTextCell position={r.position} query={query} />;
+  return undefined;
 }
 
 const COLUMNS_BY_KEY = new Map(COLUMNS.map((column) => [column.key, column]));
