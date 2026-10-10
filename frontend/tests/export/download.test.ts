@@ -81,3 +81,36 @@ describe('exportFileName', () => {
     expect(exportFileName('***.x83', 'positionen', 'csv')).toMatch(/^lv-positionen-/);
   });
 });
+
+describe('downloadText, wenn der Download scheitert', () => {
+  const original = HTMLAnchorElement.prototype.click;
+
+  beforeEach(() => {
+    URL.createObjectURL = vi.fn(() => 'blob:test');
+    URL.revokeObjectURL = vi.fn();
+  });
+
+  afterEach(() => {
+    HTMLAnchorElement.prototype.click = original;
+  });
+
+  it('meldet den Fehler und räumt Link und Objekt-URL trotzdem auf', () => {
+    HTMLAnchorElement.prototype.click = function click(): void {
+      throw new Error('Download blockiert');
+    };
+
+    expect(() => downloadText('test.csv', 'OZ\r\n', 'csv')).toThrow('Download blockiert');
+    expect(document.querySelectorAll('a[download]')).toHaveLength(0);
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:test');
+  });
+
+  it('hängt nichts ins Dokument, wenn schon die Objekt-URL scheitert', () => {
+    URL.createObjectURL = vi.fn(() => {
+      throw new Error('Speicher voll');
+    });
+
+    expect(() => downloadText('test.md', '# Hinweise\n', 'markdown')).toThrow('Speicher voll');
+    expect(document.querySelectorAll('a[download]')).toHaveLength(0);
+    expect(URL.revokeObjectURL).not.toHaveBeenCalled();
+  });
+});

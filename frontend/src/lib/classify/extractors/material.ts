@@ -11,10 +11,7 @@
 import { collect, dropContained, tidy, type Hit } from './spans';
 import type { StlbLeistungsbereich } from '../stlbCatalog';
 import type { Extractor, ExtractorContext, ExtractorResult } from './types';
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
+import { escapeRegExp } from '../../escapeRegExp';
 
 /**
  * Stichworte, die eine reine Tätigkeit benennen, sind kein Material.

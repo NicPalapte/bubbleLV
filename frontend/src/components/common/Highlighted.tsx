@@ -13,6 +13,7 @@
 import { Fragment, type CSSProperties, type ReactNode } from 'react';
 import { categoryOf } from '../../lib/spanCategories';
 import type { Span } from '../../lib/classify';
+import { escapeRegExp } from '../../lib/escapeRegExp';
 
 interface HighlightedProps {
   text: string;
@@ -22,10 +23,6 @@ interface HighlightedProps {
   spans?: readonly Span[];
   /** Sichtbare Kategorien; ohne Angabe werden alle gezeichnet. */
   activeKeys?: ReadonlySet<string>;
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function Mark({ children }: { children: ReactNode }) {
@@ -59,8 +56,19 @@ function SpanMark({ span, children }: { span: Span; children: ReactNode }) {
 }
 
 function highlightQuery(text: string, query: string, keyPrefix: string): ReactNode[] {
-  if (query === '') return [<Fragment key={`${keyPrefix}-0`}>{text}</Fragment>];
-  const parts = text.split(new RegExp(`(${escapeRegExp(query)})`, 'gi'));
+  const ohne = [<Fragment key={`${keyPrefix}-0`}>{text}</Fragment>];
+  // Länger als der Text kann der Begriff nicht vorkommen. Die Abkürzung ist
+  // nötig: ab rund 32.000 Zeichen wirft `new RegExp` „Regular expression too
+  // large", und die Hervorhebung würde die ganze Ansicht abstürzen lassen.
+  if (query === '' || query.length > text.length) return ohne;
+  let parts: string[];
+  try {
+    // V8 übersetzt das Muster erst beim ersten Lauf — der Fehler kommt aus `split`.
+    parts = text.split(new RegExp(`(${escapeRegExp(query)})`, 'gi'));
+  } catch {
+    // Text noch länger als der Begriff: dann eben ohne Hervorhebung.
+    return ohne;
+  }
   return parts.map((part, index) =>
     part.toLowerCase() === query.toLowerCase() ? (
       <Mark key={`${keyPrefix}-${index}`}>{part}</Mark>

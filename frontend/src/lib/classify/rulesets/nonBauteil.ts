@@ -3,6 +3,7 @@
 // inkrementell erweiterbar.
 
 import type { NonBauteilRuleset, RulesetContext } from './types';
+import { GUTACHTEN_WORTE, VORHALTEN_WORTE, WERKPLANUNG_WORTE } from '../vocabulary';
 
 const QUALIFIKATIONEN: ReadonlyArray<{ label: string; keywords: readonly string[] }> = [
   { label: 'Polier', keywords: ['polier'] },
@@ -30,8 +31,8 @@ const PLANUNGSARTEN: ReadonlyArray<{ label: string; keywords: readonly string[] 
   { label: 'Statik', keywords: ['statische berechnung', 'statischer nachweis', 'standsicherheit'] },
   { label: 'Bewehrungsplanung', keywords: ['bewehrungsplanung', 'bewehrungsplan'] },
   { label: 'Schalplanung', keywords: ['schalplanung', 'schalplan'] },
-  { label: 'Werkplanung', keywords: ['werkplanung', 'ausführungsplanung', 'montageplanung'] },
-  { label: 'Gutachten', keywords: ['gutachten', 'bestandsaufnahme'] },
+  { label: 'Werkplanung', keywords: WERKPLANUNG_WORTE },
+  { label: 'Gutachten', keywords: GUTACHTEN_WORTE },
 ];
 
 export const planungRuleset: NonBauteilRuleset = {
@@ -48,7 +49,7 @@ export const planungRuleset: NonBauteilRuleset = {
 
 const EINRICHTUNGSARTEN: ReadonlyArray<{ label: string; keywords: readonly string[] }> = [
   { label: 'Einrichten', keywords: ['einrichten', 'liefern und aufstellen', 'antransport'] },
-  { label: 'Vorhalten', keywords: ['vorhalten', 'vorhaltung'] },
+  { label: 'Vorhalten', keywords: VORHALTEN_WORTE },
   { label: 'Räumen', keywords: ['räumen', 'abbauen', 'abtransport'] },
 ];
 

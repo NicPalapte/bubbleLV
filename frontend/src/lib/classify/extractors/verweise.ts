@@ -11,6 +11,20 @@
 import { collect, tidy, type Hit } from './spans';
 import type { Extractor, ExtractorContext, ExtractorResult } from './types';
 
+/**
+ * Verweise auf Unterlagen außerhalb der Datei. Die Prüfregel V6
+ * (check/rules/vob.ts) liest sie von hier, damit ein neuer Wert nicht nur an
+ * einer der beiden Stellen landet.
+ */
+export const VERWEIS_ANLAGE = 'Anlage';
+export const VERWEIS_PLANUNTERLAGE = 'Planunterlage';
+export const VERWEIS_GUTACHTEN = 'Gutachten';
+export const EXTERNE_VERWEISE: readonly string[] = [
+  VERWEIS_GUTACHTEN,
+  VERWEIS_PLANUNTERLAGE,
+  VERWEIS_ANLAGE,
+];
+
 interface VerweisRegel {
   value: string;
   pattern: RegExp;
@@ -23,7 +37,7 @@ const REGELN: readonly VerweisRegel[] = [
     pattern: /\b(?:siehe|wie|vgl\.?|gemäß|gemaess|analog)\s+(?:pos\.?|position)\s*[\w.\-/]*/gi,
   },
   {
-    value: 'Anlage',
+    value: VERWEIS_ANLAGE,
     pattern: /\b(?:laut|gemäß|gemaess|siehe|nach)\s+anlage\s*[\w.\-/]*/gi,
   },
   {
@@ -31,12 +45,12 @@ const REGELN: readonly VerweisRegel[] = [
     pattern: /\b(?:laut|gemäß|gemaess|siehe|nach)\s+(?:vorbemerkung|vorbemerkungen)[\w.\-/]*/gi,
   },
   {
-    value: 'Planunterlage',
+    value: VERWEIS_PLANUNTERLAGE,
     pattern:
       /\b(?:laut|gemäß|gemaess|siehe|nach)\s+(?:plan|planung|zeichnung|detail|schalplan|bewehrungsplan)[\w.\-/]*/gi,
   },
   {
-    value: 'Gutachten',
+    value: VERWEIS_GUTACHTEN,
     pattern:
       /\b(?:laut|gemäß|gemaess|siehe|nach)\s+(?:gutachten|bodengutachten|baugrundgutachten)/gi,
   },

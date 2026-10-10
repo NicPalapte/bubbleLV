@@ -93,3 +93,21 @@ describe('Highlighted mit Fundstellen', () => {
     expect(markedKeys(container)).toEqual([]);
   });
 });
+
+describe('Highlighted mit sehr langem Suchbegriff (Issue #108)', () => {
+  // Ab rund 32.000 Zeichen wirft `new RegExp` „Regular expression too large".
+  const LANG = 'a'.repeat(40_000);
+
+  it('zeigt den Text, wenn der Begriff länger ist als der Text', () => {
+    const { container } = render(<Highlighted text="Beton C30/37" query={LANG} />);
+    expect(container.textContent).toBe('Beton C30/37');
+  });
+
+  it('stürzt nicht ab, wenn das Suchmuster zu groß wird', () => {
+    // Ob die Engine hier wirft, hängt von ihrer Version ab. Geprüft wird deshalb
+    // nur, dass der Text vollständig dasteht — mit oder ohne Hervorhebung.
+    const text = `${LANG} Ende`;
+    const { container } = render(<Highlighted text={text} query={LANG} />);
+    expect(container.textContent).toBe(text);
+  });
+});

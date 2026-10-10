@@ -12,6 +12,8 @@ import { canonicalUnit, unitGroups } from '../../units';
 import { herstellerNamen, nebenleistungen, risikoFormulierungen } from '../referenz';
 import type { CheckContext, CheckRule, Flag } from '../types';
 import type { Span } from '../../classify';
+import { EXTERNE_VERWEISE } from '../../classify/extractors/verweise';
+import { STUNDENLOHN_WORTE } from '../../classify/vocabulary';
 
 /** Die Fundstelle eines Merkmals aus WP-J, falls es eine gibt. */
 function spanOf(attributes: Record<string, unknown>, key: string): Span | undefined {
@@ -57,8 +59,6 @@ const STUNDE = 'Stunde';
 function hatZeitgruppe(): boolean {
   return unitGroups().some((gruppe) => gruppe.name === STUNDE);
 }
-
-const STUNDENLOHN_WORTE = ['stundenlohn', 'regiearbeit', 'regiestunde'];
 
 export const v2Stundenlohn: CheckRule = {
   id: 'V2',
@@ -168,12 +168,9 @@ export const v5MengeFehlt: CheckRule = {
 
 // ── V6 · Preisbeeinflussender Umstand nur als Verweis ───────────────────────
 
-/**
- * Verweise, hinter denen ein preisbeeinflussender Umstand stecken kann. Ein
- * Positionsverweis innerhalb desselben LV zählt nicht — die genannte Position
- * liegt ja in derselben Datei.
- */
-const EXTERNE_VERWEISE = ['Gutachten', 'Planunterlage', 'Anlage'];
+// Verweise, hinter denen ein preisbeeinflussender Umstand stecken kann
+// (EXTERNE_VERWEISE). Ein Positionsverweis innerhalb desselben LV zählt nicht —
+// die genannte Position liegt ja in derselben Datei.
 
 export const v6VerweisStattAngabe: CheckRule = {
   id: 'V6',
