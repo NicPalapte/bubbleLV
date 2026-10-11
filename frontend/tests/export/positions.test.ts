@@ -74,6 +74,8 @@ describe('positionsCsv', () => {
     expect(kopf).toContain('OZ');
     expect(kopf).toContain('Langtext');
     expect(kopf).not.toContain('Gewerk');
+    expect(kopf).toContain('Material');
+    expect(kopf).toContain('Bauweise (Beton)');
     expect(kopf.length).toBeGreaterThan(10);
   });
 

@@ -6,12 +6,13 @@ gepflegt werden — nicht vom Modell erfunden oder aus dem Internet geraten (sie
 
 | Datei | Inhalt | Quelle |
 |---|---|---|
+| [`material/`](material/) | Eine Tabelle je Material: Erkennung und Merkmale (Art, Bauweise, Bewehrung …). Pflege: [`../../setup/materialwissen.md`](../../setup/materialwissen.md) | Owner; Beton und Betonstahl als Entwurf von Claude |
 | [`pruefregeln.csv`](pruefregeln.csv) | Je Prüfregel: Status und Norm-Verweis (WP-K) | [`../vob-pruefungen.md`](../vob-pruefungen.md) |
 | [`risiko-formulierungen.csv`](risiko-formulierungen.csv) | Formulierungen, die ein Risiko auf den AN schieben — Regel V4 | Owner |
 | [`hersteller-produktnamen.csv`](hersteller-produktnamen.csv) | Hersteller-/Produktnamen — Regel V3 | Owner |
 | [`vob-nebenleistungen.csv`](vob-nebenleistungen.csv) | Nebenleistungen je ATV — Regeln V8, V9 | VOB/C des Owners |
 | [`einheiten-gruppen.csv`](einheiten-gruppen.csv) | Einheiten, die dasselbe bedeuten („Stk" = „Stück") | Owner |
-| [`entwuerfe/material-entwurf.csv`](entwuerfe/material-entwurf.csv) | **Entwurf, nicht geladen:** Materialstichworte, von Claude vorgeschlagen, fachlich ungeprüft. Rohstoff für die Materialtabellen ([`../../decisions/0044-leistungsbereich-entfernt.md`](../../decisions/0044-leistungsbereich-entfernt.md)) | Entwurf, Owner prüft |
+| [`entwuerfe/material-entwurf.csv`](entwuerfe/material-entwurf.csv) | **Entwurf, nicht geladen:** Materialstichworte, von Claude vorgeschlagen, fachlich ungeprüft. Rohstoff für weitere Materialtabellen ([`../../decisions/0045-materialwissen-als-tabelle.md`](../../decisions/0045-materialwissen-als-tabelle.md)) | Entwurf, Owner prüft |
 
 ## `pruefregeln.csv` — Status je Regel
 

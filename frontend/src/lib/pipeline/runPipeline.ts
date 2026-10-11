@@ -7,14 +7,14 @@
 // `classifyAndBuild` — der rechenintensive Teil mit einer Regelauswertung je
 // Position — in den Worker ausgelagert wird (siehe pipeline.worker.ts).
 
-import { runChecks, type CheckResult } from '../check';
+import { CHECK_RULES, runChecks, type CheckResult } from '../check';
 import { classifyDraft, getClassifier } from '../classify';
 import { getGaebParser, mapToLvDraft } from '../gaeb';
 import { buildPositionIndex } from '../index/positionIndex';
 import { summarize, type LVSummary } from '../index/summary';
 import { measure } from '../perf';
 import { buildRelations, type RelationResult } from '../relate';
-import { buildTree } from '../tree/buildTree';
+import { buildTree, indexParents } from '../tree/buildTree';
 import type { LVDraft } from '../../types/lvDraft';
 import type { LVNode } from '../../types/lvNode';
 
@@ -66,7 +66,7 @@ export function classifyAndBuild(draft: LVDraft, fileName: string): LoadedLV {
     summary,
     // Prüfregeln sehen das ganze LV (Anteil an der Gesamtsumme, Mengen-Rang) und
     // laufen deshalb hier — einmal, nie im Render.
-    check: runChecks(index, summary, relations),
+    check: runChecks(index, summary, relations, CHECK_RULES, indexParents(tree)),
     relations,
   };
 }

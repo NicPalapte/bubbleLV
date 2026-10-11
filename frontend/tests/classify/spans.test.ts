@@ -59,13 +59,16 @@ describe('Fundstellen im Langtext', () => {
     expect(attributes.fristen).toEqual(['Winterbau']);
     expect(attributes.platzhalter).toEqual(['Textergänzung']);
 
+    // Platzhalter und Material benennen ihre Fundstelle mit der Bedeutung
+    // („Textergänzung", „Bauweise: Ortbeton"), alle anderen mit dem Wortlaut.
     for (const span of spans) {
-      expect(LANGTEXT.slice(span.start, span.end)).toBe(
-        span.key === 'platzhalter' ? '...........' : span.label,
-      );
+      const text = LANGTEXT.slice(span.start, span.end);
+      if (span.key === 'platzhalter') expect(text).toBe('...........');
+      else if (span.key !== 'material') expect(text).toBe(span.label);
     }
     expect(spans.map((span) => span.key)).toContain('normen');
     expect(spans.map((span) => span.key)).toContain('dicke');
+    expect(spans.map((span) => span.label)).toContain('Bauweise: Ortbeton');
   });
 
   it('legt die Fundstellen als reserviertes `_spans` in den Attributen ab', () => {

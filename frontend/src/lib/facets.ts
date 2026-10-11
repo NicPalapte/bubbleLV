@@ -3,6 +3,7 @@
 // (docs/architecture/data-model.md).
 
 import { attrString, attrStrings } from './attributes';
+import { materialKatalog } from './classify/material/katalog';
 import { POSITION_STATUS } from './status';
 import { canonicalUnit, unitLabel } from './units';
 import type { PositionSummary } from '../types/lvNode';
@@ -74,6 +75,22 @@ export const FACETS: readonly Facet[] = [
     label: 'Exposition',
     get: (p) => attrStrings(p.attributes, 'expo'),
   },
+  // Material und seine Merkmale aus den Materialtabellen (Entscheidung 0045):
+  // eine neue Tabelle bringt ihre Filter mit.
+  {
+    id: 'material',
+    label: 'Material',
+    get: (p) => attrStrings(p.attributes, 'material'),
+  },
+  ...materialKatalog().flatMap((material) =>
+    material.merkmale.map((merkmal): Facet => ({
+      id: merkmal.key,
+      label: `${merkmal.name} (${material.name})`,
+      get: (p) => attrStrings(p.attributes, merkmal.key),
+      // Reihenfolge wie in der Tabelle, nicht alphabetisch.
+      sortValues: byOrder(merkmal.werte.flatMap(({ wert }) => (wert === null ? [] : [wert]))),
+    })),
+  ),
   {
     id: 'keywords',
     label: 'Besonderheiten',

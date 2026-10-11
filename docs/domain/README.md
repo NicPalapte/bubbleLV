@@ -56,8 +56,15 @@ Leistungsbereich (Gewerk) zu. Ohne gepflegte Stichworte traf das fast nie; die
 Zuordnung ist entfernt ([`decisions/0044`](../decisions/0044-leistungsbereich-entfernt.md)).
 Eine neue Logik für Leistungsbereiche legt der Owner später fest.
 
-Materialwissen (z. B. „C20/25" oder „XC4" ⇒ Beton) kommt künftig als eigene Tabelle je
-Material unter [`reference/`](reference/). Rohstoff dafür:
+## Materialwissen
+
+Material und seine Merkmale stehen als Tabelle je Material unter
+[`reference/material/`](reference/material/) — zuerst Beton und Betonstahl
+([`decisions/0045`](../decisions/0045-materialwissen-als-tabelle.md)). Ein Material wird
+an Stichworten oder Mustern erkannt (z. B. „C#/#" oder „XC#" ⇒ Beton); erst dann sucht
+die App seine Merkmale (Art, Bauweise, Bewehrung). Wie man die Tabellen pflegt:
+[`setup/materialwissen.md`](../setup/materialwissen.md). Weitere Stichworte für andere
+Materialien als ungeprüfter Rohstoff:
 [`reference/entwuerfe/material-entwurf.csv`](reference/entwuerfe/material-entwurf.csv).
 
 Bauteiltyp (`Wand`, `Decke`, `Fundament`, …) und die nicht-physischen `positionsart`-Werte

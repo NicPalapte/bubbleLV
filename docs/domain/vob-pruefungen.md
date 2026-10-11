@@ -23,6 +23,7 @@
 | V3, V8, V9, V10 | angemeldet, **inaktiv** — die Referenzdateien sind noch leer |
 | G1, G2, G3 | Kennzahlen ohne Norm-Bezug, aktiv (Kostentreiber, Mengentreiber, uneinheitliche Einheiten) |
 | G4 | Kennzahl ohne Norm-Bezug, aktiv (Einheitspreis fällt aus der Gruppe ähnlicher Positionen, WP-M) |
+| M1 | Beobachtung ohne Norm-Bezug, aktiv, solange die Materialtabellen `beton.csv` und `betonstahl.csv` da sind |
 
 Status und Norm-Verweis je Regel stehen in
 [`reference/pruefregeln.csv`](reference/pruefregeln.csv) — nicht im Code. Eine
@@ -58,6 +59,7 @@ muss der Owner bestätigen, bevor sie im UI angezeigt wird.
 | V8 | Leistung ausgeschrieben, die nach VOB/C **Nebenleistung** ist (Doppelvergütung prüfen) | VOB/C, ATV DIN 18299 Abschnitt 4.1, dazu die Abschnitte 4.1 der gewerkespezifischen ATV (DIN 18300 ff.) | sicher (Struktur) | braucht Zuordnung LB → ATV und die Nebenleistungs-Listen |
 | V9 | Im Text erwähnte **Besondere Leistung** ohne eigene Position | VOB/C, ATV DIN 18299 Abschnitt 4.2 | sicher (Struktur) | Ausbaustufe — schwerer zu erkennen als V8 |
 | V11 | Alternativposition (Wahlposition) im LV | kein Verweis gesetzt — GAEB-Merkmal (`positionType`); ein VOB-Verweis erst nach Bestätigung durch den Owner | sicher (Feld) | sofort — `positionType` liefert das direkt |
+| M1 | Betonposition mit Festigkeitsklasse, aber ohne Angabe zur Bewehrung; nennt den Betonstahl im selben Hauptabschnitt | kein Norm-Bezug — Beobachtung an der Datei | sicher (Feld) | sofort — Materialtabellen ([`reference/material/`](reference/material/)) |
 | V10 | Erdarbeiten ohne Angabe von Homogenbereichen | VOB/C, DIN 18300 Abschnitt 0 (Hinweise für das Aufstellen der Leistungsbeschreibung); Homogenbereiche lösen seit der Fassung 2015 die Bodenklassen ab — siehe [`README.md`](README.md#muster-beispiel-din-18300--bodenklassen-vs-homogenbereiche) | sicher (Inhalt), Abschnitts-Nummer zu bestätigen | braucht LB-Erkennung Erdarbeiten (entfernt, [0044](../decisions/0044-leistungsbereich-entfernt.md)) |
 
 ## Was der Owner bestätigen muss

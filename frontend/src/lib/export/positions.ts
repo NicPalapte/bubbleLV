@@ -9,7 +9,8 @@
 // fehlt, merkt man dagegen erst, wenn die Datei schon weitergereicht ist.
 // Die Zeilen sind die gefilterte Menge — das ist die Zusage aus dem Plan.
 
-import { attrString, attrStrings } from '../attributes';
+import { attributeLabel, attrString, attrStrings } from '../attributes';
+import { materialKatalog } from '../classify/material/katalog';
 import { canonicalUnit, unitLabel } from '../units';
 import type { PositionIndex } from '../index/positionIndex';
 
@@ -26,6 +27,14 @@ const COLUMNS: ReadonlyArray<{ head: string; of(index: PositionIndex, slot: numb
   { head: 'Positionsart', of: (index, i) => attr(index, i, 'positionsart') },
   { head: 'Druckfestigkeit', of: (index, i) => attr(index, i, 'beton') },
   { head: 'Exposition', of: (index, i) => liste(index, i, 'expo') },
+  // Material und je Materialtabelle ihre Merkmale (Entscheidung 0045).
+  { head: 'Material', of: (index, i) => liste(index, i, 'material') },
+  ...materialKatalog().flatMap((material) =>
+    material.merkmale.map(({ key }) => ({
+      head: attributeLabel(key),
+      of: (index: PositionIndex, i: number) => liste(index, i, key),
+    })),
+  ),
   { head: 'Normen', of: (index, i) => liste(index, i, 'normen') },
   { head: 'Zeitbezug', of: (index, i) => liste(index, i, 'fristen') },
   { head: 'Offene Stellen', of: (index, i) => liste(index, i, 'platzhalter') },

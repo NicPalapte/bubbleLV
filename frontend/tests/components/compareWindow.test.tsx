@@ -36,9 +36,9 @@ const DRAFT: LVDraft = {
           label: 'Wände',
           sections: [],
           positions: [
-            position('01.01.0010', 10, 'Wand aus Beton'),
+            position('01.01.0010', 10, 'Wand aus Holz'),
             position('01.01.0020', 10, 'Wand aus Ziegel'),
-            position('01.01.0030', 25, 'Wand aus Beton'),
+            position('01.01.0030', 25, 'Wand aus Holz'),
           ],
         },
       ],
@@ -93,7 +93,7 @@ describe('CompareWindow', () => {
     expect(zellen[1]).not.toHaveAttribute('data-differs');
     expect(zellen[2]).toHaveAttribute('data-differs');
 
-    // „Ziegel" und „Beton" stehen nicht in allen drei Texten.
+    // „Ziegel" und „Holz" stehen nicht in allen drei Texten.
     expect(within(table).getByText('Ziegel').tagName).toBe('MARK');
   });
 

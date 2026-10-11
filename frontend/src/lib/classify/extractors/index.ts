@@ -5,10 +5,12 @@
 //
 // Reihenfolge = Zeichenreihenfolge bei Überlappungen (spans.ts#mergeSpans):
 // steht "DIN EN 206" auch in einem Maß-Treffer, gewinnt der zuerst eingetragene
-// Extraktor. Normen zuerst, weil eine Normnummer nie ein Maß ist.
+// Extraktor. Normen zuerst, weil eine Normnummer nie ein Maß ist; Material vor
+// den Maßen, damit „C30/37" als Betonklasse markiert wird.
 
 import { fristenExtractor } from './fristen';
 import { masseExtractor } from './masse';
+import { materialExtractor } from './material';
 import { normenExtractor } from './normen';
 import { platzhalterExtractor } from './platzhalter';
 import { mergeSpans } from './spans';
@@ -17,6 +19,7 @@ import type { Extractor, ExtractorContext, ExtractorResult } from './types';
 
 export const GENERIC_EXTRACTORS: readonly Extractor[] = [
   normenExtractor,
+  materialExtractor,
   masseExtractor,
   platzhalterExtractor,
   verweiseExtractor,

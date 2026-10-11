@@ -4,7 +4,7 @@
 // die Regel-ID.
 //
 // Angemeldet, aber ohne Prüffunktion: V3, V8, V9, V10. Sie brauchen
-// Referenzdaten bzw. eine Gewerke-Zuordnung, die noch niemand gepflegt hat, und
+// Referenzdaten bzw. eine Erdarbeiten-Erkennung, die es noch nicht gibt, und
 // erscheinen deshalb in der Prüfliste als inaktiv — statt still zu fehlen.
 
 import { attrSpans, attrStrings } from '../../attributes';

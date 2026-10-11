@@ -9,6 +9,17 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.13.0 — 11.10.2026 · Material Beton
+
+- **Material wird erkannt.** Bubble erkennt Beton und Betonstahl an Stichworten und
+  Klassen wie „C30/37" oder „XC4". Neuer Filter „Material".
+- **Merkmale von Beton:** Art, Bauweise und Bewehrung. Sie stehen in der Positionskarte,
+  als Filter und im Export. Die Fundstellen sind im Langtext grün markiert.
+- **Neuer Hinweis M1:** Betonposition ohne Angabe zur Bewehrung. Er nennt den
+  Betonstahl im selben Abschnitt.
+- Das Wissen steht in Tabellen, die du in Excel pflegen kannst
+  (`docs/setup/materialwissen.md`). Die Inhalte sind ein Entwurf.
+
 ## 0.12.0 — 11.10.2026 · Ohne Leistungsbereich
 
 - **Gewerk entfernt.** Bubble ordnet Positionen keinem Leistungsbereich mehr zu. Die

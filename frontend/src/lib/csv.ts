@@ -1,5 +1,5 @@
 // Minimaler CSV-Leser für die gepflegten Referenzdateien unter
-// docs/domain/reference/. Bewusst klein: Trennzeichen `,`, doppelte
+// docs/domain/reference/. Bewusst klein: Trennzeichen `,` oder `;`, doppelte
 // Anführungszeichen für Felder mit Komma, `""` als escaptes Zitat. Keine
 // Abhängigkeit — eine CSV-Bibliothek wäre für vier Spalten zu viel.
 //
@@ -7,7 +7,7 @@
 // Laufzeit gibt es keinen Fetch (docs/architecture/pipeline.md).
 
 /** Eine CSV-Zeile in Felder zerlegen, Leerraum je Feld entfernt. */
-export function splitCsvLine(line: string): string[] {
+export function splitCsvLine(line: string, delimiter = ','): string[] {
   const fields: string[] = [];
   let current = '';
   let quoted = false;
@@ -21,7 +21,7 @@ export function splitCsvLine(line: string): string[] {
         i++;
       } else quoted = false;
     } else if (char === '"') quoted = true;
-    else if (char === ',') {
+    else if (char === delimiter) {
       fields.push(current);
       current = '';
     } else current += char;
@@ -42,12 +42,20 @@ export interface CsvRow {
  * fehlen ⇒ Regel inaktiv, kein Fehler".
  */
 export function parseCsv(csv: string): CsvRow[] {
-  const lines = csv.split(/\r?\n/).filter((line) => line.trim() !== '');
+  // „CSV UTF-8" aus Excel beginnt mit einer Byte-Order-Mark; sie gehört nicht
+  // zum ersten Spaltennamen.
+  const lines = csv
+    .replace(/^\uFEFF/, '')
+    .split(/\r?\n/)
+    .filter((line) => line.trim() !== '');
   if (lines.length === 0) return [];
 
-  const header = splitCsvLine(lines[0]).map((field) => field.toLowerCase());
+  // Ein deutsches Excel speichert CSV mit `;`. Die Kopfzeile verrät, welches
+  // Zeichen die Datei nutzt — sie enthält nie ein Komma in einem Spaltennamen.
+  const delimiter = lines[0].includes(';') && !lines[0].includes(',') ? ';' : ',';
+  const header = splitCsvLine(lines[0], delimiter).map((field) => field.toLowerCase());
   return lines.slice(1).map((line) => {
-    const fields = splitCsvLine(line);
+    const fields = splitCsvLine(line, delimiter);
     return {
       get(column: string): string {
         const index = header.indexOf(column.toLowerCase());

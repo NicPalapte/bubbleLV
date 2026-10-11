@@ -175,7 +175,7 @@ Stufe 0 — Positionsart       → attributes.positionsart (Stichworte/Einheit i
     │
     ▼
 Extraktoren (WP-J)
-    │   normen · masse · platzhalter · verweise · fristen
+    │   normen · material · masse · platzhalter · verweise · fristen
     │   → attributes + spans (Fundstellen im Langtext)
     │   Laufen **vor** jedem Ruleset; ein Ruleset darf ihre Werte überschreiben,
     │   aber keinen löschen.
@@ -202,8 +202,9 @@ Vokabularwert als Attribut und den Wortlaut als Span
 **Kein Leistungsbereich** ([`decisions/0044`](../decisions/0044-leistungsbereich-entfernt.md)).
 Bis 0.11 ordnete Stufe 0 jede Position über einen STLB-Katalog einem Leistungsbereich
 (Gewerk) zu. Der Katalog hatte keine gepflegten Stichworte und lieferte fast nichts;
-die Zuordnung ist entfernt. Materialwissen kommt künftig aus einer eigenen Tabelle je
-Material.
+die Zuordnung ist entfernt. Materialwissen kommt aus einer Tabelle je Material
+(`src/lib/classify/material/`, [`decisions/0045`](../decisions/0045-materialwissen-als-tabelle.md))
+und läuft als Extraktor.
 
 **Identitäts- vs. Eigenschaftserkennung.** Positionsart (Fallback-Heuristik) und
 Bauteiltyp werden ausschließlich aus dem **Kurztext** bestimmt. Deutsche LV-Langtexte

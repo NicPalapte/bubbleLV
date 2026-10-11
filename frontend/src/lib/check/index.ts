@@ -8,6 +8,7 @@
 
 import { regelEintrag } from './referenz';
 import { g4Preisausreisser } from './rules/ausreisser';
+import { m1Bewehrung } from './rules/material';
 import { g1Kostentreiber, g2Mengentreiber, g3Einheitenschreibweise } from './rules/treiber';
 import {
   v10Homogenbereiche,
@@ -26,6 +27,7 @@ import type { CheckContext, CheckResult, CheckRule, Flag, RuleStatus } from './t
 import type { PositionIndex } from '../index/positionIndex';
 import type { LVSummary } from '../index/summary';
 import type { RelationResult } from '../relate';
+import type { LVNode } from '../../types/lvNode';
 import { EMPTY_RELATIONS } from '../relate';
 
 export const CHECK_RULES: readonly CheckRule[] = [
@@ -44,6 +46,7 @@ export const CHECK_RULES: readonly CheckRule[] = [
   g2Mengentreiber,
   g3Einheitenschreibweise,
   g4Preisausreisser,
+  m1Bewehrung,
 ];
 
 /** Warum eine Regel nicht läuft — in einem Satz, den der Owner versteht. */
@@ -67,15 +70,17 @@ function inactiveReason(rule: CheckRule): string | null {
  * die stolpert, darf den Import nicht anhalten; sie erscheint dann als inaktiv
  * mit der Fehlermeldung als Grund (Test: tests/check/rules.test.ts).
  *
- * `ruleSet` weicht nur in Tests vom ausgelieferten Katalog ab.
+ * `ruleSet` weicht nur in Tests vom ausgelieferten Katalog ab. Ohne `parents`
+ * gilt das ganze LV als ein Abschnitt.
  */
 export function runChecks(
   index: PositionIndex,
   summary: LVSummary,
   relations: RelationResult = EMPTY_RELATIONS,
   ruleSet: readonly CheckRule[] = CHECK_RULES,
+  parents: ReadonlyMap<string, LVNode | null> = new Map(),
 ): CheckResult {
-  const context: CheckContext = { index, summary, relations };
+  const context: CheckContext = { index, summary, relations, parents };
   const flags: Flag[] = [];
   const rules: RuleStatus[] = [];
 

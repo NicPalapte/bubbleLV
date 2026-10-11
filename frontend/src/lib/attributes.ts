@@ -3,6 +3,7 @@
 // braucht daraus aber verlässliche Strings.
 
 import type { ClassificationMeta, Span } from './classify';
+import { materialMerkmalLabels } from './classify/material/katalog';
 import type { PositionSummary } from '../types/lvNode';
 
 /** Reservierte Keys: Provenance und Fundstellen, nie eine Facette. */
@@ -42,9 +43,13 @@ const ATTRIBUTE_LABELS: Record<string, string> = {
   kurztext: 'Kurztext',
 };
 
+/** Merkmale aus den Materialtabellen — ihre Keys kennt erst die Tabelle. */
+let materialLabels: Record<string, string> | null = null;
+
 /** Anzeigename eines Attribut-Keys; unbekannte Keys stehen unverändert da. */
 export function attributeLabel(key: string): string {
-  return ATTRIBUTE_LABELS[key] ?? key;
+  materialLabels ??= materialMerkmalLabels();
+  return ATTRIBUTE_LABELS[key] ?? materialLabels[key] ?? key;
 }
 
 export function attrString(attributes: Record<string, unknown>, key: string): string | null {

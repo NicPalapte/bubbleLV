@@ -94,6 +94,8 @@ laufen **vor** den Rulesets und werden von ihnen nur überschrieben, nie gelösc
 |---|---|---|---|
 | `keywords` | `string[]` | `["WU-Beton","CEM III/A"]` | Besonderheiten |
 | `normen` | `string[]` | `["DIN EN 206","VOB/C"]` | Normen |
+| `material` | `string[]` | `["Beton"]` | Material |
+| `<material><Merkmal>` | `string[]` | `betonBauweise: ["Ortbeton"]` | je Merkmal einer Materialtabelle, z. B. „Bauweise (Beton)" |
 | `fristen` | `string[]` | `["Winterbau","Termin"]` | Zeitbezug |
 | `platzhalter` | `string[]` | `["Textergänzung"]` | Offene Stellen |
 | `platzhalterAnzahl` | `number` | `2` | (Anzeige) |
@@ -108,8 +110,11 @@ Zwei Regeln gelten für alle Extraktoren:
 - **Kein Treffer ⇒ kein Key.** Ein leeres Array würde im Panel als Merkmal
   erscheinen, das es nicht gibt.
 
-`material` (aus dem STLB-Katalog) ist mit 0044 entfallen. Materialwissen kommt
-künftig aus einer eigenen Tabelle je Material.
+`material` und die Material-Merkmale kommen aus den Materialtabellen unter
+`docs/domain/reference/material/` ([`decisions/0045`](../decisions/0045-materialwissen-als-tabelle.md)).
+Der Key eines Merkmals entsteht aus Dateiname und Spalte `merkmal`: `beton.csv` +
+„Bauweise" ⇒ `betonBauweise`. Merkmale werden nur gesucht, wenn das Material erkannt ist.
+Alle Fundstellen tragen den Span-Key `material`; ihr Label nennt Merkmal und Wert.
 
 Normverweise standen bis WP-J unter `keywords`; sie liegen jetzt in `normen`,
 damit „DIN EN 206" nicht zweimal im Eigenschaften-Panel steht.

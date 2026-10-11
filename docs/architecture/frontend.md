@@ -39,6 +39,7 @@ frontend/
     │   ├── classify/                 # Klassifizierung (Regel-Pipeline, siehe pipeline.md)
     │   │   ├── ruleBased.ts          # Orchestrierung der Stufen hinter Classifier
     │   │   ├── extractors/           # Merkmale + Fundstellen (WP-J)
+    │   │   ├── material/             # Materialtabellen (CSV-Kopie) + Stichwort-Schreibweise
     │   │   └── rulesets/             # Registry + je Ruleset ein Modul
     │   ├── tree/
     │   │   ├── buildTree.ts          # LVDraft → LVNode-Baum

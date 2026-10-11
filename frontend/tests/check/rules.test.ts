@@ -13,7 +13,7 @@ import { formatEuro } from '../../src/lib/format';
 import { buildPositionIndex } from '../../src/lib/index/positionIndex';
 import { summarize } from '../../src/lib/index/summary';
 import { buildRelations } from '../../src/lib/relate';
-import { buildTree, collectPositions } from '../../src/lib/tree/buildTree';
+import { buildTree, collectPositions, indexParents } from '../../src/lib/tree/buildTree';
 import type { CheckResult, RuleStatus } from '../../src/lib/check';
 import type { LVDraft, PositionDraft } from '../../src/types/lvDraft';
 
@@ -283,6 +283,74 @@ describe('G4 · Einheitspreis fällt aus der Gruppe', () => {
   it('bleibt ein Hinweis und wird nie zum Urteil', () => {
     const [flag] = flagsOf(gruppe(100, 105, 110, 115, 900), 'G4');
     expect(flag.title).not.toMatch(/unzulässig|Verstoß|verboten|fehlerhaft|falsch/i);
+  });
+});
+
+describe('M1 · Bewehrung', () => {
+  /** Zwei Hauptabschnitte, damit die Suche nach Betonstahl an der Grenze endet. */
+  function zweiAbschnitte(rohbau: PositionDraft[], ausbau: PositionDraft[]): CheckResult {
+    const draft: LVDraft = {
+      projectName: 'Bewehrung',
+      client: null,
+      lots: [
+        {
+          number: '01',
+          label: 'Los',
+          sections: [
+            { number: '01.001', label: 'Rohbau', sections: [], positions: rohbau },
+            { number: '01.002', label: 'Ausbau', sections: [], positions: ausbau },
+          ],
+        },
+      ],
+    };
+    const tree = buildTree(classifyDraft(draft, classifier));
+    const index = buildPositionIndex(tree);
+    return runChecks(
+      index,
+      summarize(index),
+      buildRelations(index),
+      CHECK_RULES,
+      indexParents(tree),
+    );
+  }
+
+  const wand = (oz: string, longText: string) =>
+    position({ oz, shortText: 'Stahlbetonwand C30/37', longText });
+  const stahl = (oz: string) =>
+    position({ oz, shortText: 'Betonstahl B500B liefern und einbauen', unit: 't' });
+
+  it('nennt den Betonstahl im selben Hauptabschnitt', () => {
+    const result = zweiAbschnitte(
+      [wand('01.001.0010', 'Wand d = 25 cm.'), stahl('01.001.0020')],
+      [stahl('01.002.0010')],
+    );
+    const flags = flagsOf(result, 'M1');
+    expect(flags).toHaveLength(1);
+    expect(flags[0].positionId).toContain('01.001.0010');
+    expect(flags[0].title).toContain('01.001.0020');
+    expect(flags[0].title).not.toContain('01.002.0010');
+  });
+
+  it('sagt, wenn im Abschnitt auch kein Betonstahl steht', () => {
+    const result = zweiAbschnitte([wand('01.001.0010', '')], [stahl('01.002.0010')]);
+    expect(flagsOf(result, 'M1')[0].title).toContain('auch kein Betonstahl');
+  });
+
+  it('schweigt, wenn die Position die Bewehrung nennt', () => {
+    const result = zweiAbschnitte(
+      [
+        wand('01.001.0010', 'Einschl. Bewehrung.'),
+        wand('01.001.0020', 'Bewehrung wird gesondert vergütet.'),
+        wand('01.001.0030', 'Unbewehrt.'),
+      ],
+      [],
+    );
+    expect(flagsOf(result, 'M1')).toHaveLength(0);
+  });
+
+  it('schweigt bei Beton ohne Festigkeitsklasse, etwa einer Schalung', () => {
+    const schalung = position({ shortText: 'Schalung für Betonwände' });
+    expect(flagsOf(check(schalung), 'M1')).toHaveLength(0);
   });
 });
 
