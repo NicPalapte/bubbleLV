@@ -32,7 +32,6 @@ import {
 } from './viewState';
 import type { HintIndex } from '../lib/check';
 import { AXIS_FACETS } from '../lib/graph/layoutMap';
-import type { ColorScale } from '../lib/colors';
 import type { PositionIndex } from '../lib/index/positionIndex';
 import type { ActiveFilters } from '../lib/matchPos';
 import type { LoadedLV } from '../lib/pipeline/runPipeline';
@@ -279,8 +278,6 @@ export interface ViewerDerived {
   matches: MatchIndex;
   /** Treffer je Indexeintrag (1 = Treffer); `null`, solange nicht gefiltert wird. */
   mask: Uint8Array | null;
-  /** Eine Gewerk-Farbskala für alle Ansichten (WP-L, Schritt 5). */
-  gewerkColors: ColorScale;
   /** Punktfarbe je Position nach Hauptabschnitt (Entscheidung 0043). */
   sectionColors: SectionColors;
   /**

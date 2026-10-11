@@ -73,7 +73,7 @@ describe('positionsCsv', () => {
     // fällt erst auf, wenn die Datei schon weitergereicht ist.
     expect(kopf).toContain('OZ');
     expect(kopf).toContain('Langtext');
-    expect(kopf).toContain('Gewerk');
+    expect(kopf).not.toContain('Gewerk');
     expect(kopf.length).toBeGreaterThan(10);
   });
 

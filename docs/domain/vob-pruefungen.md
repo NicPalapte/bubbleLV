@@ -58,7 +58,7 @@ muss der Owner bestätigen, bevor sie im UI angezeigt wird.
 | V8 | Leistung ausgeschrieben, die nach VOB/C **Nebenleistung** ist (Doppelvergütung prüfen) | VOB/C, ATV DIN 18299 Abschnitt 4.1, dazu die Abschnitte 4.1 der gewerkespezifischen ATV (DIN 18300 ff.) | sicher (Struktur) | braucht Zuordnung LB → ATV und die Nebenleistungs-Listen |
 | V9 | Im Text erwähnte **Besondere Leistung** ohne eigene Position | VOB/C, ATV DIN 18299 Abschnitt 4.2 | sicher (Struktur) | Ausbaustufe — schwerer zu erkennen als V8 |
 | V11 | Alternativposition (Wahlposition) im LV | kein Verweis gesetzt — GAEB-Merkmal (`positionType`); ein VOB-Verweis erst nach Bestätigung durch den Owner | sicher (Feld) | sofort — `positionType` liefert das direkt |
-| V10 | Erdarbeiten ohne Angabe von Homogenbereichen | VOB/C, DIN 18300 Abschnitt 0 (Hinweise für das Aufstellen der Leistungsbeschreibung); Homogenbereiche lösen seit der Fassung 2015 die Bodenklassen ab — siehe [`README.md`](README.md#muster-beispiel-din-18300--bodenklassen-vs-homogenbereiche) | sicher (Inhalt), Abschnitts-Nummer zu bestätigen | braucht LB-Erkennung Erdarbeiten |
+| V10 | Erdarbeiten ohne Angabe von Homogenbereichen | VOB/C, DIN 18300 Abschnitt 0 (Hinweise für das Aufstellen der Leistungsbeschreibung); Homogenbereiche lösen seit der Fassung 2015 die Bodenklassen ab — siehe [`README.md`](README.md#muster-beispiel-din-18300--bodenklassen-vs-homogenbereiche) | sicher (Inhalt), Abschnitts-Nummer zu bestätigen | braucht LB-Erkennung Erdarbeiten (entfernt, [0044](../decisions/0044-leistungsbereich-entfernt.md)) |
 
 ## Was der Owner bestätigen muss
 
@@ -75,12 +75,11 @@ Bevor eine Regel mit `zu bestätigen` im UI erscheint:
 5. **V11:** Gibt es für Alternativpositionen einen VOB-Verweis, der angezeigt werden
    soll? Bis dahin nennt die Regel nur das GAEB-Merkmal.
 6. **V3, V8:** Wer liefert die Referenzdaten — Herstellerliste und Nebenleistungs-Listen
-   je ATV? Ohne sie bleiben beide Regeln inaktiv (wie die `keywords`-Spalte im
-   STLB-Katalog, siehe [`README.md`](README.md#stlb-bau-leistungsbereiche-als-primäre-klassifizierungsquelle-wp-2)).
+   je ATV? Ohne sie bleiben beide Regeln inaktiv.
 
 ## Ablage der Referenzdaten
 
-Wie beim STLB-Katalog: CSV unter [`reference/`](reference/), eine Zeile je Eintrag, mit
+CSV unter [`reference/`](reference/), eine Zeile je Eintrag, mit
 Spalte `quelle_version`. Nicht im Code hartkodieren, nicht erfinden.
 
 | Datei | Inhalt | Für |

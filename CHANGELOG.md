@@ -9,6 +9,17 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.12.0 — 11.10.2026 · Ohne Leistungsbereich
+
+- **Gewerk entfernt.** Bubble ordnet Positionen keinem Leistungsbereich mehr zu. Die
+  Zuordnung traf ohne gepflegten Katalog fast nie. Damit entfallen der Filter „Gewerk“,
+  die Spalte „Gewerk“ im Export und der Import-Hinweis „ohne Gewerk“.
+- **Filter „Material“ und die Merkmale „tragend“ und „Steinart“ entfallen.** Sie hingen
+  am Leistungsbereich. Material kommt bald aus einer eigenen Tabelle, Beton zuerst.
+- **Positionskarte** zeigt oben den Hauptabschnitt in seiner Farbe.
+- Druckfestigkeit, Exposition und alle anderen Klassen aus dem Text bleiben.
+- Alte Teilen-Links mit Gewerk-Filter laden weiter, der Filter fällt weg.
+
 ## 0.11.0 — 10.10.2026 · Farbe nach Abschnitt
 
 - **Punkte nach Abschnitt eingefärbt.** Im Graphen hat jeder Punkt die Farbe seines

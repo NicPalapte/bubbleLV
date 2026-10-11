@@ -1,6 +1,6 @@
 # 0030 – Filter „Material": ausblenden, solange es keine geprüfte Liste gibt
 
-- **Status:** akzeptiert
+- **Status:** ersetzt durch [0044](0044-leistungsbereich-entfernt.md)
 - **Datum:** 2026-10-04
 - **Betrifft:** Frontend, Filterleiste, Klassifizierung (Material), Issue #99
 

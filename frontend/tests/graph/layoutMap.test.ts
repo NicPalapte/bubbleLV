@@ -17,7 +17,7 @@ function position(
   oz: string,
   unit: string,
   quantity: number | null,
-  gewerk: string | null,
+  bauteiltyp: string | null,
 ): PositionDraft {
   return {
     oz,
@@ -27,7 +27,7 @@ function position(
     quantity,
     unitPrice: null,
     positionType: 'NORMAL',
-    attributes: gewerk === null ? {} : { gewerk },
+    attributes: bauteiltyp === null ? {} : { bauteiltyp },
   };
 }
 
@@ -44,8 +44,8 @@ const draft: LVDraft = {
           number: '01.01',
           label: 'Erdarbeiten',
           positions: [
-            position('01.01.0010', 'm3', 100, 'Erdarbeiten'),
-            position('01.01.0020', 'm3', 25, 'Erdarbeiten'),
+            position('01.01.0010', 'm3', 100, 'Baugrube'),
+            position('01.01.0020', 'm3', 25, 'Baugrube'),
           ],
           sections: [],
         },
@@ -58,8 +58,8 @@ const draft: LVDraft = {
               number: '01.02.01',
               label: 'Wände',
               positions: [
-                position('01.02.01.0010', 'm2', 40, 'Betonarbeiten'),
-                position('01.02.01.0020', 'm3', 12, 'Betonarbeiten'),
+                position('01.02.01.0010', 'm2', 40, 'Wand'),
+                position('01.02.01.0020', 'm3', 12, 'Wand'),
               ],
               sections: [],
             },
@@ -155,10 +155,10 @@ describe('Gliederung „nach LV"', () => {
 
 describe('Gliederung „Matrix"', () => {
   it('bildet ohne Spalten eine Gruppe je Wert, Fehlendes als „ohne Angabe"', () => {
-    const map = layoutMap(index, parents, options({ layout: 'matrix', rows: 'gewerk' }));
+    const map = layoutMap(index, parents, options({ layout: 'matrix', rows: 'bauteiltyp' }));
     expect(map.axes).toBeNull();
     expect(map.groups.map((group) => group.title).sort()).toEqual(
-      ['Betonarbeiten', 'Erdarbeiten', 'Ohne Gewerk'].sort(),
+      ['Wand', 'Baugrube', NO_VALUE].sort(),
     );
   });
 
@@ -183,10 +183,10 @@ describe('Gliederung „Matrix"', () => {
     const map = layoutMap(
       index,
       parents,
-      options({ layout: 'matrix', rows: 'einheit', cols: 'gewerk' }),
+      options({ layout: 'matrix', rows: 'einheit', cols: 'bauteiltyp' }),
     );
     expect(map.axes?.rowKey).toBe('Einheit');
-    expect(map.axes?.colKey).toBe('Gewerk');
+    expect(map.axes?.colKey).toBe('Bauteiltyp');
     const rows = map.axes?.rows.length ?? 0;
     const cols = map.axes?.cols.length ?? 0;
     // Ohne gewählte Filterwerte nur Zellen mit Positionen — keine leeren Kreise.
@@ -205,7 +205,7 @@ describe('Gliederung „Matrix"', () => {
     const map = layoutMap(
       index,
       parents,
-      options({ layout: 'matrix', rows: 'einheit', cols: 'gewerk', mask, selected }),
+      options({ layout: 'matrix', rows: 'einheit', cols: 'bauteiltyp', mask, selected }),
     );
     expect(map.axes?.rows.map((row) => row.label)).toEqual(['m²', 'm³']);
     expect(map.groups.some((group) => group.slots.length === 0)).toBe(true);
@@ -220,37 +220,37 @@ describe('Gliederung „Matrix"', () => {
   });
 
   it('verliert keinen Treffer, auch bei mehreren Werten je Merkmal', () => {
-    // Zweiter Gewerk-Wert an einer Position: der Filter trifft über ihn.
+    // Zweiter Bauteiltyp-Wert an einer Position: der Filter trifft über ihn.
     const slot = slotOf('02.01.0010');
-    const gewerk = FACETS.findIndex((facet) => facet.id === 'gewerk');
+    const bauteiltyp = FACETS.findIndex((facet) => facet.id === 'bauteiltyp');
     const facts = index.facts.map((fact, i) =>
       i === slot
         ? {
             ...fact,
             facetValues: fact.facetValues.map((values, f) =>
-              f === gewerk ? ['Erdarbeiten', 'Malerarbeiten'] : values,
+              f === bauteiltyp ? ['Baugrube', 'Decke'] : values,
             ),
           }
         : fact,
     );
     const multi = { ...index, facts };
-    const selected = { gewerk: new Set(['Malerarbeiten']) };
+    const selected = { bauteiltyp: new Set(['Decke']) };
     const mask = maskOf((s) => s === slot);
     for (const cols of [null, 'einheit']) {
       const map = layoutMap(
         multi,
         parents,
-        options({ layout: 'matrix', rows: 'gewerk', cols, mask, selected, hide: true }),
+        options({ layout: 'matrix', rows: 'bauteiltyp', cols, mask, selected, hide: true }),
       );
       const placed = map.groups.flatMap((group) => group.slots);
       expect(placed).toEqual([slot]);
-      if (cols === null) expect(map.groups[0].title).toBe('Malerarbeiten');
+      if (cols === null) expect(map.groups[0].title).toBe('Decke');
       expect(Number.isFinite(map.px[slot])).toBe(true);
     }
   });
 
   it('führt Positionen ohne Wert unter „ohne Angabe"', () => {
-    const map = layoutMap(index, parents, options({ layout: 'matrix', rows: 'bauteiltyp' }));
+    const map = layoutMap(index, parents, options({ layout: 'matrix', rows: 'beton' }));
     expect(map.groups.map((group) => group.title)).toEqual([NO_VALUE]);
   });
 });

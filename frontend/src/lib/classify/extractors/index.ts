@@ -1,5 +1,5 @@
-// Registry der gewerkeunabhängigen Extraktoren. Sie laufen **vor** den
-// gewerkespezifischen Rulesets (ruleBased.ts); ein Ruleset darf ihre Werte
+// Registry der Extraktoren. Sie laufen **vor** den
+// Rulesets (ruleBased.ts); ein Ruleset darf ihre Werte
 // überschreiben, aber keinen löschen — deshalb wird hier gemergt und nicht
 // ersetzt.
 //
@@ -9,7 +9,6 @@
 
 import { fristenExtractor } from './fristen';
 import { masseExtractor } from './masse';
-import { materialExtractor } from './material';
 import { normenExtractor } from './normen';
 import { platzhalterExtractor } from './platzhalter';
 import { mergeSpans } from './spans';
@@ -19,7 +18,6 @@ import type { Extractor, ExtractorContext, ExtractorResult } from './types';
 export const GENERIC_EXTRACTORS: readonly Extractor[] = [
   normenExtractor,
   masseExtractor,
-  materialExtractor,
   platzhalterExtractor,
   verweiseExtractor,
   fristenExtractor,

@@ -300,11 +300,7 @@ export const v10Homogenbereiche: CheckRule = {
   category: 'norm',
   severity: 'beachten',
   hint: 'Erdarbeiten ohne Angabe von Homogenbereichen — seit der Fassung 2015 lösen sie die Bodenklassen ab.',
-  // Braucht keine eigene Datei, sondern die Zuordnung „welcher LB ist
-  // Erdarbeiten" — die steckt in der noch ungepflegten keywords-Spalte des
-  // STLB-Katalogs.
-  requires: {
-    file: 'docs/domain/reference/stlb-bau-leistungsbereiche.csv (Spalte keywords)',
-    available: () => false,
-  },
+  // Braucht die Zuordnung „diese Position gehört zu den Erdarbeiten". Die
+  // Leistungsbereich-Erkennung ist entfernt (docs/decisions/0044), bis dahin ohne
+  // `check` und damit inaktiv.
 };

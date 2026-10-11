@@ -6,14 +6,12 @@ gepflegt werden — nicht vom Modell erfunden oder aus dem Internet geraten (sie
 
 | Datei | Inhalt | Quelle |
 |---|---|---|
-| [`stlb-bau-leistungsbereiche.csv`](stlb-bau-leistungsbereiche.csv) | STLB-Bau-Leistungsbereiche (LB-Nummer, Bezeichnung, Match-Stichworte) für die Klassifizierung (WP-2) | STLB-Bau-Lizenz/-Export des Maintainers |
 | [`pruefregeln.csv`](pruefregeln.csv) | Je Prüfregel: Status und Norm-Verweis (WP-K) | [`../vob-pruefungen.md`](../vob-pruefungen.md) |
 | [`risiko-formulierungen.csv`](risiko-formulierungen.csv) | Formulierungen, die ein Risiko auf den AN schieben — Regel V4 | Owner |
 | [`hersteller-produktnamen.csv`](hersteller-produktnamen.csv) | Hersteller-/Produktnamen — Regel V3 | Owner |
 | [`vob-nebenleistungen.csv`](vob-nebenleistungen.csv) | Nebenleistungen je ATV — Regeln V8, V9 | VOB/C des Owners |
 | [`einheiten-gruppen.csv`](einheiten-gruppen.csv) | Einheiten, die dasselbe bedeuten („Stk" = „Stück") | Owner |
-| [`entwuerfe/material-entwurf.csv`](entwuerfe/material-entwurf.csv) | **Entwurf, nicht geladen:** Materialstichworte für den Filter „Material". Von Claude vorgeschlagen, fachlich ungeprüft. Ablauf: [`../../setup/materialliste.md`](../../setup/materialliste.md) | Entwurf, Owner prüft |
-| [`entwuerfe/stlb-keywords-entwurf.csv`](entwuerfe/stlb-keywords-entwurf.csv) | **Entwurf, nicht geladen:** Stichworte je STLB-Leistungsbereich. Von Claude vorgeschlagen, fachlich ungeprüft. Ablauf: [`../../setup/stlb-keywords.md`](../../setup/stlb-keywords.md) | Entwurf, Owner prüft |
+| [`entwuerfe/material-entwurf.csv`](entwuerfe/material-entwurf.csv) | **Entwurf, nicht geladen:** Materialstichworte, von Claude vorgeschlagen, fachlich ungeprüft. Rohstoff für die Materialtabellen ([`../../decisions/0044-leistungsbereich-entfernt.md`](../../decisions/0044-leistungsbereich-entfernt.md)) | Entwurf, Owner prüft |
 
 ## `pruefregeln.csv` — Status je Regel
 
@@ -42,8 +40,7 @@ hochgestellte Ziffern (`m³` = `m3`) führt der Code schon von sich aus zusammen
 hier stehen nur die **inhaltlichen** Gruppen. Bewusst nicht enthalten: `lfm` und
 `m` — das ist eine Abrechnungsart, keine Schreibweise.
 
-Format je Datei ist in der jeweils referenzierenden Dokumentation beschrieben (für
-`stlb-bau-leistungsbereiche.csv` siehe [`../README.md`](../README.md#stlb-bau-leistungsbereiche-als-primäre-klassifizierungsquelle-wp-2)).
+Format je Datei ist in der jeweils referenzierenden Dokumentation beschrieben.
 Solange eine Datei nur die Kopfzeile enthält, gilt die zugehörige Zuordnung als
 **nicht verifiziert** — Code darf dafür keine Platzhalterwerte annehmen, sondern muss
 auf den dokumentierten Fallback-Pfad ausweichen.

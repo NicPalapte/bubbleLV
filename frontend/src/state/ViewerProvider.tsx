@@ -5,8 +5,6 @@
 
 import { useMemo, useReducer, type ReactNode } from 'react';
 import { EMPTY_HINTS, hintsByPosition, type HintIndex } from '../lib/check';
-import { buildColorScale, EMPTY_COLOR_SCALE, type ColorScale } from '../lib/colors';
-import { NO_GEWERK } from '../lib/facets';
 import {
   buildPositionIndex,
   EMPTY_POSITION_INDEX,
@@ -63,16 +61,6 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
     return measure('Filter', () => computeMatchCounts(tree, index, active));
   }, [tree, index, active]);
 
-  // Eine Farbskala je geladenem LV, gültig für alle Ansichten (WP-L). Die
-  // Gewerk-Namen stehen in den vorberechneten Facetten-Zählern bereits sortiert
-  // — damit bekommt dasselbe LV immer dieselben Farben.
-  const gewerkColors = useMemo<ColorScale>(() => {
-    const values = state.lv?.summary.facets.get('gewerk');
-    if (values === undefined) return EMPTY_COLOR_SCALE;
-    // „Ohne Gewerk" bleibt farblos — es soll kein Gewerk vortäuschen.
-    return buildColorScale([...values.keys()].filter((key) => key !== NO_GEWERK));
-  }, [state.lv]);
-
   // Punktfarbe nach Hauptabschnitt — einmal je LV, über die ganze Datei, damit
   // ein Filter keine Farbe verschiebt (Entscheidung 0043).
   const sectionColors = useMemo<SectionColors>(() => {
@@ -122,7 +110,6 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
       comparePositions,
       matches,
       mask,
-      gewerkColors,
       sectionColors,
       hints,
     }),
@@ -136,7 +123,6 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
       comparePositions,
       matches,
       mask,
-      gewerkColors,
       sectionColors,
       hints,
     ],

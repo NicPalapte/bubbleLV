@@ -1,6 +1,6 @@
 # 0013 – Eine Gewerk-Farbskala für alle Ansichten
 
-- **Status:** ergänzt durch [0043](0043-punktfarbe-nach-abschnitt.md)
+- **Status:** ergänzt durch [0043](0043-punktfarbe-nach-abschnitt.md) und [0044](0044-leistungsbereich-entfernt.md)
 - **Datum:** 2026-09-16
 - **Betrifft:** Frontend, Design
 

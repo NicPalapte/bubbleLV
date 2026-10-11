@@ -38,9 +38,7 @@ frontend/
     │   ├── gaeb/                     # GaebParser — einzige Stelle mit GAEB-Kenntnis
     │   ├── classify/                 # Klassifizierung (Regel-Pipeline, siehe pipeline.md)
     │   │   ├── ruleBased.ts          # Orchestrierung der Stufen hinter Classifier
-    │   │   ├── stlbCatalog.ts        # Stufe 0: STLB-Bau-LB-Katalog (Build-Zeit-Asset)
-    │   │   ├── data/                 # ausgelieferte Kopie der Referenz-CSV
-    │   │   ├── extractors/           # gewerkeunabhängige Merkmale + Fundstellen (WP-J)
+    │   │   ├── extractors/           # Merkmale + Fundstellen (WP-J)
     │   │   └── rulesets/             # Registry + je Ruleset ein Modul
     │   ├── tree/
     │   │   ├── buildTree.ts          # LVDraft → LVNode-Baum
@@ -231,7 +229,7 @@ Zustand.
 
 Die Eingangsansicht nach dem Import. Sie rechnet nichts im Render: `buildOverview`
 (`lib/overview/model.ts`) läuft einmal je Filterwechsel über dem flachen
-Positions-Index und liefert Kennzahlen, die Treemap-Gruppen (Gewerk → Abschnitt),
+Positions-Index und liefert Kennzahlen, die Treemap-Gruppen (Hauptabschnitt → Einheit),
 die Pareto-Kurve und die Mengen je Einheit. Das Kachel-Layout ist eine reine
 Funktion (`lib/overview/treemap.ts`, squarified). Gefiltert wird über dieselbe
 `ActiveFilters`-Aufbereitung wie überall (`derived.active`), gezählt wird also

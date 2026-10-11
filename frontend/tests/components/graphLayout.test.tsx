@@ -77,13 +77,13 @@ describe('Gliederung im Graphen', () => {
     expect(graphText()).toContain('m³');
     expect(graphText()).not.toContain('→');
 
-    const gewerk = within(screen.getByRole('region', { name: 'Gewerk' }));
-    fireEvent.click(gewerk.getAllByRole('button', { pressed: false })[0]);
+    const art = within(screen.getByRole('region', { name: 'Positionsart' }));
+    fireEvent.click(art.getAllByRole('button', { pressed: false })[0]);
 
     const spalten = within(screen.getByRole('radiogroup', { name: 'Spalten' }));
-    await waitFor(() => expect(spalten.getByRole('radio', { name: 'Gewerk' })).toBeChecked());
+    await waitFor(() => expect(spalten.getByRole('radio', { name: 'Positionsart' })).toBeChecked());
     // Die Matrix beschriftet ihre Achsen.
-    expect(graphText()).toContain('Gewerk →');
+    expect(graphText()).toContain('Positionsart →');
     expect(graphText()).toContain('Einheit ↓');
   });
 

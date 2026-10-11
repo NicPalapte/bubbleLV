@@ -1,20 +1,10 @@
-// classifyDraft reicht die Überschriften der übergeordneten Abschnitte und Lose
-// an den Klassifizierer durch (Gewerk aus der Abschnittsüberschrift). Der
-// Eingabe-Draft bleibt dabei unverändert — die Klassifizierung ist eine reine
-// Funktion (docs/architecture/pipeline.md#ablauf).
+// classifyDraft klassifiziert jede Position, auch in tiefer liegenden
+// Abschnitten. Der Eingabe-Draft bleibt dabei unverändert — die Klassifizierung
+// ist eine reine Funktion (docs/architecture/pipeline.md#ablauf).
 
 import { describe, expect, it } from 'vitest';
 import { classifyDraft, getClassifier } from '../../src/lib/classify';
-import { parseStlbCsv } from '../../src/lib/classify/stlbCatalog';
 import type { LVDraft, PositionDraft } from '../../src/types/lvDraft';
-
-const CATALOG = parseStlbCsv(
-  [
-    'lb_nummer,lb_bezeichnung,keywords,quelle_version',
-    '002,Erdarbeiten,erdarbeiten,2023',
-    '012,Mauerarbeiten,mauerarbeiten|mauerwerk,2023',
-  ].join('\n'),
-);
 
 function position(oz: string, shortText: string): PositionDraft {
   return {
@@ -55,17 +45,19 @@ const DRAFT: LVDraft = {
   ],
 };
 
-describe('classifyDraft · Überschriften', () => {
-  const classified = classifyDraft(DRAFT, getClassifier({ catalog: CATALOG }));
+describe('classifyDraft', () => {
+  const classified = classifyDraft(DRAFT, getClassifier());
   const section = classified.lots[0].sections[0];
 
-  it('gibt der Position das Gewerk ihres Titels', () => {
-    expect(section.positions[0].attributes.gewerk).toBe('Erdarbeiten');
+  it('klassifiziert Positionen jeder Ebene', () => {
+    expect(section.positions[0].attributes._meta).toMatchObject({ classifier: 'rule' });
+    expect(section.sections[0].positions[0].attributes._meta).toMatchObject({
+      classifier: 'rule',
+    });
   });
 
-  it('reicht die Überschrift auch an tiefer liegende Abschnitte weiter', () => {
-    // „Aushub" selbst nennt kein Gewerk — der Titel darüber schon.
-    expect(section.sections[0].positions[0].attributes.gewerk).toBe('Erdarbeiten');
+  it('leitet aus Überschriften kein Gewerk mehr ab', () => {
+    expect(section.positions[0].attributes).not.toHaveProperty('gewerk');
   });
 
   it('lässt den Eingabe-Draft unberührt', () => {

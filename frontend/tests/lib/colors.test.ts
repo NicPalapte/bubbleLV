@@ -1,46 +1,21 @@
-// Eine Gewerk-Farbskala für alle Ansichten (WP-L, Schritt 5,
-// docs/decisions/0013-gewerk-farbskala.md).
+// Eine Farbskala für alle Ansichten (docs/decisions/0013-gewerk-farbskala.md,
+// 0043-punktfarbe-nach-abschnitt.md): Ton aus dem Rang des Hauptabschnitts.
 
 import { describe, expect, it } from 'vitest';
-import {
-  buildColorScale,
-  CATEGORY_COLORS,
-  EMPTY_COLOR_SCALE,
-  NEUTRAL_COLOR,
-} from '../../src/lib/colors';
+import { CATEGORY_COLORS, NEUTRAL_COLOR } from '../../src/lib/colors';
+import { NO_SECTION_KEY, sectionColor } from '../../src/lib/tree/mainSection';
 
-describe('buildColorScale', () => {
-  it('gibt demselben Gewerk immer denselben Ton', () => {
-    const scale = buildColorScale(['Betonarbeiten', 'Erdarbeiten', 'Malerarbeiten']);
-    expect(scale.of('Erdarbeiten')).toBe(scale.of('Erdarbeiten'));
-    expect(scale.of('Betonarbeiten')).not.toBe(scale.of('Erdarbeiten'));
+describe('sectionColor', () => {
+  it('vergibt die Töne in LV-Reihenfolge', () => {
+    expect(sectionColor('section:01', 0)).toBe(CATEGORY_COLORS[0]);
+    expect(sectionColor('section:02', 1)).toBe(CATEGORY_COLORS[1]);
   });
 
-  it('vergibt die Töne in der übergebenen Reihenfolge', () => {
-    const scale = buildColorScale(['A', 'B']);
-    expect(scale.entries).toEqual([
-      ['A', CATEGORY_COLORS[0]],
-      ['B', CATEGORY_COLORS[1]],
-    ]);
+  it('läuft bei mehr Abschnitten als Tönen um, statt Zwischentöne zu erfinden', () => {
+    expect(sectionColor('section:11', CATEGORY_COLORS.length)).toBe(CATEGORY_COLORS[0]);
   });
 
-  it('läuft bei mehr Werten als Tönen um, statt Zwischentöne zu erfinden', () => {
-    const values = Array.from({ length: CATEGORY_COLORS.length + 2 }, (_, i) => `G${i}`);
-    const scale = buildColorScale(values);
-    expect(scale.entries).toHaveLength(values.length);
-    expect(scale.of('G0')).toBe(scale.of(`G${CATEGORY_COLORS.length}`));
-    expect(new Set(scale.entries.map(([, color]) => color)).size).toBe(CATEGORY_COLORS.length);
-  });
-
-  it('zählt Wiederholungen und Leerwerte nicht mit', () => {
-    const scale = buildColorScale(['A', 'A', '', 'B']);
-    expect(scale.entries.map(([value]) => value)).toEqual(['A', 'B']);
-  });
-
-  it('gibt unbekannten Werten und `null` den farblosen Ton', () => {
-    const scale = buildColorScale(['A']);
-    expect(scale.of('unbekannt')).toBe(NEUTRAL_COLOR);
-    expect(scale.of(null)).toBe(NEUTRAL_COLOR);
-    expect(EMPTY_COLOR_SCALE.of('A')).toBe(NEUTRAL_COLOR);
+  it('gibt Positionen ohne Abschnitt den farblosen Ton', () => {
+    expect(sectionColor(NO_SECTION_KEY, 3)).toBe(NEUTRAL_COLOR);
   });
 });

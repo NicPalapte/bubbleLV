@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FACETS_BY_ID, NO_GEWERK } from '../../src/lib/facets';
+import { FACETS_BY_ID } from '../../src/lib/facets';
 import {
   countActiveFilters,
   EMPTY_FILTERS,
@@ -22,8 +22,6 @@ function pos(overrides: Partial<PositionSummary> = {}): PositionSummary {
     positionType: 'NORMAL',
     attributes: {
       positionsart: 'bauteil',
-      gewerk: 'Beton- und Stahlbetonarbeiten',
-      gewerkLb: '013',
       bauteiltyp: 'Wand',
       beton: 'C30/37',
       expo: ['XC2', 'XD1'],
@@ -95,16 +93,13 @@ describe('matchPos', () => {
   });
 
   it('liefert je Facette die Werte der Position', () => {
-    const facet = FACETS_BY_ID.get('gewerk');
-    expect(facet?.get(pos())).toEqual(['Beton- und Stahlbetonarbeiten']);
+    const facet = FACETS_BY_ID.get('bauteiltyp');
+    expect(facet?.get(pos())).toEqual(['Wand']);
     expect(FACETS_BY_ID.get('status')?.get(pos())).toEqual(['offen']);
   });
 
-  it('führt Positionen ohne Gewerk unter „Ohne Gewerk" — als echten Filterwert', () => {
-    const ohne = pos({ attributes: { positionsart: 'bauteil', bauteiltyp: 'Mauerwerk' } });
-    expect(FACETS_BY_ID.get('gewerk')?.get(ohne)).toEqual([NO_GEWERK]);
-    expect(matchPos(ohne, filters({ gewerk: [NO_GEWERK] }), '')).toBe(true);
-    expect(matchPos(pos(), filters({ gewerk: [NO_GEWERK] }), '')).toBe(false);
+  it('kennt keinen Gewerk-Filter mehr (Entscheidung 0044)', () => {
+    expect(FACETS_BY_ID.has('gewerk')).toBe(false);
   });
 });
 

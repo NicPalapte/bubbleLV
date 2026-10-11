@@ -4,7 +4,7 @@
 // Der teure Weg wäre, jede Position mit jeder zu vergleichen: bei 10.000
 // Positionen sind das rund 50 Millionen Paare. Drei Stufen halten das klein:
 //
-//  1. **Vorgruppierung** nach Gewerk, Einheit und Bauteiltyp. Verglichen wird
+//  1. **Vorgruppierung** nach Einheit und Bauteiltyp. Verglichen wird
 //     nur innerhalb einer Gruppe — eine Betonwand in m³ und eine Stunde
 //     Facharbeiter haben nichts miteinander zu tun.
 //  2. **Gleiche Texte zusammenfassen.** Wiederholte Leistungen stehen in echten
@@ -53,14 +53,12 @@ const MIN_SHARED = 2;
 const IGNORED_KEYS: ReadonlySet<string> = new Set([
   '_meta',
   '_spans',
-  // Der Leistungsbereich ist die Herkunft des Gewerks, kein zweites Merkmal.
-  'gewerkLb',
   // Reine Anzahl zu `platzhalter` — als Unterschied nur Rauschen.
   'platzhalterAnzahl',
 ]);
 
 /** Merkmale, die durch die Vorgruppierung ohnehin gleich sind. */
-const GROUPING_KEYS: ReadonlySet<string> = new Set(['gewerk', 'bauteiltyp', 'einheit']);
+const GROUPING_KEYS: ReadonlySet<string> = new Set(['bauteiltyp', 'einheit']);
 
 /** Pseudo-Key für „die Kurztexte lauten verschieden". */
 export const KURZTEXT_KEY = 'kurztext';
@@ -131,11 +129,10 @@ function profileOf(position: PositionSummary): Profile {
   const langTokens = relateTokens(position.longText);
   const kurz = shingles(kurzTokens);
   const lang = shingles(langTokens);
-  const gewerk = attrString(position.attributes, 'gewerk') ?? '—';
   const bauteiltyp = attrString(position.attributes, 'bauteiltyp') ?? '—';
   const einheit = canonicalUnit(position.unit) ?? '—';
   return {
-    bucket: `${gewerk}${SEP}${einheit}${SEP}${bauteiltyp}`,
+    bucket: `${einheit}${SEP}${bauteiltyp}`,
     kurz,
     lang,
     alle: [...new Set([...kurz, ...lang])],

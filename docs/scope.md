@@ -79,8 +79,8 @@ reale LVs gliedern in wenigen Ebenen.
 ### 3 · Klassifizieren und Hervorheben
 
 Die Klassifizierung bleibt hinter der austauschbaren TS-Schnittstelle
-(`frontend/src/lib/classify/`) und wird um **quellen- und gewerkeunabhängige**
-Extraktoren erweitert. Sie greifen auch dort, wo kein STLB-Ruleset existiert:
+(`frontend/src/lib/classify/`) und wird um **quellenunabhängige**
+Extraktoren erweitert. Sie greifen auch dort, wo kein eigenes Ruleset existiert:
 
 | Merkmal | Beispiel | Wofür |
 |---|---|---|
@@ -172,7 +172,7 @@ Merkmalen berechnet:
 
 Berechnet **einmalig beim Laden im Worker**, nicht bei jedem Render. Paarweiser
 Vergleich aller Positionen ist bei 10.000 Positionen nicht bezahlbar — vorgeschaltet
-wird eine Gruppierung (Gewerk, Einheit, Bauteiltyp) und ein Ähnlichkeits-Index, sodass
+wird eine Gruppierung (Einheit, Bauteiltyp) und ein Ähnlichkeits-Index, sodass
 nur innerhalb kleiner Kandidatenmengen verglichen wird. Details im
 [`implementation-plan.md`](implementation-plan.md) (WP-M).
 

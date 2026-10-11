@@ -6,17 +6,12 @@
 import type { LotDraft, LVDraft, PositionDraft, SectionDraft } from '../../types/lvDraft';
 import type { Classifier } from './types';
 
-function classifyPosition(
-  position: PositionDraft,
-  classifier: Classifier,
-  headings: readonly string[],
-): PositionDraft {
+function classifyPosition(position: PositionDraft, classifier: Classifier): PositionDraft {
   const { attributes, meta, spans } = classifier.classify({
     oz: position.oz,
     shortText: position.shortText,
     longText: position.longText,
     unit: position.unit,
-    headings,
   });
   // `_meta` und `_spans` sind reserviert und werden von den Facetten ignoriert
   // (data-model.md). `_spans` bleibt weg, wenn nichts gefunden wurde — ein
@@ -27,36 +22,16 @@ function classifyPosition(
   };
 }
 
-/**
- * Überschriftenpfad von innen nach außen: der eigene Abschnitt zuerst, dann
- * seine Eltern bis zum Los. Die nächstgelegene Überschrift beschreibt die
- * Position am genauesten.
- */
-function withHeading(trail: readonly string[], label: string | null): readonly string[] {
-  return label === null || label === '' ? trail : [label, ...trail];
-}
-
-function classifySection(
-  section: SectionDraft,
-  classifier: Classifier,
-  trail: readonly string[],
-): SectionDraft {
-  const headings = withHeading(trail, section.label);
+function classifySection(section: SectionDraft, classifier: Classifier): SectionDraft {
   return {
     ...section,
-    positions: section.positions.map((position) =>
-      classifyPosition(position, classifier, headings),
-    ),
-    sections: section.sections.map((child) => classifySection(child, classifier, headings)),
+    positions: section.positions.map((position) => classifyPosition(position, classifier)),
+    sections: section.sections.map((child) => classifySection(child, classifier)),
   };
 }
 
 function classifyLot(lot: LotDraft, classifier: Classifier): LotDraft {
-  const headings = withHeading([], lot.label);
-  return {
-    ...lot,
-    sections: lot.sections.map((section) => classifySection(section, classifier, headings)),
-  };
+  return { ...lot, sections: lot.sections.map((section) => classifySection(section, classifier)) };
 }
 
 export function classifyDraft(draft: LVDraft, classifier: Classifier): LVDraft {

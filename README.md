@@ -8,7 +8,7 @@ Server: die Datei verlässt den Browser nie, es wird nichts gespeichert.
 Das ist die einzige Aufgabe. Konkret:
 
 - **Große LVs** — Richtung 10.000 Positionen, ohne zu ruckeln
-- **Klassifizieren und hervorheben** — Gewerk, Bauteil, Normen, Maße, Material; dazu
+- **Klassifizieren und hervorheben** — Bauteil, Normen, Maße, Material; dazu
   vier Kategorien von „wichtig": Geld- und Mengentreiber, Risiko, Normen, Fristen
 - **Fachliche Filter** — Facetten aus den Daten, Wertebereiche, Prüf-Hinweise
 - **Beziehungen** — ähnliche Positionen, ihre Unterschiede und ihre Ausreißer

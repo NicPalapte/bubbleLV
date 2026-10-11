@@ -49,7 +49,7 @@
   color-scheme: light;
 }
 
-/* ── Gewerk-Skala — zehn gleichrangige, gedämpfte Töne für Treemap, Legenden
+/* ── Kategorie-Skala (Hauptabschnitte, Entscheidung 0043) — zehn gleichrangige, gedämpfte Töne für Treemap, Legenden
    und Diagramme. Kein Rangsignal: die Reihenfolge trennt nur benachbarte
    Flächen, sie bewertet nicht. Alle Töne tragen --ink lesbar (Kontrast ≥ 7:1),
    damit Beschriftungen ohne zweite Textfarbe auskommen.
@@ -65,7 +65,7 @@
   --cat-8: #edb7c9;
   --cat-9: #c9bdee;
   --cat-10: #bdc9d6;
-  /* Positionen ohne Gewerk — bewusst farblos, nicht "elfte Farbe". */
+  /* Positionen ohne Abschnitt — bewusst farblos, nicht "elfte Farbe". */
   --cat-none: #e4ecf4;
 
   /* Fünf Stufen einer Skala für die Matrix (WP-O): hier trennt die Farbe
@@ -100,8 +100,8 @@
   --bub-cluster-line: #4a5b70;
   --bub-edge: #6b7d92; /* kräftiger als vorher, damit Kanten vom Raster abheben */
   /* Graph-Karte (docs/decisions/0035-graph-gliederung.md): Los-Hülle, Gruppenkreis,
-     Gruppe als Fläche (Detailstufe), Punkt ohne Gewerk, Rand der Punkte. */
-  /* Punktfarben im Graphen: die hellen Gewerk-Töne in beiden Themen — auf dunkler
+     Gruppe als Fläche (Detailstufe), Punkt ohne Abschnitt, Rand der Punkte. */
+  /* Punktfarben im Graphen: die hellen Kategorie-Töne in beiden Themen — auf dunkler
      Fläche tragen sie als Punkt, die dunklen Flächentöne von --cat-* nicht. */
   --dot-1: #a9c8f5;
   --dot-2: #a5dded;

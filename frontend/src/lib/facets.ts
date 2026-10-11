@@ -15,12 +15,6 @@ export interface Facet {
   /** Anzeigename eines Werts, falls er vom Rohwert abweicht. */
   optionLabel?(value: string): string;
   sortValues?(values: string[]): string[];
-  /**
-   * Kein Filterknopf, solange es keine Werte gibt. Nur für Merkmale, die aus einer
-   * Referenzliste kommen und leer bleiben, wenn die Liste fehlt — nicht für Merkmale,
-   * bei denen „kein Wert" eine Aussage über die Datei ist.
-   */
-  hideWhenEmpty?: boolean;
 }
 
 const POSITIONSART_LABELS: Record<string, string> = {
@@ -53,12 +47,6 @@ function byOrder(order: readonly string[]) {
     });
 }
 
-/**
- * Sammelwert für Positionen ohne Gewerk. Er ist ein echter Filterwert: nur so
- * lässt sich „Ohne Gewerk" im Überblick anklicken und in der Topleiste wählen.
- */
-export const NO_GEWERK = 'Ohne Gewerk';
-
 function single(value: string | null): string[] {
   return value === null ? [] : [value];
 }
@@ -70,11 +58,6 @@ export const FACETS: readonly Facet[] = [
     get: (p) => single(attrString(p.attributes, 'positionsart')),
     optionLabel: (value) => POSITIONSART_LABELS[value] ?? value,
     sortValues: byOrder(Object.keys(POSITIONSART_LABELS)),
-  },
-  {
-    id: 'gewerk',
-    label: 'Gewerk',
-    get: (p) => [attrString(p.attributes, 'gewerk') ?? NO_GEWERK],
   },
   {
     id: 'bauteiltyp',
@@ -96,22 +79,13 @@ export const FACETS: readonly Facet[] = [
     label: 'Besonderheiten',
     get: (p) => attrStrings(p.attributes, 'keywords'),
   },
-  // Merkmale der gewerkeunabhängigen Extraktoren (WP-J). Ihre Werte kommen aus
+  // Merkmale der Extraktoren (WP-J). Ihre Werte kommen aus
   // einem geschlossenen Vokabular, damit die Filterliste kurz bleibt; der
   // Wortlaut der Fundstelle steht im Span, nicht im Filterwert.
   {
     id: 'normen',
     label: 'Normen',
     get: (p) => attrStrings(p.attributes, 'normen'),
-  },
-  {
-    id: 'material',
-    label: 'Material',
-    get: (p) => attrStrings(p.attributes, 'material'),
-    // Die Werte kommen nur aus der Materialliste im STLB-Katalog
-    // (classify/extractors/material.ts, docs/decisions/0011). Fehlt die, wäre der
-    // Knopf ein Dropdown mit „Keine Werte" und ohne Erklärung (Issue #99).
-    hideWhenEmpty: true,
   },
   {
     id: 'fristen',
@@ -154,18 +128,4 @@ export const FACETS_BY_ID: ReadonlyMap<string, Facet> = new Map(
 
 export function facetOptionLabel(facet: Facet, value: string): string {
   return facet.optionLabel === undefined ? value : facet.optionLabel(value);
-}
-
-/**
- * Soll für diese Facette ein Filterknopf stehen? `counts` sind ihre Werte im
- * geladenen LV, `selected` sagt, ob gerade ein Wert gewählt ist. Ein gewählter
- * Filter bleibt immer sichtbar: Ein Teilen-Link kann ihn setzen, ohne dass es Werte
- * gibt, und ein unsichtbarer aktiver Filter versteckt Treffer ohne erkennbaren Grund.
- */
-export function isFacetVisible(
-  facet: Facet,
-  counts: ReadonlyMap<string, number> | undefined,
-  selected = false,
-): boolean {
-  return facet.hideWhenEmpty !== true || selected || (counts?.size ?? 0) > 0;
 }

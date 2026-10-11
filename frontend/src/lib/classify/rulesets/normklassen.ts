@@ -5,7 +5,7 @@
 //
 // Deshalb dürfen sie auch der FallbackRuleset-Pfad extrahieren: die Schreibweise
 // "C30/37" bedeutet in jedem Gewerk dasselbe. Alles Interpretierende (etwa
-// `tragend`) bleibt dem gewerkespezifischen Ruleset vorbehalten.
+// `tragend`) gehört zum Materialwissen, nicht hierher.
 
 import { allMatches } from '../text';
 

@@ -16,13 +16,7 @@ import type { PositionIndex } from '../index/positionIndex';
 export type LogLevel = 'hinweis' | 'beachten';
 
 export type LogKind =
-  | 'ohneEinheit'
-  | 'ohneMenge'
-  | 'ohnePreis'
-  | 'ohneGewerk'
-  | 'ohneBauteiltyp'
-  | 'ohneText'
-  | 'doppelteOz';
+  'ohneEinheit' | 'ohneMenge' | 'ohnePreis' | 'ohneBauteiltyp' | 'ohneText' | 'doppelteOz';
 
 export interface LogEntry {
   kind: LogKind;
@@ -46,7 +40,6 @@ export function buildImportLog(index: PositionIndex): ImportLog {
   const ohneEinheit: string[] = [];
   const ohneMenge: string[] = [];
   const ohnePreis: string[] = [];
-  const ohneGewerk: string[] = [];
   const ohneBauteiltyp: string[] = [];
   const ohneText: string[] = [];
   // Als Positionsnummern gesammelt: das erste Vorkommen kommt erst mit dem zweiten
@@ -70,7 +63,6 @@ export function buildImportLog(index: PositionIndex): ImportLog {
     if (!Number.isFinite(index.quantity[i])) ohneMenge.push(id);
     // Ohne Preise in der ganzen Datei (x83) ist „ohne Preis" keine Lücke.
     if (hasPrices && !Number.isFinite(index.unitPrice[i])) ohnePreis.push(id);
-    if (attrString(position.attributes, 'gewerk') === null) ohneGewerk.push(id);
     if (
       attrString(position.attributes, 'positionsart') === 'bauteil' &&
       attrString(position.attributes, 'bauteiltyp') === null
@@ -122,13 +114,6 @@ export function buildImportLog(index: PositionIndex): ImportLog {
     'Positionen ohne Einheitspreis',
     'Die Datei führt sonst Preise — diese Positionen zählen mit 0 € in die Summe.',
     ohnePreis,
-  );
-  add(
-    'ohneGewerk',
-    'hinweis',
-    'Nicht klassifiziert: kein Gewerk',
-    'Die Klassifizierung ordnet diese Positionen keinem Gewerk zu. Filter „Ohne Gewerk" zeigt sie.',
-    ohneGewerk,
   );
   add(
     'ohneBauteiltyp',
