@@ -1,6 +1,6 @@
 # 0032 – STLB-Katalog ohne Spalte `positionsart_default`
 
-- **Status:** akzeptiert
+- **Status:** ersetzt durch [0044](0044-leistungsbereich-entfernt.md)
 - **Datum:** 2026-10-04
 - **Betrifft:** Klassifizierung (Stufe 0), `stlb-bau-leistungsbereiche.csv`
 

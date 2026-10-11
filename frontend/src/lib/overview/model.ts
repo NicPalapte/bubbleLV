@@ -14,15 +14,12 @@
 // Einheit — beides steht in jeder Datei. Nach Gewerk zu gliedern hing am
 // Gewerk-Abgleich, der ohne Katalog fast alles in „Ohne Gewerk" legt.
 
-import { NO_GEWERK } from '../facets';
 import { headingOf } from '../tree/heading';
 import { mainSectionOf, sectionOrder } from '../tree/mainSection';
 import { isPauschal } from '../graph/sizes';
 import { canonicalUnit, unitLabel } from '../units';
 import type { PositionIndex } from '../index/positionIndex';
 import type { LVNode } from '../../types/lvNode';
-
-export { NO_GEWERK };
 
 /** Womit die Treemap misst. */
 export type Measure = 'preis' | 'anzahl';

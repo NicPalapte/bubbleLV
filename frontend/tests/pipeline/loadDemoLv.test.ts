@@ -64,7 +64,7 @@ describe('loadDemoLv · BVBS-Musterdatei ohne Preise', () => {
 describe('loadDemoLv · Angebot mit Preisen', () => {
   const demo = demoLvById('angebot');
 
-  it('führt Preise, Gewerke und eine plausible Angebotssumme', async () => {
+  it('führt Preise und eine plausible Angebotssumme', async () => {
     expect(demo).toBeDefined();
     if (demo === undefined) return;
     stubFetch({ ok: true, bytes: demoBytes(demo.fileName) });
@@ -79,11 +79,8 @@ describe('loadDemoLv · Angebot mit Preisen', () => {
     expect(lv.summary.totalPrice).toBeGreaterThan(500_000);
     expect(lv.summary.totalPrice).toBeLessThan(20_000_000);
 
-    // Die Gewerke kommen aus den Titel-Überschriften (Stufe 0 mit Vererbung).
-    const gewerke = lv.summary.facets.get('gewerk');
-    expect(gewerke).toBeDefined();
-    expect(gewerke?.size ?? 0).toBeGreaterThanOrEqual(8);
-    expect([...(gewerke?.keys() ?? [])]).toContain('Estricharbeiten');
+    // Die Klassifizierung läuft mit: Bauteile sind als solche erkannt.
+    expect(lv.summary.facets.get('positionsart')?.get('bauteil') ?? 0).toBeGreaterThan(0);
   });
 });
 

@@ -16,7 +16,7 @@ mapToLvDraft()
     │  → LVDraft (neutral, ohne GAEB-Vokabular)
     ▼
 classify(draft)
-    │  Extraktoren (gewerkeunabhängig) → Bauteiltyp → Ruleset
+    │  Positionsart → Extraktoren → Bauteiltyp → Ruleset
     │  → LVDraft mit befüllten position.attributes und _spans
     ▼
 buildTree(draft)
@@ -164,28 +164,18 @@ interface ClassifierInput {
 
 Nach außen bleibt `classify()` ein einziger Aufruf. Intern orchestriert er die
 Stufen; ab Stufe 2 ist die eigentliche Eigenschafts-Extraktion **pluggable**, damit
-neue Bauteiltypen/Gewerke inkrementell hinzukommen, ohne den Klassifizierer selbst zu
+neue Bauteiltypen und Materialien inkrementell hinzukommen, ohne den Klassifizierer selbst zu
 ändern:
 
 ```
 ClassifierInput
     │
     ▼
-Stufe 0 — StlbMatch          → attributes.gewerk_lb    (LB-Nummer, z. B. "012")
-    │                          attributes.gewerk        (LB-Bezeichnung, Katalog-Anzeigewert)
-    │                          attributes.positionsart   (LB-Treffer im Positionstext: Heuristik,
-    │                                                     sonst vorläufig "bauteil")
-    │
-    ├── kein LB-Treffer im Positionstext ──► Überschriften der übergeordneten
-    │                       Abschnitte/Lose gegen denselben Katalog prüfen, nächstgelegene
-    │                       zuerst ──► gewerk*, _meta.gewerkQuelle="abschnitt"
-    │
-    ├── auch dort kein Treffer ──► Fallback: heuristische Positionsart-Erkennung
-    │                       (Stichworte/Einheit) ──► attributes.positionsart, gewerk*=null
+Stufe 0 — Positionsart       → attributes.positionsart (Stichworte/Einheit im Kurztext)
     │
     ▼
-Extraktoren (gewerkeunabhängig, WP-J)
-    │   normen · masse · material · platzhalter · verweise · fristen
+Extraktoren (WP-J)
+    │   normen · masse · platzhalter · verweise · fristen
     │   → attributes + spans (Fundstellen im Langtext)
     │   Laufen **vor** jedem Ruleset; ein Ruleset darf ihre Werte überschreiben,
     │   aber keinen löschen.
@@ -196,10 +186,9 @@ Extraktoren (gewerkeunabhängig, WP-J)
 Stufe 1 — ObjectType         → attributes.bauteiltyp   ("Wand" | "Decke" | "Fundament" | …)
     │
     ▼
-Stufe 2 — RulesetRegistry.resolve(bauteiltyp, gewerk_lb)
+Stufe 2 — RulesetRegistry.resolveBauteil()
     │
-    ├── Ruleset gefunden ──► Ruleset.extract(item)   ──► spezifische Attribute (z. B. beton, expo, tragend)
-    └── kein Ruleset       ──► FallbackRuleset.extract(item) ──► genormte Kurzbezeichnungen
+    └── FallbackRuleset.extract(item) ──► genormte Kurzbezeichnungen (beton, expo, …)
 ```
 
 **Die Extraktoren** (`src/lib/classify/extractors/`) liegen hinter demselben
@@ -210,28 +199,11 @@ dient nur dem Stichwortvergleich. Jeder liefert einen geschlossenen
 Vokabularwert als Attribut und den Wortlaut als Span
 ([`data-model.md`](data-model.md#spans)).
 
-**Stufe 0 (`StlbMatch`)** matcht `shortText`/`longText` gegen die vom Maintainer
-gepflegte Referenztabelle
-[`domain/reference/stlb-bau-leistungsbereiche.csv`](../domain/reference/stlb-bau-leistungsbereiche.csv)
-(Spalten: `lb_nummer`, `lb_bezeichnung`, `keywords`,
-`quelle_version` — Format/Herkunft siehe
-[`domain/README.md`](../domain/README.md#stlb-bau-leistungsbereiche-als-primäre-klassifizierungsquelle-wp-2)).
-Die Datei wird als Build-Time-Asset eingebunden (`?raw`-Import, kein `fetch` — die App
-löst zur Laufzeit keine Netzwerk-Requests aus), nicht in TS hartkodiert. Solange die
-CSV keine echten Zeilen enthält, matcht Stufe 0 nie und **jede** Position läuft über
-den Fallback-Pfad — kein Fehler, keine erfundenen LB-Nummern. Zur aktuell leeren
-`keywords`-Spalte und der daraus abgeleiteten Notlösung siehe
-[`domain/README.md`](../domain/README.md#stlb-bau-leistungsbereiche-als-primäre-klassifizierungsquelle-wp-2).
-
-**Gewerk aus der Abschnittsüberschrift** ([`decisions/0015`](../decisions/0015-gewerk-aus-der-abschnittsueberschrift.md)).
-In realen LVs steht das Gewerk in der Titel-Überschrift und nicht in jeder
-Positionszeile. Findet Stufe 0 im Positionstext keinen Leistungsbereich, prüft sie
-deshalb die Überschriften der übergeordneten Abschnitte und Lose — mit demselben
-Katalog, die nächstgelegene zuerst. `ClassifierInput.headings` transportiert sie
-(`classifyDraft` füllt das Feld), `_meta.gewerkQuelle` hält fest, ob das Gewerk aus
-der Position oder aus einer Überschrift stammt, und das Eigenschaften-Panel weist ein
-geerbtes Gewerk als solches aus. Ein geerbter Treffer verfeinert die **Positionsart**
-bewusst nicht: unter „Betonarbeiten" stehen auch Vorhaltung und Stundenlohn.
+**Kein Leistungsbereich** ([`decisions/0044`](../decisions/0044-leistungsbereich-entfernt.md)).
+Bis 0.11 ordnete Stufe 0 jede Position über einen STLB-Katalog einem Leistungsbereich
+(Gewerk) zu. Der Katalog hatte keine gepflegten Stichworte und lieferte fast nichts;
+die Zuordnung ist entfernt. Materialwissen kommt künftig aus einer eigenen Tabelle je
+Material.
 
 **Identitäts- vs. Eigenschaftserkennung.** Positionsart (Fallback-Heuristik) und
 Bauteiltyp werden ausschließlich aus dem **Kurztext** bestimmt. Deutsche LV-Langtexte
@@ -243,36 +215,24 @@ gesucht.
 
 ```ts
 // frontend/src/lib/classify/rulesets/types.ts
-interface RulesetKey {
-  bauteiltyp: string;
-  gewerkLb: string; // STLB-Bau-LB-Nummer, nicht die Freitext-Bezeichnung
-}
-
 interface PropertyRuleset {
-  key: RulesetKey;
-  extract(item: ClassifierInput): Record<string, unknown>;
+  id: string; // landet als _meta.ruleset
+  extract(context: RulesetContext): Record<string, unknown>;
 }
 
-class RulesetRegistry {
-  register(ruleset: PropertyRuleset): void {}
-  resolve(bauteiltyp: string, gewerkLb: string): PropertyRuleset {
-    // exakter Treffer, sonst FallbackRuleset
-    throw new Error("not implemented");
-  }
+interface NonBauteilRuleset extends PropertyRuleset {
+  positionsart: Positionsart;
 }
 ```
 
-- **Registrierung ist additiv:** ein neuer LB kommt als neue Zeile in der
-  Referenz-CSV + neues `PropertyRuleset`-Modul + `registry.register(...)` hinzu.
-  Bestehende Rulesets, Stufe 0–1 und das äußere `Classifier`-Interface bleiben
-  unverändert.
-- **Ruleset-Key ist die LB-Nummer, nicht die LB-Bezeichnung** — Bezeichnungen können
-  sich zwischen Katalogversionen ändern, die Nummer bleibt stabil.
-- **Kein Fehler bei fehlendem Ruleset:** `resolve()` fällt auf `FallbackRuleset`
-  zurück (nur Maße/Stichworte).
+- **Registrierung ist additiv:** ein neues Nicht-Bauteil-Ruleset kommt als Modul +
+  Eintrag in `createDefaultRegistry()` hinzu. Stufe 0–1 und das äußere
+  `Classifier`-Interface bleiben unverändert.
+- **Bauteile laufen über `FallbackRuleset`** (`resolveBauteil()`): genormte
+  Kurzbezeichnungen, nichts Interpretierendes.
 - **Nur `ruleBased.ts` kennt die Registry und einzelne Rulesets.** Aufrufer außerhalb
   des Pakets importieren weiterhin ausschließlich das `Classifier`-Interface.
-- `meta.classifier = "rule"`, zusätzlich `meta.ruleset` (aufgelöster Ruleset-Key oder
+- `meta.classifier = "rule"`, zusätzlich `meta.ruleset` (Ruleset-`id`, für Bauteile
   `"fallback"`), `meta.confidence = 1.0` (deterministisch).
 
 **LLM (potenziell später, außerhalb dieses Repos):** ein LLM-Klassifizierer würde

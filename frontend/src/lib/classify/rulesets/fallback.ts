@@ -1,11 +1,10 @@
-// Fallback-Extraktor: greift, wenn für (Bauteiltyp, LB) bzw. für eine Positionsart
-// kein eigenes Ruleset registriert ist. Liefert nur Basis-Attribute — nie ein
+// Fallback-Extraktor: greift für Bauteil-Positionen und für jede Positionsart
+// ohne eigenes Ruleset. Liefert nur Basis-Attribute — nie ein
 // Fehler, damit ein unbekanntes Gewerk die Pipeline nicht anhält.
 //
 // Basis-Attribute sind genormte Kurzbezeichnungen nach DIN EN 206 / DIN 1045-2
 // (siehe normklassen.ts). Sie stehen wörtlich im Text und bedeuten in jedem
-// Gewerk dasselbe. Alles Interpretierende — etwa `tragend` — bleibt dem
-// gewerkespezifischen Ruleset vorbehalten.
+// Gewerk dasselbe. Nichts Interpretierendes — etwa `tragend` — wird hier abgeleitet.
 //
 // Maße stehen seit WP-J nicht mehr hier: sie bedeuten ebenfalls in jedem Gewerk
 // dasselbe und kommen deshalb aus dem gewerkeunabhängigen Extraktor

@@ -1,6 +1,6 @@
 # 0015 – Gewerk aus der Abschnittsüberschrift erben
 
-- **Status:** akzeptiert
+- **Status:** ersetzt durch [0044](0044-leistungsbereich-entfernt.md)
 - **Datum:** 2026-09-16
 - **Betrifft:** Klassifizierung
 

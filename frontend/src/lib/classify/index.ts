@@ -11,19 +11,13 @@ export type {
   ClassificationMeta,
   ClassificationResult,
   ClassifierInput,
-  GewerkQuelle,
   Positionsart,
   Span,
 } from './types';
-export { getStlbCatalog, parseStlbCsv } from './stlbCatalog';
-export type { StlbLeistungsbereich } from './stlbCatalog';
 
 let shared: Classifier | null = null;
 
-/**
- * Einziger Zugang zum Klassifizierer. Ohne Optionen wird eine geteilte Instanz
- * mit dem mitgelieferten STLB-Katalog wiederverwendet.
- */
+/** Einziger Zugang zum Klassifizierer. Ohne Optionen eine geteilte Instanz. */
 export function getClassifier(options?: RuleBasedOptions): Classifier {
   if (options !== undefined) return new RuleBasedClassifier(options);
   shared ??= new RuleBasedClassifier();

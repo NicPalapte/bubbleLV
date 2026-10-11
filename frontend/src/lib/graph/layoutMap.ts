@@ -29,7 +29,6 @@ export type GraphLayoutId = 'lv' | 'matrix';
  */
 export const AXIS_FACETS: readonly string[] = [
   'einheit',
-  'gewerk',
   'positionsart',
   'bauteiltyp',
   'positionstyp',

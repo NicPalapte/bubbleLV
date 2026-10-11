@@ -1,5 +1,4 @@
-// Heuristischer Fallback für Stufe 0: Positionsart aus Stichworten/Einheit, wenn
-// der STLB-Referenzkatalog keinen Leistungsbereich liefert. Bewusst klein und
+// Positionsart aus Stichworten und Einheit. Bewusst klein und
 // nicht-normativ (docs/domain/README.md) — im Zweifel "sonstige" statt raten.
 
 import { containsAny, subjectText, type NormalizedItem } from './text';
@@ -83,7 +82,7 @@ const BAUTEIL_UNITS = new Set([
 const ZEIT_UNITS = new Set(['h', 'std', 'std.', 'min', 'd', 'tag', 'wo', 'mon', 'mt']);
 
 /**
- * Positionsart ohne LB-Treffer bestimmen. Reihenfolge ist Absicht: explizite
+ * Positionsart bestimmen. Reihenfolge ist Absicht: explizite
  * Stichworte schlagen die Einheiten-Heuristik, weil "Stundenlohnarbeiten … m³"
  * sonst als Bauteil durchginge.
  */

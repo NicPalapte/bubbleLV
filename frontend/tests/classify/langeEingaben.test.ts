@@ -21,7 +21,6 @@ function context(longText: string): ExtractorContext {
     longText,
     unit: null,
     text: normalizeItem({ shortText: '', longText, unit: null }),
-    catalog: [],
   };
 }
 

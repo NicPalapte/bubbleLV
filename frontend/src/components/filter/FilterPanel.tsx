@@ -8,7 +8,7 @@ import { CAP, DisplayControls } from './DisplayControls';
 import { RangeSlider } from './RangeSlider';
 import { ChipGroup, ValueChip } from '../ui/ValueChip';
 import { StatusPill } from '../ui/StatusPill';
-import { FACETS, facetOptionLabel, isFacetVisible, type Facet } from '../../lib/facets';
+import { FACETS, facetOptionLabel, type Facet } from '../../lib/facets';
 import { formatCount } from '../../lib/format';
 import { EMPTY_SUMMARY } from '../../lib/index/summary';
 import { countActiveFilters } from '../../lib/matchPos';
@@ -107,9 +107,6 @@ export function FilterPanel() {
 
   const summary = lv.summary ?? EMPTY_SUMMARY;
   const activeCount = countActiveFilters(filters);
-  const visible = FACETS.filter((facet) =>
-    isFacetVisible(facet, summary.facets.get(facet.id), (filters.facets[facet.id]?.size ?? 0) > 0),
-  );
 
   return (
     <div className="absolute inset-0 flex flex-col gap-[18px] overflow-auto px-[16px] pb-[18px] pt-[14px]">
@@ -159,7 +156,7 @@ export function FilterPanel() {
             </div>
           )}
         />
-        {visible.map((facet) => (
+        {FACETS.map((facet) => (
           <FacetSection
             key={facet.id}
             facet={facet}

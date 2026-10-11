@@ -38,7 +38,7 @@ export function CardHead({
   );
 }
 
-/** Abschnitts-/Gewerk-Pille im Kopf: Farbpunkt + Name. */
+/** Abschnitts-Pille im Kopf: Farbpunkt + Name. */
 export function GroupPill({ color, children }: { color: string; children: string }) {
   return (
     <span

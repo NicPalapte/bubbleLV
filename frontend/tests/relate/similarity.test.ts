@@ -35,7 +35,7 @@ function position(overrides: Partial<PositionDraft>): PositionDraft {
     quantity: 10,
     unitPrice: 100,
     positionType: 'NORMAL',
-    attributes: { gewerk: 'Betonarbeiten', bauteiltyp: 'Wand' },
+    attributes: { bauteiltyp: 'Wand' },
     ...overrides,
   };
 }
@@ -64,7 +64,7 @@ function indexOf(positions: PositionDraft[]) {
 
 /**
  * LV **ohne** Klassifizierung. Für die Tests der Vorgruppierung: dort müssen
- * Gewerk und Bauteiltyp genau die Werte haben, die der Test setzt — der
+ * Einheit und Bauteiltyp genau die Werte haben, die der Test setzt — der
  * Klassifizierer würde sie aus dem Text neu ableiten.
  */
 function rohIndexOf(positions: PositionDraft[]) {
@@ -134,27 +134,20 @@ describe('Was nicht zusammengehört, bleibt getrennt', () => {
         oz: '01.001.0020',
         shortText: 'Baugrube ausheben',
         longText: 'Ausheben der Baugrube in Bodenklasse 3 bis 4, Abtransport und Entsorgung.',
-        attributes: { gewerk: 'Betonarbeiten', bauteiltyp: 'Wand' },
+        attributes: { bauteiltyp: 'Wand' },
       }),
     );
     expect(zusammen(result, '01.001.0010', '01.001.0020')).toBe(false);
   });
 
-  it('vergleicht nie über Gewerk, Einheit oder Bauteiltyp hinweg', () => {
-    // Vier wortgleiche Positionen, die sich nur in je einem Gruppenmerkmal
+  it('vergleicht nie über Einheit oder Bauteiltyp hinweg', () => {
+    // Drei wortgleiche Positionen, die sich nur in je einem Gruppenmerkmal
     // unterscheiden — keine zwei davon dürfen zusammenkommen.
     const result = buildRelations(
       rohIndexOf([
         position({ oz: '01.001.0010' }),
         position({ oz: '01.001.0020', unit: 'm2' }),
-        position({
-          oz: '01.001.0030',
-          attributes: { gewerk: 'Mauerarbeiten', bauteiltyp: 'Wand' },
-        }),
-        position({
-          oz: '01.001.0040',
-          attributes: { gewerk: 'Betonarbeiten', bauteiltyp: 'Decke' },
-        }),
+        position({ oz: '01.001.0030', attributes: { bauteiltyp: 'Decke' } }),
       ]),
     );
     expect(result.clusters).toHaveLength(0);
@@ -263,7 +256,6 @@ describe('positionSimilarity', () => {
     // nur die Normenliste unterscheidet sich — einmal überlappend, einmal
     // fremd. Attribute direkt gesetzt, damit nur dieses Merkmal variiert.
     const normen = (liste: string[]) => ({
-      gewerk: 'Betonarbeiten',
       bauteiltyp: 'Wand',
       normen: liste,
     });
@@ -345,8 +337,8 @@ describe('Laufzeit', () => {
 
   it('clustert 10.000 verschiedene Texte in einer Vorgruppe im Budget', () => {
     // Der teure Weg, und der einzige, der den invertierten Index wirklich
-    // fordert: 300 Wandtypen à 33 Varianten, alle unter demselben Gewerk, in
-    // derselben Einheit und mit demselben Bauteiltyp — und **jeder Text
+    // fordert: 300 Wandtypen à 33 Varianten, alle in derselben Einheit
+    // und mit demselben Bauteiltyp — und **jeder Text
     // eigen**. Genau hier wäre ein All-Paare-Vergleich unbezahlbar.
     const index = buildPositionIndex(buildTree(hardCaseDraft(300, 33)));
 

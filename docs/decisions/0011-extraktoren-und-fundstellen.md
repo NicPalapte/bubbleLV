@@ -1,6 +1,6 @@
 # 0011 – Gewerkeunabhängige Extraktoren und Fundstellen im Langtext
 
-- **Status:** akzeptiert
+- **Status:** ergänzt durch [0044](0044-leistungsbereich-entfernt.md)
 - **Datum:** 2026-09-14
 - **Betrifft:** Frontend (Klassifizierung, Eigenschaften-Panel)
 

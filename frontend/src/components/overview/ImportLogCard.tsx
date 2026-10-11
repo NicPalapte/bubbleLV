@@ -36,8 +36,8 @@ export function ImportLogCard() {
   if (log.entries.length === 0 && notices.length === 0) {
     return (
       <p className="font-sans text-[12px] text-dim">
-        Beim Import ist nichts aufgefallen: alle {formatPositions(log.total)} haben Einheit, Menge
-        und Gewerk.
+        Beim Import ist nichts aufgefallen: alle {formatPositions(log.total)} haben Einheit und
+        Menge.
       </p>
     );
   }

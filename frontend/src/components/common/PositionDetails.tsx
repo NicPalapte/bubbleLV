@@ -1,5 +1,5 @@
 // Positionskarte im Graphen (docs/decisions/0034-graph-als-hauptscreen.md):
-// Kopf mit OZ und Gewerk, Kennzahlen (Menge · EP · Positionsart), Hinweise,
+// Kopf mit OZ und Hauptabschnitt, Kennzahlen (Menge · EP · Positionsart), Hinweise,
 // Langtext mit Fundstellen und eine Eigenschaftstabelle.
 
 import { useMemo, useState, type ReactNode } from 'react';
@@ -17,19 +17,10 @@ import { facetOptionLabel, FACETS_BY_ID } from '../../lib/facets';
 import { formatEuro, formatNumber } from '../../lib/format';
 import { categoryOf, keysOfLabel, presentCategories } from '../../lib/spanCategories';
 import { POSITION_STATUS } from '../../lib/status';
+import { headingOf } from '../../lib/tree/heading';
+import { mainSectionOf } from '../../lib/tree/mainSection';
 import { useViewer } from '../../state/viewer';
-import type { ClassificationMeta } from '../../lib/classify';
 import type { LVNode, PositionSummary } from '../../types/lvNode';
-
-/**
- * Ein Gewerk, das aus der Abschnittsüberschrift stammt, wird als solches
- * ausgewiesen. Es steht so in der Datei, aber nicht in dieser Position — und
- * Bubble behauptet nichts, was die Position nicht selbst sagt.
- */
-function attributeValue(key: string, value: string, meta: ClassificationMeta | null): string {
-  const inherited = meta?.gewerkQuelle === 'abschnitt';
-  return inherited && (key === 'gewerk' || key === 'gewerkLb') ? `${value} (aus Abschnitt)` : value;
-}
 
 /**
  * Schalterreihe über dem Langtext: je gefundener Kategorie eine Pille mit
@@ -90,13 +81,17 @@ export function PositionDetails({
   const {
     filter: { search },
     parents,
-    gewerkColors,
+    index,
+    sectionColors,
     lv,
   } = useViewer();
   const parent = parents.get(node.id) ?? null;
 
   const positionsart = FACETS_BY_ID.get('positionsart');
-  const gewerk = FACETS_BY_ID.get('gewerk')?.get(position)[0];
+  // Hauptabschnitt im Ton seiner Punkte im Graphen (Entscheidung 0043).
+  const main = useMemo(() => mainSectionOf(node, parents, new Map()), [node, parents]);
+  const slot = index.slotOf.get(node.id);
+  const mainColor = slot === undefined ? undefined : sectionColors.bySlot[slot];
   const meta = attrMeta(position.attributes);
   const keywords = attrStrings(position.attributes, 'keywords');
   const attributes = displayAttributes(position);
@@ -140,7 +135,7 @@ export function PositionDetails({
   for (const [key, value] of attributes) {
     // Die Positionsart steht schon oben in den Kennzahlen.
     if (key === 'positionsart') continue;
-    rows.push([attributeLabel(key), attributeValue(key, value, meta)]);
+    rows.push([attributeLabel(key), value]);
   }
   if (priced) rows.push(['GP', formatEuro(node.totalPrice, 0)]);
   rows.push(['Positionstyp', position.positionType]);
@@ -153,8 +148,8 @@ export function PositionDetails({
         meta={
           <>
             <span className="shrink-0 font-mono text-[11px] text-dim">{position.oz}</span>
-            {gewerk !== undefined && (
-              <GroupPill color={gewerkColors.of(gewerk)}>{gewerk}</GroupPill>
+            {main !== null && mainColor !== undefined && (
+              <GroupPill color={mainColor}>{headingOf(main)}</GroupPill>
             )}
           </>
         }

@@ -16,7 +16,7 @@ function position(oz: string, patch: Partial<PositionDraft> = {}): PositionDraft
     quantity: 10,
     unitPrice: 5,
     positionType: 'NORMAL',
-    attributes: { gewerk: 'Mauerwerk' },
+    attributes: {},
     ...patch,
   };
 }
@@ -43,16 +43,15 @@ describe('buildImportLog', () => {
     expect(log.entries).toEqual([]);
   });
 
-  it('findet fehlende Einheit, Menge, Preis und Gewerk', () => {
+  it('findet fehlende Einheit, Menge und Preis', () => {
     const log = logOf([
       position('01.01.0010'),
       position('01.01.0020', { unit: null }),
       position('01.01.0030', { quantity: null }),
       position('01.01.0040', { unitPrice: null }),
-      position('01.01.0050', { attributes: {} }),
     ]);
     const counts = Object.fromEntries(log.entries.map((e) => [e.kind, e.positionIds.length]));
-    expect(counts).toEqual({ ohneEinheit: 1, ohneMenge: 1, ohnePreis: 1, ohneGewerk: 1 });
+    expect(counts).toEqual({ ohneEinheit: 1, ohneMenge: 1, ohnePreis: 1 });
   });
 
   it('wertet fehlende Preise nicht als Lücke, wenn die Datei gar keine führt', () => {

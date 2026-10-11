@@ -20,20 +20,6 @@ const BAUTEILTYPEN: ReadonlyArray<{ typ: string; keywords: readonly string[] }> 
   { typ: 'Gründung', keywords: ['bohrpfahl', 'rammpfahl', 'schlitzwand', 'spundwand'] },
 ];
 
-/** Bauteiltypen, die tragende Funktion haben können (Basis für `tragend`). */
-export const TRAGENDE_BAUTEILTYPEN: readonly string[] = [
-  'Bodenplatte',
-  'Fundament',
-  'Unterzug',
-  'Balken',
-  'Stütze',
-  'Wand',
-  'Decke',
-  'Treppe',
-  'Stürze',
-  'Gründung',
-];
-
 export function detectBauteiltyp(item: NormalizedItem): string | null {
   // Nur der benennende Text — der Langtext erwähnt regelmäßig Nachbarbauteile
   // ("mit geböschten Wänden" in einer Erdarbeiten-Position), siehe subjectText().

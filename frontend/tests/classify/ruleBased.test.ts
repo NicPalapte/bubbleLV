@@ -1,27 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { getClassifier } from '../../src/lib/classify';
-import { parseStlbCsv } from '../../src/lib/classify/stlbCatalog';
 import type { ClassifierInput } from '../../src/lib/classify';
-
-/** Referenzkatalog mit gepflegten Stichworten — so, wie ihn ein Maintainer füllt. */
-const CATALOG = parseStlbCsv(
-  [
-    'lb_nummer,lb_bezeichnung,keywords,quelle_version',
-    '000,"Baustelleneinrichtungen, Sicherheitseinrichtungen",baustelleneinrichtung,2023',
-    '012,Mauerarbeiten,mauerarbeiten|mauerwerk,2023',
-    '013,"Beton- und Stahlbetonarbeiten",betonarbeiten|stahlbetonarbeiten,2023',
-    '091,Stundenlohnarbeiten,stundenlohnarbeiten,2023',
-  ].join('\n'),
-);
 
 function input(partial: Partial<ClassifierInput>): ClassifierInput {
   return { oz: '01.010', shortText: '', longText: '', unit: null, ...partial };
 }
 
-describe('RuleBasedClassifier — Stufe 0 mit Referenzkatalog', () => {
-  const classifier = getClassifier({ catalog: CATALOG });
+// Ohne Leistungsbereich (Entscheidung 0044): was gilt, steht im Text der Position.
+describe('RuleBasedClassifier — Bauteil aus dem Text', () => {
+  const classifier = getClassifier();
 
-  it('klassifiziert eine Wand aus Stahlbetonarbeiten vollständig', () => {
+  it('klassifiziert eine Stahlbetonwand ohne Gewerk', () => {
     const { attributes, meta } = classifier.classify(
       input({
         shortText: 'Stahlbetonwand herstellen',
@@ -33,71 +22,45 @@ describe('RuleBasedClassifier — Stufe 0 mit Referenzkatalog', () => {
     );
 
     expect(attributes.positionsart).toBe('bauteil');
-    expect(attributes.gewerkLb).toBe('013');
-    expect(attributes.gewerk).toBe('Beton- und Stahlbetonarbeiten');
     expect(attributes.bauteiltyp).toBe('Wand');
     expect(attributes.beton).toBe('C30/37');
     expect(attributes.expo).toEqual(['XC2', 'XD1']);
-    expect(attributes.tragend).toBe(true);
     expect(attributes.dicke).toBe('30 cm');
     expect(meta.classifier).toBe('rule');
-    expect(meta.ruleset).toBe('013_beton');
+    expect(meta.ruleset).toBe('fallback');
     expect(meta.confidence).toBe(1);
   });
 
-  it('erkennt nichttragende Bauteile explizit', () => {
+  it('setzt weder Gewerk noch Leistungsbereich noch `tragend`', () => {
     const { attributes } = classifier.classify(
-      input({
-        shortText: 'Nichttragende Wand',
-        longText: 'Betonarbeiten, nichttragende Wand aus C20/25.',
-        unit: 'm2',
-      }),
+      input({ shortText: 'Wand aus Beton C25/30', longText: 'Tragende Wand.', unit: 'm3' }),
     );
-    expect(attributes.tragend).toBe(false);
-    expect(attributes.beton).toBe('C20/25');
+    expect(attributes).not.toHaveProperty('gewerk');
+    expect(attributes).not.toHaveProperty('gewerkLb');
+    // `tragend` ist eine Deutung — sie kommt mit dem Materialwissen, nicht von hier.
+    expect(attributes).not.toHaveProperty('tragend');
+    expect(attributes.beton).toBe('C25/30');
   });
 
-  it('nutzt den LB-Default für eindeutig nicht-physische Leistungsbereiche', () => {
+  it('erkennt Stundenlohn als Personal und wählt dessen Ruleset', () => {
     const { attributes, meta } = classifier.classify(
       input({ shortText: 'Stundenlohnarbeiten Facharbeiter', unit: 'h' }),
     );
     expect(attributes.positionsart).toBe('personal');
-    expect(attributes.gewerkLb).toBe('091');
     expect(attributes.qualifikation).toBe('Facharbeiter');
     expect(attributes.zeiteinheit).toBe('h');
     expect(attributes.bauteiltyp).toBeUndefined();
     expect(meta.ruleset).toBe('personal');
   });
 
-  it('wählt das Mauerwerks-Ruleset über die LB-Nummer', () => {
-    const { attributes, meta } = classifier.classify(
-      input({
-        shortText: 'Mauerwerk Innenwand',
-        longText: 'Mauerarbeiten: tragende Wand aus Kalksandstein, Dicke 24 cm.',
-        unit: 'm2',
-      }),
-    );
-    expect(attributes.gewerkLb).toBe('012');
-    expect(attributes.steinart).toBe('Kalksandstein');
-    expect(attributes.dicke).toBe('24 cm');
-    expect(meta.ruleset).toBe('012_mauerwerk');
-  });
-
-  it('fällt auf das Fallback-Ruleset zurück, wenn (Bauteiltyp, LB) unbekannt ist', () => {
-    const { attributes, meta } = classifier.classify(
-      input({
-        shortText: 'Dachfläche',
-        longText: 'Mauerarbeiten am Dach, Höhe 4 m.',
-        unit: 'm2',
-      }),
+  it('lässt Klassen weg, die nicht im Text stehen', () => {
+    const { attributes } = classifier.classify(
+      input({ shortText: 'Dachfläche', longText: 'Arbeiten am Dach, Höhe 4 m.', unit: 'm2' }),
     );
     expect(attributes.bauteiltyp).toBe('Dach');
-    expect(attributes.gewerkLb).toBe('012');
-    expect(meta.ruleset).toBe('fallback');
     expect(attributes.hoehe).toBe('4 m');
     // Ohne genormte Klasse im Text bleibt der Key ganz weg statt auf null zu stehen.
     expect(attributes.beton).toBeUndefined();
-    expect(attributes.tragend).toBeUndefined();
   });
 
   it('setzt Besonderheiten für jede Position', () => {
@@ -117,24 +80,8 @@ describe('RuleBasedClassifier — Stufe 0 mit Referenzkatalog', () => {
   });
 });
 
-describe('RuleBasedClassifier — Fallback ohne Referenzkatalog', () => {
-  const classifier = getClassifier({ catalog: [] });
-
-  it('klassifiziert ohne LB-Treffer über die Heuristik, ohne Fehler', () => {
-    const { attributes, meta } = classifier.classify(
-      input({ shortText: 'Wand aus Beton C25/30', longText: 'Tragende Wand.', unit: 'm3' }),
-    );
-    expect(attributes.gewerkLb).toBeNull();
-    expect(attributes.gewerk).toBeNull();
-    expect(attributes.positionsart).toBe('bauteil');
-    expect(attributes.bauteiltyp).toBe('Wand');
-    // Ohne LB gibt es keinen Ruleset-Key → Basis-Attribute statt Betonlogik.
-    expect(meta.ruleset).toBe('fallback');
-    // Genormte Kurzbezeichnungen liefert auch der Fallback (DIN EN 206) …
-    expect(attributes.beton).toBe('C25/30');
-    // … die gewerkespezifische Aussage `tragend` dagegen nicht.
-    expect(attributes.tragend).toBeUndefined();
-  });
+describe('RuleBasedClassifier — Heuristik', () => {
+  const classifier = getClassifier();
 
   it('erkennt Baustelleneinrichtung, Planung und Personal über Stichworte', () => {
     expect(
@@ -194,89 +141,5 @@ describe('RuleBasedClassifier — Fallback ohne Referenzkatalog', () => {
     const { attributes } = classifier.classify(input({ shortText: 'Titel', unit: null }));
     expect(attributes.positionsart).toBe('sonstige');
     expect(attributes.bauteiltyp).toBeUndefined();
-  });
-});
-
-// In realen LVs steht das Gewerk regelmäßig nur in der Titel-Überschrift und
-// nicht in jeder Positionszeile. Stufe 0 greift deshalb auf die Überschriften
-// der übergeordneten Abschnitte zurück — mit demselben Katalog, und sichtbar
-// als geerbt (`meta.gewerkQuelle`).
-describe('RuleBasedClassifier — Gewerk aus der Abschnittsüberschrift', () => {
-  const classifier = getClassifier({ catalog: CATALOG });
-
-  it('erbt den Leistungsbereich, wenn der Positionstext keinen nennt', () => {
-    const { attributes, meta } = classifier.classify(
-      input({
-        shortText: 'Wand herstellen, d = 24 cm',
-        longText: 'Wand aus Ortbeton C25/30 herstellen.',
-        unit: 'm3',
-        headings: ['Titel 02 Betonarbeiten', 'Los 1 Rohbau'],
-      }),
-    );
-
-    expect(attributes.gewerkLb).toBe('013');
-    expect(attributes.gewerk).toBe('Beton- und Stahlbetonarbeiten');
-    expect(meta.gewerkQuelle).toBe('abschnitt');
-  });
-
-  it('lässt den Positionstext gewinnen — er ist genauer als die Überschrift', () => {
-    const { attributes, meta } = classifier.classify(
-      input({
-        shortText: 'Mauerwerk herstellen',
-        longText: 'Mauerarbeiten: Innenwand aus Kalksandstein.',
-        unit: 'm2',
-        headings: ['Titel 02 Betonarbeiten'],
-      }),
-    );
-
-    expect(attributes.gewerkLb).toBe('012');
-    expect(meta.gewerkQuelle).toBe('position');
-  });
-
-  it('nimmt die nächstgelegene Überschrift, nicht die oberste', () => {
-    const { attributes } = classifier.classify(
-      input({
-        shortText: 'Wand herstellen',
-        headings: ['Abschnitt 2.1 Mauerarbeiten', 'Titel 02 Betonarbeiten'],
-      }),
-    );
-
-    expect(attributes.gewerkLb).toBe('012');
-  });
-
-  it('erfindet nichts: eine Überschrift ohne Leistungsbereich bleibt folgenlos', () => {
-    const { attributes, meta } = classifier.classify(
-      input({
-        shortText: 'Vorhaltung Bauzaun',
-        headings: ['Titel 09 Allgemeines', 'Los 1'],
-      }),
-    );
-
-    expect(attributes.gewerk).toBeNull();
-    expect(attributes.gewerkLb).toBeNull();
-    expect(meta.gewerkQuelle).toBeNull();
-  });
-
-  it('macht aus einem geerbten Gewerk kein Bauteil', () => {
-    // Unter „Betonarbeiten" stehen auch Stundenlohn- und Vorhalteleistungen.
-    const { attributes } = classifier.classify(
-      input({
-        shortText: 'Stundenlohnarbeiten Facharbeiter',
-        longText: 'Abrechnung nach Aufwand.',
-        unit: 'Std',
-        headings: ['Titel 02 Betonarbeiten'],
-      }),
-    );
-
-    expect(attributes.positionsart).toBe('personal');
-  });
-
-  it('erbt auch ohne eigene Abschnitts-Überschrift aus dem Los', () => {
-    const { attributes, meta } = classifier.classify(
-      input({ shortText: 'Wand herstellen', headings: ['Los 3 Mauerarbeiten'] }),
-    );
-
-    expect(attributes.gewerkLb).toBe('012');
-    expect(meta.gewerkQuelle).toBe('abschnitt');
   });
 });

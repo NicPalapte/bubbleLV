@@ -2,7 +2,7 @@
 // liefert bewusst ein offenes Record (neue Rulesets bringen neue Keys mit), die UI
 // braucht daraus aber verlässliche Strings.
 
-import type { ClassificationMeta, GewerkQuelle, Span } from './classify';
+import type { ClassificationMeta, Span } from './classify';
 import type { PositionSummary } from '../types/lvNode';
 
 /** Reservierte Keys: Provenance und Fundstellen, nie eine Facette. */
@@ -16,18 +16,14 @@ const RESERVED_KEYS: ReadonlySet<string> = new Set(['_meta', '_spans']);
  */
 const ATTRIBUTE_LABELS: Record<string, string> = {
   positionsart: 'Positionsart',
-  gewerk: 'Gewerk',
-  gewerkLb: 'Leistungsbereich (STLB-Bau)',
   bauteiltyp: 'Bauteiltyp',
   beton: 'Druckfestigkeit',
   expo: 'Expositionsklassen',
   feuchtigkeitsklasse: 'Feuchtigkeitsklasse',
-  tragend: 'Tragend',
   dicke: 'Dicke',
   hoehe: 'Höhe',
   laenge: 'Länge',
   gewicht: 'Gewicht',
-  steinart: 'Steinart',
   keywords: 'Besonderheiten',
   normen: 'Normen',
   material: 'Material',
@@ -76,13 +72,11 @@ export function attrMeta(attributes: Record<string, unknown>): ClassificationMet
   if (meta === null || typeof meta !== 'object') return null;
   const record = meta as Record<string, unknown>;
   if (typeof record.classifier !== 'string' || typeof record.ruleset !== 'string') return null;
-  const quelle = record.gewerkQuelle;
   return {
     classifier: record.classifier,
     ruleset: record.ruleset,
     version: typeof record.version === 'number' ? record.version : 0,
     confidence: typeof record.confidence === 'number' ? record.confidence : 0,
-    gewerkQuelle: quelle === 'position' || quelle === 'abschnitt' ? (quelle as GewerkQuelle) : null,
   };
 }
 

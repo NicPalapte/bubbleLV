@@ -67,43 +67,33 @@ befüllt werden, hängt vom Ergebnis der vorherigen Stufe ab.
 |---|---|---|---|
 | `positionsart` | `string` | `"bauteil"` | Positionsart (`bauteil \| personal \| planung \| baustelleneinrichtung \| nebenleistung \| sonstige`) |
 
-**Für jede Position, sobald ein STLB-Bau-Leistungsbereich (LB) erkannt wurde** (Stufe 0,
-siehe [`pipeline.md`](pipeline.md#klassifizierung)) —
-unabhängig von `positionsart`, da z. B. auch `baustelleneinrichtung` ein eigener LB ist:
-
-| Key | Typ | Beispiel | Facette |
-|---|---|---|---|
-| `gewerkLb` | `string \| null` | `"012"` | STLB-Bau-LB-Nummer (Ruleset-Key, normbasiert) |
-| `gewerk` | `string \| null` | `"Beton- und Stahlbetonarbeiten"` | Gewerk (LB-Bezeichnung, Anzeigewert); kann aus der Abschnittsüberschrift stammen — dann steht `_meta.gewerkQuelle` auf `"abschnitt"` ([`decisions/0015`](../decisions/0015-gewerk-aus-der-abschnittsueberschrift.md)) |
-
-Kein LB-Treffer (Referenzkatalog noch leer oder Text passt zu keinem LB) ⇒ beide Keys
-`null`, `positionsart` kommt dann aus dem heuristischen Fallback statt aus dem LB.
+Leistungsbereich bzw. Gewerk (`gewerk`, `gewerkLb`) gibt es seit
+[`decisions/0044`](../decisions/0044-leistungsbereich-entfernt.md) nicht mehr.
+`positionsart` kommt aus Stichworten und Einheit (Heuristik).
 
 **Nur wenn `positionsart === "bauteil"`:**
 
 | Key | Typ | Beispiel | Facette | Gilt für |
 |---|---|---|---|---|
 | `bauteiltyp` | `string \| null` | `"Wand"` | Bauteiltyp | alle Bauteil-Positionen |
-| `beton` | `string \| null` | `"C30/37"` | Betongüte | LB `Beton-/Stahlbetonarbeiten`; genormte Schreibweise auch im Fallback (s. u.) |
+| `beton` | `string \| null` | `"C30/37"` | Druckfestigkeit | genormte Schreibweise im Text (Fallback, s. u.) |
 | `expo` | `string[]` | `["XC2","XD1"]` | Expositionsklasse | wie `beton` |
-| `tragend` | `boolean \| null` | `true` | tragend/nichttragend | tragfähige Bauteiltypen |
 
 Maße (`dicke`, `hoehe`, `laenge`, `gewicht`) standen bis WP-J hier; sie kommen
-jetzt aus dem gewerkeunabhängigen Extraktor (s. u.) und gelten für jede Position.
+jetzt aus einem Extraktor (s. u.) und gelten für jede Position.
 
 **Nur wenn `positionsart !== "bauteil"`** — eigenes, kleineres Schema, **kein**
-`bauteiltyp`/`gewerk`/`beton`/`tragend`; Keys kommen aus dem jeweiligen
+`bauteiltyp`/`beton`; Keys kommen aus dem jeweiligen
 Nicht-Bauteil-Ruleset (z. B. `PersonalRuleset`, `PlanungRuleset`), initial minimal
 und inkrementell erweiterbar — nicht als vollständiges Schema vorab festgelegt.
 
-**Für alle Positionen — gewerkeunabhängige Extraktoren** (`lib/classify/extractors/`,
+**Für alle Positionen — Extraktoren** (`lib/classify/extractors/`,
 laufen **vor** den Rulesets und werden von ihnen nur überschrieben, nie gelöscht):
 
 | Key | Typ | Beispiel | Facette |
 |---|---|---|---|
 | `keywords` | `string[]` | `["WU-Beton","CEM III/A"]` | Besonderheiten |
 | `normen` | `string[]` | `["DIN EN 206","VOB/C"]` | Normen |
-| `material` | `string[]` | `["Stahlbeton"]` | Material |
 | `fristen` | `string[]` | `["Winterbau","Termin"]` | Zeitbezug |
 | `platzhalter` | `string[]` | `["Textergänzung"]` | Offene Stellen |
 | `platzhalterAnzahl` | `number` | `2` | (Anzeige) |
@@ -118,11 +108,8 @@ Zwei Regeln gelten für alle Extraktoren:
 - **Kein Treffer ⇒ kein Key.** Ein leeres Array würde im Panel als Merkmal
   erscheinen, das es nicht gibt.
 
-`material` wird **ausschließlich** aus der `keywords`-Spalte des
-STLB-Bau-Katalogs gespeist. Solange die Spalte leer ist, liefert der Extraktor
-nichts — der dokumentierte Zustand „Referenzdaten fehlen ⇒ Regel inaktiv, kein
-Fehler". Eine hier erfundene Baustoffliste wäre eine ungeprüfte Aussage über die
-Domäne.
+`material` (aus dem STLB-Katalog) ist mit 0044 entfallen. Materialwissen kommt
+künftig aus einer eigenen Tabelle je Material.
 
 Normverweise standen bis WP-J unter `keywords`; sie liegen jetzt in `normen`,
 damit „DIN EN 206" nicht zweimal im Eigenschaften-Panel steht.
@@ -133,10 +120,8 @@ Fallback-Extraktor Basis-Attribute statt eines Fehlers (siehe [`pipeline.md`](pi
 
 **Basis-Attribute des Fallbacks** sind die genormten Kurzbezeichnungen nach
 DIN EN 206 / DIN 1045-2 (`beton`, `expo`, `feuchtigkeitsklasse`). Letztere stehen wörtlich im Text und bedeuten in jedem Gewerk
-dasselbe — sie ohne LB-Treffer zu verwerfen, würde die Facetten „Druckfestigkeit" und
-„Exposition" für reale Dateien leer lassen. Alles **Interpretierende** — allen voran
-`tragend` — bleibt dem gewerkespezifischen Ruleset vorbehalten und fehlt im Fallback
-ganz (der Key wird nicht gesetzt, statt auf `null` zu stehen).
+dasselbe. Alles **Interpretierende** (etwa „tragend") leitet der Fallback nicht ab;
+der Key wird nicht gesetzt, statt auf `null` zu stehen.
 
 ### `spans` — Textstellen zu jedem Merkmal
 
@@ -265,24 +250,20 @@ trägt `attributes` einen reservierten Meta-Block. Die Facetten-Keys bleiben fla
 ```jsonc
 {
   "positionsart": "bauteil",
-  "gewerkLb": "012",
-  "gewerk": "Beton- und Stahlbetonarbeiten",
   "bauteiltyp": "Wand",
   "beton": "C30/37",
   "expo": ["XC2", "XD1"],
-  "tragend": true,
   "_meta": {
     "classifier": "rule",
-    "ruleset": "012_wand",
-    "version": 1,
+    "ruleset": "fallback",
+    "version": 2,
     "confidence": 1.0
   }
 }
 ```
 
 `_meta.ruleset` hält fest, welches konkrete `PropertyRuleset` (oder `"fallback"`) die
-Attribute geliefert hat — wichtig, um nachzuvollziehen, welche
-Bauteiltyp/LB-Kombinationen noch keinen eigenen Ruleset haben.
+Attribute geliefert hat.
 
 ## Re-Import in derselben Session
 
