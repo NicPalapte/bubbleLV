@@ -1,6 +1,6 @@
 // Provider für den Viewer-Session-State. Berechnet die abgeleiteten Sichten
 // (Knoten-Index, Elternzuordnung, flacher Positions-Index, Trefferzahlen,
-// Gewerk-Farbskala) an genau einer Stelle — Baum, Graph, Tabelle und Überblick
+// Farben) an genau einer Stelle — Baum, Graph, Tabelle und Überblick
 // bekommen dasselbe Ergebnis (Issue #18, WP-L).
 
 import { useMemo, useReducer, type ReactNode } from 'react';
@@ -16,6 +16,11 @@ import {
 import { prepareFilters, type ActiveFilters } from '../lib/matchPos';
 import { measure } from '../lib/perf';
 import { indexNodes, indexParents } from '../lib/tree/buildTree';
+import {
+  buildSectionColors,
+  EMPTY_SECTION_COLORS,
+  type SectionColors,
+} from '../lib/tree/mainSection';
 import { computeMatchCounts, type MatchIndex } from '../lib/tree/matchCounts';
 import {
   INITIAL_VIEWER_STATE,
@@ -68,6 +73,13 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
     return buildColorScale([...values.keys()].filter((key) => key !== NO_GEWERK));
   }, [state.lv]);
 
+  // Punktfarbe nach Hauptabschnitt — einmal je LV, über die ganze Datei, damit
+  // ein Filter keine Farbe verschiebt (Entscheidung 0043).
+  const sectionColors = useMemo<SectionColors>(() => {
+    if (tree === null) return EMPTY_SECTION_COLORS;
+    return buildSectionColors(index, structure.parents);
+  }, [tree, index, structure.parents]);
+
   // Trefferbitmaske für den Graphen — `null`, solange nicht gefiltert wird.
   const mask = useMemo<Uint8Array | null>(
     () => (tree === null || !active.filtering ? null : filterMask(index, active)),
@@ -111,6 +123,7 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
       matches,
       mask,
       gewerkColors,
+      sectionColors,
       hints,
     }),
     [
@@ -124,6 +137,7 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
       matches,
       mask,
       gewerkColors,
+      sectionColors,
       hints,
     ],
   );

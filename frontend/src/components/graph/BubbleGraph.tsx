@@ -40,7 +40,6 @@ import { graphOverlayProps, isOverlayEvent } from '../../lib/graph/overlay';
 import { placePins, type PinAnchor, type PlacedPin, type Rect } from '../../lib/graph/pins';
 import { positionRadii } from '../../lib/graph/sizes';
 import { NEUTRAL_COLOR } from '../../lib/colors';
-import { FACETS } from '../../lib/facets';
 import { formatCount, formatNumber } from '../../lib/format';
 import { measure } from '../../lib/perf';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
@@ -63,7 +62,6 @@ const LEADER_MIN_WIDTH = 760;
 /** Fenster und Leisten über dem Graphen — Schilder weichen ihnen aus. */
 const OVERLAY_SELECTOR = '.ov-glass, .ov-window, .ov-pill';
 const EMPTY_SELECTED: Readonly<Record<string, ReadonlySet<string>>> = {};
-const GEWERK_SLOT = FACETS.findIndex((facet) => facet.id === 'gewerk');
 
 /** Zeichenbreite der Gruppenbeschriftung in Weltkoordinaten (14px Sans, 10,5px Mono). */
 const SANS_CHAR = 8.6;
@@ -109,7 +107,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
     mask,
     matches,
     hints,
-    gewerkColors,
+    sectionColors,
     filter: {
       hideMode,
       filters: { facets: selectedFacets },
@@ -166,16 +164,15 @@ export function BubbleGraph({ root }: { root: LVNode }) {
     [index, parents, layout, rows, cols, radii, layoutMask, hide, selected],
   );
 
-  const colors = useMemo(() => {
-    const out = new Array<string>(index.size);
-    for (let slot = 0; slot < index.size; slot++) {
-      const color = gewerkColors.of(index.facts[slot].facetValues[GEWERK_SLOT]?.[0]);
-      // „Ohne Gewerk" ist auf der Gruppenfläche kaum zu sehen — ein eigener, ruhiger Ton.
-      out[slot] =
-        color === NEUTRAL_COLOR ? 'var(--dot-none)' : color.replace('var(--cat-', 'var(--dot-');
-    }
-    return out;
-  }, [index, gewerkColors]);
+  // Farbe nach Hauptabschnitt, wie in der Verteilung im Überblick (Entscheidung 0043).
+  const colors = useMemo(
+    () =>
+      sectionColors.bySlot.map((color) =>
+        // „Ohne Abschnitt" ist auf der Gruppenfläche kaum zu sehen — ein eigener, ruhiger Ton.
+        color === NEUTRAL_COLOR ? 'var(--dot-none)' : color.replace('var(--cat-', 'var(--dot-'),
+      ),
+    [sectionColors],
+  );
 
   const isHit = useCallback((slot: number) => mask === null || mask[slot] === 1, [mask]);
 

@@ -19,7 +19,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0010 | [Positions-Index und vorberechnete Aggregate](0010-positions-index-und-aggregate.md)         | akzeptiert | 2026-09-14 |
 | 0011 | [Extraktoren und Fundstellen im Langtext](0011-extraktoren-und-fundstellen.md)               | akzeptiert | 2026-09-14 |
 | 0012 | [Prüfregeln: Norm-Verweise aus der Referenzdatei](0012-pruefregeln-und-norm-verweise.md)     | akzeptiert | 2026-09-14 |
-| 0013 | [Eine Gewerk-Farbskala für alle Ansichten](0013-gewerk-farbskala.md)                         | akzeptiert | 2026-09-16 |
+| 0013 | [Eine Gewerk-Farbskala für alle Ansichten](0013-gewerk-farbskala.md)                         | ergänzt durch 0043 | 2026-09-16 |
 | 0014 | [Zweites Demo-LV: Angebot mit Preisen](0014-demo-lv-mit-preisen.md)                          | akzeptiert | 2026-09-16 |
 | 0015 | [Gewerk aus der Abschnittsüberschrift erben](0015-gewerk-aus-der-abschnittsueberschrift.md)  | akzeptiert | 2026-09-16 |
 | 0016 | [Ähnliche Positionen: wie Bubble sie findet](0016-aehnlichkeit-und-cluster.md)               | akzeptiert | 2026-09-16 |
@@ -49,6 +49,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0040 | [Auswertungen aus dem, was im LV steht](0040-auswertung-ohne-klassifizierung.md) | akzeptiert | 2026-10-08 |
 | 0041 | [Workflows: knappe Rechte, Fremd-Actions fest verdrahtet](0041-workflow-rechte-und-pinning.md) | akzeptiert | 2026-10-10 |
 | 0042 | [Preview nur auf Zuruf](0042-preview-auf-zuruf.md) | akzeptiert | 2026-10-10 |
+| 0043 | [Punktfarbe im Graphen nach Hauptabschnitt](0043-punktfarbe-nach-abschnitt.md) | akzeptiert | 2026-10-10 |
 
 ## Wann schreibe ich eine neue Datei?
 

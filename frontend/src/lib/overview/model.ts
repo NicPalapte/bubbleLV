@@ -14,9 +14,9 @@
 // Einheit — beides steht in jeder Datei. Nach Gewerk zu gliedern hing am
 // Gewerk-Abgleich, der ohne Katalog fast alles in „Ohne Gewerk" legt.
 
-import { attrString } from '../attributes';
 import { NO_GEWERK } from '../facets';
 import { headingOf } from '../tree/heading';
+import { mainSectionOf, sectionOrder } from '../tree/mainSection';
 import { isPauschal } from '../graph/sizes';
 import { canonicalUnit, unitLabel } from '../units';
 import type { PositionIndex } from '../index/positionIndex';
@@ -44,8 +44,8 @@ export interface OverviewMetrics {
   hasPrices: boolean;
   /** Summe Menge × EP über die gefilterten Positionen. */
   totalPrice: number;
-  /** Anzahl verschiedener Gewerke im Filter (ohne die unklassifizierten). */
-  gewerke: number;
+  /** Anzahl verschiedener Hauptabschnitte im Filter (Lose übersprungen). */
+  sections: number;
   /** Positionen ohne Einheitspreis — bei Dateien mit Preisen die Lücken. */
   withoutPrice: number;
   /** Anteil davon an `positions` (0…1); 0, wenn nichts im Filter liegt. */
@@ -137,27 +137,6 @@ function share(part: number, whole: number): number {
   return whole > 0 ? part / whole : 0;
 }
 
-/**
- * Hauptabschnitt einer Position: der oberste Abschnitt über ihr, Lose
- * übersprungen. `null`, wenn sie direkt unter Los oder LV steht.
- */
-function mainSectionOf(
-  node: LVNode,
-  parents: ReadonlyMap<string, LVNode | null>,
-  cache: Map<string, LVNode | null>,
-): LVNode | null {
-  const parent = parents.get(node.id) ?? null;
-  if (parent === null) return null;
-  const known = cache.get(parent.id);
-  if (known !== undefined) return known;
-  let top: LVNode | null = null;
-  for (let up: LVNode | null = parent; up !== null; up = parents.get(up.id) ?? null) {
-    if (up.kind === 'section') top = up;
-  }
-  cache.set(parent.id, top);
-  return top;
-}
-
 interface Bucket {
   key: string;
   label: string;
@@ -165,24 +144,6 @@ interface Bucket {
   count: number;
   order: number;
   cells: Map<string, TreemapCell>;
-}
-
-/**
- * Rang jedes Hauptabschnitts in LV-Reihenfolge, über die ganze Datei — nicht
- * über die Filtermenge, sonst rutschten Farben nach, wenn ein Abschnitt
- * herausfällt.
- */
-function sectionOrder(
-  index: OverviewInput['index'],
-  parents: ReadonlyMap<string, LVNode | null>,
-  cache: Map<string, LVNode | null>,
-): Map<string, number> {
-  const order = new Map<string, number>();
-  for (let slot = 0; slot < index.size; slot++) {
-    const key = mainSectionOf(index.nodes[slot], parents, cache)?.id ?? '';
-    if (!order.has(key)) order.set(key, order.size);
-  }
-  return order;
 }
 
 function bucketOf(buckets: Map<string, Bucket>, key: string, label: string, order: number): Bucket {
@@ -307,7 +268,6 @@ function fileHasPrices(index: PositionIndex): boolean {
 export function buildOverview({ index, mask, parents }: OverviewInput): OverviewModel {
   const buckets = new Map<string, Bucket>();
   const units = new Map<string, UnitTotal>();
-  const gewerke = new Set<string>();
   const prices: number[] = [];
   const mainSections = new Map<string, LVNode | null>();
   const slotsByUnit = new Map<string, number[]>();
@@ -325,8 +285,6 @@ export function buildOverview({ index, mask, parents }: OverviewInput): Overview
 
     const position = index.positions[slot];
     const node = index.nodes[slot];
-    const gewerk = attrString(position.attributes, 'gewerk');
-    if (gewerk !== null) gewerke.add(gewerk);
 
     const price = index.totalPrice[slot];
     if (Number.isFinite(index.unitPrice[slot])) pricedPositions++;
@@ -412,7 +370,7 @@ export function buildOverview({ index, mask, parents }: OverviewInput): Overview
       filtering: mask !== null,
       hasPrices,
       totalPrice,
-      gewerke: gewerke.size,
+      sections: [...buckets.keys()].filter((key) => key !== '').length,
       withoutPrice,
       withoutPriceShare: share(withoutPrice, positions),
       withoutQuantity,
