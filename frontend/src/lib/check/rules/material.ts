@@ -29,7 +29,7 @@ function bezugAus(materials: readonly MaterialDefinition[]): Bezug | null {
   const betonstahl = materials.find((material) => material.id === 'betonstahl');
   const bewehrung = beton?.merkmale.find((merkmal) => merkmal.key === 'betonBewehrung');
   if (beton === undefined || betonstahl === undefined || bewehrung === undefined) return null;
-  if (beton.erkennung === null || betonstahl.erkennung === null) return null;
+  if (beton.erkennung.length === 0 || betonstahl.erkennung.length === 0) return null;
   return { beton: beton.name, betonstahl: betonstahl.name, bewehrungKey: bewehrung.key };
 }
 

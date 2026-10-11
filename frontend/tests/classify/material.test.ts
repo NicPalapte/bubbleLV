@@ -73,7 +73,7 @@ describe('Materialtabelle lesen', () => {
 
   it('kennt ohne Erkennungszeile kein Material', () => {
     const leer = parseMaterialCsv('holz.csv', 'merkmal,wert,stichworte,ausser,bemerkung\n');
-    expect(leer.erkennung).toBeNull();
+    expect(leer.erkennung).toEqual([]);
     expect(extractMaterial({ shortText: 'Holz', longText: '' }, [leer])).toEqual({
       attributes: {},
       spans: [],
@@ -82,6 +82,20 @@ describe('Materialtabelle lesen', () => {
 });
 
 describe('Material erkennen', () => {
+  it('wendet „ausser" nur auf die eigene Erkennungszeile an', () => {
+    const zweiZeilen = parseMaterialCsv(
+      'stahl.csv',
+      [
+        'merkmal,wert,stichworte,ausser,bemerkung',
+        'Erkennung,,stahl*,stahlbeton*,',
+        'Erkennung,,stahlbeton*,,',
+      ].join('\n'),
+    );
+    expect(
+      extractMaterial({ shortText: 'Stahlbetonwand', longText: '' }, [zweiZeilen]).attributes,
+    ).toEqual({ material: ['Stahl'] });
+  });
+
   it('erkennt Beton an der Festigkeitsklasse, auch ohne das Wort', () => {
     expect(material('Wand C30/37').attributes).toMatchObject({
       material: ['Beton'],

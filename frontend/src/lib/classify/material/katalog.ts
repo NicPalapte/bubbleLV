@@ -38,7 +38,8 @@ export interface MaterialDefinition {
   readonly id: string;
   /** Anzeigename, z. B. „Beton". */
   readonly name: string;
-  readonly erkennung: Matcher | null;
+  /** Je Erkennungszeile ein Matcher — ein `ausser` gilt nur für seine Zeile. */
+  readonly erkennung: readonly Matcher[];
   readonly merkmale: readonly MaterialMerkmal[];
 }
 
@@ -72,16 +73,15 @@ function matcher(stichworte: string, ausser: string): Matcher | null {
 export function parseMaterialCsv(fileName: string, csv: string): MaterialDefinition {
   const base = fileName.replace(/\.csv$/i, '');
   const id = slug(base);
-  const erkennung: string[] = [];
-  const ausser: string[] = [];
+  const erkennung: Matcher[] = [];
   const merkmale = new Map<string, { name: string; werte: MerkmalWert[] }>();
 
   for (const row of parseCsv(csv)) {
     const name = row.get('merkmal');
     if (name === '') continue;
     if (name.toLowerCase() === ERKENNUNG) {
-      erkennung.push(row.get('stichworte'));
-      ausser.push(row.get('ausser'));
+      const found = matcher(row.get('stichworte'), row.get('ausser'));
+      if (found !== null) erkennung.push(found);
       continue;
     }
     const found = matcher(row.get('stichworte'), row.get('ausser'));
@@ -96,7 +96,7 @@ export function parseMaterialCsv(fileName: string, csv: string): MaterialDefinit
   return {
     id,
     name: capitalize(base.replace(/[-_]+/g, ' ')),
-    erkennung: matcher(erkennung.join('|'), ausser.join('|')),
+    erkennung,
     merkmale: [...merkmale].map(([key, { name, werte }]) => ({ key, name, werte })),
   };
 }

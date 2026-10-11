@@ -29,6 +29,10 @@ function treffer(text: string, matcher: Matcher): Treffer[] {
   return out;
 }
 
+function trefferAller(text: string, matchers: readonly Matcher[]): Treffer[] {
+  return matchers.flatMap((matcher) => treffer(text, matcher));
+}
+
 function pushUnique(list: string[], value: string): void {
   if (!list.includes(value)) list.push(value);
 }
@@ -42,9 +46,8 @@ export function extractMaterial(
   const spans: Span[] = [];
 
   for (const material of materials) {
-    if (material.erkennung === null) continue;
-    const inLang = treffer(context.longText, material.erkennung);
-    if (inLang.length === 0 && treffer(context.shortText, material.erkennung).length === 0) {
+    const inLang = trefferAller(context.longText, material.erkennung);
+    if (inLang.length === 0 && trefferAller(context.shortText, material.erkennung).length === 0) {
       continue;
     }
     attributes.material ??= [];
