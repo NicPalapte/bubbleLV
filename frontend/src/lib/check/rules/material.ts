@@ -7,7 +7,9 @@
 // Regel nicht: das ist ein Hinweis, kein Urteil.
 //
 // Fehlt eine der Tabellen „beton" oder „betonstahl" oder das Merkmal
-// „Bewehrung", bleibt die Regel inaktiv.
+// „Bewehrung", bleibt die Regel inaktiv. Außerhalb der Tabellen hängt sie an zwei
+// Merkmalen der Klassifizierung: `positionsart` („bauteil") und `beton` (die
+// Festigkeitsklasse aus rulesets/normklassen.ts).
 
 import { attrString, attrStrings } from '../../attributes';
 import { materialKatalog, type MaterialDefinition } from '../../classify/material/katalog';
