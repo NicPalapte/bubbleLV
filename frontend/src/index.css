@@ -683,7 +683,7 @@ a:hover {
   color: var(--greenD);
 }
 
-/* Linke Spalte: Ablage oben, darunter das Feld „letzte Datei" (Entscheidung 0045). */
+/* Linke Spalte: Ablage oben, darunter das Feld „letzte Datei" (Entscheidung 0046). */
 .start-col {
   display: flex;
   flex-direction: column;

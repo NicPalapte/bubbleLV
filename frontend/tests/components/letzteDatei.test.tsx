@@ -1,4 +1,4 @@
-// Feld „Letzte Datei öffnen" auf der Startseite (Entscheidung 0045).
+// Feld „Letzte Datei öffnen" auf der Startseite (Entscheidung 0046).
 
 import 'fake-indexeddb/auto';
 import { readFileSync } from 'node:fs';

@@ -1,4 +1,4 @@
-// Zuletzt geöffnete GAEB-Datei im Browser behalten (Entscheidung 0045).
+// Zuletzt geöffnete GAEB-Datei im Browser behalten (Entscheidung 0046).
 //
 // Genau ein Projekt: die Original-Bytes und ein paar Angaben für die Startseite.
 // Das geparste LV wird nicht gespeichert; es entsteht beim Öffnen neu aus den Bytes,

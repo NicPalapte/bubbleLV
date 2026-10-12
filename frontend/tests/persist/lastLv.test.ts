@@ -1,4 +1,4 @@
-// Speicher für die zuletzt geöffnete Datei (Entscheidung 0045).
+// Speicher für die zuletzt geöffnete Datei (Entscheidung 0046).
 
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';

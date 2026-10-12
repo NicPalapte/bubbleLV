@@ -10,7 +10,7 @@ Datei dient, gehört nicht in dieses Produkt.
 Browser laden, klassifizieren, prüfen und im Graphen mit Fenstern darüber
 durchsuchen und filtern. Die Datei verlässt den Browser nie. Einzige Ausnahme vom
 Nicht-Speichern: die zuletzt geöffnete eigene Datei bleibt in der IndexedDB dieses
-Browsers (`docs/decisions/0045-letzte-datei-im-browser.md`); sonst verwirft ein Reload den Stand.
+Browsers (`docs/decisions/0046-letzte-datei-im-browser.md`); sonst verwirft ein Reload den Stand.
 
 Vollständige Projekt-/Ordnerbeschreibung: @README.md
 Scope: @docs/scope.md · Plan: @docs/implementation-plan.md · Prüfregeln: @docs/domain/vob-pruefungen.md
@@ -45,7 +45,7 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
 - **IndexedDB nur über `frontend/src/lib/persist/lastLv.ts`:** genau ein Projekt
   (Original-Bytes + Angaben der zuletzt geöffneten eigenen Datei), löschbar auf der
   Startseite. Kein geparstes LV speichern, keine Demo-LVs, keine zweite Datei.
-  Fehlt IndexedDB ⇒ still ohne Speicher weiter, kein Fehler (Entscheidung 0045).
+  Fehlt IndexedDB ⇒ still ohne Speicher weiter, kein Fehler (Entscheidung 0046).
 
 ### Client-seitige Pipeline (Kern)
 - `GaebParser` ist die **einzige** Stelle mit GAEB-XML-Kenntnis

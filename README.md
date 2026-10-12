@@ -51,7 +51,7 @@ Es gibt kein Backend, keine Datenbank, keinen Login. Eine geladene Datei wird pe
 gehalten — nichts wird an einen Server geschickt oder in `localStorage` abgelegt.
 Ein Reload verwirft den Stand. Nur die zuletzt geöffnete Datei bleibt in diesem Browser
 (IndexedDB) und lässt sich auf der Startseite wieder öffnen oder löschen
-([Entscheidung 0045](docs/decisions/0045-letzte-datei-im-browser.md)).
+([Entscheidung 0046](docs/decisions/0046-letzte-datei-im-browser.md)).
 
 ### Client-seitige Pipeline
 

@@ -1,4 +1,4 @@
-# 0045 – Zuletzt geöffnete Datei im Browser behalten
+# 0046 – Zuletzt geöffnete Datei im Browser behalten
 
 - **Status:** akzeptiert
 - **Datum:** 2026-10-12

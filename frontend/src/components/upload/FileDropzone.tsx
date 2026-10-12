@@ -3,7 +3,7 @@
 // eines ohne Preise, weil beides in der Praxis vorkommt und die App beides
 // unterschiedlich zeigt (lib/pipeline/loadDemoLv.ts).
 // Die Datei verlässt den Browser nie: kein Upload. Die zuletzt geöffnete eigene
-// Datei bleibt in der IndexedDB dieses Browsers (Entscheidung 0045, lib/persist).
+// Datei bleibt in der IndexedDB dieses Browsers (Entscheidung 0046, lib/persist).
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { BubbleLogo } from '../ui/BubbleLogo';
