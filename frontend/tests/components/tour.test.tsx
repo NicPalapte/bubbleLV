@@ -59,6 +59,10 @@ function Harness({ without = [] }: { without?: readonly string[] }) {
         punkt
       </button>
       {selection.positionId !== null && <div data-selection-card="">karte</div>}
+      <output aria-label="seite">{view.side ?? 'zu'}</output>
+      <button type="button" onClick={() => dispatch({ type: 'sidePanel', panel: 'check' })}>
+        prüfung öffnen
+      </button>
       <output aria-label="auswahl">{selection.positionId ?? 'keine'}</output>
       <button
         type="button"
@@ -229,5 +233,16 @@ describe('Tour', () => {
     await frames();
     expect(screen.getByRole('dialog', { name: tourTitle(0) })).toBeTruthy();
     other.remove();
+  });
+
+  it('gibt nach dem Ende das eigene Seitenfenster zurück', async () => {
+    setup();
+    fireEvent.click(screen.getByText('prüfung öffnen'));
+    fireEvent.click(screen.getByRole('button', { name: 'Kurze Tour' }));
+    await frames();
+    expect(screen.getByLabelText('seite').textContent).toBe('zu');
+    fireEvent.click(screen.getByRole('button', { name: 'Beenden' }));
+    await frames();
+    expect(screen.getByLabelText('seite').textContent).toBe('check');
   });
 });

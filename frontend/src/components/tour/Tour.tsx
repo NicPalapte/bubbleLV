@@ -137,23 +137,30 @@ export function Tour() {
   /** Richtung der letzten Bewegung — ein fehlendes Ziel wird in dieselbe Richtung übersprungen. */
   const direction = useRef<1 | -1>(1);
 
-  // Die Tour schließt die Karte und wählt zur Vorführung selbst einen Punkt.
-  // Danach gilt wieder die eigene Auswahl: beim Start merken, beim Ende
-  // zurückgeben — außer ein neues LV ist inzwischen geladen.
+  // Die Tour schließt Karte und Seitenfenster und wählt zur Vorführung selbst
+  // einen Punkt. Danach gilt wieder der eigene Stand: beim Start merken, beim
+  // Ende zurückgeben — außer ein neues LV ist inzwischen geladen.
   const { nodeId, positionId } = state.selection;
-  const before = useRef<{ lv: typeof lv; nodeId: string | null; positionId: string | null }>(null);
+  const { side } = state.view;
+  const before = useRef<{
+    lv: typeof lv;
+    nodeId: string | null;
+    positionId: string | null;
+    side: typeof side;
+  }>(null);
   useEffect(() => {
     if (index !== null) {
-      before.current ??= { lv, nodeId, positionId };
+      before.current ??= { lv, nodeId, positionId, side };
       return;
     }
     const saved = before.current;
     if (saved === null) return;
     before.current = null;
     if (saved.lv !== lv) return;
+    if (saved.side !== side) dispatch({ type: 'sidePanel', panel: saved.side });
     if (saved.nodeId === nodeId && saved.positionId === positionId) return;
     dispatch({ type: 'selectPosition', nodeId: saved.nodeId, positionId: saved.positionId });
-  }, [index, lv, nodeId, positionId, dispatch]);
+  }, [index, lv, nodeId, positionId, side, dispatch]);
 
   const go = useCallback(
     (next: number | null): void => {
