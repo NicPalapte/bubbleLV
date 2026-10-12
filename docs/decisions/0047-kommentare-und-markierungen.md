@@ -51,5 +51,8 @@ Mockup freigegeben am 2026-10-12.
 
 - „Notizen“ ist nicht mehr außerhalb des Scopes, aber nur in dieser Form: je Position,
   zur letzten Datei, in diesem Browser. Aufgaben, Zuständigkeit und Status bleiben draußen.
+- Dieselbe Datei in zwei Tabs gleichzeitig: der Tab, der zuletzt schreibt, gewinnt.
+  Notizen aus dem anderen Tab gehen dann verloren. Zusammenführen ginge nicht sauber,
+  weil ein gelöschter Kommentar sonst wieder auftauchte. Bewusst so gelassen.
 - Wer die Website-Daten des Browsers löscht, verliert die Notizen. Wer sie behalten will,
   nimmt den CSV-Export mit.
