@@ -4,7 +4,8 @@
 //
 // Kurz gesammelt statt je Tastendruck: das Kommentarfeld würde sonst bei jedem
 // Zeichen die IndexedDB anstoßen. Beim Verlassen der Seite wird sofort
-// geschrieben, damit das letzte Wort nicht verloren geht.
+// geschrieben. Ob der Browser das beim Schließen des Tabs noch zu Ende führt,
+// liegt bei ihm; im schlimmsten Fall fehlen die letzten 400 ms Tippen.
 
 import { useCallback, useEffect, useRef } from 'react';
 import { EMPTY_ANNOTATIONS, type Annotations } from '../../lib/annotations';
