@@ -59,6 +59,13 @@ function Harness({ without = [] }: { without?: readonly string[] }) {
         punkt
       </button>
       {selection.positionId !== null && <div data-selection-card="">karte</div>}
+      <output aria-label="auswahl">{selection.positionId ?? 'keine'}</output>
+      <button
+        type="button"
+        onClick={() => dispatch({ type: 'selectPosition', nodeId: null, positionId: 'eigene' })}
+      >
+        eigene wählen
+      </button>
       <div data-tour="search">suche</div>
       <button
         type="button"
@@ -169,5 +176,45 @@ describe('Tour', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Tour nicht anzeigen' }));
     await frames();
     expect(screen.queryByRole('group', { name: 'Tour anbieten' })).toBeNull();
+  });
+
+  it('überspringt rückwärts, wenn das Ziel beim Zurückgehen fehlt', async () => {
+    setup(['hints']);
+    const hints = TOUR_STEPS.findIndex((step) => step.target === '[data-tour="hints"]');
+    fireEvent.click(screen.getByRole('button', { name: 'Kurze Tour' }));
+    for (let index = 0; index < hints; index++) {
+      await frames();
+      fireEvent.click(screen.getByRole('button', { name: /Weiter|Überspringen/ }));
+    }
+    await frames(1000);
+    await frames();
+    fireEvent.click(screen.getByRole('button', { name: 'Zurück' }));
+    await frames(1000);
+    await frames();
+    expect(screen.getByRole('dialog', { name: tourTitle(hints - 1) })).toBeTruthy();
+  });
+
+  it('zeigt die Positionskarte auch, wenn der Punkt-Schritt übersprungen wurde', async () => {
+    setup();
+    fireEvent.click(screen.getByRole('button', { name: 'Kurze Tour' }));
+    await frames();
+    fireEvent.click(screen.getByRole('button', { name: 'Überspringen' }));
+    await frames();
+    await frames();
+    expect(screen.getByRole('dialog', { name: tourTitle(1) })).toBeTruthy();
+    expect(screen.getByLabelText('auswahl').textContent).toBe('p');
+  });
+
+  it('gibt nach dem Ende die eigene Auswahl zurück', async () => {
+    setup();
+    fireEvent.click(screen.getByText('eigene wählen'));
+    fireEvent.click(screen.getByRole('button', { name: 'Kurze Tour' }));
+    await frames();
+    expect(screen.getByLabelText('auswahl').textContent).toBe('keine');
+    fireEvent.click(screen.getByText('punkt'));
+    await frames();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    await frames();
+    expect(screen.getByLabelText('auswahl').textContent).toBe('eigene');
   });
 });
