@@ -82,4 +82,15 @@ describe('Letzte Datei öffnen', () => {
     expect(await screen.findByRole('alert')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '+ Filter' })).toBeNull();
   });
+
+  it('ersetzt die gespeicherte Datei nicht durch eine, die beim Laden scheitert', async () => {
+    await saveLastLv({ fileName: NAME, positionCount: 3, savedAt: Date.now() }, fixtureBytes());
+    render(<App />);
+    await screen.findByRole('button', { name: `Letzte Datei öffnen: ${NAME}` });
+    fireEvent.change(screen.getByLabelText('GAEB-Datei auswählen'), {
+      target: { files: [new File(['kein GAEB'], 'kaputt.x83')] },
+    });
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect((await readLastLvMeta())?.fileName).toBe(NAME);
+  });
 });
