@@ -217,4 +217,17 @@ describe('Tour', () => {
     await frames();
     expect(screen.getByLabelText('auswahl').textContent).toBe('eigene');
   });
+
+  it('Escape gehört zuerst einem anderen offenen Fenster', async () => {
+    setup();
+    fireEvent.click(screen.getByRole('button', { name: 'Kurze Tour' }));
+    await frames();
+    const other = document.createElement('div');
+    other.setAttribute('role', 'dialog');
+    document.body.append(other);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    await frames();
+    expect(screen.getByRole('dialog', { name: tourTitle(0) })).toBeTruthy();
+    other.remove();
+  });
 });

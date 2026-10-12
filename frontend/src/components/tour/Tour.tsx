@@ -232,6 +232,10 @@ export function Tour() {
     if (index === null) return;
     const onKey = (event: KeyboardEvent): void => {
       if (event.key !== 'Escape') return;
+      // Ein anderes offenes Fenster oder die Suche bekommt Escape zuerst.
+      const target = event.target;
+      if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) return;
+      if (document.querySelector('[role="dialog"]:not([data-tour-card])') !== null) return;
       event.stopImmediatePropagation();
       go(null);
     };
@@ -297,6 +301,7 @@ export function Tour() {
       <div
         role="dialog"
         aria-label={`Tour: ${step.title}`}
+        data-tour-card=""
         className="ov-glass fixed z-[51] flex flex-col gap-[8px] p-[14px]"
         style={{
           width: CARD_WIDTH,
