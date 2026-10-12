@@ -81,6 +81,7 @@ export function GraphControls({ onFit, onFitSelection, onZoom }: GraphControlsPr
         <button
           type="button"
           aria-pressed={showHints}
+          data-tour="hints"
           title="Hinweis-Ringe und -Schilder im Graphen ein- oder ausblenden"
           onClick={() => dispatch({ type: 'graphHints', value: !showHints })}
           className={`h-[28px] cursor-pointer whitespace-nowrap rounded-[var(--r-sm)] border px-[10px] font-mono text-[10.5px] ${

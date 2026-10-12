@@ -135,6 +135,7 @@ export function TopBar() {
         <AboutMenu
           onFehlerMelden={() => setMelden(true)}
           onTastenkuerzel={() => setKuerzel(true)}
+          onTour={loaded ? () => dispatch({ type: 'tour', step: 0 }) : undefined}
           onAnderesLv={loaded ? () => dispatch({ type: 'clear' }) : undefined}
           mitnehmen={loaded ? mitnehmen : undefined}
         />
@@ -160,7 +161,10 @@ export function TopBar() {
               </span>
             </div>
 
-            <div className="mx-auto flex h-[36px] min-w-0 max-w-[620px] flex-1 items-center gap-[6px] overflow-hidden rounded-[var(--r-pill)] border border-line bg-surface pl-[12px] pr-[6px] shadow-[var(--shadow-sm)] focus-within:border-blue focus-within:shadow-[0_0_0_3px_var(--blueS)]">
+            <div
+              data-tour="search"
+              className="mx-auto flex h-[36px] min-w-0 max-w-[620px] flex-1 items-center gap-[6px] overflow-hidden rounded-[var(--r-pill)] border border-line bg-surface pl-[12px] pr-[6px] shadow-[var(--shadow-sm)] focus-within:border-blue focus-within:shadow-[0_0_0_3px_var(--blueS)]"
+            >
               <span className="text-[14px] text-mute" aria-hidden="true">
                 ⌕
               </span>
@@ -203,6 +207,7 @@ export function TopBar() {
               <button
                 type="button"
                 aria-pressed={filterOpen}
+                data-tour="filter"
                 onClick={() => dispatch({ type: 'sidePanel', panel: filterOpen ? null : 'filter' })}
                 className={`inline-flex h-[26px] shrink-0 cursor-pointer items-center whitespace-nowrap rounded-[var(--r-pill)] border px-[10px] font-mono text-[10.5px] ${
                   filterOpen

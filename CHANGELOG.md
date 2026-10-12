@@ -9,6 +9,15 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.13.0 — 12.10.2026 · Tour
+
+- **Kurze Tour.** Nach dem ersten LV fragt Bubble unten links „Neu hier?“. Die Tour zeigt
+  in neun Schritten die wichtigsten Stellen: Punkt, Positionskarte, Suche, Filter,
+  Gliederung, Kennzahlen, Hinweise, Tabelle und das Logo-Menü.
+- Manche Schritte warten, bis man selbst klickt. Jeder Schritt lässt sich überspringen,
+  Escape beendet die Tour.
+- **Logo-Menü** hat den Eintrag „Tour“, um sie jederzeit neu zu starten.
+
 ## 0.12.0 — 11.10.2026 · Ohne Leistungsbereich
 
 - **Gewerk entfernt.** Bubble ordnet Positionen keinem Leistungsbereich mehr zu. Die

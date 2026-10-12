@@ -18,6 +18,7 @@ import { GraphDock } from '../components/shell/GraphDock';
 import { KpiCapsule } from '../components/shell/KpiCapsule';
 import { SidePanel } from '../components/shell/SidePanel';
 import { TableWindow } from '../components/shell/TableWindow';
+import { Tour } from '../components/tour/Tour';
 import { FileDropzone } from '../components/upload/FileDropzone';
 import { ErrorBoundary } from '../components/common/ErrorBoundary';
 import { useShareLink } from '../components/common/useShareLink';
@@ -100,6 +101,7 @@ export function ViewerPage() {
               <TableWindow />
               <CompareWindow />
               <GraphDock />
+              <Tour />
             </main>
           )}
         </ErrorBoundary>

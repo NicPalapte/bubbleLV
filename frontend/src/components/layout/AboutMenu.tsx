@@ -37,6 +37,8 @@ export interface AboutMenuProps {
   onFehlerMelden: () => void;
   /** „Anderes LV öffnen" — zurück zur Startseite. Fehlt, solange kein LV geladen ist. */
   onAnderesLv?: () => void;
+  /** „Tour" gewählt. Fehlt, solange kein LV geladen ist — die Tour zeigt auf den Graphen. */
+  onTour?: () => void;
   /** „Tastenkürzel" gewählt; das Fenster hängt wie „Fehler melden" in der Kopfleiste. */
   onTastenkuerzel: () => void;
   /** Export und Druck der gefilterten Menge. Fehlt, solange kein LV geladen ist. */
@@ -65,6 +67,7 @@ function Angabe({ label, wert }: { label: string; wert: string }) {
 export function AboutMenu({
   onFehlerMelden,
   onTastenkuerzel,
+  onTour,
   onAnderesLv,
   mitnehmen,
 }: AboutMenuProps) {
@@ -102,6 +105,7 @@ export function AboutMenu({
         // Ohne eigenen Namen hieße die Schaltfläche „bubble ▾" — das sagt
         // niemandem, was sie tut, weder am Bildschirmleser noch im Test.
         aria-label="Über diese App"
+        data-tour="menu"
         title="Über diese App: Version, Änderungen, Fehler melden"
         className="mx-[8px] flex cursor-pointer items-center gap-[6px] rounded-[var(--r-sm)] border-none bg-transparent px-[8px] py-[5px] hover:bg-sunken aria-expanded:bg-sunken"
       >
@@ -169,6 +173,17 @@ export function AboutMenu({
         >
           Lizenzen ↗
         </PopoverRow>
+        {onTour !== undefined && (
+          <PopoverRow
+            onClick={() => {
+              setOpen(false);
+              onTour();
+            }}
+            title="Die wichtigsten Bedienelemente Schritt für Schritt"
+          >
+            Tour
+          </PopoverRow>
+        )}
         <PopoverRow
           onClick={() => {
             setOpen(false);
