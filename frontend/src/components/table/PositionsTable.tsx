@@ -7,7 +7,7 @@
 // gewählte Abschnitt keinen Treffer hat — sonst stünde man vor einer leeren
 // Tabelle, während der Baum daneben Treffer anzeigt (Issue #12).
 //
-// Spalten lassen sich ein-/ausblenden, verschieben und in der Breite ziehen
+// Alle Spalten lassen sich ein-/ausblenden, verschieben und in der Breite ziehen
 // (Issue #41). Sortierung, Umfang, Spalten und Scrollposition liegen seit WP-L
 // im Ansichts-Zustand (`view.table`) statt als lokaler `useState`: die
 // Komponente wird beim Ansichtswechsel abgebaut, der Zustand soll ihn aber
@@ -37,6 +37,7 @@ import {
   visibleColumnKeys,
   type ColumnConfig,
 } from '../../lib/table/columns';
+import type { Annotations } from '../../lib/annotations';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { LVNode, PositionSummary } from '../../types/lvNode';
 import type { PositionType } from '../../types/lvDraft';
@@ -191,6 +192,10 @@ const COLUMNS: ReadonlyArray<Column<Row>> = [
     sortable: false,
     render: () => <StatusPill status={POSITION_STATUS} />,
   },
+  // Eigene Notizen (Entscheidung 0047): der Inhalt kommt aus dem Viewer-Zustand,
+  // `render` wird deshalb in der Tabelle ersetzt (siehe `annotationRender`).
+  { key: 'marked', label: 'Markiert', width: 70, sortable: false },
+  { key: 'note', label: 'Kommentar', width: 220, sortable: false },
 ];
 
 /**
@@ -204,13 +209,29 @@ function searchRender(key: string, query: string): Column<Row>['render'] | undef
   return undefined;
 }
 
+/** Spalten aus den eigenen Markierungen und Kommentaren. */
+function annotationRender(key: string, annotations: Annotations): Column<Row>['render'] {
+  if (key === 'marked') {
+    return (r) =>
+      annotations.marked.has(r.node.id) ? (
+        <span className="text-ink" aria-label="markiert">
+          ⚑
+        </span>
+      ) : (
+        ''
+      );
+  }
+  if (key === 'note') {
+    return (r) => <span className="text-blue">{annotations.notes.get(r.node.id) ?? ''}</span>;
+  }
+  return undefined;
+}
+
 const COLUMNS_BY_KEY = new Map(COLUMNS.map((column) => [column.key, column]));
 const DEFAULT_ORDER: readonly string[] = COLUMNS.map((column) => column.key);
 const DEFAULT_WIDTHS: Readonly<Record<string, number>> = Object.fromEntries(
   COLUMNS.map((column) => [column.key, column.width]),
 );
-/** Ohne OZ und Bezeichnung wäre eine Zeile nicht mehr zuzuordnen. */
-const LOCKED_COLUMNS: ReadonlySet<string> = new Set(['oz', 'shortText']);
 
 const DEFAULT_COLUMN_CONFIG: ColumnConfig = defaultColumnConfig(DEFAULT_ORDER, DEFAULT_WIDTHS);
 
@@ -257,7 +278,6 @@ function ColumnPicker({
             const column = COLUMNS_BY_KEY.get(key);
             if (column === undefined) return null;
             const shown = !config.hidden.has(key);
-            const locked = LOCKED_COLUMNS.has(key);
             return (
               <div
                 key={key}
@@ -270,9 +290,8 @@ function ColumnPicker({
                   role="checkbox"
                   aria-checked={shown}
                   aria-label={column.label}
-                  disabled={locked}
-                  title={locked ? 'Immer sichtbar' : shown ? 'Ausblenden' : 'Einblenden'}
-                  onClick={() => onChange(toggleColumn(config, key, LOCKED_COLUMNS))}
+                  title={shown ? 'Ausblenden' : 'Einblenden'}
+                  onClick={() => onChange(toggleColumn(config, key))}
                   className="flex min-w-0 flex-1 cursor-pointer items-center gap-[8px] border-none bg-transparent p-0 text-left font-mono text-[10px] text-ink disabled:cursor-default"
                 >
                   <span
@@ -289,7 +308,6 @@ function ColumnPicker({
                       display: 'inline-flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      opacity: locked ? 0.5 : 1,
                     }}
                   >
                     {shown ? '✓' : ''}
@@ -365,6 +383,7 @@ export function PositionsTable({ root }: { root: LVNode }) {
     selection: { positionId: selectedPositionId },
     view: { table, scroll },
     parents,
+    annotations,
   } = useViewer();
   const dispatch = useViewerDispatch();
   // Der Ansichts-Zustand führt den Sortierschlüssel als Zeichenkette: die
@@ -382,10 +401,11 @@ export function PositionsTable({ root }: { root: LVNode }) {
       visibleColumnKeys(columnConfig).flatMap((key) => {
         const column = COLUMNS_BY_KEY.get(key);
         if (column === undefined) return [];
-        const render = searchRender(key, active.query) ?? column.render;
+        const render =
+          annotationRender(key, annotations) ?? searchRender(key, active.query) ?? column.render;
         return [{ ...column, render, width: columnConfig.widths[key] }];
       }),
-    [columnConfig, active.query],
+    [columnConfig, active.query, annotations],
   );
 
   // Eine Prüffunktion je Filterwechsel statt einer Ableitung je Zeile: sie
@@ -497,36 +517,46 @@ export function PositionsTable({ root }: { root: LVNode }) {
         </span>
       </div>
 
-      <DataTable
-        label="Positionen"
-        columns={columns}
-        rows={rows}
-        rowKey={(row) => row.node.id}
-        selectedKey={selectedPositionId}
-        revealKey={selectedPositionId}
-        onPick={(key, event) => {
-          // Shift + Klick legt die Position in den Vergleich — wie im Graphen.
-          if (event.shiftKey) {
-            dispatch({ type: 'toggleCompare', positionId: key });
-            return;
+      {columns.length === 0 ? (
+        <p className="m-0 p-[16px] font-mono text-[10px] text-mute">Alle Spalten ausgeblendet.</p>
+      ) : (
+        <DataTable
+          label="Positionen"
+          columns={columns}
+          rows={rows}
+          rowKey={(row) => row.node.id}
+          selectedKey={selectedPositionId}
+          revealKey={selectedPositionId}
+          onPick={(key, event) => {
+            // Shift + Klick legt die Position in den Vergleich — wie im Graphen.
+            if (event.shiftKey) {
+              dispatch({ type: 'toggleCompare', positionId: key });
+              return;
+            }
+            dispatch({
+              type: 'selectPosition',
+              nodeId: root.id,
+              positionId: selectedPositionId === key ? null : key,
+            });
+          }}
+          initialScrollTop={scroll.table}
+          onLeave={(top) => dispatch({ type: 'viewScroll', view: 'table', top })}
+          empty="Keine Positionen entsprechen den Filtern."
+          sort={sort}
+          onSort={(key) => dispatch({ type: 'tableSort', key })}
+          group={
+            groupCount > 1 ? (row) => ({ key: row.groupKey, label: row.groupLabel }) : undefined
           }
-          dispatch({
-            type: 'selectPosition',
-            nodeId: root.id,
-            positionId: selectedPositionId === key ? null : key,
-          });
-        }}
-        initialScrollTop={scroll.table}
-        onLeave={(top) => dispatch({ type: 'viewScroll', view: 'table', top })}
-        empty="Keine Positionen entsprechen den Filtern."
-        sort={sort}
-        onSort={(key) => dispatch({ type: 'tableSort', key })}
-        group={groupCount > 1 ? (row) => ({ key: row.groupKey, label: row.groupLabel }) : undefined}
-        cellTitle={(row, column) =>
-          column.key === 'shortText' ? row.position.shortText : undefined
-        }
-        onResize={(key, width) => setColumnConfig(resizeColumn(columnConfig, key, width))}
-      />
+          cellTitle={(row, column) =>
+            column.key === 'shortText'
+              ? row.position.shortText
+              : column.key === 'note'
+                ? annotations.notes.get(row.node.id)
+                : undefined
+          }
+          onResize={(key, width) => setColumnConfig(resizeColumn(columnConfig, key, width))}
+        />
+      )}
     </div>
   );
 }

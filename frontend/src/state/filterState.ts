@@ -5,6 +5,7 @@
 // liegt bewusst neben `selectionState` und `viewState`, damit ein
 // Ansichtswechsel ihn gar nicht erst anfassen kann.
 
+import { NO_ANNOTATION_FILTER, type AnnotationFilter } from '../lib/annotations';
 import { EMPTY_FILTERS, type Filters, type Range } from '../lib/matchPos';
 
 /** Nicht-Treffer dämpfen oder ganz ausblenden. */
@@ -22,6 +23,11 @@ export interface FilterState {
    * und nicht im Zustand der Ansicht „Prüfung".
    */
   mutedRules: ReadonlySet<string>;
+  /**
+   * Filter auf eigene Markierungen und Kommentare (Entscheidung 0047). Neben
+   * `filters`, weil er nicht aus der Datei kommt und nicht in geteilte Links gehört.
+   */
+  notes: AnnotationFilter;
 }
 
 export type FilterAction =
@@ -31,13 +37,15 @@ export type FilterAction =
   | { type: 'resetFilters' }
   | { type: 'hideMode'; value: HideMode }
   /** Prüfregel stummschalten bzw. wieder zulassen. */
-  | { type: 'toggleRule'; id: string };
+  | { type: 'toggleRule'; id: string }
+  | { type: 'toggleNoteFilter'; key: keyof AnnotationFilter };
 
 export const INITIAL_FILTER_STATE: FilterState = {
   search: '',
   filters: EMPTY_FILTERS,
   hideMode: 'dim',
   mutedRules: EMPTY_SET,
+  notes: NO_ANNOTATION_FILTER,
 };
 
 export function filterReducer(state: FilterState, action: FilterAction): FilterState {
@@ -53,9 +61,11 @@ export function filterReducer(state: FilterState, action: FilterAction): FilterS
     case 'setMenge':
       return { ...state, filters: { ...state.filters, menge: action.range } };
     case 'resetFilters':
-      return { ...state, filters: EMPTY_FILTERS };
+      return { ...state, filters: EMPTY_FILTERS, notes: NO_ANNOTATION_FILTER };
     case 'hideMode':
       return { ...state, hideMode: action.value };
+    case 'toggleNoteFilter':
+      return { ...state, notes: { ...state.notes, [action.key]: !state.notes[action.key] } };
     case 'toggleRule': {
       const mutedRules = new Set(state.mutedRules);
       if (!mutedRules.delete(action.id)) mutedRules.add(action.id);

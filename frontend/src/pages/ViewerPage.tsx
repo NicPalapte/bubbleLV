@@ -5,7 +5,8 @@
 // merkt, steht in `view` (state/viewState.ts).
 //
 // Alle Daten stammen aus der lokalen Pipeline (Datei → Parser →
-// Klassifizierung → Baum); nichts wird geladen oder persistiert.
+// Klassifizierung → Baum); nichts wird geladen. Gespeichert werden nur die
+// letzte Datei und ihre Notizen (Entscheidungen 0046, 0047).
 
 import { Profiler, useCallback, useEffect, type ReactNode } from 'react';
 import { NoticeBar } from '../components/layout/NoticeBar';
@@ -21,6 +22,7 @@ import { TableWindow } from '../components/shell/TableWindow';
 import { Tour } from '../components/tour/Tour';
 import { FileDropzone } from '../components/upload/FileDropzone';
 import { ErrorBoundary } from '../components/common/ErrorBoundary';
+import { useSaveAnnotations } from '../components/common/useSaveAnnotations';
 import { useShareLink } from '../components/common/useShareLink';
 import { PERF_ENABLED, reportViewSwitch } from '../lib/perf';
 import { useViewer, useViewerDispatch } from '../state/viewer';
@@ -53,6 +55,7 @@ export function ViewerPage() {
   // Ansicht, Filter und Auswahl stehen in der Adresszeile — ein Link stellt
   // sie wieder her, sobald dieselbe Datei geladen ist (WP-P, Schritt 2).
   useShareLink();
+  useSaveAnnotations();
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {

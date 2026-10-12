@@ -758,6 +758,14 @@ a:hover {
   font-variant-numeric: tabular-nums;
 }
 
+.start-recent-mk {
+  color: var(--ink);
+}
+
+.start-recent-km {
+  color: var(--blue);
+}
+
 .start-recent-x {
   width: 26px;
   height: 26px;

@@ -51,7 +51,9 @@ Es gibt kein Backend, keine Datenbank, keinen Login. Eine geladene Datei wird pe
 gehalten — nichts wird an einen Server geschickt oder in `localStorage` abgelegt.
 Ein Reload verwirft den Stand. Nur die zuletzt geöffnete Datei bleibt in diesem Browser
 (IndexedDB) und lässt sich auf der Startseite wieder öffnen oder löschen
-([Entscheidung 0046](docs/decisions/0046-letzte-datei-im-browser.md)).
+([Entscheidung 0046](docs/decisions/0046-letzte-datei-im-browser.md)). Dazu gehören die
+eigenen Markierungen und Kommentare je Position
+([Entscheidung 0047](docs/decisions/0047-kommentare-und-markierungen.md)).
 
 ### Client-seitige Pipeline
 
@@ -132,10 +134,10 @@ einen Stelle.
 
 Frontend-only: GAEB laden → klassifizieren → prüfen → im Graphen und seinen Fenstern
 verstehen. Kein Server, kein Login, keine Persistenz über die Session hinaus — außer der
-zuletzt geöffneten Datei im Browser.
+zuletzt geöffneten Datei im Browser samt eigenen Markierungen und Kommentaren.
 
 **Bewusst draußen:** mehrere Dateien gleichzeitig (Versionsvergleich, x83+x84
-zusammenführen — perspektivisch gewollt), Aufgaben/Notizen/Vergabe, Status ändern,
+zusammenführen — perspektivisch gewollt), Aufgaben/Vergabe, Status ändern,
 GAEB-Export, LLM-Klassifizierung, jede Server-Komponente.
 
 Details → [docs/scope.md](docs/scope.md) · Umsetzungsplan →

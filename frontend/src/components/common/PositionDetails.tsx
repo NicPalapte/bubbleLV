@@ -5,6 +5,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { CardHead, GroupPill, PropTable, Section, StatRow } from './CardParts';
 import { Highlighted } from './Highlighted';
+import { NoteBlock } from './NoteBlock';
 import { HintBlock } from '../check/HintBlock';
 import {
   attributeLabel,
@@ -176,6 +177,8 @@ export function PositionDetails({
         {/* Hinweise vor dem Langtext: wer eine Position aufmacht, soll zuerst
             sehen, ob an ihr etwas auffällt (WP-R, R1). */}
         <HintBlock positionId={node.id} />
+
+        <NoteBlock positionId={node.id} />
 
         {position.longText !== '' && (
           <Section title="Langtext">

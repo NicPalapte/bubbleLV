@@ -13,8 +13,8 @@ TS-App. Beim Port gilt:
 - **Keine Fixture-Daten** — alles kommt aus der lokalen Pipeline (Datei → Parser →
   Klassifizierung → Baum, siehe [`pipeline.md`](pipeline.md)).
 - **Kein `localStorage` für Fachdaten** — es gibt keine Persistenz über die Session
-  hinaus. Einzige Ausnahme: die zuletzt geöffnete Datei in der IndexedDB
-  (`lib/persist/lastLv.ts`, Entscheidung 0046). Reiner UI-Zustand (Auswahl, Zoom, aktive Filter)
+  hinaus. Einzige Ausnahme: die zuletzt geöffnete Datei und die eigenen Notizen dazu in
+  der IndexedDB (`lib/persist/lastLv.ts`, Entscheidungen 0046 und 0047). Reiner UI-Zustand (Auswahl, Zoom, aktive Filter)
   darf in React-State/Context leben, muss aber einen Reload nicht überleben.
 - `matchPos` bleibt die **einzige** Quelle für Filter-/Suchlogik.
 

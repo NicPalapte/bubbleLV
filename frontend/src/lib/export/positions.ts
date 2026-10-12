@@ -9,12 +9,16 @@
 // fehlt, merkt man dagegen erst, wenn die Datei schon weitergereicht ist.
 // Die Zeilen sind die gefilterte Menge — das ist die Zusage aus dem Plan.
 
+import { EMPTY_ANNOTATIONS, type Annotations } from '../annotations';
 import { attrString, attrStrings } from '../attributes';
 import { canonicalUnit, unitLabel } from '../units';
 import type { PositionIndex } from '../index/positionIndex';
 
 /** Spalten des Exports, in dieser Reihenfolge. */
-const COLUMNS: ReadonlyArray<{ head: string; of(index: PositionIndex, slot: number): string }> = [
+const COLUMNS: ReadonlyArray<{
+  head: string;
+  of(index: PositionIndex, slot: number, notes: Annotations): string;
+}> = [
   { head: 'OZ', of: (index, i) => index.positions[i].oz },
   { head: 'Kurztext', of: (index, i) => index.positions[i].shortText },
   { head: 'Einheit', of: (index, i) => einheit(index, i) },
@@ -30,6 +34,9 @@ const COLUMNS: ReadonlyArray<{ head: string; of(index: PositionIndex, slot: numb
   { head: 'Zeitbezug', of: (index, i) => liste(index, i, 'fristen') },
   { head: 'Offene Stellen', of: (index, i) => liste(index, i, 'platzhalter') },
   { head: 'Besonderheiten', of: (index, i) => liste(index, i, 'keywords') },
+  // Eigene Notizen (Entscheidung 0047) — stehen in der Tabelle, also auch hier.
+  { head: 'Markiert', of: (index, i, notes) => (notes.marked.has(index.nodes[i].id) ? 'ja' : '') },
+  { head: 'Kommentar', of: (index, i, notes) => notes.notes.get(index.nodes[i].id) ?? '' },
   { head: 'Langtext', of: (index, i) => index.positions[i].longText },
 ];
 
@@ -115,12 +122,17 @@ function feld(roh: string): string {
 /**
  * Die gefilterten Positionen als CSV. `mask` ist die Trefferbitmaske;
  * `null` heißt „kein Filter aktiv", dann steht das ganze LV drin.
+ * `notes` sind die eigenen Markierungen und Kommentare.
  */
-export function positionsCsv(index: PositionIndex, mask: Uint8Array | null): string {
+export function positionsCsv(
+  index: PositionIndex,
+  mask: Uint8Array | null,
+  notes: Annotations = EMPTY_ANNOTATIONS,
+): string {
   const zeilen: string[] = [COLUMNS.map((column) => feld(column.head)).join(';')];
   for (let i = 0; i < index.size; i++) {
     if (mask !== null && mask[i] !== 1) continue;
-    zeilen.push(COLUMNS.map((column) => feld(column.of(index, i))).join(';'));
+    zeilen.push(COLUMNS.map((column) => feld(column.of(index, i, notes))).join(';'));
   }
   // CRLF: Excel erwartet es, jeder Texteditor kommt damit zurecht.
   return `${zeilen.join('\r\n')}\r\n`;

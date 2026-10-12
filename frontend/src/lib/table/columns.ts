@@ -33,16 +33,9 @@ export function moveColumn(config: ColumnConfig, key: string, direction: -1 | 1)
   return { ...config, order };
 }
 
-/**
- * Spalte ein- bzw. ausblenden. `locked` sind Spalten, ohne die eine Zeile nicht
- * mehr zu erkennen wäre (OZ, Bezeichnung) — sie bleiben immer sichtbar.
- */
-export function toggleColumn(
-  config: ColumnConfig,
-  key: string,
-  locked: ReadonlySet<string> = new Set(),
-): ColumnConfig {
-  if (locked.has(key) || !config.order.includes(key)) return config;
+/** Spalte ein- bzw. ausblenden — jede Spalte, auch OZ und Bezeichnung. */
+export function toggleColumn(config: ColumnConfig, key: string): ColumnConfig {
+  if (!config.order.includes(key)) return config;
   const hidden = new Set(config.hidden);
   if (!hidden.delete(key)) hidden.add(key);
   return { ...config, hidden };

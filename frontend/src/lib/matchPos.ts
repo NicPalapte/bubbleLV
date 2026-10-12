@@ -45,7 +45,12 @@ export interface ActiveFilters {
   readonly menge: Range | null;
   /** Getrimmte, kleingeschriebene Suchanfrage; leer = keine Suche. */
   readonly query: string;
-  /** Mindestens eine Facette, ein Mengenbereich oder eine Suche ist gesetzt. */
+  /**
+   * Knoten-IDs, die der Filter „Markiert"/„Mit Kommentar" zulässt; `null` = aus.
+   * Kommt nicht aus der Datei, sondern aus den eigenen Notizen (lib/annotations.ts).
+   */
+  readonly allow: ReadonlySet<string> | null;
+  /** Mindestens eine Facette, ein Mengenbereich, eine Suche oder `allow` ist gesetzt. */
   readonly filtering: boolean;
 }
 
@@ -64,7 +69,11 @@ export function positionFacts(position: PositionSummary): PositionFacts {
   };
 }
 
-export function prepareFilters(filters: Filters, search: string): ActiveFilters {
+export function prepareFilters(
+  filters: Filters,
+  search: string,
+  allow: ReadonlySet<string> | null = null,
+): ActiveFilters {
   const facets: Array<{ slot: number; values: ReadonlySet<string> }> = [];
   FACETS.forEach((facet, slot) => {
     const values = filters.facets[facet.id];
@@ -75,7 +84,8 @@ export function prepareFilters(filters: Filters, search: string): ActiveFilters 
     facets,
     menge: filters.menge,
     query,
-    filtering: facets.length > 0 || filters.menge !== null || query !== '',
+    allow,
+    filtering: facets.length > 0 || filters.menge !== null || query !== '' || allow !== null,
   };
 }
 
@@ -101,6 +111,15 @@ export function matchFacts(facts: PositionFacts, active: ActiveFilters): boolean
   if (active.query !== '' && !facts.haystack.includes(active.query)) return false;
 
   return true;
+}
+
+/**
+ * Filterentscheidung samt eigener Markierungen und Kommentare. Braucht die
+ * Knoten-ID, weil Notizen an ihr hängen und nicht an den Fakten aus der Datei.
+ */
+export function matchNode(id: string, facts: PositionFacts, active: ActiveFilters): boolean {
+  if (active.allow !== null && !active.allow.has(id)) return false;
+  return matchFacts(facts, active);
 }
 
 /** Einzelprüfung ohne Index — leitet die Fakten je Aufruf neu ab. */
