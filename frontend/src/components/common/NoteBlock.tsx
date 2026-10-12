@@ -41,7 +41,7 @@ export function NoteBlock({ positionId }: { positionId: string }) {
       />
       {persistId === null && (
         <span className="font-mono text-[10px] text-mute">
-          Nur für diese Sitzung: Demo-LVs werden nicht gespeichert.
+          Nur für diese Sitzung, wird nicht gespeichert.
         </span>
       )}
     </Section>

@@ -89,6 +89,46 @@ describe('Markierungen und Kommentare', () => {
     expect(alle).toBeGreaterThan(1);
   });
 
+  it('behält Notizen in der Sitzung, wenn die Datei nicht gespeichert werden kann', async () => {
+    globalThis.indexedDB = {
+      open: () => {
+        throw new Error('gesperrt');
+      },
+    } as unknown as IDBFactory;
+    render(<App />);
+    fireEvent.change(screen.getByLabelText('GAEB-Datei auswählen'), {
+      target: { files: [new File([FIXTURE], NAME)] },
+    });
+    await screen.findByRole('button', { name: '+ Filter' });
+    waehlePunkt(0);
+    expect(await screen.findByText(/wird nicht gespeichert/)).toBeInTheDocument();
+  });
+
+  it('gibt die Notizen ab dem ersten Speichern an die neue Datei', async () => {
+    render(<App />);
+    fireEvent.change(screen.getByLabelText('GAEB-Datei auswählen'), {
+      target: { files: [new File([FIXTURE], NAME)] },
+    });
+    await screen.findByRole('button', { name: '+ Filter' });
+    waehlePunkt(0);
+    fireEvent.click(await screen.findByRole('button', { name: /Markieren/ }));
+    await waitFor(async () => expect(await readLastLvMeta()).toMatchObject({ marked: 1 }));
+    expect(screen.queryByText(/wird nicht gespeichert/)).toBeNull();
+  });
+
+  it('schreibt eine ausstehende Notiz beim Schließen sofort zur alten Datei', async () => {
+    await saveLastLv(
+      { fileName: NAME, positionCount: 3, savedAt: Date.now(), id: ID },
+      fixtureBytes(),
+    );
+    await oeffneGespeicherte();
+    waehlePunkt(0);
+    fireEvent.click(await screen.findByRole('button', { name: /Markieren/ }));
+    // Vor Ablauf der Sammelzeit schließen: die Notiz darf nicht verloren gehen.
+    fireEvent.click(screen.getByRole('button', { name: /LV schließen/ }));
+    await waitFor(async () => expect(await readLastLvMeta()).toMatchObject({ marked: 1 }));
+  });
+
   it('zeigt die Filter erst, wenn es etwas zu filtern gibt', async () => {
     await saveLastLv(
       { fileName: NAME, positionCount: 3, savedAt: Date.now(), id: ID },
@@ -105,7 +145,7 @@ describe('Markierungen und Kommentare', () => {
         <NoteBlock positionId="position:1" />
       </ViewerProvider>,
     );
-    expect(screen.getByText(/Demo-LVs werden nicht gespeichert/)).toBeInTheDocument();
+    expect(screen.getByText(/wird nicht gespeichert/)).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Kommentar zur Position'), {
       target: { value: 'nur kurz' },
     });

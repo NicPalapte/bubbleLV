@@ -117,18 +117,20 @@ export function FileDropzone() {
       // Die Bytes einmal lesen und für Laden und Speichern teilen: eine Datei bis
       // 50 MB nicht zweimal im Speicher, und kein zweites Lesen, das scheitern kann.
       let bytes: ArrayBuffer | null = null;
-      // Kennung vorab: Notizen, die schon während des Speicherns entstehen,
-      // gehören zu genau diesem Eintrag (lib/persist/lastLv.ts).
-      const persistId = newPersistId();
       const lv = await run(async (onNotice) => {
         bytes = await readLvFile(file);
-        return { lv: await loadLvFromBytes(bytes, file.name, { onNotice }), persistId };
+        return { lv: await loadLvFromBytes(bytes, file.name, { onNotice }) };
       }, vorab);
       // Erst nach erfolgreichem Laden merken: eine kaputte Datei soll nicht die
       // letzte gute ersetzen. Demo-LVs werden nie gespeichert.
-      if (lv !== null && bytes !== null) await merke(lv, bytes, persistId);
+      if (lv === null || bytes === null) return;
+      const persistId = newPersistId();
+      // Die Kennung erst nach dem Speichern setzen: scheitert es (volle oder
+      // gesperrte IndexedDB), bleiben Notizen sichtbar in der Sitzung. Was schon
+      // während des Speicherns entstand, schreibt useSaveAnnotations danach.
+      if (await merke(lv, bytes, persistId)) dispatch({ type: 'persisted', lv, persistId });
     },
-    [run],
+    [run, dispatch],
   );
 
   const openLetzte = (): void => {
@@ -331,8 +333,8 @@ export function FileDropzone() {
 }
 
 /** Speichert das geladene LV als „letzte Datei"; Fehler beim Speichern bleiben still. */
-async function merke(lv: LoadedLV, bytes: ArrayBuffer, id: string): Promise<void> {
-  await saveLastLv(
+async function merke(lv: LoadedLV, bytes: ArrayBuffer, id: string): Promise<boolean> {
+  return saveLastLv(
     { fileName: lv.fileName, positionCount: lv.summary.positionCount, savedAt: Date.now(), id },
     bytes,
   );

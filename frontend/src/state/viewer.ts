@@ -101,6 +101,11 @@ type LvAction =
       annotations?: Annotations;
       persistId?: string | null;
     }
+  /**
+   * Datei ist gespeichert, ab jetzt gehen Notizen mit (Entscheidung 0047). Gilt nur,
+   * wenn `lv` noch das geladene LV ist — sonst kam inzwischen ein anderes.
+   */
+  | { type: 'persisted'; lv: LoadedLV; persistId: string }
   | { type: 'toggleMark'; id: string }
   | { type: 'setNote'; id: string; text: string }
   /** Hinweis anhängen; derselbe Text erscheint nicht doppelt. */
@@ -145,6 +150,8 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
         selection: INITIAL_SELECTION_STATE,
         view: viewStateForNewLv(state.view),
       };
+    case 'persisted':
+      return state.lv === action.lv ? { ...state, persistId: action.persistId } : state;
     // Ein geteilter Link (WP-P, Schritt 2): Ansicht, Filter und Auswahl in
     // **einem** Schritt setzen. Einzelne Aktionen nacheinander würden
     // Zwischenstände erzeugen, die kurz gezeichnet und sofort wieder
