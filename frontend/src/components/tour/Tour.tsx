@@ -12,6 +12,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 import { CARD_TARGET, POINT_TARGET, TOUR_STEPS, type TourPrepare } from './tourSteps';
 
+/**
+ * Abstand zwischen zwei Suchen nach dem Ziel. Der Punkt-Schritt sucht über alle
+ * Punkte (bei ~10k Positionen ebenso viele Elemente) — das nicht in jedem Frame.
+ */
+const SEARCH_MS = 100;
 /** So lange darf ein Ziel fehlen, bevor die Tour den Schritt überspringt. */
 const MISSING_MS = 800;
 /** Luft zwischen Element und Spotlight-Rand. */
@@ -35,15 +40,20 @@ interface Box {
 
 /** Erstes Element zum Selektor, das im Fenster sichtbar ist. */
 function findVisible(selector: string): Element | null {
-  const width = window.innerWidth;
-  const height = window.innerHeight;
   for (const element of document.querySelectorAll(selector)) {
-    const rect = element.getBoundingClientRect();
-    if (rect.width === 0 && rect.height === 0) continue;
-    if (rect.right < 0 || rect.bottom < 0 || rect.left > width || rect.top > height) continue;
-    return element;
+    if (isVisible(element.getBoundingClientRect())) return element;
   }
   return null;
+}
+
+function isVisible(rect: DOMRect): boolean {
+  if (rect.width === 0 && rect.height === 0) return false;
+  return !(
+    rect.right < 0 ||
+    rect.bottom < 0 ||
+    rect.left > window.innerWidth ||
+    rect.top > window.innerHeight
+  );
 }
 
 function sameBox(a: Box | null, b: Box | null): boolean {
@@ -151,10 +161,20 @@ export function Tour() {
     let frame = 0;
     let missingSince: number | null = null;
     let last: Box | null = null;
+    // Gefundenes Ziel merken: je Frame dann nur ein `getBoundingClientRect`,
+    // neu gesucht wird erst, wenn es weg oder aus dem Bild ist.
+    let element: Element | null = null;
+    let searchedAt = -Infinity;
     const tick = (): void => {
       const now = Date.now();
-      const element = findVisible(selector);
-      if (element === null) {
+      let rect = element?.isConnected === true ? element.getBoundingClientRect() : null;
+      if (rect !== null && !isVisible(rect)) rect = null;
+      if (rect === null && now - searchedAt >= SEARCH_MS) {
+        searchedAt = now;
+        element = findVisible(selector);
+        rect = element?.getBoundingClientRect() ?? null;
+      }
+      if (rect === null) {
         missingSince ??= now;
         if (now - missingSince > MISSING_MS) {
           go(index + direction.current);
@@ -162,7 +182,6 @@ export function Tour() {
         }
       } else {
         missingSince = null;
-        const rect = element.getBoundingClientRect();
         const next = { top: rect.top, left: rect.left, width: rect.width, height: rect.height };
         if (!sameBox(last, next)) {
           last = next;
