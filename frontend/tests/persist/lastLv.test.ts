@@ -55,7 +55,7 @@ describe('letzte Datei', () => {
     delete globalThis.indexedDB;
     expect(await saveLastLv(meta, bytesOf('x'))).toBe(false);
     expect(await readLastLvMeta()).toBeNull();
-    await expect(clearLastLv()).resolves.toBeUndefined();
+    await expect(clearLastLv()).resolves.toBe(true);
   });
 });
 
@@ -95,5 +95,18 @@ describe('letzte Datei — Randfälle', () => {
     db.close();
     expect(await readLastLvMeta()).toEqual(meta);
     expect(await readLastLv()).toBeNull();
+  });
+
+  it('meldet false, wenn das Löschen scheitert', async () => {
+    await saveLastLv(meta, bytesOf('x'));
+    const echt = globalThis.indexedDB;
+    globalThis.indexedDB = {
+      open: () => {
+        throw new Error('gesperrt');
+      },
+    } as unknown as IDBFactory;
+    expect(await clearLastLv()).toBe(false);
+    globalThis.indexedDB = echt;
+    expect(await readLastLvMeta()).toEqual(meta);
   });
 });

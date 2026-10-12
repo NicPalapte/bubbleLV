@@ -93,4 +93,20 @@ describe('Letzte Datei öffnen', () => {
     expect(await screen.findByRole('alert')).toBeInTheDocument();
     expect((await readLastLvMeta())?.fileName).toBe(NAME);
   });
+
+  it('zeigt das Feld weiter, wenn das Löschen scheitert', async () => {
+    await saveLastLv({ fileName: NAME, positionCount: 3, savedAt: Date.now() }, fixtureBytes());
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Gespeicherte Datei löschen' }));
+    globalThis.indexedDB = {
+      open: () => {
+        throw new Error('gesperrt');
+      },
+    } as unknown as IDBFactory;
+    fireEvent.click(screen.getByRole('button', { name: 'Löschen' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('nicht gelöscht');
+    expect(
+      screen.getByRole('group', { name: 'Gespeichertes Projekt löschen' }),
+    ).toBeInTheDocument();
+  });
 });

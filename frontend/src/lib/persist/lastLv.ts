@@ -156,16 +156,21 @@ export async function touchLastLv(savedAt: number): Promise<void> {
   }
 }
 
-/** Löscht das gespeicherte Projekt. */
-export async function clearLastLv(): Promise<void> {
+/**
+ * Löscht das gespeicherte Projekt. Gibt zurück, ob danach sicher nichts mehr
+ * gespeichert ist — die Startseite darf das Feld nur dann ausblenden.
+ */
+export async function clearLastLv(): Promise<boolean> {
+  if (typeof indexedDB === 'undefined') return true; // ohne IndexedDB nichts gespeichert
   const db = await openDb();
-  if (db === null) return;
+  if (db === null) return false;
   try {
     const tx = db.transaction(STORE, 'readwrite');
     tx.objectStore(STORE).clear();
     await transactionDone(tx);
+    return true;
   } catch {
-    // Nichts zu tun: ohne Zugriff gibt es auch nichts, das stehen bleibt und stört.
+    return false;
   } finally {
     db.close();
   }

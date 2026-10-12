@@ -138,8 +138,20 @@ export function FileDropzone() {
   };
 
   const vergiss = (): void => {
-    setLetzte(null);
-    void clearLastLv();
+    void clearLastLv().then((geloescht) => {
+      // Feld nur ausblenden, wenn wirklich gelöscht: sonst tauchte die Datei beim
+      // nächsten Besuch wieder auf, obwohl die Startseite „gelöscht" gezeigt hat.
+      if (geloescht) {
+        setLetzte(null);
+        return;
+      }
+      dispatch({
+        type: 'error',
+        message:
+          'Die gespeicherte Datei konnte nicht gelöscht werden. ' +
+          'Bitte die Website-Daten im Browser löschen.',
+      });
+    });
   };
 
   const openDemo = (demo: DemoLv): void => {
