@@ -683,6 +683,113 @@ a:hover {
   color: var(--greenD);
 }
 
+/* Linke Spalte: Ablage oben, darunter das Feld „letzte Datei" (Entscheidung 0046). */
+.start-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.start-col > .start-drop {
+  flex: 1;
+}
+
+.start-recent {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 10px 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--glass);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(14px);
+  text-align: left;
+  transition: border-color 0.15s;
+}
+
+.start-recent:hover {
+  border-color: var(--blue);
+}
+
+.start-recent .start-btn {
+  height: 30px;
+  margin: 0;
+  padding: 0 14px;
+  font-size: 11px;
+}
+
+.start-recent-ic {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--sunken);
+  color: var(--blue);
+  font-size: 15px;
+}
+
+.start-recent-txt {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.start-recent-name {
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.start-recent-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  font-size: 10px;
+  color: var(--mute);
+  font-variant-numeric: tabular-nums;
+}
+
+.start-recent-x {
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--mute);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.start-recent-x:hover {
+  background: var(--sunken);
+  color: var(--ink);
+}
+
+.start-recent.ask {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  border-color: var(--line2);
+}
+
+.start-recent-q {
+  font-size: 11px;
+  color: var(--dim);
+}
+
+.start-btn.danger {
+  border-color: var(--red);
+  background: var(--redS);
+  color: var(--redD);
+}
+
 @media (max-width: 640px) {
   .start-grid {
     grid-template-columns: 1fr;

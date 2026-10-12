@@ -2,13 +2,28 @@
 // mitgelieferten Demo-LVs zum Ausprobieren ohne eigene Datei — eines mit und
 // eines ohne Preise, weil beides in der Praxis vorkommt und die App beides
 // unterschiedlich zeigt (lib/pipeline/loadDemoLv.ts).
-// Die Datei verlässt den Browser nie: kein Upload, keine Persistenz.
+// Die Datei verlässt den Browser nie: kein Upload. Die zuletzt geöffnete eigene
+// Datei bleibt in der IndexedDB dieses Browsers (Entscheidung 0046, lib/persist).
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { BubbleLogo } from '../ui/BubbleLogo';
 import { DEMO_LVS, loadDemoLv, type DemoLv } from '../../lib/pipeline/loadDemoLv';
 import { GAEB_ENDUNGEN } from '../../lib/gaeb';
-import { loadLv, LVLoadError, MAX_FILE_BYTES } from '../../lib/pipeline/loadLv';
+import { formatPositions, formatWhen } from '../../lib/format';
+import {
+  clearLastLv,
+  readLastLv,
+  readLastLvMeta,
+  saveLastLv,
+  touchLastLv,
+  type LastLvMeta,
+} from '../../lib/persist/lastLv';
+import {
+  loadLvFromBytes,
+  LVLoadError,
+  MAX_FILE_BYTES,
+  readLvFile,
+} from '../../lib/pipeline/loadLv';
 import { UNEXPECTED_FAILURE } from '../../lib/pipeline/messages';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { LoadedLV } from '../../lib/pipeline/runPipeline';
@@ -18,6 +33,9 @@ const ACCEPT = GAEB_ENDUNGEN.flatMap((endung) => [`.${endung}`, `.${endung.toUpp
   ',',
 );
 const MAX_MB = MAX_FILE_BYTES / (1024 * 1024);
+const DATEI_BLEIBT =
+  'Kein Server, kein Upload, kein Konto. Die zuletzt geöffnete Datei bleibt in diesem ' +
+  'Browser gespeichert, bis du sie löschst.';
 
 export function FileDropzone() {
   const { loading, error } = useViewer();
@@ -27,6 +45,17 @@ export function FileDropzone() {
   // Beim Überfahren von Kindelementen feuert dragleave, obwohl der Zeiger die
   // Ablage nie verlassen hat — deshalb wird gezählt statt geschaltet.
   const dragDepth = useRef(0);
+  const [letzte, setLetzte] = useState<LastLvMeta | null>(null);
+
+  useEffect(() => {
+    let aktiv = true;
+    void readLastLvMeta().then((meta) => {
+      if (aktiv) setLetzte(meta);
+    });
+    return () => {
+      aktiv = false;
+    };
+  }, []);
 
   /**
    * Ein Ladeweg, eine Fehlerbehandlung — Datei wie Demo-LV. `load` bekommt eine
@@ -37,12 +66,13 @@ export function FileDropzone() {
     async (
       load: (onNotice: (message: string) => void) => Promise<LoadedLV>,
       vorab: readonly string[] = [],
-    ): Promise<void> => {
+    ): Promise<LoadedLV | null> => {
       dispatch({ type: 'loading' });
       const notices = [...vorab];
       try {
         const lv = await load((message) => notices.push(message));
         dispatch({ type: 'loaded', lv, notices });
+        return lv;
       } catch (cause) {
         // Ein erwarteter Fehler (leere Datei, falsches Format …) erklärt sich selbst.
         // Ein unerwarteter ist ein Bug: seine Ursache steht am Fehler und gehört in
@@ -55,6 +85,7 @@ export function FileDropzone() {
           type: 'error',
           message: cause instanceof LVLoadError ? cause.message : UNEXPECTED_FAILURE,
         });
+        return null;
       }
     },
     [dispatch],
@@ -73,10 +104,55 @@ export function FileDropzone() {
                 'Es wird immer nur eine Datei gelesen.',
             ]
           : [];
-      await run((onNotice) => loadLv(file, { onNotice }), vorab);
+      // Die Bytes einmal lesen und für Laden und Speichern teilen: eine Datei bis
+      // 50 MB nicht zweimal im Speicher, und kein zweites Lesen, das scheitern kann.
+      let bytes: ArrayBuffer | null = null;
+      const lv = await run(async (onNotice) => {
+        bytes = await readLvFile(file);
+        return loadLvFromBytes(bytes, file.name, { onNotice });
+      }, vorab);
+      // Erst nach erfolgreichem Laden merken: eine kaputte Datei soll nicht die
+      // letzte gute ersetzen. Demo-LVs werden nie gespeichert.
+      if (lv !== null && bytes !== null) await merke(lv, bytes);
     },
     [run],
   );
+
+  const openLetzte = (): void => {
+    if (loading) return;
+    void (async () => {
+      const lv = await run(async (onNotice) => {
+        const gespeichert = await readLastLv();
+        if (gespeichert === null) {
+          setLetzte(null);
+          throw new LVLoadError(
+            'gespeichert',
+            'Die zuletzt geöffnete Datei ist in diesem Browser nicht mehr gespeichert.',
+          );
+        }
+        return loadLvFromBytes(gespeichert.bytes, gespeichert.meta.fileName, { onNotice });
+      });
+      // Zeitpunkt auffrischen, damit „gestern 16:42" das letzte Öffnen meint.
+      if (lv !== null) await touchLastLv(Date.now());
+    })();
+  };
+
+  const vergiss = (): void => {
+    void clearLastLv().then((geloescht) => {
+      // Feld nur ausblenden, wenn wirklich gelöscht: sonst tauchte die Datei beim
+      // nächsten Besuch wieder auf, obwohl die Startseite „gelöscht" gezeigt hat.
+      if (geloescht) {
+        setLetzte(null);
+        return;
+      }
+      dispatch({
+        type: 'error',
+        message:
+          'Die gespeicherte Datei konnte nicht gelöscht werden. ' +
+          'Bitte die Website-Daten im Browser löschen.',
+      });
+    });
+  };
 
   const openDemo = (demo: DemoLv): void => {
     if (loading) return;
@@ -101,66 +177,71 @@ export function FileDropzone() {
         </div>
 
         <div className="start-grid">
-          <div
-            onDragEnter={(event) => {
-              event.preventDefault();
-              dragDepth.current += 1;
-              if (!loading) setDragging(true);
-            }}
-            onDragOver={(event) => event.preventDefault()}
-            onDragLeave={() => {
-              dragDepth.current = Math.max(0, dragDepth.current - 1);
-              if (dragDepth.current === 0) setDragging(false);
-            }}
-            onDrop={(event) => {
-              event.preventDefault();
-              dragDepth.current = 0;
-              setDragging(false);
-              // Während ein Import läuft, würde eine zweite Datei den ersten Lauf
-              // überholen und das Ergebnis wäre nicht mehr vorhersagbar.
-              if (loading) return;
-              void handleFiles(event.dataTransfer.files);
-            }}
-            onClick={openDialog}
-            aria-busy={loading}
-            className={`start-card start-drop${dragging ? ' over' : ''}`}
-            style={{ cursor: loading ? 'progress' : 'pointer' }}
-          >
-            <span className="start-ring" aria-hidden="true">
-              ⇪
-            </span>
-            <h2 className="start-title">Eigenes LV öffnen</h2>
-            <span className="start-sub">GAEB-Datei hierher ziehen</span>
-            {/*
+          <div className="start-col">
+            <div
+              onDragEnter={(event) => {
+                event.preventDefault();
+                dragDepth.current += 1;
+                if (!loading) setDragging(true);
+              }}
+              onDragOver={(event) => event.preventDefault()}
+              onDragLeave={() => {
+                dragDepth.current = Math.max(0, dragDepth.current - 1);
+                if (dragDepth.current === 0) setDragging(false);
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                dragDepth.current = 0;
+                setDragging(false);
+                // Während ein Import läuft, würde eine zweite Datei den ersten Lauf
+                // überholen und das Ergebnis wäre nicht mehr vorhersagbar.
+                if (loading) return;
+                void handleFiles(event.dataTransfer.files);
+              }}
+              onClick={openDialog}
+              aria-busy={loading}
+              className={`start-card start-drop${dragging ? ' over' : ''}`}
+              style={{ cursor: loading ? 'progress' : 'pointer' }}
+            >
+              <span className="start-ring" aria-hidden="true">
+                ⇪
+              </span>
+              <h2 className="start-title">Eigenes LV öffnen</h2>
+              <span className="start-sub">GAEB-Datei hierher ziehen</span>
+              {/*
               Der Klick auf die Fläche ist eine Mausbequemlichkeit; die bedienbare
               Schaltfläche ist dieser Knopf (fokussierbar, Enter/Leertaste). Sein
               Klick darf nicht zusätzlich auf der Fläche landen, sonst öffnet sich
               der Dateidialog zweimal.
             */}
-            <button
-              type="button"
-              className="start-btn primary"
-              onClick={(event) => {
-                event.stopPropagation();
-                openDialog();
-              }}
-            >
-              {loading ? 'Wird gelesen…' : 'Datei auswählen'}
-            </button>
-            <span className="start-meta">x81 – x86 · xml · bis {MAX_MB} MB</span>
-            <input
-              ref={inputRef}
-              type="file"
-              accept={ACCEPT}
-              className="hidden"
-              aria-label="GAEB-Datei auswählen"
-              onClick={(event) => event.stopPropagation()}
-              onChange={(event) => {
-                void handleFiles(event.target.files);
-                // Zurücksetzen, damit dieselbe Datei erneut gewählt werden kann.
-                event.target.value = '';
-              }}
-            />
+              <button
+                type="button"
+                className="start-btn primary"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  openDialog();
+                }}
+              >
+                {loading ? 'Wird gelesen…' : 'Datei auswählen'}
+              </button>
+              <span className="start-meta">x81 – x86 · xml · bis {MAX_MB} MB</span>
+              <input
+                ref={inputRef}
+                type="file"
+                accept={ACCEPT}
+                className="hidden"
+                aria-label="GAEB-Datei auswählen"
+                onClick={(event) => event.stopPropagation()}
+                onChange={(event) => {
+                  void handleFiles(event.target.files);
+                  // Zurücksetzen, damit dieselbe Datei erneut gewählt werden kann.
+                  event.target.value = '';
+                }}
+              />
+            </div>
+            {letzte !== null && (
+              <LetzteDatei meta={letzte} loading={loading} onOpen={openLetzte} onForget={vergiss} />
+            )}
           </div>
 
           {/*
@@ -219,7 +300,7 @@ export function FileDropzone() {
             <span className="start-tip-ring" aria-hidden="true" />
             Hinweise stehen direkt im Graphen
           </li>
-          <li title="Kein Server, kein Upload, kein Konto. Ein Reload verwirft den Stand.">
+          <li title={DATEI_BLEIBT}>
             <span className="start-tip-lock" aria-hidden="true">
               ●
             </span>
@@ -227,6 +308,87 @@ export function FileDropzone() {
           </li>
         </ul>
       </div>
+    </div>
+  );
+}
+
+/** Speichert das geladene LV als „letzte Datei"; Fehler beim Speichern bleiben still. */
+async function merke(lv: LoadedLV, bytes: ArrayBuffer): Promise<void> {
+  await saveLastLv(
+    { fileName: lv.fileName, positionCount: lv.summary.positionCount, savedAt: Date.now() },
+    bytes,
+  );
+}
+
+interface LetzteDateiProps {
+  meta: LastLvMeta;
+  loading: boolean;
+  onOpen: () => void;
+  onForget: () => void;
+}
+
+/** Feld unter der Ablage: zuletzt geöffnete Datei öffnen oder löschen. */
+function LetzteDatei({ meta, loading, onOpen, onForget }: LetzteDateiProps) {
+  // Löschen fragt im Feld selbst nach; ein Browser-Dialog passt nicht zur Startseite.
+  const [fragen, setFragen] = useState(false);
+
+  if (fragen) {
+    return (
+      <div className="start-recent ask" role="group" aria-label="Gespeichertes Projekt löschen">
+        <span className="start-recent-q">Gespeicherte Datei löschen?</span>
+        <button type="button" className="start-btn danger" onClick={onForget}>
+          Löschen
+        </button>
+        <button type="button" className="start-btn" onClick={() => setFragen(false)}>
+          Abbrechen
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="start-recent"
+      onClick={onOpen}
+      aria-busy={loading}
+      style={{ cursor: loading ? 'progress' : 'pointer' }}
+    >
+      <span className="start-recent-ic" aria-hidden="true">
+        ↺
+      </span>
+      <span className="start-recent-txt">
+        <span className="start-recent-name" title={meta.fileName}>
+          {meta.fileName}
+        </span>
+        <span className="start-recent-meta">
+          <span>{formatPositions(meta.positionCount)}</span>
+          <span>{formatWhen(meta.savedAt)}</span>
+        </span>
+      </span>
+      {/* Wie bei der Ablage: der Knopf ist das bedienbare Element, die Fläche Bequemlichkeit. */}
+      <button
+        type="button"
+        className="start-btn primary"
+        aria-label={`Letzte Datei öffnen: ${meta.fileName}`}
+        onClick={(event) => {
+          event.stopPropagation();
+          onOpen();
+        }}
+      >
+        {loading ? 'Wird gelesen…' : 'Öffnen'}
+      </button>
+      <button
+        type="button"
+        className="start-recent-x"
+        aria-label="Gespeicherte Datei löschen"
+        title="Gespeicherte Datei löschen"
+        onClick={(event) => {
+          event.stopPropagation();
+          setFragen(true);
+        }}
+      >
+        ✕
+      </button>
     </div>
   );
 }
