@@ -14,7 +14,8 @@ Das ist die einzige Aufgabe. Alles, was nicht dem Verstehen einer geladenen Date
 gehört nicht in dieses Produkt.
 
 **Weiterhin nicht verhandelbar:** kein Backend, keine Datenbank, kein Login, keine
-Persistenz über die Session hinaus. Statische Fremd-Assets (Webfonts, npm-Pakete) sind
+Persistenz über die Session hinaus — außer der zuletzt geöffneten Datei im Browser
+(Entscheidung 0045). Statische Fremd-Assets (Webfonts, npm-Pakete) sind
 erlaubt, sie transportieren keine Nutzdaten.
 
 ---
@@ -195,7 +196,7 @@ Bewusst **nicht** Teil dieses Produkts. Anfragen dazu werden abgelehnt oder vert
 | Bereich | Anmerkung |
 |---|---|
 | Jede Server-Komponente, DB, Login, SSO | unverändert die härteste Regel |
-| Persistenz über die Session hinaus | kein `localStorage`, keine Cookies, keine IndexedDB für Fachdaten |
+| Persistenz über die Session hinaus | kein `localStorage`, keine Cookies; IndexedDB nur für die zuletzt geöffnete Datei (Entscheidung 0045) |
 | **Mehrere Dateien gleichzeitig** | Zwei LVs vergleichen (Versionsstände, Nachträge) und x83+x84 zusammenführen: **perspektivisch gewollt, jetzt draußen** |
 | LLM-Klassifizierung | setzt einen Server voraus |
 | Aufgaben, Notizen, Zuständigkeit, Vergabepakete, NU-Anfragen | braucht Persistenz |

@@ -9,6 +9,15 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.14.0 — 12.10.2026 · Letzte Datei
+
+- **Letzte Datei öffnen.** Die Startseite zeigt unter „Eigenes LV öffnen“ die zuletzt
+  geöffnete Datei mit Anzahl der Positionen und Zeitpunkt. Ein Klick öffnet sie wieder,
+  ohne sie neu zu suchen.
+- Gespeichert wird nur diese eine Datei, und nur in diesem Browser. Eine neue Datei
+  ersetzt sie, Demo-LVs werden nie gespeichert.
+- **✕** neben „Öffnen“ löscht die gespeicherte Datei nach einer Rückfrage.
+
 ## 0.13.0 — 12.10.2026 · Tour
 
 - **Kurze Tour.** Nach dem ersten LV fragt Bubble unten links „Neu hier?“. Die Tour zeigt

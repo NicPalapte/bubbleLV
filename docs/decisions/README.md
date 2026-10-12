@@ -51,6 +51,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0042 | [Preview nur auf Zuruf](0042-preview-auf-zuruf.md) | akzeptiert | 2026-10-10 |
 | 0043 | [Punktfarbe im Graphen nach Hauptabschnitt](0043-punktfarbe-nach-abschnitt.md) | akzeptiert | 2026-10-10 |
 | 0044 | [Leistungsbereich (Gewerk) aus der App entfernt](0044-leistungsbereich-entfernt.md) | akzeptiert | 2026-10-11 |
+| 0045 | [Zuletzt geöffnete Datei im Browser behalten](0045-letzte-datei-im-browser.md) | akzeptiert | 2026-10-12 |
 
 ## Wann schreibe ich eine neue Datei?
 

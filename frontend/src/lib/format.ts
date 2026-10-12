@@ -29,6 +29,20 @@ export function formatPositions(count: number): string {
   return `${formatCount(count)} ${count === 1 ? 'Position' : 'Positionen'}`;
 }
 
+/** „heute 10:42" / „gestern 16:42" / „08.10.2026" — Ortszeit des Browsers. */
+export function formatWhen(timestamp: number, now: number = Date.now()): string {
+  const when = new Date(timestamp);
+  const startOfDay = (date: Date): number =>
+    new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  // Kalendertage über die Tagesanfänge zählen, nicht über 24 h: sonst wäre 23:50
+  // von gestern um 00:10 noch „heute".
+  const days = Math.round((startOfDay(new Date(now)) - startOfDay(when)) / 86_400_000);
+  const time = when.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  if (days === 0) return `heute ${time}`;
+  if (days === 1) return `gestern ${time}`;
+  return when.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
 export function truncate(text: string | null, max: number): string {
   if (text === null || text === '') return '';
   return text.length > max ? `${text.slice(0, max - 1)}…` : text;

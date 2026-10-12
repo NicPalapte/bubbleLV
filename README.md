@@ -49,7 +49,9 @@ Modell ist GAEB-spezifisch. Details: [`docs/architecture/data-model.md`](docs/ar
 Es gibt kein Backend, keine Datenbank, keinen Login. Eine geladene Datei wird per
 `File.arrayBuffer()` im Browser gelesen, geparst, klassifiziert und in React-State
 gehalten — nichts wird an einen Server geschickt oder in `localStorage` abgelegt.
-Ein Reload verwirft den Stand; das ist gewollt.
+Ein Reload verwirft den Stand. Nur die zuletzt geöffnete Datei bleibt in diesem Browser
+(IndexedDB) und lässt sich auf der Startseite wieder öffnen oder löschen
+([Entscheidung 0045](docs/decisions/0045-letzte-datei-im-browser.md)).
 
 ### Client-seitige Pipeline
 
@@ -129,7 +131,8 @@ einen Stelle.
 ## Scope
 
 Frontend-only: GAEB laden → klassifizieren → prüfen → im Graphen und seinen Fenstern
-verstehen. Kein Server, kein Login, keine Persistenz über die Session hinaus.
+verstehen. Kein Server, kein Login, keine Persistenz über die Session hinaus — außer der
+zuletzt geöffneten Datei im Browser.
 
 **Bewusst draußen:** mehrere Dateien gleichzeitig (Versionsvergleich, x83+x84
 zusammenführen — perspektivisch gewollt), Aufgaben/Notizen/Vergabe, Status ändern,
