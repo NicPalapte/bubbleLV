@@ -8,14 +8,14 @@
 // liegt bei ihm; im schlimmsten Fall fehlen die letzten 400 ms Tippen.
 
 import { useCallback, useEffect, useRef } from 'react';
-import { EMPTY_ANNOTATIONS, type Annotations } from '../../lib/annotations';
+import type { Annotations } from '../../lib/annotations';
 import { saveAnnotations } from '../../lib/persist/lastLv';
 import { useViewer } from '../../state/viewer';
 
 export const SAVE_DELAY_MS = 400;
 
 export function useSaveAnnotations(): void {
-  const { annotations, persistId } = useViewer();
+  const { annotations, loadedAnnotations, persistId } = useViewer();
   const pending = useRef<{ id: string; annotations: Annotations } | null>(null);
 
   const flush = useCallback((): void => {
@@ -26,12 +26,13 @@ export function useSaveAnnotations(): void {
   }, []);
 
   useEffect(() => {
-    // Der leere Anfangszustand eines frisch geladenen LVs ist nichts Neues.
-    if (persistId === null || annotations === EMPTY_ANNOTATIONS) return;
+    // Unverändert seit dem Laden: steht schon so im Speicher. Kein Schreiben beim
+    // bloßen Öffnen — sonst überschriebe ein zweiter Tab schon dabei den ersten.
+    if (persistId === null || annotations === loadedAnnotations) return;
     pending.current = { id: persistId, annotations };
     const timer = window.setTimeout(flush, SAVE_DELAY_MS);
     return () => window.clearTimeout(timer);
-  }, [annotations, persistId, flush]);
+  }, [annotations, loadedAnnotations, persistId, flush]);
 
   // Anderes LV, Startseite oder Seite verlassen: Ausstehendes sofort schreiben.
   useEffect(() => flush, [persistId, flush]);

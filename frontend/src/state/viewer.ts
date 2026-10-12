@@ -80,6 +80,11 @@ export interface ViewerState {
   /** Eigene Markierungen und Kommentare zum geladenen LV (Entscheidung 0047). */
   annotations: Annotations;
   /**
+   * Stand der Notizen beim Laden — so steht er schon im Speicher. Gleicht
+   * `annotations` ihm (dieselbe Referenz), gibt es nichts zu schreiben.
+   */
+  loadedAnnotations: Annotations;
+  /**
    * Kennung des gespeicherten Projekts, zu dem das LV gehört (lib/persist/lastLv.ts).
    * `null` bei Demo-LVs oder ohne Speicher: dann bleiben Notizen in der Sitzung.
    */
@@ -125,6 +130,7 @@ export const INITIAL_VIEWER_STATE: ViewerState = {
   error: null,
   notices: [],
   annotations: EMPTY_ANNOTATIONS,
+  loadedAnnotations: EMPTY_ANNOTATIONS,
   persistId: null,
   filter: INITIAL_FILTER_STATE,
   selection: INITIAL_SELECTION_STATE,
@@ -145,6 +151,7 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
         lv: action.lv,
         notices: action.notices ?? [],
         annotations: action.annotations ?? EMPTY_ANNOTATIONS,
+        loadedAnnotations: action.annotations ?? EMPTY_ANNOTATIONS,
         persistId: action.persistId ?? null,
         filter: { ...INITIAL_FILTER_STATE, hideMode: state.filter.hideMode },
         selection: INITIAL_SELECTION_STATE,

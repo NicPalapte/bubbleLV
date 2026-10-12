@@ -9,6 +9,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import App from '../../src/App';
 import { NoteBlock } from '../../src/components/common/NoteBlock';
+import { SAVE_DELAY_MS } from '../../src/components/common/useSaveAnnotations';
 import { buildPositionIndex } from '../../src/lib/index/positionIndex';
 import { runPipeline } from '../../src/lib/pipeline/runPipeline';
 import { ViewerProvider } from '../../src/state/ViewerProvider';
@@ -127,6 +128,20 @@ describe('Markierungen und Kommentare', () => {
     // Vor Ablauf der Sammelzeit schließen: die Notiz darf nicht verloren gehen.
     fireEvent.click(screen.getByRole('button', { name: /LV schließen/ }));
     await waitFor(async () => expect(await readLastLvMeta()).toMatchObject({ marked: 1 }));
+  });
+
+  it('schreibt beim bloßen Öffnen nichts zurück', async () => {
+    await saveLastLv(
+      { fileName: NAME, positionCount: 3, savedAt: Date.now(), id: ID },
+      fixtureBytes(),
+    );
+    const ids = positionIds();
+    await saveAnnotations(ID, toggleMark(EMPTY_ANNOTATIONS, ids[0]));
+    await oeffneGespeicherte();
+    // Ein zweiter Tab schreibt inzwischen; dieser Tab hat nichts geändert.
+    await saveAnnotations(ID, setNote(EMPTY_ANNOTATIONS, ids[1], 'aus Tab 2'));
+    await new Promise((resolve) => setTimeout(resolve, SAVE_DELAY_MS + 200));
+    expect(await readLastLvMeta()).toMatchObject({ marked: 0, comments: 1 });
   });
 
   it('zeigt die Filter erst, wenn es etwas zu filtern gibt', async () => {
