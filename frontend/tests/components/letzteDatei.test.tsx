@@ -7,7 +7,7 @@ import { IDBFactory } from 'fake-indexeddb';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import App from '../../src/App';
-import { readLastLvMeta, saveLastLv } from '../../src/lib/persist/lastLv';
+import { clearLastLv, readLastLvMeta, saveLastLv } from '../../src/lib/persist/lastLv';
 
 const NAME = 'gaeb-xml-beispiel.x83';
 const FIXTURE = readFileSync(resolve(process.cwd(), 'tests/fixtures', NAME));
@@ -61,5 +61,25 @@ describe('Letzte Datei öffnen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Löschen' }));
     await waitFor(async () => expect(await readLastLvMeta()).toBeNull());
     expect(screen.queryByRole('button', { name: /Letzte Datei öffnen/ })).toBeNull();
+  });
+
+  it('meldet es, wenn die Datei inzwischen gelöscht wurde', async () => {
+    await saveLastLv({ fileName: NAME, positionCount: 3, savedAt: Date.now() }, fixtureBytes());
+    render(<App />);
+    const knopf = await screen.findByRole('button', { name: `Letzte Datei öffnen: ${NAME}` });
+    // z. B. in einem zweiten Tab gelöscht, während diese Startseite offen war
+    await clearLastLv();
+    fireEvent.click(knopf);
+    expect(await screen.findByRole('alert')).toHaveTextContent('nicht mehr gespeichert');
+    expect(screen.queryByRole('button', { name: /Letzte Datei öffnen/ })).toBeNull();
+  });
+
+  it('zeigt einen Ladefehler, wenn die gespeicherte Datei nicht lesbar ist', async () => {
+    const kaputt = new TextEncoder().encode('kein GAEB').buffer as ArrayBuffer;
+    await saveLastLv({ fileName: NAME, positionCount: 3, savedAt: Date.now() }, kaputt);
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: `Letzte Datei öffnen: ${NAME}` }));
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '+ Filter' })).toBeNull();
   });
 });

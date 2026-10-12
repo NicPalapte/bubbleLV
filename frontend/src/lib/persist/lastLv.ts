@@ -131,6 +131,31 @@ export async function saveLastLv(meta: LastLvMeta, bytes: ArrayBuffer): Promise<
   }
 }
 
+/**
+ * Setzt nur den Zeitpunkt neu, die Bytes bleiben unberührt. Ohne gespeichertes
+ * Projekt passiert nichts.
+ */
+export async function touchLastLv(savedAt: number): Promise<void> {
+  const db = await openDb();
+  if (db === null) return;
+  try {
+    const tx = db.transaction(STORE, 'readwrite');
+    const store = tx.objectStore(STORE);
+    const request = store.get(KEY_META);
+    // Schreiben direkt im Erfolgs-Callback: nach einem `await` könnte die
+    // Transaktion schon abgeschlossen sein.
+    request.onsuccess = () => {
+      const meta: unknown = request.result;
+      if (isMeta(meta)) store.put({ ...meta, savedAt }, KEY_META);
+    };
+    await transactionDone(tx);
+  } catch {
+    // Ein alter Zeitpunkt ist kein Fehler, den jemand sehen muss.
+  } finally {
+    db.close();
+  }
+}
+
 /** Löscht das gespeicherte Projekt. */
 export async function clearLastLv(): Promise<void> {
   const db = await openDb();

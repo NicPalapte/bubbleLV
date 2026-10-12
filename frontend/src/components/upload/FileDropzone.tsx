@@ -15,9 +15,15 @@ import {
   readLastLv,
   readLastLvMeta,
   saveLastLv,
+  touchLastLv,
   type LastLvMeta,
 } from '../../lib/persist/lastLv';
-import { loadLv, loadLvFromBytes, LVLoadError, MAX_FILE_BYTES } from '../../lib/pipeline/loadLv';
+import {
+  loadLvFromBytes,
+  LVLoadError,
+  MAX_FILE_BYTES,
+  readLvFile,
+} from '../../lib/pipeline/loadLv';
 import { UNEXPECTED_FAILURE } from '../../lib/pipeline/messages';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { LoadedLV } from '../../lib/pipeline/runPipeline';
@@ -98,10 +104,16 @@ export function FileDropzone() {
                 'Es wird immer nur eine Datei gelesen.',
             ]
           : [];
-      const lv = await run((onNotice) => loadLv(file, { onNotice }), vorab);
+      // Die Bytes einmal lesen und für Laden und Speichern teilen: eine Datei bis
+      // 50 MB nicht zweimal im Speicher, und kein zweites Lesen, das scheitern kann.
+      let bytes: ArrayBuffer | null = null;
+      const lv = await run(async (onNotice) => {
+        bytes = await readLvFile(file);
+        return loadLvFromBytes(bytes, file.name, { onNotice });
+      }, vorab);
       // Erst nach erfolgreichem Laden merken: eine kaputte Datei soll nicht die
       // letzte gute ersetzen. Demo-LVs werden nie gespeichert.
-      if (lv !== null) await merke(lv, await file.arrayBuffer());
+      if (lv !== null && bytes !== null) await merke(lv, bytes);
     },
     [run],
   );
@@ -118,12 +130,10 @@ export function FileDropzone() {
             'Die zuletzt geöffnete Datei ist in diesem Browser nicht mehr gespeichert.',
           );
         }
-        letzteBytes.current = gespeichert.bytes;
         return loadLvFromBytes(gespeichert.bytes, gespeichert.meta.fileName, { onNotice });
       });
       // Zeitpunkt auffrischen, damit „gestern 16:42" das letzte Öffnen meint.
-      if (lv !== null && letzteBytes.current !== null) await merke(lv, letzteBytes.current);
-      letzteBytes.current = null;
+      if (lv !== null) await touchLastLv(Date.now());
     })();
   };
 
@@ -131,8 +141,6 @@ export function FileDropzone() {
     setLetzte(null);
     void clearLastLv();
   };
-
-  const letzteBytes = useRef<ArrayBuffer | null>(null);
 
   const openDemo = (demo: DemoLv): void => {
     if (loading) return;
