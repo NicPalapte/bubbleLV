@@ -435,3 +435,25 @@ describe('viewerReducer · Vergleich (Entscheidung 0037)', () => {
     expect(next.selection.positionId).toBe(searched.selection.positionId);
   });
 });
+
+describe('viewerReducer · Tour', () => {
+  it('Start und Ende zählen als gesehen; ein neues LV beendet die Tour, bietet sie aber nicht neu an', () => {
+    const started = viewerReducer(loadedState(), { type: 'tour', step: 0 });
+    expect(started.view.tour).toEqual({ step: 0, seen: true });
+    const reloaded = loadedState(started);
+    expect(reloaded.view.tour).toEqual({ step: null, seen: true });
+  });
+
+  it('Ablehnen ohne Start merkt sich das Angebot', () => {
+    const declined = viewerReducer(loadedState(), { type: 'tour', step: null });
+    expect(declined.view.tour).toEqual({ step: null, seen: true });
+    expect(viewerReducer(declined, { type: 'tour', step: null })).toBe(declined);
+  });
+
+  it('lässt Filter und Auswahl in Ruhe', () => {
+    const state = loadedState();
+    const next = viewerReducer(state, { type: 'tour', step: 3 });
+    expect(next.filter).toBe(state.filter);
+    expect(next.selection).toBe(state.selection);
+  });
+});

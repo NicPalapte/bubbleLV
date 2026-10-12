@@ -140,6 +140,12 @@ export function clampSideWidth(width: number): number {
   return Math.round(Math.min(SIDE_WIDTH_MAX, Math.max(SIDE_WIDTH_MIN, width)));
 }
 
+export interface TourState {
+  step: number | null;
+  /** Einmal je Sitzung: nach dem ersten LV bietet Bubble die Tour an, danach nicht mehr. */
+  seen: boolean;
+}
+
 export interface ViewState {
   /** Immer `graph` — Überblick und Tabelle liegen darüber, siehe `setViewMode`. */
   mode: ViewMode;
@@ -147,6 +153,8 @@ export interface ViewState {
   side: SidePanel | null;
   /** Breite des Seitenfensters; am rechten Rand ziehbar. */
   sideWidth: number;
+  /** Geführte Tour: aktueller Schritt (`null` = aus) und ob sie schon angeboten war. */
+  tour: TourState;
   tableWindow: TableWindowState;
   /** Vergleichsfenster: dieselbe Mechanik wie die Tabelle. */
   compareWindow: TableWindowState;
@@ -164,6 +172,8 @@ export type ViewAction =
   /** Seitenfenster auf einen Reiter öffnen; `null` schließt es. */
   | { type: 'sidePanel'; panel: SidePanel | null }
   | { type: 'sideWidth'; width: number }
+  /** Tour auf einen Schritt setzen; `null` beendet sie. Start oder Ende zählen als gesehen. */
+  | { type: 'tour'; step: number | null }
   | { type: 'tableWindow'; open: boolean }
   | { type: 'tableWindowPos'; pos: CardPos }
   | { type: 'tableWindowSize'; size: PanelSize }
@@ -204,6 +214,7 @@ export const INITIAL_VIEW_STATE: ViewState = {
   mode: 'graph',
   side: null,
   sideWidth: SIDE_WIDTH_DEFAULT,
+  tour: { step: null, seen: false },
   tableWindow: { open: false, pos: DEFAULT_TABLE_POS, size: DEFAULT_TABLE_SIZE },
   compareWindow: { open: false, pos: DEFAULT_COMPARE_POS, size: DEFAULT_COMPARE_SIZE },
   // Einstieg ist das LV in seiner Gliederung; „Matrix" ist der zweite Blick.
@@ -243,6 +254,7 @@ export function viewStateForNewLv(state: ViewState): ViewState {
       size: state.compareWindow.size,
     },
     sideWidth: state.sideWidth,
+    tour: { step: null, seen: state.tour.seen },
     panelSize: state.panelSize,
     cardPos: state.cardPos,
   };
@@ -273,6 +285,13 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
     }
     case 'sidePanel':
       return state.side === action.panel ? state : { ...state, side: action.panel };
+    case 'tour':
+      return state.tour.step === action.step && state.tour.seen
+        ? state
+        : {
+            ...state,
+            tour: { step: action.step === null ? null : Math.max(0, action.step), seen: true },
+          };
     case 'sideWidth': {
       const width = clampSideWidth(action.width);
       return width === state.sideWidth ? state : { ...state, sideWidth: width };

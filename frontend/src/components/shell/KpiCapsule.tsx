@@ -60,6 +60,7 @@ export function KpiCapsule() {
     <div
       role="group"
       aria-label="Kennzahlen"
+      data-tour="kpis"
       className="ov-glass absolute left-[16px] top-[16px] z-[8] flex gap-[2px] p-[4px]"
     >
       <Kpi

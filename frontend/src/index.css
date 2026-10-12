@@ -203,6 +203,7 @@
   --shadow-hairline: 0 1px 0 rgba(21, 33, 49, 0.02);
   --scrim: rgba(255, 255, 255, 0.94);
   --backdrop: rgba(21, 33, 49, 0.12);
+  --spot: rgba(21, 33, 49, 0.42);
 
   --dur-fast: 0.1s;
   --dur-base: 0.12s;
@@ -285,6 +286,7 @@
     --shadow-hairline: 0 1px 0 rgba(0, 0, 0, 0.2);
     --scrim: rgba(22, 30, 42, 0.92);
     --backdrop: rgba(0, 0, 0, 0.45);
+    --spot: rgba(0, 0, 0, 0.6);
     color-scheme: dark;
   }
 }
@@ -358,6 +360,7 @@
   --shadow-hairline: 0 1px 0 rgba(0, 0, 0, 0.2);
   --scrim: rgba(22, 30, 42, 0.92);
   --backdrop: rgba(0, 0, 0, 0.45);
+  --spot: rgba(0, 0, 0, 0.6);
   color-scheme: dark;
 }
 

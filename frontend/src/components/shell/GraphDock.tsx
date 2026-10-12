@@ -24,6 +24,7 @@ export function GraphDock() {
         <button
           type="button"
           onClick={() => dispatch({ type: 'tableWindow', open: true })}
+          data-tour="table"
           className={`${PILL} text-ink`}
         >
           ▴ Tabelle <span className="text-mute">{formatCount(shown)}</span>
@@ -33,6 +34,7 @@ export function GraphDock() {
         <button
           type="button"
           onClick={() => dispatch({ type: 'compareWindow', open: true })}
+          data-tour="compare"
           className={`${PILL} !border-blue text-blueD`}
         >
           ⇄ Vergleich <span>{formatCount(selection.compare.length)}</span>
