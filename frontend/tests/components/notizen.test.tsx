@@ -61,6 +61,14 @@ describe('Markierungen und Kommentare', () => {
 
     expect(document.querySelectorAll('[data-note="mark"]')).toHaveLength(1);
     expect(document.querySelectorAll('[data-note="note"]')).toHaveLength(1);
+    // Schilder liegen hinter allen Punkten im SVG, also immer davor im Bild.
+    const punkte = document.querySelectorAll('[data-tier="position"]');
+    const letzterPunkt = punkte[punkte.length - 1];
+    const schild = document.querySelector('[data-note="mark"]');
+    expect(
+      schild !== null &&
+        letzterPunkt.compareDocumentPosition(schild) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     await waitFor(async () =>
       expect(await readLastLvMeta()).toMatchObject({ marked: 1, comments: 1 }),
     );

@@ -9,6 +9,13 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.15.1 — 13.10.2026 · Markierung vorn
+
+- Die Schilder ⚑ und ✎ im Graphen liegen jetzt immer vor allen Punkten. Vorher
+  verdeckte sie manchmal ein Nachbarpunkt.
+- Der Knopf ⚑ zum Markieren steht unten in der Positionskarte neben „Vergleichen“
+  und „In der Tabelle zeigen“. Das Feld „Kommentar“ bleibt ganz unten im Inhalt.
+
 ## 0.15.0 — 12.10.2026 · Kommentare
 
 - **Markieren und kommentieren.** Die Positionskarte hat einen Knopf „⚑ Markieren“ und

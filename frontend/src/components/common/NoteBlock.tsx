@@ -1,34 +1,19 @@
 // Eigene Markierung und Kommentar zu einer Position (Entscheidung 0047).
+// Der Knopf „Markieren“ steht unten in der Karte bei „Vergleichen“, das Feld
+// „Kommentar“ als letzter Block im Inhalt.
 // Gespeichert wird beim Tippen, ohne Knopf — useSaveAnnotations schreibt kurz
 // danach in den Speicher der letzten Datei.
 
-import { Section } from './CardParts';
+import { CARD_BUTTON, Section } from './CardParts';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 
 export function NoteBlock({ positionId }: { positionId: string }) {
   const { annotations, persistId } = useViewer();
   const dispatch = useViewerDispatch();
-  const marked = annotations.marked.has(positionId);
   const note = annotations.notes.get(positionId) ?? '';
 
   return (
-    <Section
-      title="Kommentar"
-      right={
-        <button
-          type="button"
-          aria-pressed={marked}
-          onClick={() => dispatch({ type: 'toggleMark', id: positionId })}
-          className={`inline-flex h-[26px] cursor-pointer items-center gap-[6px] rounded-[var(--r-pill)] border px-[10px] font-mono text-[10.5px] ${
-            marked
-              ? 'border-ink bg-ink text-surface'
-              : 'border-line bg-surface text-ink hover:border-line2'
-          }`}
-        >
-          ⚑ {marked ? 'Markiert' : 'Markieren'}
-        </button>
-      }
-    >
+    <Section title="Kommentar">
       <textarea
         value={note}
         onChange={(event) =>
@@ -45,5 +30,33 @@ export function NoteBlock({ positionId }: { positionId: string }) {
         </span>
       )}
     </Section>
+  );
+}
+
+// Wie CARD_BUTTON, aber dunkel gefüllt. Eigene Klassenliste statt Anhängen:
+// bei zwei bg-Klassen entscheidet die Reihenfolge im CSS, nicht im Attribut.
+const MARKED_BUTTON =
+  'inline-flex h-[30px] cursor-pointer items-center rounded-[var(--r-sm)] border border-ink ' +
+  'bg-ink px-[12px] font-mono text-[10.5px] text-surface focus-visible:border-blue';
+
+/**
+ * Knopf „⚑“ für die Fußleiste der Positionskarte. Nur das Zeichen, wie das
+ * Schild am Punkt: so passt er neben „Vergleichen“ und „In der Tabelle zeigen“.
+ */
+export function MarkButton({ positionId }: { positionId: string }) {
+  const { annotations } = useViewer();
+  const dispatch = useViewerDispatch();
+  const marked = annotations.marked.has(positionId);
+  return (
+    <button
+      type="button"
+      aria-pressed={marked}
+      aria-label={marked ? 'Markiert' : 'Markieren'}
+      onClick={() => dispatch({ type: 'toggleMark', id: positionId })}
+      title={marked ? 'Markierung aufheben' : 'Position markieren'}
+      className={marked ? MARKED_BUTTON : CARD_BUTTON}
+    >
+      ⚑
+    </button>
   );
 }
