@@ -51,7 +51,7 @@ export function MarkButton({ positionId }: { positionId: string }) {
     <button
       type="button"
       aria-pressed={marked}
-      aria-label={marked ? 'Markiert' : 'Markieren'}
+      aria-label="Markieren"
       onClick={() => dispatch({ type: 'toggleMark', id: positionId })}
       title={marked ? 'Markierung aufheben' : 'Position markieren'}
       className={marked ? MARKED_BUTTON : CARD_BUTTON}

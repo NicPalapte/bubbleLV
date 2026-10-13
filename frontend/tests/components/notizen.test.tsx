@@ -54,7 +54,7 @@ describe('Markierungen und Kommentare', () => {
     waehlePunkt(0);
 
     fireEvent.click(await screen.findByRole('button', { name: /Markieren/ }));
-    expect(screen.getByRole('button', { name: /Markiert/, pressed: true })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Markieren', pressed: true })).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Kommentar zur Position'), {
       target: { value: 'Boden prüfen' },
     });
