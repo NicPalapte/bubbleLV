@@ -9,7 +9,7 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
-## 0.13.0 — 11.10.2026 · Material Beton
+## 0.16.0 — 13.10.2026 · Material Beton
 
 - **Material wird erkannt.** Bubble erkennt Beton und Betonstahl an Stichworten und
   Klassen wie „C30/37" oder „XC4". Neuer Filter „Material".
@@ -19,6 +19,45 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
   Betonstahl im selben Abschnitt.
 - Das Wissen steht in Tabellen, die du in Excel pflegen kannst
   (`docs/setup/materialwissen.md`). Die Inhalte sind ein Entwurf.
+- Einheiten mit Punkt am Ende („Psch.“) gelten als dieselbe wie ohne Punkt. Neue
+  Einheiten-Gruppe „Pauschal“.
+
+## 0.15.1 — 13.10.2026 · Markierung vorn
+
+- Die Schilder ⚑ und ✎ im Graphen liegen jetzt immer vor allen Punkten. Vorher
+  verdeckte sie manchmal ein Nachbarpunkt.
+- Der Knopf ⚑ zum Markieren steht unten in der Positionskarte neben „Vergleichen“
+  und „In der Tabelle zeigen“. Das Feld „Kommentar“ bleibt ganz unten im Inhalt.
+
+## 0.15.0 — 12.10.2026 · Kommentare
+
+- **Markieren und kommentieren.** Die Positionskarte hat einen Knopf „⚑ Markieren“ und
+  ein Feld „Kommentar“. Gespeichert wird beim Tippen.
+- Im Graphen zeigt ein kleines Schild am Punkt, was markiert (⚑) oder kommentiert (✎) ist.
+- Oben neben der Suche filtern „Markiert“ und „Mit Kommentar“ auf genau diese Positionen.
+- Die Tabelle hat die Spalten „Markiert“ und „Kommentar“, der CSV-Export auch.
+- In der Tabelle lässt sich jetzt **jede** Spalte ausblenden, auch OZ und Bezeichnung.
+- Markierungen und Kommentare bleiben zur letzten Datei in diesem Browser gespeichert.
+  Die Startseite zeigt, wie viele es sind. Eine neue Datei beginnt leer, ✕ löscht sie mit.
+  Bei Demo-LVs gelten sie nur bis zum Reload.
+
+## 0.14.0 — 12.10.2026 · Letzte Datei
+
+- **Letzte Datei öffnen.** Die Startseite zeigt unter „Eigenes LV öffnen“ die zuletzt
+  geöffnete Datei mit Anzahl der Positionen und Zeitpunkt. Ein Klick öffnet sie wieder,
+  ohne sie neu zu suchen.
+- Gespeichert wird nur diese eine Datei, und nur in diesem Browser. Eine neue Datei
+  ersetzt sie, Demo-LVs werden nie gespeichert.
+- **✕** neben „Öffnen“ löscht die gespeicherte Datei nach einer Rückfrage.
+
+## 0.13.0 — 12.10.2026 · Tour
+
+- **Kurze Tour.** Nach dem ersten LV fragt Bubble unten links „Neu hier?“. Die Tour zeigt
+  in neun Schritten die wichtigsten Stellen: Punkt, Positionskarte, Suche, Filter,
+  Gliederung, Kennzahlen, Hinweise, Tabelle und das Logo-Menü.
+- Manche Schritte warten, bis man selbst klickt. Jeder Schritt lässt sich überspringen,
+  Escape beendet die Tour.
+- **Logo-Menü** hat den Eintrag „Tour“, um sie jederzeit neu zu starten.
 
 ## 0.12.0 — 11.10.2026 · Ohne Leistungsbereich
 

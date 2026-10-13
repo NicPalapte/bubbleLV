@@ -99,6 +99,61 @@ interface Overlay {
 
 const NO_OVERLAY: Overlay = { pins: [], leader: null, key: '' };
 
+/**
+ * Schilder für eigene Markierung (dunkles ⚑) und Kommentar (blaues ✎) oben
+ * rechts am Punkt (Entscheidung 0047). Der orange Ring bleibt den Prüf-Hinweisen.
+ */
+function NoteBadges({
+  x,
+  y,
+  r,
+  marked,
+  commented,
+}: {
+  x: number;
+  y: number;
+  r: number;
+  marked: boolean;
+  commented: boolean;
+}) {
+  if (!marked && !commented) return null;
+  // Mitwachsend, aber nie größer als der Punkt selbst wirkt.
+  const br = Math.max(2.6, Math.min(6, r * 0.65));
+  const cy = y - r - br * 0.4;
+  const badges: Array<{ key: string; glyph: string; fill: string; text: string }> = [];
+  if (marked) badges.push({ key: 'mark', glyph: '⚑', fill: 'var(--ink)', text: 'var(--surface)' });
+  if (commented) badges.push({ key: 'note', glyph: '✎', fill: 'var(--blue)', text: '#fff' });
+  return (
+    <g pointerEvents="none">
+      {badges.map((badge, i) => {
+        const cx = x + r * 0.7 + i * br * 2.1;
+        return (
+          <g key={badge.key} data-note={badge.key}>
+            <circle
+              cx={cx}
+              cy={cy}
+              r={br}
+              fill={badge.fill}
+              stroke="var(--surface)"
+              strokeWidth={1}
+            />
+            <text
+              x={cx}
+              y={cy}
+              fill={badge.text}
+              fontSize={br * 1.3}
+              textAnchor="middle"
+              dominantBaseline="central"
+            >
+              {badge.glyph}
+            </text>
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
 export function BubbleGraph({ root }: { root: LVNode }) {
   const {
     lv,
@@ -107,6 +162,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
     mask,
     matches,
     hints,
+    annotations,
     sectionColors,
     filter: {
       hideMode,
@@ -175,6 +231,15 @@ export function BubbleGraph({ root }: { root: LVNode }) {
   );
 
   const isHit = useCallback((slot: number) => mask === null || mask[slot] === 1, [mask]);
+  // Punkte mit eigener Notiz, für die oberste Ebene der Schilder.
+  const noteSlots = useMemo(() => {
+    const slots: number[] = [];
+    for (const id of new Set([...annotations.marked, ...annotations.notes.keys()])) {
+      const slot = index.slotOf.get(id);
+      if (slot !== undefined) slots.push(slot);
+    }
+    return slots;
+  }, [annotations, index]);
 
   // Regel-ID → Überschrift, für die Schilder.
   const ruleLabels = useMemo(() => {
@@ -504,6 +569,9 @@ export function BubbleGraph({ root }: { root: LVNode }) {
 
   const onKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>): void => {
     if (order.length === 0) return;
+    // Tippen im Kommentarfeld der Karte (sie liegt im Graphen) ist keine Navigation.
+    const target = event.target;
+    if (target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement) return;
     const current = focusSlot >= 0 ? focusSlot : (order[0]?.[0] ?? -1);
     const g = current >= 0 ? map.groupOf[current] : 0;
     const inGroup = order[g] ?? [];
@@ -938,6 +1006,32 @@ export function BubbleGraph({ root }: { root: LVNode }) {
                   );
                 }),
           )}
+
+          {/* Eigene Notizen in einer eigenen Ebene über allen Punkten: in einer
+              dichten Gruppe verdeckte sonst der nächste Punkt das Schild. Nur über
+              die Positionen mit Notiz, nicht über alle. */}
+          {noteSlots.map((slot) => {
+            const x = map.px[slot];
+            const y = map.py[slot];
+            const r = radii[slot];
+            if (!Number.isFinite(x) || !isInView(cull, x, y, r + 12)) return null;
+            const group = map.groups[map.groupOf[slot]];
+            if (group === undefined || isCoarse(group)) return null;
+            const hit = isHit(slot);
+            if (!hit && hide) return null;
+            const id = index.nodes[slot].id;
+            return (
+              <g key={id} opacity={hit ? 1 : 0.22}>
+                <NoteBadges
+                  x={x}
+                  y={y}
+                  r={r}
+                  marked={annotations.marked.has(id)}
+                  commented={annotations.notes.has(id)}
+                />
+              </g>
+            );
+          })}
 
           {/* Nummer der Spalte im Vergleich, bildschirmfest neben dem Punkt. */}
           {compare.map((id, i) => {

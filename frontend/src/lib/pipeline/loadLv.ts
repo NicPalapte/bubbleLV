@@ -195,9 +195,19 @@ async function parseClassifyBuild(
  * @throws {LVLoadError} mit verständlicher Meldung für die UI.
  */
 export async function loadLv(file: File, options: LoadOptions = {}): Promise<LoadedLV> {
+  return loadLvFromBytes(await readLvFile(file), file.name, options);
+}
+
+/**
+ * Prüft Dateityp und Größe und liest dann die Bytes. Getrennt von `loadLv`, damit
+ * die Startseite dieselben Bytes auch speichern kann, ohne die Datei zweimal zu lesen.
+ *
+ * @throws {LVLoadError} bei falschem Dateityp oder zu großer Datei.
+ */
+export async function readLvFile(file: File): Promise<ArrayBuffer> {
   // Beides vor dem Lesen: eine zu große Datei soll gar nicht erst in den
   // Speicher kommen, und ein falscher Dateityp keine Parser-Meldung erzeugen.
   pruefeDateityp(file.name);
   pruefeGroesse(file.size, file.name);
-  return loadLvFromBytes(await file.arrayBuffer(), file.name, options);
+  return file.arrayBuffer();
 }

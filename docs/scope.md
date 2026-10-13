@@ -14,7 +14,8 @@ Das ist die einzige Aufgabe. Alles, was nicht dem Verstehen einer geladenen Date
 gehört nicht in dieses Produkt.
 
 **Weiterhin nicht verhandelbar:** kein Backend, keine Datenbank, kein Login, keine
-Persistenz über die Session hinaus. Statische Fremd-Assets (Webfonts, npm-Pakete) sind
+Persistenz über die Session hinaus — außer der zuletzt geöffneten Datei im Browser
+samt eigenen Markierungen und Kommentaren dazu (Entscheidungen 0046, 0047). Statische Fremd-Assets (Webfonts, npm-Pakete) sind
 erlaubt, sie transportieren keine Nutzdaten.
 
 ---
@@ -195,10 +196,10 @@ Bewusst **nicht** Teil dieses Produkts. Anfragen dazu werden abgelehnt oder vert
 | Bereich | Anmerkung |
 |---|---|
 | Jede Server-Komponente, DB, Login, SSO | unverändert die härteste Regel |
-| Persistenz über die Session hinaus | kein `localStorage`, keine Cookies, keine IndexedDB für Fachdaten |
+| Persistenz über die Session hinaus | kein `localStorage`, keine Cookies; IndexedDB nur für die zuletzt geöffnete Datei und ihre Notizen (Entscheidungen 0046, 0047) |
 | **Mehrere Dateien gleichzeitig** | Zwei LVs vergleichen (Versionsstände, Nachträge) und x83+x84 zusammenführen: **perspektivisch gewollt, jetzt draußen** |
 | LLM-Klassifizierung | setzt einen Server voraus |
-| Aufgaben, Notizen, Zuständigkeit, Vergabepakete, NU-Anfragen | braucht Persistenz |
+| Aufgaben, Zuständigkeit, Vergabepakete, NU-Anfragen | braucht Persistenz; erlaubt sind nur eigene Markierungen und Kommentare je Position zur letzten Datei (Entscheidung 0047) |
 | Bieterfragen **verwalten** | Bubble liefert nur die Liste der Unklarheiten (UC-6) |
 | Status **ändern** | Status bleibt Filter-Facette, Default `OPEN` aus dem Import |
 | EP-Kalkulation, Preisdatenbank | das ist iTwo, nicht Bubble |

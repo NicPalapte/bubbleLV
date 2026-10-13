@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { EMPTY_ANNOTATIONS, setNote, toggleMark } from '../../src/lib/annotations';
 import { positionsCsv } from '../../src/lib/export/positions';
 import { buildPositionIndex, filterMask } from '../../src/lib/index/positionIndex';
 import { EMPTY_FILTERS, prepareFilters, type Filters } from '../../src/lib/matchPos';
@@ -77,6 +78,17 @@ describe('positionsCsv', () => {
     expect(kopf).toContain('Material');
     expect(kopf).toContain('Bauweise (Beton)');
     expect(kopf.length).toBeGreaterThan(10);
+  });
+
+  it('führt eigene Markierung und Kommentar mit', () => {
+    const id = index.nodes[1].id;
+    const notizen = setNote(toggleMark(EMPTY_ANNOTATIONS, id), id, 'Boden; prüfen');
+    const csv = positionsCsv(index, null, notizen);
+    const kopf = csv.split('\r\n')[0].split(';');
+    expect(kopf).toContain('Markiert');
+    expect(kopf).toContain('Kommentar');
+    expect(csv).toContain(';ja;"Boden; prüfen";');
+    expect(datenzeilen(csv)).toHaveLength(index.size);
   });
 
   it('macht aus einer fehlenden Menge kein Feld mit 0', () => {

@@ -5,6 +5,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { CardHead, GroupPill, PropTable, Section, StatRow } from './CardParts';
 import { Highlighted } from './Highlighted';
+import { NoteBlock } from './NoteBlock';
 import { HintBlock } from '../check/HintBlock';
 import {
   attributeLabel,
@@ -218,6 +219,9 @@ export function PositionDetails({
             </div>
           )}
         </Section>
+
+        {/* Eigene Notizen zuletzt: erst lesen, was die Datei sagt (Entscheidung 0047). */}
+        <NoteBlock positionId={node.id} />
       </div>
     </>
   );

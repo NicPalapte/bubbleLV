@@ -4,6 +4,7 @@
 // bekommen dasselbe Ergebnis (Issue #18, WP-L).
 
 import { useMemo, useReducer, type ReactNode } from 'react';
+import { annotationAllowList } from '../lib/annotations';
 import { EMPTY_HINTS, hintsByPosition, type HintIndex } from '../lib/check';
 import {
   buildPositionIndex,
@@ -54,7 +55,17 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
 
   // Eine Aufbereitung je Filterwechsel — Trefferzahlen, Tabelle und Überblick
   // rechnen gegen dieselbe.
-  const active = useMemo<ActiveFilters>(() => prepareFilters(filters, search), [filters, search]);
+  // Die Zulassungsliste aus Markierungen/Kommentaren ändert sich nur, solange
+  // ihr Filter an ist — sonst bleibt sie `null` und kein Tastendruck im
+  // Kommentarfeld löst einen Filterlauf aus.
+  const allow = useMemo(
+    () => annotationAllowList(state.annotations, state.filter.notes),
+    [state.annotations, state.filter.notes],
+  );
+  const active = useMemo<ActiveFilters>(
+    () => prepareFilters(filters, search, allow),
+    [filters, search, allow],
+  );
 
   const matches = useMemo<MatchIndex>(() => {
     if (tree === null) return EMPTY_MATCHES;

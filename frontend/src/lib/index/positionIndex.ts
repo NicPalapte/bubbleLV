@@ -13,7 +13,7 @@
 // Werte stehen als `NaN` — 0 wäre eine erfundene Menge und würde Min/Max
 // verfälschen.
 
-import { matchFacts, positionFacts, type ActiveFilters, type PositionFacts } from '../matchPos';
+import { matchNode, positionFacts, type ActiveFilters, type PositionFacts } from '../matchPos';
 import { collectPositions } from '../tree/buildTree';
 import type { LVNode, PositionSummary } from '../../types/lvNode';
 
@@ -82,7 +82,7 @@ export function filterMask(index: PositionIndex, active: ActiveFilters): Uint8Ar
     return mask;
   }
   for (let i = 0; i < index.size; i++) {
-    if (matchFacts(index.facts[i], active)) mask[i] = 1;
+    if (matchNode(index.nodes[i].id, index.facts[i], active)) mask[i] = 1;
   }
   return mask;
 }
@@ -102,6 +102,6 @@ export function createPositionFilter(
     if (node.position === null) return false;
     const slot = index.slotOf.get(node.id);
     if (slot !== undefined) return mask[slot] === 1;
-    return matchFacts(positionFacts(node.position), active);
+    return matchNode(node.id, positionFacts(node.position), active);
   };
 }

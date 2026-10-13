@@ -1,10 +1,12 @@
 // Positionstabelle (Issue #41, WP-41-3): Standardreihenfolge der Spalten,
 // Popover „Spalten" zum Ein-/Ausblenden und Verschieben, Zieh-Griffe je Spalte.
 
+import { useEffect } from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { PositionsTable } from '../../src/components/table/PositionsTable';
 import { ViewerProvider } from '../../src/state/ViewerProvider';
+import { useViewerDispatch } from '../../src/state/viewer';
 import type { LVNode, PositionSummary } from '../../src/types/lvNode';
 
 function position(oz: string): PositionSummary {
@@ -53,6 +55,16 @@ function headerLabels(): string[] {
     .map((header) => header.textContent?.replace(/[↑↓]/g, '').trim() ?? '');
 }
 
+/** Legt Notizen an, wie die Positionskarte es tut. */
+function Notizen() {
+  const dispatch = useViewerDispatch();
+  useEffect(() => {
+    dispatch({ type: 'toggleMark', id: 'position:01.0010' });
+    dispatch({ type: 'setNote', id: 'position:01.0010', text: 'Boden prüfen' });
+  }, [dispatch]);
+  return null;
+}
+
 function renderTable() {
   return render(
     <ViewerProvider>
@@ -81,6 +93,8 @@ describe('PositionsTable · Spalten', () => {
       'Bauteiltyp',
       'Druckfestigkeit',
       'Status',
+      'Markiert',
+      'Kommentar',
     ]);
   });
 
@@ -99,22 +113,40 @@ describe('PositionsTable · Spalten', () => {
     expect(headerLabels()).toContain('Einheit');
   });
 
-  it('lässt OZ und Bezeichnung nicht ausblenden', () => {
+  it('lässt jede Spalte ausblenden, auch OZ und Bezeichnung', () => {
     renderTable();
     click(screen.getByRole('button', { name: /Spalten/ }));
     const list = screen.getByRole('list', { name: 'Spalten' });
-    expect(within(list).getByRole('checkbox', { name: 'OZ' })).toBeDisabled();
-    expect(within(list).getByRole('checkbox', { name: 'Bezeichnung' })).toBeDisabled();
+    for (const checkbox of within(list).getAllByRole('checkbox')) click(checkbox);
+    expect(screen.queryAllByRole('columnheader')).toHaveLength(0);
+    expect(screen.getByText('Alle Spalten ausgeblendet.')).toBeTruthy();
+
+    click(within(list).getByRole('checkbox', { name: 'OZ' }));
+    expect(headerLabels()).toEqual(['OZ']);
+  });
+
+  it('zeigt Markierung und Kommentar der eigenen Notizen', () => {
+    render(
+      <ViewerProvider>
+        <Notizen />
+        <PositionsTable root={section} />
+      </ViewerProvider>,
+    );
+    const zeile = screen.getByRole('row', { name: /01\.0010/ });
+    expect(within(zeile).getByLabelText('markiert')).toBeTruthy();
+    expect(within(zeile).getByText('Boden prüfen')).toBeTruthy();
+    const andere = screen.getByRole('row', { name: /01\.0020/ });
+    expect(within(andere).queryByLabelText('markiert')).toBeNull();
   });
 
   it('verschiebt eine Spalte und setzt alles zurück', () => {
     renderTable();
     click(screen.getByRole('button', { name: /Spalten/ }));
-    click(screen.getByRole('button', { name: 'Status nach oben' }));
-    expect(headerLabels().slice(-2)).toEqual(['Status', 'Druckfestigkeit']);
+    click(screen.getByRole('button', { name: 'Kommentar nach oben' }));
+    expect(headerLabels().slice(-2)).toEqual(['Kommentar', 'Markiert']);
 
     click(screen.getByRole('button', { name: 'zurücksetzen' }));
-    expect(headerLabels().slice(-2)).toEqual(['Druckfestigkeit', 'Status']);
+    expect(headerLabels().slice(-2)).toEqual(['Markiert', 'Kommentar']);
   });
 
   it('hat je Spaltenkopf einen Zieh-Griff', () => {
@@ -165,7 +197,7 @@ describe('PositionsTable · Spaltenbreite (Review zu PR #43)', () => {
 
   it('reserviert die Summe der Spaltenbreiten, damit waagerecht gescrollt wird', () => {
     renderTable();
-    const total = 110 + 260 + 70 + 90 + 90 + 120 + 110 + 130 + 90;
+    const total = 110 + 260 + 70 + 90 + 90 + 120 + 110 + 130 + 90 + 70 + 220;
     const header = screen.getAllByRole('row')[0];
     expect(header.style.minWidth).toBe(`${total}px`);
   });

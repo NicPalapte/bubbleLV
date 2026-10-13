@@ -8,8 +8,10 @@ Datei dient, gehört nicht in dieses Produkt.
 
 **Reine Frontend-Anwendung** – kein Server, keine Datenbank, kein Login. GAEB-Datei im
 Browser laden, klassifizieren, prüfen und im Graphen mit Fenstern darüber
-durchsuchen und filtern. Nichts wird gespeichert – die Datei verlässt den
-Browser nie, ein Reload verwirft den Stand.
+durchsuchen und filtern. Die Datei verlässt den Browser nie. Einzige Ausnahme vom
+Nicht-Speichern: die zuletzt geöffnete eigene Datei samt eigenen Markierungen und Kommentaren
+bleibt in der IndexedDB dieses Browsers (`docs/decisions/0046-letzte-datei-im-browser.md`,
+`docs/decisions/0047-kommentare-und-markierungen.md`); sonst verwirft ein Reload den Stand.
 
 Vollständige Projekt-/Ordnerbeschreibung: @README.md
 Scope: @docs/scope.md · Plan: @docs/implementation-plan.md · Prüfregeln: @docs/domain/vob-pruefungen.md
@@ -41,6 +43,12 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
 - **Kein `localStorage`/`sessionStorage`/Cookies für Fachdaten.** Reiner UI-Zustand
   (Auswahl, Zoom, aktive Filter) darf in React-State/Context leben, muss aber einen
   Reload nicht überleben.
+- **IndexedDB nur über `frontend/src/lib/persist/lastLv.ts`:** genau ein Projekt
+  (Original-Bytes + Angaben der zuletzt geöffneten eigenen Datei + Markierungen/Kommentare
+  je Positions-ID, `lib/annotations.ts`), löschbar auf der Startseite. Kein geparstes LV
+  speichern, keine Demo-LVs, keine zweite Datei. Notizen nur schreiben, wenn die
+  Projekt-Kennung (`persistIdOf`) noch passt. Fehlt IndexedDB ⇒ still ohne Speicher
+  weiter, kein Fehler (Entscheidungen 0046, 0047).
 
 ### Client-seitige Pipeline (Kern)
 - `GaebParser` ist die **einzige** Stelle mit GAEB-XML-Kenntnis
@@ -99,14 +107,16 @@ fachliche Filter · **Graph als Hauptscreen** auf einem Filterzustand: Seitenfen
 (Überblick mit Import-Log · Filter · Prüfung), Positionskarte, Tabelle und Vergleich
 (max. 4 Positionen) als Fenster darüber (`docs/decisions/0034-graph-als-hauptscreen.md`,
 `docs/decisions/0037-vergleichsfenster.md`) · Beziehungen zwischen Positionen nur als
-Prüfregel (Ausreißer, G4) · lokaler Export/Druck über das Logo-Menü. Matrix und
+Prüfregel (Ausreißer, G4) · eigene Markierung + Kommentar je Position zur letzten Datei
+(`docs/decisions/0047-kommentare-und-markierungen.md`) · lokaler Export/Druck über das
+Logo-Menü. Matrix und
 Ähnlichkeit sind entfernt (`docs/decisions/0031-drei-ansichten.md`); keine
 Befehlspalette (`docs/decisions/0038-keine-befehlspalette.md`).
 
 **Out of Scope** (ablehnen / vertrösten): Server jeglicher Art, Persistenz über die
 Session hinaus, Auth/SSO, **mehrere Dateien gleichzeitig** (Versionsvergleich,
-x83+x84-Merge — perspektivisch gewollt, jetzt draußen), Aufgaben, Notizen,
-Vergabepakete, NU-Anfragen, Bieterfragen **verwalten**, Zuständigkeit/Zuweisung,
+x83+x84-Merge — perspektivisch gewollt, jetzt draußen), Aufgaben, Notizen außer
+Markierung/Kommentar je Position, Vergabepakete, NU-Anfragen, Bieterfragen **verwalten**, Zuständigkeit/Zuweisung,
 Status-**Änderung**, EP-Kalkulation, Excel-/Manuell-Import, Multi-Tenant, GAEB-Export,
 LLM-Klassifizierung. Details → @docs/scope.md #out-of-scope
 

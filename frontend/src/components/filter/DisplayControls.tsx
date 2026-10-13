@@ -25,9 +25,18 @@ const NO_COLS = '';
 /** Kleine Großbuchstaben-Beschriftung wie im Mockup (`.cap`). */
 export const CAP = 'font-mono text-[10px] font-medium uppercase tracking-[0.7px] text-mute';
 
-export function Row({ label, children }: { label: string; children: ReactNode }) {
+export function Row({
+  label,
+  tour,
+  children,
+}: {
+  label: string;
+  /** Ziel eines Tour-Schritts (components/tour/). */
+  tour?: string;
+  children: ReactNode;
+}) {
   return (
-    <div className="flex flex-col gap-[6px]">
+    <div data-tour={tour} className="flex flex-col gap-[6px]">
       <span className={CAP}>{label}</span>
       <div className="flex flex-wrap">{children}</div>
     </div>
@@ -57,7 +66,7 @@ export function DisplayControls() {
 
   return (
     <div className="flex flex-col gap-[12px]">
-      <Row label="Gliederung">
+      <Row label="Gliederung" tour="layout">
         <SegmentedControl
           label="Gliederung"
           options={LAYOUTS}
