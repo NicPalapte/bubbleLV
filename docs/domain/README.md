@@ -63,9 +63,7 @@ Material und seine Merkmale stehen als Tabelle je Material unter
 ([`decisions/0045`](../decisions/0045-materialwissen-als-tabelle.md)). Ein Material wird
 an Stichworten oder Mustern erkannt (z. B. „C#/#" oder „XC#" ⇒ Beton); erst dann sucht
 die App seine Merkmale (Art, Bauweise, Bewehrung). Wie man die Tabellen pflegt:
-[`setup/materialwissen.md`](../setup/materialwissen.md). Weitere Stichworte für andere
-Materialien als ungeprüfter Rohstoff:
-[`reference/entwuerfe/material-entwurf.csv`](reference/entwuerfe/material-entwurf.csv).
+[`setup/materialwissen.md`](../setup/materialwissen.md).
 
 Bauteiltyp (`Wand`, `Decke`, `Fundament`, …) und die nicht-physischen `positionsart`-Werte
 (`personal`, `planung`, …) ohne LB-Zuordnung bleiben interne, nicht-normative

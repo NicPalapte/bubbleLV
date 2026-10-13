@@ -1,5 +1,6 @@
 // Einheiten im Filter zusammenführen — in zwei Stufen:
-//  1. Schreibweise (Groß-/Kleinschreibung, Leerraum, hochgestellte Ziffern) —
+//  1. Schreibweise (Groß-/Kleinschreibung, Leerraum, hochgestellte Ziffern,
+//     Punkt am Ende) —
 //     objektiv, steht im Code.
 //  2. Inhaltliche Gruppen ("Stk" = "Stück") — Fachaussage, steht in
 //     docs/domain/reference/einheiten-gruppen.csv.
@@ -26,9 +27,14 @@ function pos(unit: string | null): PositionSummary {
 
 describe('canonicalUnit', () => {
   it('führt Groß-/Kleinschreibung zusammen', () => {
-    expect(canonicalUnit('PSCH')).toBe('psch');
-    expect(canonicalUnit('psch')).toBe('psch');
-    expect(canonicalUnit('Psch')).toBe('psch');
+    expect(canonicalUnit('LFM')).toBe('lfm');
+    expect(canonicalUnit('Lfm')).toBe('lfm');
+  });
+
+  it('übergeht den Abkürzungspunkt am Ende', () => {
+    expect(unitSpelling('Psch.')).toBe('psch');
+    expect(unitSpelling('Std.')).toBe('std');
+    expect(canonicalUnit('psch')).toBe(canonicalUnit('Psch.'));
   });
 
   it('führt hochgestellte Ziffern mit den flachen zusammen', () => {
@@ -55,6 +61,7 @@ describe('canonicalUnit', () => {
     expect(canonicalUnit('to')).toBe(canonicalUnit('t'));
     expect(canonicalUnit('h')).toBe(canonicalUnit('Std'));
     expect(canonicalUnit('Stunden')).toBe(canonicalUnit('h'));
+    expect(canonicalUnit('PSCH')).toBe(canonicalUnit('pau.'));
   });
 
   it('nimmt die Gruppen aus der Referenzdatei, nicht aus dem Code', () => {
@@ -84,7 +91,6 @@ describe('unitLabel', () => {
   });
 
   it('lässt alles andere, wie es ist', () => {
-    expect(unitLabel('psch')).toBe('psch');
     expect(unitLabel('lfm')).toBe('lfm');
   });
 });
@@ -99,7 +105,7 @@ describe('Facette „Einheit"', () => {
 
   it('beschriftet den Wert lesbar', () => {
     expect(facetOptionLabel(facet, 'm3')).toBe('m³');
-    expect(facetOptionLabel(facet, 'psch')).toBe('psch');
+    expect(facetOptionLabel(facet, 'lfm')).toBe('lfm');
   });
 
   it('lässt eine Position ohne Einheit aus der Facette heraus', () => {

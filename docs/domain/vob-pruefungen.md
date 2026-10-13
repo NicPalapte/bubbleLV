@@ -88,7 +88,7 @@ Spalte `quelle_version`. Nicht im Code hartkodieren, nicht erfinden.
 |---|---|---|
 | [`reference/pruefregeln.csv`](reference/pruefregeln.csv) | Regel-ID, Status, Norm-Verweis | alle |
 | [`reference/vob-nebenleistungen.csv`](reference/vob-nebenleistungen.csv) | ATV-Nummer, Abschnitt, Leistungstext, Stichworte | V8, V9 |
-| [`reference/hersteller-produktnamen.csv`](reference/hersteller-produktnamen.csv) | Hersteller-/Produktname, Gewerk, Stichworte | V3 |
+| [`reference/hersteller-produktnamen.csv`](reference/hersteller-produktnamen.csv) | Hersteller-/Produktname, Stichworte | V3 |
 | [`reference/risiko-formulierungen.csv`](reference/risiko-formulierungen.csv) | Formulierung, Regel-ID, Schweregrad | V4 |
 | [`reference/einheiten-gruppen.csv`](reference/einheiten-gruppen.csv) | Einheiten, die dasselbe bedeuten | G3, V2 |
 

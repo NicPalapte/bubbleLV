@@ -12,7 +12,6 @@ gepflegt werden — nicht vom Modell erfunden oder aus dem Internet geraten (sie
 | [`hersteller-produktnamen.csv`](hersteller-produktnamen.csv) | Hersteller-/Produktnamen — Regel V3 | Owner |
 | [`vob-nebenleistungen.csv`](vob-nebenleistungen.csv) | Nebenleistungen je ATV — Regeln V8, V9 | VOB/C des Owners |
 | [`einheiten-gruppen.csv`](einheiten-gruppen.csv) | Einheiten, die dasselbe bedeuten („Stk" = „Stück") | Owner |
-| [`entwuerfe/material-entwurf.csv`](entwuerfe/material-entwurf.csv) | **Entwurf, nicht geladen:** Materialstichworte, von Claude vorgeschlagen, fachlich ungeprüft. Rohstoff für weitere Materialtabellen ([`../../decisions/0045-materialwissen-als-tabelle.md`](../../decisions/0045-materialwissen-als-tabelle.md)) | Entwurf, Owner prüft |
 
 ## `pruefregeln.csv` — Status je Regel
 
