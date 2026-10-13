@@ -362,11 +362,11 @@ describe('Regelzustand', () => {
   });
 
   it('macht eine Regel ohne Referenzdaten inaktiv — mit Grund, ohne Fehler', () => {
-    const v3 = rule(result, 'V3');
-    expect(v3.active).toBe(false);
-    expect(v3.count).toBe(0);
-    expect(v3.inactiveReason).toContain('hersteller-produktnamen.csv');
-    expect(flagsOf(result, 'V3')).toHaveLength(0);
+    const v8 = rule(result, 'V8');
+    expect(v8.active).toBe(false);
+    expect(v8.count).toBe(0);
+    expect(v8.inactiveReason).toContain('vob-nebenleistungen.csv');
+    expect(flagsOf(result, 'V8')).toHaveLength(0);
   });
 
   it('markiert einen noch nicht bestätigten Norm-Verweis als solchen', () => {

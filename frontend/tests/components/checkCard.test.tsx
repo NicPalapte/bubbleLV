@@ -92,9 +92,9 @@ describe('CheckCard', () => {
 
   it('nennt bei einer inaktiven Regel den Grund statt sie zu verstecken', () => {
     renderView();
-    const v3 = sectionOf('V3');
-    expect(within(v3).getByText('inaktiv')).toBeTruthy();
-    expect(within(v3).getByText(/hersteller-produktnamen\.csv/)).toBeTruthy();
+    const v8 = sectionOf('V8');
+    expect(within(v8).getByText('inaktiv')).toBeTruthy();
+    expect(within(v8).getByText(/vob-nebenleistungen\.csv/)).toBeTruthy();
   });
 
   it('klappt die Funde einer Regel auf und listet die Positionen', () => {
