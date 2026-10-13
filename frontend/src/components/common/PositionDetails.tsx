@@ -178,8 +178,6 @@ export function PositionDetails({
             sehen, ob an ihr etwas auffällt (WP-R, R1). */}
         <HintBlock positionId={node.id} />
 
-        <NoteBlock positionId={node.id} />
-
         {position.longText !== '' && (
           <Section title="Langtext">
             {categories.length > 0 && (
@@ -221,6 +219,9 @@ export function PositionDetails({
             </div>
           )}
         </Section>
+
+        {/* Eigene Notizen zuletzt: erst lesen, was die Datei sagt (Entscheidung 0047). */}
+        <NoteBlock positionId={node.id} />
       </div>
     </>
   );
