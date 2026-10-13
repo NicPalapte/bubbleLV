@@ -5,9 +5,9 @@ Art,Leichtbeton,leichtbeton*|LC#/#,,Entwurf: LC-Klasse = Leichtbeton (DIN EN 206
 Art,Schwerbeton,schwerbeton*,,Entwurf
 Art,Spannbeton,spannbeton*|vorgespannt*,,Entwurf
 Art,Faserbeton,faserbeton*|stahlfaserbeton*,,Entwurf
-Bauweise,Ortbeton,ortbeton*|vor ort betoniert|vor ort hergestellt,,Entwurf
+Bauweise,Ortbeton,ortbeton*,,Entwurf
 Bauweise,Fertigteil,fertigteil*|betonfertigteil*|stahlbetonfertigteil*,,Entwurf
 Bauweise,Halbfertigteil,halbfertigteil*|elementdecke*|elementwand*|filigrandecke*|doppelwand*,,Entwurf
 Bewehrung,enthalten,bewehrt*|einschl. bewehrung|einschließlich bewehrung|inkl. bewehrung|inklusive bewehrung|mit bewehrung,,Entwurf
-Bewehrung,gesondert,bewehrung gesondert*|bewehrung wird gesondert*|bewehrung siehe*|bewehrung separat*|ohne bewehrung,,Entwurf: „ohne Bewehrung“ kann auch unbewehrt heißen
+Bewehrung,gesondert,bewehrung gesondert*|bewehrung wird gesondert*|bewehrung siehe*|bewehrung separat*,,Entwurf: „ohne Bewehrung“ kann auch unbewehrt heißen
 Bewehrung,unbewehrt,unbewehrt*,,Entwurf
