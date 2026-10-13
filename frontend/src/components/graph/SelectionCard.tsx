@@ -25,6 +25,7 @@
 import { useCallback, useRef } from 'react';
 import { CARD_BUTTON } from '../common/CardParts';
 import { NodeDetails } from '../common/NodeDetails';
+import { MarkButton } from '../common/NoteBlock';
 import { PositionDetails } from '../common/PositionDetails';
 import { useDismiss } from '../common/useDismiss';
 import { useDragResize } from '../common/useDragResize';
@@ -154,7 +155,7 @@ export function SelectionCard({ node, onClose }: SelectionCardProps) {
       {/* Sprung in die Tabelle (WP-Q, Schritt 5; Issue #51): der Klick auf eine
           Bubble öffnet diese Karte — wer die Zeile im Zusammenhang sehen will,
           kommt von hier aus dorthin. */}
-      <div className="flex shrink-0 gap-[8px] border-t border-line px-[16px] py-[10px]">
+      <div className="flex shrink-0 flex-wrap gap-[8px] border-t border-line px-[16px] py-[10px] [&>button]:whitespace-nowrap">
         {node.position !== null && (
           <CompareButton
             inCompare={compare.includes(node.id)}
@@ -179,6 +180,7 @@ export function SelectionCard({ node, onClose }: SelectionCardProps) {
         >
           In der Tabelle zeigen
         </button>
+        {node.position !== null && <MarkButton positionId={node.id} />}
       </div>
       {/* Trefferfläche 18 px, sichtbar sind nur die zwei Haarlinien in der Ecke;
           `currentColor` färbt sie beim Überfahren und bei Fokus blau. */}

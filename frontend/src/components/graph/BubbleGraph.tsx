@@ -231,6 +231,15 @@ export function BubbleGraph({ root }: { root: LVNode }) {
   );
 
   const isHit = useCallback((slot: number) => mask === null || mask[slot] === 1, [mask]);
+  // Punkte mit eigener Notiz, für die oberste Ebene der Schilder.
+  const noteSlots = useMemo(() => {
+    const slots: number[] = [];
+    for (const id of new Set([...annotations.marked, ...annotations.notes.keys()])) {
+      const slot = index.slotOf.get(id);
+      if (slot !== undefined) slots.push(slot);
+    }
+    return slots;
+  }, [annotations, index]);
 
   // Regel-ID → Überschrift, für die Schilder.
   const ruleLabels = useMemo(() => {
@@ -961,13 +970,6 @@ export function BubbleGraph({ root }: { root: LVNode }) {
                       {type === 'ZULAGENPOSITION' && (
                         <circle cx={x} cy={y} r={1.6} fill="var(--surface)" />
                       )}
-                      <NoteBadges
-                        x={x}
-                        y={y}
-                        r={r}
-                        marked={annotations.marked.has(index.nodes[slot].id)}
-                        commented={annotations.notes.has(index.nodes[slot].id)}
-                      />
                       {slot === selectedSlot && (
                         <>
                           <circle
@@ -1004,6 +1006,32 @@ export function BubbleGraph({ root }: { root: LVNode }) {
                   );
                 }),
           )}
+
+          {/* Eigene Notizen in einer eigenen Ebene über allen Punkten: in einer
+              dichten Gruppe verdeckte sonst der nächste Punkt das Schild. Nur über
+              die Positionen mit Notiz, nicht über alle. */}
+          {noteSlots.map((slot) => {
+            const x = map.px[slot];
+            const y = map.py[slot];
+            const r = radii[slot];
+            if (!Number.isFinite(x) || !isInView(cull, x, y, r + 12)) return null;
+            const group = map.groups[map.groupOf[slot]];
+            if (group === undefined || isCoarse(group)) return null;
+            const hit = isHit(slot);
+            if (!hit && hide) return null;
+            const id = index.nodes[slot].id;
+            return (
+              <g key={id} opacity={hit ? 1 : 0.22}>
+                <NoteBadges
+                  x={x}
+                  y={y}
+                  r={r}
+                  marked={annotations.marked.has(id)}
+                  commented={annotations.notes.has(id)}
+                />
+              </g>
+            );
+          })}
 
           {/* Nummer der Spalte im Vergleich, bildschirmfest neben dem Punkt. */}
           {compare.map((id, i) => {
