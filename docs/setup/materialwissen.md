@@ -46,6 +46,22 @@ Der Dateiname ist der Name des Materials: `beton.csv` heißt in der App „Beton
 Folge, wenn Schritt 4 fehlt: Die App nutzt die alte Tabelle, und ein Test schlägt fehl
 (beide Kopien müssen gleich sein).
 
+## Treffer prüfen
+
+Logo-Menü → **Treffer-Protokoll (CSV)**. Die Datei hat eine Zeile je Treffer, für die
+gefilterten Positionen.
+
+| Spalte | Bedeutung |
+|---|---|
+| `Stichwort` · `Tabelle` · `Zeile` | Welches Stichwort aus welcher Tabellenzeile getroffen hat |
+| `Fundtext` · `Ort` | Was im Kurz- oder Langtext gefunden wurde |
+| `Status` | `gezählt` · `verworfen (ausser)` · `nicht gesucht` (Material nicht erkannt) |
+| `Auffällig` | `mehrere Werte` für ein Merkmal · `nur über Muster erkannt` (z. B. nur „C30/37") |
+
+- Eine Wahrscheinlichkeit gibt es nicht: eine Zeile trifft oder nicht.
+- Fehler zeigen sich meist in `Auffällig` oder in einem `Fundtext`, der nicht passt
+  (z. B. „Betonkorrosion" als Beton erkannt) → Stichwort enger fassen oder in `ausser`.
+
 ## Neues Material
 
 Neue Datei anlegen, z. B. `mauerwerk.csv`, mit denselben Spalten. Ohne Zeile

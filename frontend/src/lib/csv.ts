@@ -33,6 +33,8 @@ export function splitCsvLine(line: string, delimiter = ','): string[] {
 /** Zugriff auf die Felder einer Zeile über den Spaltennamen. */
 export interface CsvRow {
   get(column: string): string;
+  /** Zeilennummer in der Datei, wie Excel sie zählt (Kopfzeile = 1). */
+  readonly line: number;
 }
 
 /**
@@ -47,16 +49,19 @@ export function parseCsv(csv: string): CsvRow[] {
   const lines = csv
     .replace(/^\uFEFF/, '')
     .split(/\r?\n/)
-    .filter((line) => line.trim() !== '');
+    .map((text, i) => ({ text, number: i + 1 }))
+    .filter((line) => line.text.trim() !== '');
   if (lines.length === 0) return [];
 
   // Ein deutsches Excel speichert CSV mit `;`. Die Kopfzeile verrät, welches
   // Zeichen die Datei nutzt — sie enthält nie ein Komma in einem Spaltennamen.
-  const delimiter = lines[0].includes(';') && !lines[0].includes(',') ? ';' : ',';
-  const header = splitCsvLine(lines[0], delimiter).map((field) => field.toLowerCase());
+  const kopf = lines[0].text;
+  const delimiter = kopf.includes(';') && !kopf.includes(',') ? ';' : ',';
+  const header = splitCsvLine(kopf, delimiter).map((field) => field.toLowerCase());
   return lines.slice(1).map((line) => {
-    const fields = splitCsvLine(line, delimiter);
+    const fields = splitCsvLine(line.text, delimiter);
     return {
+      line: line.number,
       get(column: string): string {
         const index = header.indexOf(column.toLowerCase());
         return index < 0 ? '' : (fields[index] ?? '');

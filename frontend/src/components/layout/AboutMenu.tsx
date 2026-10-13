@@ -139,6 +139,12 @@ export function AboutMenu({
               Positionen als CSV
             </PopoverRow>
             <PopoverRow
+              onClick={() => nimmMit(mitnehmen.trefferAlsCsv)}
+              title="Welche Stichworte der Materialtabellen was getroffen haben"
+            >
+              Treffer-Protokoll (CSV)
+            </PopoverRow>
+            <PopoverRow
               onClick={() => nimmMit(mitnehmen.hinweiseAlsMarkdown)}
               title="Die Hinweise der Prüfung im aktuellen Filter als Textdatei"
             >

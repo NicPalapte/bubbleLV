@@ -19,6 +19,9 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
   Betonstahl im selben Abschnitt.
 - Das Wissen steht in Tabellen, die du in Excel pflegen kannst
   (`docs/setup/materialwissen.md`). Die Inhalte sind ein Entwurf.
+- **Treffer-Protokoll:** Im Logo-Menü lädt „Treffer-Protokoll (CSV)“ eine Datei mit
+  jedem Treffer der Materialtabellen: Stichwort, Tabellenzeile, Fundtext, Status und
+  Auffälligkeiten. Damit findest du Fehler in den Tabellen.
 - Einheiten mit Punkt am Ende („Psch.“) gelten als dieselbe wie ohne Punkt. Neue
   Einheiten-Gruppe „Pauschal“.
 

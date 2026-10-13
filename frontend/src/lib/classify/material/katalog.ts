@@ -10,13 +10,17 @@
 //  - ausser: Fundstellen, die trotz Treffer nicht zählen („betonstahl*").
 //  - bemerkung: nur für Menschen.
 
-import { parseCsv } from '../../csv';
+import { parseCsv, type CsvRow } from '../../csv';
 import { compileAusser, compileStichworte, splitStichworte } from './stichwort';
 
 export interface Matcher {
   /** Global, damit `matchAll` jede Fundstelle liefert. */
   readonly pattern: RegExp;
   readonly ausser: RegExp | null;
+  /** Die Stichworte der Zelle, wie sie in der Tabelle stehen — fürs Treffer-Protokoll. */
+  readonly stichworte: readonly string[];
+  /** Zeile in der Tabelle (Kopfzeile = 1). */
+  readonly zeile: number;
 }
 
 export interface MerkmalWert {
@@ -36,6 +40,8 @@ export interface MaterialMerkmal {
 export interface MaterialDefinition {
   /** Aus dem Dateinamen, z. B. `beton`. */
   readonly id: string;
+  /** Dateiname der Tabelle, z. B. „beton.csv". */
+  readonly datei: string;
   /** Anzeigename, z. B. „Beton". */
   readonly name: string;
   /** Je Erkennungszeile ein Matcher — ein `ausser` gilt nur für seine Zeile. */
@@ -64,9 +70,12 @@ function capitalize(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-function matcher(stichworte: string, ausser: string): Matcher | null {
-  const pattern = compileStichworte(splitStichworte(stichworte));
-  return pattern === null ? null : { pattern, ausser: compileAusser(splitStichworte(ausser)) };
+function matcher(row: CsvRow): Matcher | null {
+  const stichworte = splitStichworte(row.get('stichworte'));
+  const pattern = compileStichworte(stichworte);
+  if (pattern === null) return null;
+  const ausser = compileAusser(splitStichworte(row.get('ausser')));
+  return { pattern, ausser, stichworte, zeile: row.line };
 }
 
 /** Eine Materialtabelle lesen. `fileName` ohne Pfad, z. B. „beton.csv". */
@@ -80,11 +89,11 @@ export function parseMaterialCsv(fileName: string, csv: string): MaterialDefinit
     const name = row.get('merkmal');
     if (name === '') continue;
     if (name.toLowerCase() === ERKENNUNG) {
-      const found = matcher(row.get('stichworte'), row.get('ausser'));
+      const found = matcher(row);
       if (found !== null) erkennung.push(found);
       continue;
     }
-    const found = matcher(row.get('stichworte'), row.get('ausser'));
+    const found = matcher(row);
     if (found === null) continue;
     const key = id + capitalize(slug(name));
     const entry = merkmale.get(key) ?? { name, werte: [] };
@@ -95,6 +104,7 @@ export function parseMaterialCsv(fileName: string, csv: string): MaterialDefinit
 
   return {
     id,
+    datei: fileName,
     name: capitalize(base.replace(/[-_]+/g, ' ')),
     erkennung,
     merkmale: [...merkmale].map(([key, { name, werte }]) => ({ key, name, werte })),

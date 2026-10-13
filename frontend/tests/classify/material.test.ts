@@ -7,6 +7,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { extractMaterial } from '../../src/lib/classify/extractors/material';
 import { materialKatalog, parseMaterialCsv } from '../../src/lib/classify/material/katalog';
+import { trefferProtokoll } from '../../src/lib/classify/material/protokoll';
 import { compileStichworte } from '../../src/lib/classify/material/stichwort';
 import { FACETS_BY_ID } from '../../src/lib/facets';
 import { attributeLabel } from '../../src/lib/attributes';
@@ -133,6 +134,59 @@ describe('Material erkennen', () => {
     const ortbeton = spans.filter((span) => longText.slice(span.start, span.end) === 'Ortbeton');
     expect(ortbeton.map((span) => span.label)).toEqual(['Bauweise: Ortbeton', 'Beton']);
     expect(spans.every((span) => span.key === 'material')).toBe(true);
+  });
+});
+
+describe('Treffer-Protokoll', () => {
+  const protokoll = (shortText: string, longText = '') =>
+    trefferProtokoll({ shortText, longText }, [BETON]);
+
+  it('nennt Tabelle, Zeile, Stichwort und Ort je Treffer', () => {
+    expect(protokoll('', 'Wand aus Ortbeton.')).toEqual([
+      expect.objectContaining({
+        merkmal: 'Erkennung',
+        fundtext: 'Ortbeton',
+        stichwort: '*beton',
+        tabelle: 'beton.csv',
+        zeile: 2,
+        ort: 'Langtext',
+        status: 'gezählt',
+      }),
+      expect.objectContaining({ merkmal: 'Bauweise', wert: 'Ortbeton', zeile: 3 }),
+    ]);
+  });
+
+  it('führt Treffer, die „ausser" verwirft, mit Status', () => {
+    expect(protokoll('Betonstahl')).toEqual([
+      expect.objectContaining({ fundtext: 'Betonstahl', status: 'verworfen (ausser)' }),
+    ]);
+  });
+
+  it('meldet ein Merkmal ohne erkanntes Material als nicht gesucht', () => {
+    expect(protokoll('Fertigteiltreppe aus Holz')).toEqual([
+      expect.objectContaining({ merkmal: 'Bauweise', status: 'nicht gesucht' }),
+    ]);
+  });
+
+  it('markiert mehrere Werte eines Merkmals und Erkennung nur über Muster', () => {
+    const zeilen = protokoll('Fertigteil C30/37', 'teils Ortbeton');
+    const bauweise = zeilen.filter((zeile) => zeile.merkmal === 'Bauweise');
+    expect(bauweise.map((zeile) => zeile.auffaellig)).toEqual([
+      'mehrere Werte: Ortbeton, Fertigteil',
+      'mehrere Werte: Ortbeton, Fertigteil',
+    ]);
+    const nurKlasse = protokoll('Wand C30/37').find((zeile) => zeile.merkmal === 'Erkennung');
+    expect(nurKlasse?.auffaellig).toBe('nur über Muster erkannt');
+  });
+
+  it('zählt dasselbe wie die Erkennung', () => {
+    for (const text of ['Wand aus Ortbeton', 'Betonstahl B500B', 'Fertigteil aus Holz']) {
+      const gezaehlt = protokoll(text).filter((zeile) => zeile.status === 'gezählt');
+      const attributes = material(text).attributes;
+      expect(gezaehlt.some((zeile) => zeile.merkmal === 'Erkennung')).toBe(
+        attributes.material !== undefined,
+      );
+    }
   });
 });
 
