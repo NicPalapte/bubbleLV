@@ -35,10 +35,45 @@ interface ActiveChip {
 const GHOST =
   'inline-flex h-[32px] shrink-0 cursor-pointer items-center gap-[6px] rounded-[var(--r-sm)] border-none bg-transparent px-[10px] font-mono text-[11px] text-dim hover:bg-sunken hover:text-ink';
 
+/** Filterschalter für eigene Notizen; versteckt, solange es nichts zu filtern gibt. */
+function NoteFilterButton({
+  label,
+  glyph,
+  count,
+  on,
+  onClick,
+}: {
+  label: string;
+  glyph: string;
+  count: number;
+  on: boolean;
+  onClick: () => void;
+}) {
+  if (count === 0 && !on) return null;
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      onClick={onClick}
+      title={on ? `${label}: Filter aus` : `Nur ${label.toLowerCase()} zeigen`}
+      className={`inline-flex h-[30px] shrink-0 cursor-pointer items-center gap-[6px] whitespace-nowrap rounded-[var(--r-pill)] border px-[11px] font-mono text-[10.5px] shadow-[var(--shadow-sm)] ${
+        on
+          ? 'border-blue bg-blueS text-blueD'
+          : 'border-line bg-surface text-dim hover:border-line2'
+      }`}
+    >
+      <span aria-hidden="true">{glyph}</span>
+      {label}
+      <span className={on ? 'text-blueD' : 'text-mute'}>{count}</span>
+    </button>
+  );
+}
+
 export function TopBar() {
   const {
     lv,
-    filter: { filters, search },
+    filter: { filters, search, notes },
+    annotations,
     view,
   } = useViewer();
   const dispatch = useViewerDispatch();
@@ -218,6 +253,23 @@ export function TopBar() {
                 + Filter
               </button>
             </div>
+
+            {/* Eigene Markierungen und Kommentare (Entscheidung 0047): erst sichtbar,
+                wenn es welche gibt — sonst wären es zwei leere Knöpfe mehr. */}
+            <NoteFilterButton
+              label="Markiert"
+              glyph="⚑"
+              count={annotations.marked.size}
+              on={notes.marked}
+              onClick={() => dispatch({ type: 'toggleNoteFilter', key: 'marked' })}
+            />
+            <NoteFilterButton
+              label="Mit Kommentar"
+              glyph="✎"
+              count={annotations.notes.size}
+              on={notes.commented}
+              onClick={() => dispatch({ type: 'toggleNoteFilter', key: 'commented' })}
+            />
 
             {view.mode !== 'graph' && (
               <button

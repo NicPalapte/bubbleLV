@@ -12,11 +12,13 @@ import { GAEB_ENDUNGEN } from '../../lib/gaeb';
 import { formatPositions, formatWhen } from '../../lib/format';
 import {
   clearLastLv,
+  newPersistId,
+  persistIdOf,
   readLastLv,
   readLastLvMeta,
   saveLastLv,
   touchLastLv,
-  type LastLvMeta,
+  type LastLvInfo,
 } from '../../lib/persist/lastLv';
 import {
   loadLvFromBytes,
@@ -26,7 +28,15 @@ import {
 } from '../../lib/pipeline/loadLv';
 import { UNEXPECTED_FAILURE } from '../../lib/pipeline/messages';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
+import type { Annotations } from '../../lib/annotations';
 import type { LoadedLV } from '../../lib/pipeline/runPipeline';
+
+/** Ergebnis eines Ladewegs: das LV und, wenn gespeichert, seine Notizen. */
+interface Geladen {
+  lv: LoadedLV;
+  annotations?: Annotations;
+  persistId?: string | null;
+}
 
 // Der Dateidialog unterscheidet Groß- und Kleinschreibung der Endung je nach System.
 const ACCEPT = GAEB_ENDUNGEN.flatMap((endung) => [`.${endung}`, `.${endung.toUpperCase()}`]).join(
@@ -45,7 +55,7 @@ export function FileDropzone() {
   // Beim Überfahren von Kindelementen feuert dragleave, obwohl der Zeiger die
   // Ablage nie verlassen hat — deshalb wird gezählt statt geschaltet.
   const dragDepth = useRef(0);
-  const [letzte, setLetzte] = useState<LastLvMeta | null>(null);
+  const [letzte, setLetzte] = useState<LastLvInfo | null>(null);
 
   useEffect(() => {
     let aktiv = true;
@@ -64,14 +74,14 @@ export function FileDropzone() {
    */
   const run = useCallback(
     async (
-      load: (onNotice: (message: string) => void) => Promise<LoadedLV>,
+      load: (onNotice: (message: string) => void) => Promise<Geladen>,
       vorab: readonly string[] = [],
     ): Promise<LoadedLV | null> => {
       dispatch({ type: 'loading' });
       const notices = [...vorab];
       try {
-        const lv = await load((message) => notices.push(message));
-        dispatch({ type: 'loaded', lv, notices });
+        const { lv, annotations, persistId } = await load((message) => notices.push(message));
+        dispatch({ type: 'loaded', lv, notices, annotations, persistId });
         return lv;
       } catch (cause) {
         // Ein erwarteter Fehler (leere Datei, falsches Format …) erklärt sich selbst.
@@ -109,13 +119,18 @@ export function FileDropzone() {
       let bytes: ArrayBuffer | null = null;
       const lv = await run(async (onNotice) => {
         bytes = await readLvFile(file);
-        return loadLvFromBytes(bytes, file.name, { onNotice });
+        return { lv: await loadLvFromBytes(bytes, file.name, { onNotice }) };
       }, vorab);
       // Erst nach erfolgreichem Laden merken: eine kaputte Datei soll nicht die
       // letzte gute ersetzen. Demo-LVs werden nie gespeichert.
-      if (lv !== null && bytes !== null) await merke(lv, bytes);
+      if (lv === null || bytes === null) return;
+      const persistId = newPersistId();
+      // Die Kennung erst nach dem Speichern setzen: scheitert es (volle oder
+      // gesperrte IndexedDB), bleiben Notizen sichtbar in der Sitzung. Was schon
+      // während des Speicherns entstand, schreibt useSaveAnnotations danach.
+      if (await merke(lv, bytes, persistId)) dispatch({ type: 'persisted', lv, persistId });
     },
-    [run],
+    [run, dispatch],
   );
 
   const openLetzte = (): void => {
@@ -130,7 +145,11 @@ export function FileDropzone() {
             'Die zuletzt geöffnete Datei ist in diesem Browser nicht mehr gespeichert.',
           );
         }
-        return loadLvFromBytes(gespeichert.bytes, gespeichert.meta.fileName, { onNotice });
+        return {
+          lv: await loadLvFromBytes(gespeichert.bytes, gespeichert.meta.fileName, { onNotice }),
+          annotations: gespeichert.annotations,
+          persistId: persistIdOf(gespeichert.meta),
+        };
       });
       // Zeitpunkt auffrischen, damit „gestern 16:42" das letzte Öffnen meint.
       if (lv !== null) await touchLastLv(Date.now());
@@ -156,7 +175,8 @@ export function FileDropzone() {
 
   const openDemo = (demo: DemoLv): void => {
     if (loading) return;
-    void run((onNotice) => loadDemoLv(demo, { onNotice }));
+    // Demo-LVs: Notizen gehen, bleiben aber nur in der Sitzung (`persistId` fehlt).
+    void run(async (onNotice) => ({ lv: await loadDemoLv(demo, { onNotice }) }));
   };
 
   const openDialog = (): void => {
@@ -313,15 +333,15 @@ export function FileDropzone() {
 }
 
 /** Speichert das geladene LV als „letzte Datei"; Fehler beim Speichern bleiben still. */
-async function merke(lv: LoadedLV, bytes: ArrayBuffer): Promise<void> {
-  await saveLastLv(
-    { fileName: lv.fileName, positionCount: lv.summary.positionCount, savedAt: Date.now() },
+async function merke(lv: LoadedLV, bytes: ArrayBuffer, id: string): Promise<boolean> {
+  return saveLastLv(
+    { fileName: lv.fileName, positionCount: lv.summary.positionCount, savedAt: Date.now(), id },
     bytes,
   );
 }
 
 interface LetzteDateiProps {
-  meta: LastLvMeta;
+  meta: LastLvInfo;
   loading: boolean;
   onOpen: () => void;
   onForget: () => void;
@@ -362,6 +382,12 @@ function LetzteDatei({ meta, loading, onOpen, onForget }: LetzteDateiProps) {
         </span>
         <span className="start-recent-meta">
           <span>{formatPositions(meta.positionCount)}</span>
+          {meta.marked > 0 && <span className="start-recent-mk">⚑ {meta.marked} markiert</span>}
+          {meta.comments > 0 && (
+            <span className="start-recent-km">
+              ✎ {meta.comments} {meta.comments === 1 ? 'Kommentar' : 'Kommentare'}
+            </span>
+          )}
           <span>{formatWhen(meta.savedAt)}</span>
         </span>
       </span>

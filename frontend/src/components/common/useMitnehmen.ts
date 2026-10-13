@@ -35,7 +35,7 @@ export function exportFehler(was: string): string {
 }
 
 export function useMitnehmen(): Mitnehmen {
-  const { lv, index, active, filter, matches, nodes } = useViewer();
+  const { lv, index, active, filter, matches, nodes, annotations } = useViewer();
   const dispatch = useViewerDispatch();
 
   const absichern = useCallback(
@@ -58,11 +58,11 @@ export function useMitnehmen(): Mitnehmen {
       const mask = active.filtering ? filterMask(index, active) : null;
       downloadText(
         exportFileName(lv.fileName, 'positionen', 'csv'),
-        positionsCsv(index, mask),
+        positionsCsv(index, mask, annotations),
         'csv',
       );
     });
-  }, [lv, index, active, absichern]);
+  }, [lv, index, active, annotations, absichern]);
 
   const hinweiseAlsMarkdown = useCallback((): void => {
     if (lv === null) return;

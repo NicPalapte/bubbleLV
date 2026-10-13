@@ -14,7 +14,6 @@ import {
 
 const ORDER = ['oz', 'shortText', 'unit', 'quantity'];
 const WIDTHS = { oz: 100, shortText: 200, unit: 60, quantity: 80 };
-const LOCKED = new Set(['oz', 'shortText']);
 
 describe('columns', () => {
   it('startet mit allen Spalten sichtbar in Vorgabereihenfolge', () => {
@@ -33,15 +32,19 @@ describe('columns', () => {
     expect(config.order).toEqual(ORDER);
   });
 
-  it('blendet Spalten aus und wieder ein, gesperrte nie', () => {
+  it('blendet jede Spalte aus und wieder ein, auch OZ und Bezeichnung', () => {
     const config = defaultColumnConfig(ORDER, WIDTHS);
-    const hidden = toggleColumn(config, 'unit', LOCKED);
+    const hidden = toggleColumn(config, 'unit');
     expect(visibleColumnKeys(hidden)).toEqual(['oz', 'shortText', 'quantity']);
     // Die Reihenfolge merkt sich auch ausgeblendete Spalten.
     expect(hidden.order).toEqual(ORDER);
-    expect(visibleColumnKeys(toggleColumn(hidden, 'unit', LOCKED))).toEqual(ORDER);
-    expect(toggleColumn(config, 'oz', LOCKED)).toBe(config);
-    expect(toggleColumn(config, 'fremd', LOCKED)).toBe(config);
+    expect(visibleColumnKeys(toggleColumn(hidden, 'unit'))).toEqual(ORDER);
+    expect(visibleColumnKeys(toggleColumn(config, 'oz'))).toEqual([
+      'shortText',
+      'unit',
+      'quantity',
+    ]);
+    expect(toggleColumn(config, 'fremd')).toBe(config);
   });
 
   it('begrenzt die Breite auf den erlaubten Bereich', () => {

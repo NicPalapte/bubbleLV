@@ -7,6 +7,11 @@
 // Alles bleibt in der IndexedDB dieses Browsers, kein Request. Fehlt IndexedDB
 // (privates Fenster, gesperrte Website-Daten, Tests), gibt jede Funktion still
 // `null` bzw. nichts zurück — Bubble läuft dann wie ohne Speicher.
+//
+// Seit Entscheidung 0047 liegen hier auch die eigenen Markierungen und Kommentare
+// zu genau dieser Datei. Eine neue Datei beginnt ohne sie.
+
+import { EMPTY_ANNOTATIONS, fromStored, toStored, type Annotations } from '../annotations';
 
 const DB_NAME = 'bubble';
 const DB_VERSION = 1;
@@ -15,17 +20,43 @@ const STORE = 'letztesLv';
 // Angaben und lädt bis zu 50 MB erst, wenn jemand „Öffnen" klickt.
 const KEY_META = 'meta';
 const KEY_BYTES = 'bytes';
+const KEY_NOTES = 'notizen';
+/** Kennung für Einträge aus v0.14, die noch keine eigene `id` haben. */
+const LEGACY_ID = 'v0.14';
 
 export interface LastLvMeta {
   readonly fileName: string;
   readonly positionCount: number;
   /** Zeitpunkt des Speicherns in ms seit 1970. */
   readonly savedAt: number;
+  /**
+   * Kennung dieses gespeicherten Projekts. Notizen werden nur geschrieben, wenn
+   * sie noch stimmt — so landen sie nie bei einer Datei, die inzwischen ersetzt ist.
+   * Fehlt bei Einträgen aus v0.14.
+   */
+  readonly id?: string;
+}
+
+/** Angaben für die Startseite, mit Anzahl der eigenen Notizen. */
+export interface LastLvInfo extends LastLvMeta {
+  readonly marked: number;
+  readonly comments: number;
 }
 
 export interface LastLv {
   readonly meta: LastLvMeta;
   readonly bytes: ArrayBuffer;
+  readonly annotations: Annotations;
+}
+
+/** Kennung, unter der Notizen zu diesem Eintrag gespeichert werden. */
+export function persistIdOf(meta: LastLvMeta): string {
+  return meta.id ?? LEGACY_ID;
+}
+
+/** Neue Kennung für eine frisch gespeicherte Datei. */
+export function newPersistId(): string {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 function requestResult<T>(request: IDBRequest<T>): Promise<T> {
@@ -64,7 +95,8 @@ function isMeta(value: unknown): value is LastLvMeta {
   return (
     typeof meta.fileName === 'string' &&
     typeof meta.positionCount === 'number' &&
-    typeof meta.savedAt === 'number'
+    typeof meta.savedAt === 'number' &&
+    (meta.id === undefined || typeof meta.id === 'string')
   );
 }
 
@@ -75,14 +107,18 @@ function isArrayBuffer(value: unknown): value is ArrayBuffer {
 }
 
 /** Angaben zur gespeicherten Datei, ohne die Bytes. `null`, wenn nichts gespeichert ist. */
-export async function readLastLvMeta(): Promise<LastLvMeta | null> {
+export async function readLastLvMeta(): Promise<LastLvInfo | null> {
   const db = await openDb();
   if (db === null) return null;
   try {
-    const value: unknown = await requestResult(
-      db.transaction(STORE, 'readonly').objectStore(STORE).get(KEY_META),
-    );
-    return isMeta(value) ? value : null;
+    const store = db.transaction(STORE, 'readonly').objectStore(STORE);
+    const [meta, notes]: unknown[] = await Promise.all([
+      requestResult(store.get(KEY_META)),
+      requestResult(store.get(KEY_NOTES)),
+    ]);
+    if (!isMeta(meta)) return null;
+    const annotations = fromStored(notes);
+    return { ...meta, marked: annotations.marked.size, comments: annotations.notes.size };
   } catch {
     return null;
   } finally {
@@ -96,12 +132,17 @@ export async function readLastLv(): Promise<LastLv | null> {
   if (db === null) return null;
   try {
     const store = db.transaction(STORE, 'readonly').objectStore(STORE);
-    const [meta, bytes]: unknown[] = await Promise.all([
+    const [meta, bytes, notes]: unknown[] = await Promise.all([
       requestResult(store.get(KEY_META)),
       requestResult(store.get(KEY_BYTES)),
+      requestResult(store.get(KEY_NOTES)),
     ]);
     if (!isMeta(meta) || !isArrayBuffer(bytes)) return null;
-    return { meta, bytes };
+    return {
+      meta,
+      bytes,
+      annotations: notes === undefined ? EMPTY_ANNOTATIONS : fromStored(notes),
+    };
   } catch {
     return null;
   } finally {
@@ -119,9 +160,11 @@ export async function saveLastLv(meta: LastLvMeta, bytes: ArrayBuffer): Promise<
   try {
     const tx = db.transaction(STORE, 'readwrite');
     const store = tx.objectStore(STORE);
-    // Eine Transaktion für beide Schlüssel: nie Angaben zu einer anderen Datei.
+    // Eine Transaktion für alle Schlüssel: nie Angaben oder Notizen zu einer
+    // anderen Datei. Die neue Datei beginnt ohne Notizen.
     store.put(bytes, KEY_BYTES);
     store.put({ ...meta }, KEY_META);
+    store.delete(KEY_NOTES);
     await transactionDone(tx);
     return true;
   } catch {
@@ -151,6 +194,34 @@ export async function touchLastLv(savedAt: number): Promise<void> {
     await transactionDone(tx);
   } catch {
     // Ein alter Zeitpunkt ist kein Fehler, den jemand sehen muss.
+  } finally {
+    db.close();
+  }
+}
+
+/**
+ * Speichert Markierungen und Kommentare zum gespeicherten Projekt `id`. Ist
+ * inzwischen eine andere Datei gespeichert (zweiter Tab), wird nichts geschrieben.
+ */
+export async function saveAnnotations(id: string, annotations: Annotations): Promise<boolean> {
+  const db = await openDb();
+  if (db === null) return false;
+  let written = false;
+  try {
+    const tx = db.transaction(STORE, 'readwrite');
+    const store = tx.objectStore(STORE);
+    const request = store.get(KEY_META);
+    // Prüfen und Schreiben in derselben Transaktion (siehe touchLastLv).
+    request.onsuccess = () => {
+      const meta: unknown = request.result;
+      if (!isMeta(meta) || persistIdOf(meta) !== id) return;
+      store.put(toStored(annotations), KEY_NOTES);
+      written = true;
+    };
+    await transactionDone(tx);
+    return written;
+  } catch {
+    return false;
   } finally {
     db.close();
   }

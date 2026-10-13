@@ -30,6 +30,7 @@ import {
   type ViewAction,
   type ViewState,
 } from './viewState';
+import { EMPTY_ANNOTATIONS, setNote, toggleMark, type Annotations } from '../lib/annotations';
 import type { HintIndex } from '../lib/check';
 import { AXIS_FACETS } from '../lib/graph/layoutMap';
 import type { PositionIndex } from '../lib/index/positionIndex';
@@ -76,6 +77,18 @@ export interface ViewerState {
    * aber die Datei ist da. Anders als `error` verdrängen sie die Ansicht nicht.
    */
   notices: readonly string[];
+  /** Eigene Markierungen und Kommentare zum geladenen LV (Entscheidung 0047). */
+  annotations: Annotations;
+  /**
+   * Stand der Notizen beim Laden — so steht er schon im Speicher. Gleicht
+   * `annotations` ihm (dieselbe Referenz), gibt es nichts zu schreiben.
+   */
+  loadedAnnotations: Annotations;
+  /**
+   * Kennung des gespeicherten Projekts, zu dem das LV gehört (lib/persist/lastLv.ts).
+   * `null` bei Demo-LVs oder ohne Speicher: dann bleiben Notizen in der Sitzung.
+   */
+  persistId: string | null;
   filter: FilterState;
   selection: SelectionState;
   view: ViewState;
@@ -86,7 +99,20 @@ type LvAction =
   | { type: 'loading' }
   /** Zustand aus einem geteilten Link (WP-P, Schritt 2, lib/share/urlState.ts). */
   | { type: 'applyShared'; shared: SharedState; nodeId: string | null; positionId: string | null }
-  | { type: 'loaded'; lv: LoadedLV; notices?: readonly string[] }
+  | {
+      type: 'loaded';
+      lv: LoadedLV;
+      notices?: readonly string[];
+      annotations?: Annotations;
+      persistId?: string | null;
+    }
+  /**
+   * Datei ist gespeichert, ab jetzt gehen Notizen mit (Entscheidung 0047). Gilt nur,
+   * wenn `lv` noch das geladene LV ist — sonst kam inzwischen ein anderes.
+   */
+  | { type: 'persisted'; lv: LoadedLV; persistId: string }
+  | { type: 'toggleMark'; id: string }
+  | { type: 'setNote'; id: string; text: string }
   /** Hinweis anhängen; derselbe Text erscheint nicht doppelt. */
   | { type: 'notice'; message: string }
   | { type: 'dismissNotices' }
@@ -103,6 +129,9 @@ export const INITIAL_VIEWER_STATE: ViewerState = {
   loading: false,
   error: null,
   notices: [],
+  annotations: EMPTY_ANNOTATIONS,
+  loadedAnnotations: EMPTY_ANNOTATIONS,
+  persistId: null,
   filter: INITIAL_FILTER_STATE,
   selection: INITIAL_SELECTION_STATE,
   view: INITIAL_VIEW_STATE,
@@ -121,10 +150,15 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
         ...INITIAL_VIEWER_STATE,
         lv: action.lv,
         notices: action.notices ?? [],
+        annotations: action.annotations ?? EMPTY_ANNOTATIONS,
+        loadedAnnotations: action.annotations ?? EMPTY_ANNOTATIONS,
+        persistId: action.persistId ?? null,
         filter: { ...INITIAL_FILTER_STATE, hideMode: state.filter.hideMode },
         selection: INITIAL_SELECTION_STATE,
         view: viewStateForNewLv(state.view),
       };
+    case 'persisted':
+      return state.lv === action.lv ? { ...state, persistId: action.persistId } : state;
     // Ein geteilter Link (WP-P, Schritt 2): Ansicht, Filter und Auswahl in
     // **einem** Schritt setzen. Einzelne Aktionen nacheinander würden
     // Zwischenstände erzeugen, die kurz gezeichnet und sofort wieder
@@ -146,6 +180,12 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
         selection: { ...state.selection, nodeId, positionId },
         view: viewReducer(state.view, { type: 'setViewMode', mode: shared.view }),
       };
+    }
+    case 'toggleMark':
+      return { ...state, annotations: toggleMark(state.annotations, action.id) };
+    case 'setNote': {
+      const annotations = setNote(state.annotations, action.id, action.text);
+      return annotations === state.annotations ? state : { ...state, annotations };
     }
     case 'notice':
       return state.notices.includes(action.message)
@@ -194,6 +234,7 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     case 'setMenge':
     case 'resetFilters':
     case 'hideMode':
+    case 'toggleNoteFilter':
     case 'toggleRule': {
       const filter = filterReducer(state.filter, action);
       return filter === state.filter ? state : { ...state, filter };

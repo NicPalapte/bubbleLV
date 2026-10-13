@@ -9,6 +9,18 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.15.0 — 12.10.2026 · Kommentare
+
+- **Markieren und kommentieren.** Die Positionskarte hat einen Knopf „⚑ Markieren“ und
+  ein Feld „Kommentar“. Gespeichert wird beim Tippen.
+- Im Graphen zeigt ein kleines Schild am Punkt, was markiert (⚑) oder kommentiert (✎) ist.
+- Oben neben der Suche filtern „Markiert“ und „Mit Kommentar“ auf genau diese Positionen.
+- Die Tabelle hat die Spalten „Markiert“ und „Kommentar“, der CSV-Export auch.
+- In der Tabelle lässt sich jetzt **jede** Spalte ausblenden, auch OZ und Bezeichnung.
+- Markierungen und Kommentare bleiben zur letzten Datei in diesem Browser gespeichert.
+  Die Startseite zeigt, wie viele es sind. Eine neue Datei beginnt leer, ✕ löscht sie mit.
+  Bei Demo-LVs gelten sie nur bis zum Reload.
+
 ## 0.14.0 — 12.10.2026 · Letzte Datei
 
 - **Letzte Datei öffnen.** Die Startseite zeigt unter „Eigenes LV öffnen“ die zuletzt
