@@ -28,6 +28,12 @@ describe('Stichwort-Schreibweise', () => {
     expect(trifft(['XC#'], 'XC4, XD1')).toEqual(['XC4']);
   });
 
+  it('liest ** und ## wie * und #', () => {
+    expect(compileStichworte(['beton**'])?.source).toBe(compileStichworte(['beton*'])?.source);
+    expect(compileStichworte(['C##'])?.source).toBe(compileStichworte(['C#'])?.source);
+    expect(trifft(['beton**'], 'Betonwand')).toEqual(['Betonwand']);
+  });
+
   it('lässt zwischen Wörtern beliebigen Leerraum zu', () => {
     expect(trifft(['einschl. bewehrung'], 'einschl.\n  Bewehrung')).toEqual([
       'einschl.\n  Bewehrung',

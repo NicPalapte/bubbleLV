@@ -9,13 +9,18 @@
 /** Buchstabe oder Ziffer, auch Umlaute — die Wortgrenze der Stichworte. */
 const WORD_CHAR = '[\\p{L}\\p{N}]';
 
+// `**` oder `##` hintereinander zählen wie eines: zwei gleiche Wiederholungen in
+// Folge lassen den Regex auf langen Texten ohne Treffer stark zurückspringen.
 function toSource(stichwort: string): string {
   let source = '';
+  const append = (part: string): void => {
+    if (!source.endsWith(part)) source += part;
+  };
   for (const char of stichwort.trim()) {
-    if (char === '*') source += `${WORD_CHAR}*`;
-    else if (char === '#') source += '\\d+';
+    if (char === '*') append(`${WORD_CHAR}*`);
+    else if (char === '#') append('\\d+');
     else if (/\s/.test(char)) {
-      if (!source.endsWith('\\s+')) source += '\\s+';
+      append('\\s+');
     }
     // Mit dem Flag `u` darf nur ein Syntaxzeichen escapt werden — „\-" wäre ein Fehler.
     else source += char.replace(/[.+?^${}()|[\]\\/]/g, '\\$&');
