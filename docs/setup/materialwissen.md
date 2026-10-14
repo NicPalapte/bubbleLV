@@ -4,7 +4,7 @@ Diese Seite ist für den Repo-Owner.
 
 **Kurz:** Je Material gibt es eine Tabelle unter
 [`docs/domain/reference/material/`](../domain/reference/material/). Bearbeiten kannst du
-sie in Excel. Danach muss die Datei in die App kopiert werden (siehe unten).
+sie in Excel. Die App liest genau diese Dateien, eine Kopie gibt es nicht.
 
 ## Aufbau einer Tabelle
 
@@ -40,11 +40,7 @@ Der Dateiname ist der Name des Materials: `beton.csv` heißt in der App „Beton
    Trennzeichen **Komma**.
 2. Zeilen ändern oder ergänzen.
 3. Speichern als **CSV UTF-8**. Sonst gehen Umlaute kaputt.
-4. Die Datei an Claude geben oder in den Ordner `frontend/src/lib/classify/material/data/`
-   kopieren — **gleicher Dateiname**.
-
-Folge, wenn Schritt 4 fehlt: Die App nutzt die alte Tabelle, und ein Test schlägt fehl
-(beide Kopien müssen gleich sein).
+4. Datei auf den Branch hochladen (gleicher Dateiname) oder an Claude geben.
 
 ## Treffer prüfen
 

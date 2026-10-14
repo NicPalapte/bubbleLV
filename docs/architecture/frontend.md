@@ -40,7 +40,7 @@ frontend/
     │   ├── classify/                 # Klassifizierung (Regel-Pipeline, siehe pipeline.md)
     │   │   ├── ruleBased.ts          # Orchestrierung der Stufen hinter Classifier
     │   │   ├── extractors/           # Merkmale + Fundstellen (WP-J)
-    │   │   ├── material/             # Materialtabellen (CSV-Kopie) + Stichwort-Schreibweise
+    │   │   ├── material/             # liest die Materialtabellen + Stichwort-Schreibweise
     │   │   └── rulesets/             # Registry + je Ruleset ein Modul
     │   ├── tree/
     │   │   ├── buildTree.ts          # LVDraft → LVNode-Baum
@@ -68,8 +68,7 @@ frontend/
     │   │   └── types.ts              # Cluster, Outlier, RelationResult
     │   ├── check/                    # Prüfregeln + Hinweise (WP-K)
     │   │   ├── rules/                # ein Modul je Regelgruppe
-    │   │   ├── referenz.ts           # Regel-Status und Listen aus den CSV
-    │   │   └── data/                 # ausgelieferte Kopien der Referenz-CSV
+    │   │   └── referenz.ts           # Regel-Status und Listen aus docs/domain/reference/
     │   ├── pipeline/                 # Datei → LoadedLV, inkl. Web Worker
     │   ├── matchPos.ts               # Filter/Suche — single source of truth
     │   ├── csv.ts                    # gemeinsamer Leser der Referenzdateien

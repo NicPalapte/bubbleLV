@@ -4,10 +4,10 @@
 // nur die Kopfzeile, bleibt die zugehörige Regel inaktiv: kein Fehler, nur ein
 // sichtbarer Hinweis in der Prüfliste.
 
-import herstellerCsv from './data/hersteller-produktnamen.csv?raw';
-import regelnCsv from './data/pruefregeln.csv?raw';
-import risikoCsv from './data/risiko-formulierungen.csv?raw';
-import nebenleistungenCsv from './data/vob-nebenleistungen.csv?raw';
+import herstellerCsv from '@reference/hersteller-produktnamen.csv?raw';
+import regelnCsv from '@reference/pruefregeln.csv?raw';
+import risikoCsv from '@reference/risiko-formulierungen.csv?raw';
+import nebenleistungenCsv from '@reference/vob-nebenleistungen.csv?raw';
 import { parseCsv } from '../csv';
 
 /** Status einer Regel laut Referenzdatei. */

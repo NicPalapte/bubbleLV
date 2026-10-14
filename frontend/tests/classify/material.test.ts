@@ -1,8 +1,8 @@
 // Materialwissen aus Tabellen (Entscheidung 0045): Stichwort-Schreibweise,
 // Lesen der CSV, Erkennung samt Merkmalen und Fundstellen. Die ausgelieferten
-// Tabellen müssen deckungsgleich mit docs/domain/reference/material/ sein.
+// Tabellen liest die App direkt aus docs/domain/reference/material/.
 
-import { readdirSync, readFileSync } from 'node:fs';
+import { readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { extractMaterial } from '../../src/lib/classify/extractors/material';
@@ -191,17 +191,9 @@ describe('Treffer-Protokoll', () => {
 });
 
 describe('Ausgelieferte Materialtabellen', () => {
-  const shippedDir = resolve(process.cwd(), 'src/lib/classify/material/data');
-  const canonicalDir = resolve(process.cwd(), '../docs/domain/reference/material');
-
-  it('sind deckungsgleich mit docs/domain/reference/material/', () => {
-    const shipped = readdirSync(shippedDir).sort();
-    expect(shipped).toEqual(readdirSync(canonicalDir).sort());
-    for (const datei of shipped) {
-      expect(readFileSync(resolve(shippedDir, datei), 'utf-8'), datei).toBe(
-        readFileSync(resolve(canonicalDir, datei), 'utf-8'),
-      );
-    }
+  it('liest jede Tabelle aus docs/domain/reference/material/', () => {
+    const dateien = readdirSync(resolve(process.cwd(), '../docs/domain/reference/material'));
+    expect(materialKatalog().map((material) => material.datei)).toEqual(dateien.sort());
   });
 
   it('bringen Beton mit Art, Bauweise und Bewehrung mit', () => {

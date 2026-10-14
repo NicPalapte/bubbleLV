@@ -17,7 +17,7 @@
 //     und steht deshalb in docs/domain/reference/einheiten-gruppen.csv, nicht im
 //     Code. Ist die Datei leer, greift nur Stufe 1 — kein Fehler.
 
-import gruppenCsv from './check/data/einheiten-gruppen.csv?raw';
+import gruppenCsv from '@reference/einheiten-gruppen.csv?raw';
 import { parseCsv, splitList } from './csv';
 
 /** Hochgestellte Ziffern, wie sie in "m²"/"m³" vorkommen. */

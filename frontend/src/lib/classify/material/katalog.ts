@@ -1,6 +1,6 @@
 // Materialwissen als Daten (docs/decisions/0045-materialwissen-als-tabelle.md).
-// Eine CSV je Material unter docs/domain/reference/material/, ausgeliefert als
-// Kopie in ./data/ (Build-Zeit-Asset, kein Fetch). Der Code kennt kein Material
+// Eine CSV je Material unter docs/domain/reference/material/, zur Build-Zeit
+// eingebunden (Alias `@reference`, vite.config.ts; kein Fetch). Der Code kennt kein Material
 // beim Namen — ein neues Material ist eine neue Datei.
 //
 // Spalten: merkmal · wert · stichworte · ausser · bemerkung
@@ -116,7 +116,11 @@ let katalog: readonly MaterialDefinition[] | null = null;
 /** Alle ausgelieferten Materialtabellen, nach Dateiname sortiert. */
 export function materialKatalog(): readonly MaterialDefinition[] {
   katalog ??= Object.entries(
-    import.meta.glob<string>('./data/*.csv', { query: '?raw', import: 'default', eager: true }),
+    import.meta.glob<string>('@reference/material/*.csv', {
+      query: '?raw',
+      import: 'default',
+      eager: true,
+    }),
   )
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([path, csv]) => parseMaterialCsv(path.split('/').pop() ?? path, csv));
