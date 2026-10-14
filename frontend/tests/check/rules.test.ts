@@ -35,6 +35,10 @@ function position(overrides: Partial<PositionDraft>): PositionDraft {
 
 /** Ein LV aus den gegebenen Positionen, komplett durch die Pipeline gedreht. */
 function check(...positions: PositionDraft[]): CheckResult {
+  return checkMit(CHECK_RULES, ...positions);
+}
+
+function checkMit(ruleSet: readonly CheckRule[], ...positions: PositionDraft[]): CheckResult {
   const draft: LVDraft = {
     projectName: 'Prüf-Test',
     client: null,
@@ -49,7 +53,7 @@ function check(...positions: PositionDraft[]): CheckResult {
   const tree = buildTree(classifyDraft(draft, classifier));
   const index = buildPositionIndex(tree);
   // G4 vergleicht gegen die Cluster aus WP-M — die gehören zum Kontext.
-  return runChecks(index, summarize(index), buildRelations(index));
+  return runChecks(index, summarize(index), buildRelations(index), ruleSet);
 }
 
 function rule(result: CheckResult, id: string): RuleStatus {
@@ -62,7 +66,7 @@ function flagsOf(result: CheckResult, id: string) {
   return result.flags.filter((flag) => flag.id === id);
 }
 
-describe('V1 · Bedarfsposition', () => {
+describe('V1 · Bedarfs- und Alternativposition', () => {
   it('findet die Bedarfsposition und nur sie', () => {
     const result = check(
       position({ oz: '01.001.0010', positionType: 'NORMAL' }),
@@ -74,21 +78,19 @@ describe('V1 · Bedarfsposition', () => {
     expect(rule(result, 'V1').count).toBe(1);
   });
 
-  it('schweigt in einem LV ohne Bedarfspositionen', () => {
-    expect(flagsOf(check(position({})), 'V1')).toHaveLength(0);
-  });
-});
-
-describe('V11 · Alternativposition', () => {
-  it('findet die Alternativposition und nur sie', () => {
+  it('findet auch die Alternativposition, mit eigenem Titel', () => {
     const result = check(
-      position({ oz: '01.001.0010', positionType: 'NORMAL' }),
+      position({ oz: '01.001.0010', positionType: 'BEDARF' }),
       position({ oz: '01.001.0020', positionType: 'ALTERNATIV' }),
     );
-    const flags = flagsOf(result, 'V11');
-    expect(flags).toHaveLength(1);
-    expect(flags[0].positionId).toContain('01.001.0020');
-    expect(rule(result, 'V11').active).toBe(true);
+    expect(flagsOf(result, 'V1').map((flag) => flag.title)).toEqual([
+      'Bedarfsposition',
+      'Alternativposition',
+    ]);
+  });
+
+  it('schweigt in einem LV ohne Bedarfspositionen', () => {
+    expect(flagsOf(check(position({})), 'V1')).toHaveLength(0);
   });
 });
 
@@ -357,22 +359,34 @@ describe('M1 · Bewehrung', () => {
 describe('Regelzustand', () => {
   const result = check(position({}));
 
-  it('meldet jede Regel des Katalogs, auch die inaktiven', () => {
-    expect(result.rules.map((entry) => entry.id)).toEqual(CHECK_RULES.map((entry) => entry.id));
+  it('meldet jede Regel des Katalogs, auch die inaktiven — außer denen auf „aus"', () => {
+    const aus = ['V8', 'V9', 'V10'];
+    expect(result.rules.map((entry) => entry.id)).toEqual(
+      CHECK_RULES.map((entry) => entry.id).filter((id) => !aus.includes(id)),
+    );
+    expect(result.flags.some((flag) => aus.includes(flag.id))).toBe(false);
   });
 
   it('macht eine Regel ohne Referenzdaten inaktiv — mit Grund, ohne Fehler', () => {
-    const v8 = rule(result, 'V8');
-    expect(v8.active).toBe(false);
-    expect(v8.count).toBe(0);
-    expect(v8.inactiveReason).toContain('vob-nebenleistungen.csv');
-    expect(flagsOf(result, 'V8')).toHaveLength(0);
+    const ohneDaten: CheckRule = {
+      id: 'V2', // vorhandene ID, damit der Eintrag in pruefregeln.csv greift
+      label: 'Braucht Daten',
+      category: 'vob',
+      severity: 'hinweis',
+      hint: 'Nur für den Test.',
+      check: () => [],
+      requires: { file: 'docs/domain/reference/leer.csv', available: () => false },
+    };
+    const [status] = checkMit([ohneDaten], position({})).rules;
+    expect(status.active).toBe(false);
+    expect(status.count).toBe(0);
+    expect(status.inactiveReason).toContain('leer.csv');
   });
 
-  it('markiert einen noch nicht bestätigten Norm-Verweis als solchen', () => {
+  it('übernimmt Norm-Verweis und Status aus pruefregeln.csv', () => {
     const v1 = rule(result, 'V1');
     expect(v1.ruleRef).toBe('VOB/A § 7 Abs. 1 Nr. 4');
-    expect(v1.refConfirmed).toBe(false);
+    expect(v1.refConfirmed).toBe(true);
 
     const v7 = rule(result, 'V7');
     expect(v7.refConfirmed).toBe(true);

@@ -12,7 +12,6 @@ import { m1Bewehrung } from './rules/material';
 import { g1Kostentreiber, g2Mengentreiber, g3Einheitenschreibweise } from './rules/treiber';
 import {
   v10Homogenbereiche,
-  v11Alternativposition,
   v1Bedarfsposition,
   v2Stundenlohn,
   v3Produktname,
@@ -41,7 +40,6 @@ export const CHECK_RULES: readonly CheckRule[] = [
   v8Nebenleistung,
   v9BesondereLeistung,
   v10Homogenbereiche,
-  v11Alternativposition,
   g1Kostentreiber,
   g2Mengentreiber,
   g3Einheitenschreibweise,
@@ -55,7 +53,6 @@ function inactiveReason(rule: CheckRule): string | null {
   if (eintrag === undefined) {
     return `Kein Eintrag für ${rule.id} in docs/domain/reference/pruefregeln.csv.`;
   }
-  if (eintrag.status === 'aus') return 'In der Referenzdatei abgeschaltet.';
   if (rule.requires !== undefined && !rule.requires.available()) {
     return `Referenzdatei ${rule.requires.file} enthält noch keine Einträge.`;
   }
@@ -86,6 +83,8 @@ export function runChecks(
 
   for (const rule of ruleSet) {
     const eintrag = regelEintrag(rule.id);
+    // `aus` nimmt die Regel ganz aus der Prüfung — auch aus der Liste.
+    if (eintrag?.status === 'aus') continue;
     let grund = inactiveReason(rule);
     let found: Flag[] = [];
 

@@ -22,6 +22,10 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 - **Treffer-Protokoll:** Im Logo-Menü lädt „Treffer-Protokoll (CSV)“ eine Datei mit
   jedem Treffer der Materialtabellen: Stichwort, Tabellenzeile, Fundtext, Status und
   Auffälligkeiten. Damit findest du Fehler in den Tabellen.
+- **Prüfung:** Bedarfs- und Alternativpositionen sind eine Regel (V1), der Hinweis nennt
+  weiter, welche der beiden es ist. V6 heißt jetzt „Verweis auf ein anderes Dokument“ und
+  bittet nur zu prüfen, ob das Dokument vorliegt. V8 bis V10 sind vorerst aus der
+  Prüfung genommen. Die Norm-Verweise von V1 bis V7 sind bestätigt.
 - Einheiten mit Punkt am Ende („Psch.“) gelten als dieselbe wie ohne Punkt. Neue
   Einheiten-Gruppe „Pauschal“.
 

@@ -19,8 +19,9 @@
 
 | Regel | Zustand |
 |---|---|
-| V1, V2, V4, V5, V6, V7, V11 | **umgesetzt und aktiv** |
-| V3, V8, V9, V10 | angemeldet, **inaktiv** — die Referenzdateien sind noch leer |
+| V1, V2, V4, V5, V6, V7 | **umgesetzt und aktiv**, Norm-Verweise vom Owner bestätigt (14.10.2026) |
+| V3 | angemeldet, **inaktiv** — Herstellerliste liegt als Entwurf vor, Prüffunktion fehlt noch |
+| V8, V9, V10 | **aus** (`status = aus`) — Owner recherchiert die Verweise, bis dahin nicht in der Prüfung |
 | G1, G2, G3 | Kennzahlen ohne Norm-Bezug, aktiv (Kostentreiber, Mengentreiber, uneinheitliche Einheiten) |
 | G4 | Kennzahl ohne Norm-Bezug, aktiv (Einheitspreis fällt aus der Gruppe ähnlicher Positionen, WP-M) |
 | M1 | Beobachtung ohne Norm-Bezug, aktiv, solange die Materialtabellen `beton.csv` und `betonstahl.csv` da sind |
@@ -45,39 +46,32 @@ Ohne Preise in der Datei findet sie nichts — kein Fehler.
 
 Spalte **Konfidenz**: `sicher` = Inhalt und Fundstelle in der Norm geprüft.
 `zu bestätigen` = Inhalt ist geläufig, die genaue Absatz-Nummer der geltenden Fassung
-muss der Owner bestätigen, bevor sie im UI angezeigt wird.
+muss der Owner bestätigen, bevor sie im UI angezeigt wird. `bestätigt` = vom Owner
+bestätigt (Status in `reference/pruefregeln.csv`).
 
 | ID | Bubble findet | Norm-Verweis | Konfidenz | Umsetzbar |
 |---|---|---|---|---|
-| V1 | Bedarfs-/Eventualposition im LV | VOB/A § 7 Abs. 1 Nr. 4 (Bedarfspositionen grundsätzlich nicht aufnehmen) | zu bestätigen | sofort — `positionType` liefert das direkt |
-| V2 | Angehängte Stundenlohnarbeiten, besonders in größerem Umfang | VOB/A § 7 Abs. 1 Nr. 4 Satz 2 · Abrechnung: VOB/B § 15 | zu bestätigen | sofort — Einheit `h`/`Std` plus Stichworte |
-| V3 | Produkt- oder Herstellername ohne Zusatz „oder gleichwertig" | VOB/A § 7 Abs. 2 (Produktneutralität); bei EU-Vergaben zusätzlich § 31 Abs. 6 VgV | zu bestätigen | braucht Herstellerliste (Referenzdatei, vom Owner) |
-| V4 | Risiko-Übertragung auf den AN („trägt der AN", „unabhängig von den angetroffenen Verhältnissen") | VOB/A § 7 Abs. 1 Nr. 3 (kein ungewöhnliches Wagnis) | zu bestätigen | sofort — Formulierungsliste |
-| V5 | Position ohne Menge, ohne Einheit oder mit Menge 0 | VOB/A § 7 Abs. 1 Nr. 1 (eindeutig und erschöpfend) | zu bestätigen | sofort — steht in den Feldern |
-| V6 | Preisbeeinflussende Umstände nur als Verweis, nicht in der Datei („gemäß Baugrundgutachten", „siehe Plan") | VOB/A § 7 Abs. 1 Nr. 2 (alle preisbeeinflussenden Umstände angeben) | zu bestätigen | sofort — Verweis-Erkennung |
+| V1 | Bedarfs- oder Alternativposition im LV; der Titel je Fund nennt, welche der beiden (früher V11 für Alternativpositionen) | VOB/A § 7 Abs. 1 Nr. 4 | bestätigt | sofort — `positionType` liefert das direkt |
+| V2 | Angehängte Stundenlohnarbeiten, besonders in größerem Umfang | VOB/A § 7 Abs. 1 Nr. 4 Satz 2 · Abrechnung: VOB/B § 15 | bestätigt | sofort — Einheit `h`/`Std` plus Stichworte |
+| V3 | Produkt- oder Herstellername ohne Zusatz „oder gleichwertig" | VOB/A § 7 Abs. 2 (Produktneutralität); bei EU-Vergaben zusätzlich § 31 Abs. 6 VgV | bestätigt | braucht Herstellerliste (Referenzdatei, vom Owner) |
+| V4 | Risiko-Übertragung auf den AN („trägt der AN", „unabhängig von den angetroffenen Verhältnissen") | VOB/A § 7 Abs. 1 Nr. 3 (kein ungewöhnliches Wagnis) | bestätigt | sofort — Formulierungsliste |
+| V5 | Position ohne Menge, ohne Einheit oder mit Menge 0 | VOB/A § 7 Abs. 1 Nr. 1 (eindeutig und erschöpfend) | bestätigt | sofort — steht in den Feldern |
+| V6 | Verweis auf ein Dokument außerhalb des LV („gemäß Baugrundgutachten", „siehe Plan"). Solche Dokumente liegen meist den Vergabeunterlagen bei; der Hinweis bittet nur zu prüfen, ob sie vorliegen | VOB/A § 7 Abs. 1 Nr. 2 (alle preisbeeinflussenden Umstände angeben) | bestätigt | sofort — Verweis-Erkennung |
 | V7 | Offener Platzhalter, den der Bieter ausfüllen muss | kein VOB-Bezug — GAEB-Merkmal (`TextComplement`) | sicher | sofort — Parser liefert es |
 | V8 | Leistung ausgeschrieben, die nach VOB/C **Nebenleistung** ist (Doppelvergütung prüfen) | VOB/C, ATV DIN 18299 Abschnitt 4.1, dazu die Abschnitte 4.1 der gewerkespezifischen ATV (DIN 18300 ff.) | sicher (Struktur) | braucht Zuordnung LB → ATV und die Nebenleistungs-Listen |
 | V9 | Im Text erwähnte **Besondere Leistung** ohne eigene Position | VOB/C, ATV DIN 18299 Abschnitt 4.2 | sicher (Struktur) | Ausbaustufe — schwerer zu erkennen als V8 |
-| V11 | Alternativposition (Wahlposition) im LV | kein Verweis gesetzt — GAEB-Merkmal (`positionType`); ein VOB-Verweis erst nach Bestätigung durch den Owner | sicher (Feld) | sofort — `positionType` liefert das direkt |
 | M1 | Betonposition mit Festigkeitsklasse, aber ohne Angabe zur Bewehrung; nennt den Betonstahl im selben Hauptabschnitt | kein Norm-Bezug — Beobachtung an der Datei | sicher (Feld) | sofort — Materialtabellen ([`reference/material/`](reference/material/)); braucht außerdem Positionsart „Bauteil“ und die Festigkeitsklasse aus der Klassifizierung |
 | V10 | Erdarbeiten ohne Angabe von Homogenbereichen | VOB/C, DIN 18300 Abschnitt 0 (Hinweise für das Aufstellen der Leistungsbeschreibung); Homogenbereiche lösen seit der Fassung 2015 die Bodenklassen ab — siehe [`README.md`](README.md#muster-beispiel-din-18300--bodenklassen-vs-homogenbereiche) | sicher (Inhalt), Abschnitts-Nummer zu bestätigen | braucht LB-Erkennung Erdarbeiten (entfernt, [0044](../decisions/0044-leistungsbereich-entfernt.md)) |
 
 ## Was der Owner bestätigen muss
 
-Bevor eine Regel mit `zu bestätigen` im UI erscheint:
+V1–V7 sind bestätigt (14.10.2026). Offen:
 
-1. **V1, V2:** Ist „Bedarfspositionen grundsätzlich nicht aufnehmen" und der Satz zu
-   angehängten Stundenlohnarbeiten in der geltenden Fassung tatsächlich
-   **§ 7 Abs. 1 Nr. 4 VOB/A**?
-2. **V3:** Steht die Produktneutralität samt „oder gleichwertig" in **§ 7 Abs. 2 VOB/A**?
-   Soll die Regel auch unterhalb der EU-Schwellenwerte gelten?
-3. **V4, V5, V6:** Sind **§ 7 Abs. 1 Nr. 1–3 VOB/A** korrekt zugeordnet?
-4. **V10:** Welcher Unterabschnitt von **DIN 18300 Abschnitt 0** verlangt die
+1. **V8, V9:** Verweise auf VOB/C, ATV DIN 18299 Abschnitt 4.1 und 4.2 — und wer
+   liefert die Nebenleistungs-Listen je ATV?
+2. **V10:** Welcher Unterabschnitt von **DIN 18300 Abschnitt 0** verlangt die
    Homogenbereich-Angaben genau?
-5. **V11:** Gibt es für Alternativpositionen einen VOB-Verweis, der angezeigt werden
-   soll? Bis dahin nennt die Regel nur das GAEB-Merkmal.
-6. **V3, V8:** Wer liefert die Referenzdaten — Herstellerliste und Nebenleistungs-Listen
-   je ATV? Ohne sie bleiben beide Regeln inaktiv.
+3. **V3:** Soll die Regel auch unterhalb der EU-Schwellenwerte gelten?
 
 ## Ablage der Referenzdaten
 

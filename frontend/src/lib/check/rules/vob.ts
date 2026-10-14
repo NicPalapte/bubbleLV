@@ -1,11 +1,11 @@
-// VOB-Regeln V1…V11 (docs/domain/vob-pruefungen.md). Jede Regel findet ein
+// VOB-Regeln V1…V10 (docs/domain/vob-pruefungen.md). Jede Regel findet ein
 // Textmuster oder ein Feld — sie bewertet nicht. Die Norm-Verweise stehen nicht
 // hier, sondern in docs/domain/reference/pruefregeln.csv; dieser Code kennt nur
 // die Regel-ID.
 //
-// Angemeldet, aber ohne Prüffunktion: V3, V8, V9, V10. Sie brauchen
-// Referenzdaten bzw. eine Erdarbeiten-Erkennung, die es noch nicht gibt, und
-// erscheinen deshalb in der Prüfliste als inaktiv — statt still zu fehlen.
+// Angemeldet, aber ohne Prüffunktion: V3, V8, V9, V10. V3 erscheint in der
+// Prüfliste als inaktiv, statt still zu fehlen. V8–V10 stehen in
+// pruefregeln.csv auf `aus`, bis der Owner sie bestätigt hat.
 
 import { attrSpans, attrStrings } from '../../attributes';
 import { canonicalUnit, unitGroups } from '../../units';
@@ -20,50 +20,33 @@ function spanOf(attributes: Record<string, unknown>, key: string): Span | undefi
   return attrSpans(attributes).find((span) => span.key === key);
 }
 
-// ── V1 · Bedarfs-/Eventualposition ──────────────────────────────────────────
+// ── V1 · Bedarfs- und Alternativposition ────────────────────────────────────
+// Beide Positionsarten stehen unter demselben Verweis (VOB/A § 7 Abs. 1 Nr. 4,
+// vom Owner bestätigt) und sind deshalb eine Regel. Der Titel je Fund trennt
+// die Begriffe weiter.
+
+const V1_ARTEN: Readonly<Partial<Record<string, string>>> = {
+  BEDARF: 'Bedarfsposition',
+  ALTERNATIV: 'Alternativposition',
+};
 
 export const v1Bedarfsposition: CheckRule = {
   id: 'V1',
-  label: 'Bedarfs- oder Eventualposition',
+  label: 'Bedarfs- oder Alternativposition',
   category: 'vob',
   severity: 'beachten',
-  hint: 'Die Position ist als Bedarfsposition ausgewiesen. Ob sie beauftragt wird, steht bei Angebotsabgabe nicht fest.',
+  hint: 'Die Position ist als Bedarfs- oder Alternativposition ausgewiesen. Ob sie beauftragt wird, steht bei Angebotsabgabe nicht fest.',
   check(context: CheckContext): Flag[] {
     const flags: Flag[] = [];
     for (let i = 0; i < context.index.size; i++) {
-      if (context.index.positions[i].positionType !== 'BEDARF') continue;
+      const art = V1_ARTEN[context.index.positions[i].positionType];
+      if (art === undefined) continue;
       flags.push({
         id: 'V1',
         category: 'vob',
         severity: 'beachten',
         positionId: context.index.nodes[i].id,
-        title: 'Bedarfsposition',
-      });
-    }
-    return flags;
-  },
-};
-
-// ── V11 · Alternativposition ────────────────────────────────────────────────
-// Kein VOB-Verweis, bis der Owner einen bestätigt (Issue #102): die Regel
-// meldet nur, was das Feld `positionType` sagt — wie V7 ein GAEB-Merkmal.
-
-export const v11Alternativposition: CheckRule = {
-  id: 'V11',
-  label: 'Alternativposition',
-  category: 'vob',
-  severity: 'beachten',
-  hint: 'Die Position ist als Alternative ausgewiesen. Ob sie statt der Grundposition beauftragt wird, steht bei Angebotsabgabe nicht fest.',
-  check(context: CheckContext): Flag[] {
-    const flags: Flag[] = [];
-    for (let i = 0; i < context.index.size; i++) {
-      if (context.index.positions[i].positionType !== 'ALTERNATIV') continue;
-      flags.push({
-        id: 'V11',
-        category: 'vob',
-        severity: 'beachten',
-        positionId: context.index.nodes[i].id,
-        title: 'Alternativposition',
+        title: art,
       });
     }
     return flags;
@@ -200,10 +183,10 @@ export const v5MengeFehlt: CheckRule = {
 
 export const v6VerweisStattAngabe: CheckRule = {
   id: 'V6',
-  label: 'Preisbeeinflussender Umstand nur als Verweis',
+  label: 'Verweis auf ein anderes Dokument',
   category: 'risiko',
   severity: 'hinweis',
-  hint: 'Der Text verweist auf eine Unterlage außerhalb der Datei. Liegt sie nicht vor, fehlt die Kalkulationsgrundlage.',
+  hint: 'Der Text verweist auf ein Dokument außerhalb des LV. Prüfen, ob es in den Vergabeunterlagen vorliegt.',
   check(context: CheckContext): Flag[] {
     const flags: Flag[] = [];
     for (let i = 0; i < context.index.size; i++) {

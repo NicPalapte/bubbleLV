@@ -23,13 +23,15 @@ function loadFixture() {
 }
 
 const lv = loadFixture();
+/** Was „laden" in den Provider gibt — ein Test kann es abwandeln. */
+let geladen = lv;
 
 /** Lädt das LV in den Provider, damit die Ansicht echte Daten sieht. */
 function WithLv({ children }: { children: ReactNode }) {
   const dispatch = useViewerDispatch();
   return (
     <>
-      <button type="button" onClick={() => dispatch({ type: 'loaded', lv })}>
+      <button type="button" onClick={() => dispatch({ type: 'loaded', lv: geladen })}>
         laden
       </button>
       <button type="button" onClick={() => dispatch(SUCHE_OHNE_TREFFER)}>
@@ -80,21 +82,33 @@ describe('CheckCard', () => {
     }
   });
 
-  it('nennt den Norm-Verweis und markiert ihn als zu bestätigen', () => {
-    renderView();
-    const v1 = sectionOf('V1');
-    expect(within(v1).getByText(/VOB\/A § 7 Abs\. 1 Nr\. 4/)).toBeTruthy();
-    expect(within(v1).getByText('Verweis zu bestätigen')).toBeTruthy();
-
-    // V7 hat keinen VOB-Bezug und ist bestätigt — keine Markierung.
-    expect(within(sectionOf('V7')).queryByText('Verweis zu bestätigen')).toBeNull();
+  it('nennt den Norm-Verweis und markiert einen offenen als zu bestätigen', () => {
+    // Alle ausgelieferten Verweise sind bestätigt — V1 wird hier als offen gesetzt.
+    geladen = {
+      ...lv,
+      check: {
+        ...lv.check,
+        rules: lv.check.rules.map((rule) =>
+          rule.id === 'V1' ? { ...rule, refConfirmed: false } : rule,
+        ),
+      },
+    };
+    try {
+      renderView();
+      const v1 = sectionOf('V1');
+      expect(within(v1).getByText(/VOB\/A § 7 Abs\. 1 Nr\. 4/)).toBeTruthy();
+      expect(within(v1).getByText('Verweis zu bestätigen')).toBeTruthy();
+      expect(within(sectionOf('V7')).queryByText('Verweis zu bestätigen')).toBeNull();
+    } finally {
+      geladen = lv;
+    }
   });
 
   it('nennt bei einer inaktiven Regel den Grund statt sie zu verstecken', () => {
     renderView();
-    const v8 = sectionOf('V8');
-    expect(within(v8).getByText('inaktiv')).toBeTruthy();
-    expect(within(v8).getByText(/vob-nebenleistungen\.csv/)).toBeTruthy();
+    const v3 = sectionOf('V3');
+    expect(within(v3).getByText('inaktiv')).toBeTruthy();
+    expect(within(v3).getByText(/Noch nicht umgesetzt/)).toBeTruthy();
   });
 
   it('klappt die Funde einer Regel auf und listet die Positionen', () => {
