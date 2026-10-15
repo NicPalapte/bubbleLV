@@ -24,7 +24,7 @@
 | V8, V9, V10            | **aus** (`status = aus`) — Owner recherchiert die Verweise, bis dahin nicht in der Prüfung                                                                |
 | G3                     | Kennzahl ohne Norm-Bezug, aktiv (uneinheitliche Einheiten)                                                                                                |
 | G1, G2                 | **entfernt** (15.10.2026): Ranglisten der teuersten und mengenstärksten Positionen sind keine Auffälligkeit. Die Auswertung im Überblick zeigt sie weiter |
-| G4                     | Kennzahl ohne Norm-Bezug, aktiv (Einheitspreis fällt aus der Gruppe ähnlicher Positionen, WP-M)                                                           |
+| G4                     | **entfernt** (15.10.2026): ein „auffälliger" Einheitspreis ist eine Deutung der Software, keine Tatsache aus der Datei                                    |
 | M1                     | Beobachtung ohne Norm-Bezug, aktiv, solange die Materialtabellen `beton.csv` und `betonstahl.csv` da sind                                                 |
 
 Status, Norm-Verweis, Name, Kategorie, Schwere und Hinweistext je Regel stehen in
@@ -39,12 +39,6 @@ behauptet aber keine Fundstelle in der Norm, die niemand geprüft hat. Mit
 
 Umgesetzt in `frontend/src/lib/check/`, ein Modul je Regelgruppe; die Ansicht
 „Prüfung" ist einer der gleichrangigen Ansichtsmodi.
-
-**G4** war in WP-K zurückgestellt: ein Einheitspreis fällt nur „aus dem Rahmen", wenn
-es einen Rahmen gibt. Den liefern seit WP-M die Gruppen ähnlicher Positionen
-(`frontend/src/lib/relate/`). Die Regel rechnet nichts selbst, sie liest die fertigen
-Gruppen und meldet, wessen Preis außerhalb von Median ± 1,5 × Quartilsabstand liegt.
-Ohne Preise in der Datei findet sie nichts — kein Fehler.
 
 ## Regeln
 
@@ -85,7 +79,7 @@ Spalte `quelle_version`. Nicht im Code hartkodieren, nicht erfinden.
 | Datei                                                                            | Inhalt                                                            | Für        |
 | -------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ---------- |
 | [`reference/pruefregeln.csv`](reference/pruefregeln.csv)                         | Regel-ID, Status, Norm-Verweis, Name, Kategorie, Schwere, Hinweis | alle       |
-| [`reference/pruefregeln-parameter.csv`](reference/pruefregeln-parameter.csv)     | Regel-ID, Parameter, Wert                                         | V2, G4, M1 |
+| [`reference/pruefregeln-parameter.csv`](reference/pruefregeln-parameter.csv)     | Regel-ID, Parameter, Wert                                         | V2, M1     |
 | [`reference/pruefregeln-stichworte.csv`](reference/pruefregeln-stichworte.csv)   | Regel-ID, Wert, Stichworte, ausser                                | V2, V6, V7 |
 | [`reference/vob-nebenleistungen.csv`](reference/vob-nebenleistungen.csv)         | ATV-Nummer, Abschnitt, Leistungstext, Stichworte                  | V8, V9     |
 | [`reference/hersteller-produktnamen.csv`](reference/hersteller-produktnamen.csv) | Hersteller-/Produktname, Stichworte                               | V3         |

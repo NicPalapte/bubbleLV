@@ -55,7 +55,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0046 | [Zuletzt geöffnete Datei im Browser behalten](0046-letzte-datei-im-browser.md)                 | akzeptiert                         | 2026-10-12 |
 | 0047 | [Eigene Markierungen und Kommentare je Position](0047-kommentare-und-markierungen.md)          | akzeptiert                         | 2026-10-12 |
 | 0048 | [Referenzdaten ohne Kopie im Frontend](0048-referenzdaten-ohne-kopie.md)                       | akzeptiert                         | 2026-10-14 |
-| 0049 | [Prüfregeln als Tabelle, Ranglisten keine Prüfregel](0049-pruefregeln-als-tabelle.md)          | akzeptiert                         | 2026-10-15 |
+| 0049 | [Prüfregeln als Tabelle, keine wertenden Kennzahlen](0049-pruefregeln-als-tabelle.md)          | akzeptiert                         | 2026-10-15 |
 
 ## Wann schreibe ich eine neue Datei?
 

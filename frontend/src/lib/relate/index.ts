@@ -1,4 +1,4 @@
-// Beziehungen zwischen Positionen (WP-M): Ähnlichkeit, Unterschiede, Ausreißer.
+// Beziehungen zwischen Positionen (WP-M): Ähnlichkeit und Unterschiede.
 // Öffentliche Fläche des Moduls — außerhalb wird nur von hier importiert.
 
 export {
@@ -9,14 +9,7 @@ export {
   positionSimilarity,
 } from './similarity';
 export type { RelateOptions } from './similarity';
-export {
-  minForOutliers,
-  outlierBounds,
-  outlierDirection,
-  quantile,
-  spread,
-  statsOf,
-} from './stats';
-export type { OutlierDirection, ValueStats } from './stats';
+export { quantile, spread, statsOf } from './stats';
+export type { ValueStats } from './stats';
 export { clusterByPosition, EMPTY_RELATIONS } from './types';
-export type { Cluster, Outlier, OutlierField, RelationResult } from './types';
+export type { Cluster, RelationResult } from './types';

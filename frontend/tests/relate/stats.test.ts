@@ -1,16 +1,9 @@
-// Streuung und Ausreißer (WP-M, Schritt 4). Der Plan verlangt ausdrücklich
+// Streuung (WP-M, Schritt 4). Der Plan verlangt ausdrücklich
 // Median und Quartilsabstand statt Mittelwert — der erste Test hält genau das
 // fest: ein einzelner Extremwert darf die Bezugsgröße nicht mitziehen.
 
 import { describe, expect, it } from 'vitest';
-import {
-  minForOutliers,
-  outlierBounds,
-  outlierDirection,
-  quantile,
-  spread,
-  statsOf,
-} from '../../src/lib/relate/stats';
+import { quantile, spread, statsOf } from '../../src/lib/relate/stats';
 
 describe('quantile', () => {
   it('interpoliert zwischen den Nachbarn', () => {
@@ -42,29 +35,6 @@ describe('statsOf', () => {
   it('gibt null zurück, wenn kein Wert vorliegt', () => {
     expect(statsOf([Number.NaN, Number.NaN])).toBeNull();
     expect(statsOf([])).toBeNull();
-  });
-});
-
-describe('outlierBounds', () => {
-  it('schweigt bei zu wenigen Werten', () => {
-    const werte = Array.from({ length: (minForOutliers() ?? 0) - 1 }, (_, i) => i + 1);
-    expect(outlierBounds(statsOf(werte)!)).toBeNull();
-  });
-
-  it('schweigt, wenn die halbe Gruppe auf demselben Wert liegt', () => {
-    // Quartilsabstand 0: jede Abweichung wäre ein „Ausreißer" — das ist kein
-    // Hinweis, sondern Rauschen.
-    expect(outlierBounds(statsOf([5, 5, 5, 5, 9])!)).toBeNull();
-  });
-
-  it('spannt den Erwartungsbereich um die Quartile', () => {
-    const stats = statsOf([10, 12, 14, 16, 100])!;
-    const bounds = outlierBounds(stats)!;
-    expect(bounds).not.toBeNull();
-    expect(outlierDirection(100, bounds)).toBe('hoch');
-    expect(outlierDirection(14, bounds)).toBeNull();
-    expect(outlierDirection(-500, bounds)).toBe('niedrig');
-    expect(outlierDirection(Number.NaN, bounds)).toBeNull();
   });
 });
 

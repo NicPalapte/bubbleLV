@@ -61,9 +61,9 @@ frontend/
     │   │   └── urlState.ts           # encode/decode, prüft jeden fremden Link
     │   ├── matrix/                   # Heatmap über zwei Facetten (WP-O)
     │   │   └── model.ts              # buildMatrix: Achsen, Zellen, Zellmaß
-    │   ├── relate/                   # Beziehungen: Ähnlichkeit, Ausreißer (WP-M)
+    │   ├── relate/                   # Beziehungen: Ähnlichkeit, Unterschiede (WP-M)
     │   │   ├── text.ts               # Normalisierung, Wort-Schindeln, Jaccard
-    │   │   ├── stats.ts              # Median, Quartile, Ausreißer-Grenzen
+    │   │   ├── stats.ts              # Median, Quartile
     │   │   ├── similarity.ts         # Vorgruppierung, Cluster-Bildung (im Worker)
     │   │   └── types.ts              # Cluster, Outlier, RelationResult
     │   ├── check/                    # Prüfregeln + Hinweise (WP-K)
@@ -178,11 +178,11 @@ Beziehungen rechnen gegen ihn, nie gegen den Baum.
 
 Alles, was mehrere Fenster brauchen, steht **einmal** im Provider:
 
-| Was | Wo | Bemerkung |
-|---|---|---|
-| Positions-Index | `derived.index` (`PositionIndex`) | flache Rechenbasis, einmal je geladenem LV |
-| Trefferzahlen | `derived.matches` (`MatchIndex`) | einmal je Filter-/Suchwechsel, für Graph und Tabelle |
-| Trefferbitmaske | `derived.mask` | je Indexeintrag 1/0; `null`, solange nicht gefiltert wird |
+| Was             | Wo                                | Bemerkung                                                 |
+| --------------- | --------------------------------- | --------------------------------------------------------- |
+| Positions-Index | `derived.index` (`PositionIndex`) | flache Rechenbasis, einmal je geladenem LV                |
+| Trefferzahlen   | `derived.matches` (`MatchIndex`)  | einmal je Filter-/Suchwechsel, für Graph und Tabelle      |
+| Trefferbitmaske | `derived.mask`                    | je Indexeintrag 1/0; `null`, solange nicht gefiltert wird |
 
 ### Drei getrennte Bereiche, eine Klammer (WP-L)
 
@@ -190,11 +190,11 @@ Alles, was mehrere Fenster brauchen, steht **einmal** im Provider:
 eigenem Reducer. Die Trennung ist keine Ordnungsfrage: sie macht es unmöglich,
 dass ein Ansichtswechsel Filter oder Auswahl anfasst.
 
-| Bereich | Datei | Inhalt |
-|---|---|---|
-| `filter` | `state/filterState.ts` | Suche, Facetten, Mengenbereich, Nicht-Treffer-Modus, stummgeschaltete Prüfregeln |
-| `selection` | `state/selectionState.ts` | angewählter Knoten/Position, Mauszeiger |
-| `view` | `state/viewState.ts` | aktive Ansicht plus Zustand **je** Ansicht: Graph-Ausschnitt, Gliederung, Größe und Hinweis-Schalter, Sortierung/Umfang/Spalten der Tabelle, offene Regeln der Prüfung, Scrollposition je Ansicht, Maße der Info-Panels |
+| Bereich     | Datei                     | Inhalt                                                                                                                                                                                                                  |
+| ----------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `filter`    | `state/filterState.ts`    | Suche, Facetten, Mengenbereich, Nicht-Treffer-Modus, stummgeschaltete Prüfregeln                                                                                                                                        |
+| `selection` | `state/selectionState.ts` | angewählter Knoten/Position, Mauszeiger                                                                                                                                                                                 |
+| `view`      | `state/viewState.ts`      | aktive Ansicht plus Zustand **je** Ansicht: Graph-Ausschnitt, Gliederung, Größe und Hinweis-Schalter, Sortierung/Umfang/Spalten der Tabelle, offene Regeln der Prüfung, Scrollposition je Ansicht, Maße der Info-Panels |
 
 `state/viewer.ts` klammert die drei und behandelt selbst nur, was mehr als einen
 Bereich betrifft: `loaded`, `clear`, `openInTable` und `showGraph`. Ändert ein
@@ -349,18 +349,18 @@ Skalierungs-Testwerkzeug hinter einem Flag denkbar, nicht im Default-Pfad).
 
 ## Komponenten-Port-Map
 
-| Ziel (TS) | Quelle (Design) | Zweck |
-|---|---|---|
-| `components/layout/Tree.tsx` | `Tree` in `lv-main.jsx` | linke Hierarchie, filter-/suchbewusst |
-| `components/layout/TopBar.tsx` | `TopBar` | Suchleiste + Facetten-Buttons |
-| `components/layout/PropertiesPanel.tsx` | rechte Spalte in `lv-main.jsx` | Positionsdetails |
-| `components/upload/FileDropzone.tsx` | — (neu) | Datei laden → Pipeline anstoßen |
-| `components/graph/*` | `lv-graph.jsx` (`Bubbles`, Layout) | Bubble-Graph |
-| `components/table/PositionsTable.tsx` | `PositionsTable` | Positionsliste, sortierbar |
-| `components/filter/*` | `FilterStrip`,`FacetButton`,`RangeButton` | Facetten + aktive-Filter-Chips |
-| `components/common/Highlighted.tsx` | `Highlighted` | rendert `**…**` im Langtext |
-| `components/common/Status.tsx` | `Status` | Status-Badge (nur Anzeige/Filter) |
-| `lib/matchPos.ts` | `matchPos` | Filter/Suche |
+| Ziel (TS)                               | Quelle (Design)                           | Zweck                                 |
+| --------------------------------------- | ----------------------------------------- | ------------------------------------- |
+| `components/layout/Tree.tsx`            | `Tree` in `lv-main.jsx`                   | linke Hierarchie, filter-/suchbewusst |
+| `components/layout/TopBar.tsx`          | `TopBar`                                  | Suchleiste + Facetten-Buttons         |
+| `components/layout/PropertiesPanel.tsx` | rechte Spalte in `lv-main.jsx`            | Positionsdetails                      |
+| `components/upload/FileDropzone.tsx`    | — (neu)                                   | Datei laden → Pipeline anstoßen       |
+| `components/graph/*`                    | `lv-graph.jsx` (`Bubbles`, Layout)        | Bubble-Graph                          |
+| `components/table/PositionsTable.tsx`   | `PositionsTable`                          | Positionsliste, sortierbar            |
+| `components/filter/*`                   | `FilterStrip`,`FacetButton`,`RangeButton` | Facetten + aktive-Filter-Chips        |
+| `components/common/Highlighted.tsx`     | `Highlighted`                             | rendert `**…**` im Langtext           |
+| `components/common/Status.tsx`          | `Status`                                  | Status-Badge (nur Anzeige/Filter)     |
+| `lib/matchPos.ts`                       | `matchPos`                                | Filter/Suche                          |
 
 **Nicht portiert:** `TasksBlock`, `lv-notes.jsx`, `lv-analytics.jsx`, `lv-vergabe.jsx`,
 `wf-*.jsx`, `design-canvas.jsx` (Design-/Wireframe-Gerüst → nur Referenz in `design/`),

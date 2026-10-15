@@ -11,7 +11,6 @@
 import type { Span } from '../classify';
 import type { PositionIndex } from '../index/positionIndex';
 import type { LVSummary } from '../index/summary';
-import type { RelationResult } from '../relate';
 import type { LVNode } from '../../types/lvNode';
 
 export type FlagCategory = 'geld' | 'menge' | 'risiko' | 'norm' | 'frist' | 'vob';
@@ -37,8 +36,6 @@ export type InactiveReason = string | null;
 export interface CheckContext {
   index: PositionIndex;
   summary: LVSummary;
-  /** Ähnlichkeits-Cluster (WP-M) — Vergleichsgruppe für Regel G4. */
-  relations: RelationResult;
   /** Elternknoten je Knoten-ID — für Regeln, die im Hauptabschnitt suchen (M1). */
   parents: ReadonlyMap<string, LVNode | null>;
 }

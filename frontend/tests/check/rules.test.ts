@@ -9,10 +9,8 @@ import { describe, expect, it } from 'vitest';
 import { CHECK_RULES, runChecks } from '../../src/lib/check';
 import type { CheckRule } from '../../src/lib/check';
 import { classifyDraft, getClassifier } from '../../src/lib/classify';
-import { formatEuro } from '../../src/lib/format';
 import { buildPositionIndex } from '../../src/lib/index/positionIndex';
 import { summarize } from '../../src/lib/index/summary';
-import { buildRelations } from '../../src/lib/relate';
 import { buildTree, collectPositions, indexParents } from '../../src/lib/tree/buildTree';
 import type { CheckResult, RuleStatus } from '../../src/lib/check';
 import type { LVDraft, PositionDraft } from '../../src/types/lvDraft';
@@ -52,8 +50,7 @@ function checkMit(ruleSet: readonly CheckRule[], ...positions: PositionDraft[]):
   };
   const tree = buildTree(classifyDraft(draft, classifier));
   const index = buildPositionIndex(tree);
-  // G4 vergleicht gegen die Cluster aus WP-M — die gehören zum Kontext.
-  return runChecks(index, summarize(index), buildRelations(index), ruleSet);
+  return runChecks(index, summarize(index), ruleSet);
 }
 
 function rule(result: CheckResult, id: string): RuleStatus {
@@ -193,56 +190,6 @@ describe('G3 · Einheit uneinheitlich geschrieben', () => {
   });
 });
 
-describe('G4 · Einheitspreis fällt aus der Gruppe', () => {
-  /** Fünf gleichlautende Positionen; nur der letzte Preis ist der Prüfling. */
-  function gruppe(...preise: number[]) {
-    return check(
-      ...preise.map((unitPrice, i) =>
-        position({
-          oz: `01.001.00${i + 1}0`,
-          shortText: 'Innenwand herstellen',
-          longText: 'Herstellen einer tragenden Innenwand aus Beton, Abrechnung nach Aufmaß.',
-          unitPrice,
-        }),
-      ),
-    );
-  }
-
-  it('meldet den Preis, der aus dem Rahmen seiner Gruppe fällt', () => {
-    const flags = flagsOf(gruppe(100, 105, 110, 115, 900), 'G4');
-    expect(flags).toHaveLength(1);
-    expect(flags[0].positionId).toContain('01.001.0050');
-    expect(flags[0].title).toContain('Median');
-  });
-
-  it('schreibt Beträge wie der Rest der Oberfläche', () => {
-    // Derselbe Ausreißer steht auch auf der Cluster-Karte der Ansicht
-    // „Ähnlichkeit"; beide gehen durch `formatEuro`, also mit zwei
-    // Nachkommastellen — sonst liest man je Ansicht eine andere Zahl.
-    const [flag] = flagsOf(gruppe(100, 105, 110, 115, 900), 'G4');
-    expect(flag.title).toContain(formatEuro(900));
-    expect(flag.title).toContain(`Median ${formatEuro(110)}`);
-  });
-
-  it('schweigt, solange die Preise der Gruppe beieinanderliegen', () => {
-    expect(flagsOf(gruppe(100, 105, 110, 115, 120), 'G4')).toHaveLength(0);
-  });
-
-  it('schweigt in einer Datei ohne Preise', () => {
-    const result = check(
-      ...[100, 105, 110, 115, 900].map((_, i) =>
-        position({ oz: `01.001.00${i + 1}0`, unitPrice: null }),
-      ),
-    );
-    expect(flagsOf(result, 'G4')).toHaveLength(0);
-  });
-
-  it('bleibt ein Hinweis und wird nie zum Urteil', () => {
-    const [flag] = flagsOf(gruppe(100, 105, 110, 115, 900), 'G4');
-    expect(flag.title).not.toMatch(/unzulässig|Verstoß|verboten|fehlerhaft|falsch/i);
-  });
-});
-
 describe('M1 · Bewehrung', () => {
   /** Zwei Hauptabschnitte, damit die Suche nach Betonstahl an der Grenze endet. */
   function zweiAbschnitte(rohbau: PositionDraft[], ausbau: PositionDraft[]): CheckResult {
@@ -262,13 +209,7 @@ describe('M1 · Bewehrung', () => {
     };
     const tree = buildTree(classifyDraft(draft, classifier));
     const index = buildPositionIndex(tree);
-    return runChecks(
-      index,
-      summarize(index),
-      buildRelations(index),
-      CHECK_RULES,
-      indexParents(tree),
-    );
+    return runChecks(index, summarize(index), CHECK_RULES, indexParents(tree));
   }
 
   const wand = (oz: string, longText: string) =>
@@ -389,7 +330,7 @@ describe('Eine stolpernde Regel hält den Import nicht an', () => {
     );
     const index = buildPositionIndex(tree);
 
-    const result = runChecks(index, summarize(index), buildRelations(index), [kaputt]);
+    const result = runChecks(index, summarize(index), [kaputt]);
     expect(result.flags).toEqual([]);
     const [status] = result.rules;
     expect(status.active).toBe(false);

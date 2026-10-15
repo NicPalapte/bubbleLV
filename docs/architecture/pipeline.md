@@ -26,7 +26,7 @@ summarize(buildPositionIndex(tree))
     │  → LVSummary (Facetten-Zähler, Wertebereiche) im LoadedLV
     ▼
 buildRelations(index) · runChecks(index, summary, relations)
-    │  → Cluster (Ähnlichkeit, Unterschiede, Ausreißer) und Hinweise im LoadedLV
+    │  → Cluster (Ähnlichkeit, Unterschiede) und Hinweise im LoadedLV
     ▼
 React State (Session-only)
     │  buildPositionIndex(tree) im Haupt-Thread
@@ -46,11 +46,11 @@ Fremd-Assets (Webfonts) sind davon unberührt — sie transportieren keine Nutzd
 Browser im Worker verfügbar — der Parser-Schritt kann deshalb **nicht** in den Worker
 wandern. Die Pipeline ist entsprechend geteilt (`frontend/src/lib/pipeline/`):
 
-| Schritt | Läuft in | Warum |
-|---|---|---|
-| `parseToDraft` (Parser + `mapToLvDraft`) | Haupt-Thread | braucht `DOMParser`; nativer XML-Parser, entsprechend schnell |
-| `classifyAndBuild` (Klassifizierung + `buildTree` + Aggregate + Beziehungen + Prüfregeln) | Web Worker ab ~500 Positionen | rechenintensiv: eine Regelauswertung je Position, danach je ein Durchlauf für Aggregate, Cluster und Hinweise |
-| `buildPositionIndex` (flacher Positions-Index) | Haupt-Thread, nach dem Empfang | verweist auf die Baumknoten; Objektidentität überlebt `structuredClone` nicht |
+| Schritt                                                                                   | Läuft in                       | Warum                                                                                                         |
+| ----------------------------------------------------------------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| `parseToDraft` (Parser + `mapToLvDraft`)                                                  | Haupt-Thread                   | braucht `DOMParser`; nativer XML-Parser, entsprechend schnell                                                 |
+| `classifyAndBuild` (Klassifizierung + `buildTree` + Aggregate + Beziehungen + Prüfregeln) | Web Worker ab ~500 Positionen  | rechenintensiv: eine Regelauswertung je Position, danach je ein Durchlauf für Aggregate, Cluster und Hinweise |
+| `buildPositionIndex` (flacher Positions-Index)                                            | Haupt-Thread, nach dem Empfang | verweist auf die Baumknoten; Objektidentität überlebt `structuredClone` nicht                                 |
 
 `LVDraft` ist reines Datenmodell und damit `structuredClone`-fähig — der Übergang
 über die Worker-Grenze braucht keine Serialisierungsschicht. Dasselbe gilt für die
@@ -121,6 +121,7 @@ interface LVDraft {
 ```
 
 **Regeln:**
+
 - `buildTree(draft: LVDraft): LVNode` ist eine reine Funktion — kein Import aus
   `lib/gaeb/`.
 - `mapToLvDraft()` lebt neben dem Parser und ist die einzige Stelle, die GAEB-Typen
@@ -137,7 +138,7 @@ außerhalb dieses Repos, da ein LLM-Aufruf einen Server voraussetzt):
 interface ClassificationResult {
   attributes: Record<string, unknown>;
   meta: ClassificationMeta; // classifier-id, ruleset-id, version, confidence
-  spans: Span[];            // Fundstellen im Langtext (data-model.md#spans)
+  spans: Span[]; // Fundstellen im Langtext (data-model.md#spans)
 }
 
 interface Classifier {

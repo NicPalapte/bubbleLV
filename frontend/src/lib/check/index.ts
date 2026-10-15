@@ -7,7 +7,6 @@
 // und wäre je Ansicht zu teuer (.claude/CLAUDE.md#kritische-constraints).
 
 import { regelEintrag } from './referenz';
-import { g4Preisausreisser } from './rules/ausreisser';
 import { m1Bewehrung } from './rules/material';
 import { g3Einheitenschreibweise } from './rules/treiber';
 import {
@@ -25,9 +24,7 @@ import {
 import type { CheckContext, CheckResult, CheckRule, Flag, RuleStatus } from './types';
 import type { PositionIndex } from '../index/positionIndex';
 import type { LVSummary } from '../index/summary';
-import type { RelationResult } from '../relate';
 import type { LVNode } from '../../types/lvNode';
-import { EMPTY_RELATIONS } from '../relate';
 
 export const CHECK_RULES: readonly CheckRule[] = [
   v1Bedarfsposition,
@@ -41,7 +38,6 @@ export const CHECK_RULES: readonly CheckRule[] = [
   v9BesondereLeistung,
   v10Homogenbereiche,
   g3Einheitenschreibweise,
-  g4Preisausreisser,
   m1Bewehrung,
 ];
 
@@ -74,11 +70,10 @@ function inactiveReason(rule: CheckRule): string | null {
 export function runChecks(
   index: PositionIndex,
   summary: LVSummary,
-  relations: RelationResult = EMPTY_RELATIONS,
   ruleSet: readonly CheckRule[] = CHECK_RULES,
   parents: ReadonlyMap<string, LVNode | null> = new Map(),
 ): CheckResult {
-  const context: CheckContext = { index, summary, relations, parents };
+  const context: CheckContext = { index, summary, parents };
   const flags: Flag[] = [];
   const rules: RuleStatus[] = [];
 

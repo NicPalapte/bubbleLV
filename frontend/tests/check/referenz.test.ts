@@ -32,13 +32,13 @@ describe('Referenzdateien der Prüfregeln', () => {
     }
   });
 
-  it('liest Parameter, auch mit deutschem Komma', () => {
-    expect(regelZahl('G4', 'zaunbreite')).toBe(1.5);
+  it('liest Parameter als Zahl und als Text', () => {
+    expect(regelZahl('M1', 'positionen_im_titel')).toBe(3);
     expect(regelParameter('V2', 'einheiten_gruppe')).toBe('Stunde');
   });
 
   it('nennt einen fehlenden Parameter beim Namen, statt still mit 0 zu rechnen', () => {
-    expect(() => regelZahl('G4', 'gibt-es-nicht')).toThrow(/gibt-es-nicht.*pruefregeln-parameter/);
+    expect(() => regelZahl('M1', 'gibt-es-nicht')).toThrow(/gibt-es-nicht.*pruefregeln-parameter/);
   });
 
   it('liest die Suchwörter je Regel und findet Verweise samt Nummer', () => {

@@ -29,8 +29,8 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 - **Prüfregeln in Tabellen:** Name, Hinweistext, Schwere, Schwellwerte und Suchwörter
   jeder Regel stehen jetzt in `docs/domain/reference/` und lassen sich in Excel ändern
   (`docs/setup/pruefregeln.md`).
-- **Kostentreiber und Mengentreiber** (G1, G2) sind keine Hinweise mehr. Die Listen im
-  Überblick bleiben.
+- **Kostentreiber, Mengentreiber und Preisausreißer** (G1, G2, G4) sind keine Hinweise
+  mehr. Die Listen im Überblick bleiben.
 - Einheiten mit Punkt am Ende („Psch.“) gelten als dieselbe wie ohne Punkt. Neue
   Einheiten-Gruppe „Pauschal“.
 

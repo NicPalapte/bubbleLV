@@ -28,7 +28,7 @@ export interface LoadedLV {
   /** Hinweise der Prüfregeln, fertig berechnet (WP-K). */
   check: CheckResult;
   /**
-   * Ähnlichkeits-Cluster, Unterschiede und Ausreißer (WP-M). Entstehen hier —
+   * Ähnlichkeits-Cluster und Unterschiede (WP-M). Entstehen hier —
    * also im Worker, sobald dessen Schwelle greift — und nie im Render
    * (.claude/CLAUDE.md#kritische-constraints).
    */
@@ -55,8 +55,7 @@ export function classifyAndBuild(draft: LVDraft, fileName: string): LoadedLV {
   // Haupt-Thread über dem empfangenen Baum neu auf (state/ViewerProvider.tsx).
   const index = buildPositionIndex(tree);
   const summary = summarize(index);
-  // Beziehungen vor den Prüfregeln: Regel G4 vergleicht den Einheitspreis
-  // gegen seinen Cluster und braucht ihn deshalb fertig.
+  // Beziehungen für das Vergleichsfenster (CompareWindow: ähnliche Positionen).
   const relations = measure('Beziehungen', () => buildRelations(index));
   return {
     tree,
@@ -66,7 +65,7 @@ export function classifyAndBuild(draft: LVDraft, fileName: string): LoadedLV {
     summary,
     // Prüfregeln sehen das ganze LV (Anteil an der Gesamtsumme, Mengen-Rang) und
     // laufen deshalb hier — einmal, nie im Render.
-    check: runChecks(index, summary, relations, CHECK_RULES, indexParents(tree)),
+    check: runChecks(index, summary, CHECK_RULES, indexParents(tree)),
     relations,
   };
 }

@@ -1,30 +1,8 @@
-// Streuung und Ausreißer innerhalb eines Clusters (WP-M, Schritt 4).
+// Streuung innerhalb eines Clusters (WP-M, Schritt 4).
 //
-// **Median und Quartilsabstand, nicht Mittelwert.** Ein einziger Tippfehler im
-// Einheitspreis (120 € statt 12 €) zieht den Mittelwert so weit mit, dass er
-// selbst nicht mehr auffällt — der Median bleibt, wo die Masse liegt. Die
-// Grenze ist das in der Statistik übliche 1,5-fache des Quartilsabstands
-// (Tukey). Zaunbreite und Mindestanzahl stehen als Parameter der Regel G4 in
-// docs/domain/reference/pruefregeln-parameter.csv; fehlen sie, gibt es keine
-// Ausreißer — kein Fehler.
-
-import { regelParameter } from '../check/referenz';
-
-function g4Zahl(name: string): number | null {
-  const roh = regelParameter('G4', name);
-  const zahl = roh === undefined ? NaN : Number(roh.replace(',', '.'));
-  return Number.isFinite(zahl) ? zahl : null;
-}
-
-/** Kleinste Anzahl Werte, ab der Quartile etwas aussagen (`mindestanzahl`). */
-export function minForOutliers(): number | null {
-  return g4Zahl('mindestanzahl');
-}
-
-/** Zaunbreite für Ausreißer: Quartil ± Zaunbreite × Quartilsabstand (`zaunbreite`). */
-function fence(): number | null {
-  return g4Zahl('zaunbreite');
-}
+// **Median und Quartile, nicht Mittelwert.** Ein einziger Tippfehler im
+// Einheitspreis (120 € statt 12 €) zieht den Mittelwert weit mit — der Median
+// bleibt, wo die Masse liegt.
 
 export interface ValueStats {
   /** Anzahl Werte, die tatsächlich vorliegen (fehlende zählen nicht mit). */
@@ -35,9 +13,6 @@ export interface ValueStats {
   q3: number;
   max: number;
 }
-
-/** Ausreißer-Richtung — „auffällig" sagt nichts ohne „wohin". */
-export type OutlierDirection = 'hoch' | 'niedrig';
 
 /**
  * Quantil einer aufsteigend sortierten Liste, linear interpoliert.
@@ -64,32 +39,6 @@ export function statsOf(values: readonly number[]): ValueStats | null {
     q3: quantile(sorted, 0.75),
     max: sorted[sorted.length - 1],
   };
-}
-
-/**
- * Erwartungsbereich einer Werteliste. `null`, wenn es zu wenige Werte gibt oder
- * der Quartilsabstand 0 ist: dann liegt die halbe Gruppe auf demselben Wert,
- * und jede Abweichung wäre ein „Ausreißer" — das ist kein Hinweis, das ist
- * Rauschen.
- */
-export function outlierBounds(stats: ValueStats): { low: number; high: number } | null {
-  const min = minForOutliers();
-  const zaun = fence();
-  if (min === null || zaun === null || stats.count < min) return null;
-  const iqr = stats.q3 - stats.q1;
-  if (iqr <= 0) return null;
-  return { low: stats.q1 - zaun * iqr, high: stats.q3 + zaun * iqr };
-}
-
-/** Wohin ein Wert aus dem Erwartungsbereich fällt; `null` = er liegt darin. */
-export function outlierDirection(
-  value: number,
-  bounds: { low: number; high: number },
-): OutlierDirection | null {
-  if (!Number.isFinite(value)) return null;
-  if (value > bounds.high) return 'hoch';
-  if (value < bounds.low) return 'niedrig';
-  return null;
 }
 
 /**

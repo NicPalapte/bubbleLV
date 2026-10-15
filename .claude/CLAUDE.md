@@ -107,7 +107,7 @@ fachliche Filter · **Graph als Hauptscreen** auf einem Filterzustand: Seitenfen
 (Überblick mit Import-Log · Filter · Prüfung), Positionskarte, Tabelle und Vergleich
 (max. 4 Positionen) als Fenster darüber (`docs/decisions/0034-graph-als-hauptscreen.md`,
 `docs/decisions/0037-vergleichsfenster.md`) · Beziehungen zwischen Positionen nur als
-Prüfregel (Ausreißer, G4) · eigene Markierung + Kommentar je Position zur letzten Datei
+ähnliche Positionen im Vergleich, keine wertende Prüfregel (`docs/decisions/0049`) · eigene Markierung + Kommentar je Position zur letzten Datei
 (`docs/decisions/0047-kommentare-und-markierungen.md`) · lokaler Export/Druck über das
 Logo-Menü. Matrix und
 Ähnlichkeit sind entfernt (`docs/decisions/0031-drei-ansichten.md`); keine

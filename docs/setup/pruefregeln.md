@@ -9,7 +9,7 @@ Build. Im Code bleibt nur, _wie_ eine Regel sucht und rechnet.
 | Datei                         | Was du dort änderst                                         |
 | ----------------------------- | ----------------------------------------------------------- |
 | `pruefregeln.csv`             | Status, Norm-Verweis, Name, Kategorie, Schwere, Hinweistext |
-| `pruefregeln-parameter.csv`   | Schwellwerte, z. B. `zaunbreite` bei G4                     |
+| `pruefregeln-parameter.csv`   | Schwellwerte, z. B. `positionen_im_titel` bei M1            |
 | `pruefregeln-stichworte.csv`  | Suchwörter für V2, V6 und V7                                |
 | `risiko-formulierungen.csv`   | Formulierungen für V4                                       |
 | `hersteller-produktnamen.csv` | Hersteller und Produktnamen für V3                          |
@@ -48,8 +48,8 @@ Folge, wenn eine Zeile fehlt: Die Regel bleibt inaktiv und nennt den fehlenden P
 
 ## Was im Code bleibt
 
-- Wie eine Regel rechnet: z. B. „Preis außerhalb des Erwartungsbereichs seiner Gruppe"
-  (G4) oder „Beton ohne Bewehrung, Betonstahl im selben Abschnitt" (M1).
+- Wie eine Regel rechnet: z. B. „Beton ohne Bewehrung, Betonstahl im selben Abschnitt"
+  (M1).
 - Die Titel je Fund, z. B. „keine Menge, keine Einheit" — sie setzen sich aus der Datei
   zusammen.
 - Die Erkennung von Bedarfs- und Alternativpositionen: sie steht als Feld in der
