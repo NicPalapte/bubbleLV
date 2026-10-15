@@ -7,11 +7,10 @@
 // und wäre je Ansicht zu teuer (.claude/CLAUDE.md#kritische-constraints).
 
 import { regelEintrag } from './referenz';
-import { g4Preisausreisser } from './rules/ausreisser';
-import { g1Kostentreiber, g2Mengentreiber, g3Einheitenschreibweise } from './rules/treiber';
+import { m1Bewehrung } from './rules/material';
+import { g3Einheitenschreibweise } from './rules/treiber';
 import {
   v10Homogenbereiche,
-  v11Alternativposition,
   v1Bedarfsposition,
   v2Stundenlohn,
   v3Produktname,
@@ -25,8 +24,7 @@ import {
 import type { CheckContext, CheckResult, CheckRule, Flag, RuleStatus } from './types';
 import type { PositionIndex } from '../index/positionIndex';
 import type { LVSummary } from '../index/summary';
-import type { RelationResult } from '../relate';
-import { EMPTY_RELATIONS } from '../relate';
+import type { LVNode } from '../../types/lvNode';
 
 export const CHECK_RULES: readonly CheckRule[] = [
   v1Bedarfsposition,
@@ -39,11 +37,8 @@ export const CHECK_RULES: readonly CheckRule[] = [
   v8Nebenleistung,
   v9BesondereLeistung,
   v10Homogenbereiche,
-  v11Alternativposition,
-  g1Kostentreiber,
-  g2Mengentreiber,
   g3Einheitenschreibweise,
-  g4Preisausreisser,
+  m1Bewehrung,
 ];
 
 /** Warum eine Regel nicht läuft — in einem Satz, den der Owner versteht. */
@@ -52,7 +47,9 @@ function inactiveReason(rule: CheckRule): string | null {
   if (eintrag === undefined) {
     return `Kein Eintrag für ${rule.id} in docs/domain/reference/pruefregeln.csv.`;
   }
-  if (eintrag.status === 'aus') return 'In der Referenzdatei abgeschaltet.';
+  if (eintrag.name === '' || eintrag.kategorie === null || eintrag.schwere === null) {
+    return `Name, Kategorie oder Schwere für ${rule.id} fehlt in docs/domain/reference/pruefregeln.csv.`;
+  }
   if (rule.requires !== undefined && !rule.requires.available()) {
     return `Referenzdatei ${rule.requires.file} enthält noch keine Einträge.`;
   }
@@ -67,26 +64,37 @@ function inactiveReason(rule: CheckRule): string | null {
  * die stolpert, darf den Import nicht anhalten; sie erscheint dann als inaktiv
  * mit der Fehlermeldung als Grund (Test: tests/check/rules.test.ts).
  *
- * `ruleSet` weicht nur in Tests vom ausgelieferten Katalog ab.
+ * `ruleSet` weicht nur in Tests vom ausgelieferten Katalog ab. Ohne `parents`
+ * gilt das ganze LV als ein Abschnitt.
  */
 export function runChecks(
   index: PositionIndex,
   summary: LVSummary,
-  relations: RelationResult = EMPTY_RELATIONS,
   ruleSet: readonly CheckRule[] = CHECK_RULES,
+  parents: ReadonlyMap<string, LVNode | null> = new Map(),
 ): CheckResult {
-  const context: CheckContext = { index, summary, relations };
+  const context: CheckContext = { index, summary, parents };
   const flags: Flag[] = [];
   const rules: RuleStatus[] = [];
 
   for (const rule of ruleSet) {
     const eintrag = regelEintrag(rule.id);
+    // `aus` nimmt die Regel ganz aus der Prüfung — auch aus der Liste.
+    if (eintrag?.status === 'aus') continue;
     let grund = inactiveReason(rule);
     let found: Flag[] = [];
 
+    const category = eintrag?.kategorie ?? 'vob';
+    const severity = eintrag?.schwere ?? 'hinweis';
+
     if (grund === null && rule.check !== undefined) {
       try {
-        found = rule.check(context);
+        found = rule.check(context).map((fund): Flag => ({
+          ...fund,
+          id: rule.id,
+          category,
+          severity: fund.severity ?? severity,
+        }));
       } catch (error) {
         // Eine stolpernde Regel darf den Import nicht anhalten.
         grund = `Regel abgebrochen: ${error instanceof Error ? error.message : 'unbekannt'}`;
@@ -99,10 +107,10 @@ export function runChecks(
 
     rules.push({
       id: rule.id,
-      label: rule.label,
-      category: rule.category,
-      severity: rule.severity,
-      hint: rule.hint,
+      label: eintrag?.name || rule.id,
+      category,
+      severity,
+      hint: eintrag?.hinweis ?? '',
       ruleRef: eintrag?.normVerweis ?? '',
       refConfirmed: eintrag?.status === 'bestaetigt',
       active,
@@ -124,5 +132,6 @@ export type {
   Flag,
   FlagCategory,
   FlagSeverity,
+  Fund,
   RuleStatus,
 } from './types';

@@ -20,10 +20,10 @@
 // Leistung gewollt; der konservative Schwellwert hält die Ketten kurz.
 
 import { jaccard, relateTokens, shingles } from './text';
-import { outlierBounds, outlierDirection, statsOf } from './stats';
+import { statsOf } from './stats';
 import { attrString } from '../attributes';
 import { canonicalUnit, unitLabel } from '../units';
-import type { Cluster, Outlier, RelationResult } from './types';
+import type { Cluster, RelationResult } from './types';
 import type { PositionIndex } from '../index/positionIndex';
 import type { PositionSummary } from '../../types/lvNode';
 
@@ -389,10 +389,6 @@ function clusterOf(index: PositionIndex, slots: readonly number[], similarity: n
     label: labelOf(positions),
     gemeinsameMerkmale,
     unterscheidendeMerkmale,
-    ausreisser: [
-      ...outliersOf(index.unitPrice, slots, positionIds, 'ep'),
-      ...outliersOf(index.quantity, slots, positionIds, 'menge'),
-    ],
     unitPrice: statsOf(slots.map((slot) => index.unitPrice[slot])),
     quantity: statsOf(slots.map((slot) => index.quantity[slot])),
     similarity,
@@ -434,27 +430,6 @@ function compareMerkmale(positions: readonly PositionSummary[]): {
   // Das vielfältigste Merkmal zuerst: dort steckt der eigentliche Unterschied.
   unterschiede.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'de'));
   return { gemeinsameMerkmale, unterscheidendeMerkmale: unterschiede.map(([key]) => key) };
-}
-
-function outliersOf(
-  column: Float64Array,
-  slots: readonly number[],
-  positionIds: readonly string[],
-  field: Outlier['field'],
-): Outlier[] {
-  const values = slots.map((slot) => column[slot]);
-  const stats = statsOf(values);
-  if (stats === null) return [];
-  const bounds = outlierBounds(stats);
-  if (bounds === null) return [];
-
-  const out: Outlier[] = [];
-  values.forEach((value, i) => {
-    const direction = outlierDirection(value, bounds);
-    if (direction === null) return;
-    out.push({ positionId: positionIds[i], field, direction, value, median: stats.median });
-  });
-  return out;
 }
 
 /**

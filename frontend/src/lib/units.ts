@@ -9,14 +9,15 @@
 // nicht um.
 //
 // Zwei Stufen:
-//  1. **Schreibweise** — Groß-/Kleinschreibung, Leerraum, hochgestellte Ziffern.
-//     Das ist objektiv und steht hier im Code.
+//  1. **Schreibweise** — Groß-/Kleinschreibung, Leerraum, hochgestellte Ziffern,
+//     Abkürzungspunkt am Ende („Psch." = „psch"). Das ist objektiv und steht hier
+//     im Code.
 //  2. **Inhaltliche Gruppen** — „Stk" und „Stück" sind dieselbe Einheit, „lfm"
 //     und „m" nicht (das eine ist eine Abrechnungsart). Das ist eine Fachaussage
 //     und steht deshalb in docs/domain/reference/einheiten-gruppen.csv, nicht im
 //     Code. Ist die Datei leer, greift nur Stufe 1 — kein Fehler.
 
-import gruppenCsv from './check/data/einheiten-gruppen.csv?raw';
+import gruppenCsv from '@reference/einheiten-gruppen.csv?raw';
 import { parseCsv, splitList } from './csv';
 
 /** Hochgestellte Ziffern, wie sie in "m²"/"m³" vorkommen. */
@@ -28,6 +29,7 @@ export function unitSpelling(raw: string | null | undefined): string | null {
   const key = raw
     .replace(/[¹²³]/g, (char) => SUPERSCRIPT[char])
     .replace(/\s+/g, '')
+    .replace(/\.+$/, '')
     .toLowerCase();
   return key === '' ? null : key;
 }

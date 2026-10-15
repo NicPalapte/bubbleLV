@@ -26,7 +26,7 @@ summarize(buildPositionIndex(tree))
     │  → LVSummary (Facetten-Zähler, Wertebereiche) im LoadedLV
     ▼
 buildRelations(index) · runChecks(index, summary, relations)
-    │  → Cluster (Ähnlichkeit, Unterschiede, Ausreißer) und Hinweise im LoadedLV
+    │  → Cluster (Ähnlichkeit, Unterschiede) und Hinweise im LoadedLV
     ▼
 React State (Session-only)
     │  buildPositionIndex(tree) im Haupt-Thread
@@ -46,11 +46,11 @@ Fremd-Assets (Webfonts) sind davon unberührt — sie transportieren keine Nutzd
 Browser im Worker verfügbar — der Parser-Schritt kann deshalb **nicht** in den Worker
 wandern. Die Pipeline ist entsprechend geteilt (`frontend/src/lib/pipeline/`):
 
-| Schritt | Läuft in | Warum |
-|---|---|---|
-| `parseToDraft` (Parser + `mapToLvDraft`) | Haupt-Thread | braucht `DOMParser`; nativer XML-Parser, entsprechend schnell |
-| `classifyAndBuild` (Klassifizierung + `buildTree` + Aggregate + Beziehungen + Prüfregeln) | Web Worker ab ~500 Positionen | rechenintensiv: eine Regelauswertung je Position, danach je ein Durchlauf für Aggregate, Cluster und Hinweise |
-| `buildPositionIndex` (flacher Positions-Index) | Haupt-Thread, nach dem Empfang | verweist auf die Baumknoten; Objektidentität überlebt `structuredClone` nicht |
+| Schritt                                                                                   | Läuft in                       | Warum                                                                                                         |
+| ----------------------------------------------------------------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| `parseToDraft` (Parser + `mapToLvDraft`)                                                  | Haupt-Thread                   | braucht `DOMParser`; nativer XML-Parser, entsprechend schnell                                                 |
+| `classifyAndBuild` (Klassifizierung + `buildTree` + Aggregate + Beziehungen + Prüfregeln) | Web Worker ab ~500 Positionen  | rechenintensiv: eine Regelauswertung je Position, danach je ein Durchlauf für Aggregate, Cluster und Hinweise |
+| `buildPositionIndex` (flacher Positions-Index)                                            | Haupt-Thread, nach dem Empfang | verweist auf die Baumknoten; Objektidentität überlebt `structuredClone` nicht                                 |
 
 `LVDraft` ist reines Datenmodell und damit `structuredClone`-fähig — der Übergang
 über die Worker-Grenze braucht keine Serialisierungsschicht. Dasselbe gilt für die
@@ -97,6 +97,7 @@ interface PositionDraft {
   quantity: number | null;
   unitPrice: number | null;
   positionType: PositionType; // NORMAL | ALTERNATIV | BEDARF | ZULAGENPOSITION
+  inputFields?: TextRange[]; // Eingabefelder, die die Quelle selbst kennzeichnet (0050)
   attributes: Record<string, unknown>; // aus classify() befüllt
 }
 
@@ -121,6 +122,7 @@ interface LVDraft {
 ```
 
 **Regeln:**
+
 - `buildTree(draft: LVDraft): LVNode` ist eine reine Funktion — kein Import aus
   `lib/gaeb/`.
 - `mapToLvDraft()` lebt neben dem Parser und ist die einzige Stelle, die GAEB-Typen
@@ -137,7 +139,7 @@ außerhalb dieses Repos, da ein LLM-Aufruf einen Server voraussetzt):
 interface ClassificationResult {
   attributes: Record<string, unknown>;
   meta: ClassificationMeta; // classifier-id, ruleset-id, version, confidence
-  spans: Span[];            // Fundstellen im Langtext (data-model.md#spans)
+  spans: Span[]; // Fundstellen im Langtext (data-model.md#spans)
 }
 
 interface Classifier {
@@ -175,7 +177,7 @@ Stufe 0 — Positionsart       → attributes.positionsart (Stichworte/Einheit i
     │
     ▼
 Extraktoren (WP-J)
-    │   normen · masse · platzhalter · verweise · fristen
+    │   normen · material · masse · platzhalter · verweise · fristen
     │   → attributes + spans (Fundstellen im Langtext)
     │   Laufen **vor** jedem Ruleset; ein Ruleset darf ihre Werte überschreiben,
     │   aber keinen löschen.
@@ -202,8 +204,9 @@ Vokabularwert als Attribut und den Wortlaut als Span
 **Kein Leistungsbereich** ([`decisions/0044`](../decisions/0044-leistungsbereich-entfernt.md)).
 Bis 0.11 ordnete Stufe 0 jede Position über einen STLB-Katalog einem Leistungsbereich
 (Gewerk) zu. Der Katalog hatte keine gepflegten Stichworte und lieferte fast nichts;
-die Zuordnung ist entfernt. Materialwissen kommt künftig aus einer eigenen Tabelle je
-Material.
+die Zuordnung ist entfernt. Materialwissen kommt aus einer Tabelle je Material
+(`src/lib/classify/material/`, [`decisions/0045`](../decisions/0045-materialwissen-als-tabelle.md))
+und läuft als Extraktor.
 
 **Identitäts- vs. Eigenschaftserkennung.** Positionsart (Fallback-Heuristik) und
 Bauteiltyp werden ausschließlich aus dem **Kurztext** bestimmt. Deutsche LV-Langtexte

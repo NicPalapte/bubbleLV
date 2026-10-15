@@ -11,7 +11,7 @@
 import type { Span } from '../classify';
 import type { PositionIndex } from '../index/positionIndex';
 import type { LVSummary } from '../index/summary';
-import type { RelationResult } from '../relate';
+import type { LVNode } from '../../types/lvNode';
 
 export type FlagCategory = 'geld' | 'menge' | 'risiko' | 'norm' | 'frist' | 'vob';
 export type FlagSeverity = 'hinweis' | 'beachten';
@@ -36,24 +36,28 @@ export type InactiveReason = string | null;
 export interface CheckContext {
   index: PositionIndex;
   summary: LVSummary;
-  /** Ähnlichkeits-Cluster (WP-M) — Vergleichsgruppe für Regel G4. */
-  relations: RelationResult;
+  /** Elternknoten je Knoten-ID — für Regeln, die im Hauptabschnitt suchen (M1). */
+  parents: ReadonlyMap<string, LVNode | null>;
 }
 
+/** Was eine Prüffunktion meldet; Regel-ID, Kategorie und Schwere setzt `runChecks`. */
+export type Fund = Omit<Flag, 'id' | 'category' | 'severity'> & {
+  /** Nur wenn ein Fund von der Schwere der Regel abweicht (V4: je Formulierung). */
+  severity?: FlagSeverity;
+};
+
+/**
+ * Die Logik einer Regel. Name, Hinweis, Kategorie, Schwere, Status und
+ * Norm-Verweis stehen nicht hier, sondern in docs/domain/reference/pruefregeln.csv.
+ */
 export interface CheckRule {
   /** Stabile ID, zugleich Schlüssel in docs/domain/reference/pruefregeln.csv. */
   id: string;
-  /** Überschrift der Gruppe in der Prüfliste. */
-  label: string;
-  category: FlagCategory;
-  severity: FlagSeverity;
-  /** Was die Regel sucht und warum ein Blick lohnt — ein Satz, kein Urteil. */
-  hint: string;
   /**
    * Prüffunktion. Fehlt sie, ist die Regel angemeldet, aber noch nicht
    * umgesetzt — sie erscheint in der Liste als inaktiv, statt still zu fehlen.
    */
-  check?(context: CheckContext): Flag[];
+  check?(context: CheckContext): Fund[];
   /**
    * Referenzdatei, ohne deren Inhalt die Regel nicht laufen kann. Enthält sie
    * nur die Kopfzeile, bleibt die Regel inaktiv — kein Fehler, nur ein

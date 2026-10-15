@@ -12,6 +12,7 @@ function classifyPosition(position: PositionDraft, classifier: Classifier): Posi
     shortText: position.shortText,
     longText: position.longText,
     unit: position.unit,
+    inputFields: position.inputFields,
   });
   // `_meta` und `_spans` sind reserviert und werden von den Facetten ignoriert
   // (data-model.md). `_spans` bleibt weg, wenn nichts gefunden wurde — ein

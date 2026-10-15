@@ -4,6 +4,12 @@
 
 export type PositionType = 'NORMAL' | 'ALTERNATIV' | 'BEDARF' | 'ZULAGENPOSITION';
 
+/** Zeichenbereich im Langtext. */
+export interface TextRange {
+  start: number;
+  end: number;
+}
+
 export interface PositionDraft {
   oz: string;
   shortText: string;
@@ -12,6 +18,11 @@ export interface PositionDraft {
   quantity: number | null;
   unitPrice: number | null;
   positionType: PositionType;
+  /**
+   * Stellen im Langtext, die die Quelldatei ausdrücklich als Eingabe des Bieters
+   * kennzeichnet. Fehlt, wenn die Quelle das nicht kennt oder keine hat.
+   */
+  inputFields?: TextRange[];
   // von classify() befüllt, siehe docs/architecture/data-model.md#attributes
   attributes: Record<string, unknown>;
 }

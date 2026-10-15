@@ -1,38 +1,60 @@
-// Die ausgelieferten Referenzdateien müssen deckungsgleich mit den gepflegten
-// unter docs/domain/reference/ sein — sonst prüft die App gegen etwas anderes,
-// als in der Dokumentation steht. Gleiches Prinzip wie beim STLB-Katalog.
+// Referenzdateien der Prüfregeln. Die App liest sie direkt aus
+// docs/domain/reference/ — es gibt keine zweite Kopie, die abweichen könnte.
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { CHECK_RULES } from '../../src/lib/check';
-import { regelEintrag, risikoFormulierungen } from '../../src/lib/check/referenz';
+import {
+  regelEintrag,
+  regelParameter,
+  regelStichworte,
+  regelZahl,
+  risikoFormulierungen,
+} from '../../src/lib/check/referenz';
+import { findeStichworte } from '../../src/lib/classify/material/stichwort';
 import { parseCsv, splitList } from '../../src/lib/csv';
 
-const DATEIEN = [
-  'pruefregeln.csv',
-  'risiko-formulierungen.csv',
-  'hersteller-produktnamen.csv',
-  'vob-nebenleistungen.csv',
-  'einheiten-gruppen.csv',
-];
-
 describe('Referenzdateien der Prüfregeln', () => {
-  it.each(DATEIEN)('%s ist deckungsgleich mit docs/domain/reference/', (datei) => {
-    const shipped = resolve(process.cwd(), `src/lib/check/data/${datei}`);
-    const canonical = resolve(process.cwd(), `../docs/domain/reference/${datei}`);
-    expect(readFileSync(shipped, 'utf-8')).toBe(readFileSync(canonical, 'utf-8'));
-  });
-
   it('führt jede angemeldete Regel in pruefregeln.csv', () => {
     for (const rule of CHECK_RULES) {
       expect(regelEintrag(rule.id), `Regel ${rule.id} fehlt in pruefregeln.csv`).toBeDefined();
     }
   });
 
+  it('gibt jeder Regel Name, Hinweis, Kategorie und Schwere aus der Tabelle', () => {
+    for (const rule of CHECK_RULES) {
+      const eintrag = regelEintrag(rule.id);
+      expect(eintrag?.name, `${rule.id} ohne Name`).not.toBe('');
+      expect(eintrag?.hinweis, `${rule.id} ohne Hinweis`).not.toBe('');
+      expect(eintrag?.kategorie, `${rule.id} ohne gültige Kategorie`).not.toBeNull();
+      expect(eintrag?.schwere, `${rule.id} ohne gültige Schwere`).not.toBeNull();
+    }
+  });
+
+  it('liest Parameter als Zahl und als Text', () => {
+    expect(regelZahl('M1', 'positionen_im_titel')).toBe(3);
+    expect(regelParameter('V2', 'einheiten_gruppe')).toBe('Stunde');
+  });
+
+  it('nennt einen fehlenden Parameter beim Namen, statt still mit 0 zu rechnen', () => {
+    expect(() => regelZahl('M1', 'gibt-es-nicht')).toThrow(/gibt-es-nicht.*pruefregeln-parameter/);
+  });
+
+  it('liest die Suchwörter je Regel und findet Verweise samt Nummer', () => {
+    const anlage = regelStichworte('V6').find((zeile) => zeile.wert === 'Anlage');
+    expect(anlage).toBeDefined();
+    const [treffer] = findeStichworte('Details siehe Anlage 3.', anlage!.pattern, null);
+    expect(treffer.text).toBe('siehe Anlage 3');
+    expect(regelStichworte('V9')).toEqual([]);
+  });
+
   it('nennt zu jeder Risiko-Formulierung ihre Quelle', () => {
     const rows = parseCsv(
-      readFileSync(resolve(process.cwd(), 'src/lib/check/data/risiko-formulierungen.csv'), 'utf-8'),
+      readFileSync(
+        resolve(process.cwd(), '../docs/domain/reference/risiko-formulierungen.csv'),
+        'utf-8',
+      ),
     );
     for (const row of rows) {
       expect(row.get('quelle_version'), `"${row.get('formulierung')}" ohne Quelle`).not.toBe('');

@@ -11,7 +11,7 @@ Das ist die einzige Aufgabe. Konkret:
 - **Klassifizieren und hervorheben** — Bauteil, Normen, Maße, Material; dazu
   vier Kategorien von „wichtig": Geld- und Mengentreiber, Risiko, Normen, Fristen
 - **Fachliche Filter** — Facetten aus den Daten, Wertebereiche, Prüf-Hinweise
-- **Beziehungen** — ähnliche Positionen, ihre Unterschiede und ihre Ausreißer
+- **Beziehungen** — ähnliche Positionen und ihre Unterschiede
 - **VOB-Check** — Hinweise mit Norm-Verweis, kein Rechtsrat
   ([Regelkatalog](docs/domain/vob-pruefungen.md))
 
@@ -38,13 +38,13 @@ Modell ist GAEB-spezifisch. Details: [`docs/architecture/data-model.md`](docs/ar
 
 ### Stack
 
-| Schicht       | Technologie                                          |
-|---------------|------------------------------------------------------|
-| App           | Vite · React · TypeScript · Tailwind (`frontend/`)   |
-| GAEB-Parsing  | eigener TS-Parser, gekapselt hinter `GaebParser`      |
-| Persistenz    | **keine** — alles im Browser-Speicher einer Session   |
-| Testing       | Vitest                                                |
-| Linting       | ESLint + Prettier                                     |
+| Schicht      | Technologie                                         |
+| ------------ | --------------------------------------------------- |
+| App          | Vite · React · TypeScript · Tailwind (`frontend/`)  |
+| GAEB-Parsing | eigener TS-Parser, gekapselt hinter `GaebParser`    |
+| Persistenz   | **keine** — alles im Browser-Speicher einer Session |
+| Testing      | Vitest                                              |
+| Linting      | ESLint + Prettier                                   |
 
 Es gibt kein Backend, keine Datenbank, keinen Login. Eine geladene Datei wird per
 `File.arrayBuffer()` im Browser gelesen, geparst, klassifiziert und in React-State
@@ -151,14 +151,14 @@ Details → [docs/scope.md](docs/scope.md) · Umsetzungsplan →
 Die App ist ein statisches Bundle und wird als GitHub Project Page ausgeliefert:
 **https://nicpalapte.github.io/bubbleLV/**
 
-| Was                 | Wann                                | Wo                                          |
-|---------------------|-------------------------------------|---------------------------------------------|
-| Live-Stand          | Push auf `main` oder manuell        | `https://nicpalapte.github.io/bubbleLV/`    |
-| Preview je PR       | Kommentar `/preview` im PR          | `.../bubbleLV/pr-preview/pr-<nummer>/`      |
+| Was           | Wann                         | Wo                                       |
+| ------------- | ---------------------------- | ---------------------------------------- |
+| Live-Stand    | Push auf `main` oder manuell | `https://nicpalapte.github.io/bubbleLV/` |
+| Preview je PR | Kommentar `/preview` im PR   | `.../bubbleLV/pr-preview/pr-<nummer>/`   |
 
 - [`deploy-pages.yml`](.github/workflows/deploy-pages.yml) baut `frontend/` und schreibt
   das Ergebnis in den Branch `gh-pages` (Wurzelverzeichnis). Manuell auslösbar über
-  *Actions → Deploy to GitHub Pages → Run workflow*, damit lässt sich auch ein
+  _Actions → Deploy to GitHub Pages → Run workflow_, damit lässt sich auch ein
   Feature-Branch testweise veröffentlichen.
 - [`pr-preview.yml`](.github/workflows/pr-preview.yml) legt auf den Kommentar `/preview`
   eine eigene Version unter `pr-preview/pr-<nummer>/` ab und postet den Link als Kommentar.
@@ -169,8 +169,8 @@ Die App ist ein statisches Bundle und wird als GitHub Project Page ausgeliefert:
 - Der Branch `gh-pages` wird ausschließlich von diesen Workflows verwaltet — dort nie
   von Hand committen.
 
-Einmalig im Repo einzustellen: *Settings → Pages → Source: **Deploy from a branch**,
-Branch `gh-pages` / `(root)`*. Schritt-für-Schritt: [`docs/setup/ci-und-agenten.md`](docs/setup/ci-und-agenten.md).
+Einmalig im Repo einzustellen: _Settings → Pages → Source: **Deploy from a branch**,
+Branch `gh-pages` / `(root)`_. Schritt-für-Schritt: [`docs/setup/ci-und-agenten.md`](docs/setup/ci-und-agenten.md).
 
 Project Pages liegen unter `/<repo>/`, deshalb baut der Workflow mit
 `--base=/<repo-name>/` (Previews entsprechend mit dem Unterordner). Lokal

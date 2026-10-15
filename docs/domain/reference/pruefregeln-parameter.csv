@@ -1,0 +1,4 @@
+regel_id,parameter,wert,bemerkung
+V2,einheiten_gruppe,Stunde,"Gruppe aus einheiten-gruppen.csv, die als Abrechnung nach Zeit gilt"
+V7,punktreihe_mindestlaenge,5,"So viele Punkte oder Unterstriche braucht eine Reihe im Fließtext, um als offene Stelle zu zählen. Eingabefelder, die die GAEB-Datei selbst kennzeichnet, zählen immer"
+M1,positionen_im_titel,3,"So viele Betonstahl-Positionen nennt der Hinweis mit OZ, der Rest als Anzahl"

@@ -9,11 +9,9 @@ import { describe, expect, it } from 'vitest';
 import { CHECK_RULES, runChecks } from '../../src/lib/check';
 import type { CheckRule } from '../../src/lib/check';
 import { classifyDraft, getClassifier } from '../../src/lib/classify';
-import { formatEuro } from '../../src/lib/format';
 import { buildPositionIndex } from '../../src/lib/index/positionIndex';
 import { summarize } from '../../src/lib/index/summary';
-import { buildRelations } from '../../src/lib/relate';
-import { buildTree, collectPositions } from '../../src/lib/tree/buildTree';
+import { buildTree, collectPositions, indexParents } from '../../src/lib/tree/buildTree';
 import type { CheckResult, RuleStatus } from '../../src/lib/check';
 import type { LVDraft, PositionDraft } from '../../src/types/lvDraft';
 
@@ -35,6 +33,10 @@ function position(overrides: Partial<PositionDraft>): PositionDraft {
 
 /** Ein LV aus den gegebenen Positionen, komplett durch die Pipeline gedreht. */
 function check(...positions: PositionDraft[]): CheckResult {
+  return checkMit(CHECK_RULES, ...positions);
+}
+
+function checkMit(ruleSet: readonly CheckRule[], ...positions: PositionDraft[]): CheckResult {
   const draft: LVDraft = {
     projectName: 'Prüf-Test',
     client: null,
@@ -48,8 +50,7 @@ function check(...positions: PositionDraft[]): CheckResult {
   };
   const tree = buildTree(classifyDraft(draft, classifier));
   const index = buildPositionIndex(tree);
-  // G4 vergleicht gegen die Cluster aus WP-M — die gehören zum Kontext.
-  return runChecks(index, summarize(index), buildRelations(index));
+  return runChecks(index, summarize(index), ruleSet);
 }
 
 function rule(result: CheckResult, id: string): RuleStatus {
@@ -62,7 +63,7 @@ function flagsOf(result: CheckResult, id: string) {
   return result.flags.filter((flag) => flag.id === id);
 }
 
-describe('V1 · Bedarfsposition', () => {
+describe('V1 · Bedarfs- und Alternativposition', () => {
   it('findet die Bedarfsposition und nur sie', () => {
     const result = check(
       position({ oz: '01.001.0010', positionType: 'NORMAL' }),
@@ -74,21 +75,19 @@ describe('V1 · Bedarfsposition', () => {
     expect(rule(result, 'V1').count).toBe(1);
   });
 
-  it('schweigt in einem LV ohne Bedarfspositionen', () => {
-    expect(flagsOf(check(position({})), 'V1')).toHaveLength(0);
-  });
-});
-
-describe('V11 · Alternativposition', () => {
-  it('findet die Alternativposition und nur sie', () => {
+  it('findet auch die Alternativposition, mit eigenem Titel', () => {
     const result = check(
-      position({ oz: '01.001.0010', positionType: 'NORMAL' }),
+      position({ oz: '01.001.0010', positionType: 'BEDARF' }),
       position({ oz: '01.001.0020', positionType: 'ALTERNATIV' }),
     );
-    const flags = flagsOf(result, 'V11');
-    expect(flags).toHaveLength(1);
-    expect(flags[0].positionId).toContain('01.001.0020');
-    expect(rule(result, 'V11').active).toBe(true);
+    expect(flagsOf(result, 'V1').map((flag) => flag.title)).toEqual([
+      'Bedarfsposition',
+      'Alternativposition',
+    ]);
+  });
+
+  it('schweigt in einem LV ohne Bedarfspositionen', () => {
+    expect(flagsOf(check(position({})), 'V1')).toHaveLength(0);
   });
 });
 
@@ -171,51 +170,6 @@ describe('V7 · Offene Textergänzung', () => {
   });
 });
 
-/** `count` Positionen mit aufsteigender OZ, Menge und Preis. */
-function viele(count: number, overrides: Partial<PositionDraft> = {}): PositionDraft[] {
-  return Array.from({ length: count }, (_, i) =>
-    position({
-      oz: `01.001.${String((i + 1) * 10).padStart(4, '0')}`,
-      quantity: i + 1,
-      unitPrice: i + 1,
-      ...overrides,
-    }),
-  );
-}
-
-describe('G1 · Kostentreiber', () => {
-  it('reiht nach Anteil an der Gesamtsumme', () => {
-    const result = check(...viele(12));
-    const flags = flagsOf(result, 'G1');
-    expect(flags).toHaveLength(10);
-    // Die teuerste Position ist die mit der größten Menge × EP.
-    expect(flags[0].positionId).toContain('01.001.0120');
-    expect(flags[0].title).toContain('Rang 1');
-    expect(flags[0].title).toContain('%');
-  });
-
-  it('schweigt, wenn die Datei keine Preise führt', () => {
-    expect(flagsOf(check(...viele(12, { unitPrice: null })), 'G1')).toHaveLength(0);
-  });
-
-  it('schweigt bei zu wenigen Positionen — „Rang 2 von 2" sagt nichts', () => {
-    expect(flagsOf(check(...viele(3)), 'G1')).toHaveLength(0);
-  });
-});
-
-describe('G2 · Mengentreiber', () => {
-  it('vergleicht nur innerhalb derselben Einheit', () => {
-    const result = check(
-      ...viele(12, { unit: 'm3' }),
-      position({ oz: '01.002.0010', unit: 'Stck', quantity: 99_999 }),
-    );
-    const flags = flagsOf(result, 'G2');
-    // Die einzelne Stück-Position bildet keine Rangliste — trotz Riesenmenge.
-    expect(flags).toHaveLength(10);
-    expect(flags.every((flag) => flag.title.includes('m3'))).toBe(true);
-  });
-});
-
 describe('G3 · Einheit uneinheitlich geschrieben', () => {
   it('meldet dieselbe Einheit in zwei Schreibweisen', () => {
     const result = check(
@@ -236,75 +190,95 @@ describe('G3 · Einheit uneinheitlich geschrieben', () => {
   });
 });
 
-describe('G4 · Einheitspreis fällt aus der Gruppe', () => {
-  /** Fünf gleichlautende Positionen; nur der letzte Preis ist der Prüfling. */
-  function gruppe(...preise: number[]) {
-    return check(
-      ...preise.map((unitPrice, i) =>
-        position({
-          oz: `01.001.00${i + 1}0`,
-          shortText: 'Innenwand herstellen',
-          longText: 'Herstellen einer tragenden Innenwand aus Beton, Abrechnung nach Aufmaß.',
-          unitPrice,
-        }),
-      ),
-    );
+describe('M1 · Bewehrung', () => {
+  /** Zwei Hauptabschnitte, damit die Suche nach Betonstahl an der Grenze endet. */
+  function zweiAbschnitte(rohbau: PositionDraft[], ausbau: PositionDraft[]): CheckResult {
+    const draft: LVDraft = {
+      projectName: 'Bewehrung',
+      client: null,
+      lots: [
+        {
+          number: '01',
+          label: 'Los',
+          sections: [
+            { number: '01.001', label: 'Rohbau', sections: [], positions: rohbau },
+            { number: '01.002', label: 'Ausbau', sections: [], positions: ausbau },
+          ],
+        },
+      ],
+    };
+    const tree = buildTree(classifyDraft(draft, classifier));
+    const index = buildPositionIndex(tree);
+    return runChecks(index, summarize(index), CHECK_RULES, indexParents(tree));
   }
 
-  it('meldet den Preis, der aus dem Rahmen seiner Gruppe fällt', () => {
-    const flags = flagsOf(gruppe(100, 105, 110, 115, 900), 'G4');
-    expect(flags).toHaveLength(1);
-    expect(flags[0].positionId).toContain('01.001.0050');
-    expect(flags[0].title).toContain('Median');
-  });
+  const wand = (oz: string, longText: string) =>
+    position({ oz, shortText: 'Stahlbetonwand C30/37', longText });
+  const stahl = (oz: string) =>
+    position({ oz, shortText: 'Betonstahl B500B liefern und einbauen', unit: 't' });
 
-  it('schreibt Beträge wie der Rest der Oberfläche', () => {
-    // Derselbe Ausreißer steht auch auf der Cluster-Karte der Ansicht
-    // „Ähnlichkeit"; beide gehen durch `formatEuro`, also mit zwei
-    // Nachkommastellen — sonst liest man je Ansicht eine andere Zahl.
-    const [flag] = flagsOf(gruppe(100, 105, 110, 115, 900), 'G4');
-    expect(flag.title).toContain(formatEuro(900));
-    expect(flag.title).toContain(`Median ${formatEuro(110)}`);
-  });
-
-  it('schweigt, solange die Preise der Gruppe beieinanderliegen', () => {
-    expect(flagsOf(gruppe(100, 105, 110, 115, 120), 'G4')).toHaveLength(0);
-  });
-
-  it('schweigt in einer Datei ohne Preise', () => {
-    const result = check(
-      ...[100, 105, 110, 115, 900].map((_, i) =>
-        position({ oz: `01.001.00${i + 1}0`, unitPrice: null }),
-      ),
+  it('nennt den Betonstahl im selben Hauptabschnitt', () => {
+    const result = zweiAbschnitte(
+      [wand('01.001.0010', 'Wand d = 25 cm.'), stahl('01.001.0020')],
+      [stahl('01.002.0010')],
     );
-    expect(flagsOf(result, 'G4')).toHaveLength(0);
+    const flags = flagsOf(result, 'M1');
+    expect(flags).toHaveLength(1);
+    expect(flags[0].positionId).toContain('01.001.0010');
+    expect(flags[0].title).toContain('01.001.0020');
+    expect(flags[0].title).not.toContain('01.002.0010');
   });
 
-  it('bleibt ein Hinweis und wird nie zum Urteil', () => {
-    const [flag] = flagsOf(gruppe(100, 105, 110, 115, 900), 'G4');
-    expect(flag.title).not.toMatch(/unzulässig|Verstoß|verboten|fehlerhaft|falsch/i);
+  it('sagt, wenn im Abschnitt auch kein Betonstahl steht', () => {
+    const result = zweiAbschnitte([wand('01.001.0010', '')], [stahl('01.002.0010')]);
+    expect(flagsOf(result, 'M1')[0].title).toContain('auch kein Betonstahl');
+  });
+
+  it('schweigt, wenn die Position die Bewehrung nennt', () => {
+    const result = zweiAbschnitte(
+      [
+        wand('01.001.0010', 'Einschl. Bewehrung.'),
+        wand('01.001.0020', 'Bewehrung wird gesondert vergütet.'),
+        wand('01.001.0030', 'Unbewehrt.'),
+      ],
+      [],
+    );
+    expect(flagsOf(result, 'M1')).toHaveLength(0);
+  });
+
+  it('schweigt bei Beton ohne Festigkeitsklasse, etwa einer Schalung', () => {
+    const schalung = position({ shortText: 'Schalung für Betonwände' });
+    expect(flagsOf(check(schalung), 'M1')).toHaveLength(0);
   });
 });
 
 describe('Regelzustand', () => {
   const result = check(position({}));
 
-  it('meldet jede Regel des Katalogs, auch die inaktiven', () => {
-    expect(result.rules.map((entry) => entry.id)).toEqual(CHECK_RULES.map((entry) => entry.id));
+  it('meldet jede Regel des Katalogs, auch die inaktiven — außer denen auf „aus"', () => {
+    const aus = ['V8', 'V9', 'V10'];
+    expect(result.rules.map((entry) => entry.id)).toEqual(
+      CHECK_RULES.map((entry) => entry.id).filter((id) => !aus.includes(id)),
+    );
+    expect(result.flags.some((flag) => aus.includes(flag.id))).toBe(false);
   });
 
   it('macht eine Regel ohne Referenzdaten inaktiv — mit Grund, ohne Fehler', () => {
-    const v3 = rule(result, 'V3');
-    expect(v3.active).toBe(false);
-    expect(v3.count).toBe(0);
-    expect(v3.inactiveReason).toContain('hersteller-produktnamen.csv');
-    expect(flagsOf(result, 'V3')).toHaveLength(0);
+    const ohneDaten: CheckRule = {
+      id: 'V2', // vorhandene ID, damit der Eintrag in pruefregeln.csv greift
+      check: () => [],
+      requires: { file: 'docs/domain/reference/leer.csv', available: () => false },
+    };
+    const [status] = checkMit([ohneDaten], position({})).rules;
+    expect(status.active).toBe(false);
+    expect(status.count).toBe(0);
+    expect(status.inactiveReason).toContain('leer.csv');
   });
 
-  it('markiert einen noch nicht bestätigten Norm-Verweis als solchen', () => {
+  it('übernimmt Norm-Verweis und Status aus pruefregeln.csv', () => {
     const v1 = rule(result, 'V1');
     expect(v1.ruleRef).toBe('VOB/A § 7 Abs. 1 Nr. 4');
-    expect(v1.refConfirmed).toBe(false);
+    expect(v1.refConfirmed).toBe(true);
 
     const v7 = rule(result, 'V7');
     expect(v7.refConfirmed).toBe(true);
@@ -330,10 +304,6 @@ describe('Regelzustand', () => {
 describe('Eine stolpernde Regel hält den Import nicht an', () => {
   const kaputt: CheckRule = {
     id: 'V1', // vorhandene ID, damit der Eintrag in pruefregeln.csv greift
-    label: 'Absichtlich fehlerhaft',
-    category: 'vob',
-    severity: 'hinweis',
-    hint: 'Nur für den Test.',
     check() {
       throw new TypeError('absichtlich');
     },
@@ -360,7 +330,7 @@ describe('Eine stolpernde Regel hält den Import nicht an', () => {
     );
     const index = buildPositionIndex(tree);
 
-    const result = runChecks(index, summarize(index), buildRelations(index), [kaputt]);
+    const result = runChecks(index, summarize(index), [kaputt]);
     expect(result.flags).toEqual([]);
     const [status] = result.rules;
     expect(status.active).toBe(false);

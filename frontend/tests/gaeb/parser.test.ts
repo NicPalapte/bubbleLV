@@ -147,6 +147,20 @@ describe('XmlGaebParser · gaeb-xml-beispiel.x83 (BVBS-Musterdatei)', () => {
     expect(position.longText).toContain('02 Membran-Druckausdehnungsgefäß');
   });
 
+  it('kennzeichnet Bieter-Textergänzungen als Eingabefelder im Langtext', () => {
+    const positions = lv.lots.flatMap(function all(entry: {
+      positions?: ParsedPosition[];
+      sections: ParsedSection[];
+    }): ParsedPosition[] {
+      return [...(entry.positions ?? []), ...entry.sections.flatMap(all)];
+    });
+    const position = positions.find((p) => p.longText.includes('Breite von'));
+    expect(position).toBeDefined();
+    const felder = position!.inputFields.map((f) => position!.longText.slice(f.start, f.end));
+    expect(felder).toEqual(['...........', '...........']);
+    expect(position!.longText).not.toMatch(/[\uE000\uE001]/);
+  });
+
   it('liefert Mengen und Einheiten, aber keine Preise (x83 ohne UP)', () => {
     const position = byOz(lv, '001.002.0040');
     expect(position.quantity).toBe(1245);

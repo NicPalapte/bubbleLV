@@ -27,14 +27,14 @@ erlaubt, sie transportieren keine Nutzdaten.
 > ausschreibenden Büros. Jede Ansicht in diesem Dokument bedient mindestens einen
 > dieser Fälle — Ansichten ohne Anwendungsfall werden nicht gebaut.
 
-| Nr. | Anwendungsfall | Leitfrage | Ansichten |
-|---|---|---|---|
-| UC-1 | **Erster Überblick** (Tag 1 nach Erhalt) | Wie groß, welche Gewerke, wo liegen die Schwerpunkte? | Überblick, Graph |
-| UC-2 | **Risiko-Durchsicht** vor der Abgabe | Wo lauern Bedarfspositionen, Stundenlohn, Wagnisse, Lücken? | Prüfung, Tabelle |
-| UC-3 | **Paketbildung / Kalkulationsvorbereitung** | Was gehört fachlich zusammen, was wiederholt sich? | Ähnlichkeit, Matrix |
-| UC-4 | **Mengengerüst verstehen** | Welche Mengen und Einheiten dominieren, ist das plausibel? | Überblick, Matrix, Tabelle |
-| UC-5 | **Einzelne Position verstehen** | Was genau ist gefordert, welche Norm gilt, was ist anders als nebenan? | Eigenschaften, Vergleich |
-| UC-6 | **Unklarheiten sammeln** (Grundlage für Bieterfragen) | Welche Stellen sind unvollständig, widersprüchlich oder auszufüllen? | Prüfung |
+| Nr.  | Anwendungsfall                                        | Leitfrage                                                              | Ansichten                  |
+| ---- | ----------------------------------------------------- | ---------------------------------------------------------------------- | -------------------------- |
+| UC-1 | **Erster Überblick** (Tag 1 nach Erhalt)              | Wie groß, welche Gewerke, wo liegen die Schwerpunkte?                  | Überblick, Graph           |
+| UC-2 | **Risiko-Durchsicht** vor der Abgabe                  | Wo lauern Bedarfspositionen, Stundenlohn, Wagnisse, Lücken?            | Prüfung, Tabelle           |
+| UC-3 | **Paketbildung / Kalkulationsvorbereitung**           | Was gehört fachlich zusammen, was wiederholt sich?                     | Ähnlichkeit, Matrix        |
+| UC-4 | **Mengengerüst verstehen**                            | Welche Mengen und Einheiten dominieren, ist das plausibel?             | Überblick, Matrix, Tabelle |
+| UC-5 | **Einzelne Position verstehen**                       | Was genau ist gefordert, welche Norm gilt, was ist anders als nebenan? | Eigenschaften, Vergleich   |
+| UC-6 | **Unklarheiten sammeln** (Grundlage für Bieterfragen) | Welche Stellen sind unvollständig, widersprüchlich oder auszufüllen?   | Prüfung                    |
 
 UC-6 liefert **nur die Liste**. Fragen verwalten, zuweisen oder versenden bleibt draußen
 — das braucht einen Server (siehe Out of Scope).
@@ -59,12 +59,12 @@ UC-6 liefert **nur die Liste**. Fragen verwalten, zuweisen oder versenden bleibt
 
 Richtwert: **10.000 Positionen** flüssig. Messbare Zielwerte, gültig für alle Ansichten:
 
-| Was | Ziel |
-|---|---|
-| Laden bis erste Ansicht (10k Positionen) | < 5 s |
-| Filter/Suche ändern → Ansicht aktualisiert | < 100 ms |
-| Zoom/Pan im Graphen | flüssig (keine sichtbaren Ruckler) |
-| Ansicht wechseln | < 200 ms, Filter und Auswahl bleiben erhalten |
+| Was                                        | Ziel                                          |
+| ------------------------------------------ | --------------------------------------------- |
+| Laden bis erste Ansicht (10k Positionen)   | < 5 s                                         |
+| Filter/Suche ändern → Ansicht aktualisiert | < 100 ms                                      |
+| Zoom/Pan im Graphen                        | flüssig (keine sichtbaren Ruckler)            |
+| Ansicht wechseln                           | < 200 ms, Filter und Auswahl bleiben erhalten |
 
 Mittel dazu: flacher Positions-Index statt Baum-Traversierung bei jedem Render,
 Aggregation im Web Worker, Virtualisierung in der Tabelle, Level-of-Detail und Culling
@@ -83,25 +83,25 @@ Die Klassifizierung bleibt hinter der austauschbaren TS-Schnittstelle
 (`frontend/src/lib/classify/`) und wird um **quellenunabhängige**
 Extraktoren erweitert. Sie greifen auch dort, wo kein eigenes Ruleset existiert:
 
-| Merkmal | Beispiel | Wofür |
-|---|---|---|
-| Normen-Verweise | `DIN EN 206`, `DIN 18300`, `ZTV-ING` | Qualitätsanforderungen sichtbar machen |
-| Maße und Mengengrößen | `d = 30 cm`, `bis 3,50 m`, `≥ 5 t` | Vergleich, Filter |
-| Material | Beton, Stahl, Holz, Bitumen, Dämmstoff | Ähnlichkeit, Matrix |
-| Platzhalter / Textergänzungen | „vom Bieter einzutragen" | UC-6 |
-| Verweise | „siehe Pos. 01.020", „gemäß Baugrundgutachten" | Vollständigkeit |
-| Fristen und Randbedingungen | Bauzeit, Winterbau, Arbeiten unter Verkehr | UC-2 |
+| Merkmal                       | Beispiel                                       | Wofür                                  |
+| ----------------------------- | ---------------------------------------------- | -------------------------------------- |
+| Normen-Verweise               | `DIN EN 206`, `DIN 18300`, `ZTV-ING`           | Qualitätsanforderungen sichtbar machen |
+| Maße und Mengengrößen         | `d = 30 cm`, `bis 3,50 m`, `≥ 5 t`             | Vergleich, Filter                      |
+| Material                      | Beton, Stahl, Holz, Bitumen, Dämmstoff         | Ähnlichkeit, Matrix                    |
+| Platzhalter / Textergänzungen | „vom Bieter einzutragen"                       | UC-6                                   |
+| Verweise                      | „siehe Pos. 01.020", „gemäß Baugrundgutachten" | Vollständigkeit                        |
+| Fristen und Randbedingungen   | Bauzeit, Winterbau, Arbeiten unter Verkehr     | UC-2                                   |
 
 **Hervorhebung im Text:** Der Klassifizierer liefert künftig **Textstellen**
-(Zeichen-Positionen) statt nur Werte. Nur so lässt sich im Langtext markieren, *woher*
+(Zeichen-Positionen) statt nur Werte. Nur so lässt sich im Langtext markieren, _woher_
 ein Merkmal stammt. Das ist eine Erweiterung des `attributes`-Schemas, siehe
 [`architecture/data-model.md`](architecture/data-model.md).
 
 **Vier Kategorien von „wichtig"** (vom Owner bestätigt), jede als eigene, abschaltbare
 Hervorhebung:
 
-1. **Geld- und Mengentreiber** — Anteil an der Gesamtsumme, auffällige Mengen,
-   Einheitspreis-Ausreißer gegenüber ähnlichen Positionen.
+1. **Geld und Menge** — Anteil an der Gesamtsumme, größte Mengen je Einheit. Als Liste,
+   ohne Wertung (G1, G2, G4 entfernt, `docs/decisions/0049-pruefregeln-als-tabelle.md`).
 2. **Risiko und Unschärfe** — Bedarfs-/Alternativ-/Zulageposition, Stundenlohn, fehlende
    Menge oder Einheit, offene Platzhalter, unklare Formulierungen.
 3. **Normen und Qualitäten** — DIN/EN-Verweise, Betongüte, Expositions- und
@@ -141,17 +141,17 @@ Wechseln heißt: anderer Blick auf dasselbe, nie Neuanfang.
 > unten sind durchgestrichen und gelten nicht mehr. Der Vergleich ist seit
 > [0037](decisions/0037-vergleichsfenster.md) als Fenster zurück.
 
-| Ansicht | Zeigt | Anwendungsfall | Stand |
-|---|---|---|---|
-| **Überblick** | Kennzahlen, Treemap nach Hauptabschnitt/Einheit, Pareto („20 % der Positionen = 80 % der Summe"), ohne Preise größte Mengen je Einheit statt Pareto und Mengen je Einheit ([0040](decisions/0040-auswertung-ohne-klassifizierung.md)) | UC-1, UC-4 | neu |
-| **Graph** | Struktur und Verortung als Bubble-Graph | UC-1 | vorhanden, Umbau offen |
-| **Tabelle** | alle Spalten, Gruppierung, Summen | UC-2, UC-4 | vorhanden |
-| ~~Matrix~~ | entfernt, siehe [0031](decisions/0031-drei-ansichten.md) | – | entfernt |
-| ~~Ähnlichkeit~~ | entfernt; später ggf. als Fenster über dem Graphen | – | zurückgestellt |
-| **Vergleich** | Fenster über dem Graphen, bis zu vier Positionen, siehe [0037](decisions/0037-vergleichsfenster.md) | UC-5 | Fenster |
-| **Prüfung** | Reiter im Seitenfenster: Hinweise aus VOB-Check und Flags, gruppiert nach Regel | UC-2, UC-6 | Seitenfenster |
-| **Import-Log** | Karte im Überblick: fehlende Einheiten/Mengen, nicht klassifizierte Positionen, doppelte OZ | UC-6 | neu |
-| **Eigenschaften** | Details der gewählten Position mit hervorgehobenem Langtext | UC-5 | vorhanden |
+| Ansicht           | Zeigt                                                                                                                                                                                                                                 | Anwendungsfall | Stand                  |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- | ---------------------- |
+| **Überblick**     | Kennzahlen, Treemap nach Hauptabschnitt/Einheit, Pareto („20 % der Positionen = 80 % der Summe"), ohne Preise größte Mengen je Einheit statt Pareto und Mengen je Einheit ([0040](decisions/0040-auswertung-ohne-klassifizierung.md)) | UC-1, UC-4     | neu                    |
+| **Graph**         | Struktur und Verortung als Bubble-Graph                                                                                                                                                                                               | UC-1           | vorhanden, Umbau offen |
+| **Tabelle**       | alle Spalten, Gruppierung, Summen                                                                                                                                                                                                     | UC-2, UC-4     | vorhanden              |
+| ~~Matrix~~        | entfernt, siehe [0031](decisions/0031-drei-ansichten.md)                                                                                                                                                                              | –              | entfernt               |
+| ~~Ähnlichkeit~~   | entfernt; später ggf. als Fenster über dem Graphen                                                                                                                                                                                    | –              | zurückgestellt         |
+| **Vergleich**     | Fenster über dem Graphen, bis zu vier Positionen, siehe [0037](decisions/0037-vergleichsfenster.md)                                                                                                                                   | UC-5           | Fenster                |
+| **Prüfung**       | Reiter im Seitenfenster: Hinweise aus VOB-Check und Flags, gruppiert nach Regel                                                                                                                                                       | UC-2, UC-6     | Seitenfenster          |
+| **Import-Log**    | Karte im Überblick: fehlende Einheiten/Mengen, nicht klassifizierte Positionen, doppelte OZ                                                                                                                                           | UC-6           | neu                    |
+| **Eigenschaften** | Details der gewählten Position mit hervorgehobenem Langtext                                                                                                                                                                           | UC-5           | vorhanden              |
 
 **Seit 2026-10-05** ist der Graph der Hauptscreen; Überblick (mit Import-Log) und Prüfung
 sind Reiter im Seitenfenster, Tabelle und Eigenschaften (Positionskarte) schweben als
@@ -168,8 +168,6 @@ Merkmalen berechnet:
   gruppiert. Findet Wiederholungen über Lose hinweg und Varianten derselben Leistung.
 - **Unterschied** — innerhalb einer Gruppe wird markiert, was die Positionen
   auseinanderhält: eine Zeile Langtext, eine andere Betongüte, eine andere Dicke.
-- **Ausreißer** — gleiche Leistung, abweichender Einheitspreis oder abweichende
-  Mengenordnung. Nur bei Dateien mit Preisen.
 
 Berechnet **einmalig beim Laden im Worker**, nicht bei jedem Render. Paarweiser
 Vergleich aller Positionen ist bei 10.000 Positionen nicht bezahlbar — vorgeschaltet
@@ -193,29 +191,29 @@ Bisher galt „kein Export". Das wird gelockert, weil es die Architektur nicht b
 
 Bewusst **nicht** Teil dieses Produkts. Anfragen dazu werden abgelehnt oder vertröstet.
 
-| Bereich | Anmerkung |
-|---|---|
-| Jede Server-Komponente, DB, Login, SSO | unverändert die härteste Regel |
-| Persistenz über die Session hinaus | kein `localStorage`, keine Cookies; IndexedDB nur für die zuletzt geöffnete Datei und ihre Notizen (Entscheidungen 0046, 0047) |
-| **Mehrere Dateien gleichzeitig** | Zwei LVs vergleichen (Versionsstände, Nachträge) und x83+x84 zusammenführen: **perspektivisch gewollt, jetzt draußen** |
-| LLM-Klassifizierung | setzt einen Server voraus |
-| Aufgaben, Zuständigkeit, Vergabepakete, NU-Anfragen | braucht Persistenz; erlaubt sind nur eigene Markierungen und Kommentare je Position zur letzten Datei (Entscheidung 0047) |
-| Bieterfragen **verwalten** | Bubble liefert nur die Liste der Unklarheiten (UC-6) |
-| Status **ändern** | Status bleibt Filter-Facette, Default `OPEN` aus dem Import |
-| EP-Kalkulation, Preisdatenbank | das ist iTwo, nicht Bubble |
-| GAEB-Export, Excel-/Manuell-Import | Datenmodell bleibt offen dafür, Wege werden nicht gebaut |
-| Multi-Tenant / SaaS | nie |
+| Bereich                                             | Anmerkung                                                                                                                      |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Jede Server-Komponente, DB, Login, SSO              | unverändert die härteste Regel                                                                                                 |
+| Persistenz über die Session hinaus                  | kein `localStorage`, keine Cookies; IndexedDB nur für die zuletzt geöffnete Datei und ihre Notizen (Entscheidungen 0046, 0047) |
+| **Mehrere Dateien gleichzeitig**                    | Zwei LVs vergleichen (Versionsstände, Nachträge) und x83+x84 zusammenführen: **perspektivisch gewollt, jetzt draußen**         |
+| LLM-Klassifizierung                                 | setzt einen Server voraus                                                                                                      |
+| Aufgaben, Zuständigkeit, Vergabepakete, NU-Anfragen | braucht Persistenz; erlaubt sind nur eigene Markierungen und Kommentare je Position zur letzten Datei (Entscheidung 0047)      |
+| Bieterfragen **verwalten**                          | Bubble liefert nur die Liste der Unklarheiten (UC-6)                                                                           |
+| Status **ändern**                                   | Status bleibt Filter-Facette, Default `OPEN` aus dem Import                                                                    |
+| EP-Kalkulation, Preisdatenbank                      | das ist iTwo, nicht Bubble                                                                                                     |
+| GAEB-Export, Excel-/Manuell-Import                  | Datenmodell bleibt offen dafür, Wege werden nicht gebaut                                                                       |
+| Multi-Tenant / SaaS                                 | nie                                                                                                                            |
 
 ---
 
 ## Was sich gegenüber dem MVP-Scope ändert
 
-| Punkt | Vorher | Jetzt |
-|---|---|---|
-| Zielsatz | LV-Viewer, der iTwo bei der Angebotskoordination ergänzt | Ein LV vollständig verstehen |
-| Ansichten | Graph ist der Kern, Tabelle ist Beiwerk | acht gleichrangige Ansichten, ein Filterzustand |
-| Beziehungen | gar nicht vorhanden | eigene Säule (Ähnlichkeit, Unterschied, Ausreißer) |
-| Bewertung | nur beschreiben | VOB-Check und Flags bewerten (als Hinweis) |
-| Klassifizierung | Rulesets je Gewerk, sonst dünner Fallback | zusätzlich gewerkeunabhängige Extraktoren mit Textstellen |
-| Export | verboten | lokaler Download und Druck erlaubt |
-| Preisdateien | nur x83 betrachtet | x84/x86 ausdrücklich mit |
+| Punkt           | Vorher                                                   | Jetzt                                                     |
+| --------------- | -------------------------------------------------------- | --------------------------------------------------------- |
+| Zielsatz        | LV-Viewer, der iTwo bei der Angebotskoordination ergänzt | Ein LV vollständig verstehen                              |
+| Ansichten       | Graph ist der Kern, Tabelle ist Beiwerk                  | acht gleichrangige Ansichten, ein Filterzustand           |
+| Beziehungen     | gar nicht vorhanden                                      | eigene Säule (Ähnlichkeit, Unterschied)                   |
+| Bewertung       | nur beschreiben                                          | VOB-Check und Flags bewerten (als Hinweis)                |
+| Klassifizierung | Rulesets je Gewerk, sonst dünner Fallback                | zusätzlich gewerkeunabhängige Extraktoren mit Textstellen |
+| Export          | verboten                                                 | lokaler Download und Druck erlaubt                        |
+| Preisdateien    | nur x83 betrachtet                                       | x84/x86 ausdrücklich mit                                  |

@@ -183,53 +183,7 @@ describe('Schwellwert', () => {
   });
 });
 
-describe('Ausreißer', () => {
-  /** Vier gleiche Preise plus einer, der weit darüber liegt. */
-  function preisgruppe(extra: number): RelationResult {
-    return relationsOf(
-      position({ oz: '01.001.0010', unitPrice: 100 }),
-      position({ oz: '01.001.0020', unitPrice: 105 }),
-      position({ oz: '01.001.0030', unitPrice: 110 }),
-      position({ oz: '01.001.0040', unitPrice: 115 }),
-      position({ oz: '01.001.0050', unitPrice: extra }),
-    );
-  }
-
-  it('meldet den Einheitspreis, der aus dem Rahmen fällt', () => {
-    const [cluster] = preisgruppe(900).clusters;
-    const ep = cluster.ausreisser.filter((outlier) => outlier.field === 'ep');
-    expect(ep).toHaveLength(1);
-    expect(ep[0].positionId).toContain('01.001.0050');
-    expect(ep[0].direction).toBe('hoch');
-    expect(ep[0].median).toBe(110);
-  });
-
-  it('schweigt, solange die Preise beieinanderliegen', () => {
-    const [cluster] = preisgruppe(120).clusters;
-    expect(cluster.ausreisser.filter((outlier) => outlier.field === 'ep')).toHaveLength(0);
-  });
-
-  it('schweigt bei zu kleiner Gruppe — zwei Werte haben keine Quartile', () => {
-    const result = relationsOf(
-      position({ oz: '01.001.0010', unitPrice: 100 }),
-      position({ oz: '01.001.0020', unitPrice: 9000 }),
-    );
-    expect(result.clusters[0].ausreisser).toHaveLength(0);
-  });
-
-  it('meldet auch eine Menge, die aus dem Rahmen fällt', () => {
-    const result = relationsOf(
-      position({ oz: '01.001.0010', quantity: 10 }),
-      position({ oz: '01.001.0020', quantity: 12 }),
-      position({ oz: '01.001.0030', quantity: 14 }),
-      position({ oz: '01.001.0040', quantity: 16 }),
-      position({ oz: '01.001.0050', quantity: 5000 }),
-    );
-    const mengen = result.clusters[0].ausreisser.filter((outlier) => outlier.field === 'menge');
-    expect(mengen).toHaveLength(1);
-    expect(mengen[0].positionId).toContain('01.001.0050');
-  });
-
+describe('Kennzahlen', () => {
   it('kennt ohne Preise keine Preis-Kennzahlen', () => {
     const result = relationsOf(
       position({ oz: '01.001.0010', unitPrice: null }),

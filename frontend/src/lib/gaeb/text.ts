@@ -33,6 +33,32 @@ const INLINE_PARTS = new Set(['ComplCaption', 'ComplBody', 'ComplTail']);
  */
 const PARAGRAPH_END = '\u2029';
 
+/**
+ * Interne Marker um den Inhalt eines Bieter-Eingabefelds (<TextComplement
+ * Kind="Bidder">, dessen <ComplBody>). Zeichen aus dem Private-Use-Bereich: sie
+ * überleben `toBlocks`/`reflowLines` unverändert und werden erst von
+ * `splitInputFields` zu Zeichenbereichen im fertigen Text. So stimmen die
+ * Bereiche, auch wenn Zeilen zusammengezogen wurden.
+ */
+const FIELD_START = '\uE000';
+const FIELD_END = '\uE001';
+const MARKERS = /[\uE000\uE001]/g;
+
+/** Zeichenbereich eines Eingabefelds im Text; `start === end` bei leerem Feld. */
+export interface TextRange {
+  start: number;
+  end: number;
+}
+
+function isBidderBody(el: Element): boolean {
+  const parent = el.parentElement;
+  return (
+    el.localName === 'ComplBody' &&
+    parent?.localName === 'TextComplement' &&
+    parent.getAttribute('Kind') === 'Bidder'
+  );
+}
+
 function walk(node: Node, out: string[]): void {
   const children = node.childNodes;
   for (let i = 0; i < children.length; i++) {
@@ -43,7 +69,9 @@ function walk(node: Node, out: string[]): void {
       // Zeilenumbruch und erzeugte so nach jedem <p> eine Leerzeile (Issue #41).
       // Als Leerzeichen bleibt sie Trenner zwischen zwei <span> in einem <p>.
       out.push(
-        value.includes('\n') && value.trim() === '' ? ' ' : value.replaceAll(PARAGRAPH_END, ' '),
+        value.includes('\n') && value.trim() === ''
+          ? ' '
+          : value.replaceAll(PARAGRAPH_END, ' ').replace(MARKERS, ''),
       );
       continue;
     }
@@ -57,7 +85,10 @@ function walk(node: Node, out: string[]): void {
     // <image> transportiert nur Binärdaten/Verweise, kein Text.
     if (el.localName === 'image') continue;
 
+    const field = isBidderBody(el);
+    if (field) out.push(FIELD_START);
     walk(el, out);
+    if (field) out.push(FIELD_END);
     if (BLOCK_ELEMENTS.has(el.localName)) out.push(PARAGRAPH_END);
     else if (INLINE_PARTS.has(el.localName)) out.push(' ');
   }
@@ -161,12 +192,44 @@ export function reflowLines(lines: readonly string[]): string {
   return paragraphs.join('\n');
 }
 
-/** Mehrzeiliger Text mit erhaltenen Absätzen (Langtext, Hinweistexte). */
-export function extractText(el: Element | null): string {
+/**
+ * Wie `extractText`, aber mit den Markern um Bieter-Eingabefelder. Nur für
+ * Texte, die anschließend durch `splitInputFields` gehen.
+ */
+export function extractMarkedText(el: Element | null): string {
   if (el === null) return '';
   const out: string[] = [];
   walk(el, out);
   return reflowLines(toBlocks(out.join('')));
+}
+
+/** Bereich ohne Leerraum am Rand; ein Feld nur aus Leerraum wird leer. */
+function trimRange(text: string, start: number, end: number): TextRange {
+  let s = start;
+  let e = end;
+  while (s < e && /\s/.test(text[s])) s++;
+  while (e > s && /\s/.test(text[e - 1])) e--;
+  return { start: s, end: e };
+}
+
+/** Entfernt die Marker und liefert die Bereiche der Eingabefelder im bereinigten Text. */
+export function splitInputFields(marked: string): { text: string; fields: TextRange[] } {
+  const fields: TextRange[] = [];
+  let text = '';
+  let open: number | null = null;
+  for (const char of marked) {
+    if (char === FIELD_START) open = text.length;
+    else if (char === FIELD_END) {
+      if (open !== null) fields.push(trimRange(text, open, text.length));
+      open = null;
+    } else text += char;
+  }
+  return { text, fields };
+}
+
+/** Mehrzeiliger Text mit erhaltenen Absätzen (Langtext, Hinweistexte). */
+export function extractText(el: Element | null): string {
+  return extractMarkedText(el).replace(MARKERS, '');
 }
 
 /** Einzeiliger Text (Kurztext, Bereichsbezeichnung) — Umbrüche werden zu Leerzeichen. */

@@ -2,6 +2,8 @@
 // Adaptergrenze nie — nach mapToLvDraft() gibt es nur noch LVDraft
 // (docs/architecture/pipeline.md#gaeb-parser-grenze).
 
+import type { TextRange } from './text';
+
 /**
  * Positionsart im GAEB-Vokabular. Namen und Wertebereich entsprechen der
  * Mapping-Tabelle des archivierten `PyGAEBAdapter` (`archive/backend-mvp`),
@@ -29,6 +31,8 @@ export interface ParsedPosition {
   quantity: number | null;
   unitPrice: number | null;
   itemType: GaebItemType;
+  /** Bieter-Eingabefelder (<TextComplement Kind="Bidder">) als Bereiche im Langtext. */
+  inputFields: TextRange[];
 }
 
 export interface ParsedSection {

@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { EMPTY_ANNOTATIONS, setNote, toggleMark } from '../../src/lib/annotations';
 import { positionsCsv } from '../../src/lib/export/positions';
+import { trefferProtokollCsv } from '../../src/lib/export/trefferProtokoll';
 import { buildPositionIndex, filterMask } from '../../src/lib/index/positionIndex';
 import { EMPTY_FILTERS, prepareFilters, type Filters } from '../../src/lib/matchPos';
 import { runPipeline } from '../../src/lib/pipeline/runPipeline';
@@ -75,6 +76,8 @@ describe('positionsCsv', () => {
     expect(kopf).toContain('OZ');
     expect(kopf).toContain('Langtext');
     expect(kopf).not.toContain('Gewerk');
+    expect(kopf).toContain('Material');
+    expect(kopf).toContain('Bauweise (Beton)');
     expect(kopf.length).toBeGreaterThan(10);
   });
 
@@ -195,5 +198,36 @@ describe('positionsCsv · Zahlen', () => {
     const felder = zeile.split(';');
     expect(felder[4]).toBe('0,0125');
     expect(felder[5]).toBe('0,125');
+  });
+});
+
+describe('trefferProtokollCsv', () => {
+  it('schreibt je Treffer eine Zeile, nur für Positionen mit Treffer', () => {
+    const kleinerIndex = buildPositionIndex(
+      buildTree(
+        draftMit([
+          position({ oz: '01.001.0010', shortText: 'Wand C30/37', longText: 'aus Ortbeton' }),
+          position({ oz: '01.001.0020', shortText: 'Holzbalken', longText: '' }),
+        ]),
+      ),
+    );
+    const [kopf, ...zeilen] = trefferProtokollCsv(kleinerIndex, null).trimEnd().split('\r\n');
+    expect(kopf.split(';')).toEqual([
+      'OZ',
+      'Kurztext',
+      'Material',
+      'Merkmal',
+      'Wert',
+      'Fundtext',
+      'Stichwort',
+      'Tabelle',
+      'Zeile',
+      'Ort',
+      'Status',
+      'Auffällig',
+    ]);
+    expect(zeilen.length).toBeGreaterThan(0);
+    expect(zeilen.every((zeile) => zeile.startsWith('01.001.0010;'))).toBe(true);
+    expect(zeilen.some((zeile) => zeile.includes(';Bauweise;Ortbeton;'))).toBe(true);
   });
 });

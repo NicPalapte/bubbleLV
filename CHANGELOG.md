@@ -9,6 +9,35 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.16.0 — 13.10.2026 · Material Beton
+
+- **Material wird erkannt.** Bubble erkennt Beton und Betonstahl an Stichworten und
+  Klassen wie „C30/37" oder „XC4". Neuer Filter „Material".
+- **Merkmale von Beton:** Art, Bauweise und Bewehrung. Sie stehen in der Positionskarte,
+  als Filter und im Export. Die Fundstellen sind im Langtext grün markiert.
+- **Neuer Hinweis M1:** Betonposition ohne Angabe zur Bewehrung. Er nennt den
+  Betonstahl im selben Abschnitt.
+- Das Wissen steht in Tabellen, die du in Excel pflegen kannst
+  (`docs/setup/materialwissen.md`). Die Inhalte sind ein Entwurf.
+- **Treffer-Protokoll:** Im Logo-Menü lädt „Treffer-Protokoll (CSV)“ eine Datei mit
+  jedem Treffer der Materialtabellen: Stichwort, Tabellenzeile, Fundtext, Status und
+  Auffälligkeiten. Damit findest du Fehler in den Tabellen.
+- **Prüfung:** Bedarfs- und Alternativpositionen sind eine Regel (V1), der Hinweis nennt
+  weiter, welche der beiden es ist. V6 heißt jetzt „Verweis auf ein anderes Dokument“ und
+  bittet nur zu prüfen, ob das Dokument vorliegt. V8 bis V10 sind vorerst aus der
+  Prüfung genommen. Die Norm-Verweise von V1 bis V7 sind bestätigt.
+- **Prüfregeln in Tabellen:** Name, Hinweistext, Schwere, Schwellwerte und Suchwörter
+  jeder Regel stehen jetzt in `docs/domain/reference/` und lassen sich in Excel ändern
+  (`docs/setup/pruefregeln.md`).
+- **Kostentreiber, Mengentreiber und Preisausreißer** (G1, G2, G4) sind keine Hinweise
+  mehr. Die Listen im Überblick bleiben.
+- **Offene Stellen genauer (V7):** Eingabefelder, die die GAEB-Datei selbst als
+  Bieterangabe kennzeichnet, zählen immer („Textergänzung“). Punkte im übrigen Text
+  zählen erst ab 5 Stück („Punktreihe“). Drei Punkte als Auslassung lösen keinen
+  Hinweis mehr aus. Die Zahl steht in `pruefregeln-parameter.csv`.
+- Einheiten mit Punkt am Ende („Psch.“) gelten als dieselbe wie ohne Punkt. Neue
+  Einheiten-Gruppe „Pauschal“.
+
 ## 0.15.1 — 13.10.2026 · Markierung vorn
 
 - Die Schilder ⚑ und ✎ im Graphen liegen jetzt immer vor allen Punkten. Vorher

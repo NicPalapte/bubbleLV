@@ -10,8 +10,10 @@
 // Die Zeilen sind die gefilterte Menge — das ist die Zusage aus dem Plan.
 
 import { EMPTY_ANNOTATIONS, type Annotations } from '../annotations';
-import { attrString, attrStrings } from '../attributes';
+import { attributeLabel, attrString, attrStrings } from '../attributes';
+import { materialKatalog } from '../classify/material/katalog';
 import { canonicalUnit, unitLabel } from '../units';
+import { csvText } from './csvText';
 import type { PositionIndex } from '../index/positionIndex';
 
 /** Spalten des Exports, in dieser Reihenfolge. */
@@ -30,6 +32,14 @@ const COLUMNS: ReadonlyArray<{
   { head: 'Positionsart', of: (index, i) => attr(index, i, 'positionsart') },
   { head: 'Druckfestigkeit', of: (index, i) => attr(index, i, 'beton') },
   { head: 'Exposition', of: (index, i) => liste(index, i, 'expo') },
+  // Material und je Materialtabelle ihre Merkmale (Entscheidung 0045).
+  { head: 'Material', of: (index, i) => liste(index, i, 'material') },
+  ...materialKatalog().flatMap((material) =>
+    material.merkmale.map(({ key }) => ({
+      head: attributeLabel(key),
+      of: (index: PositionIndex, i: number) => liste(index, i, key),
+    })),
+  ),
   { head: 'Normen', of: (index, i) => liste(index, i, 'normen') },
   { head: 'Zeitbezug', of: (index, i) => liste(index, i, 'fristen') },
   { head: 'Offene Stellen', of: (index, i) => liste(index, i, 'platzhalter') },
@@ -89,36 +99,6 @@ function liste(index: PositionIndex, slot: number, key: string): string {
   return attrStrings(index.positions[slot].attributes, key).join(', ');
 }
 
-/** Zeichen, mit denen Excel und LibreOffice eine Formel beginnen lassen. */
-const FORMELSTART = /^[=+\-@\t\r]/;
-
-/** Eine Zahl, wie `zahl()` sie schreibt — die darf so bleiben. */
-const ZAHL = /^-?\d+(?:,\d+)?$/;
-
-/**
- * Formel-Start entschärfen (CSV-Injection, CWE-1236). Texte stammen aus der
- * geladenen Datei, und die kommt im Vergabeverfahren selten vom Leser selbst:
- * ein Kurztext `=HYPERLINK("…")` würde beim Öffnen der Datei in Excel als
- * Formel ausgeführt. Das führende Apostroph macht daraus wieder Text.
- *
- * Zahlen bleiben unangetastet: ein negativer Einheitspreis („-50") ist eine
- * Zahl und soll in Excel auch als Zahl ankommen.
- */
-function entschaerfen(value: string): string {
-  return FORMELSTART.test(value) && !ZAHL.test(value) ? `'${value}` : value;
-}
-
-/**
- * Ein CSV-Feld. Semikolon als Trennzeichen, weil Excel in deutscher
- * Spracheinstellung nur das als Spaltentrenner liest — mit Komma landet die
- * ganze Zeile in einer Zelle. Zeilenumbrüche im Langtext bleiben erhalten;
- * in Anführungszeichen ist das gültiges CSV.
- */
-function feld(roh: string): string {
-  const value = entschaerfen(roh);
-  return /[";\n\r]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
-}
-
 /**
  * Die gefilterten Positionen als CSV. `mask` ist die Trefferbitmaske;
  * `null` heißt „kein Filter aktiv", dann steht das ganze LV drin.
@@ -129,11 +109,10 @@ export function positionsCsv(
   mask: Uint8Array | null,
   notes: Annotations = EMPTY_ANNOTATIONS,
 ): string {
-  const zeilen: string[] = [COLUMNS.map((column) => feld(column.head)).join(';')];
+  const zeilen: string[][] = [COLUMNS.map((column) => column.head)];
   for (let i = 0; i < index.size; i++) {
     if (mask !== null && mask[i] !== 1) continue;
-    zeilen.push(COLUMNS.map((column) => feld(column.of(index, i, notes))).join(';'));
+    zeilen.push(COLUMNS.map((column) => column.of(index, i, notes)));
   }
-  // CRLF: Excel erwartet es, jeder Texteditor kommt damit zurecht.
-  return `${zeilen.join('\r\n')}\r\n`;
+  return csvText(zeilen);
 }

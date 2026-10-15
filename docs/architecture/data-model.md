@@ -28,6 +28,7 @@ interface PositionDraft {
   quantity: number | null;
   unitPrice: number | null;
   positionType: PositionType; // NORMAL | ALTERNATIV | BEDARF | ZULAGENPOSITION
+  inputFields?: TextRange[]; // Eingabefelder, die die Quelle selbst kennzeichnet (0050)
   attributes: Record<string, unknown>; // aus classify() befüllt, siehe unten
 }
 
@@ -63,8 +64,8 @@ befüllt werden, hängt vom Ergebnis der vorherigen Stufe ab.
 
 **Stufe 0 — für jede Position gesetzt:**
 
-| Key | Typ | Beispiel | Facette |
-|---|---|---|---|
+| Key            | Typ      | Beispiel    | Facette                                                                                               |
+| -------------- | -------- | ----------- | ----------------------------------------------------------------------------------------------------- |
 | `positionsart` | `string` | `"bauteil"` | Positionsart (`bauteil \| personal \| planung \| baustelleneinrichtung \| nebenleistung \| sonstige`) |
 
 Leistungsbereich bzw. Gewerk (`gewerk`, `gewerkLb`) gibt es seit
@@ -73,11 +74,11 @@ Leistungsbereich bzw. Gewerk (`gewerk`, `gewerkLb`) gibt es seit
 
 **Nur wenn `positionsart === "bauteil"`:**
 
-| Key | Typ | Beispiel | Facette | Gilt für |
-|---|---|---|---|---|
-| `bauteiltyp` | `string \| null` | `"Wand"` | Bauteiltyp | alle Bauteil-Positionen |
-| `beton` | `string \| null` | `"C30/37"` | Druckfestigkeit | genormte Schreibweise im Text (Fallback, s. u.) |
-| `expo` | `string[]` | `["XC2","XD1"]` | Expositionsklasse | wie `beton` |
+| Key          | Typ              | Beispiel        | Facette           | Gilt für                                        |
+| ------------ | ---------------- | --------------- | ----------------- | ----------------------------------------------- |
+| `bauteiltyp` | `string \| null` | `"Wand"`        | Bauteiltyp        | alle Bauteil-Positionen                         |
+| `beton`      | `string \| null` | `"C30/37"`      | Druckfestigkeit   | genormte Schreibweise im Text (Fallback, s. u.) |
+| `expo`       | `string[]`       | `["XC2","XD1"]` | Expositionsklasse | wie `beton`                                     |
 
 Maße (`dicke`, `hoehe`, `laenge`, `gewicht`) standen bis WP-J hier; sie kommen
 jetzt aus einem Extraktor (s. u.) und gelten für jede Position.
@@ -90,15 +91,17 @@ und inkrementell erweiterbar — nicht als vollständiges Schema vorab festgeleg
 **Für alle Positionen — Extraktoren** (`lib/classify/extractors/`,
 laufen **vor** den Rulesets und werden von ihnen nur überschrieben, nie gelöscht):
 
-| Key | Typ | Beispiel | Facette |
-|---|---|---|---|
-| `keywords` | `string[]` | `["WU-Beton","CEM III/A"]` | Besonderheiten |
-| `normen` | `string[]` | `["DIN EN 206","VOB/C"]` | Normen |
-| `fristen` | `string[]` | `["Winterbau","Termin"]` | Zeitbezug |
-| `platzhalter` | `string[]` | `["Textergänzung"]` | Offene Stellen |
-| `platzhalterAnzahl` | `number` | `2` | (Anzeige) |
-| `verweise` | `string[]` | `["Positionsverweis","Anlage"]` | (Anzeige) |
-| `dicke` · `hoehe` · `laenge` · `gewicht` | `string` | `"30 cm"` | (Anzeige) |
+| Key                                      | Typ        | Beispiel                        | Facette                                                    |
+| ---------------------------------------- | ---------- | ------------------------------- | ---------------------------------------------------------- |
+| `keywords`                               | `string[]` | `["WU-Beton","CEM III/A"]`      | Besonderheiten                                             |
+| `normen`                                 | `string[]` | `["DIN EN 206","VOB/C"]`        | Normen                                                     |
+| `material`                               | `string[]` | `["Beton"]`                     | Material                                                   |
+| `<material><Merkmal>`                    | `string[]` | `betonBauweise: ["Ortbeton"]`   | je Merkmal einer Materialtabelle, z. B. „Bauweise (Beton)" |
+| `fristen`                                | `string[]` | `["Winterbau","Termin"]`        | Zeitbezug                                                  |
+| `platzhalter`                            | `string[]` | `["Textergänzung"]`             | Offene Stellen                                             |
+| `platzhalterAnzahl`                      | `number`   | `2`                             | (Anzeige)                                                  |
+| `verweise`                               | `string[]` | `["Positionsverweis","Anlage"]` | (Anzeige)                                                  |
+| `dicke` · `hoehe` · `laenge` · `gewicht` | `string`   | `"30 cm"`                       | (Anzeige)                                                  |
 
 Zwei Regeln gelten für alle Extraktoren:
 
@@ -108,8 +111,11 @@ Zwei Regeln gelten für alle Extraktoren:
 - **Kein Treffer ⇒ kein Key.** Ein leeres Array würde im Panel als Merkmal
   erscheinen, das es nicht gibt.
 
-`material` (aus dem STLB-Katalog) ist mit 0044 entfallen. Materialwissen kommt
-künftig aus einer eigenen Tabelle je Material.
+`material` und die Material-Merkmale kommen aus den Materialtabellen unter
+`docs/domain/reference/material/` ([`decisions/0045`](../decisions/0045-materialwissen-als-tabelle.md)).
+Der Key eines Merkmals entsteht aus Dateiname und Spalte `merkmal`: `beton.csv` +
+„Bauweise" ⇒ `betonBauweise`. Merkmale werden nur gesucht, wenn das Material erkannt ist.
+Alle Fundstellen tragen den Span-Key `material`; ihr Label nennt Merkmal und Wert.
 
 Normverweise standen bis WP-J unter `keywords`; sie liegen jetzt in `normen`,
 damit „DIN EN 206" nicht zweimal im Eigenschaften-Panel steht.
@@ -129,10 +135,10 @@ Zu jedem gefundenen Merkmal kommt die Fundstelle im Langtext:
 
 ```ts
 interface Span {
-  key: string;     // z. B. "beton", "normen"
-  start: number;   // Zeichen-Index im Langtext
+  key: string; // z. B. "beton", "normen"
+  start: number; // Zeichen-Index im Langtext
   end: number;
-  label: string;   // Anzeigetext, z. B. "DIN EN 206"
+  label: string; // Anzeigetext, z. B. "DIN EN 206"
 }
 ```
 
@@ -157,12 +163,12 @@ geladenen LV (`LoadedLV.check`), je Eintrag mit Verweis auf die Position:
 
 ```ts
 interface Flag {
-  id: string;                                                   // Regel-ID, z. B. "V1"
-  category: 'geld' | 'menge' | 'risiko' | 'norm' | 'frist' | 'vob';
-  severity: 'hinweis' | 'beachten';
-  positionId: string;                                           // Sprungziel
-  title: string;                                                // was gefunden wurde
-  span?: Span;                                                  // Fundstelle, wo es eine gibt
+  id: string; // Regel-ID, z. B. "V1"
+  category: "geld" | "menge" | "risiko" | "norm" | "frist" | "vob";
+  severity: "hinweis" | "beachten";
+  positionId: string; // Sprungziel
+  title: string; // was gefunden wurde
+  span?: Span; // Fundstelle, wo es eine gibt
 }
 ```
 
@@ -186,23 +192,23 @@ am geladenen LV (`LoadedLV.relations`) und verweist über Knoten-IDs:
 
 ```ts
 interface Cluster {
-  id: string;                          // "cluster:<erste Position>", stabil je Datei
-  positionIds: string[];               // Mitglieder in Dokumentreihenfolge, mindestens zwei
-  label: string;                       // häufigster Kurztext der Gruppe, aus der Datei
-  gemeinsameMerkmale: Record<string, string>;  // Key → Wert, den alle Mitglieder teilen
-  unterscheidendeMerkmale: string[];   // Keys, in denen sich die Mitglieder unterscheiden
-  ausreisser: Outlier[];               // auffälliger Einheitspreis oder auffällige Menge
-  unitPrice: ValueStats | null;        // Median, Quartile, Spanne; null ohne Preise
+  id: string; // "cluster:<erste Position>", stabil je Datei
+  positionIds: string[]; // Mitglieder in Dokumentreihenfolge, mindestens zwei
+  label: string; // häufigster Kurztext der Gruppe, aus der Datei
+  gemeinsameMerkmale: Record<string, string>; // Key → Wert, den alle Mitglieder teilen
+  unterscheidendeMerkmale: string[]; // Keys, in denen sich die Mitglieder unterscheiden
+  ausreisser: Outlier[]; // auffälliger Einheitspreis oder auffällige Menge
+  unitPrice: ValueStats | null; // Median, Quartile, Spanne; null ohne Preise
   quantity: ValueStats | null;
-  similarity: number;                  // mittlere Ähnlichkeit innerhalb der Gruppe (0…1)
+  similarity: number; // mittlere Ähnlichkeit innerhalb der Gruppe (0…1)
 }
 
 interface Outlier {
   positionId: string;
-  field: 'ep' | 'menge';
-  direction: 'hoch' | 'niedrig';
+  field: "ep" | "menge";
+  direction: "hoch" | "niedrig";
   value: number;
-  median: number;                      // Bezugsgröße der Aussage
+  median: number; // Bezugsgröße der Aussage
 }
 ```
 
@@ -257,8 +263,8 @@ trägt `attributes` einen reservierten Meta-Block. Die Facetten-Keys bleiben fla
     "classifier": "rule",
     "ruleset": "fallback",
     "version": 2,
-    "confidence": 1.0
-  }
+    "confidence": 1.0,
+  },
 }
 ```
 
@@ -299,15 +305,15 @@ persistiert wird, das erhalten bleiben müsste. Der Baum wird einfach neu aufgeb
 `WBSNode` wäre eine eigenständige Server-Entität mit eigener Identität — ein
 self-referenzieller Baum, unabhängig von der LV-Struktur:
 
-| Feld | Typ | Zweck |
-|---|---|---|
-| `id` | UUID | eigene Identität |
-| `parentId` | UUID, nullable | self-ref Baum |
-| `kind` | Enum (`project \| lot \| section \| position \| …`) | Knotentyp |
-| `code` | `string` | Kurzkennung (z. B. OZ, Los-/Abschnittsnummer) |
-| `label` | `string \| null` | Anzeigename |
-| `sortOrder` | `number` | Geschwister-Reihenfolge |
-| `din276Kostengruppe` | `string \| null` | vorgesehener Attribut-Slot |
+| Feld                 | Typ                                                 | Zweck                                         |
+| -------------------- | --------------------------------------------------- | --------------------------------------------- |
+| `id`                 | UUID                                                | eigene Identität                              |
+| `parentId`           | UUID, nullable                                      | self-ref Baum                                 |
+| `kind`               | Enum (`project \| lot \| section \| position \| …`) | Knotentyp                                     |
+| `code`               | `string`                                            | Kurzkennung (z. B. OZ, Los-/Abschnittsnummer) |
+| `label`              | `string \| null`                                    | Anzeigename                                   |
+| `sortOrder`          | `number`                                            | Geschwister-Reihenfolge                       |
+| `din276Kostengruppe` | `string \| null`                                    | vorgesehener Attribut-Slot                    |
 
 **Warum das einen Server braucht:** Notiz, Aufgabe, Termin, Vergabepaket usw. sollen
 an einem stabilen Knoten hängen, der eine Session überlebt — das setzt Persistenz

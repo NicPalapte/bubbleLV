@@ -1,6 +1,6 @@
 // Extraktoren (WP-J). Sie laufen **vor** den
 // Rulesets und liefern Merkmale, die in jedem Gewerk
-// dieselbe Bedeutung haben — Normverweise, Maße, offene
+// dieselbe Bedeutung haben — Normverweise, Material, Maße, offene
 // Textergänzungen, Verweise, Fristen.
 //
 // Zwei Regeln gelten für alle:
@@ -24,6 +24,8 @@ export interface ExtractorContext {
   /** Rohtext des Langtexts — Bezugspunkt aller Spans. */
   readonly longText: string;
   readonly unit: string | null;
+  /** Eingabefelder, die die Quelldatei selbst kennzeichnet (Bereiche im Langtext). */
+  readonly inputFields?: readonly { start: number; end: number }[];
   /** Kleingeschriebene Fassung für Stichwortvergleiche. */
   readonly text: NormalizedItem;
 }

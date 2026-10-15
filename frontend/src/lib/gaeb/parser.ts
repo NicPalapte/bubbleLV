@@ -3,7 +3,7 @@
 // (<GAEB>, <Award>, <BoQ>, <BoQCtgy>, …) verlassen dieses Modul nie.
 
 import { GAEBParseError, GAEBValidationError, GAEBVersionError } from './errors';
-import { extractInlineText, extractText } from './text';
+import { extractInlineText, extractMarkedText, splitInputFields, type TextRange } from './text';
 import type { GaebItemType, ParsedLV, ParsedLot, ParsedPosition, ParsedSection } from './types';
 import { childrenByLocal, decimalByLocal, firstByLocal, pathByLocal, textByLocal } from './xml';
 
@@ -104,10 +104,10 @@ function readShortText(description: Element | null): string {
   return extractInlineText(outline);
 }
 
-/** Langtext aus <Description>: CompleteText/DetailTxt. */
+/** Langtext aus <Description>: CompleteText/DetailTxt, mit Feld-Markern (text.ts). */
 function readLongText(description: Element | null): string {
   if (description === null) return '';
-  return extractText(pathByLocal(description, 'CompleteText', 'DetailTxt'));
+  return extractMarkedText(pathByLocal(description, 'CompleteText', 'DetailTxt'));
 }
 
 /**
@@ -116,7 +116,10 @@ function readLongText(description: Element | null): string {
  * nicht zu eigenen Positionen, ihr Text bleibt aber für Suche und
  * Klassifizierung erhalten.
  */
-function collectLongText(item: Element, description: Element | null): string {
+function collectLongText(
+  item: Element,
+  description: Element | null,
+): { text: string; fields: TextRange[] } {
   const blocks: string[] = [];
   const main = readLongText(description);
   if (main !== '') blocks.push(main);
@@ -128,7 +131,9 @@ function collectLongText(item: Element, description: Element | null): string {
     const block = [heading, readLongText(subDescription)].filter((p) => p !== '').join('\n');
     if (block !== '') blocks.push(block);
   }
-  return blocks.join('\n\n');
+  // Marker erst nach dem Zusammensetzen auflösen, damit die Bereiche auf den
+  // ganzen Langtext zeigen und nicht nur auf einen Block.
+  return splitInputFields(blocks.join('\n\n'));
 }
 
 /**
@@ -158,7 +163,7 @@ function parseItem(item: Element, path: string[], isMarkupItem: boolean): Parsed
   if (index !== '') segments.push(index);
 
   const description = firstByLocal(item, 'Description');
-  const longText = collectLongText(item, description);
+  const { text: longText, fields: inputFields } = collectLongText(item, description);
   let shortText = readShortText(description);
   if (shortText === '' && longText !== '') {
     shortText = longText.split('\n')[0];
@@ -172,6 +177,7 @@ function parseItem(item: Element, path: string[], isMarkupItem: boolean): Parsed
     quantity: decimalByLocal(item, 'Qty'),
     unitPrice: decimalByLocal(item, 'UP'),
     itemType: detectItemType(item, isMarkupItem),
+    inputFields,
   };
 }
 

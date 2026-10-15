@@ -11,8 +11,14 @@ const { version } = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url), 'utf8'),
 ) as { version: string };
 
+// Die gepflegten Tabellen liegen einmal, unter docs/domain/reference/ — die App
+// liest sie dort zur Build-Zeit (Rohtext, kein Fetch). Eine Kopie im Frontend
+// gibt es nicht mehr: sie lief zweimal still auseinander.
+const REFERENCE = fileURLToPath(new URL('../docs/domain/reference', import.meta.url));
+
 // https://vite.dev/config/
 export default defineConfig({
+  resolve: { alias: { '@reference': REFERENCE } },
   plugins: [react(), thirdPartyLicenses(fileURLToPath(new URL('.', import.meta.url)))],
   // Bau-Stand für „Fehler melden" (WP-P): in GitHub Actions steht der Commit
   // in GITHUB_SHA, lokal gibt es keinen — dann „dev". Bewusst kein Aufruf von
@@ -28,6 +34,8 @@ export default defineConfig({
     // Bind to all interfaces: Docker port-mapping (see .devcontainer/docker-compose.yml)
     // can't reach a listener bound to 127.0.0.1-only inside the container.
     host: true,
+    // Der Dev-Server liefert sonst nichts außerhalb von frontend/ aus.
+    fs: { allow: ['.', REFERENCE] },
   },
   test: {
     environment: 'jsdom',

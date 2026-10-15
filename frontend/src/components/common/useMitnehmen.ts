@@ -5,7 +5,7 @@
 // verschwunden, die Funktionen nicht. Hier liegen sie an einer Stelle, unter
 // einem Namen, und lassen sich ohne geöffnetes Menü testen.
 //
-// Keiner der drei Wege erzeugt einen Request: CSV und Markdown entstehen als
+// Keiner der Wege erzeugt einen Request: CSV und Markdown entstehen als
 // Blob im Browser, der Druck läuft über `window.print()`
 // (docs/decisions/0022-export-und-druck-ohne-request.md).
 
@@ -13,6 +13,7 @@ import { useCallback } from 'react';
 import { checkMarkdown } from '../../lib/export/checkReport';
 import { downloadText, exportFileName } from '../../lib/export/download';
 import { positionsCsv } from '../../lib/export/positions';
+import { trefferProtokollCsv } from '../../lib/export/trefferProtokoll';
 import { filterMask } from '../../lib/index/positionIndex';
 import { matchCount } from '../../lib/tree/matchCounts';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
@@ -20,6 +21,8 @@ import { useViewer, useViewerDispatch } from '../../state/viewer';
 export interface Mitnehmen {
   /** Alle Spalten, genau die gefilterten Zeilen. */
   positionenAlsCsv: () => void;
+  /** Je Treffer der Materialtabellen eine Zeile — zum Prüfen der Tabellen. */
+  trefferAlsCsv: () => void;
   /** Prüf-Hinweise im aktuellen Filter, abgeschaltete Regeln bleiben draußen. */
   hinweiseAlsMarkdown: () => void;
   /** Druckt die gefilterte Liste, nicht nur das sichtbare Fenster. */
@@ -64,6 +67,18 @@ export function useMitnehmen(): Mitnehmen {
     });
   }, [lv, index, active, annotations, absichern]);
 
+  const trefferAlsCsv = useCallback((): void => {
+    if (lv === null) return;
+    absichern('Das Treffer-Protokoll', () => {
+      const mask = active.filtering ? filterMask(index, active) : null;
+      downloadText(
+        exportFileName(lv.fileName, 'treffer', 'csv'),
+        trefferProtokollCsv(index, mask),
+        'csv',
+      );
+    });
+  }, [lv, index, active, absichern]);
+
   const hinweiseAlsMarkdown = useCallback((): void => {
     if (lv === null) return;
     absichern('Die Markdown-Datei', () => {
@@ -97,5 +112,5 @@ export function useMitnehmen(): Mitnehmen {
     absichern('Der Druck', () => window.print());
   }, [absichern]);
 
-  return { positionenAlsCsv, hinweiseAlsMarkdown, drucken };
+  return { positionenAlsCsv, trefferAlsCsv, hinweiseAlsMarkdown, drucken };
 }
