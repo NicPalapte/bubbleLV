@@ -1,5 +1,5 @@
 // Karte „Prüfung" im Überblick (WP-K, Schritt 5): alle Hinweise, nach Regel
-// gruppiert, mit Anzahl, Sprung zur Position und Schalter je Regel.
+// gruppiert, mit Anzahl, Auswahl der Position im Graphen und Schalter je Regel.
 //
 // Ton: **Hinweis, kein Urteil** (docs/domain/vob-pruefungen.md). Deshalb steht
 // über der Liste, was Bubble nicht tut, jede Regel nennt ihren Norm-Verweis, und
@@ -234,7 +234,7 @@ export function CheckCard() {
                       key={`${flag.id}-${flag.positionId}-${index}`}
                       flag={flag}
                       node={nodes.get(flag.positionId) ?? null}
-                      onJump={() => jumpTo(flag.positionId)}
+                      onJump={() => jumpTo(flag.positionId, { stayInView: true })}
                     />
                   ))}
                 </div>

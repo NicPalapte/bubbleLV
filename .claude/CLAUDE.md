@@ -133,7 +133,8 @@ LLM-Klassifizierung. Details → @docs/scope.md #out-of-scope
 - **Prüfregeln sind Hinweise, keine Urteile.** Jede Regel nennt ihren Norm-Verweis,
   zeigt die Fundstelle und ist einzeln abschaltbar. Fehlende Referenzdaten ⇒ Regel
   inaktiv, kein Fehler. Formulierungen nie als Rechtsrat.
-- Status ist Default `OPEN` aus dem Import und nur Filter-Facette, nicht editierbar
+- Status ist Default `OPEN` aus dem Import, nur Anzeige, nicht editierbar, kein Filter
+  (`docs/decisions/0051-kein-status-filter.md`)
 - Kein Request, der Fachdaten irgendwohin schickt – bei Unsicherheit nachfragen,
   bevor ein Feature einen eigenen Server voraussetzt. Statische Fremd-Assets
   (Fonts, CDN-Pakete) sind davon nicht betroffen. Lokale Downloads (CSV/Markdown als

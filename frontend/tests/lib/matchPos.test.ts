@@ -95,7 +95,10 @@ describe('matchPos', () => {
   it('liefert je Facette die Werte der Position', () => {
     const facet = FACETS_BY_ID.get('bauteiltyp');
     expect(facet?.get(pos())).toEqual(['Wand']);
-    expect(FACETS_BY_ID.get('status')?.get(pos())).toEqual(['offen']);
+  });
+
+  it('kennt keinen Status-Filter — der Status lässt sich nicht setzen', () => {
+    expect(FACETS_BY_ID.has('status')).toBe(false);
   });
 
   it('kennt keinen Gewerk-Filter mehr (Entscheidung 0044)', () => {

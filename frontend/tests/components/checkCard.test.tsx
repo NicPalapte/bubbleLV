@@ -105,10 +105,26 @@ describe('CheckCard', () => {
   });
 
   it('nennt bei einer inaktiven Regel den Grund statt sie zu verstecken', () => {
-    renderView();
-    const v3 = sectionOf('V3');
-    expect(within(v3).getByText('inaktiv')).toBeTruthy();
-    expect(within(v3).getByText(/Noch nicht umgesetzt/)).toBeTruthy();
+    // Alle ausgelieferten Regeln laufen — V3 wird hier als inaktiv gesetzt.
+    geladen = {
+      ...lv,
+      check: {
+        ...lv.check,
+        rules: lv.check.rules.map((rule) =>
+          rule.id === 'V3'
+            ? { ...rule, active: false, count: 0, inactiveReason: 'Noch nicht umgesetzt.' }
+            : rule,
+        ),
+      },
+    };
+    try {
+      renderView();
+      const v3 = sectionOf('V3');
+      expect(within(v3).getByText('inaktiv')).toBeTruthy();
+      expect(within(v3).getByText(/Noch nicht umgesetzt/)).toBeTruthy();
+    } finally {
+      geladen = lv;
+    }
   });
 
   it('klappt die Funde einer Regel auf und listet die Positionen', () => {

@@ -7,12 +7,13 @@
 
 import { describe, expect, it } from 'vitest';
 import { CHECK_RULES, runChecks } from '../../src/lib/check';
+import { m1Bewehrung } from '../../src/lib/check/rules/material';
 import type { CheckRule } from '../../src/lib/check';
 import { classifyDraft, getClassifier } from '../../src/lib/classify';
 import { buildPositionIndex } from '../../src/lib/index/positionIndex';
 import { summarize } from '../../src/lib/index/summary';
 import { buildTree, collectPositions, indexParents } from '../../src/lib/tree/buildTree';
-import type { CheckResult, RuleStatus } from '../../src/lib/check';
+import type { CheckResult, Fund, RuleStatus } from '../../src/lib/check';
 import type { LVDraft, PositionDraft } from '../../src/types/lvDraft';
 
 const classifier = getClassifier();
@@ -107,6 +108,32 @@ describe('V2 · Stundenlohnarbeiten', () => {
   });
 });
 
+describe('V3 · Produktname ohne „oder gleichwertig"', () => {
+  it('findet einen Hersteller- oder Produktnamen im Lang- und Kurztext', () => {
+    const result = check(
+      position({ oz: '01.001.0010', longText: 'Kragplattenanschluss Schöck Isokorb Typ K.' }),
+      position({ oz: '01.001.0020', shortText: 'Porenbetonwand Ytong d = 24 cm' }),
+    );
+    const flags = flagsOf(result, 'V3');
+    expect(flags.map((flag) => flag.title)).toEqual(['Schöck', 'Xella']);
+    expect(flags[0].span?.label).toBe('Schöck');
+    expect(flags[1].span).toBeUndefined();
+  });
+
+  it('schweigt, wenn die Position „oder gleichwertig" nennt', () => {
+    const result = check(
+      position({ oz: '01.001.0010', longText: 'Fabrikat Sika oder gleichwertig.' }),
+      position({ oz: '01.001.0020', longText: 'Dichtstoff Sikaflex o. glw.' }),
+    );
+    expect(flagsOf(result, 'V3')).toHaveLength(0);
+  });
+
+  it('trifft nur ganze Wörter', () => {
+    const result = check(position({ longText: 'Stoßfuge schließen, Peripherie anpassen.' }));
+    expect(flagsOf(result, 'V3')).toHaveLength(0);
+  });
+});
+
 describe('V4 · Risiko-Formulierung', () => {
   it('findet die Formulierung samt Fundstelle im Langtext', () => {
     const longText = 'Das Risiko der Baugrundverhältnisse trägt der AN vollständig.';
@@ -190,9 +217,12 @@ describe('G3 · Einheit uneinheitlich geschrieben', () => {
   });
 });
 
+// M1 steht in pruefregeln.csv auf `aus` (15.10.2026). Die Prüffunktion bleibt,
+// damit der Owner sie mit einem Wort wieder einschalten kann — getestet wird sie
+// darum direkt, ohne runChecks.
 describe('M1 · Bewehrung', () => {
   /** Zwei Hauptabschnitte, damit die Suche nach Betonstahl an der Grenze endet. */
-  function zweiAbschnitte(rohbau: PositionDraft[], ausbau: PositionDraft[]): CheckResult {
+  function zweiAbschnitte(rohbau: PositionDraft[], ausbau: PositionDraft[]): Fund[] {
     const draft: LVDraft = {
       projectName: 'Bewehrung',
       client: null,
@@ -209,7 +239,8 @@ describe('M1 · Bewehrung', () => {
     };
     const tree = buildTree(classifyDraft(draft, classifier));
     const index = buildPositionIndex(tree);
-    return runChecks(index, summarize(index), CHECK_RULES, indexParents(tree));
+    const context = { index, summary: summarize(index), parents: indexParents(tree) };
+    return m1Bewehrung.check?.(context) ?? [];
   }
 
   const wand = (oz: string, longText: string) =>
@@ -222,7 +253,7 @@ describe('M1 · Bewehrung', () => {
       [wand('01.001.0010', 'Wand d = 25 cm.'), stahl('01.001.0020')],
       [stahl('01.002.0010')],
     );
-    const flags = flagsOf(result, 'M1');
+    const flags = result;
     expect(flags).toHaveLength(1);
     expect(flags[0].positionId).toContain('01.001.0010');
     expect(flags[0].title).toContain('01.001.0020');
@@ -231,7 +262,7 @@ describe('M1 · Bewehrung', () => {
 
   it('sagt, wenn im Abschnitt auch kein Betonstahl steht', () => {
     const result = zweiAbschnitte([wand('01.001.0010', '')], [stahl('01.002.0010')]);
-    expect(flagsOf(result, 'M1')[0].title).toContain('auch kein Betonstahl');
+    expect(result[0].title).toContain('auch kein Betonstahl');
   });
 
   it('schweigt, wenn die Position die Bewehrung nennt', () => {
@@ -243,12 +274,12 @@ describe('M1 · Bewehrung', () => {
       ],
       [],
     );
-    expect(flagsOf(result, 'M1')).toHaveLength(0);
+    expect(result).toHaveLength(0);
   });
 
   it('schweigt bei Beton ohne Festigkeitsklasse, etwa einer Schalung', () => {
     const schalung = position({ shortText: 'Schalung für Betonwände' });
-    expect(flagsOf(check(schalung), 'M1')).toHaveLength(0);
+    expect(zweiAbschnitte([schalung], [])).toHaveLength(0);
   });
 });
 
@@ -256,7 +287,7 @@ describe('Regelzustand', () => {
   const result = check(position({}));
 
   it('meldet jede Regel des Katalogs, auch die inaktiven — außer denen auf „aus"', () => {
-    const aus = ['V8', 'V9', 'V10'];
+    const aus = ['V8', 'V9', 'V10', 'M1'];
     expect(result.rules.map((entry) => entry.id)).toEqual(
       CHECK_RULES.map((entry) => entry.id).filter((id) => !aus.includes(id)),
     );
@@ -284,9 +315,11 @@ describe('Regelzustand', () => {
     expect(v7.refConfirmed).toBe(true);
   });
 
-  it('nennt zu jeder Regel einen Verweis oder sagt, dass es keinen gibt', () => {
+  it('lässt den Verweis leer, wo es keinen Norm-Bezug gibt', () => {
+    expect(rule(result, 'G3').ruleRef).toBe('');
+    expect(rule(result, 'V7').ruleRef).toBe('');
     for (const entry of result.rules) {
-      expect(entry.ruleRef, `Regel ${entry.id} ohne Verweis`).not.toBe('');
+      expect(entry.ruleRef, `Regel ${entry.id}`).not.toMatch(/kein (Norm|VOB)-Bezug/);
     }
   });
 

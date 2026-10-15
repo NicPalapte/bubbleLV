@@ -9,7 +9,7 @@ gepflegt werden — nicht vom Modell erfunden oder aus dem Internet geraten (sie
 | [`material/`](material/)                                     | Eine Tabelle je Material: Erkennung und Merkmale (Art, Bauweise, Bewehrung …). Pflege: [`../../setup/materialwissen.md`](../../setup/materialwissen.md) | Owner; Beton und Betonstahl als Entwurf von Claude |
 | [`pruefregeln.csv`](pruefregeln.csv)                         | Je Prüfregel: Status, Norm-Verweis, Name, Kategorie, Schwere, Hinweistext                                                                               | [`../vob-pruefungen.md`](../vob-pruefungen.md)     |
 | [`pruefregeln-parameter.csv`](pruefregeln-parameter.csv)     | Schwellwerte und Einstellungen je Regel (z. B. Titelgröße bei M1)                                                                                       | Owner                                              |
-| [`pruefregeln-stichworte.csv`](pruefregeln-stichworte.csv)   | Suchwörter je Regel (V2, V6, V7), Schreibweise wie bei den Materialtabellen                                                                             | Owner                                              |
+| [`pruefregeln-stichworte.csv`](pruefregeln-stichworte.csv)   | Suchwörter je Regel (V2, V3, V6, V7), Schreibweise wie bei den Materialtabellen                                                                         | Owner                                              |
 | [`risiko-formulierungen.csv`](risiko-formulierungen.csv)     | Formulierungen, die ein Risiko auf den AN schieben — Regel V4                                                                                           | Owner                                              |
 | [`hersteller-produktnamen.csv`](hersteller-produktnamen.csv) | Hersteller-/Produktnamen — Regel V3                                                                                                                     | Owner                                              |
 | [`vob-nebenleistungen.csv`](vob-nebenleistungen.csv)         | Nebenleistungen je ATV — Regeln V8, V9                                                                                                                  | VOB/C des Owners                                   |
@@ -23,7 +23,7 @@ Pflege: [`../../setup/pruefregeln.md`](../../setup/pruefregeln.md).
 | ---------------- | --------------------------------------------------------------------- |
 | `regel_id`       | ID aus [`../vob-pruefungen.md`](../vob-pruefungen.md), z. B. `V1`     |
 | `status`         | `bestaetigt` · `zu_bestaetigen` · `aus`                               |
-| `norm_verweis`   | Wortlaut, den die Oberfläche anzeigt                                  |
+| `norm_verweis`   | Wortlaut, den die Oberfläche anzeigt; leer, wenn es keinen gibt       |
 | `name`           | Überschrift in der Prüfliste                                          |
 | `kategorie`      | `geld` · `menge` · `risiko` · `norm` · `frist` · `vob`                |
 | `schwere`        | `hinweis` · `beachten`                                                |

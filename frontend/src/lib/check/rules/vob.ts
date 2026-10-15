@@ -4,8 +4,7 @@
 // pruefregeln-stichworte.csv, Schwellwerte in pruefregeln-parameter.csv. Hier
 // steht nur, wie eine Regel sucht.
 //
-// Angemeldet, aber ohne Prüffunktion: V3, V8, V9, V10. V3 erscheint in der
-// Prüfliste als inaktiv, statt still zu fehlen. V8–V10 stehen in
+// Angemeldet, aber ohne Prüffunktion: V8, V9, V10. Sie stehen in
 // pruefregeln.csv auf `aus`, bis der Owner sie bestätigt hat.
 
 import { attrSpans, attrStrings } from '../../attributes';
@@ -207,15 +206,47 @@ export const v7Platzhalter: CheckRule = {
   },
 };
 
-// ── Angemeldet, noch ohne Prüffunktion ──────────────────────────────────────
+// ── V3 · Produktname ohne „oder gleichwertig" ───────────────────────────────
+// Namen und Produktnamen stehen in hersteller-produktnamen.csv, der erlaubende
+// Zusatz unter V3 in pruefregeln-stichworte.csv. Steht der Zusatz irgendwo in
+// der Position, gilt jeder Name darin als erlaubt — der Zusatz steht oft am
+// Ende des Langtexts, nicht direkt hinter dem Namen.
 
 export const v3Produktname: CheckRule = {
   id: 'V3',
   requires: {
     file: 'docs/domain/reference/hersteller-produktnamen.csv',
-    available: () => herstellerNamen().length > 0,
+    available: () => herstellerNamen().length > 0 && regelStichworte('V3').length > 0,
+  },
+  check(context: CheckContext): Fund[] {
+    const liste = herstellerNamen();
+    const zusatz = regelStichworte('V3');
+    const funde: Fund[] = [];
+    for (let i = 0; i < context.index.size; i++) {
+      const { shortText, longText } = context.index.positions[i];
+      const text = `${shortText}\n${longText}`;
+      if (zusatz.some((art) => findeStichworte(text, art.pattern, art.ausser).length > 0)) {
+        continue;
+      }
+      const namen: string[] = [];
+      let span: Span | undefined;
+      for (const eintrag of liste) {
+        const imKurztext = findeStichworte(shortText, eintrag.pattern, null).length > 0;
+        const [erster] = findeStichworte(longText, eintrag.pattern, null);
+        if (!imKurztext && erster === undefined) continue;
+        namen.push(eintrag.name);
+        if (erster !== undefined && (span === undefined || erster.start < span.start)) {
+          span = { key: 'hersteller', start: erster.start, end: erster.end, label: erster.text };
+        }
+      }
+      if (namen.length === 0) continue;
+      funde.push({ positionId: context.index.nodes[i].id, title: namen.join(', '), span });
+    }
+    return funde;
   },
 };
+
+// ── Angemeldet, noch ohne Prüffunktion ──────────────────────────────────────
 
 export const v8Nebenleistung: CheckRule = {
   id: 'V8',

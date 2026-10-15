@@ -199,7 +199,7 @@ Bewusst **nicht** Teil dieses Produkts. Anfragen dazu werden abgelehnt oder vert
 | LLM-Klassifizierung                                 | setzt einen Server voraus                                                                                                      |
 | Aufgaben, Zuständigkeit, Vergabepakete, NU-Anfragen | braucht Persistenz; erlaubt sind nur eigene Markierungen und Kommentare je Position zur letzten Datei (Entscheidung 0047)      |
 | Bieterfragen **verwalten**                          | Bubble liefert nur die Liste der Unklarheiten (UC-6)                                                                           |
-| Status **ändern**                                   | Status bleibt Filter-Facette, Default `OPEN` aus dem Import                                                                    |
+| Status **ändern**                                   | Status bleibt Anzeige, Default `OPEN` aus dem Import, kein Filter (0051)                                                       |
 | EP-Kalkulation, Preisdatenbank                      | das ist iTwo, nicht Bubble                                                                                                     |
 | GAEB-Export, Excel-/Manuell-Import                  | Datenmodell bleibt offen dafür, Wege werden nicht gebaut                                                                       |
 | Multi-Tenant / SaaS                                 | nie                                                                                                                            |

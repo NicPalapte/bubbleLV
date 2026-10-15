@@ -92,11 +92,22 @@ export function risikoFormulierungen(): RisikoFormulierung[] {
   return risiko;
 }
 
+export interface Hersteller {
+  name: string;
+  /** Name und Produktnamen als ein Suchmuster (global, mit Wortgrenzen). */
+  pattern: RegExp;
+}
+
+let hersteller: Hersteller[] | null = null;
+
 /** Hersteller-/Produktnamen (V3) — leer, solange niemand sie gepflegt hat. */
-export function herstellerNamen(): string[] {
-  return parseCsv(herstellerCsv)
-    .map((row) => row.get('name'))
-    .filter((name) => name !== '');
+export function herstellerNamen(): Hersteller[] {
+  hersteller ??= parseCsv(herstellerCsv).flatMap((row) => {
+    const name = row.get('name');
+    const pattern = compileStichworte([name, ...splitStichworte(row.get('stichworte'))]);
+    return name === '' || pattern === null ? [] : [{ name, pattern }];
+  });
+  return hersteller;
 }
 
 /** Nebenleistungen je ATV (V8) — leer, solange niemand sie gepflegt hat. */

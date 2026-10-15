@@ -9,6 +9,18 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.17.0 — 15.10.2026 · Prüfung aufgeräumt
+
+- **V3 läuft:** Hersteller- und Produktnamen aus `hersteller-produktnamen.csv` werden
+  gefunden. Steht „gleichwertig“ oder „o. glw.“ in der Position, gibt es keinen Hinweis.
+  Die Zusätze stehen in `pruefregeln-stichworte.csv`.
+- **M1 ist aus:** Der Hinweis zur Bewehrung erscheint nicht mehr. Mit `bestaetigt` in
+  `pruefregeln.csv` kommt er zurück.
+- **Kein „kein Norm-Bezug“ mehr:** Regeln ohne Norm zeigen keine Verweiszeile.
+- **Klick auf einen Fund** in der Prüfung wählt die Position im Graphen aus. Die Tabelle
+  öffnet sich nicht mehr.
+- **Filter „Status“ entfernt:** Er hatte immer nur den Wert „offen“.
+
 ## 0.16.0 — 13.10.2026 · Material Beton
 
 - **Material wird erkannt.** Bubble erkennt Beton und Betonstahl an Stichworten und
