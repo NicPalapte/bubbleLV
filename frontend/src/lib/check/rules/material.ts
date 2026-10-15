@@ -14,11 +14,9 @@
 import { attrString, attrStrings } from '../../attributes';
 import { materialKatalog, type MaterialDefinition } from '../../classify/material/katalog';
 import { mainSectionOf, NO_SECTION_KEY } from '../../tree/mainSection';
-import type { CheckContext, CheckRule, Flag } from '../types';
+import { regelZahl } from '../referenz';
+import type { CheckContext, CheckRule, Fund } from '../types';
 import type { LVNode } from '../../../types/lvNode';
-
-/** So viele Positionsnummern stehen im Hinweis; der Rest als Anzahl. */
-const MAX_OZ = 3;
 
 interface Bezug {
   beton: string;
@@ -35,18 +33,20 @@ function bezugAus(materials: readonly MaterialDefinition[]): Bezug | null {
   return { beton: beton.name, betonstahl: betonstahl.name, bewehrungKey: bewehrung.key };
 }
 
-function liste(oz: readonly string[]): string {
-  const shown = oz.slice(0, MAX_OZ).join(', ');
-  return oz.length > MAX_OZ ? `${shown} und ${oz.length - MAX_OZ} weitere` : shown;
+/** Positionsnummern im Titel; ab dem Parameter `positionen_im_titel` als Anzahl. */
+function liste(oz: readonly string[], max: number): string {
+  const shown = oz.slice(0, max).join(', ');
+  return oz.length > max ? `${shown} und ${oz.length - max} weitere` : shown;
 }
 
 /** Prüffunktion mit austauschbarem Katalog — der Test braucht eigene Tabellen. */
 export function checkBewehrung(
   context: CheckContext,
   materials: readonly MaterialDefinition[],
-): Flag[] {
+): Fund[] {
   const bezug = bezugAus(materials);
   if (bezug === null) return [];
+  const max = regelZahl('M1', 'positionen_im_titel');
   const { index, parents } = context;
   const cache = new Map<string, LVNode | null>();
   const sectionOf = (slot: number): string =>
@@ -79,16 +79,13 @@ export function checkBewehrung(
     }
   }
 
-  return offen.map((slot): Flag => {
+  return offen.map((slot): Fund => {
     const nachbarn = stahl.get(sectionOf(slot)) ?? [];
     return {
-      id: 'M1',
-      category: 'risiko',
-      severity: 'hinweis',
       positionId: index.nodes[slot].id,
       title:
         nachbarn.length > 0
-          ? `Keine Angabe zur Bewehrung — Betonstahl im Abschnitt: ${liste(nachbarn)}`
+          ? `Keine Angabe zur Bewehrung — Betonstahl im Abschnitt: ${liste(nachbarn, max)}`
           : 'Keine Angabe zur Bewehrung, auch kein Betonstahl im Abschnitt',
     };
   });
@@ -96,12 +93,6 @@ export function checkBewehrung(
 
 export const m1Bewehrung: CheckRule = {
   id: 'M1',
-  label: 'Betonposition ohne Angabe zur Bewehrung',
-  category: 'risiko',
-  severity: 'hinweis',
-  hint:
-    'Die Betonposition nennt eine Festigkeitsklasse, sagt aber nichts zur Bewehrung. Oft steht sie in einer eigenen ' +
-    'Position — ein Blick lohnt, ob sie dort erfasst ist.',
   check: (context) => checkBewehrung(context, materialKatalog()),
   requires: {
     file: 'docs/domain/reference/material/beton.csv und betonstahl.csv',

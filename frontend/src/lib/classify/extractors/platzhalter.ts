@@ -10,19 +10,31 @@
 //
 // Das ist der Rohstoff für den VOB-Hinweis „unvollständige Leistungsbeschreibung"
 // in WP-K; hier wird nur gefunden, nicht bewertet.
+//
+// Die Wörter stehen als Zeilen V7 in docs/domain/reference/pruefregeln-stichworte.csv.
+// Hier bleibt nur die Form: was eine Lücke ist, und dass ein „offenes Feld" ein
+// Feldname mit Doppelpunkt vor einer Lücke ist.
 
+import { regelStichworte } from '../../check/referenz';
+import { findeStichworte, stichwortQuelle } from '../material/stichwort';
 import { collect, tidy, type Hit } from './spans';
 import type { Extractor, ExtractorContext, ExtractorResult } from './types';
 
-/** Punkt-, Unterstrich- oder Auslassungsreihe ab drei Zeichen. */
+/** Punkt-, Unterstrich- oder Auslassungsreihe ab drei Zeichen — eine Form, kein Wort. */
 const LUECKE = /\.{3,}|_{3,}|…+/g;
 
-/** Ausformulierte Aufforderung an den Bieter. */
-const BIETERANGABE =
-  /\b(?:bieterangabe|vom\s+bieter\s+(?:ein)?zutragen|vom\s+bieter\s+anzugeben|durch\s+den\s+bieter\s+(?:ein)?zutragen|bieter\s+trägt\s+ein)\b/gi;
+/** Zeile in pruefregeln-stichworte.csv, deren Wörter Feldnamen vor einer Lücke sind. */
+const OFFENES_FELD = 'Offenes Feld';
 
-/** Feldnamen, die typischerweise offen bleiben. */
-const OFFENES_FELD = /\b(?:fabrikat|hersteller|typ|erzeugnis)\s*:\s*(?=\s*(?:\.{3,}|_{3,}|…|$))/gi;
+/** Feldname, Doppelpunkt, danach nichts oder nur eine Lücke. */
+function offenesFeld(namen: readonly string[]): RegExp | null {
+  const quelle = stichwortQuelle(namen);
+  if (quelle === null) return null;
+  return new RegExp(
+    `(?<![\\p{L}\\p{N}])(?:${quelle})\\s*:\\s*(?=\\s*(?:\\.{3,}|_{3,}|…|$))`,
+    'giu',
+  );
+}
 
 /** Wie viele Zeichen vor der Lücke als Beschriftung dienen. */
 const CAPTION_CHARS = 40;
@@ -39,27 +51,26 @@ function captionOf(longText: string, start: number): string {
 }
 
 export function findPlatzhalter(longText: string): Hit[] {
-  const hits: Hit[] = [
-    ...findLuecken(longText),
-    ...[...longText.matchAll(BIETERANGABE)].map((match) => {
-      const start = match.index ?? 0;
-      return {
-        value: 'Bieterangabe',
-        start,
-        end: start + match[0].length,
-        label: tidy(match[0]),
-      };
-    }),
-    ...[...longText.matchAll(OFFENES_FELD)].map((match) => {
-      const start = match.index ?? 0;
-      return {
-        value: 'Offenes Feld',
-        start,
-        end: start + match[0].length,
-        label: tidy(match[0]),
-      };
-    }),
-  ];
+  const hits: Hit[] = findLuecken(longText);
+  for (const zeile of regelStichworte('V7')) {
+    if (zeile.wert === OFFENES_FELD) {
+      const pattern = offenesFeld(zeile.stichworte);
+      if (pattern === null) continue;
+      for (const match of longText.matchAll(pattern)) {
+        const start = match.index ?? 0;
+        hits.push({
+          value: zeile.wert,
+          start,
+          end: start + match[0].length,
+          label: tidy(match[0]),
+        });
+      }
+      continue;
+    }
+    for (const treffer of findeStichworte(longText, zeile.pattern, zeile.ausser)) {
+      hits.push({ value: zeile.wert, start: treffer.start, end: treffer.end, label: treffer.text });
+    }
+  }
   return hits.sort((a, b) => a.start - b.start);
 }
 

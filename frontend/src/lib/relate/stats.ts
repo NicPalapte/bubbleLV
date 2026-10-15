@@ -3,14 +3,28 @@
 // **Median und Quartilsabstand, nicht Mittelwert.** Ein einziger Tippfehler im
 // Einheitspreis (120 € statt 12 €) zieht den Mittelwert so weit mit, dass er
 // selbst nicht mehr auffällt — der Median bleibt, wo die Masse liegt. Die
-// Grenze ist die in der Statistik übliche 1,5-fache des Quartilsabstands
-// (Tukey); sie steht hier als Konstante und nicht verstreut im Code.
+// Grenze ist das in der Statistik übliche 1,5-fache des Quartilsabstands
+// (Tukey). Zaunbreite und Mindestanzahl stehen als Parameter der Regel G4 in
+// docs/domain/reference/pruefregeln-parameter.csv; fehlen sie, gibt es keine
+// Ausreißer — kein Fehler.
 
-/** Kleinste Anzahl Werte, ab der Quartile etwas aussagen. */
-export const MIN_FOR_OUTLIERS = 4;
+import { regelParameter } from '../check/referenz';
 
-/** Übliche Zaunbreite für Ausreißer: Quartil ± 1,5 × Quartilsabstand. */
-const FENCE = 1.5;
+function g4Zahl(name: string): number | null {
+  const roh = regelParameter('G4', name);
+  const zahl = roh === undefined ? NaN : Number(roh.replace(',', '.'));
+  return Number.isFinite(zahl) ? zahl : null;
+}
+
+/** Kleinste Anzahl Werte, ab der Quartile etwas aussagen (`mindestanzahl`). */
+export function minForOutliers(): number | null {
+  return g4Zahl('mindestanzahl');
+}
+
+/** Zaunbreite für Ausreißer: Quartil ± Zaunbreite × Quartilsabstand (`zaunbreite`). */
+function fence(): number | null {
+  return g4Zahl('zaunbreite');
+}
 
 export interface ValueStats {
   /** Anzahl Werte, die tatsächlich vorliegen (fehlende zählen nicht mit). */
@@ -59,10 +73,12 @@ export function statsOf(values: readonly number[]): ValueStats | null {
  * Rauschen.
  */
 export function outlierBounds(stats: ValueStats): { low: number; high: number } | null {
-  if (stats.count < MIN_FOR_OUTLIERS) return null;
+  const min = minForOutliers();
+  const zaun = fence();
+  if (min === null || zaun === null || stats.count < min) return null;
   const iqr = stats.q3 - stats.q1;
   if (iqr <= 0) return null;
-  return { low: stats.q1 - FENCE * iqr, high: stats.q3 + FENCE * iqr };
+  return { low: stats.q1 - zaun * iqr, high: stats.q3 + zaun * iqr };
 }
 
 /** Wohin ein Wert aus dem Erwartungsbereich fällt; `null` = er liegt darin. */

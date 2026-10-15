@@ -5,56 +5,57 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 
 ## Übersicht
 
-| Nr.  | Entscheidung                                                                                 | Status     | Datum      |
-| ---- | -------------------------------------------------------------------------------------------- | ---------- | ---------- |
-| 0001 | [Review-Agent für Pull Requests](0001-pr-review-agent.md)                                    | akzeptiert | 2026-09-09 |
-| 0002 | [Preview-App pro Pull Request](0002-pr-preview.md)                                           | akzeptiert | 2026-09-09 |
-| 0003 | [Sprach- und Dokumentationsregeln](0003-sprache-und-dokumentation.md)                        | akzeptiert | 2026-09-09 |
-| 0004 | [Design-Kit bleibt JSX, App bleibt TSX](0004-design-kit-und-frontend.md)                     | akzeptiert | 2026-09-10 |
-| 0005 | [Preview nur bei Code-Änderungen](0005-preview-nur-bei-code.md)                              | ersetzt durch 0042 | 2026-09-10 |
-| 0006 | [Fokus: ein LV vollständig verstehen](0006-fokus-lv-verstehen.md)                            | akzeptiert | 2026-09-11 |
-| 0007 | [Previews werden beim Deploy aufgeräumt](0007-previews-im-deploy-aufraeumen.md)              | akzeptiert | 2026-09-11 |
-| 0008 | [Positionen als Wolke statt als Ring](0008-graph-layout-positionswolke.md)                   | ersetzt durch 0035 | 2026-09-11 |
-| 0009 | [Demo-LV in der App](0009-demo-lv.md)                                                        | akzeptiert | 2026-09-11 |
-| 0010 | [Positions-Index und vorberechnete Aggregate](0010-positions-index-und-aggregate.md)         | akzeptiert | 2026-09-14 |
-| 0011 | [Extraktoren und Fundstellen im Langtext](0011-extraktoren-und-fundstellen.md)               | ergänzt durch 0044 | 2026-09-14 |
-| 0012 | [Prüfregeln: Norm-Verweise aus der Referenzdatei](0012-pruefregeln-und-norm-verweise.md)     | akzeptiert | 2026-09-14 |
-| 0013 | [Eine Gewerk-Farbskala für alle Ansichten](0013-gewerk-farbskala.md)                         | ergänzt durch 0043, 0044 | 2026-09-16 |
-| 0014 | [Zweites Demo-LV: Angebot mit Preisen](0014-demo-lv-mit-preisen.md)                          | akzeptiert | 2026-09-16 |
-| 0015 | [Gewerk aus der Abschnittsüberschrift erben](0015-gewerk-aus-der-abschnittsueberschrift.md)  | ersetzt durch 0044 | 2026-09-16 |
-| 0016 | [Ähnliche Positionen: wie Bubble sie findet](0016-aehnlichkeit-und-cluster.md)               | akzeptiert | 2026-09-16 |
-| 0017 | [Keine Nutzungsmessung, nur ein Melde-Knopf](0017-keine-nutzungsmessung.md)                  | akzeptiert | 2026-09-21 |
-| 0018 | [Treffer im Graphen: isolieren oder im Ganzen zeigen](0018-graph-treffer-isolation.md)       | ersetzt durch 0035 | 2026-09-22 |
-| 0019 | [Mengen im Graphen nur innerhalb einer Einheit](0019-mengen-nur-je-einheit.md)               | akzeptiert | 2026-09-22 |
-| 0020 | [Langtext-Vergleich: Wortmenge statt Teilfolge](0020-langtext-vergleich-ohne-bibliothek.md)  | akzeptiert | 2026-09-22 |
-| 0021 | [Matrix: Zählregeln und Farbskala](0021-matrix-zaehlregeln.md)                               | ersetzt durch 0031 | 2026-09-22 |
-| 0022 | [Export, Druck und Fehlermeldung ohne Request](0022-export-und-druck-ohne-request.md)        | akzeptiert | 2026-09-22 |
-| 0023 | [Ansicht, Filter und Auswahl im URL-Fragment](0023-zustand-im-url-fragment.md)               | akzeptiert | 2026-09-22 |
-| 0024 | [Fehler melden ohne GitHub-Konto](0024-fehler-melden-ohne-konto.md)                          | akzeptiert | 2026-09-23 |
-| 0025 | [Typecheck läuft auch über die Tests](0025-typecheck-ueber-die-tests.md)                     | akzeptiert | 2026-09-23 |
-| 0026 | [Ein Absturz zeigt eine Seite, keine weiße Fläche](0026-absturz-auffangnetz.md)              | akzeptiert | 2026-09-23 |
-| 0027 | [Versionsnummer, Changelog und „Über diese App"](0027-versionsnummer-und-ueber-diese-app.md) | akzeptiert | 2026-09-24 |
-| 0028 | [Zwei Leisten, „Mitnehmen" in die Befehle](0028-zwei-leisten-und-befehle.md)                 | ersetzt durch 0034 | 2026-09-24 |
-| 0029 | [Markierungen im Graphen: Ringe und Muster](0029-markierungen-im-graphen.md)                 | akzeptiert | 2026-09-25 |
-| 0030 | [Material-Filter ausblenden, bis die Liste geprüft ist](0030-material-filter-ausblenden.md)  | ersetzt durch 0044 | 2026-10-04 |
-| 0031 | [Drei Ansichten statt acht](0031-drei-ansichten.md)                                          | teilweise ersetzt durch 0034, 0037 | 2026-10-04 |
-| 0032 | [STLB-Katalog ohne Spalte `positionsart_default`](0032-stlb-katalog-ohne-positionsart.md)    | ersetzt durch 0044 | 2026-10-04 |
-| 0033 | [Neuer Look und Dunkelmodus](0033-neuer-look-und-dunkelmodus.md)                            | akzeptiert | 2026-10-05 |
-| 0034 | [Der Graph ist der Hauptscreen](0034-graph-als-hauptscreen.md)                               | teilweise ersetzt durch 0038 | 2026-10-05 |
-| 0035 | [Graph: Gliederung „nach LV" oder „frei"](0035-graph-gliederung.md)                     | ergänzt durch 0040 | 2026-10-05 |
-| 0036 | [Alle Rechte vorbehalten statt AGPL](0036-alle-rechte-vorbehalten.md) | akzeptiert | 2026-10-05 |
-| 0037 | [Vergleich als Fenster über dem Graphen](0037-vergleichsfenster.md)          | akzeptiert | 2026-10-05 |
-| 0038 | [Keine Befehlspalette mehr](0038-keine-befehlspalette.md)                    | akzeptiert | 2026-10-05 |
-| 0039 | [Tabelle im eigenen Fenster](0039-tabelle-im-eigenen-fenster.md)             | akzeptiert | 2026-10-06 |
-| 0040 | [Auswertungen aus dem, was im LV steht](0040-auswertung-ohne-klassifizierung.md) | akzeptiert | 2026-10-08 |
-| 0041 | [Workflows: knappe Rechte, Fremd-Actions fest verdrahtet](0041-workflow-rechte-und-pinning.md) | akzeptiert | 2026-10-10 |
-| 0042 | [Preview nur auf Zuruf](0042-preview-auf-zuruf.md) | akzeptiert | 2026-10-10 |
-| 0043 | [Punktfarbe im Graphen nach Hauptabschnitt](0043-punktfarbe-nach-abschnitt.md) | akzeptiert | 2026-10-10 |
-| 0044 | [Leistungsbereich (Gewerk) aus der App entfernt](0044-leistungsbereich-entfernt.md) | akzeptiert | 2026-10-11 |
-| 0045 | [Materialwissen als Tabelle je Material](0045-materialwissen-als-tabelle.md) | akzeptiert | 2026-10-11 |
-| 0046 | [Zuletzt geöffnete Datei im Browser behalten](0046-letzte-datei-im-browser.md) | akzeptiert | 2026-10-12 |
-| 0047 | [Eigene Markierungen und Kommentare je Position](0047-kommentare-und-markierungen.md) | akzeptiert | 2026-10-12 |
-| 0048 | [Referenzdaten ohne Kopie im Frontend](0048-referenzdaten-ohne-kopie.md) | akzeptiert | 2026-10-14 |
+| Nr.  | Entscheidung                                                                                   | Status                             | Datum      |
+| ---- | ---------------------------------------------------------------------------------------------- | ---------------------------------- | ---------- |
+| 0001 | [Review-Agent für Pull Requests](0001-pr-review-agent.md)                                      | akzeptiert                         | 2026-09-09 |
+| 0002 | [Preview-App pro Pull Request](0002-pr-preview.md)                                             | akzeptiert                         | 2026-09-09 |
+| 0003 | [Sprach- und Dokumentationsregeln](0003-sprache-und-dokumentation.md)                          | akzeptiert                         | 2026-09-09 |
+| 0004 | [Design-Kit bleibt JSX, App bleibt TSX](0004-design-kit-und-frontend.md)                       | akzeptiert                         | 2026-09-10 |
+| 0005 | [Preview nur bei Code-Änderungen](0005-preview-nur-bei-code.md)                                | ersetzt durch 0042                 | 2026-09-10 |
+| 0006 | [Fokus: ein LV vollständig verstehen](0006-fokus-lv-verstehen.md)                              | akzeptiert                         | 2026-09-11 |
+| 0007 | [Previews werden beim Deploy aufgeräumt](0007-previews-im-deploy-aufraeumen.md)                | akzeptiert                         | 2026-09-11 |
+| 0008 | [Positionen als Wolke statt als Ring](0008-graph-layout-positionswolke.md)                     | ersetzt durch 0035                 | 2026-09-11 |
+| 0009 | [Demo-LV in der App](0009-demo-lv.md)                                                          | akzeptiert                         | 2026-09-11 |
+| 0010 | [Positions-Index und vorberechnete Aggregate](0010-positions-index-und-aggregate.md)           | akzeptiert                         | 2026-09-14 |
+| 0011 | [Extraktoren und Fundstellen im Langtext](0011-extraktoren-und-fundstellen.md)                 | ergänzt durch 0044                 | 2026-09-14 |
+| 0012 | [Prüfregeln: Norm-Verweise aus der Referenzdatei](0012-pruefregeln-und-norm-verweise.md)       | akzeptiert                         | 2026-09-14 |
+| 0013 | [Eine Gewerk-Farbskala für alle Ansichten](0013-gewerk-farbskala.md)                           | ergänzt durch 0043, 0044           | 2026-09-16 |
+| 0014 | [Zweites Demo-LV: Angebot mit Preisen](0014-demo-lv-mit-preisen.md)                            | akzeptiert                         | 2026-09-16 |
+| 0015 | [Gewerk aus der Abschnittsüberschrift erben](0015-gewerk-aus-der-abschnittsueberschrift.md)    | ersetzt durch 0044                 | 2026-09-16 |
+| 0016 | [Ähnliche Positionen: wie Bubble sie findet](0016-aehnlichkeit-und-cluster.md)                 | akzeptiert                         | 2026-09-16 |
+| 0017 | [Keine Nutzungsmessung, nur ein Melde-Knopf](0017-keine-nutzungsmessung.md)                    | akzeptiert                         | 2026-09-21 |
+| 0018 | [Treffer im Graphen: isolieren oder im Ganzen zeigen](0018-graph-treffer-isolation.md)         | ersetzt durch 0035                 | 2026-09-22 |
+| 0019 | [Mengen im Graphen nur innerhalb einer Einheit](0019-mengen-nur-je-einheit.md)                 | akzeptiert                         | 2026-09-22 |
+| 0020 | [Langtext-Vergleich: Wortmenge statt Teilfolge](0020-langtext-vergleich-ohne-bibliothek.md)    | akzeptiert                         | 2026-09-22 |
+| 0021 | [Matrix: Zählregeln und Farbskala](0021-matrix-zaehlregeln.md)                                 | ersetzt durch 0031                 | 2026-09-22 |
+| 0022 | [Export, Druck und Fehlermeldung ohne Request](0022-export-und-druck-ohne-request.md)          | akzeptiert                         | 2026-09-22 |
+| 0023 | [Ansicht, Filter und Auswahl im URL-Fragment](0023-zustand-im-url-fragment.md)                 | akzeptiert                         | 2026-09-22 |
+| 0024 | [Fehler melden ohne GitHub-Konto](0024-fehler-melden-ohne-konto.md)                            | akzeptiert                         | 2026-09-23 |
+| 0025 | [Typecheck läuft auch über die Tests](0025-typecheck-ueber-die-tests.md)                       | akzeptiert                         | 2026-09-23 |
+| 0026 | [Ein Absturz zeigt eine Seite, keine weiße Fläche](0026-absturz-auffangnetz.md)                | akzeptiert                         | 2026-09-23 |
+| 0027 | [Versionsnummer, Changelog und „Über diese App"](0027-versionsnummer-und-ueber-diese-app.md)   | akzeptiert                         | 2026-09-24 |
+| 0028 | [Zwei Leisten, „Mitnehmen" in die Befehle](0028-zwei-leisten-und-befehle.md)                   | ersetzt durch 0034                 | 2026-09-24 |
+| 0029 | [Markierungen im Graphen: Ringe und Muster](0029-markierungen-im-graphen.md)                   | akzeptiert                         | 2026-09-25 |
+| 0030 | [Material-Filter ausblenden, bis die Liste geprüft ist](0030-material-filter-ausblenden.md)    | ersetzt durch 0044                 | 2026-10-04 |
+| 0031 | [Drei Ansichten statt acht](0031-drei-ansichten.md)                                            | teilweise ersetzt durch 0034, 0037 | 2026-10-04 |
+| 0032 | [STLB-Katalog ohne Spalte `positionsart_default`](0032-stlb-katalog-ohne-positionsart.md)      | ersetzt durch 0044                 | 2026-10-04 |
+| 0033 | [Neuer Look und Dunkelmodus](0033-neuer-look-und-dunkelmodus.md)                               | akzeptiert                         | 2026-10-05 |
+| 0034 | [Der Graph ist der Hauptscreen](0034-graph-als-hauptscreen.md)                                 | teilweise ersetzt durch 0038       | 2026-10-05 |
+| 0035 | [Graph: Gliederung „nach LV" oder „frei"](0035-graph-gliederung.md)                            | ergänzt durch 0040                 | 2026-10-05 |
+| 0036 | [Alle Rechte vorbehalten statt AGPL](0036-alle-rechte-vorbehalten.md)                          | akzeptiert                         | 2026-10-05 |
+| 0037 | [Vergleich als Fenster über dem Graphen](0037-vergleichsfenster.md)                            | akzeptiert                         | 2026-10-05 |
+| 0038 | [Keine Befehlspalette mehr](0038-keine-befehlspalette.md)                                      | akzeptiert                         | 2026-10-05 |
+| 0039 | [Tabelle im eigenen Fenster](0039-tabelle-im-eigenen-fenster.md)                               | akzeptiert                         | 2026-10-06 |
+| 0040 | [Auswertungen aus dem, was im LV steht](0040-auswertung-ohne-klassifizierung.md)               | akzeptiert                         | 2026-10-08 |
+| 0041 | [Workflows: knappe Rechte, Fremd-Actions fest verdrahtet](0041-workflow-rechte-und-pinning.md) | akzeptiert                         | 2026-10-10 |
+| 0042 | [Preview nur auf Zuruf](0042-preview-auf-zuruf.md)                                             | akzeptiert                         | 2026-10-10 |
+| 0043 | [Punktfarbe im Graphen nach Hauptabschnitt](0043-punktfarbe-nach-abschnitt.md)                 | akzeptiert                         | 2026-10-10 |
+| 0044 | [Leistungsbereich (Gewerk) aus der App entfernt](0044-leistungsbereich-entfernt.md)            | akzeptiert                         | 2026-10-11 |
+| 0045 | [Materialwissen als Tabelle je Material](0045-materialwissen-als-tabelle.md)                   | akzeptiert                         | 2026-10-11 |
+| 0046 | [Zuletzt geöffnete Datei im Browser behalten](0046-letzte-datei-im-browser.md)                 | akzeptiert                         | 2026-10-12 |
+| 0047 | [Eigene Markierungen und Kommentare je Position](0047-kommentare-und-markierungen.md)          | akzeptiert                         | 2026-10-12 |
+| 0048 | [Referenzdaten ohne Kopie im Frontend](0048-referenzdaten-ohne-kopie.md)                       | akzeptiert                         | 2026-10-14 |
+| 0049 | [Prüfregeln als Tabelle, Ranglisten keine Prüfregel](0049-pruefregeln-als-tabelle.md)          | akzeptiert                         | 2026-10-15 |
 
 ## Wann schreibe ich eine neue Datei?
 

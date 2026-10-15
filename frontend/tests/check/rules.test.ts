@@ -173,51 +173,6 @@ describe('V7 · Offene Textergänzung', () => {
   });
 });
 
-/** `count` Positionen mit aufsteigender OZ, Menge und Preis. */
-function viele(count: number, overrides: Partial<PositionDraft> = {}): PositionDraft[] {
-  return Array.from({ length: count }, (_, i) =>
-    position({
-      oz: `01.001.${String((i + 1) * 10).padStart(4, '0')}`,
-      quantity: i + 1,
-      unitPrice: i + 1,
-      ...overrides,
-    }),
-  );
-}
-
-describe('G1 · Kostentreiber', () => {
-  it('reiht nach Anteil an der Gesamtsumme', () => {
-    const result = check(...viele(12));
-    const flags = flagsOf(result, 'G1');
-    expect(flags).toHaveLength(10);
-    // Die teuerste Position ist die mit der größten Menge × EP.
-    expect(flags[0].positionId).toContain('01.001.0120');
-    expect(flags[0].title).toContain('Rang 1');
-    expect(flags[0].title).toContain('%');
-  });
-
-  it('schweigt, wenn die Datei keine Preise führt', () => {
-    expect(flagsOf(check(...viele(12, { unitPrice: null })), 'G1')).toHaveLength(0);
-  });
-
-  it('schweigt bei zu wenigen Positionen — „Rang 2 von 2" sagt nichts', () => {
-    expect(flagsOf(check(...viele(3)), 'G1')).toHaveLength(0);
-  });
-});
-
-describe('G2 · Mengentreiber', () => {
-  it('vergleicht nur innerhalb derselben Einheit', () => {
-    const result = check(
-      ...viele(12, { unit: 'm3' }),
-      position({ oz: '01.002.0010', unit: 'Stck', quantity: 99_999 }),
-    );
-    const flags = flagsOf(result, 'G2');
-    // Die einzelne Stück-Position bildet keine Rangliste — trotz Riesenmenge.
-    expect(flags).toHaveLength(10);
-    expect(flags.every((flag) => flag.title.includes('m3'))).toBe(true);
-  });
-});
-
 describe('G3 · Einheit uneinheitlich geschrieben', () => {
   it('meldet dieselbe Einheit in zwei Schreibweisen', () => {
     const result = check(
@@ -370,10 +325,6 @@ describe('Regelzustand', () => {
   it('macht eine Regel ohne Referenzdaten inaktiv — mit Grund, ohne Fehler', () => {
     const ohneDaten: CheckRule = {
       id: 'V2', // vorhandene ID, damit der Eintrag in pruefregeln.csv greift
-      label: 'Braucht Daten',
-      category: 'vob',
-      severity: 'hinweis',
-      hint: 'Nur für den Test.',
       check: () => [],
       requires: { file: 'docs/domain/reference/leer.csv', available: () => false },
     };
@@ -412,10 +363,6 @@ describe('Regelzustand', () => {
 describe('Eine stolpernde Regel hält den Import nicht an', () => {
   const kaputt: CheckRule = {
     id: 'V1', // vorhandene ID, damit der Eintrag in pruefregeln.csv greift
-    label: 'Absichtlich fehlerhaft',
-    category: 'vob',
-    severity: 'hinweis',
-    hint: 'Nur für den Test.',
     check() {
       throw new TypeError('absichtlich');
     },

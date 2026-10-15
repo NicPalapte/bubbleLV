@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 import {
-  MIN_FOR_OUTLIERS,
+  minForOutliers,
   outlierBounds,
   outlierDirection,
   quantile,
@@ -47,7 +47,7 @@ describe('statsOf', () => {
 
 describe('outlierBounds', () => {
   it('schweigt bei zu wenigen Werten', () => {
-    const werte = Array.from({ length: MIN_FOR_OUTLIERS - 1 }, (_, i) => i + 1);
+    const werte = Array.from({ length: (minForOutliers() ?? 0) - 1 }, (_, i) => i + 1);
     expect(outlierBounds(statsOf(werte)!)).toBeNull();
   });
 

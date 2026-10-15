@@ -26,6 +26,11 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
   weiter, welche der beiden es ist. V6 heißt jetzt „Verweis auf ein anderes Dokument“ und
   bittet nur zu prüfen, ob das Dokument vorliegt. V8 bis V10 sind vorerst aus der
   Prüfung genommen. Die Norm-Verweise von V1 bis V7 sind bestätigt.
+- **Prüfregeln in Tabellen:** Name, Hinweistext, Schwere, Schwellwerte und Suchwörter
+  jeder Regel stehen jetzt in `docs/domain/reference/` und lassen sich in Excel ändern
+  (`docs/setup/pruefregeln.md`).
+- **Kostentreiber und Mengentreiber** (G1, G2) sind keine Hinweise mehr. Die Listen im
+  Überblick bleiben.
 - Einheiten mit Punkt am Ende („Psch.“) gelten als dieselbe wie ohne Punkt. Neue
   Einheiten-Gruppe „Pauschal“.
 

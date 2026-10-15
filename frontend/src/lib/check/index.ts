@@ -9,7 +9,7 @@
 import { regelEintrag } from './referenz';
 import { g4Preisausreisser } from './rules/ausreisser';
 import { m1Bewehrung } from './rules/material';
-import { g1Kostentreiber, g2Mengentreiber, g3Einheitenschreibweise } from './rules/treiber';
+import { g3Einheitenschreibweise } from './rules/treiber';
 import {
   v10Homogenbereiche,
   v1Bedarfsposition,
@@ -40,8 +40,6 @@ export const CHECK_RULES: readonly CheckRule[] = [
   v8Nebenleistung,
   v9BesondereLeistung,
   v10Homogenbereiche,
-  g1Kostentreiber,
-  g2Mengentreiber,
   g3Einheitenschreibweise,
   g4Preisausreisser,
   m1Bewehrung,
@@ -52,6 +50,9 @@ function inactiveReason(rule: CheckRule): string | null {
   const eintrag = regelEintrag(rule.id);
   if (eintrag === undefined) {
     return `Kein Eintrag für ${rule.id} in docs/domain/reference/pruefregeln.csv.`;
+  }
+  if (eintrag.name === '' || eintrag.kategorie === null || eintrag.schwere === null) {
+    return `Name, Kategorie oder Schwere für ${rule.id} fehlt in docs/domain/reference/pruefregeln.csv.`;
   }
   if (rule.requires !== undefined && !rule.requires.available()) {
     return `Referenzdatei ${rule.requires.file} enthält noch keine Einträge.`;
@@ -88,9 +89,17 @@ export function runChecks(
     let grund = inactiveReason(rule);
     let found: Flag[] = [];
 
+    const category = eintrag?.kategorie ?? 'vob';
+    const severity = eintrag?.schwere ?? 'hinweis';
+
     if (grund === null && rule.check !== undefined) {
       try {
-        found = rule.check(context);
+        found = rule.check(context).map((fund): Flag => ({
+          ...fund,
+          id: rule.id,
+          category,
+          severity: fund.severity ?? severity,
+        }));
       } catch (error) {
         // Eine stolpernde Regel darf den Import nicht anhalten.
         grund = `Regel abgebrochen: ${error instanceof Error ? error.message : 'unbekannt'}`;
@@ -103,10 +112,10 @@ export function runChecks(
 
     rules.push({
       id: rule.id,
-      label: rule.label,
-      category: rule.category,
-      severity: rule.severity,
-      hint: rule.hint,
+      label: eintrag?.name || rule.id,
+      category,
+      severity,
+      hint: eintrag?.hinweis ?? '',
       ruleRef: eintrag?.normVerweis ?? '',
       refConfirmed: eintrag?.status === 'bestaetigt',
       active,
@@ -128,5 +137,6 @@ export type {
   Flag,
   FlagCategory,
   FlagSeverity,
+  Fund,
   RuleStatus,
 } from './types';

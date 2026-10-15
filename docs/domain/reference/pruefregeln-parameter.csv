@@ -1,0 +1,5 @@
+regel_id,parameter,wert,bemerkung
+V2,einheiten_gruppe,Stunde,"Gruppe aus einheiten-gruppen.csv, die als Abrechnung nach Zeit gilt"
+G4,zaunbreite,"1,5",Erwartungsbereich: Quartil ± zaunbreite × Quartilsabstand (Tukey). Gilt auch für die Ausreißer in den Gruppen ähnlicher Positionen
+G4,mindestanzahl,4,"So viele Einheitspreise braucht eine Gruppe mindestens, bevor ein Ausreißer gemeldet wird"
+M1,positionen_im_titel,3,"So viele Betonstahl-Positionen nennt der Hinweis mit OZ, der Rest als Anzahl"

@@ -17,7 +17,9 @@
 // Ansicht „Prüfung" und auf der Cluster-Karte, und beide sollen ihn gleich
 // schreiben.
 import { formatEuro } from '../../format';
-import type { CheckContext, CheckRule, Flag } from '../types';
+import { minForOutliers } from '../../relate/stats';
+import { regelParameter } from '../referenz';
+import type { CheckContext, CheckRule, Fund } from '../types';
 
 /** Nur EP-Ausreißer: eine abweichende Menge ist eine Aussage über das Bauwerk,
  *  keine über den Preis, und gehört damit in die Ansicht „Ähnlichkeit". */
@@ -29,22 +31,16 @@ function richtung(direction: 'hoch' | 'niedrig'): string {
 
 export const g4Preisausreisser: CheckRule = {
   id: 'G4',
-  label: 'Einheitspreis fällt aus der Gruppe',
-  category: 'geld',
-  severity: 'beachten',
-  hint:
-    'Der Einheitspreis liegt außerhalb des Erwartungsbereichs seiner Gruppe ähnlicher ' +
-    'Positionen (Median und Quartilsabstand). Das kann sachlich begründet sein — ein ' +
-    'Blick auf die Einbausituation lohnt trotzdem.',
-  check(context: CheckContext): Flag[] {
-    const flags: Flag[] = [];
+  requires: {
+    file: 'docs/domain/reference/pruefregeln-parameter.csv (zaunbreite, mindestanzahl)',
+    available: () => minForOutliers() !== null && regelParameter('G4', 'zaunbreite') !== undefined,
+  },
+  check(context: CheckContext): Fund[] {
+    const funde: Fund[] = [];
     for (const cluster of context.relations.clusters) {
       for (const outlier of cluster.ausreisser) {
         if (outlier.field !== FIELD) continue;
-        flags.push({
-          id: 'G4',
-          category: 'geld',
-          severity: 'beachten',
+        funde.push({
           positionId: outlier.positionId,
           title:
             `${formatEuro(outlier.value)} — ${richtung(outlier.direction)} dem ` +
@@ -53,6 +49,6 @@ export const g4Preisausreisser: CheckRule = {
         });
       }
     }
-    return flags;
+    return funde;
   },
 };

@@ -8,28 +8,15 @@
 // eine Farbe im Langtext, der Wert steht im Label.
 
 import { materialKatalog, type Matcher, type MaterialDefinition } from '../material/katalog';
-import { tidy } from './spans';
+import { findeStichworte, type StichwortTreffer } from '../material/stichwort';
 import type { Span } from '../types';
 import type { Extractor, ExtractorContext, ExtractorResult } from './types';
 
-interface Treffer {
-  text: string;
-  start: number;
-  end: number;
+function treffer(text: string, matcher: Matcher): StichwortTreffer[] {
+  return findeStichworte(text, matcher.pattern, matcher.ausser);
 }
 
-function treffer(text: string, matcher: Matcher): Treffer[] {
-  const out: Treffer[] = [];
-  for (const match of text.matchAll(matcher.pattern)) {
-    const found = tidy(match[0]);
-    if (matcher.ausser?.test(found) === true) continue;
-    const start = match.index ?? 0;
-    out.push({ text: found, start, end: start + match[0].length });
-  }
-  return out;
-}
-
-function trefferAller(text: string, matchers: readonly Matcher[]): Treffer[] {
+function trefferAller(text: string, matchers: readonly Matcher[]): StichwortTreffer[] {
   return matchers.flatMap((matcher) => treffer(text, matcher));
 }
 

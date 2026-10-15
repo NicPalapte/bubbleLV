@@ -5,7 +5,14 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { CHECK_RULES } from '../../src/lib/check';
-import { regelEintrag, risikoFormulierungen } from '../../src/lib/check/referenz';
+import {
+  regelEintrag,
+  regelParameter,
+  regelStichworte,
+  regelZahl,
+  risikoFormulierungen,
+} from '../../src/lib/check/referenz';
+import { findeStichworte } from '../../src/lib/classify/material/stichwort';
 import { parseCsv, splitList } from '../../src/lib/csv';
 
 describe('Referenzdateien der Prüfregeln', () => {
@@ -13,6 +20,33 @@ describe('Referenzdateien der Prüfregeln', () => {
     for (const rule of CHECK_RULES) {
       expect(regelEintrag(rule.id), `Regel ${rule.id} fehlt in pruefregeln.csv`).toBeDefined();
     }
+  });
+
+  it('gibt jeder Regel Name, Hinweis, Kategorie und Schwere aus der Tabelle', () => {
+    for (const rule of CHECK_RULES) {
+      const eintrag = regelEintrag(rule.id);
+      expect(eintrag?.name, `${rule.id} ohne Name`).not.toBe('');
+      expect(eintrag?.hinweis, `${rule.id} ohne Hinweis`).not.toBe('');
+      expect(eintrag?.kategorie, `${rule.id} ohne gültige Kategorie`).not.toBeNull();
+      expect(eintrag?.schwere, `${rule.id} ohne gültige Schwere`).not.toBeNull();
+    }
+  });
+
+  it('liest Parameter, auch mit deutschem Komma', () => {
+    expect(regelZahl('G4', 'zaunbreite')).toBe(1.5);
+    expect(regelParameter('V2', 'einheiten_gruppe')).toBe('Stunde');
+  });
+
+  it('nennt einen fehlenden Parameter beim Namen, statt still mit 0 zu rechnen', () => {
+    expect(() => regelZahl('G4', 'gibt-es-nicht')).toThrow(/gibt-es-nicht.*pruefregeln-parameter/);
+  });
+
+  it('liest die Suchwörter je Regel und findet Verweise samt Nummer', () => {
+    const anlage = regelStichworte('V6').find((zeile) => zeile.wert === 'Anlage');
+    expect(anlage).toBeDefined();
+    const [treffer] = findeStichworte('Details siehe Anlage 3.', anlage!.pattern, null);
+    expect(treffer.text).toBe('siehe Anlage 3');
+    expect(regelStichworte('V9')).toEqual([]);
   });
 
   it('nennt zu jeder Risiko-Formulierung ihre Quelle', () => {

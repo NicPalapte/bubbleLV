@@ -10,7 +10,7 @@ export {
 } from './similarity';
 export type { RelateOptions } from './similarity';
 export {
-  MIN_FOR_OUTLIERS,
+  minForOutliers,
   outlierBounds,
   outlierDirection,
   quantile,
