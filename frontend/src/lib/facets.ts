@@ -60,11 +60,6 @@ export const FACETS: readonly Facet[] = [
     sortValues: byOrder(Object.keys(POSITIONSART_LABELS)),
   },
   {
-    id: 'bauteiltyp',
-    label: 'Bauteiltyp',
-    get: (p) => single(attrString(p.attributes, 'bauteiltyp')),
-  },
-  {
     id: 'beton',
     label: 'Druckfestigkeit',
     get: (p) => single(attrString(p.attributes, 'beton')),

@@ -129,7 +129,7 @@ LLM-Klassifizierung. Details → @docs/scope.md #out-of-scope
   schließen ändert nie Filter, Suche oder Auswahl. Der Graph ist der Hauptscreen; Fenster
   und Seitenfenster liegen darüber (`view.side`, `view.tableWindow`).
 - **Beziehungen werden einmal beim Laden im Worker berechnet**, nie im Render. Kein
-  All-Paare-Vergleich — erst nach Einheit/Bauteiltyp vorgruppieren.
+  All-Paare-Vergleich — erst nach Einheit vorgruppieren.
 - **Prüfregeln sind Hinweise, keine Urteile.** Jede Regel nennt ihren Norm-Verweis,
   zeigt die Fundstelle und ist einzeln abschaltbar. Fehlende Referenzdaten ⇒ Regel
   inaktiv, kein Fehler. Formulierungen nie als Rechtsrat.

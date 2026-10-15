@@ -96,7 +96,7 @@ describe('filterMask / createPositionFilter', () => {
     ['Mehrwert-Facette', filters({ expo: ['XF3'] }), ''],
     ['Mengenbereich', filters({}, [100, 400]), ''],
     ['Suche', EMPTY_FILTERS, 'nachbehandeln'],
-    ['Facette und Suche', filters({ bauteiltyp: ['Wand'] }), 'aufmaß'],
+    ['Facette und Suche', filters({ positionsart: ['bauteil'] }), 'aufmaß'],
   ];
 
   it.each(cases)('antwortet wie matchPos: %s', (_name, active, search) => {

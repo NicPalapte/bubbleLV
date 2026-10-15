@@ -20,6 +20,8 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 - **Klick auf einen Fund** in der Prüfung wählt die Position im Graphen aus. Die Tabelle
   öffnet sich nicht mehr.
 - **Filter „Status“ entfernt:** Er hatte immer nur den Wert „offen“.
+- **Bauteiltyp entfernt:** Die Erkennung kannte nur zwölf Typen. Filter, Tabellenspalte,
+  Export-Spalte, Matrix-Achse und der Import-Hinweis „Bauteil ohne Bauteiltyp“ fallen weg.
 
 ## 0.16.0 — 13.10.2026 · Material Beton
 

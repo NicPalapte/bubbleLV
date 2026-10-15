@@ -4,7 +4,7 @@
 // Der teure Weg wäre, jede Position mit jeder zu vergleichen: bei 10.000
 // Positionen sind das rund 50 Millionen Paare. Drei Stufen halten das klein:
 //
-//  1. **Vorgruppierung** nach Einheit und Bauteiltyp. Verglichen wird
+//  1. **Vorgruppierung** nach Einheit. Verglichen wird
 //     nur innerhalb einer Gruppe — eine Betonwand in m³ und eine Stunde
 //     Facharbeiter haben nichts miteinander zu tun.
 //  2. **Gleiche Texte zusammenfassen.** Wiederholte Leistungen stehen in echten
@@ -21,7 +21,6 @@
 
 import { jaccard, relateTokens, shingles } from './text';
 import { statsOf } from './stats';
-import { attrString } from '../attributes';
 import { canonicalUnit, unitLabel } from '../units';
 import type { Cluster, RelationResult } from './types';
 import type { PositionIndex } from '../index/positionIndex';
@@ -58,7 +57,7 @@ const IGNORED_KEYS: ReadonlySet<string> = new Set([
 ]);
 
 /** Merkmale, die durch die Vorgruppierung ohnehin gleich sind. */
-const GROUPING_KEYS: ReadonlySet<string> = new Set(['bauteiltyp', 'einheit']);
+const GROUPING_KEYS: ReadonlySet<string> = new Set(['einheit']);
 
 /** Pseudo-Key für „die Kurztexte lauten verschieden". */
 export const KURZTEXT_KEY = 'kurztext';
@@ -129,10 +128,8 @@ function profileOf(position: PositionSummary): Profile {
   const langTokens = relateTokens(position.longText);
   const kurz = shingles(kurzTokens);
   const lang = shingles(langTokens);
-  const bauteiltyp = attrString(position.attributes, 'bauteiltyp') ?? '—';
-  const einheit = canonicalUnit(position.unit) ?? '—';
   return {
-    bucket: `${einheit}${SEP}${bauteiltyp}`,
+    bucket: canonicalUnit(position.unit) ?? '—',
     kurz,
     lang,
     alle: [...new Set([...kurz, ...lang])],

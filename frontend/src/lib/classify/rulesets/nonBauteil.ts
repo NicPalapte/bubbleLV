@@ -1,5 +1,5 @@
 // Rulesets für Nicht-Bauteil-Positionen. Eigenes, kleineres Schema — kein
-// bauteiltyp/beton/tragend (docs/architecture/data-model.md). Bewusst minimal und
+// beton/tragend (docs/architecture/data-model.md). Bewusst minimal und
 // inkrementell erweiterbar.
 
 import type { NonBauteilRuleset, RulesetContext } from './types';

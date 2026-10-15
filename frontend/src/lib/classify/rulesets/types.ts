@@ -7,7 +7,6 @@ import type { ClassifierInput, Positionsart } from '../types';
 export interface RulesetContext {
   item: ClassifierInput;
   text: NormalizedItem;
-  bauteiltyp: string | null;
   positionsart: Positionsart;
 }
 

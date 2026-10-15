@@ -16,7 +16,7 @@ mapToLvDraft()
     │  → LVDraft (neutral, ohne GAEB-Vokabular)
     ▼
 classify(draft)
-    │  Positionsart → Extraktoren → Bauteiltyp → Ruleset
+    │  Positionsart → Extraktoren → Ruleset
     │  → LVDraft mit befüllten position.attributes und _spans
     ▼
 buildTree(draft)
@@ -185,7 +185,7 @@ Extraktoren (WP-J)
     ├── positionsart != "bauteil" ──► Nicht-Bauteil-Ruleset (per positionsart) ──► attributes
     │
     ▼ ("bauteil")
-Stufe 1 — ObjectType         → attributes.bauteiltyp   ("Wand" | "Decke" | "Fundament" | …)
+Stufe 1 — ObjectType         → entfernt (Entscheidung 0052), kein attributes.bauteiltyp
     │
     ▼
 Stufe 2 — RulesetRegistry.resolveBauteil()

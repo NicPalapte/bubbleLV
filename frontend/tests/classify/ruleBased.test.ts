@@ -22,7 +22,8 @@ describe('RuleBasedClassifier — Bauteil aus dem Text', () => {
     );
 
     expect(attributes.positionsart).toBe('bauteil');
-    expect(attributes.bauteiltyp).toBe('Wand');
+    // Kein Bauteiltyp mehr (Entscheidung 0052).
+    expect(attributes).not.toHaveProperty('bauteiltyp');
     expect(attributes.beton).toBe('C30/37');
     expect(attributes.expo).toEqual(['XC2', 'XD1']);
     expect(attributes.dicke).toBe('30 cm');
@@ -49,7 +50,6 @@ describe('RuleBasedClassifier — Bauteil aus dem Text', () => {
     expect(attributes.positionsart).toBe('personal');
     expect(attributes.qualifikation).toBe('Facharbeiter');
     expect(attributes.zeiteinheit).toBe('h');
-    expect(attributes.bauteiltyp).toBeUndefined();
     expect(meta.ruleset).toBe('personal');
   });
 
@@ -57,7 +57,6 @@ describe('RuleBasedClassifier — Bauteil aus dem Text', () => {
     const { attributes } = classifier.classify(
       input({ shortText: 'Dachfläche', longText: 'Arbeiten am Dach, Höhe 4 m.', unit: 'm2' }),
     );
-    expect(attributes.bauteiltyp).toBe('Dach');
     expect(attributes.hoehe).toBe('4 m');
     // Ohne genormte Klasse im Text bleibt der Key ganz weg statt auf null zu stehen.
     expect(attributes.beton).toBeUndefined();
@@ -98,21 +97,6 @@ describe('RuleBasedClassifier — Heuristik', () => {
     ).toBe('personal');
   });
 
-  it('lässt sich von Nachbarbauteilen im Langtext nicht in die Irre führen', () => {
-    // Reale Erdarbeiten-Position aus gaeb-xml-beispiel.x83: der Langtext nennt
-    // die Böschungswände der Baugrube, das Bauteil ist aber keine Wand.
-    const { attributes } = classifier.classify(
-      input({
-        shortText: 'Boden für Baugrube, BK 3',
-        longText:
-          'Boden für Baugruben ab Baugrubensohle profilgerecht lösen, ' +
-          'Ausführung mit geböschten Wänden, Aushubtiefe bis 2,8 m.',
-        unit: 'm3',
-      }),
-    );
-    expect(attributes.bauteiltyp).toBeNull();
-  });
-
   it('leitet die Positionsart nicht aus Verweisen im Langtext ab', () => {
     const { attributes } = classifier.classify(
       input({
@@ -132,7 +116,6 @@ describe('RuleBasedClassifier — Heuristik', () => {
         unit: 'm2',
       }),
     );
-    expect(attributes.bauteiltyp).toBe('Decke');
     expect(attributes.dicke).toBe('20 cm');
     expect(attributes.keywords).toContain('Ortbeton');
   });
@@ -140,6 +123,5 @@ describe('RuleBasedClassifier — Heuristik', () => {
   it('fällt auf "sonstige" zurück, wenn weder Stichwort noch Einheit tragen', () => {
     const { attributes } = classifier.classify(input({ shortText: 'Titel', unit: null }));
     expect(attributes.positionsart).toBe('sonstige');
-    expect(attributes.bauteiltyp).toBeUndefined();
   });
 });

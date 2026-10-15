@@ -170,7 +170,7 @@ describe('Viewer', () => {
       .map((cell) => cell.textContent?.trim().replace(/\s+[↑↓]$/, ''));
     expect(headers).toContain('Bezeichnung');
     expect(headers).toContain('Positionsart');
-    expect(headers).toContain('Bauteiltyp');
+    expect(headers).not.toContain('Bauteiltyp');
     // Erste Position der Beispieldatei ist in der Tabelle sichtbar.
     expect(within(table).getAllByText('001.001.0010').length).toBeGreaterThan(0);
     // Der Graph bleibt darunter stehen.

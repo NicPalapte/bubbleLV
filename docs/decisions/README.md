@@ -57,6 +57,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0048 | [Referenzdaten ohne Kopie im Frontend](0048-referenzdaten-ohne-kopie.md)                       | akzeptiert                         | 2026-10-14 |
 | 0049 | [Prüfregeln als Tabelle, keine wertenden Kennzahlen](0049-pruefregeln-als-tabelle.md)          | akzeptiert                         | 2026-10-15 |
 | 0050 | [Eingabefelder aus der Datei](0050-eingabefelder-aus-der-datei.md)                             | akzeptiert                         | 2026-10-15 |
+| 0052 | [Kein Bauteiltyp](0052-kein-bauteiltyp.md)                                                     | akzeptiert                         | 2026-10-15 |
 | 0051 | [Kein Status-Filter](0051-kein-status-filter.md)                                               | akzeptiert                         | 2026-10-15 |
 
 ## Wann schreibe ich eine neue Datei?
