@@ -25,6 +25,9 @@
   URL-Fragment. Die Ereignisnamen sind fest im Code, es gibt keinen freien Text.
 - Funktionen zählen einmal je Seitenaufruf, geöffnete Dateien jedes Mal.
 - **Kein Zählen** im Dev-Server, in Tests, in PR-Vorschauen und bei „Do Not Track“.
+- **Hauptschalter `VITE_USAGE_COUNT`:** Zählen ist aus, bis `frontend/.env.production`
+  `VITE_USAGE_COUNT=1` enthält. Erst einschalten, wenn die Datenschutzerklärung
+  GoatCounter nennt: jeder Zähl-Aufruf überträgt technisch IP-Adresse und Browsertyp.
 - Eigene Requests statt GoatCounters Skript `count.js`: kein fremder Code auf der Seite.
 - Gezählt wird beim Auslösen (`dispatch` in `ViewerProvider`), nicht im Reducer.
 
@@ -33,7 +36,8 @@
 - Zahlen zu Besuchern, geöffneten Dateien und genutzten Funktionen.
 - Ein Request an GoatCounter je Ereignis. Die Fachdaten-Regel in `.claude/CLAUDE.md`
   bleibt bestehen; dazu kommt eine Regel nur für das Zählmodul.
-- Die Datenschutzerklärung muss GoatCounter nennen (Impressum/Datenschutz fehlen noch).
+- Die Datenschutzerklärung muss GoatCounter nennen, bevor der Schalter an geht
+  (Impressum/Datenschutz fehlen noch).
 - Fällt GoatCounter aus, merkt die App nichts davon.
 
 ## Verworfen

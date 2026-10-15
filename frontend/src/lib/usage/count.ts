@@ -74,15 +74,29 @@ export function usageEventOf(action: ViewerAction): UsageEvent | null {
 }
 
 /**
+ * Hauptschalter: erst an, wenn die Datenschutzerklärung GoatCounter nennt. Einschalten
+ * über `frontend/.env.production` mit `VITE_USAGE_COUNT=1` (docs/setup/nutzungszaehlung.md).
+ */
+function switchedOn(): boolean {
+  return import.meta.env.VITE_USAGE_COUNT === '1';
+}
+
+/** „Do Not Track“: Browser melden `'1'`, ältere Firefox `'yes'`, ältere Safari über `window`. */
+function doNotTrack(): boolean {
+  const legacy = (window as { doNotTrack?: string | null }).doNotTrack;
+  return [navigator.doNotTrack, legacy].some((value) => value === '1' || value === 'yes');
+}
+
+/**
  * Zählen nur auf der Live-Seite: nicht im Dev-Server, nicht in Tests, nicht in
  * PR-Vorschauen und nicht, wenn der Browser „Do Not Track“ meldet.
  */
 function isEnabled(): boolean {
-  if (!import.meta.env.PROD || typeof window === 'undefined') return false;
+  if (!import.meta.env.PROD || !switchedOn() || typeof window === 'undefined') return false;
   const { hostname, pathname } = window.location;
   if (hostname === 'localhost' || hostname === '127.0.0.1') return false;
   if (pathname.includes('/pr-preview/')) return false;
-  return navigator.doNotTrack !== '1';
+  return !doNotTrack();
 }
 
 /** URL für einen Zähl-Aufruf. `path` ist immer fest, nie aus der Adresszeile. */

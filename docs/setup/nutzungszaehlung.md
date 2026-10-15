@@ -2,7 +2,7 @@
 
 Einmaliger Schritt für den Repo-Owner. Hintergrund: Entscheidung 0051.
 
-**Ohne diesen Schritt:** Die App läuft normal, aber es kommen keine Zahlen an.
+**Ohne diese Schritte:** Die App läuft normal, aber es wird nichts gezählt.
 
 ## Schritt 1 – Konto anlegen
 
@@ -19,7 +19,16 @@ Unter **Settings** prüfen, welche Angaben GoatCounter sammelt (z. B. Ort, Sprac
 Weniger ist datensparsamer. Dort lässt sich auch die eigene IP ausschließen, damit du
 dich nicht selbst mitzählst.
 
-## Schritt 3 – Prüfen
+## Schritt 3 – Einschalten
+
+Erst, wenn die Datenschutzerklärung GoatCounter nennt (jeder Zähl-Aufruf überträgt
+technisch IP-Adresse und Browsertyp an GoatCounter).
+
+- Datei `frontend/.env.production` mit der Zeile `VITE_USAGE_COUNT=1` anlegen und mergen.
+  Am einfachsten: mir „Zählung einschalten“ sagen, dann kommt das als kleiner PR.
+- Ohne diese Datei bleibt die Zählung aus, auch auf der Live-Seite.
+
+## Schritt 4 – Prüfen
 
 1. Nach dem Merge die Live-Seite öffnen und eine Demo laden.
 2. Im GoatCounter-Dashboard erscheinen nach kurzer Zeit `/` und `demo-geoeffnet`.

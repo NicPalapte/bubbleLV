@@ -11,13 +11,15 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ## 0.17.0 — 15.10.2026 · Anonyme Nutzungszählung
 
-- **Bubble zählt anonym**, welche Funktionen genutzt werden: Seitenaufrufe, geöffnete
+- **Bubble kann anonym zählen**, welche Funktionen genutzt werden: Seitenaufrufe, geöffnete
   Dateien und Demos, Seitenfenster, Tabelle, Vergleich, Suche, Markierung, Kommentar,
   Tour, Export und Druck. Dienst: GoatCounter, ohne Cookies.
 - Nicht gezählt werden Dateinamen, LV-Inhalte, Suchtexte und Filterwerte. Die Datei
   verlässt den Browser weiterhin nie.
 - Gezählt wird nur auf der Live-Seite, nicht in PR-Vorschauen und nicht, wenn der
   Browser „Do Not Track“ meldet.
+- Die Zählung ist vorbereitet, aber noch aus. Sie startet erst, wenn die
+  Datenschutzerklärung steht.
 
 ## 0.16.0 — 13.10.2026 · Material Beton
 

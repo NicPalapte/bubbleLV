@@ -142,6 +142,8 @@ LLM-Klassifizierung. Details → @docs/scope.md #out-of-scope
   Entscheidung 0051): nur feste Namen aus `USAGE_EVENTS`. Verboten: Dateinamen, LV-Texte,
   Suchtexte, Filterwerte, Positions-IDs, URL-Fragment mitsenden. Neues Ereignis ⇒ Namen
   in `USAGE_EVENTS` ergänzen, Zuordnung in `usageEventOf` oder Aufruf von `countEvent`.
+  Hauptschalter `VITE_USAGE_COUNT=1` in `frontend/.env.production` nur nach Freigabe des
+  Owners setzen (Datenschutzerklärung muss GoatCounter nennen).
 
 ## Sprache & Zielgruppen
 Der Repo-Owner ist **kein Software-Experte**. Zwei Textsorten, zwei Stile – Begründung:

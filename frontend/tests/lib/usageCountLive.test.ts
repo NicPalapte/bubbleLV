@@ -22,6 +22,7 @@ function sentPaths(): (string | null)[] {
 describe('Zählen auf der Live-Seite', () => {
   beforeEach(() => {
     vi.stubEnv('PROD', true);
+    vi.stubEnv('VITE_USAGE_COUNT', '1');
     beacon.mockClear();
     Object.defineProperty(navigator, 'sendBeacon', { value: beacon, configurable: true });
     Object.defineProperty(navigator, 'doNotTrack', { value: null, configurable: true });
@@ -51,6 +52,21 @@ describe('Zählen auf der Live-Seite', () => {
     window.history.replaceState(null, '', '/bubbleLV/pr-preview/pr-1/');
     const { countEvent, countPageview } = await loadFresh();
     countPageview();
+    countEvent('datei-geoeffnet');
+    expect(beacon).not.toHaveBeenCalled();
+  });
+
+  it('zählt nicht, solange der Hauptschalter aus ist', async () => {
+    vi.stubEnv('VITE_USAGE_COUNT', '');
+    const { countEvent, countPageview } = await loadFresh();
+    countPageview();
+    countEvent('datei-geoeffnet');
+    expect(beacon).not.toHaveBeenCalled();
+  });
+
+  it('erkennt „Do Not Track“ auch als „yes“', async () => {
+    Object.defineProperty(navigator, 'doNotTrack', { value: 'yes', configurable: true });
+    const { countEvent } = await loadFresh();
     countEvent('datei-geoeffnet');
     expect(beacon).not.toHaveBeenCalled();
   });
