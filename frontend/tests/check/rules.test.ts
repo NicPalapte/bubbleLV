@@ -128,6 +128,16 @@ describe('V3 · Produktname ohne „oder gleichwertig"', () => {
     expect(flagsOf(result, 'V3')).toHaveLength(0);
   });
 
+  it('lässt den Zusatz nur für Namen in seiner Nähe gelten', () => {
+    const fern = 'x'.repeat(200);
+    const result = check(
+      position({
+        longText: `Kragplattenanschluss Schöck Isokorb. ${fern} Dichtband oder gleichwertig.`,
+      }),
+    );
+    expect(flagsOf(result, 'V3').map((flag) => flag.title)).toEqual(['Schöck']);
+  });
+
   it('trifft nur ganze Wörter', () => {
     const result = check(position({ longText: 'Stoßfuge schließen, Peripherie anpassen.' }));
     expect(flagsOf(result, 'V3')).toHaveLength(0);

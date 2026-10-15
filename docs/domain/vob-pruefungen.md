@@ -79,7 +79,7 @@ Spalte `quelle_version`. Nicht im Code hartkodieren, nicht erfinden.
 | Datei                                                                            | Inhalt                                                            | Für            |
 | -------------------------------------------------------------------------------- | ----------------------------------------------------------------- | -------------- |
 | [`reference/pruefregeln.csv`](reference/pruefregeln.csv)                         | Regel-ID, Status, Norm-Verweis, Name, Kategorie, Schwere, Hinweis | alle           |
-| [`reference/pruefregeln-parameter.csv`](reference/pruefregeln-parameter.csv)     | Regel-ID, Parameter, Wert                                         | V2, M1         |
+| [`reference/pruefregeln-parameter.csv`](reference/pruefregeln-parameter.csv)     | Regel-ID, Parameter, Wert                                         | V2, V3, V7, M1 |
 | [`reference/pruefregeln-stichworte.csv`](reference/pruefregeln-stichworte.csv)   | Regel-ID, Wert, Stichworte, ausser                                | V2, V3, V6, V7 |
 | [`reference/vob-nebenleistungen.csv`](reference/vob-nebenleistungen.csv)         | ATV-Nummer, Abschnitt, Leistungstext, Stichworte                  | V8, V9         |
 | [`reference/hersteller-produktnamen.csv`](reference/hersteller-produktnamen.csv) | Hersteller-/Produktname, Stichworte                               | V3             |

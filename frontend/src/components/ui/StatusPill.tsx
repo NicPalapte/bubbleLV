@@ -1,7 +1,7 @@
 // Bubble — StatusPill: LV-Workflow-Status (geprüft / offen / entwurf).
 // Portiert aus .claude/skills/bubble-design/components/core/StatusPill.jsx.
-// Im MVP entsteht aus dem Import nur „offen"; der Wert ist reine Anzeige/Filter-
-// Facette und nicht editierbar (docs/mvp-scope.md#out-of-scope).
+// Im MVP entsteht aus dem Import nur „offen"; der Wert ist reine Anzeige und
+// nicht editierbar (docs/decisions/0051-kein-status-filter.md).
 
 export type StatusValue = 'geprüft' | 'offen' | 'entwurf';
 
@@ -13,28 +13,10 @@ const STATUS: Record<StatusValue, { bg: string; fg: string; dot: string }> = {
 
 export interface StatusPillProps {
   status: string;
-  /** Nur der farbige Punkt — für dichte Tree-Zeilen. */
-  dotOnly?: boolean;
 }
 
-export function StatusPill({ status, dotOnly = false }: StatusPillProps) {
+export function StatusPill({ status }: StatusPillProps) {
   const colors = STATUS[status as StatusValue] ?? STATUS.entwurf;
-
-  if (dotOnly) {
-    return (
-      <span
-        title={status}
-        style={{
-          width: 7,
-          height: 7,
-          borderRadius: '50%',
-          background: colors.dot,
-          display: 'inline-block',
-          flexShrink: 0,
-        }}
-      />
-    );
-  }
 
   return (
     <span

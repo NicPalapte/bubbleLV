@@ -8,14 +8,15 @@
 // pruefregeln.csv auf `aus`, bis der Owner sie bestätigt hat.
 
 import { attrSpans, attrStrings } from '../../attributes';
-import { findeStichworte } from '../../classify/material/stichwort';
+import { findeStichworte, type StichwortTreffer } from '../../classify/material/stichwort';
 import { canonicalUnit, unitGroups } from '../../units';
 import {
-  herstellerNamen,
+  herstellerMuster,
   nebenleistungen,
   regelParameter,
   regelStichworte,
   regelText,
+  regelZahl,
   risikoFormulierungen,
 } from '../referenz';
 import type { CheckContext, CheckRule, Fund } from '../types';
@@ -208,39 +209,46 @@ export const v7Platzhalter: CheckRule = {
 
 // ── V3 · Produktname ohne „oder gleichwertig" ───────────────────────────────
 // Namen und Produktnamen stehen in hersteller-produktnamen.csv, der erlaubende
-// Zusatz unter V3 in pruefregeln-stichworte.csv. Steht der Zusatz irgendwo in
-// der Position, gilt jeder Name darin als erlaubt — der Zusatz steht oft am
-// Ende des Langtexts, nicht direkt hinter dem Namen.
+// Zusatz unter V3 in pruefregeln-stichworte.csv. Der Zusatz gilt nur für Namen
+// in seiner Nähe (Parameter `zusatz_abstand`, Zeichen vor oder hinter dem
+// Namen): „Dichtband Typ B oder gleichwertig" erlaubt nicht einen Namen, der
+// drei Sätze vorher ohne Zusatz steht.
 
 export const v3Produktname: CheckRule = {
   id: 'V3',
   requires: {
     file: 'docs/domain/reference/hersteller-produktnamen.csv',
-    available: () => herstellerNamen().length > 0 && regelStichworte('V3').length > 0,
+    available: () => herstellerMuster() !== null && regelStichworte('V3').length > 0,
   },
   check(context: CheckContext): Fund[] {
-    const liste = herstellerNamen();
+    const muster = herstellerMuster();
+    if (muster === null) return [];
     const zusatz = regelStichworte('V3');
+    const abstand = regelZahl('V3', 'zusatz_abstand');
     const funde: Fund[] = [];
     for (let i = 0; i < context.index.size; i++) {
       const { shortText, longText } = context.index.positions[i];
+      // Kurz- und Langtext in einem Durchlauf; ab `offset` beginnt der Langtext.
       const text = `${shortText}\n${longText}`;
-      if (zusatz.some((art) => findeStichworte(text, art.pattern, art.ausser).length > 0)) {
-        continue;
-      }
-      const namen: string[] = [];
+      const offset = shortText.length + 1;
+      const namen = new Set<string>();
       let span: Span | undefined;
-      for (const eintrag of liste) {
-        const imKurztext = findeStichworte(shortText, eintrag.pattern, null).length > 0;
-        const [erster] = findeStichworte(longText, eintrag.pattern, null);
-        if (!imKurztext && erster === undefined) continue;
-        namen.push(eintrag.name);
-        if (erster !== undefined && (span === undefined || erster.start < span.start)) {
-          span = { key: 'hersteller', start: erster.start, end: erster.end, label: erster.text };
+      let zusaetze: StichwortTreffer[] | null = null;
+      for (const match of text.matchAll(muster.pattern)) {
+        const gruppe = match.findIndex((teil, j) => j > 0 && teil !== undefined);
+        const name = muster.namen[gruppe - 1];
+        if (name === undefined) continue;
+        const start = match.index ?? 0;
+        const end = start + match[0].length;
+        zusaetze ??= zusatz.flatMap((art) => findeStichworte(text, art.pattern, art.ausser));
+        if (zusaetze.some((z) => z.start <= end + abstand && z.end >= start - abstand)) continue;
+        namen.add(name);
+        if (span === undefined && start >= offset) {
+          span = { key: 'hersteller', start: start - offset, end: end - offset, label: match[0] };
         }
       }
-      if (namen.length === 0) continue;
-      funde.push({ positionId: context.index.nodes[i].id, title: namen.join(', '), span });
+      if (namen.size === 0) continue;
+      funde.push({ positionId: context.index.nodes[i].id, title: [...namen].join(', '), span });
     }
     return funde;
   },
