@@ -109,11 +109,16 @@ function referrerOrigin(): string | null {
 }
 
 function send(url: string): void {
+  if (typeof navigator.sendBeacon === 'function' && navigator.sendBeacon(url)) return;
+  void fetch(url, { method: 'POST', mode: 'no-cors', keepalive: true }).catch(() => {});
+}
+
+/** Zählen darf die App nie stören — jeder Fehler hier bleibt folgenlos. */
+function quietly(work: () => void): void {
   try {
-    if (typeof navigator.sendBeacon === 'function' && navigator.sendBeacon(url)) return;
-    void fetch(url, { method: 'POST', mode: 'no-cors', keepalive: true }).catch(() => {});
+    work();
   } catch {
-    // Zählen darf die App nie stören — ein Fehler hier bleibt folgenlos.
+    // bewusst leer
   }
 }
 
@@ -121,16 +126,18 @@ const counted = new Set<UsageEvent>();
 
 /** Einmal je Seitenaufruf, beim Start der App. */
 export function countPageview(): void {
-  if (!isEnabled()) return;
-  send(countUrl('/', false));
+  quietly(() => {
+    if (isEnabled()) send(countUrl('/', false));
+  });
 }
 
 /** Ein Ereignis zählen. Funktionen zählen einmal je Seitenaufruf, Dateien jedes Mal. */
 export function countEvent(event: UsageEvent): void {
-  if (!REPEATABLE.has(event)) {
-    if (counted.has(event)) return;
-    counted.add(event);
-  }
-  if (!isEnabled()) return;
-  send(countUrl(event, true));
+  quietly(() => {
+    if (!REPEATABLE.has(event)) {
+      if (counted.has(event)) return;
+      counted.add(event);
+    }
+    if (isEnabled()) send(countUrl(event, true));
+  });
 }

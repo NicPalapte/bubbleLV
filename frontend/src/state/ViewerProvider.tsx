@@ -42,9 +42,9 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
   // Zählen beim Auslösen, nicht im Reducer: der bleibt eine reine Funktion
   // (Entscheidung 0051).
   const dispatch = useCallback((action: ViewerAction): void => {
+    rawDispatch(action);
     const event = usageEventOf(action);
     if (event !== null) countEvent(event);
-    rawDispatch(action);
   }, []);
 
   const tree = state.lv?.tree ?? null;
