@@ -49,6 +49,7 @@ export class RuleBasedClassifier implements Classifier {
       shortText: item.shortText,
       longText: item.longText,
       unit: item.unit,
+      inputFields: item.inputFields,
       text,
     };
     const generic = runExtractors(extractorContext);

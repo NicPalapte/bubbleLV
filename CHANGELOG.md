@@ -31,6 +31,10 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
   (`docs/setup/pruefregeln.md`).
 - **Kostentreiber, Mengentreiber und Preisausreißer** (G1, G2, G4) sind keine Hinweise
   mehr. Die Listen im Überblick bleiben.
+- **Offene Stellen genauer (V7):** Eingabefelder, die die GAEB-Datei selbst als
+  Bieterangabe kennzeichnet, zählen immer („Textergänzung“). Punkte im übrigen Text
+  zählen erst ab 5 Stück („Punktreihe“). Drei Punkte als Auslassung lösen keinen
+  Hinweis mehr aus. Die Zahl steht in `pruefregeln-parameter.csv`.
 - Einheiten mit Punkt am Ende („Psch.“) gelten als dieselbe wie ohne Punkt. Neue
   Einheiten-Gruppe „Pauschal“.
 

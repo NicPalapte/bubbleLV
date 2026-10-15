@@ -24,6 +24,8 @@ export interface ExtractorContext {
   /** Rohtext des Langtexts — Bezugspunkt aller Spans. */
   readonly longText: string;
   readonly unit: string | null;
+  /** Eingabefelder, die die Quelldatei selbst kennzeichnet (Bereiche im Langtext). */
+  readonly inputFields?: readonly { start: number; end: number }[];
   /** Kleingeschriebene Fassung für Stichwortvergleiche. */
   readonly text: NormalizedItem;
 }

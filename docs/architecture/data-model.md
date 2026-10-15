@@ -28,6 +28,7 @@ interface PositionDraft {
   quantity: number | null;
   unitPrice: number | null;
   positionType: PositionType; // NORMAL | ALTERNATIV | BEDARF | ZULAGENPOSITION
+  inputFields?: TextRange[]; // Eingabefelder, die die Quelle selbst kennzeichnet (0050)
   attributes: Record<string, unknown>; // aus classify() befüllt, siehe unten
 }
 

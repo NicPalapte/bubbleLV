@@ -8,6 +8,8 @@ export interface ClassifierInput {
   shortText: string;
   longText: string;
   unit: string | null;
+  /** Ausdrücklich gekennzeichnete Eingabefelder im Langtext (`PositionDraft.inputFields`). */
+  inputFields?: readonly { start: number; end: number }[];
 }
 
 /** Provenance-Block, landet als `attributes._meta` (docs/architecture/data-model.md). */

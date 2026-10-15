@@ -131,10 +131,10 @@ describe('masse', () => {
 });
 
 describe('platzhalter', () => {
-  it('findet gepunktete Textergänzungen mit ihrer Beschriftung', () => {
+  it('findet Punktreihen im Text mit ihrer Beschriftung', () => {
     const text = 'Herstellen einer Öffnung. Breite von ........... cm.';
     const [hit] = findPlatzhalter(text);
-    expect(hit.value).toBe('Textergänzung');
+    expect(hit.value).toBe('Punktreihe');
     expect(text.slice(hit.start, hit.end)).toBe('...........');
     expect(hit.label).toBe('Breite von …');
   });
@@ -147,8 +147,35 @@ describe('platzhalter', () => {
 
   it('zählt, wie viele Stellen offen sind', () => {
     const result = runExtractors(context('Breite ........ cm, Höhe ........ cm.'));
-    expect(result.attributes.platzhalter).toEqual(['Textergänzung']);
+    expect(result.attributes.platzhalter).toEqual(['Punktreihe']);
     expect(result.attributes.platzhalterAnzahl).toBe(2);
+  });
+
+  it('übergeht drei Punkte im Fließtext — oft nur eine Auslassung', () => {
+    expect(findPlatzhalter('Beton, Mörtel, Estrich ... und Zubehör.')).toEqual([]);
+  });
+
+  it('zählt ein Eingabefeld aus der Datei, auch mit nur drei Punkten', () => {
+    const text = 'Breite von ... cm.';
+    const start = text.indexOf('...');
+    const hits = findPlatzhalter(text, [{ start, end: start + 3 }]);
+    expect(hits).toHaveLength(1);
+    expect(hits[0].value).toBe('Textergänzung');
+    expect(hits[0].label).toBe('Breite von …');
+  });
+
+  it('zählt ein leeres Eingabefeld und markiert seine Beschriftung', () => {
+    const text = 'Fabrikat  cm.';
+    const [hit] = findPlatzhalter(text, [{ start: 9, end: 9 }]);
+    expect(hit.value).toBe('Textergänzung');
+    expect(text.slice(hit.start, hit.end)).toBe('Fabrikat ');
+  });
+
+  it('zählt Punkte in einem Eingabefeld nicht ein zweites Mal', () => {
+    const text = 'Höhe von ........... cm.';
+    const start = text.indexOf('.');
+    const hits = findPlatzhalter(text, [{ start, end: start + 11 }]);
+    expect(hits.map((hit) => hit.value)).toEqual(['Textergänzung']);
   });
 
   it('liefert ohne offene Stelle keinen Key', () => {

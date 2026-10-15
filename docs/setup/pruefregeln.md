@@ -42,7 +42,9 @@ Folge, wenn eine Zeile fehlt: Die Regel bleibt inaktiv und nennt den fehlenden P
   Buchstaben, `#` = Zahl, `|` trennt.
 - **V6:** Jede Zeile ist eine Art Dokument außerhalb des LV. Was hier fehlt, meldet V6
   nicht — z. B. ein Positionsverweis.
-- **V7:** Die Zeile `Offenes Feld` enthält Feldnamen. Gemeldet wird nur, wenn nach
+- **V7:** Eingabefelder, die die GAEB-Datei selbst kennzeichnet, zählen immer. Punkte im
+  übrigen Text zählen ab `punktreihe_mindestlaenge` (Parameter-Tabelle).
+  Die Zeile `Offenes Feld` enthält Feldnamen. Gemeldet wird nur, wenn nach
   Feldname und Doppelpunkt nichts oder eine Lücke steht („Fabrikat: ....").
   Punkt- und Strichreihen („.....", „____") erkennt der Code selbst.
 

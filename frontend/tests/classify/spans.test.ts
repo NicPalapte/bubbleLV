@@ -57,10 +57,10 @@ describe('Fundstellen im Langtext', () => {
     expect(attributes.dicke).toBe('30 cm');
     expect(attributes.beton).toBe('C30/37');
     expect(attributes.fristen).toEqual(['Winterbau']);
-    expect(attributes.platzhalter).toEqual(['Textergänzung']);
+    expect(attributes.platzhalter).toEqual(['Punktreihe']);
 
     // Platzhalter und Material benennen ihre Fundstelle mit der Bedeutung
-    // („Textergänzung", „Bauweise: Ortbeton"), alle anderen mit dem Wortlaut.
+    // („Punktreihe", „Bauweise: Ortbeton"), alle anderen mit dem Wortlaut.
     for (const span of spans) {
       const text = LANGTEXT.slice(span.start, span.end);
       if (span.key === 'platzhalter') expect(text).toBe('...........');

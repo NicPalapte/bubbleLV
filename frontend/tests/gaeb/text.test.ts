@@ -6,7 +6,13 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { getGaebParser } from '../../src/lib/gaeb/parser';
-import { extractInlineText, extractText, reflowLines } from '../../src/lib/gaeb/text';
+import {
+  extractInlineText,
+  extractMarkedText,
+  extractText,
+  reflowLines,
+  splitInputFields,
+} from '../../src/lib/gaeb/text';
 import type { ParsedLV, ParsedPosition, ParsedSection } from '../../src/lib/gaeb/types';
 
 const FIXTURE_DIR = resolve(process.cwd(), 'tests/fixtures');
@@ -123,6 +129,20 @@ describe('extractText', () => {
     expect(extractText(el)).toBe(
       "Unterlagen digital '-' zur Prüfung liefern und Anmerkungen einarbeiten.",
     );
+  });
+
+  it('liefert nur Bieter-Textergänzungen als Eingabefelder', () => {
+    const el = element(`<Text><p>
+      <TextComplement Kind="Bidder"><ComplCaption><span>Breite von </span></ComplCaption>
+        <ComplBody><span>...</span></ComplBody><ComplTail><span> cm,</span></ComplTail>
+      </TextComplement>
+      <TextComplement Kind="Owner"><ComplCaption/><ComplBody><span>30</span></ComplBody>
+        <ComplTail><span>cm tief.</span></ComplTail></TextComplement>
+    </p></Text>`);
+    const { text, fields } = splitInputFields(extractMarkedText(el));
+    expect(text).toBe('Breite von ... cm, 30 cm tief.');
+    expect(fields.map((f) => text.slice(f.start, f.end))).toEqual(['...']);
+    expect(extractText(el)).toBe(text);
   });
 
   it('lässt sich nicht von U+2029 im Eingabetext täuschen', () => {

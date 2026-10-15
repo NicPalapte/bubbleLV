@@ -36,6 +36,7 @@ function mapPosition(position: ParsedPosition): PositionDraft {
     quantity: position.quantity,
     unitPrice: position.unitPrice,
     positionType: POSITION_TYPE_BY_ITEM_TYPE[position.itemType],
+    ...(position.inputFields.length > 0 ? { inputFields: position.inputFields } : {}),
     // Wird erst von classify() befüllt, siehe docs/architecture/data-model.md.
     attributes: {},
   };
