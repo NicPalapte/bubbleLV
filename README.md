@@ -3,7 +3,9 @@
 **Bubble macht ein Leistungsverzeichnis lesbar.** Es zeigt jede Information, die in der
 GAEB-Datei steckt, hebt das Wichtige hervor und macht die Beziehungen zwischen den
 Positionen sichtbar — **komplett client-seitig**. Keine Installation, kein Login, kein
-Server: die Datei verlässt den Browser nie, es wird nichts gespeichert.
+Server: die Datei verlässt den Browser nie, es wird nichts gespeichert. Gezählt wird nur
+anonym, welche Funktionen genutzt werden — ohne Cookies und ohne Inhalte aus der Datei
+([Entscheidung 0051](docs/decisions/0051-anonyme-nutzungszaehlung.md)).
 
 Das ist die einzige Aufgabe. Konkret:
 

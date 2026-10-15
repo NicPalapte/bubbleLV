@@ -1,6 +1,6 @@
 # 0017 – Keine Nutzungsmessung, nur ein Melde-Knopf
 
-- **Status:** akzeptiert
+- **Status:** ersetzt durch 0051
 - **Datum:** 2026-09-21
 - **Betrifft:** Frontend, Datenschutz, Issue #57
 
