@@ -62,4 +62,22 @@ describe('Zählen auf der Live-Seite', () => {
     countEvent('datei-geoeffnet');
     expect(beacon).not.toHaveBeenCalled();
   });
+
+  it('weicht auf fetch aus, wenn sendBeacon ablehnt', async () => {
+    beacon.mockReturnValueOnce(false);
+    const fetchSpy = vi.fn(() => Promise.resolve(new Response()));
+    vi.stubGlobal('fetch', fetchSpy);
+    const { countEvent } = await loadFresh();
+    countEvent('datei-geoeffnet');
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    vi.unstubAllGlobals();
+  });
+
+  it('lässt einen Fehler beim Senden nie nach außen', async () => {
+    beacon.mockImplementationOnce(() => {
+      throw new Error('blockiert');
+    });
+    const { countEvent } = await loadFresh();
+    expect(() => countEvent('datei-geoeffnet')).not.toThrow();
+  });
 });

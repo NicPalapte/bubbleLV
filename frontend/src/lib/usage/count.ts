@@ -47,7 +47,8 @@ const SIDE_PANEL_EVENT = {
 
 /**
  * Ereignis zu einer Viewer-Aktion, sonst null. Zählt nur, dass eine Funktion genutzt
- * wurde — bei `search` und `setNote` nie der Text selbst.
+ * wurde — bei `search` und `setNote` nie der Text selbst. `toggleMark` zählt auch das
+ * Entfernen einer Markierung: gemessen wird die Nutzung der Funktion, nicht ihr Ergebnis.
  */
 export function usageEventOf(action: ViewerAction): UsageEvent | null {
   switch (action.type) {

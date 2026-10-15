@@ -4,8 +4,8 @@
 // **Nichts aus der geladenen Datei.** Kein Dateiname, kein Projektname, keine
 // OZ, kein Positionstext, keine Zahl daraus. In den Link gehören nur Dinge,
 // die den Fehler technisch einordnen: Browser, Bildschirmgröße, Bau-Stand und
-// die Ansicht, in der es passiert ist. Begründung und die abgelehnte
-// Nutzungsmessung: docs/decisions/0017-keine-nutzungsmessung.md.
+// die Ansicht, in der es passiert ist. Begründung: docs/decisions/0017-keine-
+// nutzungsmessung.md; anonyme Zählung inzwischen über lib/usage (Entscheidung 0051).
 //
 // Abgeschickt wird nichts automatisch: der Link öffnet das ausgefüllte
 // Formular in einem neuen Tab, der Nutzer liest es und drückt selbst ab.
