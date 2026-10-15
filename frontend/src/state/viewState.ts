@@ -120,7 +120,7 @@ export interface TableWindowState {
 
 /** Überblick: aufgeklappte Prüfregeln und das Sprungziel aus dem Graphen. */
 export interface OverviewViewState {
-  /** Aufgeklappte Regeln — welche Fundlisten offen stehen. */
+  /** Aufgeklappte Regel — höchstens eine; ihre Funde stehen in der Klappkarte. */
   openRules: ReadonlySet<string>;
   /**
    * Regel, die die Ansicht einmalig ins Fenster holen soll (WP-R, R1). Ein
@@ -357,12 +357,12 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
     case 'tableColumns':
       return { ...state, table: { ...state.table, columns: action.columns } };
     case 'toggleRuleOpen': {
-      const openRules = new Set(state.overview.openRules);
-      if (!openRules.delete(action.id)) openRules.add(action.id);
+      // Höchstens eine Regel offen: ihre Funde stehen in der Klappkarte daneben.
+      const openRules = new Set(state.overview.openRules.has(action.id) ? [] : [action.id]);
       return { ...state, overview: { ...state.overview, openRules } };
     }
     case 'openRule': {
-      const openRules = new Set(state.overview.openRules).add(action.id);
+      const openRules = new Set([action.id]);
       return { ...state, overview: { openRules, revealRule: action.id } };
     }
     case 'ruleRevealed':
