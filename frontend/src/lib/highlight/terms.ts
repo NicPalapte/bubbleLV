@@ -77,8 +77,21 @@ export function patternOf(text: string): string | null {
 }
 
 /** Fundstellen eines Begriffs im Text; ein kaputtes Muster liefert keine. */
+// Ein Muster je Begriff, einmal übersetzt. `matchAll` arbeitet auf einer Kopie,
+// das gemeinsame `g`-Muster behält also keinen Zustand zwischen Aufrufen.
+const compiled = new Map<string, RegExp | null>();
+
+function patternFor(begriff: string): RegExp | null {
+  let pattern = compiled.get(begriff);
+  if (pattern === undefined) {
+    pattern = compileStichworte([begriff]);
+    compiled.set(begriff, pattern);
+  }
+  return pattern;
+}
+
 function matches(text: string, begriff: string): Array<{ start: number; end: number }> {
-  const pattern = compileStichworte([begriff]);
+  const pattern = patternFor(begriff);
   if (pattern === null) return [];
   const out: Array<{ start: number; end: number }> = [];
   for (const match of text.matchAll(pattern)) {

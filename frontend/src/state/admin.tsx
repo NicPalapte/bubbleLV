@@ -70,12 +70,14 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // Speichern nach dem Rendern, nicht im State-Updater: React darf Updater
+  // mehrfach ausführen, dann liefen Schreibvorgänge doppelt und in unklarer Folge.
+  useEffect(() => {
+    if (loaded.current) void saveLearnedTerms(learned);
+  }, [learned]);
+
   const change = useCallback((next: (current: readonly LearnedTerm[]) => LearnedTerm[]) => {
-    setLearned((current) => {
-      const result = next(current);
-      if (loaded.current) void saveLearnedTerms(result);
-      return result;
-    });
+    setLearned(next);
   }, []);
 
   const value = useMemo<AdminContextValue>(
