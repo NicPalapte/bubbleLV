@@ -64,7 +64,7 @@ function indexOf(positions: PositionDraft[]) {
 
 /**
  * LV **ohne** Klassifizierung. Für die Tests der Vorgruppierung: dort müssen
- * Einheit und Bauteiltyp genau die Werte haben, die der Test setzt — der
+ * die Einheit genau den Wert hat, den der Test setzt — der
  * Klassifizierer würde sie aus dem Text neu ableiten.
  */
 function rohIndexOf(positions: PositionDraft[]) {
@@ -102,7 +102,6 @@ describe('Dubletten und Varianten', () => {
     const [cluster] = result.clusters;
     // Die Dicke kommt aus dem Extraktor (WP-J) und ist das, was die beiden
     // auseinanderhält; alles andere teilen sie.
-    expect(cluster.gemeinsameMerkmale.bauteiltyp).toBe('Wand');
     expect(cluster.gemeinsameMerkmale.einheit).toBe('m³');
     expect(cluster.unterscheidendeMerkmale).toContain('dicke');
     expect(cluster.gemeinsameMerkmale.dicke).toBeUndefined();
@@ -140,15 +139,10 @@ describe('Was nicht zusammengehört, bleibt getrennt', () => {
     expect(zusammen(result, '01.001.0010', '01.001.0020')).toBe(false);
   });
 
-  it('vergleicht nie über Einheit oder Bauteiltyp hinweg', () => {
-    // Drei wortgleiche Positionen, die sich nur in je einem Gruppenmerkmal
-    // unterscheiden — keine zwei davon dürfen zusammenkommen.
+  it('vergleicht nie über die Einheit hinweg', () => {
+    // Zwei wortgleiche Positionen, die sich nur in der Einheit unterscheiden.
     const result = buildRelations(
-      rohIndexOf([
-        position({ oz: '01.001.0010' }),
-        position({ oz: '01.001.0020', unit: 'm2' }),
-        position({ oz: '01.001.0030', attributes: { bauteiltyp: 'Decke' } }),
-      ]),
+      rohIndexOf([position({ oz: '01.001.0010' }), position({ oz: '01.001.0020', unit: 'm2' })]),
     );
     expect(result.clusters).toHaveLength(0);
   });

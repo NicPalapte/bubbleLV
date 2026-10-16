@@ -4,19 +4,19 @@
 // pruefregeln-stichworte.csv, Schwellwerte in pruefregeln-parameter.csv. Hier
 // steht nur, wie eine Regel sucht.
 //
-// Angemeldet, aber ohne Prüffunktion: V3, V8, V9, V10. V3 erscheint in der
-// Prüfliste als inaktiv, statt still zu fehlen. V8–V10 stehen in
+// Angemeldet, aber ohne Prüffunktion: V8, V9, V10. Sie stehen in
 // pruefregeln.csv auf `aus`, bis der Owner sie bestätigt hat.
 
 import { attrSpans, attrStrings } from '../../attributes';
-import { findeStichworte } from '../../classify/material/stichwort';
+import { findeStichworte, type StichwortTreffer } from '../../classify/material/stichwort';
 import { canonicalUnit, unitGroups } from '../../units';
 import {
-  herstellerNamen,
+  herstellerMuster,
   nebenleistungen,
   regelParameter,
   regelStichworte,
   regelText,
+  regelZahl,
   risikoFormulierungen,
 } from '../referenz';
 import type { CheckContext, CheckRule, Fund } from '../types';
@@ -207,15 +207,54 @@ export const v7Platzhalter: CheckRule = {
   },
 };
 
-// ── Angemeldet, noch ohne Prüffunktion ──────────────────────────────────────
+// ── V3 · Produktname ohne „oder gleichwertig" ───────────────────────────────
+// Namen und Produktnamen stehen in hersteller-produktnamen.csv, der erlaubende
+// Zusatz unter V3 in pruefregeln-stichworte.csv. Der Zusatz gilt nur für Namen
+// in seiner Nähe (Parameter `zusatz_abstand`, Zeichen vor oder hinter dem
+// Namen): „Dichtband Typ B oder gleichwertig" erlaubt nicht einen Namen, der
+// drei Sätze vorher ohne Zusatz steht.
 
 export const v3Produktname: CheckRule = {
   id: 'V3',
   requires: {
     file: 'docs/domain/reference/hersteller-produktnamen.csv',
-    available: () => herstellerNamen().length > 0,
+    available: () => herstellerMuster() !== null && regelStichworte('V3').length > 0,
+  },
+  check(context: CheckContext): Fund[] {
+    const muster = herstellerMuster();
+    if (muster === null) return [];
+    const zusatz = regelStichworte('V3');
+    const abstand = regelZahl('V3', 'zusatz_abstand');
+    const funde: Fund[] = [];
+    for (let i = 0; i < context.index.size; i++) {
+      const { shortText, longText } = context.index.positions[i];
+      // Kurz- und Langtext in einem Durchlauf; ab `offset` beginnt der Langtext.
+      const text = `${shortText}\n${longText}`;
+      const offset = shortText.length + 1;
+      const namen = new Set<string>();
+      let span: Span | undefined;
+      let zusaetze: StichwortTreffer[] | null = null;
+      for (const match of text.matchAll(muster.pattern)) {
+        const gruppe = match.findIndex((teil, j) => j > 0 && teil !== undefined);
+        const name = muster.namen[gruppe - 1];
+        if (name === undefined) continue;
+        const start = match.index ?? 0;
+        const end = start + match[0].length;
+        zusaetze ??= zusatz.flatMap((art) => findeStichworte(text, art.pattern, art.ausser));
+        if (zusaetze.some((z) => z.start <= end + abstand && z.end >= start - abstand)) continue;
+        namen.add(name);
+        if (span === undefined && start >= offset) {
+          span = { key: 'hersteller', start: start - offset, end: end - offset, label: match[0] };
+        }
+      }
+      if (namen.size === 0) continue;
+      funde.push({ positionId: context.index.nodes[i].id, title: [...namen].join(', '), span });
+    }
+    return funde;
   },
 };
+
+// ── Angemeldet, noch ohne Prüffunktion ──────────────────────────────────────
 
 export const v8Nebenleistung: CheckRule = {
   id: 'V8',

@@ -27,7 +27,7 @@ function position(
     quantity,
     unitPrice: null,
     positionType: 'NORMAL',
-    attributes: bauteiltyp === null ? {} : { bauteiltyp },
+    attributes: bauteiltyp === null ? {} : { beton: bauteiltyp },
   };
 }
 
@@ -155,7 +155,7 @@ describe('Gliederung „nach LV"', () => {
 
 describe('Gliederung „Matrix"', () => {
   it('bildet ohne Spalten eine Gruppe je Wert, Fehlendes als „ohne Angabe"', () => {
-    const map = layoutMap(index, parents, options({ layout: 'matrix', rows: 'bauteiltyp' }));
+    const map = layoutMap(index, parents, options({ layout: 'matrix', rows: 'beton' }));
     expect(map.axes).toBeNull();
     expect(map.groups.map((group) => group.title).sort()).toEqual(
       ['Wand', 'Baugrube', NO_VALUE].sort(),
@@ -183,10 +183,10 @@ describe('Gliederung „Matrix"', () => {
     const map = layoutMap(
       index,
       parents,
-      options({ layout: 'matrix', rows: 'einheit', cols: 'bauteiltyp' }),
+      options({ layout: 'matrix', rows: 'einheit', cols: 'beton' }),
     );
     expect(map.axes?.rowKey).toBe('Einheit');
-    expect(map.axes?.colKey).toBe('Bauteiltyp');
+    expect(map.axes?.colKey).toBe('Druckfestigkeit');
     const rows = map.axes?.rows.length ?? 0;
     const cols = map.axes?.cols.length ?? 0;
     // Ohne gewählte Filterwerte nur Zellen mit Positionen — keine leeren Kreise.
@@ -205,7 +205,7 @@ describe('Gliederung „Matrix"', () => {
     const map = layoutMap(
       index,
       parents,
-      options({ layout: 'matrix', rows: 'einheit', cols: 'bauteiltyp', mask, selected }),
+      options({ layout: 'matrix', rows: 'einheit', cols: 'beton', mask, selected }),
     );
     expect(map.axes?.rows.map((row) => row.label)).toEqual(['m²', 'm³']);
     expect(map.groups.some((group) => group.slots.length === 0)).toBe(true);
@@ -220,9 +220,9 @@ describe('Gliederung „Matrix"', () => {
   });
 
   it('verliert keinen Treffer, auch bei mehreren Werten je Merkmal', () => {
-    // Zweiter Bauteiltyp-Wert an einer Position: der Filter trifft über ihn.
+    // Zweiter Wert an einer Position: der Filter trifft über ihn.
     const slot = slotOf('02.01.0010');
-    const bauteiltyp = FACETS.findIndex((facet) => facet.id === 'bauteiltyp');
+    const bauteiltyp = FACETS.findIndex((facet) => facet.id === 'beton');
     const facts = index.facts.map((fact, i) =>
       i === slot
         ? {
@@ -234,13 +234,13 @@ describe('Gliederung „Matrix"', () => {
         : fact,
     );
     const multi = { ...index, facts };
-    const selected = { bauteiltyp: new Set(['Decke']) };
+    const selected = { beton: new Set(['Decke']) };
     const mask = maskOf((s) => s === slot);
     for (const cols of [null, 'einheit']) {
       const map = layoutMap(
         multi,
         parents,
-        options({ layout: 'matrix', rows: 'bauteiltyp', cols, mask, selected, hide: true }),
+        options({ layout: 'matrix', rows: 'beton', cols, mask, selected, hide: true }),
       );
       const placed = map.groups.flatMap((group) => group.slots);
       expect(placed).toEqual([slot]);
@@ -250,7 +250,7 @@ describe('Gliederung „Matrix"', () => {
   });
 
   it('führt Positionen ohne Wert unter „ohne Angabe"', () => {
-    const map = layoutMap(index, parents, options({ layout: 'matrix', rows: 'beton' }));
+    const map = layoutMap(index, parents, options({ layout: 'matrix', rows: 'positionsart' }));
     expect(map.groups.map((group) => group.title)).toEqual([NO_VALUE]);
   });
 });

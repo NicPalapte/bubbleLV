@@ -4,7 +4,7 @@
 
 import { useMemo, useRef } from 'react';
 import type { KeyboardEvent, MouseEvent } from 'react';
-import { CheckCard } from '../overview/CheckCard';
+import { CheckCard, CheckFlyout } from '../overview/CheckCard';
 import { FilterPanel } from '../filter/FilterPanel';
 import { OverviewView } from '../overview/OverviewView';
 import { ErrorBoundary } from '../common/ErrorBoundary';
@@ -78,84 +78,92 @@ export function SidePanel() {
   };
 
   return (
-    <aside
-      aria-label="Seitenfenster"
-      // Unten weicht es der Legende aus; ihre Höhe setzt GraphHeader als
-      // --legend-space. Ohne Legende (schmal) bleibt Platz für Leiste und Steuerung.
-      style={{ width, bottom: 'max(64px, calc(var(--legend-space, 0px) + 28px))' }}
-      className="ov-glass absolute left-[16px] top-[88px] z-[9] flex max-w-[calc(100%-32px)] flex-col overflow-hidden"
-    >
-      <div
-        role="tablist"
-        aria-label="Reiter des Seitenfensters"
-        onKeyDown={switchTabByKey}
-        className="flex shrink-0 items-center gap-[2px] border-b border-line p-[6px]"
+    <>
+      <aside
+        aria-label="Seitenfenster"
+        // Unten weicht es der Legende aus; ihre Höhe setzt GraphHeader als
+        // --legend-space. Ohne Legende (schmal) bleibt Platz für Leiste und Steuerung.
+        style={{ width, bottom: 'max(64px, calc(var(--legend-space, 0px) + 28px))' }}
+        className="ov-glass absolute left-[16px] top-[88px] z-[9] flex max-w-[calc(100%-32px)] flex-col overflow-hidden"
       >
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            id={`side-tab-${tab.id}`}
-            type="button"
-            role="tab"
-            aria-selected={side === tab.id}
-            aria-controls="side-tabpanel"
-            // Roving tabindex: Tab springt in die Leiste, Pfeiltasten wechseln
-            // den Reiter (WAI-ARIA Tabs, Issue #105).
-            tabIndex={side === tab.id ? 0 : -1}
-            onClick={() => dispatch({ type: 'sidePanel', panel: tab.id })}
-            className={`flex h-[30px] flex-1 cursor-pointer items-center justify-center gap-[6px] rounded-[var(--r-sm)] border-none px-[8px] font-mono text-[11px] ${
-              side === tab.id
-                ? 'bg-surface text-ink shadow-[var(--shadow-sm)]'
-                : 'bg-transparent text-dim hover:text-ink'
-            }`}
-          >
-            {tab.label}
-            {tab.id === 'check' && hintCount > 0 && (
-              <span className="rounded-[var(--r-pill)] bg-amberS px-[6px] text-[10px] text-amberD">
-                {formatCount(hintCount)}
-              </span>
-            )}
-          </button>
-        ))}
-        <button
-          type="button"
-          onClick={() => dispatch({ type: 'sidePanel', panel: null })}
-          aria-label="Seitenfenster schließen"
-          className="ml-[4px] inline-flex h-[28px] w-[28px] shrink-0 cursor-pointer items-center justify-center rounded-[var(--r-sm)] border-none bg-transparent text-mute hover:bg-sunken hover:text-ink"
+        <div
+          role="tablist"
+          aria-label="Reiter des Seitenfensters"
+          onKeyDown={switchTabByKey}
+          className="flex shrink-0 items-center gap-[2px] border-b border-line p-[6px]"
         >
-          ✕
-        </button>
-      </div>
-      {/* Eigenes Netz: stürzt ein Reiter ab, bleibt der Graph bedienbar. */}
-      <div
-        role="tabpanel"
-        id="side-tabpanel"
-        aria-labelledby={`side-tab-${side}`}
-        className="relative min-h-0 flex-1"
-      >
-        <ErrorBoundary key={side} bereich={side} dateiGeladen>
-          {side === 'overview' && <OverviewView />}
-          {side === 'filter' && <FilterPanel />}
-          {side === 'check' && (
-            <div className="absolute inset-0 overflow-auto px-[14px] py-[14px]">
-              <CheckCard />
-            </div>
-          )}
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              id={`side-tab-${tab.id}`}
+              type="button"
+              role="tab"
+              aria-selected={side === tab.id}
+              aria-controls="side-tabpanel"
+              // Roving tabindex: Tab springt in die Leiste, Pfeiltasten wechseln
+              // den Reiter (WAI-ARIA Tabs, Issue #105).
+              tabIndex={side === tab.id ? 0 : -1}
+              onClick={() => dispatch({ type: 'sidePanel', panel: tab.id })}
+              className={`flex h-[30px] flex-1 cursor-pointer items-center justify-center gap-[6px] rounded-[var(--r-sm)] border-none px-[8px] font-mono text-[11px] ${
+                side === tab.id
+                  ? 'bg-surface text-ink shadow-[var(--shadow-sm)]'
+                  : 'bg-transparent text-dim hover:text-ink'
+              }`}
+            >
+              {tab.label}
+              {tab.id === 'check' && hintCount > 0 && (
+                <span className="rounded-[var(--r-pill)] bg-amberS px-[6px] text-[10px] text-amberD">
+                  {formatCount(hintCount)}
+                </span>
+              )}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => dispatch({ type: 'sidePanel', panel: null })}
+            aria-label="Seitenfenster schließen"
+            className="ml-[4px] inline-flex h-[28px] w-[28px] shrink-0 cursor-pointer items-center justify-center rounded-[var(--r-sm)] border-none bg-transparent text-mute hover:bg-sunken hover:text-ink"
+          >
+            ✕
+          </button>
+        </div>
+        {/* Eigenes Netz: stürzt ein Reiter ab, bleibt der Graph bedienbar. */}
+        <div
+          role="tabpanel"
+          id="side-tabpanel"
+          aria-labelledby={`side-tab-${side}`}
+          className="relative min-h-0 flex-1"
+        >
+          <ErrorBoundary key={side} bereich={side} dateiGeladen>
+            {side === 'overview' && <OverviewView />}
+            {side === 'filter' && <FilterPanel />}
+            {side === 'check' && (
+              <div className="absolute inset-0 overflow-auto px-[14px] py-[14px]">
+                <CheckCard />
+              </div>
+            )}
+          </ErrorBoundary>
+        </div>
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Breite des Seitenfensters"
+          aria-valuenow={width}
+          aria-valuemin={SIDE_WIDTH_MIN}
+          aria-valuemax={SIDE_WIDTH_MAX}
+          tabIndex={0}
+          title="Breite ändern — ziehen"
+          onMouseDown={startResize}
+          onKeyDown={resizeByKey}
+          className="absolute bottom-0 right-0 top-0 w-[8px] cursor-ew-resize hover:bg-[var(--blueS)] focus-visible:bg-[var(--blueS)] focus-visible:outline-none"
+        />
+      </aside>
+      {/* Funde einer Regel klappen neben dem Fenster auf, damit die Liste schmal bleibt. */}
+      {side === 'check' && (
+        <ErrorBoundary bereich="check" dateiGeladen>
+          <CheckFlyout left={16 + width + 10} />
         </ErrorBoundary>
-      </div>
-      <div
-        role="separator"
-        aria-orientation="vertical"
-        aria-label="Breite des Seitenfensters"
-        aria-valuenow={width}
-        aria-valuemin={SIDE_WIDTH_MIN}
-        aria-valuemax={SIDE_WIDTH_MAX}
-        tabIndex={0}
-        title="Breite ändern — ziehen"
-        onMouseDown={startResize}
-        onKeyDown={resizeByKey}
-        className="absolute bottom-0 right-0 top-0 w-[8px] cursor-ew-resize hover:bg-[var(--blueS)] focus-visible:bg-[var(--blueS)] focus-visible:outline-none"
-      />
-    </aside>
+      )}
+    </>
   );
 }

@@ -90,7 +90,6 @@ describe('PositionsTable · Spalten', () => {
       'Menge',
       'EP €',
       'Positionsart',
-      'Bauteiltyp',
       'Druckfestigkeit',
       'Status',
       'Markiert',
@@ -197,7 +196,7 @@ describe('PositionsTable · Spaltenbreite (Review zu PR #43)', () => {
 
   it('reserviert die Summe der Spaltenbreiten, damit waagerecht gescrollt wird', () => {
     renderTable();
-    const total = 110 + 260 + 70 + 90 + 90 + 120 + 110 + 130 + 90 + 70 + 220;
+    const total = 110 + 260 + 70 + 90 + 90 + 120 + 130 + 90 + 70 + 220;
     const header = screen.getAllByRole('row')[0];
     expect(header.style.minWidth).toBe(`${total}px`);
   });

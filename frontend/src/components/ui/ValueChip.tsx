@@ -11,8 +11,6 @@ interface ValueChipProps {
   onClick: () => void;
   /** Zahl rechts im Chip, z. B. Positionen mit diesem Wert. */
   count?: number;
-  /** Vor dem Text, z. B. der Status-Punkt. */
-  leading?: ReactNode;
   title?: string;
   /** `radio` in einer Einfachauswahl (Zeilen/Spalten), sonst Mehrfachauswahl. */
   kind?: 'toggle' | 'radio';
@@ -23,7 +21,6 @@ export function ValueChip({
   on,
   onClick,
   count,
-  leading,
   title,
   kind = 'toggle',
 }: ValueChipProps) {
@@ -41,7 +38,6 @@ export function ValueChip({
           : 'border-line bg-surface text-ink hover:border-line2'
       }`}
     >
-      {leading}
       <span className="truncate">{children}</span>
       {count !== undefined && (
         <span className={`text-[10px] ${on ? 'text-blueD' : 'text-mute'}`}>

@@ -7,7 +7,7 @@
 // Stichwort trifft nur ganze Wörter: „beton" trifft nicht „Betonstahl".
 
 /** Buchstabe oder Ziffer, auch Umlaute — die Wortgrenze der Stichworte. */
-const WORD_CHAR = '[\\p{L}\\p{N}]';
+export const WORD_CHAR = '[\\p{L}\\p{N}]';
 
 // `**` oder `##` hintereinander zählen wie eines: zwei gleiche Wiederholungen in
 // Folge lassen den Regex auf langen Texten ohne Treffer stark zurückspringen.

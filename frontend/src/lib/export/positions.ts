@@ -28,7 +28,6 @@ const COLUMNS: ReadonlyArray<{
   { head: 'Einheitspreis', of: (index, i) => zahl(index.unitPrice[i]) },
   { head: 'Gesamtpreis', of: (index, i) => gesamtpreis(index, i) },
   { head: 'Positionstyp', of: (index, i) => index.positions[i].positionType },
-  { head: 'Bauteiltyp', of: (index, i) => attr(index, i, 'bauteiltyp') },
   { head: 'Positionsart', of: (index, i) => attr(index, i, 'positionsart') },
   { head: 'Druckfestigkeit', of: (index, i) => attr(index, i, 'beton') },
   { head: 'Exposition', of: (index, i) => liste(index, i, 'expo') },

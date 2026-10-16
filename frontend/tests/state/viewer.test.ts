@@ -257,33 +257,33 @@ describe('viewerReducer · Gliederung des Graphen', () => {
     const frei = viewerReducer(loadedState(), { type: 'graphLayout', value: 'matrix' });
     const next = viewerReducer(frei, {
       type: 'setFacet',
-      facetId: 'bauteiltyp',
+      facetId: 'beton',
       values: new Set(['Wand']),
     });
-    expect(next.view.graph.cols).toBe('bauteiltyp');
+    expect(next.view.graph.cols).toBe('beton');
     // Eine gesetzte Spalte überschreibt der nächste Filter nicht.
     const second = viewerReducer(next, {
       type: 'setFacet',
       facetId: 'positionsart',
       values: new Set(['bauteil']),
     });
-    expect(second.view.graph.cols).toBe('bauteiltyp');
+    expect(second.view.graph.cols).toBe('beton');
   });
 
   it('lässt „nach LV" beim Filtern unangetastet', () => {
     const state = loadedState();
     const next = viewerReducer(state, {
       type: 'setFacet',
-      facetId: 'bauteiltyp',
+      facetId: 'beton',
       values: new Set(['Wand']),
     });
     expect(next.view).toBe(state.view);
   });
 
   it('nimmt die Spalte weg, wenn die Zeilen dasselbe Merkmal bekommen', () => {
-    const frei = viewerReducer(loadedState(), { type: 'graphCols', value: 'bauteiltyp' });
-    const next = viewerReducer(frei, { type: 'graphRows', value: 'bauteiltyp' });
-    expect(next.view.graph.rows).toBe('bauteiltyp');
+    const frei = viewerReducer(loadedState(), { type: 'graphCols', value: 'beton' });
+    const next = viewerReducer(frei, { type: 'graphRows', value: 'beton' });
+    expect(next.view.graph.rows).toBe('beton');
     expect(next.view.graph.cols).toBeNull();
   });
 

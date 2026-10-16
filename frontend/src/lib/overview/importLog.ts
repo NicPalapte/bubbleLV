@@ -9,14 +9,12 @@
 //
 // Reine Funktion über dem flachen Positions-Index (WP-I), einmal je Import.
 
-import { attrString } from '../attributes';
 import { canonicalUnit } from '../units';
 import type { PositionIndex } from '../index/positionIndex';
 
 export type LogLevel = 'hinweis' | 'beachten';
 
-export type LogKind =
-  'ohneEinheit' | 'ohneMenge' | 'ohnePreis' | 'ohneBauteiltyp' | 'ohneText' | 'doppelteOz';
+export type LogKind = 'ohneEinheit' | 'ohneMenge' | 'ohnePreis' | 'ohneText' | 'doppelteOz';
 
 export interface LogEntry {
   kind: LogKind;
@@ -40,7 +38,6 @@ export function buildImportLog(index: PositionIndex): ImportLog {
   const ohneEinheit: string[] = [];
   const ohneMenge: string[] = [];
   const ohnePreis: string[] = [];
-  const ohneBauteiltyp: string[] = [];
   const ohneText: string[] = [];
   // Als Positionsnummern gesammelt: das erste Vorkommen kommt erst mit dem zweiten
   // dazu, die Liste soll aber in Dokumentreihenfolge stehen.
@@ -63,12 +60,6 @@ export function buildImportLog(index: PositionIndex): ImportLog {
     if (!Number.isFinite(index.quantity[i])) ohneMenge.push(id);
     // Ohne Preise in der ganzen Datei (x83) ist „ohne Preis" keine Lücke.
     if (hasPrices && !Number.isFinite(index.unitPrice[i])) ohnePreis.push(id);
-    if (
-      attrString(position.attributes, 'positionsart') === 'bauteil' &&
-      attrString(position.attributes, 'bauteiltyp') === null
-    ) {
-      ohneBauteiltyp.push(id);
-    }
     if (position.shortText.trim() === '' && position.longText.trim() === '') ohneText.push(id);
 
     // Eine fehlende OZ ist keine doppelte: sonst meldeten zwei leere OZ einen Fehlalarm.
@@ -114,13 +105,6 @@ export function buildImportLog(index: PositionIndex): ImportLog {
     'Positionen ohne Einheitspreis',
     'Die Datei führt sonst Preise — diese Positionen zählen mit 0 € in die Summe.',
     ohnePreis,
-  );
-  add(
-    'ohneBauteiltyp',
-    'hinweis',
-    'Bauteil ohne Bauteiltyp',
-    'Als Bauteil erkannt, aber ohne Typ (z. B. Wand, Decke) — fehlt in Filter und Gruppierung.',
-    ohneBauteiltyp,
   );
   add(
     'ohneText',

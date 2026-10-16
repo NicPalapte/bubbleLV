@@ -4,7 +4,6 @@
 
 import { attrString, attrStrings } from './attributes';
 import { materialKatalog } from './classify/material/katalog';
-import { POSITION_STATUS } from './status';
 import { canonicalUnit, unitLabel } from './units';
 import type { PositionSummary } from '../types/lvNode';
 
@@ -59,11 +58,6 @@ export const FACETS: readonly Facet[] = [
     get: (p) => single(attrString(p.attributes, 'positionsart')),
     optionLabel: (value) => POSITIONSART_LABELS[value] ?? value,
     sortValues: byOrder(Object.keys(POSITIONSART_LABELS)),
-  },
-  {
-    id: 'bauteiltyp',
-    label: 'Bauteiltyp',
-    get: (p) => single(attrString(p.attributes, 'bauteiltyp')),
   },
   {
     id: 'beton',
@@ -129,13 +123,6 @@ export const FACETS: readonly Facet[] = [
     label: 'Einheit',
     get: (p) => single(canonicalUnit(p.unit)),
     optionLabel: unitLabel,
-  },
-  {
-    id: 'status',
-    label: 'Status',
-    // Status kommt als Default aus dem Import und ist nur Filter-Facette,
-    // nicht editierbar (.claude/CLAUDE.md#kritische-constraints).
-    get: () => [POSITION_STATUS],
   },
 ];
 

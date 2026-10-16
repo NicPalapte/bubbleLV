@@ -17,7 +17,6 @@ const RESERVED_KEYS: ReadonlySet<string> = new Set(['_meta', '_spans']);
  */
 const ATTRIBUTE_LABELS: Record<string, string> = {
   positionsart: 'Positionsart',
-  bauteiltyp: 'Bauteiltyp',
   beton: 'Druckfestigkeit',
   expo: 'Expositionsklassen',
   feuchtigkeitsklasse: 'Feuchtigkeitsklasse',

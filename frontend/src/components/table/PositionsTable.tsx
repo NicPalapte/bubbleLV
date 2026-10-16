@@ -42,8 +42,7 @@ import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { LVNode, PositionSummary } from '../../types/lvNode';
 import type { PositionType } from '../../types/lvDraft';
 
-type SortKey =
-  'oz' | 'shortText' | 'positionsart' | 'bauteiltyp' | 'beton' | 'unit' | 'quantity' | 'unitPrice';
+type SortKey = 'oz' | 'shortText' | 'positionsart' | 'beton' | 'unit' | 'quantity' | 'unitPrice';
 
 type Scope = 'node' | 'lv';
 
@@ -167,12 +166,6 @@ const COLUMNS: ReadonlyArray<Column<Row>> = [
       if (value === null || facet === undefined) return '—';
       return facetOptionLabel(facet, value);
     },
-  },
-  {
-    key: 'bauteiltyp',
-    label: 'Bauteiltyp',
-    width: 110,
-    render: (r) => attrString(r.position.attributes, 'bauteiltyp') ?? '—',
   },
   {
     key: 'beton',
@@ -351,8 +344,6 @@ function sortValue(position: PositionSummary, key: SortKey): string | number | n
       return position.shortText;
     case 'positionsart':
       return attrString(position.attributes, 'positionsart');
-    case 'bauteiltyp':
-      return attrString(position.attributes, 'bauteiltyp');
     case 'beton':
       return attrString(position.attributes, 'beton');
     case 'unit':

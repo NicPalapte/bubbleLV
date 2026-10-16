@@ -20,12 +20,12 @@
 | Regel                  | Zustand                                                                                                                                                   |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | V1, V2, V4, V5, V6, V7 | **umgesetzt und aktiv**, Norm-Verweise vom Owner bestätigt (14.10.2026)                                                                                   |
-| V3                     | angemeldet, **inaktiv** — Herstellerliste liegt als Entwurf vor, Prüffunktion fehlt noch                                                                  |
+| V3                     | aktiv (15.10.2026) — sucht Namen aus der Herstellerliste; steht „gleichwertig“ in der Position, schlägt sie nicht an                                      |
 | V8, V9, V10            | **aus** (`status = aus`) — Owner recherchiert die Verweise, bis dahin nicht in der Prüfung                                                                |
 | G3                     | Kennzahl ohne Norm-Bezug, aktiv (uneinheitliche Einheiten)                                                                                                |
 | G1, G2                 | **entfernt** (15.10.2026): Ranglisten der teuersten und mengenstärksten Positionen sind keine Auffälligkeit. Die Auswertung im Überblick zeigt sie weiter |
 | G4                     | **entfernt** (15.10.2026): ein „auffälliger" Einheitspreis ist eine Deutung der Software, keine Tatsache aus der Datei                                    |
-| M1                     | Beobachtung ohne Norm-Bezug, aktiv, solange die Materialtabellen `beton.csv` und `betonstahl.csv` da sind                                                 |
+| M1                     | **aus** (15.10.2026): unbewehrte Bauteile erkennt der Fachmann selbst, der Hinweis überlud die Oberfläche                                                 |
 
 Status, Norm-Verweis, Name, Kategorie, Schwere und Hinweistext je Regel stehen in
 [`reference/pruefregeln.csv`](reference/pruefregeln.csv), Schwellwerte in
@@ -76,15 +76,15 @@ V1–V7 sind bestätigt (14.10.2026). Offen:
 CSV unter [`reference/`](reference/), eine Zeile je Eintrag, mit
 Spalte `quelle_version`. Nicht im Code hartkodieren, nicht erfinden.
 
-| Datei                                                                            | Inhalt                                                            | Für        |
-| -------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ---------- |
-| [`reference/pruefregeln.csv`](reference/pruefregeln.csv)                         | Regel-ID, Status, Norm-Verweis, Name, Kategorie, Schwere, Hinweis | alle       |
-| [`reference/pruefregeln-parameter.csv`](reference/pruefregeln-parameter.csv)     | Regel-ID, Parameter, Wert                                         | V2, M1     |
-| [`reference/pruefregeln-stichworte.csv`](reference/pruefregeln-stichworte.csv)   | Regel-ID, Wert, Stichworte, ausser                                | V2, V6, V7 |
-| [`reference/vob-nebenleistungen.csv`](reference/vob-nebenleistungen.csv)         | ATV-Nummer, Abschnitt, Leistungstext, Stichworte                  | V8, V9     |
-| [`reference/hersteller-produktnamen.csv`](reference/hersteller-produktnamen.csv) | Hersteller-/Produktname, Stichworte                               | V3         |
-| [`reference/risiko-formulierungen.csv`](reference/risiko-formulierungen.csv)     | Formulierung, Regel-ID, Schweregrad                               | V4         |
-| [`reference/einheiten-gruppen.csv`](reference/einheiten-gruppen.csv)             | Einheiten, die dasselbe bedeuten                                  | G3, V2     |
+| Datei                                                                            | Inhalt                                                            | Für            |
+| -------------------------------------------------------------------------------- | ----------------------------------------------------------------- | -------------- |
+| [`reference/pruefregeln.csv`](reference/pruefregeln.csv)                         | Regel-ID, Status, Norm-Verweis, Name, Kategorie, Schwere, Hinweis | alle           |
+| [`reference/pruefregeln-parameter.csv`](reference/pruefregeln-parameter.csv)     | Regel-ID, Parameter, Wert                                         | V2, V3, V7, M1 |
+| [`reference/pruefregeln-stichworte.csv`](reference/pruefregeln-stichworte.csv)   | Regel-ID, Wert, Stichworte, ausser                                | V2, V3, V6, V7 |
+| [`reference/vob-nebenleistungen.csv`](reference/vob-nebenleistungen.csv)         | ATV-Nummer, Abschnitt, Leistungstext, Stichworte                  | V8, V9         |
+| [`reference/hersteller-produktnamen.csv`](reference/hersteller-produktnamen.csv) | Hersteller-/Produktname, Stichworte                               | V3             |
+| [`reference/risiko-formulierungen.csv`](reference/risiko-formulierungen.csv)     | Formulierung, Regel-ID, Schweregrad                               | V4             |
+| [`reference/einheiten-gruppen.csv`](reference/einheiten-gruppen.csv)             | Einheiten, die dasselbe bedeuten                                  | G3, V2         |
 
 Solange eine Datei nur die Kopfzeile enthält, ist die zugehörige Regel inaktiv — sie
 verschwindet aber nicht aus der Ansicht, sondern steht dort mit ihrem Grund. Sonst

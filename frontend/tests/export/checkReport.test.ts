@@ -70,11 +70,11 @@ describe('checkMarkdown', () => {
   it('schreibt einen unbestätigten Norm-Verweis als solchen aus', () => {
     // Bubble behauptet keine Fundstelle in einer Norm, die niemand geprüft hat
     // — auch nicht in einer Datei, die weitergereicht wird.
-    // Alle ausgelieferten Verweise sind bestätigt — V7 wird hier als offen gesetzt.
+    // Alle ausgelieferten Verweise sind bestätigt — V1 wird hier als offen gesetzt.
     const check = {
       ...lv.check,
       rules: lv.check.rules.map((rule) =>
-        rule.id === 'V7' ? { ...rule, refConfirmed: false } : rule,
+        rule.id === 'V1' ? { ...rule, refConfirmed: false } : rule,
       ),
     };
     const text = checkMarkdown({
@@ -85,8 +85,8 @@ describe('checkMarkdown', () => {
       fileName: lv.fileName,
       projectName: lv.projectName,
     });
-    const v7 = check.rules.find((rule) => rule.id === 'V7');
-    expect(regelnIm(text)).toContain('V7');
-    expect(text).toContain(`${v7?.ruleRef} (Norm-Verweis noch zu bestätigen)`);
+    const v1 = check.rules.find((rule) => rule.id === 'V1');
+    expect(regelnIm(text)).toContain('V1');
+    expect(text).toContain(`${v1?.ruleRef} (Norm-Verweis noch zu bestätigen)`);
   });
 });

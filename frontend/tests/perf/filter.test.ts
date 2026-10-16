@@ -61,7 +61,7 @@ describe(`Filter über ${POSITIONS.toLocaleString('de-DE')} Positionen`, () => {
     ['mehrere Facetten', filters({ gewerk: ['Betonarbeiten'], einheit: ['m3'] }), ''],
     ['Mengenbereich', filters({}, [100, 400]), ''],
     ['Volltextsuche im Langtext', EMPTY_FILTERS, 'nachbehandeln'],
-    ['Facette und Suche', filters({ bauteiltyp: ['Wand'] }), 'aufmaß'],
+    ['Facette und Suche', filters({ positionsart: ['bauteil'] }), 'aufmaß'],
   ];
 
   it.each(cases)('%s bleibt im Budget', (_name, active, search) => {
