@@ -278,10 +278,15 @@ function isTerm(value: unknown): value is LearnedTerm {
   );
 }
 
-/** Begriffe, die der Admin in diesem Browser gelernt hat. Leer ohne IndexedDB. */
-export async function readLearnedTerms(): Promise<LearnedTerm[]> {
+/**
+ * Begriffe, die der Admin in diesem Browser gelernt hat. Leer ohne IndexedDB;
+ * `null`, wenn das Lesen scheitert — dann darf niemand darüber schreiben, sonst
+ * gingen die bisher gelernten Begriffe still verloren.
+ */
+export async function readLearnedTerms(): Promise<LearnedTerm[] | null> {
+  if (typeof indexedDB === 'undefined') return [];
   const db = await openDb();
-  if (db === null) return [];
+  if (db === null) return null;
   try {
     const stored: unknown = await requestResult(
       db.transaction(STORE, 'readonly').objectStore(STORE).get(KEY_TERMS),
@@ -290,7 +295,7 @@ export async function readLearnedTerms(): Promise<LearnedTerm[]> {
       ? stored.filter(isTerm).map(({ begriff, kategorie }) => ({ begriff, kategorie }))
       : [];
   } catch {
-    return [];
+    return null;
   } finally {
     db.close();
   }

@@ -2,7 +2,7 @@
 
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { addComment, commentsOf, EMPTY_ANNOTATIONS, setMarker } from '../../src/lib/annotations';
 import {
   clearLastLv,
@@ -194,5 +194,15 @@ describe('gelernte Begriffe (Entscheidung 0053)', () => {
     delete globalThis.indexedDB;
     expect(await readLearnedTerms()).toEqual([]);
     expect(await saveLearnedTerms([])).toBe(false);
+  });
+
+  it('meldet ein gescheitertes Lesen als null statt als leere Liste', async () => {
+    await saveLearnedTerms([{ begriff: 'SB#', kategorie: 'wichtig' }]);
+    const open = vi.spyOn(indexedDB, 'open').mockImplementation(() => {
+      throw new Error('kaputt');
+    });
+    expect(await readLearnedTerms()).toBeNull();
+    open.mockRestore();
+    expect(await readLearnedTerms()).toEqual([{ begriff: 'SB#', kategorie: 'wichtig' }]);
   });
 });

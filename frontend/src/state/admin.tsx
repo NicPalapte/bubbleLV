@@ -57,7 +57,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
     void readLearnedTerms().then((stored) => {
-      if (!active) return;
+      // Lesen gescheitert: nichts speichern, das Gelernte gilt nur bis zum Reload.
+      if (!active || stored === null) return;
       loaded.current = true;
       // Was vor dem Lesen schon gelernt wurde, bleibt vorn.
       setLearned((current) => [
