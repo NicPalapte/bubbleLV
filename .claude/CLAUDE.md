@@ -11,7 +11,9 @@ Browser laden, klassifizieren, prüfen und im Graphen mit Fenstern darüber
 durchsuchen und filtern. Die Datei verlässt den Browser nie. Einzige Ausnahme vom
 Nicht-Speichern: die zuletzt geöffnete eigene Datei samt eigenen Markierungen und Kommentaren
 bleibt in der IndexedDB dieses Browsers (`docs/decisions/0046-letzte-datei-im-browser.md`,
-`docs/decisions/0047-kommentare-und-markierungen.md`); sonst verwirft ein Reload den Stand.
+`docs/decisions/0047-kommentare-und-markierungen.md`), dazu die im Admin-Werkzeug gelernten
+Begriffe für die Langtext-Hervorhebung (`docs/decisions/0053`); sonst verwirft ein Reload
+den Stand.
 
 Vollständige Projekt-/Ordnerbeschreibung: @README.md
 Scope: @docs/scope.md · Plan: @docs/implementation-plan.md · Prüfregeln: @docs/domain/vob-pruefungen.md
@@ -116,7 +118,8 @@ Logo-Menü. Matrix und
 Befehlspalette (`docs/decisions/0038-keine-befehlspalette.md`).
 
 **Out of Scope** (ablehnen / vertrösten): Server jeglicher Art, Persistenz über die
-Session hinaus, Auth/SSO, **mehrere Dateien gleichzeitig** (Versionsvergleich,
+Session hinaus (außer 0046/0047/0053), Auth/SSO (das Admin-Passwort aus 0053 ist nur
+Sichtschutz), **mehrere Dateien gleichzeitig** (Versionsvergleich,
 x83+x84-Merge — perspektivisch gewollt, jetzt draußen), Aufgaben, Notizen außer
 Markierung/Kommentar je Position, Vergabepakete, NU-Anfragen, Bieterfragen **verwalten**, Zuständigkeit/Zuweisung,
 Status-**Änderung**, EP-Kalkulation, Excel-/Manuell-Import, Multi-Tenant, GAEB-Export,

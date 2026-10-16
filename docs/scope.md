@@ -15,7 +15,8 @@ gehört nicht in dieses Produkt.
 
 **Weiterhin nicht verhandelbar:** kein Backend, keine Datenbank, kein Login, keine
 Persistenz über die Session hinaus — außer der zuletzt geöffneten Datei im Browser
-samt eigenen Markierungen und Kommentaren dazu (Entscheidungen 0046, 0047). Statische Fremd-Assets (Webfonts, npm-Pakete) sind
+samt eigenen Markern und Kommentaren dazu (Entscheidungen 0046, 0047) und der im
+Admin-Werkzeug gelernten Begriffe für die Langtext-Hervorhebung (Entscheidung 0053). Statische Fremd-Assets (Webfonts, npm-Pakete) sind
 erlaubt, sie transportieren keine Nutzdaten.
 
 ---
@@ -191,18 +192,18 @@ Bisher galt „kein Export". Das wird gelockert, weil es die Architektur nicht b
 
 Bewusst **nicht** Teil dieses Produkts. Anfragen dazu werden abgelehnt oder vertröstet.
 
-| Bereich                                             | Anmerkung                                                                                                                      |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Jede Server-Komponente, DB, Login, SSO              | unverändert die härteste Regel                                                                                                 |
-| Persistenz über die Session hinaus                  | kein `localStorage`, keine Cookies; IndexedDB nur für die zuletzt geöffnete Datei und ihre Notizen (Entscheidungen 0046, 0047) |
-| **Mehrere Dateien gleichzeitig**                    | Zwei LVs vergleichen (Versionsstände, Nachträge) und x83+x84 zusammenführen: **perspektivisch gewollt, jetzt draußen**         |
-| LLM-Klassifizierung                                 | setzt einen Server voraus                                                                                                      |
-| Aufgaben, Zuständigkeit, Vergabepakete, NU-Anfragen | braucht Persistenz; erlaubt sind nur eigene Markierungen und Kommentare je Position zur letzten Datei (Entscheidung 0047)      |
-| Bieterfragen **verwalten**                          | Bubble liefert nur die Liste der Unklarheiten (UC-6)                                                                           |
-| Status **ändern**                                   | Status bleibt Anzeige, Default `OPEN` aus dem Import, kein Filter (0051)                                                       |
-| EP-Kalkulation, Preisdatenbank                      | das ist iTwo, nicht Bubble                                                                                                     |
-| GAEB-Export, Excel-/Manuell-Import                  | Datenmodell bleibt offen dafür, Wege werden nicht gebaut                                                                       |
-| Multi-Tenant / SaaS                                 | nie                                                                                                                            |
+| Bereich                                             | Anmerkung                                                                                                                                |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Jede Server-Komponente, DB, Login, SSO              | unverändert die härteste Regel                                                                                                           |
+| Persistenz über die Session hinaus                  | kein `localStorage`, keine Cookies; IndexedDB nur für die zuletzt geöffnete Datei, ihre Notizen und gelernte Begriffe (0046, 0047, 0053) |
+| **Mehrere Dateien gleichzeitig**                    | Zwei LVs vergleichen (Versionsstände, Nachträge) und x83+x84 zusammenführen: **perspektivisch gewollt, jetzt draußen**                   |
+| LLM-Klassifizierung                                 | setzt einen Server voraus                                                                                                                |
+| Aufgaben, Zuständigkeit, Vergabepakete, NU-Anfragen | braucht Persistenz; erlaubt sind nur eigene Markierungen und Kommentare je Position zur letzten Datei (Entscheidung 0047)                |
+| Bieterfragen **verwalten**                          | Bubble liefert nur die Liste der Unklarheiten (UC-6)                                                                                     |
+| Status **ändern**                                   | Status bleibt Anzeige, Default `OPEN` aus dem Import, kein Filter (0051)                                                                 |
+| EP-Kalkulation, Preisdatenbank                      | das ist iTwo, nicht Bubble                                                                                                               |
+| GAEB-Export, Excel-/Manuell-Import                  | Datenmodell bleibt offen dafür, Wege werden nicht gebaut                                                                                 |
+| Multi-Tenant / SaaS                                 | nie                                                                                                                                      |
 
 ---
 
