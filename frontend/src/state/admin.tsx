@@ -72,8 +72,12 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   // Speichern nach dem Rendern, nicht im State-Updater: React darf Updater
   // mehrfach ausführen, dann liefen Schreibvorgänge doppelt und in unklarer Folge.
+  // Nacheinander, nie parallel: jeder Aufruf öffnet seine eigene Verbindung, zwei
+  // schnelle Änderungen könnten sonst in vertauschter Folge ankommen.
+  const queue = useRef<Promise<unknown>>(Promise.resolve());
   useEffect(() => {
-    if (loaded.current) void saveLearnedTerms(learned);
+    if (!loaded.current) return;
+    queue.current = queue.current.then(() => saveLearnedTerms(learned));
   }, [learned]);
 
   const change = useCallback((next: (current: readonly LearnedTerm[]) => LearnedTerm[]) => {
