@@ -34,6 +34,7 @@ import {
   MIN_ZOOM,
   marksVisible,
 } from '../../lib/graph/constants';
+import { commentedIds, hasComment, MARKER_INFO, type Marker } from '../../lib/annotations';
 import { cullBounds, isInView } from '../../lib/graph/culling';
 import { layoutMap, type MapGroup } from '../../lib/graph/layoutMap';
 import { graphOverlayProps, isOverlayEvent } from '../../lib/graph/overlay';
@@ -100,28 +101,28 @@ interface Overlay {
 const NO_OVERLAY: Overlay = { pins: [], leader: null, key: '' };
 
 /**
- * Schilder für eigene Markierung (dunkles ⚑) und Kommentar (blaues ✎) oben
- * rechts am Punkt (Entscheidung 0047). Der orange Ring bleibt den Prüf-Hinweisen.
+ * Schilder für den eigenen Marker (⚑ ! ✓) und Kommentar (blaues ✎) oben rechts
+ * am Punkt (Entscheidungen 0047, 0053). Der orange Ring bleibt den Prüf-Hinweisen.
  */
 function NoteBadges({
   x,
   y,
   r,
-  marked,
+  marker,
   commented,
 }: {
   x: number;
   y: number;
   r: number;
-  marked: boolean;
+  marker: Marker | null;
   commented: boolean;
 }) {
-  if (!marked && !commented) return null;
+  if (marker === null && !commented) return null;
   // Mitwachsend, aber nie größer als der Punkt selbst wirkt.
   const br = Math.max(2.6, Math.min(6, r * 0.65));
   const cy = y - r - br * 0.4;
   const badges: Array<{ key: string; glyph: string; fill: string; text: string }> = [];
-  if (marked) badges.push({ key: 'mark', glyph: '⚑', fill: 'var(--ink)', text: 'var(--surface)' });
+  if (marker !== null) badges.push({ key: marker, ...MARKER_INFO[marker] });
   if (commented) badges.push({ key: 'note', glyph: '✎', fill: 'var(--blue)', text: '#fff' });
   return (
     <g pointerEvents="none">
@@ -234,7 +235,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
   // Punkte mit eigener Notiz, für die oberste Ebene der Schilder.
   const noteSlots = useMemo(() => {
     const slots: number[] = [];
-    for (const id of new Set([...annotations.marked, ...annotations.notes.keys()])) {
+    for (const id of new Set([...annotations.markers.keys(), ...commentedIds(annotations)])) {
       const slot = index.slotOf.get(id);
       if (slot !== undefined) slots.push(slot);
     }
@@ -1026,8 +1027,8 @@ export function BubbleGraph({ root }: { root: LVNode }) {
                   x={x}
                   y={y}
                   r={r}
-                  marked={annotations.marked.has(id)}
-                  commented={annotations.notes.has(id)}
+                  marker={annotations.markers.get(id) ?? null}
+                  commented={hasComment(annotations, id)}
                 />
               </g>
             );

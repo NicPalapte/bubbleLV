@@ -36,8 +36,29 @@ export const AXIS_FACETS: readonly string[] = ['einheit', 'positionsart', 'posit
  */
 export const SECTION_AXIS = 'abschnitt';
 
+/**
+ * Zeilen/Spalten nach der Größenordnung der Menge (Entscheidung 0053) — zusammen
+ * mit „Einheit" eine Matrix „welche Mengen in welcher Einheit". Kommt aus der
+ * Datei, braucht keine Klassifizierung. Pauschal und ohne Menge: ohne Angabe.
+ */
+export const QUANTITY_AXIS = 'mengenstufe';
+
 /** Alle Achsen der Matrix in Anzeigereihenfolge. */
-export const AXIS_IDS: readonly string[] = ['einheit', SECTION_AXIS, ...AXIS_FACETS.slice(1)];
+export const AXIS_IDS: readonly string[] = [
+  'einheit',
+  QUANTITY_AXIS,
+  SECTION_AXIS,
+  ...AXIS_FACETS.slice(1),
+];
+
+/** Stufen der Mengen-Achse: Untergrenze (einschließlich) und Name. */
+const QUANTITY_STEPS: ReadonlyArray<readonly [number, string]> = [
+  [0, 'unter 10'],
+  [10, '10 bis 100'],
+  [100, '100 bis 1.000'],
+  [1000, '1.000 bis 10.000'],
+  [10000, 'ab 10.000'],
+];
 
 /** Sammelwert für Positionen, denen das Merkmal fehlt. */
 export const NO_VALUE = 'ohne Angabe';
@@ -147,10 +168,23 @@ function newGroup(key: string, title: string, slots: number[]): MapGroup {
   };
 }
 
-/** Positionen als Sonnenblume in den Gruppenkreis setzen — die größten innen. */
-function placeCloud(group: MapGroup, radii: Float64Array, px: Float64Array, py: Float64Array) {
+/**
+ * Positionen als Sonnenblume in den Gruppenkreis setzen — die größten innen.
+ * Bei gleicher Punktgröße (Größe „gleich") entscheidet die Menge: so steht die
+ * größte Menge einer Gruppe immer in der Mitte (Entscheidung 0053).
+ */
+function placeCloud(
+  group: MapGroup,
+  radii: Float64Array,
+  quantity: Float64Array,
+  px: Float64Array,
+  py: Float64Array,
+) {
   const n = group.slots.length;
-  const order = [...group.slots].sort((a, b) => radii[b] - radii[a] || a - b);
+  const amount = (slot: number): number => (quantity[slot] > 0 ? quantity[slot] : 0);
+  const order = [...group.slots].sort(
+    (a, b) => radii[b] - radii[a] || amount(b) - amount(a) || a - b,
+  );
   const spread = group.r - 12;
   order.forEach((slot, i) => {
     const rr = n === 1 ? 0 : spread * Math.sqrt((i + 0.5) / n);
@@ -308,12 +342,30 @@ function sectionAxis(index: PositionIndex, parents: ReadonlyMap<string, LVNode |
   };
 }
 
+function quantityAxis(index: PositionIndex): Axis {
+  return {
+    id: QUANTITY_AXIS,
+    label: 'Mengenstufe',
+    values: (slot) => {
+      const value = index.quantity[slot];
+      if (!(value > 0) || isPauschal(index.positions[slot].unit)) return [];
+      let step = 0;
+      while (step + 1 < QUANTITY_STEPS.length && value >= QUANTITY_STEPS[step + 1][0]) step++;
+      return [String(step)];
+    },
+    valueLabel: (value) => QUANTITY_STEPS[Number(value)]?.[1] ?? value,
+    sort: (values) => values.sort((a, b) => Number(a) - Number(b)),
+  };
+}
+
 function axisOf(
   index: PositionIndex,
   parents: ReadonlyMap<string, LVNode | null>,
   id: string,
 ): Axis | null {
-  return id === SECTION_AXIS ? sectionAxis(index, parents) : facetAxis(index, id);
+  if (id === SECTION_AXIS) return sectionAxis(index, parents);
+  if (id === QUANTITY_AXIS) return quantityAxis(index);
+  return facetAxis(index, id);
 }
 
 function firstValue(axis: Axis, slot: number): string {
@@ -462,7 +514,7 @@ export function layoutMap(
   }
 
   groups.forEach((group, i) => {
-    placeCloud(group, options.radii, px, py);
+    placeCloud(group, options.radii, index.quantity, px, py);
     for (const slot of group.slots) groupOf[slot] = i;
   });
 

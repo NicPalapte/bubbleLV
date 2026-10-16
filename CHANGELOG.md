@@ -9,6 +9,19 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.18.0 — 16.10.2026 · Marker, Verlauf, Mengenstufe
+
+- **Drei Marker statt einer Markierung:** Markiert (⚑), Wichtig (!) und Erledigt (✓),
+  unten in der Positionskarte. Je Marker gibt es oben einen Filter, dazu „Nicht
+  erledigt“ für die Kalkulation. Alte Markierungen werden zu „Markiert“.
+- **Kommentar-Verlauf:** „Senden“ (oder Strg+Enter) hängt einen Kommentar mit Datum und
+  Uhrzeit an. Marker-Wechsel stehen grau dazwischen. Bleibt in diesem Browser.
+- **Matrix nach Mengenstufe:** neue Achse „Mengenstufe“ (unter 10 bis ab 10.000), zum
+  Beispiel als Spalten neben „Einheit“. In jeder Gruppe liegt die größte Menge innen.
+- **Maße violett:** benannte Maße im Langtext fallen jetzt auf.
+- **Admin-Werkzeuge** im Logo-Menü, mit Passwort: Begriffe im Langtext als Material,
+  Maße, Wichtig oder „nicht hervorheben“ lernen und als CSV fürs Repo herunterladen.
+
 ## 0.17.0 — 15.10.2026 · Prüfung aufgeräumt
 
 - **V3 läuft:** Hersteller- und Produktnamen aus `hersteller-produktnamen.csv` werden

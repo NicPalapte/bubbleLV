@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { EMPTY_ANNOTATIONS, setNote, toggleMark } from '../../src/lib/annotations';
+import { addComment, EMPTY_ANNOTATIONS, setMarker } from '../../src/lib/annotations';
 import { positionsCsv } from '../../src/lib/export/positions';
 import { trefferProtokollCsv } from '../../src/lib/export/trefferProtokoll';
 import { buildPositionIndex, filterMask } from '../../src/lib/index/positionIndex';
@@ -81,14 +81,15 @@ describe('positionsCsv', () => {
     expect(kopf.length).toBeGreaterThan(10);
   });
 
-  it('führt eigene Markierung und Kommentar mit', () => {
+  it('führt eigenen Marker und Kommentar mit', () => {
     const id = index.nodes[1].id;
-    const notizen = setNote(toggleMark(EMPTY_ANNOTATIONS, id), id, 'Boden; prüfen');
+    let notizen = setMarker(EMPTY_ANNOTATIONS, id, 'erledigt', 1);
+    notizen = addComment(notizen, id, 'Boden; prüfen', 0);
     const csv = positionsCsv(index, null, notizen);
     const kopf = csv.split('\r\n')[0].split(';');
-    expect(kopf).toContain('Markiert');
+    expect(kopf).toContain('Marker');
     expect(kopf).toContain('Kommentar');
-    expect(csv).toContain(';ja;"Boden; prüfen";');
+    expect(csv).toContain(';Erledigt;"Boden; prüfen";');
     expect(datenzeilen(csv)).toHaveLength(index.size);
   });
 

@@ -5,13 +5,16 @@
 // hauptscreen.md): kein Ansichtsumschalter mehr, die Filter wählt man im
 // Seitenfenster („+ Filter"), hier stehen sie nur als entfernbare Chips.
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ReportDialog } from '../report/ReportDialog';
+import { AdminDialog } from './AdminDialog';
 import { ShortcutsDialog } from './ShortcutsDialog';
 import { AboutMenu } from './AboutMenu';
 import { useMitnehmen } from '../common/useMitnehmen';
+import { commentedIds, MARKER_INFO, MARKERS, markerCounts } from '../../lib/annotations';
 import { FACETS, facetOptionLabel } from '../../lib/facets';
 import { formatCount } from '../../lib/format';
+import { useAdmin } from '../../state/admin';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 
 /**
@@ -74,15 +77,21 @@ export function TopBar() {
     lv,
     filter: { filters, search, notes },
     annotations,
+    index,
     view,
   } = useViewer();
   const dispatch = useViewerDispatch();
+  const counts = useMemo(() => markerCounts(annotations), [annotations]);
+  const commentCount = useMemo(() => commentedIds(annotations).length, [annotations]);
   const mitnehmen = useMitnehmen();
   const inputRef = useRef<HTMLInputElement>(null);
   /** „Fehler melden" — das Fenster gehört hierher, nicht ins Menü (WP-P, Schritt 6). */
   const [melden, setMelden] = useState(false);
   /** „Tastenkürzel" aus dem Logo-Menü oder per „?". */
   const [kuerzel, setKuerzel] = useState(false);
+  /** „Admin-Werkzeuge" aus dem Logo-Menü (Entscheidung 0053). */
+  const [adminOffen, setAdminOffen] = useState(false);
+  const adminFrei = useAdmin().unlocked;
 
   // Das Eingabefeld hängt am lokalen Wert, damit Tippen nie auf den Suchlauf
   // wartet; der Viewer-State folgt verzögert nach.
@@ -173,7 +182,18 @@ export function TopBar() {
           onTour={loaded ? () => dispatch({ type: 'tour', step: 0 }) : undefined}
           onAnderesLv={loaded ? () => dispatch({ type: 'clear' }) : undefined}
           mitnehmen={loaded ? mitnehmen : undefined}
+          onAdmin={() => setAdminOffen(true)}
         />
+        {adminFrei && (
+          <button
+            type="button"
+            onClick={() => setAdminOffen(true)}
+            title="Admin-Werkzeuge"
+            className="-ml-[8px] inline-flex h-[20px] shrink-0 cursor-pointer items-center rounded-[var(--r-pill)] border-none bg-[var(--violetS)] px-[8px] font-mono text-[10px] text-[var(--violetD)]"
+          >
+            Admin
+          </button>
+        )}
 
         {loaded && (
           <>
@@ -254,21 +274,32 @@ export function TopBar() {
               </button>
             </div>
 
-            {/* Eigene Markierungen und Kommentare (Entscheidung 0047): erst sichtbar,
-                wenn es welche gibt — sonst wären es zwei leere Knöpfe mehr. */}
+            {/* Eigene Marker und Kommentare (Entscheidungen 0047, 0053): erst sichtbar,
+                wenn es welche gibt — sonst wären es leere Knöpfe mehr. */}
+            {MARKERS.map((marker) => (
+              <NoteFilterButton
+                key={marker}
+                label={MARKER_INFO[marker].label}
+                glyph={MARKER_INFO[marker].glyph}
+                count={counts[marker]}
+                on={notes.marker === marker}
+                onClick={() => dispatch({ type: 'toggleMarkerFilter', value: marker })}
+              />
+            ))}
+            {/* Beim Kalkulieren: nur, was noch nicht erledigt ist. */}
             <NoteFilterButton
-              label="Markiert"
-              glyph="⚑"
-              count={annotations.marked.size}
-              on={notes.marked}
-              onClick={() => dispatch({ type: 'toggleNoteFilter', key: 'marked' })}
+              label="Nicht erledigt"
+              glyph="○"
+              count={counts.erledigt > 0 ? index.size - counts.erledigt : 0}
+              on={notes.marker === 'offen'}
+              onClick={() => dispatch({ type: 'toggleMarkerFilter', value: 'offen' })}
             />
             <NoteFilterButton
               label="Mit Kommentar"
               glyph="✎"
-              count={annotations.notes.size}
+              count={commentCount}
               on={notes.commented}
-              onClick={() => dispatch({ type: 'toggleNoteFilter', key: 'commented' })}
+              onClick={() => dispatch({ type: 'toggleCommentFilter' })}
             />
 
             {view.mode !== 'graph' && (
@@ -293,6 +324,7 @@ export function TopBar() {
       </div>
 
       {kuerzel && <ShortcutsDialog onClose={() => setKuerzel(false)} />}
+      {adminOffen && <AdminDialog onClose={() => setAdminOffen(false)} />}
       {melden && (
         <ReportDialog
           context={{ view: view.mode, loaded: lv !== null }}

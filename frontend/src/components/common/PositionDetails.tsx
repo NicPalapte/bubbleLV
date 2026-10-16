@@ -2,9 +2,11 @@
 // Kopf mit OZ und Hauptabschnitt, Kennzahlen (Menge · EP · Positionsart), Hinweise,
 // Langtext mit Fundstellen und eine Eigenschaftstabelle.
 
-import { useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
 import { CardHead, GroupPill, PropTable, Section, StatRow } from './CardParts';
 import { Highlighted } from './Highlighted';
+import { LearnPopover } from './LearnPopover';
+import { selectionIn, type LearnTarget } from './learnSelection';
 import { NoteBlock } from './NoteBlock';
 import { HintBlock } from '../check/HintBlock';
 import {
@@ -20,6 +22,8 @@ import { categoryOf, keysOfLabel, presentCategories } from '../../lib/spanCatego
 import { POSITION_STATUS } from '../../lib/status';
 import { headingOf } from '../../lib/tree/heading';
 import { mainSectionOf } from '../../lib/tree/mainSection';
+import { applyTerms } from '../../lib/highlight/terms';
+import { useAdmin } from '../../state/admin';
 import { useViewer } from '../../state/viewer';
 import type { LVNode, PositionSummary } from '../../types/lvNode';
 
@@ -97,7 +101,16 @@ export function PositionDetails({
   const keywords = attrStrings(position.attributes, 'keywords');
   const attributes = displayAttributes(position);
 
-  const spans = useMemo(() => attrSpans(position.attributes), [position.attributes]);
+  // Gelernte Begriffe (Entscheidung 0053) kommen beim Anzeigen dazu, nicht in der
+  // Klassifizierung: sie färben nur ein und sind kein Filter.
+  const admin = useAdmin();
+  const spans = useMemo(
+    () => applyTerms(position.longText, attrSpans(position.attributes), admin.terms),
+    [position.longText, position.attributes, admin.terms],
+  );
+  const longTextRef = useRef<HTMLDivElement>(null);
+  const [learnTarget, setLearnTarget] = useState<LearnTarget | null>(null);
+  const closeLearn = useCallback(() => setLearnTarget(null), []);
   const categories = useMemo(() => presentCategories(spans), [spans]);
   const counts = useMemo(() => {
     const out = new Map<string, number>();
@@ -188,7 +201,19 @@ export function PositionDetails({
                 onToggle={toggleCategory}
               />
             )}
-            <div className="whitespace-pre-wrap font-sans text-[13px] leading-[1.62] text-ink">
+            <div
+              ref={longTextRef}
+              onMouseUp={
+                admin.unlocked
+                  ? () => {
+                      if (longTextRef.current !== null) {
+                        setLearnTarget(selectionIn(longTextRef.current));
+                      }
+                    }
+                  : undefined
+              }
+              className="whitespace-pre-wrap font-sans text-[13px] leading-[1.62] text-ink"
+            >
               <Highlighted
                 text={position.longText}
                 query={search}
@@ -196,6 +221,9 @@ export function PositionDetails({
                 activeKeys={activeKeys}
               />
             </div>
+            {admin.unlocked && learnTarget !== null && (
+              <LearnPopover target={learnTarget} onClose={closeLearn} />
+            )}
             {keywords.length > 0 && (
               <div className="flex flex-wrap gap-[4px]">
                 {keywords.map((keyword) => (

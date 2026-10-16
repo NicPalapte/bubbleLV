@@ -37,7 +37,7 @@ import {
   visibleColumnKeys,
   type ColumnConfig,
 } from '../../lib/table/columns';
-import type { Annotations } from '../../lib/annotations';
+import { commentsOf, MARKER_INFO, type Annotations } from '../../lib/annotations';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { LVNode, PositionSummary } from '../../types/lvNode';
 import type { PositionType } from '../../types/lvDraft';
@@ -185,9 +185,9 @@ const COLUMNS: ReadonlyArray<Column<Row>> = [
     sortable: false,
     render: () => <StatusPill status={POSITION_STATUS} />,
   },
-  // Eigene Notizen (Entscheidung 0047): der Inhalt kommt aus dem Viewer-Zustand,
-  // `render` wird deshalb in der Tabelle ersetzt (siehe `annotationRender`).
-  { key: 'marked', label: 'Markiert', width: 70, sortable: false },
+  // Eigene Notizen (Entscheidungen 0047, 0053): der Inhalt kommt aus dem
+  // Viewer-Zustand, `render` wird deshalb in der Tabelle ersetzt (siehe `annotationRender`).
+  { key: 'marked', label: 'Marker', width: 90, sortable: false },
   { key: 'note', label: 'Kommentar', width: 220, sortable: false },
 ];
 
@@ -202,20 +202,24 @@ function searchRender(key: string, query: string): Column<Row>['render'] | undef
   return undefined;
 }
 
-/** Spalten aus den eigenen Markierungen und Kommentaren. */
+/** Spalten aus den eigenen Markern und Kommentaren. */
 function annotationRender(key: string, annotations: Annotations): Column<Row>['render'] {
   if (key === 'marked') {
-    return (r) =>
-      annotations.marked.has(r.node.id) ? (
-        <span className="text-ink" aria-label="markiert">
-          ⚑
+    return (r) => {
+      const marker = annotations.markers.get(r.node.id);
+      if (marker === undefined) return '';
+      const info = MARKER_INFO[marker];
+      return (
+        <span style={{ color: info.fill === 'var(--ink)' ? 'var(--ink)' : info.fill }}>
+          {info.glyph} {info.label}
         </span>
-      ) : (
-        ''
       );
+    };
   }
   if (key === 'note') {
-    return (r) => <span className="text-blue">{annotations.notes.get(r.node.id) ?? ''}</span>;
+    return (r) => (
+      <span className="text-blue">{commentsOf(annotations, r.node.id).join(' · ')}</span>
+    );
   }
   return undefined;
 }
@@ -542,7 +546,7 @@ export function PositionsTable({ root }: { root: LVNode }) {
             column.key === 'shortText'
               ? row.position.shortText
               : column.key === 'note'
-                ? annotations.notes.get(row.node.id)
+                ? commentsOf(annotations, row.node.id).join('\n') || undefined
                 : undefined
           }
           onResize={(key, width) => setColumnConfig(resizeColumn(columnConfig, key, width))}

@@ -45,6 +45,9 @@
   --redD: #a81d1d;
   /* Weiche Tönung zu --red; Fundstellen-Markierung „Offene Stellen" (WP-J). */
   --redS: #fde3e3;
+  /* Fundstellen-Markierung „Maße" (Entscheidung 0053); ≥5:1 auf --violetS. */
+  --violetD: #6d28d9;
+  --violetS: #ede5fd;
 
   color-scheme: light;
 }
@@ -244,6 +247,10 @@
     --red: #ff6b6b;
     --redD: #ff9a9a;
     --redS: #3d1a1d;
+    --violetD: #c4b0fc;
+    --violetS: #2a1f48;
+    --violetD: #c4b0fc;
+    --violetS: #2a1f48;
     --cat-1: #2b4470;
     --cat-2: #1f4f5c;
     --cat-3: #1f5148;

@@ -6,7 +6,12 @@ import type { ReactNode } from 'react';
 import { SegmentedControl } from '../ui/SegmentedControl';
 import { ChipGroup, ValueChip } from '../ui/ValueChip';
 import { FACETS_BY_ID } from '../../lib/facets';
-import { AXIS_IDS, SECTION_AXIS, type GraphLayoutId } from '../../lib/graph/layoutMap';
+import {
+  AXIS_IDS,
+  QUANTITY_AXIS,
+  SECTION_AXIS,
+  type GraphLayoutId,
+} from '../../lib/graph/layoutMap';
 import { useViewer, useViewerDispatch, type HideMode } from '../../state/viewer';
 
 const LAYOUTS: ReadonlyArray<{ value: GraphLayoutId; label: string; title: string }> = [
@@ -43,6 +48,11 @@ export function Row({
   );
 }
 
+const AXIS_LABELS: Readonly<Record<string, string>> = {
+  [SECTION_AXIS]: 'Abschnitt',
+  [QUANTITY_AXIS]: 'Mengenstufe',
+};
+
 export function DisplayControls() {
   const {
     lv,
@@ -55,13 +65,14 @@ export function DisplayControls() {
   const dispatch = useViewerDispatch();
   if (lv === null) return null;
 
-  // Nur Merkmale, die in dieser Datei mindestens einen Wert haben; der
-  // Abschnitt steht immer da, er kommt aus der Gliederung der Datei.
+  // Nur Merkmale, die in dieser Datei mindestens einen Wert haben; Abschnitt
+  // und Mengenstufe stehen immer da, sie kommen aus der Datei selbst.
   const axes = AXIS_IDS.filter(
-    (id) => id === SECTION_AXIS || (lv.summary.facets.get(id)?.size ?? 0) > 0,
+    (id) =>
+      id === SECTION_AXIS || id === QUANTITY_AXIS || (lv.summary.facets.get(id)?.size ?? 0) > 0,
   ).map((id) => ({
     value: id,
-    label: id === SECTION_AXIS ? 'Abschnitt' : (FACETS_BY_ID.get(id)?.label ?? id),
+    label: AXIS_LABELS[id] ?? FACETS_BY_ID.get(id)?.label ?? id,
   }));
 
   return (

@@ -30,7 +30,14 @@ import {
   type ViewAction,
   type ViewState,
 } from './viewState';
-import { EMPTY_ANNOTATIONS, setNote, toggleMark, type Annotations } from '../lib/annotations';
+import {
+  addComment,
+  EMPTY_ANNOTATIONS,
+  removeComment,
+  setMarker,
+  type Annotations,
+  type Marker,
+} from '../lib/annotations';
 import type { HintIndex } from '../lib/check';
 import { AXIS_FACETS } from '../lib/graph/layoutMap';
 import type { PositionIndex } from '../lib/index/positionIndex';
@@ -111,8 +118,10 @@ type LvAction =
    * wenn `lv` noch das geladene LV ist — sonst kam inzwischen ein anderes.
    */
   | { type: 'persisted'; lv: LoadedLV; persistId: string }
-  | { type: 'toggleMark'; id: string }
-  | { type: 'setNote'; id: string; text: string }
+  /** `at` = Zeitpunkt in ms; kommt vom Aufrufer, damit der Reducer rein bleibt. */
+  | { type: 'setMarker'; id: string; marker: Marker | null; at: number }
+  | { type: 'addComment'; id: string; text: string; at: number }
+  | { type: 'removeComment'; id: string; position: number }
   /** Hinweis anhängen; derselbe Text erscheint nicht doppelt. */
   | { type: 'notice'; message: string }
   | { type: 'dismissNotices' }
@@ -181,10 +190,15 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
         view: viewReducer(state.view, { type: 'setViewMode', mode: shared.view }),
       };
     }
-    case 'toggleMark':
-      return { ...state, annotations: toggleMark(state.annotations, action.id) };
-    case 'setNote': {
-      const annotations = setNote(state.annotations, action.id, action.text);
+    case 'setMarker':
+    case 'addComment':
+    case 'removeComment': {
+      const annotations =
+        action.type === 'setMarker'
+          ? setMarker(state.annotations, action.id, action.marker, action.at)
+          : action.type === 'addComment'
+            ? addComment(state.annotations, action.id, action.text, action.at)
+            : removeComment(state.annotations, action.id, action.position);
       return annotations === state.annotations ? state : { ...state, annotations };
     }
     case 'notice':
@@ -234,7 +248,8 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     case 'setMenge':
     case 'resetFilters':
     case 'hideMode':
-    case 'toggleNoteFilter':
+    case 'toggleCommentFilter':
+    case 'toggleMarkerFilter':
     case 'toggleRule': {
       const filter = filterReducer(state.filter, action);
       return filter === state.filter ? state : { ...state, filter };

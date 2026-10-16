@@ -10,8 +10,19 @@
 //
 // Seit Entscheidung 0047 liegen hier auch die eigenen Markierungen und Kommentare
 // zu genau dieser Datei. Eine neue Datei beginnt ohne sie.
+//
+// Seit Entscheidung 0053 außerdem die Begriffe, die der Admin im Langtext gelernt
+// hat. Sie hängen an keiner Datei: weder eine neue Datei noch „Letzte Datei
+// löschen" nimmt sie mit.
 
-import { EMPTY_ANNOTATIONS, fromStored, toStored, type Annotations } from '../annotations';
+import type { LearnedTerm } from '../highlight/terms';
+import {
+  commentedIds,
+  EMPTY_ANNOTATIONS,
+  fromStored,
+  toStored,
+  type Annotations,
+} from '../annotations';
 
 const DB_NAME = 'bubble';
 const DB_VERSION = 1;
@@ -21,6 +32,7 @@ const STORE = 'letztesLv';
 const KEY_META = 'meta';
 const KEY_BYTES = 'bytes';
 const KEY_NOTES = 'notizen';
+const KEY_TERMS = 'begriffe';
 /** Kennung für Einträge aus v0.14, die noch keine eigene `id` haben. */
 const LEGACY_ID = 'v0.14';
 
@@ -118,7 +130,11 @@ export async function readLastLvMeta(): Promise<LastLvInfo | null> {
     ]);
     if (!isMeta(meta)) return null;
     const annotations = fromStored(notes);
-    return { ...meta, marked: annotations.marked.size, comments: annotations.notes.size };
+    return {
+      ...meta,
+      marked: annotations.markers.size,
+      comments: commentedIds(annotations).length,
+    };
   } catch {
     return null;
   } finally {
@@ -237,7 +253,59 @@ export async function clearLastLv(): Promise<boolean> {
   if (db === null) return false;
   try {
     const tx = db.transaction(STORE, 'readwrite');
-    tx.objectStore(STORE).clear();
+    const store = tx.objectStore(STORE);
+    // Nicht `clear()`: die gelernten Begriffe gehören zu keiner Datei.
+    for (const key of [KEY_META, KEY_BYTES, KEY_NOTES]) store.delete(key);
+    await transactionDone(tx);
+    return true;
+  } catch {
+    return false;
+  } finally {
+    db.close();
+  }
+}
+
+function isTerm(value: unknown): value is LearnedTerm {
+  if (typeof value !== 'object' || value === null) return false;
+  const term = value as Record<string, unknown>;
+  return (
+    typeof term.begriff === 'string' &&
+    term.begriff.trim() !== '' &&
+    (term.kategorie === 'material' ||
+      term.kategorie === 'masse' ||
+      term.kategorie === 'wichtig' ||
+      term.kategorie === 'aus')
+  );
+}
+
+/** Begriffe, die der Admin in diesem Browser gelernt hat. Leer ohne IndexedDB. */
+export async function readLearnedTerms(): Promise<LearnedTerm[]> {
+  const db = await openDb();
+  if (db === null) return [];
+  try {
+    const stored: unknown = await requestResult(
+      db.transaction(STORE, 'readonly').objectStore(STORE).get(KEY_TERMS),
+    );
+    return Array.isArray(stored)
+      ? stored.filter(isTerm).map(({ begriff, kategorie }) => ({ begriff, kategorie }))
+      : [];
+  } catch {
+    return [];
+  } finally {
+    db.close();
+  }
+}
+
+/** Ersetzt die gelernten Begriffe. Gibt zurück, ob es geklappt hat. */
+export async function saveLearnedTerms(terms: readonly LearnedTerm[]): Promise<boolean> {
+  const db = await openDb();
+  if (db === null) return false;
+  try {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).put(
+      terms.map(({ begriff, kategorie }) => ({ begriff, kategorie })),
+      KEY_TERMS,
+    );
     await transactionDone(tx);
     return true;
   } catch {
