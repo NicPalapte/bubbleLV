@@ -76,7 +76,6 @@ export function patternOf(text: string): string | null {
   return pattern === text.trim() ? null : pattern;
 }
 
-/** Fundstellen eines Begriffs im Text; ein kaputtes Muster liefert keine. */
 // Ein Muster je Begriff, einmal übersetzt. `matchAll` arbeitet auf einer Kopie,
 // das gemeinsame `g`-Muster behält also keinen Zustand zwischen Aufrufen.
 const compiled = new Map<string, RegExp | null>();
@@ -90,6 +89,7 @@ function patternFor(begriff: string): RegExp | null {
   return pattern;
 }
 
+/** Fundstellen eines Begriffs im Text; ein kaputtes Muster liefert keine. */
 function matches(text: string, begriff: string): Array<{ start: number; end: number }> {
   const pattern = patternFor(begriff);
   if (pattern === null) return [];
