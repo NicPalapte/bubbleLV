@@ -71,6 +71,29 @@ describe('hashPosition', () => {
 });
 
 describe('hashPositions', () => {
+  it('trennt gleiche Positionen in verschiedenen Abschnitten über die volle OZ', () => {
+    // Die OZ trägt die Abschnittsnummer („01.0010" vs. „02.0010") — kein `-2` nötig.
+    const a = pos({ oz: '01.0010' });
+    const b = pos({ oz: '02.0010' });
+    const draft: LVDraft = {
+      ...lv([a]),
+      lots: [
+        {
+          number: '1',
+          label: null,
+          sections: [
+            { number: '01', label: null, positions: [a], sections: [] },
+            { number: '02', label: null, positions: [b], sections: [] },
+          ],
+        },
+      ],
+    };
+    const hashes = hashPositions(draft);
+    expect(hashes.get(a)?.id).not.toBe(hashes.get(b)?.id);
+    expect(hashes.get(b)?.id).not.toContain('-');
+    expect(hashes.get(a)?.text).toBe(hashes.get(b)?.text);
+  });
+
   it('macht gleiche Positionen in Dateireihenfolge eindeutig', () => {
     const erste = pos();
     const zweite = pos();
