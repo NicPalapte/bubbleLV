@@ -26,10 +26,11 @@ import {
   MAX_FILE_BYTES,
   readLvFile,
 } from '../../lib/pipeline/loadLv';
+import { indexNodes } from '../../lib/tree/buildTree';
 import { UNEXPECTED_FAILURE } from '../../lib/pipeline/messages';
 import { countEvent } from '../../lib/usage/count';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
-import type { Annotations } from '../../lib/annotations';
+import { rekey, storageKeys, type Annotations } from '../../lib/annotations';
 import type { LoadedLV } from '../../lib/pipeline/runPipeline';
 
 /** Ergebnis eines Ladewegs: das LV und, wenn gespeichert, seine Notizen. */
@@ -148,9 +149,14 @@ export function FileDropzone() {
             'Die zuletzt geöffnete Datei ist in diesem Browser nicht mehr gespeichert.',
           );
         }
+        const lv = await loadLvFromBytes(gespeichert.bytes, gespeichert.meta.fileName, {
+          onNotice,
+        });
+        // Gespeichert unter dem Positions-Hash, in der Sitzung unter der Knoten-ID.
+        const keys = storageKeys(indexNodes(lv.tree).values());
         return {
-          lv: await loadLvFromBytes(gespeichert.bytes, gespeichert.meta.fileName, { onNotice }),
-          annotations: gespeichert.annotations,
+          lv,
+          annotations: rekey(gespeichert.annotations, keys.toNode),
           persistId: persistIdOf(gespeichert.meta),
         };
       });

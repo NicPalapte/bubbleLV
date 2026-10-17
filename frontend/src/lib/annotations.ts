@@ -1,14 +1,17 @@
 // Eigene Marker und Kommentar-Verlauf je Position (Entscheidungen 0047, 0053).
 //
-// Schlüssel ist die Knoten-ID der Position. Sie entsteht beim Laden aus OZ und
-// Reihenfolge (lib/tree/buildTree.ts) und ist für dieselbe Datei immer gleich —
-// deshalb passen gespeicherte Notizen wieder, wenn die Datei neu geöffnet wird.
+// In der Sitzung ist der Schlüssel die Knoten-ID der Position (lib/tree/buildTree.ts).
+// Gespeichert wird unter dem Positions-Hash (Entscheidung 0055, `hashes.id`): er hängt
+// am Inhalt, nicht an OZ und Reihenfolge, und passt so auch nach Umnummerieren.
+// Umschlüsseln an der Grenze zum Speicher: `storageKeys` + `rekey`.
 //
 // Ein Marker ist eine eigene Notiz, nicht der GAEB-Status (Entscheidung 0051):
 // „Erledigt" heißt „habe ich kalkuliert", nicht „Status geändert".
 //
 // Reine Funktionen über einem unveränderlichen Wert; der Zustand liegt im Viewer.
 // Zeitpunkte kommen von außen, damit der Reducer rein bleibt.
+
+import type { LVNode } from '../types/lvNode';
 
 export type Marker = 'markiert' | 'wichtig' | 'erledigt';
 
@@ -162,18 +165,52 @@ export function formatAt(at: number): string {
   );
 }
 
+/** Knoten-ID ↔ Positions-Hash für alle Positionen eines LV. */
+export interface StorageKeys {
+  readonly toHash: ReadonlyMap<string, string>;
+  readonly toNode: ReadonlyMap<string, string>;
+}
+
+export function storageKeys(nodes: Iterable<LVNode>): StorageKeys {
+  const toHash = new Map<string, string>();
+  const toNode = new Map<string, string>();
+  for (const node of nodes) {
+    const hash = node.position?.hashes.id;
+    if (hash === undefined) continue;
+    toHash.set(node.id, hash);
+    toNode.set(hash, node.id);
+  }
+  return { toHash, toNode };
+}
+
+/**
+ * Schlüssel austauschen. Unbekannte Schlüssel bleiben, wie sie sind: so gehen
+ * Notizen ohne passende Position beim nächsten Speichern nicht verloren, und
+ * Notizen aus v0.21 und älter (Knoten-ID) finden ihre Position direkt.
+ */
+export function rekey(annotations: Annotations, keys: ReadonlyMap<string, string>): Annotations {
+  if (annotations.markers.size === 0 && annotations.log.size === 0) return annotations;
+  const key = (id: string): string => keys.get(id) ?? id;
+  return {
+    markers: new Map([...annotations.markers].map(([id, marker]) => [key(id), marker])),
+    log: new Map([...annotations.log].map(([id, entries]) => [key(id), entries])),
+  };
+}
+
 /**
  * Form für die IndexedDB: Arrays statt Set/Map, damit auch ältere Browser klonen.
- * `v: 2` seit den drei Markern; ohne `v` ist es die Form aus v0.15 (Entscheidung 0047).
+ * `v: 3`: Schlüssel ist der Positions-Hash. `v: 2` (drei Marker) und ohne `v`
+ * (v0.15, Entscheidung 0047) tragen die Knoten-ID.
  */
 export interface StoredAnnotations {
-  readonly v: 2;
+  readonly v: 3;
   readonly markers: ReadonlyArray<readonly [string, Marker]>;
   readonly log: ReadonlyArray<readonly [string, readonly LogEntry[]]>;
 }
 
+/** `annotations` muss schon nach Hash geschlüsselt sein (`rekey(…, keys.toHash)`). */
 export function toStored(annotations: Annotations): StoredAnnotations {
-  return { v: 2, markers: [...annotations.markers], log: [...annotations.log] };
+  return { v: 3, markers: [...annotations.markers], log: [...annotations.log] };
 }
 
 function isMarker(value: unknown): value is Marker {
@@ -200,11 +237,12 @@ function pairs(value: unknown): Array<[string, unknown]> {
   );
 }
 
+/** Gespeicherte Notizen mit ihren Schlüsseln wie gespeichert; danach `rekey(…, keys.toNode)`. */
 export function fromStored(value: unknown): Annotations {
   if (typeof value !== 'object' || value === null) return EMPTY_ANNOTATIONS;
   const raw = value as Record<string, unknown>;
 
-  if (raw.v !== 2) {
+  if (raw.v !== 2 && raw.v !== 3) {
     // v0.15: eine Markierung (an/aus) und ein Kommentarfeld je Position. Die
     // Markierung wird „Markiert", der Kommentar ein Eintrag ohne Zeitpunkt.
     const marked = Array.isArray(raw.marked)

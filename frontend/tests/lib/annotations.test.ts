@@ -9,8 +9,10 @@ import {
   fromStored,
   hasComment,
   markerCounts,
+  rekey,
   removeComment,
   setMarker,
+  storageKeys,
   toStored,
 } from '../../src/lib/annotations';
 import {
@@ -92,6 +94,31 @@ describe('annotations', () => {
         ],
       }),
     ).toEqual(a);
+  });
+
+  it('speichert unter dem Positions-Hash und findet beim Laden die Knoten-ID wieder', () => {
+    const keys = storageKeys([
+      { id: 'position:01', position: { hashes: { id: 'h1' } } },
+      { id: 'position:02', position: { hashes: { id: 'h2' } } },
+      { id: 'section:01', position: null },
+    ] as unknown as Parameters<typeof storageKeys>[0]);
+    const a = addComment(setMarker(EMPTY_ANNOTATIONS, 'position:01', 'wichtig', 5), 'alt', 'x', 6);
+
+    const stored = toStored(rekey(a, keys.toHash));
+    expect(stored.v).toBe(3);
+    expect(stored.markers).toEqual([['h1', 'wichtig']]);
+    // Ohne passende Position bleibt der Schlüssel, die Notiz geht nicht verloren.
+    expect(stored.log.map(([id]) => id)).toEqual(['h1', 'alt']);
+    expect(rekey(fromStored(stored), keys.toNode)).toEqual(a);
+  });
+
+  it('findet Notizen aus v0.21 (Knoten-ID) direkt wieder', () => {
+    const keys = storageKeys([
+      { id: 'position:01', position: { hashes: { id: 'h1' } } },
+    ] as unknown as Parameters<typeof storageKeys>[0]);
+    const alt = fromStored({ v: 2, markers: [['position:01', 'markiert']], log: [] });
+    expect([...rekey(alt, keys.toNode).markers]).toEqual([['position:01', 'markiert']]);
+    expect(rekey(EMPTY_ANNOTATIONS, keys.toHash)).toBe(EMPTY_ANNOTATIONS);
   });
 
   it('übernimmt Markierung und Kommentar aus v0.15', () => {

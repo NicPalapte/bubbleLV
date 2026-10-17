@@ -19,7 +19,12 @@ import {
   setMarker,
   type Annotations,
 } from '../../src/lib/annotations';
-import { readLastLvMeta, saveAnnotations, saveLastLv } from '../../src/lib/persist/lastLv';
+import {
+  readLastLv,
+  readLastLvMeta,
+  saveAnnotations,
+  saveLastLv,
+} from '../../src/lib/persist/lastLv';
 
 const NAME = 'gaeb-xml-beispiel.x83';
 const FIXTURE = readFileSync(resolve(process.cwd(), '../packages/core/tests/fixtures', NAME));
@@ -87,6 +92,22 @@ describe('Markierungen und Kommentare', () => {
     await waitFor(async () =>
       expect(await readLastLvMeta()).toMatchObject({ marked: 1, comments: 1 }),
     );
+    // Gespeichert unter dem Positions-Hash, nicht unter der Knoten-ID (Entscheidung 0057).
+    const gespeichert = await readLastLv();
+    const [schluessel] = [...(gespeichert?.annotations.markers.keys() ?? [])];
+    expect(positionHashes()).toContain(schluessel);
+  });
+
+  it('findet unter dem Positions-Hash gespeicherte Notizen beim Öffnen wieder', async () => {
+    await saveLastLv(
+      { fileName: NAME, positionCount: 3, savedAt: Date.now(), id: ID },
+      fixtureBytes(),
+    );
+    const hashes = positionHashes();
+    await saveAnnotations(ID, kommentiere(markiere(EMPTY_ANNOTATIONS, hashes[0]), hashes[1], 'x'));
+    await oeffneGespeicherte();
+    expect(document.querySelectorAll('[data-note="markiert"]')).toHaveLength(1);
+    expect(document.querySelectorAll('[data-note="note"]')).toHaveLength(1);
   });
 
   it('Marker-Knopf: Pfeil wählt, merkt die Wahl und ändert einen gesetzten Marker', async () => {
@@ -231,6 +252,13 @@ describe('Markierungen und Kommentare', () => {
 function positionIds(): string[] {
   const lv = runPipeline(fixtureBytes(), NAME);
   return buildPositionIndex(lv.tree).nodes.map((node) => node.id);
+}
+
+function positionHashes(): string[] {
+  const lv = runPipeline(fixtureBytes(), NAME);
+  return buildPositionIndex(lv.tree).nodes.flatMap((node) =>
+    node.position === null ? [] : [node.position.hashes.id],
+  );
 }
 
 /** Punkte im Graphen, die nicht abgeblendet sind. */

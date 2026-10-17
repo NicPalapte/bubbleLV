@@ -63,6 +63,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0054 | [Kern als eigenes Paket im selben Repo](0054-kern-als-paket.md)                                                | akzeptiert                         | 2026-10-17 |
 | 0055 | [Positions-Hash und Datei-ID im Link](0055-positions-hash.md)                                                  | akzeptiert                         | 2026-10-17 |
 | 0056 | [Anonyme Nutzungszählung mit GoatCounter](0056-anonyme-nutzungszaehlung.md)                                    | akzeptiert                         | 2026-10-17 |
+| 0057 | [Notizen hängen am Positions-Hash](0057-notizen-am-positions-hash.md)                                          | akzeptiert                         | 2026-10-17 |
 
 ## Wann schreibe ich eine neue Datei?
 
