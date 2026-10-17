@@ -9,6 +9,13 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.22.0 — 17.10.2026 · Notizen hängen am Inhalt der Position
+
+- **Marker und Kommentare** werden jetzt unter dem Fingerabdruck der Position gespeichert
+  (OZ, Text und Menge), wie der Positions-Link. Vorher hing die Zuordnung an der
+  Reihenfolge, in der Bubble die Datei einliest.
+- Vorhandene Notizen bleiben erhalten und werden beim nächsten Speichern umgestellt.
+
 ## 0.21.0 — 17.10.2026 · Anonyme Nutzungszählung
 
 - **Bubble kann anonym zählen**, welche Funktionen genutzt werden: Seitenaufrufe, geöffnete

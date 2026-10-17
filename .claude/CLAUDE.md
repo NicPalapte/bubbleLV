@@ -47,8 +47,9 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
   Reload nicht überleben.
 - **IndexedDB nur über `frontend/src/lib/persist/lastLv.ts`:** genau ein Projekt
   (Original-Bytes + Angaben der zuletzt geöffneten eigenen Datei + Marker/Kommentar-Verlauf
-  je Positions-ID, `lib/annotations.ts`), löschbar auf der Startseite. Dazu, unabhängig
-  von der Datei, die im Admin-Werkzeug gelernten Begriffe (`lib/highlight/terms.ts`).
+  je Positions-Hash `hashes.id`, `lib/annotations.ts`, Entscheidung 0057), löschbar auf
+  der Startseite. Dazu, unabhängig von der Datei, die im Admin-Werkzeug gelernten
+  Begriffe (`lib/highlight/terms.ts`).
   Kein geparstes LV speichern, keine Demo-LVs, keine zweite Datei. Notizen nur schreiben,
   wenn die Projekt-Kennung (`persistIdOf`) noch passt. Fehlt IndexedDB ⇒ still ohne
   Speicher weiter, kein Fehler (Entscheidungen 0046, 0047, 0053).
