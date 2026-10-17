@@ -43,6 +43,8 @@ export interface AboutMenuProps {
   onTastenkuerzel: () => void;
   /** Export und Druck der gefilterten Menge. Fehlt, solange kein LV geladen ist. */
   mitnehmen?: Mitnehmen;
+  /** „Admin-Werkzeuge" gewählt (Entscheidung 0053); Fenster hängt in der Kopfleiste. */
+  onAdmin: () => void;
 }
 
 const THEME_OPTIONS = [
@@ -70,6 +72,7 @@ export function AboutMenu({
   onTour,
   onAnderesLv,
   mitnehmen,
+  onAdmin,
 }: AboutMenuProps) {
   const [open, setOpen] = useState(false);
   const [theme, chooseTheme] = useTheme();
@@ -207,6 +210,15 @@ export function AboutMenu({
           title="Fertige Meldung zum Kopieren, Mailen oder als GitHub-Issue — ohne Inhalte aus deiner Datei"
         >
           Fehler melden
+        </PopoverRow>
+        <PopoverRow
+          onClick={() => {
+            setOpen(false);
+            onAdmin();
+          }}
+          title="Nur mit Passwort"
+        >
+          Admin-Werkzeuge
         </PopoverRow>
         <div className="flex items-center justify-between gap-[8px] px-[10px] py-[4px] text-ink">
           <span>Design</span>

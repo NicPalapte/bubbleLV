@@ -2,16 +2,18 @@
 
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
-import { beforeEach, describe, expect, it } from 'vitest';
-import { EMPTY_ANNOTATIONS, setNote, toggleMark } from '../../src/lib/annotations';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { addComment, commentsOf, EMPTY_ANNOTATIONS, setMarker } from '../../src/lib/annotations';
 import {
   clearLastLv,
   newPersistId,
   persistIdOf,
   readLastLv,
   readLastLvMeta,
+  readLearnedTerms,
   saveAnnotations,
   saveLastLv,
+  saveLearnedTerms,
   touchLastLv,
 } from '../../src/lib/persist/lastLv';
 
@@ -118,7 +120,12 @@ describe('letzte Datei — Randfälle', () => {
 });
 
 describe('letzte Datei — Markierungen und Kommentare', () => {
-  const notizen = setNote(toggleMark(EMPTY_ANNOTATIONS, 'p:1'), 'p:2', 'Boden prüfen');
+  const notizen = addComment(
+    setMarker(EMPTY_ANNOTATIONS, 'p:1', 'wichtig', 1),
+    'p:2',
+    'Boden prüfen',
+    2,
+  );
 
   it('speichert Notizen zur Datei und zählt sie für die Startseite', async () => {
     const id = newPersistId();
@@ -127,8 +134,8 @@ describe('letzte Datei — Markierungen und Kommentare', () => {
 
     expect(await readLastLvMeta()).toEqual({ ...meta, id, marked: 1, comments: 1 });
     const last = await readLastLv();
-    expect([...(last?.annotations.marked ?? [])]).toEqual(['p:1']);
-    expect(last?.annotations.notes.get('p:2')).toBe('Boden prüfen');
+    expect([...(last?.annotations.markers ?? [])]).toEqual([['p:1', 'wichtig']]);
+    expect(commentsOf(last?.annotations ?? EMPTY_ANNOTATIONS, 'p:2')).toEqual(['Boden prüfen']);
   });
 
   it('schreibt nichts, wenn inzwischen eine andere Datei gespeichert ist', async () => {
@@ -160,5 +167,42 @@ describe('letzte Datei — Markierungen und Kommentare', () => {
     await saveLastLv({ ...meta, id }, bytesOf('x'));
     await touchLastLv(meta.savedAt + 1);
     expect(await saveAnnotations(id, notizen)).toBe(true);
+  });
+});
+
+describe('gelernte Begriffe (Entscheidung 0053)', () => {
+  it('bleiben über neue Datei und „Letzte Datei löschen" hinweg', async () => {
+    const begriffe = [
+      { begriff: 'SB#', kategorie: 'wichtig' as const },
+      { begriff: 'bauseits', kategorie: 'aus' as const },
+    ];
+    expect(await saveLearnedTerms(begriffe)).toBe(true);
+    await saveLastLv({ ...meta, id: newPersistId() }, bytesOf('x'));
+    await clearLastLv();
+    expect(await readLastLvMeta()).toBeNull();
+    expect(await readLearnedTerms()).toEqual(begriffe);
+  });
+
+  it('verwirft Unbrauchbares und liefert ohne IndexedDB nichts', async () => {
+    await saveLearnedTerms([
+      { begriff: 'ok', kategorie: 'masse' },
+      // @ts-expect-error -- kaputter Eintrag aus einer älteren Version nachstellen
+      { begriff: ' ', kategorie: 'quatsch' },
+    ]);
+    expect(await readLearnedTerms()).toEqual([{ begriff: 'ok', kategorie: 'masse' }]);
+    // @ts-expect-error -- privates Fenster nachstellen
+    delete globalThis.indexedDB;
+    expect(await readLearnedTerms()).toEqual([]);
+    expect(await saveLearnedTerms([])).toBe(false);
+  });
+
+  it('meldet ein gescheitertes Lesen als null statt als leere Liste', async () => {
+    await saveLearnedTerms([{ begriff: 'SB#', kategorie: 'wichtig' }]);
+    const open = vi.spyOn(indexedDB, 'open').mockImplementation(() => {
+      throw new Error('kaputt');
+    });
+    expect(await readLearnedTerms()).toBeNull();
+    open.mockRestore();
+    expect(await readLearnedTerms()).toEqual([{ begriff: 'SB#', kategorie: 'wichtig' }]);
   });
 });

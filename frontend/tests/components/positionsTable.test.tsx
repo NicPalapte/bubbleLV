@@ -61,8 +61,8 @@ function headerLabels(): string[] {
 function Notizen() {
   const dispatch = useViewerDispatch();
   useEffect(() => {
-    dispatch({ type: 'toggleMark', id: 'position:01.0010' });
-    dispatch({ type: 'setNote', id: 'position:01.0010', text: 'Boden prüfen' });
+    dispatch({ type: 'setMarker', id: 'position:01.0010', marker: 'wichtig', at: 1 });
+    dispatch({ type: 'addComment', id: 'position:01.0010', text: 'Boden prüfen', at: 1 });
   }, [dispatch]);
   return null;
 }
@@ -94,7 +94,7 @@ describe('PositionsTable · Spalten', () => {
       'Positionsart',
       'Druckfestigkeit',
       'Status',
-      'Markiert',
+      'Marker',
       'Kommentar',
     ]);
   });
@@ -134,20 +134,20 @@ describe('PositionsTable · Spalten', () => {
       </ViewerProvider>,
     );
     const zeile = screen.getByRole('row', { name: /01\.0010/ });
-    expect(within(zeile).getByLabelText('markiert')).toBeTruthy();
+    expect(within(zeile).getByText('! Wichtig')).toBeTruthy();
     expect(within(zeile).getByText('Boden prüfen')).toBeTruthy();
     const andere = screen.getByRole('row', { name: /01\.0020/ });
-    expect(within(andere).queryByLabelText('markiert')).toBeNull();
+    expect(within(andere).queryByText('! Wichtig')).toBeNull();
   });
 
   it('verschiebt eine Spalte und setzt alles zurück', () => {
     renderTable();
     click(screen.getByRole('button', { name: /Spalten/ }));
     click(screen.getByRole('button', { name: 'Kommentar nach oben' }));
-    expect(headerLabels().slice(-2)).toEqual(['Kommentar', 'Markiert']);
+    expect(headerLabels().slice(-2)).toEqual(['Kommentar', 'Marker']);
 
     click(screen.getByRole('button', { name: 'zurücksetzen' }));
-    expect(headerLabels().slice(-2)).toEqual(['Markiert', 'Kommentar']);
+    expect(headerLabels().slice(-2)).toEqual(['Marker', 'Kommentar']);
   });
 
   it('hat je Spaltenkopf einen Zieh-Griff', () => {
@@ -198,7 +198,7 @@ describe('PositionsTable · Spaltenbreite (Review zu PR #43)', () => {
 
   it('reserviert die Summe der Spaltenbreiten, damit waagerecht gescrollt wird', () => {
     renderTable();
-    const total = 110 + 260 + 70 + 90 + 90 + 120 + 130 + 90 + 70 + 220;
+    const total = 110 + 260 + 70 + 90 + 90 + 120 + 130 + 90 + 90 + 220;
     const header = screen.getAllByRole('row')[0];
     expect(header.style.minWidth).toBe(`${total}px`);
   });

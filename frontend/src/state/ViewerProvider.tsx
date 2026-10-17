@@ -59,8 +59,14 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
   // ihr Filter an ist — sonst bleibt sie `null` und kein Tastendruck im
   // Kommentarfeld löst einen Filterlauf aus.
   const allow = useMemo(
-    () => annotationAllowList(state.annotations, state.filter.notes),
-    [state.annotations, state.filter.notes],
+    () =>
+      annotationAllowList(
+        state.annotations,
+        state.filter.notes,
+        // Alle IDs braucht nur „Nicht erledigt" — sonst kein Durchlauf über 10k Positionen.
+        state.filter.notes.marker === 'offen' ? index.nodes.map((node) => node.id) : [],
+      ),
+    [state.annotations, state.filter.notes, index],
   );
   const active = useMemo<ActiveFilters>(
     () => prepareFilters(filters, search, allow),

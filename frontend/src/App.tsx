@@ -1,5 +1,6 @@
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { ViewerPage } from './pages/ViewerPage';
+import { AdminProvider } from './state/admin';
 import { useViewer } from './state/viewer';
 import { ViewerProvider } from './state/ViewerProvider';
 
@@ -21,7 +22,9 @@ function ViewerMitNetz() {
 function App() {
   return (
     <ViewerProvider>
-      <ViewerMitNetz />
+      <AdminProvider>
+        <ViewerMitNetz />
+      </AdminProvider>
     </ViewerProvider>
   );
 }
