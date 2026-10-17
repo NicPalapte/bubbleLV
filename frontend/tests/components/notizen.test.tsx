@@ -89,6 +89,36 @@ describe('Markierungen und Kommentare', () => {
     );
   });
 
+  it('Marker-Knopf: Pfeil wählt, merkt die Wahl und ändert einen gesetzten Marker', async () => {
+    render(<App />);
+    fireEvent.change(screen.getByLabelText('GAEB-Datei auswählen'), {
+      target: { files: [new File([FIXTURE], NAME)] },
+    });
+    await screen.findByRole('button', { name: '+ Filter' });
+    waehlePunkt(0);
+    fireEvent.click(await screen.findByRole('button', { name: 'Marker wählen' }));
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      '⚑Markiert',
+      '!Wichtig',
+      '✓Erledigt',
+    ]);
+    fireEvent.click(screen.getByRole('menuitem', { name: /Erledigt/ }));
+    // Gesetzt: der Knopf nimmt ihn weg, der Pfeil bietet die anderen und „aufheben".
+    expect(screen.getByRole('button', { name: 'Erledigt', pressed: true })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Marker wählen' }));
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      '⚑Markiert',
+      '!Wichtig',
+      '✕Marker aufheben',
+    ]);
+    fireEvent.click(screen.getByRole('menuitem', { name: /Wichtig/ }));
+    expect(screen.getByRole('button', { name: 'Wichtig', pressed: true })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Wichtig', pressed: true }));
+    // Ohne Marker zeigt der Knopf die letzte Wahl und setzt sie mit einem Klick.
+    fireEvent.click(screen.getByRole('button', { name: 'Wichtig', pressed: false }));
+    expect(screen.getByRole('button', { name: 'Wichtig', pressed: true })).toBeInTheDocument();
+  });
+
   it('bringt die Notizen beim nächsten Öffnen zurück und filtert danach', async () => {
     await saveLastLv(
       { fileName: NAME, positionCount: 3, savedAt: Date.now(), id: ID },
@@ -135,7 +165,8 @@ describe('Markierungen und Kommentare', () => {
     });
     await screen.findByRole('button', { name: '+ Filter' });
     waehlePunkt(0);
-    fireEvent.click(await screen.findByRole('button', { name: 'Wichtig', pressed: false }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Marker wählen' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Wichtig' }));
     await waitFor(async () => expect(await readLastLvMeta()).toMatchObject({ marked: 1 }));
     expect(screen.queryByText(/wird nicht gespeichert/)).toBeNull();
   });
@@ -147,7 +178,8 @@ describe('Markierungen und Kommentare', () => {
     );
     await oeffneGespeicherte();
     waehlePunkt(0);
-    fireEvent.click(await screen.findByRole('button', { name: 'Erledigt', pressed: false }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Marker wählen' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Erledigt' }));
     // Vor Ablauf der Sammelzeit schließen: die Notiz darf nicht verloren gehen.
     fireEvent.click(screen.getByRole('button', { name: /LV schließen/ }));
     await waitFor(async () => expect(await readLastLvMeta()).toMatchObject({ marked: 1 }));

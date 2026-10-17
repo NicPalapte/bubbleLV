@@ -94,11 +94,14 @@ describe('Admin-Werkzeuge', () => {
     expect(screen.queryByRole('dialog', { name: 'Begriff lernen' })).toBeNull();
 
     await oeffneAdmin(PASSWORT);
-    expect(await screen.findByRole('button', { name: 'Admin beenden' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Admin-Werkzeuge schließen' }));
-    expect(screen.getByRole('button', { name: 'Admin' })).toBeInTheDocument();
+    // Nach dem Passwort geht das Fenster zu, damit man gleich im Langtext arbeiten kann.
+    expect(await screen.findByRole('button', { name: 'Admin' })).toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: 'Admin-Werkzeuge' })).toBeNull();
 
-    const wort = markiereWort(await langtextBlock());
+    const block = await langtextBlock();
+    // Der Graph darunter setzt `select-none`; der Langtext muss markierbar bleiben.
+    expect(block.querySelector('.whitespace-pre-wrap')).toHaveClass('select-text');
+    const wort = markiereWort(block);
     const lernen = await screen.findByRole('dialog', { name: 'Begriff lernen' });
     fireEvent.click(within(lernen).getByRole('button', { name: 'Wichtig' }));
 

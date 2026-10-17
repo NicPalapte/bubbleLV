@@ -212,7 +212,9 @@ export function PositionDetails({
                     }
                   : undefined
               }
-              className="whitespace-pre-wrap font-sans text-[13px] leading-[1.62] text-ink"
+              // Die Karte liegt im Graphen, der `select-none` setzt — ohne `select-text`
+              // ließe sich weder kopieren noch im Admin-Modus ein Begriff markieren.
+              className="select-text whitespace-pre-wrap font-sans text-[13px] leading-[1.62] text-ink"
             >
               <Highlighted
                 text={position.longText}

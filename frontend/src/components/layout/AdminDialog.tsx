@@ -178,7 +178,7 @@ export function AdminDialog({ onClose }: { onClose: () => void }) {
             ✕
           </button>
         </div>
-        {unlocked ? <Begriffe onClose={onClose} /> : <Passwort onDone={() => undefined} />}
+        {unlocked ? <Begriffe onClose={onClose} /> : <Passwort onDone={onClose} />}
       </div>
     </div>,
     document.body,

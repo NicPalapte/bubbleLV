@@ -1,12 +1,13 @@
 // Eigene Marker und Kommentar-Verlauf zu einer Position (Entscheidungen 0047, 0053).
-// Die drei Marker-Knöpfe stehen unten in der Karte bei „Vergleichen", der Verlauf
+// Der Marker-Knopf mit Pfeil steht unten in der Karte bei „Vergleichen", der Verlauf
 // als letzter Block im Inhalt. „Senden" hängt einen Kommentar mit Zeitpunkt an;
 // Marker-Wechsel stehen grau dazwischen. useSaveAnnotations schreibt kurz danach
 // in den Speicher der letzten Datei.
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { CARD_BUTTON, Section } from './CardParts';
-import { formatAt, MARKER_INFO, MARKERS, type LogEntry } from '../../lib/annotations';
+import { useDismiss } from './useDismiss';
+import { formatAt, MARKER_INFO, MARKERS, type LogEntry, type Marker } from '../../lib/annotations';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 
 function entryLine(entry: Extract<LogEntry, { kind: 'marker' }>): string {
@@ -98,40 +99,107 @@ export function NoteBlock({ positionId }: { positionId: string }) {
 }
 
 /**
- * Drei Knöpfe ⚑ ! ✓ für die Fußleiste der Positionskarte. Höchstens einer ist
- * an; der gedrückte noch einmal geklickt nimmt den Marker weg.
+ * Zuletzt gewählter Marker — reiner UI-Zustand dieser Sitzung, damit die
+ * nächste Karte gleich mit ihm startet. Überlebt keinen Reload (CLAUDE.md).
+ */
+let lastChoice: Marker = 'markiert';
+
+function setTo(dispatch: ReturnType<typeof useViewerDispatch>, id: string, marker: Marker | null) {
+  dispatch({ type: 'setMarker', id, marker, at: Date.now() });
+}
+
+/**
+ * Marker-Knopf mit Pfeil für die Fußleiste der Positionskarte.
+ * - Ohne Marker: der Knopf setzt den zuletzt gewählten; der Pfeil bietet alle drei.
+ * - Mit Marker: der Knopf nimmt ihn weg; der Pfeil bietet die anderen und „Aufheben".
  */
 export function MarkerButtons({ positionId }: { positionId: string }) {
   const { annotations } = useViewer();
   const dispatch = useViewerDispatch();
   const current = annotations.markers.get(positionId) ?? null;
+  const [last, setLast] = useState<Marker>(lastChoice);
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  useDismiss(wrapRef, open, () => setOpen(false));
+
+  const shown = current ?? last;
+  const info = MARKER_INFO[shown];
+  const choose = (marker: Marker | null): void => {
+    if (marker !== null) {
+      lastChoice = marker;
+      setLast(marker);
+    }
+    setTo(dispatch, positionId, marker);
+    setOpen(false);
+  };
+  const options = MARKERS.filter((marker) => marker !== current);
+  const filled =
+    current !== null ? { background: info.fill, borderColor: info.fill, color: info.text } : {};
+
   return (
-    <div role="group" aria-label="Marker" className="inline-flex gap-[4px]">
-      {MARKERS.map((marker) => {
-        const info = MARKER_INFO[marker];
-        const on = current === marker;
-        return (
-          <button
-            key={marker}
-            type="button"
-            aria-pressed={on}
-            aria-label={info.label}
-            title={on ? `${info.label} aufheben` : info.label}
-            onClick={() =>
-              dispatch({
-                type: 'setMarker',
-                id: positionId,
-                marker: on ? null : marker,
-                at: Date.now(),
-              })
-            }
-            className={`${CARD_BUTTON} w-[30px] justify-center px-0`}
-            style={on ? { background: info.fill, borderColor: info.fill, color: info.text } : {}}
-          >
-            {info.glyph}
-          </button>
-        );
-      })}
+    <div ref={wrapRef} role="group" aria-label="Marker" className="relative inline-flex">
+      <button
+        type="button"
+        aria-pressed={current !== null}
+        aria-label={info.label}
+        title={current !== null ? `${info.label} aufheben` : `Als „${info.label}" markieren`}
+        onClick={() => choose(current !== null ? null : shown)}
+        className={`${CARD_BUTTON} gap-[6px] rounded-r-none px-[10px]`}
+        style={filled}
+      >
+        <span aria-hidden="true">{info.glyph}</span>
+        {info.label}
+      </button>
+      <button
+        type="button"
+        aria-label="Marker wählen"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+        className={`${CARD_BUTTON} -ml-px w-[22px] justify-center rounded-l-none px-0 text-[9px]`}
+        style={filled}
+      >
+        ▾
+      </button>
+      {open && (
+        <div
+          role="menu"
+          aria-label="Marker"
+          className="ov-window absolute bottom-[calc(100%+4px)] left-0 z-[5] flex min-w-[150px] flex-col gap-[2px] p-[4px]"
+        >
+          {options.map((marker) => (
+            <button
+              key={marker}
+              type="button"
+              role="menuitem"
+              onClick={() => choose(marker)}
+              className="flex cursor-pointer items-center gap-[8px] rounded-[6px] border-none bg-transparent px-[8px] py-[6px] text-left font-mono text-[11px] text-ink hover:bg-sunken"
+            >
+              <span
+                aria-hidden="true"
+                className="inline-flex h-[16px] w-[16px] items-center justify-center rounded-[4px] text-[10px]"
+                style={{ background: MARKER_INFO[marker].fill, color: MARKER_INFO[marker].text }}
+              >
+                {MARKER_INFO[marker].glyph}
+              </span>
+              {MARKER_INFO[marker].label}
+            </button>
+          ))}
+          {current !== null && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => choose(null)}
+              className="flex cursor-pointer items-center gap-[8px] rounded-[6px] border-none bg-transparent px-[8px] py-[6px] text-left font-mono text-[11px] text-dim hover:bg-sunken"
+            >
+              <span aria-hidden="true" className="w-[16px] text-center">
+                ✕
+              </span>
+              Marker aufheben
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

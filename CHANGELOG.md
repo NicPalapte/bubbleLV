@@ -12,7 +12,8 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 ## 0.20.0 — 17.10.2026 · Marker, Verlauf, Mengenstufe
 
 - **Drei Marker statt einer Markierung:** Markiert (⚑), Wichtig (!) und Erledigt (✓),
-  unten in der Positionskarte. Je Marker gibt es oben einen Filter, dazu „Nicht
+  unten in der Positionskarte als ein Knopf mit Pfeil. Der Knopf setzt die zuletzt
+  gewählte Art oder nimmt einen gesetzten Marker weg; der Pfeil wechselt. Je Marker gibt es oben einen Filter, dazu „Nicht
   erledigt“ für die Kalkulation. Alte Markierungen werden zu „Markiert“.
 - **Kommentar-Verlauf:** „Senden“ (oder Strg+Enter) hängt einen Kommentar mit Datum und
   Uhrzeit an. Marker-Wechsel stehen grau dazwischen. Bleibt in diesem Browser.
@@ -21,6 +22,7 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 - **Maße violett:** benannte Maße im Langtext fallen jetzt auf.
 - **Admin-Werkzeuge** im Logo-Menü, mit Passwort: Begriffe im Langtext als Material,
   Maße, Wichtig oder „nicht hervorheben“ lernen und als CSV fürs Repo herunterladen.
+  Der Langtext in der Positionskarte lässt sich jetzt markieren und kopieren.
 
 ## 0.19.0 — 17.10.2026 · Positionen als Link teilen
 
