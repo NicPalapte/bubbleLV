@@ -4,16 +4,17 @@ Strukturierte Normdaten, die vom Maintainer aus einer lizenzierten/offiziellen Q
 gepflegt werden — nicht vom Modell erfunden oder aus dem Internet geraten (siehe
 [`../README.md`](../README.md)).
 
-| Datei                                                        | Inhalt                                                                                                                                                  | Quelle                                             |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| [`material/`](material/)                                     | Eine Tabelle je Material: Erkennung und Merkmale (Art, Bauweise, Bewehrung …). Pflege: [`../../setup/materialwissen.md`](../../setup/materialwissen.md) | Owner; Beton und Betonstahl als Entwurf von Claude |
-| [`pruefregeln.csv`](pruefregeln.csv)                         | Je Prüfregel: Status, Norm-Verweis, Name, Kategorie, Schwere, Hinweistext                                                                               | [`../vob-pruefungen.md`](../vob-pruefungen.md)     |
-| [`pruefregeln-parameter.csv`](pruefregeln-parameter.csv)     | Schwellwerte und Einstellungen je Regel (z. B. Titelgröße bei M1)                                                                                       | Owner                                              |
-| [`pruefregeln-stichworte.csv`](pruefregeln-stichworte.csv)   | Suchwörter je Regel (V2, V3, V6, V7), Schreibweise wie bei den Materialtabellen                                                                         | Owner                                              |
-| [`risiko-formulierungen.csv`](risiko-formulierungen.csv)     | Formulierungen, die ein Risiko auf den AN schieben — Regel V4                                                                                           | Owner                                              |
-| [`hersteller-produktnamen.csv`](hersteller-produktnamen.csv) | Hersteller-/Produktnamen — Regel V3                                                                                                                     | Owner                                              |
-| [`vob-nebenleistungen.csv`](vob-nebenleistungen.csv)         | Nebenleistungen je ATV — Regeln V8, V9                                                                                                                  | VOB/C des Owners                                   |
-| [`einheiten-gruppen.csv`](einheiten-gruppen.csv)             | Einheiten, die dasselbe bedeuten („Stk" = „Stück")                                                                                                      | Owner                                              |
+| Datei                                                        | Inhalt                                                                                                                                                                                      | Quelle                                             |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| [`material/`](material/)                                     | Eine Tabelle je Material: Erkennung und Merkmale (Art, Bauweise, Bewehrung …). Pflege: [`../../setup/materialwissen.md`](../../setup/materialwissen.md)                                     | Owner; Beton und Betonstahl als Entwurf von Claude |
+| [`pruefregeln.csv`](pruefregeln.csv)                         | Je Prüfregel: Status, Norm-Verweis, Name, Kategorie, Schwere, Hinweistext                                                                                                                   | [`../vob-pruefungen.md`](../vob-pruefungen.md)     |
+| [`pruefregeln-parameter.csv`](pruefregeln-parameter.csv)     | Schwellwerte und Einstellungen je Regel (z. B. Titelgröße bei M1)                                                                                                                           | Owner                                              |
+| [`pruefregeln-stichworte.csv`](pruefregeln-stichworte.csv)   | Suchwörter je Regel (V2, V3, V6, V7), Schreibweise wie bei den Materialtabellen                                                                                                             | Owner                                              |
+| [`risiko-formulierungen.csv`](risiko-formulierungen.csv)     | Formulierungen, die ein Risiko auf den AN schieben — Regel V4                                                                                                                               | Owner                                              |
+| [`hersteller-produktnamen.csv`](hersteller-produktnamen.csv) | Hersteller-/Produktnamen — Regel V3                                                                                                                                                         | Owner                                              |
+| [`vob-nebenleistungen.csv`](vob-nebenleistungen.csv)         | Nebenleistungen je ATV — Regeln V8, V9                                                                                                                                                      | VOB/C des Owners                                   |
+| [`einheiten-gruppen.csv`](einheiten-gruppen.csv)             | Einheiten, die dasselbe bedeuten („Stk" = „Stück")                                                                                                                                          | Owner                                              |
+| [`hervorhebungen.csv`](hervorhebungen.csv)                   | Begriffe, die im Langtext hervorgehoben werden (Material, Maße, Wichtig, nicht hervorheben) — Entscheidung 0053. Pflege: [`../../setup/admin-werkzeuge.md`](../../setup/admin-werkzeuge.md) | Owner (Admin-Werkzeuge)                            |
 
 ## `pruefregeln.csv` — Stammdaten je Regel
 
@@ -42,6 +43,26 @@ Fehlt Name, Kategorie oder Schwere, bleibt die Regel inaktiv und nennt den Grund
 
 Ein unbekannter oder leerer Status gilt als `zu_bestaetigen` — die vorsichtige
 Annahme.
+
+## `hervorhebungen.csv` — Begriffe im Langtext
+
+Färbt Begriffe im Langtext der Positionskarte ein. Kein Filter, kein Attribut, keine
+Prüfregel. Pflege mit den Admin-Werkzeugen oder von Hand:
+[`../../setup/admin-werkzeuge.md`](../../setup/admin-werkzeuge.md).
+
+| Spalte      | Bedeutung                                                                                       |
+| ----------- | ----------------------------------------------------------------------------------------------- |
+| `begriff`   | Wort oder Muster, ohne Groß/klein. `#` = eine Zahl, `*` = Buchstaben oder Ziffern, z. B. `C#/#` |
+| `kategorie` | `material` (grün) · `masse` (violett) · `wichtig` (rot) · `aus` (nicht hervorheben)             |
+| `bemerkung` | frei, wird nicht ausgewertet                                                                    |
+
+- **Vorrang:** Was die App selbst findet (Normen, Maße, Fristen …), bleibt. Ein Begriff
+  färbt nur Stellen, die noch frei sind.
+- **`aus`** nimmt jede Markierung weg, die den Begriff berührt, auch eine der App.
+- **Längere Begriffe zuerst:** „Sichtbetonklasse SB#" gewinnt gegen „SB#".
+- Zeilen mit leerem Begriff oder unbekannter Kategorie werden still übersprungen.
+- Im Browser gelernte Begriffe kommen dazu und gelten nur dort, bis die Datei hier
+  ersetzt ist.
 
 ## `einheiten-gruppen.csv`
 

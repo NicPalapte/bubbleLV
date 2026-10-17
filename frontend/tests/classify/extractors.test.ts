@@ -58,6 +58,15 @@ describe('normen', () => {
 
   it('hält bloße Zahlen für keine Norm', () => {
     expect(findNormen('Liefern von 206 Stück, Menge 1045 kg.')).toEqual([]);
+  });
+
+  it('erkennt Vornormen und Spezifikationen mit V bzw. SPEC', () => {
+    const text = 'Putz nach DIN V 18580 und DIN 18550-1, Daten nach DIN SPEC 91400.';
+    expect(findNormen(text).map((hit) => hit.value)).toEqual([
+      'DIN V 18580',
+      'DIN 18550-1',
+      'DIN SPEC 91400',
+    ]);
     expect(runExtractors(context('Liefern von 206 Stück.')).attributes.normen).toBeUndefined();
   });
 });

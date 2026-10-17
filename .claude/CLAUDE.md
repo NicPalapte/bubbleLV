@@ -11,7 +11,9 @@ Browser laden, klassifizieren, prüfen und im Graphen mit Fenstern darüber
 durchsuchen und filtern. Die Datei verlässt den Browser nie. Einzige Ausnahme vom
 Nicht-Speichern: die zuletzt geöffnete eigene Datei samt eigenen Markierungen und Kommentaren
 bleibt in der IndexedDB dieses Browsers (`docs/decisions/0046-letzte-datei-im-browser.md`,
-`docs/decisions/0047-kommentare-und-markierungen.md`); sonst verwirft ein Reload den Stand.
+`docs/decisions/0047-kommentare-und-markierungen.md`), dazu die im Admin-Werkzeug gelernten
+Begriffe für die Langtext-Hervorhebung (`docs/decisions/0053`); sonst verwirft ein Reload
+den Stand.
 
 Vollständige Projekt-/Ordnerbeschreibung: @README.md
 Scope: @docs/scope.md · Plan: @docs/implementation-plan.md · Prüfregeln: @docs/domain/vob-pruefungen.md
@@ -44,11 +46,12 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
   (Auswahl, Zoom, aktive Filter) darf in React-State/Context leben, muss aber einen
   Reload nicht überleben.
 - **IndexedDB nur über `frontend/src/lib/persist/lastLv.ts`:** genau ein Projekt
-  (Original-Bytes + Angaben der zuletzt geöffneten eigenen Datei + Markierungen/Kommentare
-  je Positions-ID, `lib/annotations.ts`), löschbar auf der Startseite. Kein geparstes LV
-  speichern, keine Demo-LVs, keine zweite Datei. Notizen nur schreiben, wenn die
-  Projekt-Kennung (`persistIdOf`) noch passt. Fehlt IndexedDB ⇒ still ohne Speicher
-  weiter, kein Fehler (Entscheidungen 0046, 0047).
+  (Original-Bytes + Angaben der zuletzt geöffneten eigenen Datei + Marker/Kommentar-Verlauf
+  je Positions-ID, `lib/annotations.ts`), löschbar auf der Startseite. Dazu, unabhängig
+  von der Datei, die im Admin-Werkzeug gelernten Begriffe (`lib/highlight/terms.ts`).
+  Kein geparstes LV speichern, keine Demo-LVs, keine zweite Datei. Notizen nur schreiben,
+  wenn die Projekt-Kennung (`persistIdOf`) noch passt. Fehlt IndexedDB ⇒ still ohne
+  Speicher weiter, kein Fehler (Entscheidungen 0046, 0047, 0053).
 
 ### Client-seitige Pipeline (Kern)
 - `GaebParser` ist die **einzige** Stelle mit GAEB-XML-Kenntnis
@@ -112,14 +115,16 @@ fachliche Filter · **Graph als Hauptscreen** auf einem Filterzustand: Seitenfen
 (Überblick mit Import-Log · Filter · Prüfung), Positionskarte, Tabelle und Vergleich
 (max. 4 Positionen) als Fenster darüber (`docs/decisions/0034-graph-als-hauptscreen.md`,
 `docs/decisions/0037-vergleichsfenster.md`) · Beziehungen zwischen Positionen nur als
-ähnliche Positionen im Vergleich, keine wertende Prüfregel (`docs/decisions/0049`) · eigene Markierung + Kommentar je Position zur letzten Datei
-(`docs/decisions/0047-kommentare-und-markierungen.md`) · lokaler Export/Druck über das
+ähnliche Positionen im Vergleich, keine wertende Prüfregel (`docs/decisions/0049`) · eigener Marker (Markiert/Wichtig/Erledigt) + Kommentar-Verlauf je Position zur letzten
+Datei (`docs/decisions/0047-kommentare-und-markierungen.md`, `docs/decisions/0053`) ·
+gelernte Hervorhebungen im Langtext nur über Admin-Werkzeug (0053) · lokaler Export/Druck über das
 Logo-Menü. Matrix und
 Ähnlichkeit sind entfernt (`docs/decisions/0031-drei-ansichten.md`); keine
 Befehlspalette (`docs/decisions/0038-keine-befehlspalette.md`).
 
 **Out of Scope** (ablehnen / vertrösten): Server jeglicher Art, Persistenz über die
-Session hinaus, Auth/SSO, **mehrere Dateien gleichzeitig** (Versionsvergleich,
+Session hinaus (außer 0046/0047/0053), Auth/SSO (das Admin-Passwort aus 0053 ist nur
+Sichtschutz), **mehrere Dateien gleichzeitig** (Versionsvergleich,
 x83+x84-Merge — perspektivisch gewollt, jetzt draußen), Aufgaben, Notizen außer
 Markierung/Kommentar je Position, Vergabepakete, NU-Anfragen, Bieterfragen **verwalten**, Zuständigkeit/Zuweisung,
 Status-**Änderung**, EP-Kalkulation, Excel-/Manuell-Import, Multi-Tenant, GAEB-Export,

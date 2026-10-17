@@ -34,10 +34,15 @@ export const SPAN_CATEGORIES: readonly SpanCategory[] = [
   },
   { key: 'material', label: 'Material', color: 'var(--greenD)', background: 'var(--greenS)' },
   { key: 'verweise', label: 'Verweise', color: 'var(--cyan)', background: 'var(--cyanS)' },
-  { key: 'dicke', label: 'Maße', color: 'var(--dim)', background: 'var(--grid)' },
-  { key: 'hoehe', label: 'Maße', color: 'var(--dim)', background: 'var(--grid)' },
-  { key: 'laenge', label: 'Maße', color: 'var(--dim)', background: 'var(--grid)' },
-  { key: 'gewicht', label: 'Maße', color: 'var(--dim)', background: 'var(--grid)' },
+  // Maße violett (Entscheidung 0053), vorher grau — gingen neben dem Fließtext unter.
+  // `masse` sind gelernte Maße (lib/highlight/terms.ts), die anderen kommen vom Extraktor.
+  { key: 'dicke', label: 'Maße', color: 'var(--violetD)', background: 'var(--violetS)' },
+  { key: 'hoehe', label: 'Maße', color: 'var(--violetD)', background: 'var(--violetS)' },
+  { key: 'laenge', label: 'Maße', color: 'var(--violetD)', background: 'var(--violetS)' },
+  { key: 'gewicht', label: 'Maße', color: 'var(--violetD)', background: 'var(--violetS)' },
+  { key: 'masse', label: 'Maße', color: 'var(--violetD)', background: 'var(--violetS)' },
+  // Gelernt „Wichtig" (Entscheidung 0053): kräftiges Rot mit Rand, „Offene Stellen" nur getönt.
+  { key: 'wichtig', label: 'Wichtig', color: 'var(--red)', background: 'var(--redS)' },
 ];
 
 const NEUTRAL: SpanCategory = {

@@ -16,10 +16,15 @@ describe('usageEventOf', () => {
   it('zählt Suche und Kommentar, ohne den Text weiterzugeben', () => {
     expect(usageEventOf({ type: 'search', value: 'Beton C30/37' })).toBe('suche');
     expect(usageEventOf({ type: 'search', value: '  ' })).toBeNull();
-    expect(usageEventOf({ type: 'setNote', id: 'position:01.0010', text: 'prüfen' })).toBe(
-      'kommentar',
+    expect(usageEventOf({ type: 'addComment', id: 'p1', text: 'prüfen', at: 0 })).toBe('kommentar');
+    expect(usageEventOf({ type: 'addComment', id: 'p1', text: ' ', at: 0 })).toBeNull();
+  });
+
+  it('zählt das Setzen eines Markers, nicht das Entfernen', () => {
+    expect(usageEventOf({ type: 'setMarker', id: 'p1', marker: 'wichtig', at: 0 })).toBe(
+      'markierung',
     );
-    expect(usageEventOf({ type: 'setNote', id: 'position:01.0010', text: '' })).toBeNull();
+    expect(usageEventOf({ type: 'setMarker', id: 'p1', marker: null, at: 0 })).toBeNull();
   });
 
   it('zählt die Tour nur beim Start', () => {

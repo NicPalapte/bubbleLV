@@ -11,10 +11,11 @@ import type { Extractor, ExtractorContext, ExtractorResult } from './types';
 
 /**
  * DIN/EN/ISO-Familie inklusive Teilnummer und Ausgabestand:
- * "DIN 1045-2", "DIN EN 206", "DIN EN ISO 9001", "EN 1992-1-1", "ISO 4287".
+ * "DIN 1045-2", "DIN EN 206", "DIN EN ISO 9001", "EN 1992-1-1", "ISO 4287",
+ * dazu Vornormen und Spezifikationen: "DIN V 18580", "DIN SPEC 91400".
  * Der führende Wortanfang verhindert Treffer mitten in Wörtern.
  */
-const DIN_EN_ISO = /\b(?:DIN\s+)?(?:EN\s+)?(?:ISO\s+)?\d{2,5}(?:-\d+)*\b/g;
+const DIN_EN_ISO = /\b(?:DIN\s+(?:V\s+|SPEC\s+)?)?(?:EN\s+)?(?:ISO\s+)?\d{2,5}(?:-\d+)*\b/g;
 const NORM_PREFIX = /\b(?:DIN|EN|ISO)\b/;
 
 /** Vorschriftenwerke ohne Nummer im Namen: "VOB/C", "ATV DIN 18331", "ZTV-ING". */

@@ -5,7 +5,13 @@
 import { describe, expect, it } from 'vitest';
 import { FACETS } from '../../src/lib/facets';
 import { groupRadius } from '../../src/lib/graph/constants';
-import { layoutMap, NO_VALUE, SECTION_AXIS, type MapOptions } from '../../src/lib/graph/layoutMap';
+import {
+  layoutMap,
+  NO_VALUE,
+  QUANTITY_AXIS,
+  SECTION_AXIS,
+  type MapOptions,
+} from '../../src/lib/graph/layoutMap';
 import { packCircles } from '../../src/lib/graph/pack';
 import { MAX_PIN_CANDIDATES, placePins, type PinAnchor } from '../../src/lib/graph/pins';
 import { isPauschal, positionRadii } from '../../src/lib/graph/sizes';
@@ -177,6 +183,35 @@ describe('Gliederung „Matrix"', () => {
     // Wände: m2 und m3 — zwei Zellen in derselben Zeile.
     const waende = map.axes?.rows[1].y;
     expect(map.groups.filter((group) => group.y === waende)).toHaveLength(2);
+  });
+
+  it('gliedert nach Mengenstufe, Pauschal ohne Angabe', () => {
+    const map = layoutMap(
+      index,
+      parents,
+      options({ layout: 'matrix', rows: 'einheit', cols: QUANTITY_AXIS }),
+    );
+    expect(map.axes?.colKey).toBe('Mengenstufe');
+    expect(map.axes?.cols.map((col) => col.label)).toEqual([
+      '10 bis 100',
+      '100 bis 1.000',
+      NO_VALUE,
+    ]);
+    const zelle = map.groups[map.groupOf[slotOf('02.01.0020')]];
+    expect(zelle.slots).toEqual([slotOf('02.01.0020')]);
+  });
+
+  it('setzt die größte Menge einer Gruppe nach innen', () => {
+    const map = layoutMap(index, parents, options({ layout: 'matrix', rows: 'einheit' }));
+    const m3 = map.groups[map.groupOf[slotOf('01.01.0010')]];
+    const abstand = (slot: number): number => Math.hypot(map.px[slot] - m3.x, map.py[slot] - m3.y);
+    const nachAbstand = [...m3.slots].sort((a, b) => abstand(a) - abstand(b));
+    // m3: 100 (01.01.0010), 25 (01.01.0020), 12 (01.02.01.0020)
+    expect(nachAbstand.map((slot) => index.positions[slot].oz)).toEqual([
+      '01.01.0010',
+      '01.01.0020',
+      '01.02.01.0020',
+    ]);
   });
 
   it('legt mit Spalten eine Matrix samt Achsen an', () => {

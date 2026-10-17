@@ -9,12 +9,28 @@
 // fehlt, merkt man dagegen erst, wenn die Datei schon weitergereicht ist.
 // Die Zeilen sind die gefilterte Menge — das ist die Zusage aus dem Plan.
 
-import { EMPTY_ANNOTATIONS, type Annotations } from '../annotations';
+import { EMPTY_ANNOTATIONS, formatAt, MARKER_INFO, type Annotations } from '../annotations';
 import { attributeLabel, attrString, attrStrings } from '../attributes';
 import { materialKatalog } from '../classify/material/katalog';
 import { canonicalUnit, unitLabel } from '../units';
 import { csvText } from './csvText';
 import type { PositionIndex } from '../index/positionIndex';
+
+function markerLabel(notes: Annotations, id: string): string {
+  const marker = notes.markers.get(id);
+  return marker === undefined ? '' : MARKER_INFO[marker].label;
+}
+
+/** Alle Kommentare einer Position, je Zeile mit Zeitpunkt, älteste zuerst. */
+function commentText(notes: Annotations, id: string): string {
+  const lines: string[] = [];
+  for (const entry of notes.log.get(id) ?? []) {
+    if (entry.kind !== 'comment') continue;
+    const at = formatAt(entry.at);
+    lines.push(at === '' ? entry.text : `${at} ${entry.text}`);
+  }
+  return lines.join('\n');
+}
 
 /** Spalten des Exports, in dieser Reihenfolge. */
 const COLUMNS: ReadonlyArray<{
@@ -43,9 +59,9 @@ const COLUMNS: ReadonlyArray<{
   { head: 'Zeitbezug', of: (index, i) => liste(index, i, 'fristen') },
   { head: 'Offene Stellen', of: (index, i) => liste(index, i, 'platzhalter') },
   { head: 'Besonderheiten', of: (index, i) => liste(index, i, 'keywords') },
-  // Eigene Notizen (Entscheidung 0047) — stehen in der Tabelle, also auch hier.
-  { head: 'Markiert', of: (index, i, notes) => (notes.marked.has(index.nodes[i].id) ? 'ja' : '') },
-  { head: 'Kommentar', of: (index, i, notes) => notes.notes.get(index.nodes[i].id) ?? '' },
+  // Eigene Notizen (Entscheidungen 0047, 0053) — stehen in der Tabelle, also auch hier.
+  { head: 'Marker', of: (index, i, notes) => markerLabel(notes, index.nodes[i].id) },
+  { head: 'Kommentar', of: (index, i, notes) => commentText(notes, index.nodes[i].id) },
   { head: 'Langtext', of: (index, i) => index.positions[i].longText },
 ];
 

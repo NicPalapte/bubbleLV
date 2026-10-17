@@ -1,12 +1,16 @@
-// Eigene Markierungen und Kommentare (Entscheidung 0047): reine Funktionen.
+// Eigene Marker und Kommentar-Verlauf (Entscheidungen 0047, 0053): reine Funktionen.
 
 import { describe, expect, it } from 'vitest';
 import {
+  addComment,
   annotationAllowList,
+  commentsOf,
   EMPTY_ANNOTATIONS,
   fromStored,
-  setNote,
-  toggleMark,
+  hasComment,
+  markerCounts,
+  removeComment,
+  setMarker,
   toStored,
 } from '../../src/lib/annotations';
 import {
@@ -16,45 +20,85 @@ import {
   type PositionFacts,
 } from '../../src/lib/matchPos';
 
+const ids = (set: ReadonlySet<string> | null): string[] => [...(set ?? [])].sort();
+
 describe('annotations', () => {
-  it('schaltet die Markierung an und wieder aus', () => {
-    const an = toggleMark(EMPTY_ANNOTATIONS, 'a');
-    expect(an.marked.has('a')).toBe(true);
-    expect(toggleMark(an, 'a').marked.has('a')).toBe(false);
-    expect(EMPTY_ANNOTATIONS.marked.size).toBe(0);
+  it('setzt höchstens einen Marker und schreibt jeden Wechsel in den Verlauf', () => {
+    let a = setMarker(EMPTY_ANNOTATIONS, 'a', 'markiert', 1);
+    a = setMarker(a, 'a', 'erledigt', 2);
+    expect(a.markers.get('a')).toBe('erledigt');
+    expect(setMarker(a, 'a', 'erledigt', 3)).toBe(a);
+    a = setMarker(a, 'a', null, 4);
+    expect(a.markers.has('a')).toBe(false);
+    expect(a.log.get('a')?.map((entry) => entry.at)).toEqual([1, 2, 4]);
+    expect(hasComment(a, 'a')).toBe(false);
+    expect(EMPTY_ANNOTATIONS.markers.size).toBe(0);
   });
 
-  it('löscht einen Kommentar, der nur noch Leerraum ist', () => {
-    const mit = setNote(EMPTY_ANNOTATIONS, 'a', ' Boden prüfen ');
-    expect(mit.notes.get('a')).toBe(' Boden prüfen ');
-    expect(setNote(mit, 'a', '  \n').notes.has('a')).toBe(false);
-    expect(setNote(mit, 'a', ' Boden prüfen ')).toBe(mit);
+  it('hängt Kommentare an, verwirft Leerraum und löscht nur Kommentare', () => {
+    let a = addComment(EMPTY_ANNOTATIONS, 'a', ' Boden prüfen ', 1);
+    expect(addComment(a, 'a', '  \n', 2)).toBe(a);
+    a = setMarker(a, 'a', 'wichtig', 3);
+    a = addComment(a, 'a', 'AG gefragt', 4);
+    expect(commentsOf(a, 'a')).toEqual(['Boden prüfen', 'AG gefragt']);
+    expect(removeComment(a, 'a', 1)).toBe(a);
+    a = removeComment(a, 'a', 0);
+    expect(commentsOf(a, 'a')).toEqual(['AG gefragt']);
+    a = removeComment(a, 'a', 1);
+    expect(hasComment(a, 'a')).toBe(false);
   });
 
-  it('filtert markiert, kommentiert oder beides', () => {
-    let a = toggleMark(EMPTY_ANNOTATIONS, 'm');
-    a = toggleMark(a, 'mk');
-    a = setNote(a, 'mk', 'x');
-    a = setNote(a, 'k', 'y');
-    expect(annotationAllowList(a, { marked: false, commented: false })).toBeNull();
-    expect([...(annotationAllowList(a, { marked: true, commented: false }) ?? [])].sort()).toEqual([
-      'm',
-      'mk',
-    ]);
-    expect([...(annotationAllowList(a, { marked: false, commented: true }) ?? [])].sort()).toEqual([
+  it('filtert nach Marker, „Nicht erledigt" und Kommentar', () => {
+    let a = setMarker(EMPTY_ANNOTATIONS, 'm', 'markiert', 1);
+    a = setMarker(a, 'w', 'wichtig', 1);
+    a = setMarker(a, 'e', 'erledigt', 1);
+    a = addComment(a, 'w', 'x', 1);
+    a = addComment(a, 'k', 'y', 1);
+    const alle = ['m', 'w', 'e', 'k', 'leer'];
+    expect(annotationAllowList(a, { marker: null, commented: false }, alle)).toBeNull();
+    expect(ids(annotationAllowList(a, { marker: 'wichtig', commented: false }, []))).toEqual(['w']);
+    expect(ids(annotationAllowList(a, { marker: 'offen', commented: false }, alle))).toEqual([
       'k',
-      'mk',
+      'leer',
+      'm',
+      'w',
     ]);
-    expect([...(annotationAllowList(a, { marked: true, commented: true }) ?? [])]).toEqual(['mk']);
+    expect(ids(annotationAllowList(a, { marker: null, commented: true }, []))).toEqual(['k', 'w']);
+    expect(ids(annotationAllowList(a, { marker: 'offen', commented: true }, alle))).toEqual([
+      'k',
+      'w',
+    ]);
+    expect(markerCounts(a)).toEqual({ markiert: 1, wichtig: 1, erledigt: 1 });
   });
 
   it('übersteht den Weg durch den Speicher und verwirft Unbrauchbares', () => {
-    const a = setNote(toggleMark(EMPTY_ANNOTATIONS, 'm'), 'k', 'Text');
+    const a = addComment(setMarker(EMPTY_ANNOTATIONS, 'm', 'wichtig', 5), 'k', 'Text', 6);
     expect(fromStored(toStored(a))).toEqual(a);
     expect(fromStored(null)).toBe(EMPTY_ANNOTATIONS);
-    expect(fromStored({ marked: ['m', 3], notes: [['k', 'Text'], ['l', ' '], 'kaputt'] })).toEqual(
-      a,
-    );
+    expect(
+      fromStored({
+        v: 2,
+        markers: [['m', 'wichtig'], ['x', 'kaputt'], 3],
+        log: [
+          ['m', [{ kind: 'marker', at: 5, marker: 'wichtig' }]],
+          [
+            'k',
+            [
+              { kind: 'comment', at: 6, text: 'Text' },
+              { kind: 'comment', text: ' ' },
+            ],
+          ],
+          ['l', 'kaputt'],
+        ],
+      }),
+    ).toEqual(a);
+  });
+
+  it('übernimmt Markierung und Kommentar aus v0.15', () => {
+    const alt = fromStored({ marked: ['m', 3], notes: [['k', 'Text'], ['l', ' '], 'kaputt'] });
+    expect([...alt.markers]).toEqual([['m', 'markiert']]);
+    expect(alt.log.get('k')).toEqual([{ kind: 'comment', at: 0, text: 'Text' }]);
+    expect(alt.log.has('l')).toBe(false);
   });
 });
 

@@ -389,7 +389,7 @@ function LetzteDatei({ meta, loading, onOpen, onForget }: LetzteDateiProps) {
         </span>
         <span className="start-recent-meta">
           <span>{formatPositions(meta.positionCount)}</span>
-          {meta.marked > 0 && <span className="start-recent-mk">⚑ {meta.marked} markiert</span>}
+          {meta.marked > 0 && <span className="start-recent-mk">⚑ {meta.marked} mit Marker</span>}
           {meta.comments > 0 && (
             <span className="start-recent-km">
               ✎ {meta.comments} {meta.comments === 1 ? 'Kommentar' : 'Kommentare'}

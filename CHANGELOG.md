@@ -9,7 +9,7 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
-## 0.20.0 — 17.10.2026 · Anonyme Nutzungszählung
+## 0.21.0 — 17.10.2026 · Anonyme Nutzungszählung
 
 - **Bubble kann anonym zählen**, welche Funktionen genutzt werden: Seitenaufrufe, geöffnete
   Dateien und Demos, Seitenfenster, Tabelle, Vergleich, Suche, Markierung, Kommentar,
@@ -20,6 +20,23 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
   Browser „Do Not Track“ meldet.
 - Die Zählung ist vorbereitet, aber noch aus. Sie startet erst, wenn die
   Datenschutzerklärung steht.
+
+## 0.20.0 — 17.10.2026 · Marker, Verlauf, Mengenstufe
+
+- **Drei Marker statt einer Markierung:** Markiert (⚑), Wichtig (!) und Erledigt (✓),
+  unten in der Positionskarte als ein Knopf mit Pfeil. Der Knopf setzt die zuletzt
+  gewählte Art oder nimmt einen gesetzten Marker weg; der Pfeil wechselt. Je Marker gibt es oben einen Filter, dazu „Nicht
+  erledigt“ für die Kalkulation. Alte Markierungen werden zu „Markiert“.
+- **Kommentar-Verlauf:** „Senden“ (oder Strg+Enter) hängt einen Kommentar mit Datum und
+  Uhrzeit an. Marker-Wechsel stehen grau dazwischen. Bleibt in diesem Browser.
+- **Matrix nach Mengenstufe:** neue Achse „Mengenstufe“ (unter 10 bis ab 10.000), zum
+  Beispiel als Spalten neben „Einheit“. In jeder Gruppe liegt die größte Menge innen.
+- **Maße violett:** benannte Maße im Langtext fallen jetzt auf.
+- **Admin-Werkzeuge** im Logo-Menü, mit Passwort: Begriffe im Langtext als Material,
+  Maße, Wichtig oder „nicht hervorheben“ lernen und als CSV fürs Repo herunterladen.
+  Der Langtext in der Positionskarte lässt sich jetzt markieren und kopieren.
+- **Normen:** Vornormen und Spezifikationen wie „DIN V 18580“ oder „DIN SPEC 91400“ werden
+  jetzt erkannt.
 
 ## 0.19.0 — 17.10.2026 · Positionen als Link teilen
 
