@@ -8,7 +8,7 @@ import { TOUR_STEPS } from '../../src/components/tour/tourSteps';
 import { classifyAndBuild } from '../../src/lib/pipeline/runPipeline';
 import { ViewerProvider } from '../../src/state/ViewerProvider';
 import { useViewer, useViewerDispatch } from '../../src/state/viewer';
-import type { LVDraft } from '../../src/types/lvDraft';
+import type { LVDraft } from '@core';
 
 const DRAFT: LVDraft = {
   projectName: 'Tour',

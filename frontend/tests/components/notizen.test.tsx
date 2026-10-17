@@ -22,7 +22,7 @@ import {
 import { readLastLvMeta, saveAnnotations, saveLastLv } from '../../src/lib/persist/lastLv';
 
 const NAME = 'gaeb-xml-beispiel.x83';
-const FIXTURE = readFileSync(resolve(process.cwd(), 'tests/fixtures', NAME));
+const FIXTURE = readFileSync(resolve(process.cwd(), '../packages/core/tests/fixtures', NAME));
 const ID = 'test-projekt';
 
 const markiere = (a: Annotations, id: string): Annotations => setMarker(a, id, 'markiert', 1);

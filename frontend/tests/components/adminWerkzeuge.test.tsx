@@ -12,7 +12,7 @@ import { readLearnedTerms } from '../../src/lib/persist/lastLv';
 import { ADMIN_PASSWORD_SHA256 } from '../../src/state/admin';
 
 const NAME = 'gaeb-xml-beispiel.x83';
-const FIXTURE = readFileSync(resolve(process.cwd(), 'tests/fixtures', NAME));
+const FIXTURE = readFileSync(resolve(process.cwd(), '../packages/core/tests/fixtures', NAME));
 // Das echte Passwort steht nirgends im Repo (docs/setup/admin-werkzeuge.md). Der
 // Test ersetzt den Fingerabdruck: „richtig" ergibt den hinterlegten Wert.
 const PASSWORT = 'richtig';

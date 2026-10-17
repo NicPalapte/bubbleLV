@@ -44,6 +44,20 @@ describe('encodeShared / decodeShared', () => {
     expect(decodeShared(encodeShared(vorher))).toEqual(vorher);
   });
 
+  it('bringt Positions-Hash und Datei-ID zurück', () => {
+    const vorher = zustand({ pos: 'a81c55d2e0-2', lv: '3f9a1c2e7b04' });
+    expect(encodeShared(vorher)).toBe('lv=3f9a1c2e7b04~pos=a81c55d2e0-2');
+    expect(decodeShared(encodeShared(vorher))).toEqual(vorher);
+  });
+
+  it('schreibt die Datei-ID nur zusammen mit einer Position', () => {
+    expect(encodeShared(zustand({ lv: '3f9a1c2e7b04' }))).toBe('');
+  });
+
+  it('schreibt den Hash statt der OZ, wenn beides da ist', () => {
+    expect(encodeShared(zustand({ pos: 'a81c55d2e0', oz: '001.004.0030' }))).toBe('pos=a81c55d2e0');
+  });
+
   it('nimmt das Fragment mit und ohne führendes #', () => {
     const fragment = encodeShared(zustand({ view: 'graph' }));
     expect(decodeShared(`#${fragment}`)).toEqual(decodeShared(fragment));
@@ -105,6 +119,14 @@ describe('Was im Link steht', () => {
     expect(new Set(schluessel)).toEqual(new Set(['v', 'f.beton', 'p']));
   });
 
+  it('trägt für die Auswahl nur Hash und Datei-ID — keine OZ', () => {
+    const fragment = encodeShared(
+      zustand({ view: 'table', pos: 'a81c55d2e0', lv: '3f9a1c2e7b04' }),
+    );
+    const schluessel = fragment.split('~').map((teil) => teil.split('=')[0]);
+    expect(new Set(schluessel)).toEqual(new Set(['v', 'lv', 'pos']));
+  });
+
   it('trägt Normnummer und Betongüte mit — dafür teilt man den Link', () => {
     // Beide Werte stehen wörtlich im Langtext. Sie bleiben trotzdem drin:
     // ohne sie wäre „schau dir die C30/37-Positionen an" nicht teilbar
@@ -152,6 +174,20 @@ describe('decodeSharedChecked (Issue #95)', () => {
     expect(state.facets).toEqual({});
     expect(state.search).toBe('Beton');
     expect(verworfen).toEqual(['Filter „gewerk"']);
+  });
+
+  it('verwirft einen Positions-Hash, der keiner ist', () => {
+    const { state, verworfen } = decodeSharedChecked('pos=<script>~q=Beton');
+    expect(state.pos).toBeNull();
+    expect(state.search).toBe('Beton');
+    expect(verworfen).toEqual(['Auswahl']);
+  });
+
+  it('übergeht eine kaputte Datei-ID still — sie dient nur dem Hinweis', () => {
+    const { state, verworfen } = decodeSharedChecked('lv=xyz~pos=a81c55d2e0');
+    expect(state.lv).toBeNull();
+    expect(state.pos).toBe('a81c55d2e0');
+    expect(verworfen).toEqual([]);
   });
 
   it('behält den passenden Rest des Links trotzdem', () => {

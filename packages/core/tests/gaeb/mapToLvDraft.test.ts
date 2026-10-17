@@ -1,11 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { getGaebParser, mapToLvDraft } from '../../src/lib/gaeb';
-import type { LVDraft, PositionDraft, SectionDraft } from '../../src/types/lvDraft';
+import { getGaebParser, mapToLvDraft } from '../../src/gaeb';
+import type { LVDraft, PositionDraft, SectionDraft } from '../../src/model/lvDraft';
+import { FIXTURE_DIR } from '../support/fixtures';
 
 const parser = getGaebParser();
-const FIXTURE_DIR = resolve(process.cwd(), 'tests/fixtures');
 
 function draftFrom(name: string): LVDraft {
   return mapToLvDraft(parser.parse(new Uint8Array(readFileSync(resolve(FIXTURE_DIR, name))), name));

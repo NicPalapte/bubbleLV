@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { BubbleLogo } from '../ui/BubbleLogo';
 import { DEMO_LVS, loadDemoLv, type DemoLv } from '../../lib/pipeline/loadDemoLv';
-import { GAEB_ENDUNGEN } from '../../lib/gaeb';
+import { GAEB_ENDUNGEN } from '@core';
 import { formatPositions, formatWhen } from '../../lib/format';
 import {
   clearLastLv,

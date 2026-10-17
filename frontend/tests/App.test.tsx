@@ -4,7 +4,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { describe, expect, it } from 'vitest';
 import App from '../src/App';
 
-const FIXTURE_DIR = resolve(process.cwd(), 'tests/fixtures');
+const FIXTURE_DIR = resolve(process.cwd(), '../packages/core/tests/fixtures');
 
 function fixtureFile(name: string): File {
   return new File([readFileSync(resolve(FIXTURE_DIR, name))], name);

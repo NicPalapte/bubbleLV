@@ -21,7 +21,7 @@ import {
   viewerReducer,
   type ViewerState,
 } from '../../src/state/viewer';
-import type { LVDraft } from '../../src/types/lvDraft';
+import type { LVDraft } from '@core';
 
 const base: ViewerState = { ...INITIAL_VIEWER_STATE };
 

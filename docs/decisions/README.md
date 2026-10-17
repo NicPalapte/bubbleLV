@@ -57,9 +57,11 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0048 | [Referenzdaten ohne Kopie im Frontend](0048-referenzdaten-ohne-kopie.md)                                       | akzeptiert                         | 2026-10-14 |
 | 0049 | [Prüfregeln als Tabelle, keine wertenden Kennzahlen](0049-pruefregeln-als-tabelle.md)                          | akzeptiert                         | 2026-10-15 |
 | 0050 | [Eingabefelder aus der Datei](0050-eingabefelder-aus-der-datei.md)                                             | akzeptiert                         | 2026-10-15 |
-| 0053 | [Drei Marker, Kommentar-Verlauf, Mengenstufe, gelernte Begriffe](0053-marker-verlauf-und-gelernte-begriffe.md) | akzeptiert                         | 2026-10-16 |
 | 0052 | [Kein Bauteiltyp](0052-kein-bauteiltyp.md)                                                                     | akzeptiert                         | 2026-10-15 |
 | 0051 | [Kein Status-Filter](0051-kein-status-filter.md)                                                               | akzeptiert                         | 2026-10-15 |
+| 0053 | [Drei Marker, Kommentar-Verlauf, Mengenstufe, gelernte Begriffe](0053-marker-verlauf-und-gelernte-begriffe.md) | akzeptiert                         | 2026-10-16 |
+| 0054 | [Kern als eigenes Paket im selben Repo](0054-kern-als-paket.md)                                                | akzeptiert                         | 2026-10-17 |
+| 0055 | [Positions-Hash und Datei-ID im Link](0055-positions-hash.md)                                                  | akzeptiert                         | 2026-10-17 |
 
 ## Wann schreibe ich eine neue Datei?
 

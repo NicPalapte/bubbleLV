@@ -9,13 +9,13 @@
 
 import { CHECK_RULES, runChecks, type CheckResult } from '../check';
 import { classifyDraft, getClassifier } from '../classify';
-import { getGaebParser, mapToLvDraft } from '../gaeb';
+import { fileIdOf, getGaebParser, mapToLvDraft } from '@core';
 import { buildPositionIndex } from '../index/positionIndex';
 import { summarize, type LVSummary } from '../index/summary';
 import { measure } from '../perf';
 import { buildRelations, type RelationResult } from '../relate';
 import { buildTree, indexParents } from '../tree/buildTree';
-import type { LVDraft } from '../../types/lvDraft';
+import type { LVDraft } from '@core';
 import type { LVNode } from '../../types/lvNode';
 
 export interface LoadedLV {
@@ -23,6 +23,11 @@ export interface LoadedLV {
   projectName: string | null;
   client: string | null;
   fileName: string;
+  /**
+   * Datei-ID aus den Original-Bytes (Entscheidung 0055). `null`, wenn das LV
+   * nicht aus Bytes stammt (Tests mit gebautem Draft).
+   */
+  fileId: string | null;
   /** Facetten-Zähler und Wertebereiche, fertig berechnet (WP-I, Schritt 2). */
   summary: LVSummary;
   /** Hinweise der Prüfregeln, fertig berechnet (WP-K). */
@@ -46,7 +51,11 @@ export function parseToDraft(bytes: ArrayBuffer, fileName: string): LVDraft {
   return mapToLvDraft(getGaebParser().parse(bytes, fileName));
 }
 
-export function classifyAndBuild(draft: LVDraft, fileName: string): LoadedLV {
+export function classifyAndBuild(
+  draft: LVDraft,
+  fileName: string,
+  fileId: string | null = null,
+): LoadedLV {
   const classified = classifyDraft(draft, getClassifier());
   const tree = buildTree(classified);
   // Der Index dient hier nur als Rechenbasis der Aggregate und wird danach
@@ -62,6 +71,7 @@ export function classifyAndBuild(draft: LVDraft, fileName: string): LoadedLV {
     projectName: classified.projectName,
     client: classified.client,
     fileName,
+    fileId,
     summary,
     // Prüfregeln sehen das ganze LV (Anteil an der Gesamtsumme, Mengen-Rang) und
     // laufen deshalb hier — einmal, nie im Render.
@@ -72,5 +82,5 @@ export function classifyAndBuild(draft: LVDraft, fileName: string): LoadedLV {
 
 /** Ganze Pipeline synchron — Fallback ohne Worker und Testpfad. */
 export function runPipeline(bytes: ArrayBuffer, fileName: string): LoadedLV {
-  return classifyAndBuild(parseToDraft(bytes, fileName), fileName);
+  return classifyAndBuild(parseToDraft(bytes, fileName), fileName, fileIdOf(bytes));
 }

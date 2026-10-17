@@ -10,9 +10,9 @@ import {
   type PipelineResponse,
 } from './messages';
 import { classifyAndBuild, parseToDraft, type LoadedLV } from './runPipeline';
-import { fileExtension, isGaebExtension } from '../gaeb';
+import { fileExtension, fileIdOf, isGaebExtension } from '@core';
 import { measureAsync } from '../perf';
-import type { LVDraft } from '../../types/lvDraft';
+import type { LVDraft } from '@core';
 
 export class LVLoadError extends Error {
   readonly code: string;
@@ -107,6 +107,7 @@ function createWorker(): Worker | null {
 function classifyInWorker(
   draft: LVDraft,
   fileName: string,
+  fileId: string,
   onNotice: ((message: string) => void) | undefined,
 ): Promise<LoadedLV> | null {
   const worker = createWorker();
@@ -125,7 +126,7 @@ function classifyInWorker(
       // lassen, und es sagen: die Wartezeit ist sonst unerklärlich.
       onNotice?.(WORKER_AUSFALL_HINWEIS);
       try {
-        resolve(classifyAndBuild(draft, fileName));
+        resolve(classifyAndBuild(draft, fileName, fileId));
       } catch (error) {
         reject(error);
       }
@@ -141,7 +142,7 @@ function classifyInWorker(
     // Die Antwort ließ sich nicht deserialisieren: ohne diesen Handler bliebe
     // der Import für immer im Ladezustand hängen.
     worker.onmessageerror = rechneWeiter;
-    const request: PipelineRequest = { draft, fileName };
+    const request: PipelineRequest = { draft, fileName, fileId };
     worker.postMessage(request);
   });
 }
@@ -169,6 +170,10 @@ async function parseClassifyBuild(
   fileName: string,
   options: LoadOptions,
 ): Promise<LoadedLV> {
+  // Datei-ID für teilbare Links (Entscheidung 0055) — aus denselben Bytes wie der Parser.
+  // Läuft wie der Parser im Haupt-Thread: der Worker bekommt nur den Draft, nicht die
+  // Bytes. Gemessen ~60 ms für 5 MB (≈ 10k Positionen), ~0,5 s für die Obergrenze 50 MB.
+  const fileId = fileIdOf(bytes);
   let draft: LVDraft;
   try {
     // Bytes, nicht Text — das Encoding steht in der XML-Deklaration.
@@ -179,10 +184,10 @@ async function parseClassifyBuild(
 
   try {
     if (countPositions(draft) >= WORKER_THRESHOLD_POSITIONS) {
-      const viaWorker = classifyInWorker(draft, fileName, options.onNotice);
+      const viaWorker = classifyInWorker(draft, fileName, fileId, options.onNotice);
       if (viaWorker !== null) return await viaWorker;
     }
-    return classifyAndBuild(draft, fileName);
+    return classifyAndBuild(draft, fileName, fileId);
   } catch (error) {
     if (error instanceof LVLoadError) throw error;
     throw toLoadError(toPipelineError(error), error);

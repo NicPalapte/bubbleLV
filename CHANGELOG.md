@@ -9,7 +9,7 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
-## 0.18.0 — 16.10.2026 · Marker, Verlauf, Mengenstufe
+## 0.20.0 — 17.10.2026 · Marker, Verlauf, Mengenstufe
 
 - **Drei Marker statt einer Markierung:** Markiert (⚑), Wichtig (!) und Erledigt (✓),
   unten in der Positionskarte. Je Marker gibt es oben einen Filter, dazu „Nicht
@@ -21,6 +21,18 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 - **Maße violett:** benannte Maße im Langtext fallen jetzt auf.
 - **Admin-Werkzeuge** im Logo-Menü, mit Passwort: Begriffe im Langtext als Material,
   Maße, Wichtig oder „nicht hervorheben“ lernen und als CSV fürs Repo herunterladen.
+
+## 0.19.0 — 17.10.2026 · Positionen als Link teilen
+
+- **Link auf eine Position:** Ist eine Position gewählt, steht in der Adresszeile ein
+  kurzer Code für genau diese Position (`#lv=…~pos=…`). Wer dieselbe Datei lädt, landet
+  dort – auch wenn er die Datei unter anderem Namen gespeichert hat.
+- **Andere Datei, gleiche Position:** Stammt der Link aus einer anderen Datei und die
+  Position ist inhaltlich gleich (z. B. X83 und bepreiste X84), öffnet sie trotzdem, mit
+  Hinweis.
+- **Alte Links** mit OZ funktionieren weiter.
+- **Unter der Haube:** Parser und Datenmodell liegen jetzt als eigener Kern in
+  `packages/core/` – Grundlage für BIM und Terminplan.
 
 ## 0.17.0 — 15.10.2026 · Prüfung aufgeräumt
 

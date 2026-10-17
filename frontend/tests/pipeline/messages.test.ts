@@ -2,7 +2,7 @@
 // nächsten Schritt.
 
 import { describe, expect, it } from 'vitest';
-import { GAEBParseError, GAEBValidationError, GAEBVersionError } from '../../src/lib/gaeb';
+import { GAEBParseError, GAEBValidationError, GAEBVersionError } from '@core';
 import { describeFailure, toPipelineError } from '../../src/lib/pipeline/messages';
 
 describe('toPipelineError', () => {

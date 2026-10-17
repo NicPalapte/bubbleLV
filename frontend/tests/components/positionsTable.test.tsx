@@ -8,6 +8,7 @@ import { PositionsTable } from '../../src/components/table/PositionsTable';
 import { ViewerProvider } from '../../src/state/ViewerProvider';
 import { useViewerDispatch } from '../../src/state/viewer';
 import type { LVNode, PositionSummary } from '../../src/types/lvNode';
+import { TEST_HASHES } from '../support/hashes';
 
 function position(oz: string): PositionSummary {
   return {
@@ -18,6 +19,7 @@ function position(oz: string): PositionSummary {
     quantity: 5,
     unitPrice: null,
     positionType: 'NORMAL',
+    hashes: TEST_HASHES,
     attributes: { positionsart: 'bauteil' },
   };
 }

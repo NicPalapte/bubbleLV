@@ -1,12 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { GAEBVersionError } from '../../src/lib/gaeb';
+import { GAEBVersionError } from '@core';
 import { describeFailure, toPipelineError } from '../../src/lib/pipeline/messages';
 import { runPipeline } from '../../src/lib/pipeline/runPipeline';
 import { collectPositions } from '../../src/lib/tree/buildTree';
 
-const FIXTURE_DIR = resolve(process.cwd(), 'tests/fixtures');
+const FIXTURE_DIR = resolve(process.cwd(), '../packages/core/tests/fixtures');
 
 function bytesOf(name: string): ArrayBuffer {
   const buffer = readFileSync(resolve(FIXTURE_DIR, name));
@@ -24,6 +24,17 @@ describe('runPipeline', () => {
     for (const node of positions) {
       expect(node.position?.attributes.positionsart).toBeTypeOf('string');
     }
+  });
+
+  it('gibt der Datei eine ID und jeder Position einen eindeutigen Hash', () => {
+    const loaded = runPipeline(bytesOf('gaeb-xml-beispiel.x83'), 'gaeb-xml-beispiel.x83');
+    expect(loaded.fileId).toMatch(/^[0-9a-f]{12}$/);
+    const ids = collectPositions(loaded.tree).map((node) => node.position?.hashes.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    // Gleiche Bytes ⇒ gleiche Hashes: darauf beruht der geteilte Link.
+    const nochmal = runPipeline(bytesOf('gaeb-xml-beispiel.x83'), 'anderer-name.x83');
+    expect(nochmal.fileId).toBe(loaded.fileId);
+    expect(collectPositions(nochmal.tree).map((node) => node.position?.hashes.id)).toEqual(ids);
   });
 
   it('deckt alle vier Positionsarten der Beispieldatei ab', () => {

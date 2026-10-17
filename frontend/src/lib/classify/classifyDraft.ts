@@ -3,7 +3,7 @@
 // (docs/architecture/pipeline.md#ablauf). Reine Funktion — der Eingabe-Draft
 // bleibt unverändert.
 
-import type { LotDraft, LVDraft, PositionDraft, SectionDraft } from '../../types/lvDraft';
+import type { LotDraft, LVDraft, PositionDraft, SectionDraft } from '@core';
 import type { Classifier } from './types';
 
 function classifyPosition(position: PositionDraft, classifier: Classifier): PositionDraft {

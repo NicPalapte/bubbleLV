@@ -21,7 +21,10 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+
+    /* Neutraler Kern neben der App (Entscheidung 0054) */
+    "paths": { "@core": ["../packages/core/src/index.ts"] }
   },
-  "include": ["src"]
+  "include": ["src", "../packages/core/src"]
 }
