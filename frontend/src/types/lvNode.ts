@@ -2,7 +2,7 @@
 // docs/architecture/pipeline.md#in-memory-baum). Ein Contract für Tree-Spalte,
 // Bubble-Graph und Tabelle.
 
-import type { PositionType } from './lvDraft';
+import type { PositionHashes, PositionType } from '@core';
 
 export type LVNodeKind = 'project' | 'lot' | 'section' | 'position';
 
@@ -15,6 +15,8 @@ export interface PositionSummary {
   unitPrice: number | null;
   positionType: PositionType;
   attributes: Record<string, unknown>;
+  /** Inhalts-Hashes aus dem Kern: `id` adressiert die Position im Link (Entscheidung 0055). */
+  hashes: PositionHashes;
 }
 
 export interface LVNode {

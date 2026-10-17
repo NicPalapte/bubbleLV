@@ -19,7 +19,7 @@ import { buildTree } from '../../src/lib/tree/buildTree';
 import { hardCaseDraft, syntheticDraft } from '../support/syntheticLv';
 import type { PositionIndex } from '../../src/lib/index/positionIndex';
 import type { RelationResult } from '../../src/lib/relate';
-import type { LVDraft, PositionDraft } from '../../src/types/lvDraft';
+import type { LVDraft, PositionDraft } from '@core';
 
 const WAND_LANG = [
   'Herstellen einer tragenden Innenwand aus Beton einschließlich Schalung,',
@@ -224,7 +224,7 @@ describe('positionSimilarity', () => {
 });
 
 describe('Reale Datei', () => {
-  const bytes = readFileSync('tests/fixtures/gaeb-xml-beispiel.x83');
+  const bytes = readFileSync('../packages/core/tests/fixtures/gaeb-xml-beispiel.x83');
   const lv = runPipeline(
     bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer,
     'beispiel.x83',

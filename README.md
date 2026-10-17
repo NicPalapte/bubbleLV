@@ -81,17 +81,19 @@ bubble/
 ├── .devcontainer/
 │   ├── devcontainer.json
 │   └── docker-compose.yml
-├── frontend/                     # wird in WP-D angelegt
+├── packages/core/                # Kern: Datenmodell, GaebParser, Positions-Hashes (0054)
+│   ├── src/
+│   └── tests/
+│       └── fixtures/             # echte GAEB DA XML-Testdateien
+├── frontend/                     # Viewer (Bubble), liest den Kern über @core
 │   ├── src/
 │   │   ├── lib/
-│   │   │   ├── gaeb/             # GaebParser – einzige Stelle mit GAEB-Kenntnis
 │   │   │   ├── classify/         # RuleBasedClassifier (TS-Port aus WP-2)
 │   │   │   └── tree/             # buildTree – LVDraft → LVNode
 │   │   ├── components/
 │   │   ├── state/
 │   │   └── types/
 │   └── tests/
-│       └── fixtures/             # echte GAEB DA XML-Testdateien
 ├── tests/
 │   └── fixtures/                 # GAEB DA XML-Testdateien (Quelle, siehe oben)
 ├── CHANGELOG.md                  # Was sich je Version geändert hat
@@ -120,7 +122,7 @@ Python-Adapter vollständig gekapselt ist:
 
 ```
 GaebParser (Interface)
-    └── XmlGaebParser   ← frontend/src/lib/gaeb/parser.ts
+    └── XmlGaebParser   ← packages/core/src/gaeb/parser.ts
 ```
 
 GAEB-XML-Elemente (`<Award>`, `<BoQ>`, `<BoQBody>`, `<BoQCtgy>`, …) verlassen die

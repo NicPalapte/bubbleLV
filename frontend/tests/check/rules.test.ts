@@ -14,7 +14,7 @@ import { buildPositionIndex } from '../../src/lib/index/positionIndex';
 import { summarize } from '../../src/lib/index/summary';
 import { buildTree, collectPositions, indexParents } from '../../src/lib/tree/buildTree';
 import type { CheckResult, Fund, RuleStatus } from '../../src/lib/check';
-import type { LVDraft, PositionDraft } from '../../src/types/lvDraft';
+import type { LVDraft, PositionDraft } from '@core';
 
 const classifier = getClassifier();
 
@@ -384,7 +384,7 @@ describe('Eine stolpernde Regel hält den Import nicht an', () => {
 describe('Echte Beispieldatei', () => {
   it('findet in der Musterdatei Hinweise mit gültigem Sprungziel', async () => {
     const { readFileSync } = await import('node:fs');
-    const bytes = readFileSync('tests/fixtures/gaeb-xml-beispiel.x83');
+    const bytes = readFileSync('../packages/core/tests/fixtures/gaeb-xml-beispiel.x83');
     const { runPipeline } = await import('../../src/lib/pipeline/runPipeline');
     const lv = runPipeline(
       bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer,

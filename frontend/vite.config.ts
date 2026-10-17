@@ -16,9 +16,13 @@ const { version } = JSON.parse(
 // gibt es nicht mehr: sie lief zweimal still auseinander.
 const REFERENCE = fileURLToPath(new URL('../docs/domain/reference', import.meta.url));
 
+// Der neutrale Kern liegt neben der App (packages/core, Entscheidung 0054). Die
+// App liest ihn als Quelltext — kein eigener Build, kein eigenes `npm ci`.
+const CORE = fileURLToPath(new URL('../packages/core', import.meta.url));
+
 // https://vite.dev/config/
 export default defineConfig({
-  resolve: { alias: { '@reference': REFERENCE } },
+  resolve: { alias: { '@reference': REFERENCE, '@core': `${CORE}/src/index.ts` } },
   plugins: [react(), thirdPartyLicenses(fileURLToPath(new URL('.', import.meta.url)))],
   // Bau-Stand für „Fehler melden" (WP-P): in GitHub Actions steht der Commit
   // in GITHUB_SHA, lokal gibt es keinen — dann „dev". Bewusst kein Aufruf von
@@ -35,11 +39,12 @@ export default defineConfig({
     // can't reach a listener bound to 127.0.0.1-only inside the container.
     host: true,
     // Der Dev-Server liefert sonst nichts außerhalb von frontend/ aus.
-    fs: { allow: ['.', REFERENCE] },
+    fs: { allow: ['.', REFERENCE, CORE] },
   },
   test: {
     environment: 'jsdom',
     setupFiles: ['./tests/setup.ts'],
     globals: true,
+    include: ['tests/**/*.test.{ts,tsx}', '../packages/core/tests/**/*.test.ts'],
   },
 });

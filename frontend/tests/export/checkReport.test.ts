@@ -12,7 +12,7 @@ import { runPipeline } from '../../src/lib/pipeline/runPipeline';
 import { indexNodes } from '../../src/lib/tree/buildTree';
 
 function loadFixture() {
-  const bytes = readFileSync('tests/fixtures/gaeb-xml-beispiel.x83');
+  const bytes = readFileSync('../packages/core/tests/fixtures/gaeb-xml-beispiel.x83');
   return runPipeline(
     bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer,
     'beispiel.x83',

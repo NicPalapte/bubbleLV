@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '../../src/App';
 import { MAX_FILE_BYTES } from '../../src/lib/pipeline/loadLv';
 
-const FIXTURE_DIR = resolve(process.cwd(), 'tests/fixtures');
+const FIXTURE_DIR = resolve(process.cwd(), '../packages/core/tests/fixtures');
 
 function fixtureDatei(name: string): File {
   return new File([readFileSync(resolve(FIXTURE_DIR, name))], name);

@@ -2,8 +2,8 @@
 // serialisierbaren Code abgebildet: Exception-Klassen überleben structuredClone
 // nicht, `instanceof` funktioniert jenseits der Worker-Grenze also nicht.
 
-import { GAEBParseError, GAEBValidationError, GAEBVersionError } from '../gaeb';
-import type { LVDraft } from '../../types/lvDraft';
+import { GAEBParseError, GAEBValidationError, GAEBVersionError } from '@core';
+import type { LVDraft } from '@core';
 import type { LoadedLV } from './runPipeline';
 
 export type PipelineErrorCode = 'parse' | 'validation' | 'version' | 'unknown';
@@ -11,6 +11,7 @@ export type PipelineErrorCode = 'parse' | 'validation' | 'version' | 'unknown';
 export interface PipelineRequest {
   draft: LVDraft;
   fileName: string;
+  fileId: string | null;
 }
 
 export type PipelineResponse = { ok: true; result: LoadedLV } | ({ ok: false } & PipelineFailure);

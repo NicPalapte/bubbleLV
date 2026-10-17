@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import { classifyDraft, getClassifier } from '../../src/lib/classify';
 import { attrSpans, displayAttributes } from '../../src/lib/attributes';
 import { buildTree, collectPositions } from '../../src/lib/tree/buildTree';
-import type { LVDraft, PositionDraft } from '../../src/types/lvDraft';
+import type { LVDraft, PositionDraft } from '@core';
 
 const LANGTEXT =
   'Stahlbetonarbeiten: Tragende Wand aus Ortbeton C30/37 nach DIN EN 206, d = 30 cm. ' +

@@ -7,7 +7,7 @@ import { layoutMap, type MapOptions } from '../../src/lib/graph/layoutMap';
 import { positionRadii } from '../../src/lib/graph/sizes';
 import { buildPositionIndex } from '../../src/lib/index/positionIndex';
 import { buildTree, indexParents } from '../../src/lib/tree/buildTree';
-import type { LVDraft, PositionDraft, SectionDraft } from '../../src/types/lvDraft';
+import type { LVDraft, PositionDraft, SectionDraft } from '@core';
 
 /** 1 Los × 10 Abschnitte × 10 Unterabschnitte × 100 Positionen = 10 000 Positionen. */
 function syntheticDraft(): LVDraft {

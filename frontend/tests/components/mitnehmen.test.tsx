@@ -14,9 +14,9 @@ import { classifyAndBuild } from '../../src/lib/pipeline/runPipeline';
 import { ViewerProvider } from '../../src/state/ViewerProvider';
 import { useViewerDispatch } from '../../src/state/viewer';
 import type { LoadedLV } from '../../src/lib/pipeline/runPipeline';
-import type { LVDraft, PositionDraft } from '../../src/types/lvDraft';
+import type { LVDraft, PositionDraft } from '@core';
 
-const FIXTURE_DIR = resolve(process.cwd(), 'tests/fixtures');
+const FIXTURE_DIR = resolve(process.cwd(), '../packages/core/tests/fixtures');
 
 /** Inhalte, die `downloadText` an den Browser gegeben hätte. */
 const dateien: Array<{ name: string; text: string }> = [];

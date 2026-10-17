@@ -3,7 +3,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { loadLv, LVLoadError, MAX_FILE_BYTES } from '../../src/lib/pipeline/loadLv';
-import { gaebMitPositionen } from '../support/gaebXml';
+import { gaebMitPositionen } from '../../../packages/core/tests/support/gaebXml';
 
 afterEach(() => {
   vi.unstubAllGlobals();

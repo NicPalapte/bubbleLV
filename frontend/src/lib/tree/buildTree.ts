@@ -1,8 +1,16 @@
-// LVDraft (klassifiziert) → LVNode-Baum. Reine Funktion, kein Import aus lib/gaeb
+// LVDraft (klassifiziert) → LVNode-Baum. Reine Funktion, kein GAEB-Wissen
 // (docs/architecture/pipeline.md#in-memory-baum). Ein Contract für Tree-Spalte,
 // Bubble-Graph und Tabelle.
 
-import type { LotDraft, LVDraft, PositionDraft, SectionDraft } from '../../types/lvDraft';
+import {
+  hashPosition,
+  hashPositions,
+  type LotDraft,
+  type LVDraft,
+  type PositionDraft,
+  type PositionHashes,
+  type SectionDraft,
+} from '@core';
 import type { LVNode } from '../../types/lvNode';
 
 /**
@@ -12,6 +20,13 @@ import type { LVNode } from '../../types/lvNode';
  */
 class IdFactory {
   private readonly used = new Set<string>();
+
+  /** Inhalts-Hashes je Position aus dem Kern (Entscheidung 0055). */
+  readonly hashes: Map<PositionDraft, PositionHashes>;
+
+  constructor(hashes: Map<PositionDraft, PositionHashes>) {
+    this.hashes = hashes;
+  }
 
   next(kind: string, code: string, fallback: string): string {
     const base = `${kind}:${code === '' ? fallback : code}`;
@@ -67,6 +82,8 @@ function buildPosition(
       unitPrice: position.unitPrice,
       positionType: position.positionType,
       attributes: position.attributes,
+      // Jede Position steht in der Map; der Fallback ist nur Typ-Sicherheit.
+      hashes: ids.hashes.get(position) ?? hashPosition(position),
     },
   };
 }
@@ -120,7 +137,7 @@ function buildLot(lot: LotDraft, ids: IdFactory, index: number): LVNode {
 }
 
 export function buildTree(draft: LVDraft): LVNode {
-  const ids = new IdFactory();
+  const ids = new IdFactory(hashPositions(draft));
   const children = draft.lots.map((lot, index) => buildLot(lot, ids, index));
   return {
     id: 'project',

@@ -7,10 +7,10 @@ import { toPipelineError, type PipelineRequest, type PipelineResponse } from './
 import { classifyAndBuild } from './runPipeline';
 
 self.onmessage = (event: MessageEvent<PipelineRequest>) => {
-  const { draft, fileName } = event.data;
+  const { draft, fileName, fileId } = event.data;
   let response: PipelineResponse;
   try {
-    response = { ok: true, result: classifyAndBuild(draft, fileName) };
+    response = { ok: true, result: classifyAndBuild(draft, fileName, fileId) };
   } catch (error) {
     response = { ok: false, ...toPipelineError(error) };
   }

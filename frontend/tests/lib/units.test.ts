@@ -11,6 +11,7 @@ import { describe, expect, it } from 'vitest';
 import { FACETS_BY_ID, facetOptionLabel } from '../../src/lib/facets';
 import { canonicalUnit, unitGroups, unitLabel, unitSpelling } from '../../src/lib/units';
 import type { PositionSummary } from '../../src/types/lvNode';
+import { TEST_HASHES } from '../support/hashes';
 
 function pos(unit: string | null): PositionSummary {
   return {
@@ -21,6 +22,7 @@ function pos(unit: string | null): PositionSummary {
     quantity: 1,
     unitPrice: null,
     positionType: 'NORMAL',
+    hashes: TEST_HASHES,
     attributes: {},
   };
 }

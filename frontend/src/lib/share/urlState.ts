@@ -7,7 +7,10 @@
 // verworfene Wege: docs/decisions/0023-zustand-im-url-fragment.md.
 //
 // **Was im Link steht:** die Ansicht, die Filter (Facetten, Suche,
-// Mengenbereich, Umgang mit Nicht-Treffern) und die OZ der gewählten Position.
+// Mengenbereich, Umgang mit Nicht-Treffern) und die gewählte Position als
+// Inhalts-Hash `pos` samt Datei-ID `lv` (docs/decisions/0055-positions-hash.md).
+// Ältere Links tragen statt des Hashes die OZ (`p`); sie werden weiter gelesen,
+// aber nicht mehr geschrieben.
 //
 // Ein Teil davon stammt aus der Datei, und zwar mehr als nur die OZ: die
 // Facetten `normen` und `beton` tragen die Bezeichnung, die im Langtext steht
@@ -35,7 +38,11 @@ export interface SharedState {
   facets: Record<string, string[]>;
   menge: Range | null;
   hideMode: (typeof HIDE_MODES)[number];
-  /** OZ der gewählten Position; `null`, wenn keine gewählt ist. */
+  /** Inhalts-Hash der gewählten Position (`PositionHashes.id`); `null` ohne Auswahl. */
+  pos: string | null;
+  /** Datei-ID der Datei, aus der der Link stammt; nur zusammen mit `pos`. */
+  lv: string | null;
+  /** OZ aus einem älteren Link (`p=`); wird nur gelesen. */
   oz: string | null;
 }
 
@@ -48,8 +55,13 @@ export const EMPTY_SHARED: SharedState = {
   facets: {},
   menge: null,
   hideMode: 'dim',
+  pos: null,
+  lv: null,
   oz: null,
 };
+
+const POS_MUSTER = /^[0-9a-f]{10}(-[0-9]+)?$/;
+const LV_MUSTER = /^[0-9a-f]{12}$/;
 
 /** Trennzeichen im Fragment — kurz und in URLs unauffällig. */
 const TEIL = '~';
@@ -75,7 +87,12 @@ export function encodeShared(state: SharedState): string {
   if (state.search !== '') teile.push(`q=${enc(state.search)}`);
   if (state.menge !== null) teile.push(`m=${state.menge[0]}${WERT}${state.menge[1]}`);
   if (state.hideMode !== EMPTY_SHARED.hideMode) teile.push(`h=${state.hideMode}`);
-  if (state.oz !== null) teile.push(`p=${enc(state.oz)}`);
+  if (state.pos !== null) {
+    if (state.lv !== null) teile.push(`lv=${state.lv}`);
+    teile.push(`pos=${state.pos}`);
+  } else if (state.oz !== null) {
+    teile.push(`p=${enc(state.oz)}`);
+  }
   for (const [facetId, values] of Object.entries(state.facets)) {
     if (values.length === 0) continue;
     const liste = values.map(enc).join(WERT);
@@ -162,6 +179,17 @@ export function decodeSharedChecked(fragment: string): CheckedShared {
       const mode = HIDE_MODES.find((kandidat) => kandidat === wert);
       if (mode === undefined) verworfen.push('Umgang mit Nicht-Treffern');
       else state.hideMode = mode;
+      continue;
+    }
+    if (schluessel === 'pos') {
+      // Hashes sind reine Hex-Zeichen: alles andere ist ein beschädigter Link.
+      if (POS_MUSTER.test(wert)) state.pos = wert;
+      else verworfen.push('Auswahl');
+      continue;
+    }
+    if (schluessel === 'lv') {
+      // Die Datei-ID dient nur dem Hinweis „andere Datei" — fehlt sie, gilt der Rest.
+      state.lv = LV_MUSTER.test(wert) ? wert : null;
       continue;
     }
     if (schluessel === 'p') {

@@ -40,7 +40,7 @@ import {
 import type { Annotations } from '../../lib/annotations';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { LVNode, PositionSummary } from '../../types/lvNode';
-import type { PositionType } from '../../types/lvDraft';
+import type { PositionType } from '@core';
 
 type SortKey = 'oz' | 'shortText' | 'positionsart' | 'beton' | 'unit' | 'quantity' | 'unitPrice';
 

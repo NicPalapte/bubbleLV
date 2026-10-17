@@ -12,6 +12,7 @@ import { EMPTY_FILTERS, matchPos, prepareFilters, type Filters } from '../../src
 import { buildTree, collectPositions } from '../../src/lib/tree/buildTree';
 import { syntheticDraft } from '../support/syntheticLv';
 import type { LVNode } from '../../src/types/lvNode';
+import { TEST_HASHES } from '../support/hashes';
 
 const draft = syntheticDraft(120);
 const tree = buildTree(draft);
@@ -125,6 +126,7 @@ describe('filterMask / createPositionFilter', () => {
         quantity: 5,
         unitPrice: null,
         positionType: 'NORMAL',
+        hashes: TEST_HASHES,
         attributes: {},
       },
     };

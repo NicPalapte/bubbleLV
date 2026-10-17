@@ -9,7 +9,7 @@ import { classifyAndBuild } from '../../src/lib/pipeline/runPipeline';
 import { ViewerProvider } from '../../src/state/ViewerProvider';
 import { useViewerDispatch } from '../../src/state/viewer';
 import { setTheme } from '../../src/lib/theme';
-import type { LVDraft, PositionDraft } from '../../src/types/lvDraft';
+import type { LVDraft, PositionDraft } from '@core';
 
 function position(oz: string): PositionDraft {
   return {

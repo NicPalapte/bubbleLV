@@ -11,7 +11,7 @@ import { MAX_PIN_CANDIDATES, placePins, type PinAnchor } from '../../src/lib/gra
 import { isPauschal, positionRadii } from '../../src/lib/graph/sizes';
 import { buildPositionIndex } from '../../src/lib/index/positionIndex';
 import { buildTree, indexParents } from '../../src/lib/tree/buildTree';
-import type { LVDraft, PositionDraft } from '../../src/types/lvDraft';
+import type { LVDraft, PositionDraft } from '@core';
 
 function position(
   oz: string,

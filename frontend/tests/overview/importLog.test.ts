@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { buildPositionIndex } from '../../src/lib/index/positionIndex';
 import { buildImportLog } from '../../src/lib/overview/importLog';
 import { buildTree } from '../../src/lib/tree/buildTree';
-import type { LVDraft, PositionDraft } from '../../src/types/lvDraft';
+import type { LVDraft, PositionDraft } from '@core';
 
 function position(oz: string, patch: Partial<PositionDraft> = {}): PositionDraft {
   return {

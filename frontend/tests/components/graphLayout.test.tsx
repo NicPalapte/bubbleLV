@@ -9,7 +9,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeAll, describe, expect, it } from 'vitest';
 import App from '../../src/App';
 
-const FIXTURE_DIR = resolve(process.cwd(), 'tests/fixtures');
+const FIXTURE_DIR = resolve(process.cwd(), '../packages/core/tests/fixtures');
 
 // jsdom misst jedes Element mit 0×0 — dann läge der ganze Graph außerhalb des
 // Ausschnitts und es würde keine einzige Bubble gezeichnet.

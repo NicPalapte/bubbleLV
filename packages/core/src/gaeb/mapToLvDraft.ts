@@ -7,7 +7,7 @@ import type {
   PositionDraft,
   PositionType,
   SectionDraft,
-} from '../../types/lvDraft';
+} from '../model/lvDraft';
 import type { GaebItemType, ParsedLot, ParsedLV, ParsedPosition, ParsedSection } from './types';
 
 /**

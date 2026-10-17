@@ -5,7 +5,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { loadLv, LVLoadError } from '../../src/lib/pipeline/loadLv';
 import { UNEXPECTED_FAILURE } from '../../src/lib/pipeline/messages';
-import { gaebMitPositionen } from '../support/gaebXml';
+import { gaebMitPositionen } from '../../../packages/core/tests/support/gaebXml';
 
 const URSACHE = new RangeError('Maximum call stack size exceeded');
 

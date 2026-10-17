@@ -12,7 +12,7 @@ import { runPipeline } from '../../src/lib/pipeline/runPipeline';
 import { buildTree } from '../../src/lib/tree/buildTree';
 import { indexParents } from '../../src/lib/tree/buildTree';
 import { syntheticDraft } from '../support/syntheticLv';
-import type { LVDraft } from '../../src/types/lvDraft';
+import type { LVDraft } from '@core';
 
 function overviewOf(draft: LVDraft, search = '') {
   const tree = buildTree(draft);
@@ -94,7 +94,7 @@ describe('buildOverview · mit Preisen', () => {
 });
 
 describe('buildOverview · ohne Preise', () => {
-  const bytes = readFileSync('tests/fixtures/gaeb-xml-beispiel.x83');
+  const bytes = readFileSync('../packages/core/tests/fixtures/gaeb-xml-beispiel.x83');
   const lv = runPipeline(
     bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer,
     'beispiel.x83',

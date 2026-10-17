@@ -11,7 +11,7 @@ import App from '../../src/App';
 import { issueBody } from '../../src/lib/export/issueLink';
 import { APP_VERSION, BUILD_ID, buildDate } from '../../src/lib/version';
 
-const FIXTURE_DIR = resolve(process.cwd(), 'tests/fixtures');
+const FIXTURE_DIR = resolve(process.cwd(), '../packages/core/tests/fixtures');
 
 function ladeDatei(): void {
   const name = 'gaeb-xml-beispiel.x83';

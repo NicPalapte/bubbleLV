@@ -52,10 +52,15 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
 
 ### Client-seitige Pipeline (Kern)
 - `GaebParser` ist die **einzige** Stelle mit GAEB-XML-Kenntnis
-  (`frontend/src/lib/gaeb/parser.ts`); Exceptions nur `GAEBParseError`,
+  (`packages/core/src/gaeb/parser.ts`); Exceptions nur `GAEBParseError`,
   `GAEBValidationError`, `GAEBVersionError`.
 - Der Parser liefert das neutrale Zwischenmodell `LVDraft`
-  (`frontend/src/types/lvDraft.ts`) – **ohne** GAEB-Begriffe.
+  (`packages/core/src/model/lvDraft.ts`) – **ohne** GAEB-Begriffe.
+- Kern `packages/core/` (Entscheidung 0054): App importiert nur über `@core`; im Kern kein
+  React und kein Import aus `frontend/`. Neue Fachlogik ohne UI-Bezug gehört dorthin.
+- Positionen tragen Inhalts-Hashes (`PositionHashes`, Entscheidung 0055). Preis,
+  Klassifizierung und Notizen gehen nie in den Hash ein; Normierung nur mit neuer
+  Schema-Kennung (`bubble-pos-v1`) ändern.
 - Klassifizierung läuft über das `LVDraft` **vor** dem Baum-Aufbau und schreibt nach
   `Position.attributes` – quellenunabhängig, siehe `docs/architecture/data-model.md`.
 - Klassifizierung liegt hinter `ClassifierProtocol`-äquivalentem TS-Interface
@@ -96,7 +101,7 @@ Scopes: `gaeb · classify · tree · viewer · graph · relate · check · front
 
 ## Tests
 - Unit: `GaebParser`, Klassifizierer, `buildTree`, `matchPos` – mit Vitest
-- Parser-Tests laufen gegen echte GAEB-Fixtures unter `frontend/tests/fixtures/`
+- Parser-Tests laufen gegen echte GAEB-Fixtures unter `packages/core/tests/fixtures/`
 - Jede eigene Exception hat mindestens einen Test, der den Fehlerfall auslöst
 
 ## Produkt-Scope
