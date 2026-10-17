@@ -23,6 +23,8 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 - **Admin-Werkzeuge** im Logo-Menü, mit Passwort: Begriffe im Langtext als Material,
   Maße, Wichtig oder „nicht hervorheben“ lernen und als CSV fürs Repo herunterladen.
   Der Langtext in der Positionskarte lässt sich jetzt markieren und kopieren.
+- **Normen:** Vornormen und Spezifikationen wie „DIN V 18580“ oder „DIN SPEC 91400“ werden
+  jetzt erkannt.
 
 ## 0.19.0 — 17.10.2026 · Positionen als Link teilen
 
