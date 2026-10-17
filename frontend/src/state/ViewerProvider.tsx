@@ -3,7 +3,7 @@
 // Farben) an genau einer Stelle — Baum, Graph, Tabelle und Überblick
 // bekommen dasselbe Ergebnis (Issue #18, WP-L).
 
-import { useMemo, useReducer, type ReactNode } from 'react';
+import { useCallback, useMemo, useReducer, type ReactNode } from 'react';
 import { annotationAllowList } from '../lib/annotations';
 import { EMPTY_HINTS, hintsByPosition, type HintIndex } from '../lib/check';
 import {
@@ -14,6 +14,7 @@ import {
 } from '../lib/index/positionIndex';
 import { prepareFilters, type ActiveFilters } from '../lib/matchPos';
 import { measure } from '../lib/perf';
+import { countEvent, usageEventOf } from '../lib/usage/count';
 import { indexNodes, indexParents } from '../lib/tree/buildTree';
 import {
   buildSectionColors,
@@ -26,6 +27,7 @@ import {
   ViewerDispatchContext,
   ViewerStateContext,
   viewerReducer,
+  type ViewerAction,
   type ViewerDerived,
 } from './viewer';
 import type { LVNode } from '../types/lvNode';
@@ -35,7 +37,15 @@ const EMPTY_PARENTS: ReadonlyMap<string, LVNode | null> = new Map();
 const EMPTY_MATCHES: MatchIndex = { counts: new Map(), filtering: false };
 
 export function ViewerProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(viewerReducer, INITIAL_VIEWER_STATE);
+  const [state, rawDispatch] = useReducer(viewerReducer, INITIAL_VIEWER_STATE);
+
+  // Zählen beim Auslösen, nicht im Reducer: der bleibt eine reine Funktion
+  // (Entscheidung 0056).
+  const dispatch = useCallback((action: ViewerAction): void => {
+    rawDispatch(action);
+    const event = usageEventOf(action);
+    if (event !== null) countEvent(event);
+  }, []);
 
   const tree = state.lv?.tree ?? null;
   const { search, filters } = state.filter;

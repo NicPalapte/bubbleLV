@@ -16,6 +16,7 @@ import { positionsCsv } from '../../lib/export/positions';
 import { trefferProtokollCsv } from '../../lib/export/trefferProtokoll';
 import { filterMask } from '../../lib/index/positionIndex';
 import { matchCount } from '../../lib/tree/matchCounts';
+import { countEvent } from '../../lib/usage/count';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 
 export interface Mitnehmen {
@@ -55,6 +56,7 @@ export function useMitnehmen(): Mitnehmen {
 
   const positionenAlsCsv = useCallback((): void => {
     if (lv === null) return;
+    countEvent('export-csv');
     absichern('Die CSV-Datei', () => {
       // Die Maske kostet einen Durchlauf über den Positions-Index (bei 10k
       // Positionen spürbar) — deshalb erst hier, beim Auslösen.
@@ -69,6 +71,7 @@ export function useMitnehmen(): Mitnehmen {
 
   const trefferAlsCsv = useCallback((): void => {
     if (lv === null) return;
+    countEvent('export-treffer');
     absichern('Das Treffer-Protokoll', () => {
       const mask = active.filtering ? filterMask(index, active) : null;
       downloadText(
@@ -81,6 +84,7 @@ export function useMitnehmen(): Mitnehmen {
 
   const hinweiseAlsMarkdown = useCallback((): void => {
     if (lv === null) return;
+    countEvent('export-markdown');
     absichern('Die Markdown-Datei', () => {
       // Dieselbe Menge, die die Ansicht „Prüfung" zeigt.
       const visible = matches.filtering
@@ -109,6 +113,7 @@ export function useMitnehmen(): Mitnehmen {
   }, [lv, matches, nodes, filter.mutedRules, absichern]);
 
   const drucken = useCallback((): void => {
+    countEvent('drucken');
     absichern('Der Druck', () => window.print());
   }, [absichern]);
 

@@ -27,6 +27,7 @@ import {
   readLvFile,
 } from '../../lib/pipeline/loadLv';
 import { UNEXPECTED_FAILURE } from '../../lib/pipeline/messages';
+import { countEvent } from '../../lib/usage/count';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { Annotations } from '../../lib/annotations';
 import type { LoadedLV } from '../../lib/pipeline/runPipeline';
@@ -84,6 +85,7 @@ export function FileDropzone() {
         dispatch({ type: 'loaded', lv, notices, annotations, persistId });
         return lv;
       } catch (cause) {
+        countEvent('laden-fehlgeschlagen');
         // Ein erwarteter Fehler (leere Datei, falsches Format …) erklärt sich selbst.
         // Ein unerwarteter ist ein Bug: seine Ursache steht am Fehler und gehört in
         // die Konsole, genau wie bei einem Absturz (ErrorBoundary). Die UI zeigt
@@ -124,6 +126,7 @@ export function FileDropzone() {
       // Erst nach erfolgreichem Laden merken: eine kaputte Datei soll nicht die
       // letzte gute ersetzen. Demo-LVs werden nie gespeichert.
       if (lv === null || bytes === null) return;
+      countEvent('datei-geoeffnet');
       const persistId = newPersistId();
       // Die Kennung erst nach dem Speichern setzen: scheitert es (volle oder
       // gesperrte IndexedDB), bleiben Notizen sichtbar in der Sitzung. Was schon
@@ -152,7 +155,9 @@ export function FileDropzone() {
         };
       });
       // Zeitpunkt auffrischen, damit „gestern 16:42" das letzte Öffnen meint.
-      if (lv !== null) await touchLastLv(Date.now());
+      if (lv === null) return;
+      countEvent('letzte-datei-geoeffnet');
+      await touchLastLv(Date.now());
     })();
   };
 
@@ -176,7 +181,9 @@ export function FileDropzone() {
   const openDemo = (demo: DemoLv): void => {
     if (loading) return;
     // Demo-LVs: Notizen gehen, bleiben aber nur in der Sitzung (`persistId` fehlt).
-    void run(async (onNotice) => ({ lv: await loadDemoLv(demo, { onNotice }) }));
+    void run(async (onNotice) => ({ lv: await loadDemoLv(demo, { onNotice }) })).then((lv) => {
+      if (lv !== null) countEvent('demo-geoeffnet');
+    });
   };
 
   const openDialog = (): void => {

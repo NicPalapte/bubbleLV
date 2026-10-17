@@ -11,6 +11,9 @@ import '@fontsource/space-grotesk/600.css';
 import '@fontsource/space-grotesk/700.css';
 import './index.css';
 import App from './App.tsx';
+import { countPageview } from './lib/usage/count';
+
+countPageview();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

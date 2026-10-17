@@ -692,9 +692,10 @@ Vier Schritte, in dieser Reihenfolge. Jeder ist ein eigener Pull Request.
 stehen. Ohne Persistenz wäre jedes Lesezeichen nach einem Reload weg. Ob das trotzdem
 nützt, entscheidet sich erst, wenn der Export aus WP-P existiert.
 
-**Issue #57 — Nutzung messen:** abgelehnt. Jede Messung braucht einen Empfänger, also
-einen Server. Vom Issue bleibt der Melde-Knopf in WP-P Schritt 6. Begründung:
-[`decisions/0017`](decisions/0017-keine-nutzungsmessung.md).
+**Issue #57 — Nutzung messen:** zuerst abgelehnt
+([`decisions/0017`](decisions/0017-keine-nutzungsmessung.md)), seit 15.10.2026 anonym
+über GoatCounter ([`decisions/0056`](decisions/0056-anonyme-nutzungszaehlung.md)).
+Der Melde-Knopf aus WP-P Schritt 6 bleibt.
 
 ---
 
