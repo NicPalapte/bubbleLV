@@ -171,6 +171,8 @@ async function parseClassifyBuild(
   options: LoadOptions,
 ): Promise<LoadedLV> {
   // Datei-ID für teilbare Links (Entscheidung 0055) — aus denselben Bytes wie der Parser.
+  // Läuft wie der Parser im Haupt-Thread: der Worker bekommt nur den Draft, nicht die
+  // Bytes. Gemessen ~60 ms für 5 MB (≈ 10k Positionen), ~0,5 s für die Obergrenze 50 MB.
   const fileId = fileIdOf(bytes);
   let draft: LVDraft;
   try {

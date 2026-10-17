@@ -23,79 +23,85 @@ function rotr(x: number, n: number): number {
 }
 
 // Puffer werden wiederverwendet: bei zehntausend kurzen Eingaben je Datei
-// kostet das Anlegen typisierter Arrays mehr als das Rechnen selbst.
+// kostet das Anlegen typisierter Arrays mehr als das Rechnen selbst. Die Bytes
+// selbst werden nie kopiert, nur der letzte, aufgefüllte Block (höchstens 128 Byte).
 const W = new Uint32Array(64);
 const H = new Uint32Array(8);
-let scratch = new Uint8Array(256);
+const TAIL = new Uint8Array(128);
+
+/** Ein 64-Byte-Block ab `offset` in den Zustand `H` einrechnen. */
+function compress(bytes: Uint8Array, offset: number): void {
+  const w = W;
+  for (let t = 0, i = offset; t < 16; t++, i += 4) {
+    w[t] = (bytes[i] << 24) | (bytes[i + 1] << 16) | (bytes[i + 2] << 8) | bytes[i + 3];
+  }
+  for (let t = 16; t < 64; t++) {
+    const s0 = rotr(w[t - 15], 7) ^ rotr(w[t - 15], 18) ^ (w[t - 15] >>> 3);
+    const s1 = rotr(w[t - 2], 17) ^ rotr(w[t - 2], 19) ^ (w[t - 2] >>> 10);
+    w[t] = (w[t - 16] + s0 + w[t - 7] + s1) | 0;
+  }
+  const h = H;
+  let a = h[0];
+  let b = h[1];
+  let c = h[2];
+  let d = h[3];
+  let e = h[4];
+  let f = h[5];
+  let g = h[6];
+  let k = h[7];
+  for (let t = 0; t < 64; t++) {
+    const s1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+    const ch = (e & f) ^ (~e & g);
+    const t1 = (k + s1 + ch + K[t] + w[t]) | 0;
+    const s0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+    const maj = (a & b) ^ (a & c) ^ (b & c);
+    const t2 = (s0 + maj) | 0;
+    k = g;
+    g = f;
+    f = e;
+    e = (d + t1) | 0;
+    d = c;
+    c = b;
+    b = a;
+    a = (t1 + t2) | 0;
+  }
+  h[0] += a;
+  h[1] += b;
+  h[2] += c;
+  h[3] += d;
+  h[4] += e;
+  h[5] += f;
+  h[6] += g;
+  h[7] += k;
+}
 
 /** SHA-256 der Bytes als 64 Hex-Zeichen (Kleinbuchstaben). */
 export function sha256Hex(data: Uint8Array): string {
-  // Nachricht + 0x80 + Nullen + 64-Bit-Länge, aufgefüllt auf ein Vielfaches von 64 Byte.
-  const length = (data.length + 9 + 63) & ~63;
-  if (scratch.length < length) scratch = new Uint8Array(length * 2);
-  const padded = scratch;
-  padded.set(data);
-  padded.fill(0, data.length, length);
-  padded[data.length] = 0x80;
-  const bitsHigh = Math.floor(data.length / 0x20000000);
-  const bitsLow = (data.length * 8) >>> 0;
-  padded[length - 8] = bitsHigh >>> 24;
-  padded[length - 7] = (bitsHigh >>> 16) & 0xff;
-  padded[length - 6] = (bitsHigh >>> 8) & 0xff;
-  padded[length - 5] = bitsHigh & 0xff;
-  padded[length - 4] = bitsLow >>> 24;
-  padded[length - 3] = (bitsLow >>> 16) & 0xff;
-  padded[length - 2] = (bitsLow >>> 8) & 0xff;
-  padded[length - 1] = bitsLow & 0xff;
-
-  const h = H;
-  h.set([
+  H.set([
     0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
   ]);
-  const w = W;
-  for (let offset = 0; offset < length; offset += 64) {
-    for (let t = 0, i = offset; t < 16; t++, i += 4) {
-      w[t] = (padded[i] << 24) | (padded[i + 1] << 16) | (padded[i + 2] << 8) | padded[i + 3];
-    }
-    for (let t = 16; t < 64; t++) {
-      const s0 = rotr(w[t - 15], 7) ^ rotr(w[t - 15], 18) ^ (w[t - 15] >>> 3);
-      const s1 = rotr(w[t - 2], 17) ^ rotr(w[t - 2], 19) ^ (w[t - 2] >>> 10);
-      w[t] = (w[t - 16] + s0 + w[t - 7] + s1) | 0;
-    }
-    let a = h[0];
-    let b = h[1];
-    let c = h[2];
-    let d = h[3];
-    let e = h[4];
-    let f = h[5];
-    let g = h[6];
-    let k = h[7];
-    for (let t = 0; t < 64; t++) {
-      const s1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
-      const ch = (e & f) ^ (~e & g);
-      const t1 = (k + s1 + ch + K[t] + w[t]) | 0;
-      const s0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
-      const maj = (a & b) ^ (a & c) ^ (b & c);
-      const t2 = (s0 + maj) | 0;
-      k = g;
-      g = f;
-      f = e;
-      e = (d + t1) | 0;
-      d = c;
-      c = b;
-      b = a;
-      a = (t1 + t2) | 0;
-    }
-    h[0] += a;
-    h[1] += b;
-    h[2] += c;
-    h[3] += d;
-    h[4] += e;
-    h[5] += f;
-    h[6] += g;
-    h[7] += k;
-  }
+  const full = data.length & ~63;
+  for (let offset = 0; offset < full; offset += 64) compress(data, offset);
 
+  // Rest + 0x80 + Nullen + 64-Bit-Länge: ein oder zwei Blöcke.
+  const rest = data.length - full;
+  const tailLength = rest + 9 > 64 ? 128 : 64;
+  TAIL.fill(0);
+  TAIL.set(data.subarray(full));
+  TAIL[rest] = 0x80;
+  const bitsHigh = Math.floor(data.length / 0x20000000);
+  const bitsLow = (data.length * 8) >>> 0;
+  TAIL[tailLength - 8] = bitsHigh >>> 24;
+  TAIL[tailLength - 7] = (bitsHigh >>> 16) & 0xff;
+  TAIL[tailLength - 6] = (bitsHigh >>> 8) & 0xff;
+  TAIL[tailLength - 5] = bitsHigh & 0xff;
+  TAIL[tailLength - 4] = bitsLow >>> 24;
+  TAIL[tailLength - 3] = (bitsLow >>> 16) & 0xff;
+  TAIL[tailLength - 2] = (bitsLow >>> 8) & 0xff;
+  TAIL[tailLength - 1] = bitsLow & 0xff;
+  for (let offset = 0; offset < tailLength; offset += 64) compress(TAIL, offset);
+
+  const h = H;
   let out = '';
   for (let i = 0; i < 8; i++) {
     out += HEX[h[i] >>> 24] + HEX[(h[i] >>> 16) & 0xff] + HEX[(h[i] >>> 8) & 0xff];
