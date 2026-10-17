@@ -8,7 +8,7 @@ import { runPipeline } from '../../src/lib/pipeline/runPipeline';
 import { ViewerProvider } from '../../src/state/ViewerProvider';
 import { useViewerDispatch } from '../../src/state/viewer';
 
-const bytes = readFileSync('tests/fixtures/gaeb-xml-beispiel.x83');
+const bytes = readFileSync('../packages/core/tests/fixtures/gaeb-xml-beispiel.x83');
 const LV = runPipeline(
   bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer,
   'beispiel.x83',

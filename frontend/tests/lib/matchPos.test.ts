@@ -10,6 +10,7 @@ import {
   type Filters,
 } from '../../src/lib/matchPos';
 import type { PositionSummary } from '../../src/types/lvNode';
+import { TEST_HASHES } from '../support/hashes';
 
 function pos(overrides: Partial<PositionSummary> = {}): PositionSummary {
   return {
@@ -20,6 +21,7 @@ function pos(overrides: Partial<PositionSummary> = {}): PositionSummary {
     quantity: 120,
     unitPrice: 180,
     positionType: 'NORMAL',
+    hashes: TEST_HASHES,
     attributes: {
       positionsart: 'bauteil',
       beton: 'C30/37',

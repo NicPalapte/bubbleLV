@@ -6,7 +6,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from '../../src/App';
 import { UNEXPECTED_FAILURE } from '../../src/lib/pipeline/messages';
-import { gaebMitPositionen } from '../support/gaebXml';
+import { gaebMitPositionen } from '../../../packages/core/tests/support/gaebXml';
 
 vi.mock('../../src/lib/pipeline/runPipeline', async (importOriginal) => {
   const original = await importOriginal<typeof import('../../src/lib/pipeline/runPipeline')>();

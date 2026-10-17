@@ -2,7 +2,12 @@
   "extends": "./tsconfig.app.json",
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.test.tsbuildinfo",
-    "types": ["vite/client", "vitest/globals", "node"]
+    "types": ["vite/client", "vitest/globals", "node"],
+    // Tests des Kerns liegen außerhalb von frontend/ und fänden `vitest` sonst nicht.
+    "paths": {
+      "@core": ["../packages/core/src/index.ts"],
+      "vitest": ["./node_modules/vitest"]
+    }
   },
-  "include": ["tests"]
+  "include": ["tests", "../packages/core/tests"]
 }

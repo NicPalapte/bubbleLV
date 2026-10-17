@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { classifyDraft, getClassifier } from '../../src/lib/classify';
-import type { LVDraft, PositionDraft } from '../../src/types/lvDraft';
+import type { LVDraft, PositionDraft } from '@core';
 
 function position(oz: string, shortText: string): PositionDraft {
   return {

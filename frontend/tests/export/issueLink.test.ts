@@ -9,7 +9,7 @@ import { buildPositionIndex } from '../../src/lib/index/positionIndex';
 import { runPipeline } from '../../src/lib/pipeline/runPipeline';
 
 function loadFixture() {
-  const bytes = readFileSync('tests/fixtures/gaeb-xml-beispiel.x83');
+  const bytes = readFileSync('../packages/core/tests/fixtures/gaeb-xml-beispiel.x83');
   return runPipeline(
     bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer,
     'beispiel.x83',

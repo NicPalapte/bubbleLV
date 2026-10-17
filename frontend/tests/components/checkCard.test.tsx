@@ -15,7 +15,7 @@ import { readFileSync } from 'node:fs';
 import type { ReactNode } from 'react';
 
 function loadFixture() {
-  const bytes = readFileSync('tests/fixtures/gaeb-xml-beispiel.x83');
+  const bytes = readFileSync('../packages/core/tests/fixtures/gaeb-xml-beispiel.x83');
   return runPipeline(
     bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer,
     'beispiel.x83',

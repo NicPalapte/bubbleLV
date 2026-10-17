@@ -15,10 +15,10 @@ import { indexParents } from '../../src/lib/tree/buildTree';
 import { buildSectionColors } from '../../src/lib/tree/mainSection';
 import { ViewerProvider } from '../../src/state/ViewerProvider';
 import { useViewerDispatch } from '../../src/state/viewer';
-import type { LVDraft, PositionDraft } from '../../src/types/lvDraft';
+import type { LVDraft, PositionDraft } from '@core';
 
 function loadFixture() {
-  const bytes = readFileSync('tests/fixtures/gaeb-xml-beispiel.x83');
+  const bytes = readFileSync('../packages/core/tests/fixtures/gaeb-xml-beispiel.x83');
   return runPipeline(
     bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer,
     'beispiel.x83',

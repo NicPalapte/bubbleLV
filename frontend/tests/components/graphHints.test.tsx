@@ -18,7 +18,7 @@ import { ViewerProvider } from '../../src/state/ViewerProvider';
 import { useViewer, useViewerDispatch } from '../../src/state/viewer';
 
 function loadFixture() {
-  const bytes = readFileSync('tests/fixtures/gaeb-xml-beispiel.x83');
+  const bytes = readFileSync('../packages/core/tests/fixtures/gaeb-xml-beispiel.x83');
   return runPipeline(
     bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer,
     'beispiel.x83',

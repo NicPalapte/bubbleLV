@@ -1,7 +1,7 @@
 // Dateiendungen von GAEB DA XML: GAEB-Wissen, deshalb in lib/gaeb/ (Review auf PR 114).
 
 import { describe, expect, it } from 'vitest';
-import { fileExtension, GAEB_ENDUNGEN, isGaebExtension } from '../../src/lib/gaeb';
+import { fileExtension, GAEB_ENDUNGEN, isGaebExtension } from '../../src/gaeb';
 
 describe('fileExtension', () => {
   it('liefert die Endung klein geschrieben, ohne Punkt', () => {

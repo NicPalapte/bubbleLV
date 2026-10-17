@@ -2,12 +2,12 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { getClassifier, classifyDraft } from '../../src/lib/classify';
-import { getGaebParser, mapToLvDraft } from '../../src/lib/gaeb';
+import { getGaebParser, mapToLvDraft } from '@core';
 import { buildTree, collectPositions, indexParents, ownCodeOf } from '../../src/lib/tree/buildTree';
-import type { LVDraft, PositionDraft, SectionDraft } from '../../src/types/lvDraft';
+import type { LVDraft, PositionDraft, SectionDraft } from '@core';
 import type { LVNode } from '../../src/types/lvNode';
 
-const FIXTURE_DIR = resolve(process.cwd(), 'tests/fixtures');
+const FIXTURE_DIR = resolve(process.cwd(), '../packages/core/tests/fixtures');
 
 function draftFrom(name: string): LVDraft {
   const bytes = new Uint8Array(readFileSync(resolve(FIXTURE_DIR, name)));

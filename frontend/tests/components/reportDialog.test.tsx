@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '../../src/App';
 import { meldeMail } from '../../src/lib/export/issueLink';
 
-const FIXTURE_DIR = resolve(process.cwd(), 'tests/fixtures');
+const FIXTURE_DIR = resolve(process.cwd(), '../packages/core/tests/fixtures');
 
 let geschrieben: string[] = [];
 let geoeffnet: string[] = [];
