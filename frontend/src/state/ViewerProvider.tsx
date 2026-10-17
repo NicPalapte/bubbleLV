@@ -40,7 +40,7 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
   const [state, rawDispatch] = useReducer(viewerReducer, INITIAL_VIEWER_STATE);
 
   // Zählen beim Auslösen, nicht im Reducer: der bleibt eine reine Funktion
-  // (Entscheidung 0051).
+  // (Entscheidung 0056).
   const dispatch = useCallback((action: ViewerAction): void => {
     rawDispatch(action);
     const event = usageEventOf(action);

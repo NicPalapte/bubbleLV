@@ -52,10 +52,15 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
 
 ### Client-seitige Pipeline (Kern)
 - `GaebParser` ist die **einzige** Stelle mit GAEB-XML-Kenntnis
-  (`frontend/src/lib/gaeb/parser.ts`); Exceptions nur `GAEBParseError`,
+  (`packages/core/src/gaeb/parser.ts`); Exceptions nur `GAEBParseError`,
   `GAEBValidationError`, `GAEBVersionError`.
 - Der Parser liefert das neutrale Zwischenmodell `LVDraft`
-  (`frontend/src/types/lvDraft.ts`) – **ohne** GAEB-Begriffe.
+  (`packages/core/src/model/lvDraft.ts`) – **ohne** GAEB-Begriffe.
+- Kern `packages/core/` (Entscheidung 0054): App importiert nur über `@core`; im Kern kein
+  React und kein Import aus `frontend/`. Neue Fachlogik ohne UI-Bezug gehört dorthin.
+- Positionen tragen Inhalts-Hashes (`PositionHashes`, Entscheidung 0055). Preis,
+  Klassifizierung und Notizen gehen nie in den Hash ein; Normierung nur mit neuer
+  Schema-Kennung (`bubble-pos-v1`) ändern.
 - Klassifizierung läuft über das `LVDraft` **vor** dem Baum-Aufbau und schreibt nach
   `Position.attributes` – quellenunabhängig, siehe `docs/architecture/data-model.md`.
 - Klassifizierung liegt hinter `ClassifierProtocol`-äquivalentem TS-Interface
@@ -96,7 +101,7 @@ Scopes: `gaeb · classify · tree · viewer · graph · relate · check · front
 
 ## Tests
 - Unit: `GaebParser`, Klassifizierer, `buildTree`, `matchPos` – mit Vitest
-- Parser-Tests laufen gegen echte GAEB-Fixtures unter `frontend/tests/fixtures/`
+- Parser-Tests laufen gegen echte GAEB-Fixtures unter `packages/core/tests/fixtures/`
 - Jede eigene Exception hat mindestens einen Test, der den Fehlerfall auslöst
 
 ## Produkt-Scope
@@ -129,17 +134,18 @@ LLM-Klassifizierung. Details → @docs/scope.md #out-of-scope
   schließen ändert nie Filter, Suche oder Auswahl. Der Graph ist der Hauptscreen; Fenster
   und Seitenfenster liegen darüber (`view.side`, `view.tableWindow`).
 - **Beziehungen werden einmal beim Laden im Worker berechnet**, nie im Render. Kein
-  All-Paare-Vergleich — erst nach Einheit/Bauteiltyp vorgruppieren.
+  All-Paare-Vergleich — erst nach Einheit vorgruppieren.
 - **Prüfregeln sind Hinweise, keine Urteile.** Jede Regel nennt ihren Norm-Verweis,
   zeigt die Fundstelle und ist einzeln abschaltbar. Fehlende Referenzdaten ⇒ Regel
   inaktiv, kein Fehler. Formulierungen nie als Rechtsrat.
-- Status ist Default `OPEN` aus dem Import und nur Filter-Facette, nicht editierbar
+- Status ist Default `OPEN` aus dem Import, nur Anzeige, nicht editierbar, kein Filter
+  (`docs/decisions/0051-kein-status-filter.md`)
 - Kein Request, der Fachdaten irgendwohin schickt – bei Unsicherheit nachfragen,
   bevor ein Feature einen eigenen Server voraussetzt. Statische Fremd-Assets
   (Fonts, CDN-Pakete) sind davon nicht betroffen. Lokale Downloads (CSV/Markdown als
   Blob) und Browser-Druck sind erlaubt – sie erzeugen keinen Request.
 - **Nutzungszählung nur über `frontend/src/lib/usage/count.ts`** (GoatCounter,
-  Entscheidung 0051): nur feste Namen aus `USAGE_EVENTS`. Verboten: Dateinamen, LV-Texte,
+  Entscheidung 0056): nur feste Namen aus `USAGE_EVENTS`. Verboten: Dateinamen, LV-Texte,
   Suchtexte, Filterwerte, Positions-IDs, URL-Fragment mitsenden. Neues Ereignis ⇒ Namen
   in `USAGE_EVENTS` ergänzen, Zuordnung in `usageEventOf` oder Aufruf von `countEvent`.
   Hauptschalter `VITE_USAGE_COUNT=1` in `frontend/.env.production` nur nach Freigabe des

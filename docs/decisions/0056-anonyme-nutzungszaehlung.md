@@ -1,7 +1,7 @@
-# 0051 – Anonyme Nutzungszählung mit GoatCounter
+# 0056 – Anonyme Nutzungszählung mit GoatCounter
 
 - **Status:** akzeptiert
-- **Datum:** 2026-10-15
+- **Datum:** 2026-10-17
 - **Betrifft:** Frontend (`frontend/src/lib/usage/count.ts`), Datenschutz; ersetzt 0017
 
 ## Worum geht's

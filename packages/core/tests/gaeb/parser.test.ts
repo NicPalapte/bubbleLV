@@ -1,15 +1,15 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { GAEBParseError, GAEBValidationError, GAEBVersionError } from '../../src/lib/gaeb/errors';
-import { getGaebParser } from '../../src/lib/gaeb/parser';
-import type { ParsedLV, ParsedPosition, ParsedSection } from '../../src/lib/gaeb/types';
+import { GAEBParseError, GAEBValidationError, GAEBVersionError } from '../../src/gaeb/errors';
+import { getGaebParser } from '../../src/gaeb/parser';
+import type { ParsedLV, ParsedPosition, ParsedSection } from '../../src/gaeb/types';
 import { gaebVerschachtelt } from '../support/gaebXml';
+import { FIXTURE_DIR } from '../support/fixtures';
 
 const parser = getGaebParser();
 
 // Vitest läuft mit `frontend/` als Arbeitsverzeichnis (vite.config.ts).
-const FIXTURE_DIR = resolve(process.cwd(), 'tests/fixtures');
 
 function fixture(name: string): Uint8Array {
   return new Uint8Array(readFileSync(resolve(FIXTURE_DIR, name)));

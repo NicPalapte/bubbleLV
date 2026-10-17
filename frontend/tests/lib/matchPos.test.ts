@@ -10,6 +10,7 @@ import {
   type Filters,
 } from '../../src/lib/matchPos';
 import type { PositionSummary } from '../../src/types/lvNode';
+import { TEST_HASHES } from '../support/hashes';
 
 function pos(overrides: Partial<PositionSummary> = {}): PositionSummary {
   return {
@@ -20,9 +21,9 @@ function pos(overrides: Partial<PositionSummary> = {}): PositionSummary {
     quantity: 120,
     unitPrice: 180,
     positionType: 'NORMAL',
+    hashes: TEST_HASHES,
     attributes: {
       positionsart: 'bauteil',
-      bauteiltyp: 'Wand',
       beton: 'C30/37',
       expo: ['XC2', 'XD1'],
       keywords: ['WU-Beton'],
@@ -46,8 +47,8 @@ describe('matchPos', () => {
   });
 
   it('filtert über Klassifizierungs-Facetten', () => {
-    expect(matchPos(pos(), filters({ bauteiltyp: ['Wand'] }), '')).toBe(true);
-    expect(matchPos(pos(), filters({ bauteiltyp: ['Decke'] }), '')).toBe(false);
+    expect(matchPos(pos(), filters({ beton: ['C30/37'] }), '')).toBe(true);
+    expect(matchPos(pos(), filters({ beton: ['C25/30'] }), '')).toBe(false);
     expect(matchPos(pos(), filters({ positionsart: ['bauteil'] }), '')).toBe(true);
     expect(matchPos(pos(), filters({ positionsart: ['personal'] }), '')).toBe(false);
   });
@@ -59,8 +60,8 @@ describe('matchPos', () => {
   });
 
   it('verknüpft verschiedene Facetten als UND', () => {
-    expect(matchPos(pos(), filters({ bauteiltyp: ['Wand'], einheit: ['m3'] }), '')).toBe(true);
-    expect(matchPos(pos(), filters({ bauteiltyp: ['Wand'], einheit: ['m2'] }), '')).toBe(false);
+    expect(matchPos(pos(), filters({ beton: ['C30/37'], einheit: ['m3'] }), '')).toBe(true);
+    expect(matchPos(pos(), filters({ beton: ['C30/37'], einheit: ['m2'] }), '')).toBe(false);
   });
 
   it('filtert die GAEB-Positionsart (NORMAL/ALTERNATIV/BEDARF/ZULAGENPOSITION)', () => {
@@ -93,9 +94,16 @@ describe('matchPos', () => {
   });
 
   it('liefert je Facette die Werte der Position', () => {
-    const facet = FACETS_BY_ID.get('bauteiltyp');
-    expect(facet?.get(pos())).toEqual(['Wand']);
-    expect(FACETS_BY_ID.get('status')?.get(pos())).toEqual(['offen']);
+    const facet = FACETS_BY_ID.get('beton');
+    expect(facet?.get(pos())).toEqual(['C30/37']);
+  });
+
+  it('kennt keinen Bauteiltyp-Filter (Entscheidung 0052)', () => {
+    expect(FACETS_BY_ID.has('bauteiltyp')).toBe(false);
+  });
+
+  it('kennt keinen Status-Filter — der Status lässt sich nicht setzen', () => {
+    expect(FACETS_BY_ID.has('status')).toBe(false);
   });
 
   it('kennt keinen Gewerk-Filter mehr (Entscheidung 0044)', () => {
@@ -108,13 +116,13 @@ describe('prepareFilters', () => {
     expect(prepareFilters(EMPTY_FILTERS, '').filtering).toBe(false);
     expect(prepareFilters(EMPTY_FILTERS, '   ').filtering).toBe(false);
     expect(prepareFilters(EMPTY_FILTERS, 'wand').filtering).toBe(true);
-    expect(prepareFilters(filters({ bauteiltyp: ['Wand'] }), '').filtering).toBe(true);
+    expect(prepareFilters(filters({ beton: ['C30/37'] }), '').filtering).toBe(true);
     expect(prepareFilters(filters({}, [1, 2]), '').filtering).toBe(true);
   });
 
   it('lässt leere Facetten-Auswahlen weg', () => {
-    expect(prepareFilters(filters({ bauteiltyp: [] }), '').facets).toEqual([]);
-    expect(prepareFilters(filters({ bauteiltyp: ['Wand'] }), '').facets).toHaveLength(1);
+    expect(prepareFilters(filters({ beton: [] }), '').facets).toEqual([]);
+    expect(prepareFilters(filters({ beton: ['C30/37'] }), '').facets).toHaveLength(1);
   });
 
   it('normalisiert die Suchanfrage einmal je Lauf', () => {
@@ -127,8 +135,8 @@ describe('matchFacts', () => {
     const position = pos();
     const cases: Array<[Filters, string]> = [
       [EMPTY_FILTERS, ''],
-      [filters({ bauteiltyp: ['Wand'] }), ''],
-      [filters({ bauteiltyp: ['Decke'] }), ''],
+      [filters({ beton: ['C30/37'] }), ''],
+      [filters({ beton: ['C25/30'] }), ''],
       [filters({}, [0, 50]), ''],
       [EMPTY_FILTERS, 'estrich'],
       [EMPTY_FILTERS, 'stahlbeton'],

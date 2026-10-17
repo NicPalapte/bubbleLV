@@ -27,13 +27,7 @@ export type GraphLayoutId = 'lv' | 'matrix';
  * Position. Bei Normen oder Expositionsklassen stünde eine Position in mehreren
  * Zellen zugleich — der Punkt wäre dann nicht mehr eindeutig.
  */
-export const AXIS_FACETS: readonly string[] = [
-  'einheit',
-  'positionsart',
-  'bauteiltyp',
-  'positionstyp',
-  'beton',
-];
+export const AXIS_FACETS: readonly string[] = ['einheit', 'positionsart', 'positionstyp', 'beton'];
 
 /**
  * Zeilen/Spalten nach dem Abschnitt der Position (ihr Elternknoten im LV) —

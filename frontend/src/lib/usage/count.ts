@@ -1,4 +1,4 @@
-// Anonyme Nutzungszählung über GoatCounter (Entscheidung 0051). Einzige Stelle der
+// Anonyme Nutzungszählung über GoatCounter (Entscheidung 0056). Einzige Stelle der
 // App, die von sich aus einen Request an einen fremden Dienst schickt. Gesendet
 // werden nur feste Ereignisnamen aus `USAGE_EVENTS` — nie Dateinamen, LV-Inhalte,
 // Suchtexte, Filterwerte oder das URL-Fragment.

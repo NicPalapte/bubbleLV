@@ -16,7 +16,7 @@ mapToLvDraft()
     │  → LVDraft (neutral, ohne GAEB-Vokabular)
     ▼
 classify(draft)
-    │  Positionsart → Extraktoren → Bauteiltyp → Ruleset
+    │  Positionsart → Extraktoren → Ruleset
     │  → LVDraft mit befüllten position.attributes und _spans
     ▼
 buildTree(draft)
@@ -66,7 +66,7 @@ derselbe Code synchron weiter.
 
 ```
 GaebParser (Interface)
-    └── XmlGaebParser        ← frontend/src/lib/gaeb/parser.ts  (einzige GAEB-XML-Kenntnis)
+    └── XmlGaebParser        ← packages/core/src/gaeb/parser.ts  (einzige GAEB-XML-Kenntnis)
 ```
 
 GAEB-XML-Elemente (`<GAEB>`, `<Award>`, `<BoQ>`, `<BoQBody>`, `<BoQCtgy>`, …) verlassen
@@ -88,7 +88,7 @@ weitere Quelle (Excel, manuelle Eingabe) hinzukommt, würde sie auf dasselbe Mod
 mappen, ohne dass `buildTree`/`classify` sich ändern müssten (nicht Teil des MVP):
 
 ```ts
-// frontend/src/types/lvDraft.ts
+// packages/core/src/model/lvDraft.ts
 interface PositionDraft {
   oz: string;
   shortText: string;
@@ -124,7 +124,7 @@ interface LVDraft {
 **Regeln:**
 
 - `buildTree(draft: LVDraft): LVNode` ist eine reine Funktion — kein Import aus
-  `lib/gaeb/`.
+  `packages/core/src/gaeb/`.
 - `mapToLvDraft()` lebt neben dem Parser und ist die einzige Stelle, die GAEB-Typen
   in `LVDraft` überführt.
 
@@ -185,7 +185,7 @@ Extraktoren (WP-J)
     ├── positionsart != "bauteil" ──► Nicht-Bauteil-Ruleset (per positionsart) ──► attributes
     │
     ▼ ("bauteil")
-Stufe 1 — ObjectType         → attributes.bauteiltyp   ("Wand" | "Decke" | "Fundament" | …)
+Stufe 1 — ObjectType         → entfernt (Entscheidung 0052), kein attributes.bauteiltyp
     │
     ▼
 Stufe 2 — RulesetRegistry.resolveBauteil()

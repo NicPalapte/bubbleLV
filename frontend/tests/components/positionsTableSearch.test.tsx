@@ -8,6 +8,7 @@ import { PositionsTable } from '../../src/components/table/PositionsTable';
 import { useViewerDispatch } from '../../src/state/viewer';
 import { ViewerProvider } from '../../src/state/ViewerProvider';
 import type { LVNode } from '../../src/types/lvNode';
+import { TEST_HASHES } from '../support/hashes';
 
 function positionNode(oz: string, shortText: string, longText: string): LVNode {
   return {
@@ -27,6 +28,7 @@ function positionNode(oz: string, shortText: string, longText: string): LVNode {
       quantity: 5,
       unitPrice: null,
       positionType: 'NORMAL',
+      hashes: TEST_HASHES,
       attributes: {},
     },
   };

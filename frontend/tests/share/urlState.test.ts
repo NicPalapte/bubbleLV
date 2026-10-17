@@ -26,7 +26,7 @@ describe('encodeShared / decodeShared', () => {
     const vorher = zustand({
       view: 'table',
       search: 'Beton C30/37',
-      facets: { bauteiltyp: ['Decke', 'Wand'], einheit: ['m3'] },
+      facets: { beton: ['Decke', 'Wand'], einheit: ['m3'] },
       menge: [10, 500],
       hideMode: 'hide',
       oz: '001.004.0030',
@@ -42,6 +42,20 @@ describe('encodeShared / decodeShared', () => {
       oz: '01.002~0010',
     });
     expect(decodeShared(encodeShared(vorher))).toEqual(vorher);
+  });
+
+  it('bringt Positions-Hash und Datei-ID zurück', () => {
+    const vorher = zustand({ pos: 'a81c55d2e0-2', lv: '3f9a1c2e7b04' });
+    expect(encodeShared(vorher)).toBe('lv=3f9a1c2e7b04~pos=a81c55d2e0-2');
+    expect(decodeShared(encodeShared(vorher))).toEqual(vorher);
+  });
+
+  it('schreibt die Datei-ID nur zusammen mit einer Position', () => {
+    expect(encodeShared(zustand({ lv: '3f9a1c2e7b04' }))).toBe('');
+  });
+
+  it('schreibt den Hash statt der OZ, wenn beides da ist', () => {
+    expect(encodeShared(zustand({ pos: 'a81c55d2e0', oz: '001.004.0030' }))).toBe('pos=a81c55d2e0');
   });
 
   it('nimmt das Fragment mit und ohne führendes #', () => {
@@ -84,12 +98,12 @@ describe('decodeShared · fremde Links', () => {
   it('übersteht eine defekte Prozent-Kodierung', () => {
     // `decodeURIComponent('%')` wirft. Ein Link, der beim Kopieren in einen
     // Chat abgeschnitten wurde, darf die App nicht mitreißen.
-    for (const kaputt of ['q=%', 'p=%E4%', 'f.bauteiltyp=%3', 'q=%zz']) {
+    for (const kaputt of ['q=%', 'p=%E4%', 'f.beton=%3', 'q=%zz']) {
       expect(() => decodeShared(kaputt)).not.toThrow();
     }
     expect(decodeShared('q=%').search).toBe('');
     expect(decodeShared('p=%E4%').oz).toBeNull();
-    expect(decodeShared('f.bauteiltyp=%3').facets).toEqual({});
+    expect(decodeShared('f.beton=%3').facets).toEqual({});
     // Und was daneben steht, gilt weiter.
     expect(decodeShared('q=%~v=graph').view).toBe('graph');
   });
@@ -99,10 +113,18 @@ describe('Was im Link steht', () => {
   it('trägt keinen Dateinamen, keinen Text, keine Menge, keinen Preis', () => {
     // Ein Link ohne dieselbe Datei ist nutzlos — genau so ist es gewollt.
     const fragment = encodeShared(
-      zustand({ view: 'table', facets: { bauteiltyp: ['Wand'] }, oz: '001.004.0030' }),
+      zustand({ view: 'table', facets: { beton: ['Wand'] }, oz: '001.004.0030' }),
     );
     const schluessel = fragment.split('~').map((teil) => teil.split('=')[0]);
-    expect(new Set(schluessel)).toEqual(new Set(['v', 'f.bauteiltyp', 'p']));
+    expect(new Set(schluessel)).toEqual(new Set(['v', 'f.beton', 'p']));
+  });
+
+  it('trägt für die Auswahl nur Hash und Datei-ID — keine OZ', () => {
+    const fragment = encodeShared(
+      zustand({ view: 'table', pos: 'a81c55d2e0', lv: '3f9a1c2e7b04' }),
+    );
+    const schluessel = fragment.split('~').map((teil) => teil.split('=')[0]);
+    expect(new Set(schluessel)).toEqual(new Set(['v', 'lv', 'pos']));
   });
 
   it('trägt Normnummer und Betongüte mit — dafür teilt man den Link', () => {
@@ -133,7 +155,7 @@ describe('decodeSharedChecked (Issue #95)', () => {
 
   it('meldet jeden verworfenen Teil mit deutschem Namen', () => {
     const { verworfen } = decodeSharedChecked(
-      '#v=nope~q=%~m=5,1~h=weg~p=%~f.gibtsnicht=a~f.bauteiltyp=%E0%A4%A',
+      '#v=nope~q=%~m=5,1~h=weg~p=%~f.gibtsnicht=a~f.beton=%E0%A4%A',
     );
     expect(verworfen).toEqual([
       'Ansicht',
@@ -142,7 +164,7 @@ describe('decodeSharedChecked (Issue #95)', () => {
       'Umgang mit Nicht-Treffern',
       'Auswahl',
       'Filter „gibtsnicht"',
-      'Filter „bauteiltyp"',
+      'Filter „beton"',
     ]);
   });
 
@@ -152,6 +174,20 @@ describe('decodeSharedChecked (Issue #95)', () => {
     expect(state.facets).toEqual({});
     expect(state.search).toBe('Beton');
     expect(verworfen).toEqual(['Filter „gewerk"']);
+  });
+
+  it('verwirft einen Positions-Hash, der keiner ist', () => {
+    const { state, verworfen } = decodeSharedChecked('pos=<script>~q=Beton');
+    expect(state.pos).toBeNull();
+    expect(state.search).toBe('Beton');
+    expect(verworfen).toEqual(['Auswahl']);
+  });
+
+  it('übergeht eine kaputte Datei-ID still — sie dient nur dem Hinweis', () => {
+    const { state, verworfen } = decodeSharedChecked('lv=xyz~pos=a81c55d2e0');
+    expect(state.lv).toBeNull();
+    expect(state.pos).toBe('a81c55d2e0');
+    expect(verworfen).toEqual([]);
   });
 
   it('behält den passenden Rest des Links trotzdem', () => {

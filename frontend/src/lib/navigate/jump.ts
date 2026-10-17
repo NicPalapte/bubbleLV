@@ -11,10 +11,9 @@ export interface JumpOptions {
   /**
    * Im Graphen bleiben, statt in die Tabelle zu wechseln.
    *
-   * Gilt nur für die Kommandopalette: wer dort eine OZ tippt, während er den
-   * Graphen betrachtet, hat den Graphen bewusst gewählt — und der zeigt die
-   * Auswahl selbst als Karte. Die Schaltflächen in der Prüfkarte und
-   * Auswahlkarte heißen dagegen „in Tabelle öffnen"; sie wechseln immer.
+   * Die Prüfkarte setzt es: ein Fund wählt die Position im Graphen aus, der
+   * sie selbst als Karte zeigt. Die Schaltfläche „in Tabelle öffnen" der
+   * Auswahlkarte wechselt dagegen immer.
    */
   stayInView?: boolean;
 }

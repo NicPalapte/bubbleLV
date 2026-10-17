@@ -8,6 +8,7 @@ import { PositionsTable } from '../../src/components/table/PositionsTable';
 import { ViewerProvider } from '../../src/state/ViewerProvider';
 import { useViewerDispatch } from '../../src/state/viewer';
 import type { LVNode, PositionSummary } from '../../src/types/lvNode';
+import { TEST_HASHES } from '../support/hashes';
 
 function position(oz: string): PositionSummary {
   return {
@@ -18,6 +19,7 @@ function position(oz: string): PositionSummary {
     quantity: 5,
     unitPrice: null,
     positionType: 'NORMAL',
+    hashes: TEST_HASHES,
     attributes: { positionsart: 'bauteil' },
   };
 }
@@ -90,7 +92,6 @@ describe('PositionsTable · Spalten', () => {
       'Menge',
       'EP €',
       'Positionsart',
-      'Bauteiltyp',
       'Druckfestigkeit',
       'Status',
       'Markiert',
@@ -197,7 +198,7 @@ describe('PositionsTable · Spaltenbreite (Review zu PR #43)', () => {
 
   it('reserviert die Summe der Spaltenbreiten, damit waagerecht gescrollt wird', () => {
     renderTable();
-    const total = 110 + 260 + 70 + 90 + 90 + 120 + 110 + 130 + 90 + 70 + 220;
+    const total = 110 + 260 + 70 + 90 + 90 + 120 + 130 + 90 + 70 + 220;
     const header = screen.getAllByRole('row')[0];
     expect(header.style.minWidth).toBe(`${total}px`);
   });

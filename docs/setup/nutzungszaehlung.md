@@ -1,6 +1,6 @@
 # Nutzungszählung einrichten (GoatCounter)
 
-Einmaliger Schritt für den Repo-Owner. Hintergrund: Entscheidung 0051.
+Einmaliger Schritt für den Repo-Owner. Hintergrund: Entscheidung 0056.
 
 **Ohne diese Schritte:** Die App läuft normal, aber es wird nichts gezählt.
 

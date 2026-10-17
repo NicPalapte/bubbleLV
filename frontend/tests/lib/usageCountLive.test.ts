@@ -1,7 +1,7 @@
 /**
  * @vitest-environment-options {"url": "https://nicpalapte.github.io/bubbleLV/"}
  */
-// Nutzungszählung auf der Live-Seite (Entscheidung 0051): wann gesendet wird und wann nicht.
+// Nutzungszählung auf der Live-Seite (Entscheidung 0056): wann gesendet wird und wann nicht.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 

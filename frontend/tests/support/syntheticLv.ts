@@ -6,7 +6,7 @@
 // Betonsorten, Einheiten und Mengen, damit Facetten- und Mengenfilter etwas zu
 // tun bekommen und nicht alles oder nichts treffen.
 
-import type { LVDraft, LotDraft, PositionDraft, SectionDraft } from '../../src/types/lvDraft';
+import type { LVDraft, LotDraft, PositionDraft, SectionDraft } from '@core';
 
 const GEWERKE = ['Betonarbeiten', 'Mauerarbeiten', 'Erdarbeiten', 'Putzarbeiten'];
 const BAUTEILTYPEN = ['Wand', 'Decke', 'Stütze', 'Fundament', 'Bodenplatte'];

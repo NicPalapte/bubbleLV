@@ -5,17 +5,16 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { getGaebParser } from '../../src/lib/gaeb/parser';
+import { getGaebParser } from '../../src/gaeb/parser';
 import {
   extractInlineText,
   extractMarkedText,
   extractText,
   reflowLines,
   splitInputFields,
-} from '../../src/lib/gaeb/text';
-import type { ParsedLV, ParsedPosition, ParsedSection } from '../../src/lib/gaeb/types';
-
-const FIXTURE_DIR = resolve(process.cwd(), 'tests/fixtures');
+} from '../../src/gaeb/text';
+import type { ParsedLV, ParsedPosition, ParsedSection } from '../../src/gaeb/types';
+import { FIXTURE_DIR } from '../support/fixtures';
 
 function fixture(name: string): Uint8Array {
   return new Uint8Array(readFileSync(resolve(FIXTURE_DIR, name)));

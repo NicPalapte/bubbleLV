@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { compareRows } from '../../src/lib/compare/rows';
 import type { PositionSummary } from '../../src/types/lvNode';
+import { TEST_HASHES } from '../support/hashes';
 
 function position(overrides: Partial<PositionSummary> = {}): PositionSummary {
   return {
@@ -13,6 +14,7 @@ function position(overrides: Partial<PositionSummary> = {}): PositionSummary {
     quantity: 10,
     unitPrice: 100,
     positionType: 'NORMAL',
+    hashes: TEST_HASHES,
     attributes: { gewerk: 'Betonarbeiten', bauteiltyp: 'Wand', beton: 'C25/30' },
     ...overrides,
   };

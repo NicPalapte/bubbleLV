@@ -1,4 +1,4 @@
-// Anonyme Nutzungszählung (Entscheidung 0051): feste Ereignisse, keine Inhalte.
+// Anonyme Nutzungszählung (Entscheidung 0056): feste Ereignisse, keine Inhalte.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { countEvent, countUrl, USAGE_EVENTS, usageEventOf } from '../../src/lib/usage/count';

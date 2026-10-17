@@ -7,6 +7,7 @@ import { PositionDetails } from '../../src/components/common/PositionDetails';
 import { Chip } from '../../src/components/ui/Chip';
 import { ViewerProvider } from '../../src/state/ViewerProvider';
 import type { LVNode, PositionSummary } from '../../src/types/lvNode';
+import { TEST_HASHES } from '../support/hashes';
 
 const position: PositionSummary = {
   oz: '01.0010',
@@ -16,6 +17,7 @@ const position: PositionSummary = {
   quantity: 12,
   unitPrice: null,
   positionType: 'NORMAL',
+  hashes: TEST_HASHES,
   attributes: { positionsart: 'bauteil', expo: ['XC1'] },
 };
 

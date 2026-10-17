@@ -18,6 +18,10 @@ import { useViewer, useViewerDispatch } from '../../state/viewer';
 /** Wartezeit vor dem Schreiben — Tippen in der Suche soll nicht je Zeichen schreiben. */
 const SCHREIB_VERZOEGERUNG = 300;
 
+/** Hinweis, wenn der Link aus einer anderen Datei stammt, die Position aber gleich ist. */
+export const ANDERE_DATEI =
+  'Der Link stammt aus einer anderen Datei. Die Position ist inhaltlich gleich.';
+
 /** Fragment wegnehmen, Pfad behalten. */
 function leereFragment(): void {
   if (window.location.hash === '') return;
@@ -49,11 +53,14 @@ export function useShareLink(): void {
     if (window.location.hash === '' || window.location.hash === '#') return;
     const { state: shared, verworfen } = decodeSharedChecked(window.location.hash);
 
-    // Die OZ im Link zeigt auf eine Position **dieser** Datei. Findet sie sich
-    // nicht, gilt der Rest des Links trotzdem — ein Link aus einer anderen
-    // Fassung des LV soll nicht alles verwerfen.
+    // Der Hash im Link zeigt auf eine Position mit genau diesem Inhalt; ältere
+    // Links tragen die OZ. Findet sich keine, gilt der Rest des Links trotzdem —
+    // ein Link aus einer anderen Fassung des LV soll nicht alles verwerfen.
     let positionId: string | null = null;
-    if (shared.oz !== null) {
+    if (shared.pos !== null) {
+      const treffer = index.nodes.find((node) => node.position?.hashes.id === shared.pos);
+      positionId = treffer?.id ?? null;
+    } else if (shared.oz !== null) {
       const treffer = index.nodes.find((node) => node.position?.oz === shared.oz);
       positionId = treffer?.id ?? null;
     }
@@ -63,14 +70,19 @@ export function useShareLink(): void {
     // Was am Link nicht passte, nicht still verschlucken (Issue #95): sonst
     // wundert sich jemand über den leeren Standardzustand, ohne zu erfahren,
     // dass der Link die Ursache ist.
-    if (shared.oz !== null && positionId === null && !verworfen.includes('Auswahl')) {
+    const gesucht = shared.pos !== null || shared.oz !== null;
+    if (gesucht && positionId === null && !verworfen.includes('Auswahl')) {
       verworfen.push('Auswahl');
     }
+    const andereDatei = shared.lv !== null && lv.fileId !== null && shared.lv !== lv.fileId;
     if (verworfen.length > 0) {
       dispatch({
         type: 'notice',
         message: `Der Link passt nur teilweise zu dieser Datei. Ignoriert: ${verworfen.join(', ')}.`,
       });
+    } else if (andereDatei && positionId !== null) {
+      // Gleicher Hash ⇒ gleicher Inhalt, auch wenn die Datei eine andere ist.
+      dispatch({ type: 'notice', message: ANDERE_DATEI });
     }
   }, [lv, index, parents, dispatch]);
 
@@ -90,6 +102,7 @@ export function useShareLink(): void {
       return () => window.clearTimeout(timer);
     }
     const position = selection.positionId === null ? null : nodes.get(selection.positionId);
+    const pos = position?.position?.hashes.id ?? null;
     const shared: SharedState = {
       view: view.mode,
       search: filter.search,
@@ -100,7 +113,9 @@ export function useShareLink(): void {
       ),
       menge: filter.filters.menge,
       hideMode: filter.hideMode,
-      oz: position?.position?.oz ?? null,
+      pos,
+      lv: pos === null ? null : lv.fileId,
+      oz: null,
     };
     const hash = sharedHash(shared);
     const timer = window.setTimeout(() => {

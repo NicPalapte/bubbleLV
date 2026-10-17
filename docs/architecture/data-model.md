@@ -74,17 +74,18 @@ Leistungsbereich bzw. Gewerk (`gewerk`, `gewerkLb`) gibt es seit
 
 **Nur wenn `positionsart === "bauteil"`:**
 
-| Key          | Typ              | Beispiel        | Facette           | Gilt für                                        |
-| ------------ | ---------------- | --------------- | ----------------- | ----------------------------------------------- |
-| `bauteiltyp` | `string \| null` | `"Wand"`        | Bauteiltyp        | alle Bauteil-Positionen                         |
-| `beton`      | `string \| null` | `"C30/37"`      | Druckfestigkeit   | genormte Schreibweise im Text (Fallback, s. u.) |
-| `expo`       | `string[]`       | `["XC2","XD1"]` | Expositionsklasse | wie `beton`                                     |
+| Key     | Typ              | Beispiel        | Facette           | Gilt für                                        |
+| ------- | ---------------- | --------------- | ----------------- | ----------------------------------------------- |
+| `beton` | `string \| null` | `"C30/37"`      | Druckfestigkeit   | genormte Schreibweise im Text (Fallback, s. u.) |
+| `expo`  | `string[]`       | `["XC2","XD1"]` | Expositionsklasse | wie `beton`                                     |
+
+`bauteiltyp` ist seit 15.10.2026 entfernt (Entscheidung 0052).
 
 Maße (`dicke`, `hoehe`, `laenge`, `gewicht`) standen bis WP-J hier; sie kommen
 jetzt aus einem Extraktor (s. u.) und gelten für jede Position.
 
 **Nur wenn `positionsart !== "bauteil"`** — eigenes, kleineres Schema, **kein**
-`bauteiltyp`/`beton`; Keys kommen aus dem jeweiligen
+`beton`; Keys kommen aus dem jeweiligen
 Nicht-Bauteil-Ruleset (z. B. `PersonalRuleset`, `PlanungRuleset`), initial minimal
 und inkrementell erweiterbar — nicht als vollständiges Schema vorab festgelegt.
 

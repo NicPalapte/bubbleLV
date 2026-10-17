@@ -9,7 +9,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { loadLv, LVLoadError } from '../../src/lib/pipeline/loadLv';
 import type { PipelineRequest, PipelineResponse } from '../../src/lib/pipeline/messages';
 import { classifyAndBuild } from '../../src/lib/pipeline/runPipeline';
-import { gaebMitPositionen } from '../support/gaebXml';
+import { gaebMitPositionen } from '../../../packages/core/tests/support/gaebXml';
 
 afterEach(() => {
   vi.unstubAllGlobals();

@@ -9,7 +9,7 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
-## 0.17.0 — 15.10.2026 · Anonyme Nutzungszählung
+## 0.20.0 — 17.10.2026 · Anonyme Nutzungszählung
 
 - **Bubble kann anonym zählen**, welche Funktionen genutzt werden: Seitenaufrufe, geöffnete
   Dateien und Demos, Seitenfenster, Tabelle, Vergleich, Suche, Markierung, Kommentar,
@@ -20,6 +20,35 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
   Browser „Do Not Track“ meldet.
 - Die Zählung ist vorbereitet, aber noch aus. Sie startet erst, wenn die
   Datenschutzerklärung steht.
+
+## 0.19.0 — 17.10.2026 · Positionen als Link teilen
+
+- **Link auf eine Position:** Ist eine Position gewählt, steht in der Adresszeile ein
+  kurzer Code für genau diese Position (`#lv=…~pos=…`). Wer dieselbe Datei lädt, landet
+  dort – auch wenn er die Datei unter anderem Namen gespeichert hat.
+- **Andere Datei, gleiche Position:** Stammt der Link aus einer anderen Datei und die
+  Position ist inhaltlich gleich (z. B. X83 und bepreiste X84), öffnet sie trotzdem, mit
+  Hinweis.
+- **Alte Links** mit OZ funktionieren weiter.
+- **Unter der Haube:** Parser und Datenmodell liegen jetzt als eigener Kern in
+  `packages/core/` – Grundlage für BIM und Terminplan.
+
+## 0.17.0 — 15.10.2026 · Prüfung aufgeräumt
+
+- **V3 läuft:** Hersteller- und Produktnamen aus `hersteller-produktnamen.csv` werden
+  gefunden. Steht „gleichwertig“ oder „o. glw.“ in der Position, gibt es keinen Hinweis.
+  Die Zusätze stehen in `pruefregeln-stichworte.csv`.
+- **M1 ist aus:** Der Hinweis zur Bewehrung erscheint nicht mehr. Mit `bestaetigt` in
+  `pruefregeln.csv` kommt er zurück.
+- **Kein „kein Norm-Bezug“ mehr:** Regeln ohne Norm zeigen keine Verweiszeile.
+- **Prüfkarte kompakt:** eine Zeile je Regel mit Schalter und Anzahl, nach Kategorie
+  gruppiert. Ein Klick auf die Regel öffnet Hinweistext, Verweis und Funde in einer Karte
+  rechts daneben. Regeln ohne Treffer stehen gesammelt in einer Zeile.
+- **Klick auf einen Fund** in der Prüfung wählt die Position im Graphen aus. Die Tabelle
+  öffnet sich nicht mehr.
+- **Filter „Status“ entfernt:** Er hatte immer nur den Wert „offen“.
+- **Bauteiltyp entfernt:** Die Erkennung kannte nur zwölf Typen. Filter, Tabellenspalte,
+  Export-Spalte, Matrix-Achse und der Import-Hinweis „Bauteil ohne Bauteiltyp“ fallen weg.
 
 ## 0.16.0 — 13.10.2026 · Material Beton
 

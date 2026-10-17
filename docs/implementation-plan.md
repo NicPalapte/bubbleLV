@@ -694,7 +694,7 @@ nützt, entscheidet sich erst, wenn der Export aus WP-P existiert.
 
 **Issue #57 — Nutzung messen:** zuerst abgelehnt
 ([`decisions/0017`](decisions/0017-keine-nutzungsmessung.md)), seit 15.10.2026 anonym
-über GoatCounter ([`decisions/0051`](decisions/0051-anonyme-nutzungszaehlung.md)).
+über GoatCounter ([`decisions/0056`](decisions/0056-anonyme-nutzungszaehlung.md)).
 Der Melde-Knopf aus WP-P Schritt 6 bleibt.
 
 ---

@@ -1,14 +1,18 @@
 // Geteilter Link in der App (WP-P, Schritt 2). Die Abnahme aus dem Plan:
 // „Ein geteilter Link stellt Ansicht und Filter wieder her, sobald dieselbe
 // Datei geladen ist — ohne Fachdaten im Link außer der OZ der Auswahl."
+// Seit Entscheidung 0055 steht statt der OZ ein Inhalts-Hash im Link.
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import App from '../../src/App';
+import { ANDERE_DATEI } from '../../src/components/common/useShareLink';
+import { collectPositions } from '../../src/lib/tree/buildTree';
+import { runPipeline } from '../../src/lib/pipeline/runPipeline';
 
-const FIXTURE_DIR = resolve(process.cwd(), 'tests/fixtures');
+const FIXTURE_DIR = resolve(process.cwd(), '../packages/core/tests/fixtures');
 
 /** Das Fragment, das die App gerade geschrieben hat. */
 function fragment(): string {
@@ -144,6 +148,41 @@ describe('Was im Link steht', () => {
     expect(hash).not.toContain('BVBS');
     // Und keine Position, solange keine gewählt ist.
     expect(hash).not.toContain('p=');
+  });
+});
+
+describe('Geteilter Link · Positions-Hash', () => {
+  const NAME = 'gaeb-xml-beispiel.x83';
+  const OZ = '001.004.0030';
+
+  /** Hash und Datei-ID so, wie die App sie für die Fixture berechnet. */
+  function erwartet(): { pos: string; lv: string } {
+    const bytes = readFileSync(resolve(FIXTURE_DIR, NAME));
+    const loaded = runPipeline(new Uint8Array(bytes).buffer, NAME);
+    const node = collectPositions(loaded.tree).find((n) => n.position?.oz === OZ);
+    if (node?.position == null || loaded.fileId === null) throw new Error('Fixture ohne OZ');
+    return { pos: node.position.hashes.id, lv: loaded.fileId };
+  }
+
+  it('wählt die Position aus dem Hash des Links', async () => {
+    setzeFragment(`#v=table~pos=${erwartet().pos}`);
+    await ladeApp(NAME);
+    await waitFor(() => expect(screen.getAllByText(OZ).length).toBeGreaterThan(0));
+  });
+
+  it('schreibt die Auswahl als Datei-ID und Hash, nicht als OZ', async () => {
+    // Ein älterer Link mit OZ wählt die Position; die App schreibt ihn neu.
+    setzeFragment(`#p=${OZ}`);
+    await ladeApp(NAME);
+    const { pos, lv } = erwartet();
+    await waitFor(() => expect(fragment()).toBe(`#lv=${lv}~pos=${pos}`));
+  });
+
+  it('sagt, wenn der Link aus einer anderen Datei stammt', async () => {
+    setzeFragment(`#lv=000000000000~pos=${erwartet().pos}`);
+    await ladeApp(NAME);
+    await waitFor(() => expect(screen.getByText(ANDERE_DATEI)).toBeInTheDocument());
+    expect(screen.getAllByText(OZ).length).toBeGreaterThan(0);
   });
 });
 

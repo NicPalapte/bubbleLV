@@ -50,6 +50,10 @@ function filters(facets: Record<string, string[]>, menge: [number, number] | nul
 }
 
 describe(`Filter über ${POSITIONS.toLocaleString('de-DE')} Positionen`, () => {
+  it('baut den Baum samt Positions-Hashes in einem Bruchteil des Ladebudgets', () => {
+    expect(timeMedian(() => buildTree(draft))).toBeLessThan(BUILD_BUDGET_MS);
+  });
+
   it('baut Index und Aggregate in einem Bruchteil des Ladebudgets', () => {
     expect(index.size).toBe(POSITIONS);
     const elapsed = timeMedian(() => summarize(buildPositionIndex(tree)));
@@ -61,7 +65,7 @@ describe(`Filter über ${POSITIONS.toLocaleString('de-DE')} Positionen`, () => {
     ['mehrere Facetten', filters({ gewerk: ['Betonarbeiten'], einheit: ['m3'] }), ''],
     ['Mengenbereich', filters({}, [100, 400]), ''],
     ['Volltextsuche im Langtext', EMPTY_FILTERS, 'nachbehandeln'],
-    ['Facette und Suche', filters({ bauteiltyp: ['Wand'] }), 'aufmaß'],
+    ['Facette und Suche', filters({ positionsart: ['bauteil'] }), 'aufmaß'],
   ];
 
   it.each(cases)('%s bleibt im Budget', (_name, active, search) => {

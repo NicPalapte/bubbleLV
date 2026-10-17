@@ -11,7 +11,13 @@ import regelnCsv from '@reference/pruefregeln.csv?raw';
 import risikoCsv from '@reference/risiko-formulierungen.csv?raw';
 import nebenleistungenCsv from '@reference/vob-nebenleistungen.csv?raw';
 import { parseCsv } from '../csv';
-import { compileAusser, compileStichworte, splitStichworte } from '../classify/material/stichwort';
+import {
+  compileAusser,
+  compileStichworte,
+  splitStichworte,
+  stichwortQuelle,
+  WORD_CHAR,
+} from '../classify/material/stichwort';
 import type { FlagCategory, FlagSeverity } from './types';
 
 /** Status einer Regel laut Referenzdatei. */
@@ -92,11 +98,35 @@ export function risikoFormulierungen(): RisikoFormulierung[] {
   return risiko;
 }
 
-/** Hersteller-/Produktnamen (V3) — leer, solange niemand sie gepflegt hat. */
-export function herstellerNamen(): string[] {
-  return parseCsv(herstellerCsv)
-    .map((row) => row.get('name'))
-    .filter((name) => name !== '');
+export interface HerstellerMuster {
+  /** Name je Gruppe: Gruppe `i + 1` des Musters gehört zu `namen[i]`. */
+  namen: readonly string[];
+  /** Alle Namen und Produktnamen in einem Muster (global, mit Wortgrenzen). */
+  pattern: RegExp;
+}
+
+let hersteller: HerstellerMuster | null = null;
+
+/**
+ * Hersteller-/Produktnamen (V3) als **ein** Suchmuster: ein Durchlauf je Text
+ * statt einer pro Zeile der Tabelle. `null`, solange niemand sie gepflegt hat.
+ */
+export function herstellerMuster(): HerstellerMuster | null {
+  if (hersteller !== null) return hersteller.namen.length > 0 ? hersteller : null;
+  const namen: string[] = [];
+  const gruppen: string[] = [];
+  for (const row of parseCsv(herstellerCsv)) {
+    const name = row.get('name');
+    const quelle = stichwortQuelle([name, ...splitStichworte(row.get('stichworte'))]);
+    if (name === '' || quelle === null) continue;
+    namen.push(name);
+    gruppen.push(`(${quelle})`);
+  }
+  hersteller = {
+    namen,
+    pattern: new RegExp(`(?<!${WORD_CHAR})(?:${gruppen.join('|')})(?!${WORD_CHAR})`, 'giu'),
+  };
+  return namen.length > 0 ? hersteller : null;
 }
 
 /** Nebenleistungen je ATV (V8) — leer, solange niemand sie gepflegt hat. */

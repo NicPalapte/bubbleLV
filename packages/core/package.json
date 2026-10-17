@@ -1,0 +1,9 @@
+{
+  "name": "@bubble/core",
+  "private": true,
+  "version": "0.1.0",
+  "license": "UNLICENSED",
+  "type": "module",
+  "description": "Neutraler LV-Kern: Datenmodell, GAEB-Import, Positions-Hashes. Ohne React.",
+  "exports": "./src/index.ts"
+}

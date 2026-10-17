@@ -7,7 +7,6 @@ import { useState } from 'react';
 import { CAP, DisplayControls } from './DisplayControls';
 import { RangeSlider } from './RangeSlider';
 import { ChipGroup, ValueChip } from '../ui/ValueChip';
-import { StatusPill } from '../ui/StatusPill';
 import { FACETS, facetOptionLabel, type Facet } from '../../lib/facets';
 import { formatCount } from '../../lib/format';
 import { EMPTY_SUMMARY } from '../../lib/index/summary';
@@ -77,7 +76,6 @@ function FacetSection({
               onClick={() => toggle(value)}
               title={label}
               count={count}
-              leading={facet.id === 'status' ? <StatusPill status={value} dotOnly /> : undefined}
             >
               {label}
             </ValueChip>
