@@ -35,7 +35,7 @@ Spalten der Tabelle:
 
 | Spalte      | Inhalt                                                       |
 | ----------- | ------------------------------------------------------------ |
-| `begriff`   | Wort oder Muster (`#` = Zahl, `*` = Buchstaben)              |
+| `begriff`   | Wort oder Muster (`#` = Zahl, `*` = Buchstaben/Ziffern)      |
 | `kategorie` | `material` · `masse` · `wichtig` · `aus` (nicht hervorheben) |
 | `bemerkung` | frei, wird nicht ausgewertet                                 |
 

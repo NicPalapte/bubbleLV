@@ -44,6 +44,26 @@ Fehlt Name, Kategorie oder Schwere, bleibt die Regel inaktiv und nennt den Grund
 Ein unbekannter oder leerer Status gilt als `zu_bestaetigen` — die vorsichtige
 Annahme.
 
+## `hervorhebungen.csv` — Begriffe im Langtext
+
+Färbt Begriffe im Langtext der Positionskarte ein. Kein Filter, kein Attribut, keine
+Prüfregel. Pflege mit den Admin-Werkzeugen oder von Hand:
+[`../../setup/admin-werkzeuge.md`](../../setup/admin-werkzeuge.md).
+
+| Spalte      | Bedeutung                                                                                       |
+| ----------- | ----------------------------------------------------------------------------------------------- |
+| `begriff`   | Wort oder Muster, ohne Groß/klein. `#` = eine Zahl, `*` = Buchstaben oder Ziffern, z. B. `C#/#` |
+| `kategorie` | `material` (grün) · `masse` (violett) · `wichtig` (rot) · `aus` (nicht hervorheben)             |
+| `bemerkung` | frei, wird nicht ausgewertet                                                                    |
+
+- **Vorrang:** Was die App selbst findet (Normen, Maße, Fristen …), bleibt. Ein Begriff
+  färbt nur Stellen, die noch frei sind.
+- **`aus`** nimmt jede Markierung weg, die den Begriff berührt, auch eine der App.
+- **Längere Begriffe zuerst:** „Sichtbetonklasse SB#" gewinnt gegen „SB#".
+- Zeilen mit leerem Begriff oder unbekannter Kategorie werden still übersprungen.
+- Im Browser gelernte Begriffe kommen dazu und gelten nur dort, bis die Datei hier
+  ersetzt ist.
+
 ## `einheiten-gruppen.csv`
 
 Eine Zeile je Gruppe, Schreibweisen pipe-getrennt. Groß-/Kleinschreibung und
