@@ -7,9 +7,11 @@ Einmaliger Schritt für den Repo-Owner. Hintergrund: Entscheidung 0056.
 ## Schritt 1 – Konto anlegen
 
 1. https://www.goatcounter.com/signup öffnen.
-2. Als **Code** genau `bubblelv` eintragen. Der Code steht so in
-   `frontend/src/lib/usage/count.ts` (`GOATCOUNTER_CODE`).
-   - Ist `bubblelv` schon vergeben: einen anderen Code wählen und mir sagen, dann
+2. Als **Code** genau `bubble` eintragen (Konto: https://bubble.goatcounter.com). Der Code
+   steht so in `frontend/src/lib/usage/count.ts` (`GOATCOUNTER_CODE`).
+   - Das Skript-Schnipsel, das GoatCounter anzeigt, wird **nicht** gebraucht: die App
+     schickt die Zählung selbst an `https://bubble.goatcounter.com/count`.
+   - Ist `bubble` schon vergeben: einen anderen Code wählen und mir sagen, dann
      ändere ich die Konstante.
 3. E-Mail und Passwort eintragen, bestätigen.
 

@@ -48,7 +48,7 @@ describe('countUrl', () => {
   it('schickt ein Ereignis nur mit festem Namen, ohne Adresse oder Fragment', () => {
     window.location.hash = '#q=geheim~p=01.0010';
     const url = new URL(countUrl('export-csv', true));
-    expect(url.origin).toBe('https://bubblelv.goatcounter.com');
+    expect(url.origin).toBe('https://bubble.goatcounter.com');
     expect(url.searchParams.get('p')).toBe('export-csv');
     expect(url.searchParams.get('e')).toBe('true');
     expect(url.searchParams.has('s')).toBe(false);
