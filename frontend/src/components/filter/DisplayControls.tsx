@@ -1,5 +1,6 @@
-// „Visualisierung" im Seitenfenster über den Filtern: wie der Graph gliedert und
-// was mit Nicht-Treffern geschieht (docs/decisions/0035-graph-gliederung.md).
+// „Visualisierung" im Seitenfenster über den Filtern: wie der Graph gliedert
+// (docs/decisions/0035-graph-gliederung.md). Der Umgang mit Nicht-Treffern steht
+// in der Suche (TopBar, Entscheidung 0058).
 // Die Größe der Positionen steht unten rechts am Graphen (GraphControls).
 
 import type { ReactNode } from 'react';
@@ -12,17 +13,12 @@ import {
   SECTION_AXIS,
   type GraphLayoutId,
 } from '../../lib/graph/layoutMap';
-import { useViewer, useViewerDispatch, type HideMode } from '../../state/viewer';
+import { useViewer, useViewerDispatch } from '../../state/viewer';
 
 const LAYOUTS: ReadonlyArray<{ value: GraphLayoutId; label: string; title: string }> = [
   { value: 'lv', label: 'nach LV', title: 'Lose und Abschnitte, wie das LV gegliedert ist' },
   { value: 'matrix', label: 'Matrix', title: 'Nach Merkmalen in Zeilen und Spalten ordnen' },
 ];
-
-const HIDE_MODES = [
-  { value: 'dim', label: 'dimmen' },
-  { value: 'hide', label: 'ausblenden' },
-] as const;
 
 /** Kein Wert gewählt — der Knopf „keine Spalten". */
 const NO_COLS = '';
@@ -59,8 +55,6 @@ export function DisplayControls() {
     view: {
       graph: { layout, rows, cols },
     },
-    filter: { hideMode },
-    matches,
   } = useViewer();
   const dispatch = useViewerDispatch();
   if (lv === null) return null;
@@ -125,17 +119,6 @@ export function DisplayControls() {
             </ChipGroup>
           </Row>
         </>
-      )}
-
-      {matches.filtering && (
-        <Row label="Nicht-Treffer">
-          <SegmentedControl
-            label="Nicht-Treffer"
-            options={HIDE_MODES}
-            value={hideMode}
-            onChange={(value) => dispatch({ type: 'hideMode', value: value as HideMode })}
-          />
-        </Row>
       )}
     </div>
   );

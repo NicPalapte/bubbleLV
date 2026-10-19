@@ -75,6 +75,8 @@ export interface DataTableProps<T> {
   label?: string;
   /** Titel-Attribut je Zelle, z. B. für abgeschnittene Bezeichnungen. */
   cellTitle?: (row: T, column: Column<T>) => string | undefined;
+  /** Zeile blass zeichnen — Nicht-Treffer im Modus „dimmen" (Entscheidung 0058). */
+  dimmed?: (row: T) => boolean;
   /**
    * Gruppenzuordnung einer Zeile. Wechselt der Schlüssel gegenüber der
    * vorigen Zeile, steht darüber eine Kopfzeile. Die Zeilen müssen dafür
@@ -261,6 +263,7 @@ export function DataTable<T>({
   onSort,
   label,
   cellTitle,
+  dimmed,
   group,
   onResize,
   initialScrollTop = 0,
@@ -719,6 +722,7 @@ export function DataTable<T>({
                       : 'var(--white)',
                   fontFamily: 'var(--mono)',
                   fontSize: 'var(--fs-row)',
+                  opacity: dimmed?.(row) === true ? 0.4 : undefined,
                   ...(measured
                     ? { position: 'absolute', top, left: 0, right: 0, boxSizing: 'border-box' }
                     : {}),

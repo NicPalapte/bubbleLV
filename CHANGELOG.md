@@ -9,6 +9,13 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.23.0 — 19.10.2026 · Nicht-Treffer in der Suche
+
+- **Dimmen oder ausblenden** steht jetzt direkt in der Suchleiste, sobald Suche oder Filter
+  aktiv sind. Vorher lag der Schalter im Seitenfenster „Filter".
+- **Die Tabelle folgt dem Schalter:** beim Dimmen zeigt sie alle Positionen, Nicht-Treffer
+  blass; beim Ausblenden nur die Treffer.
+
 ## 0.22.0 — 17.10.2026 · Notizen hängen am Inhalt der Position
 
 - **Marker und Kommentare** werden jetzt unter dem Fingerabdruck der Position gespeichert
