@@ -792,9 +792,9 @@ export function BubbleGraph({ root }: { root: LVNode }) {
   // Kacheln: Farbstufe 1–5 nach Anzahl, bezogen auf die vollste Kachel.
   const grid = map.axes?.grid ?? null;
   // „übrige" (gedämpfte Nicht-Treffer) zählt nicht mit, sonst wären alle Kacheln blass.
-  const maxInCell = Math.max(
-    1,
-    ...map.groups.filter((g) => g.cell !== null).map((g) => g.slots.length),
+  const maxInCell = useMemo(
+    () => map.groups.reduce((m, g) => (g.cell === null ? m : Math.max(m, g.slots.length)), 1),
+    [map],
   );
   // Nur Zeilen und Spalten im Bild — Zeilen × Spalten einzeln zu prüfen, kostete je Frame.
   const gridRows =
