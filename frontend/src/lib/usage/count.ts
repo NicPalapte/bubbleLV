@@ -5,8 +5,8 @@
 
 import type { ViewerAction } from '../../state/viewer';
 
-/** Konto bei GoatCounter: https://bubblelv.goatcounter.com (docs/setup/nutzungszaehlung.md). */
-export const GOATCOUNTER_CODE = 'bubblelv';
+/** Konto bei GoatCounter: https://bubble.goatcounter.com (docs/setup/nutzungszaehlung.md). */
+export const GOATCOUNTER_CODE = 'bubble';
 const COUNT_URL = `https://${GOATCOUNTER_CODE}.goatcounter.com/count`;
 
 export const USAGE_EVENTS = [
