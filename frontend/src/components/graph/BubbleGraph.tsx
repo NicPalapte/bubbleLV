@@ -588,7 +588,10 @@ export function BubbleGraph({ root }: { root: LVNode }) {
   // ── Hover: Kurztext als HTML-Tooltip (SVG-Text bricht nicht um).
   const [hoverSlot, setHoverSlot] = useState(-1);
   // Kachel unter der Maus — auch über einem ihrer Punkte, sonst flackert die Hervorhebung.
-  const [hoverGroup, setHoverGroup] = useState(-1);
+  // Gemerkt samt Layout: nach einem Umbau zeigte der Index sonst auf eine andere Gruppe.
+  const [hover, setHover] = useState<{ map: typeof map; group: number } | null>(null);
+  const hoverGroup = hover !== null && hover.map === map ? hover.group : -1;
+  const setHoverGroup = (group: number): void => setHover(group < 0 ? null : { map, group });
   const onWorldOver = (event: ReactMouseEvent<SVGGElement>): void => {
     const target = (event.target as Element).closest('[data-slot],[data-group]');
     const slot = target?.getAttribute('data-slot') ?? null;
