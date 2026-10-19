@@ -515,22 +515,18 @@ function layoutFree(
     }
     const pitch = 2 * (maxR || 4) + 4;
     const colLabels = colValues.map((value) => (value === null ? '' : axisLabel(colAxis, value)));
-    const perRow = colValues.map((_, j) => {
-      const most = Math.max(0, ...cellGroups.filter((g) => g.col === j).map((g) => g.slots.length));
-      return Math.max(3, Math.ceil(Math.sqrt(most * 2.2)));
-    });
+    // Vollste Zelle je Spalte, einmal über alle Zellen statt je Spalte gefiltert.
+    const mostInCol = colValues.map(() => 0);
+    for (const g of cellGroups) mostInCol[g.col] = Math.max(mostInCol[g.col], g.slots.length);
+    const perRow = mostInCol.map((most) => Math.max(3, Math.ceil(Math.sqrt(most * 2.2))));
     const colW = perRow.map((k, j) =>
       Math.max(k * pitch + 2 * TILE_PAD, colLabels[j].length * AXIS_CHAR + 16),
     );
-    const rowH = rowValues.map((_, i) => {
-      const lines = Math.max(
-        1,
-        ...cellGroups
-          .filter((g) => g.row === i)
-          .map((g) => Math.ceil(g.slots.length / perRow[g.col])),
-      );
-      return TILE_TOP + lines * pitch + TILE_PAD - 2;
-    });
+    const linesInRow = rowValues.map(() => 1);
+    for (const g of cellGroups) {
+      linesInRow[g.row] = Math.max(linesInRow[g.row], Math.ceil(g.slots.length / perRow[g.col]));
+    }
+    const rowH = linesInRow.map((lines) => TILE_TOP + lines * pitch + TILE_PAD - 2);
     const colX: number[] = [];
     const rowY: number[] = [];
     colW.reduce((x, width, j) => ((colX[j] = x), x + width + TILE_GAP), 0);

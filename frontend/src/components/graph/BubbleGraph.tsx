@@ -796,6 +796,15 @@ export function BubbleGraph({ root }: { root: LVNode }) {
     1,
     ...map.groups.filter((g) => g.cell !== null).map((g) => g.slots.length),
   );
+  // Nur Zeilen und Spalten im Bild — Zeilen × Spalten einzeln zu prüfen, kostete je Frame.
+  const gridRows =
+    grid === null
+      ? []
+      : grid.rowY.flatMap((y, i) => (y + grid.rowH[i] >= cull.y0 && y <= cull.y1 ? [i] : []));
+  const gridCols =
+    grid === null
+      ? []
+      : grid.colX.flatMap((x, j) => (x + grid.colW[j] >= cull.x0 && x <= cull.x1 ? [j] : []));
   const hotCell = map.groups[hoverGroup]?.cell ?? null;
   const pickedGroup = selectedSlot >= 0 ? map.groupOf[selectedSlot] : -1;
   // Punkte: beim Gleiten alle, sonst nur die im Bild.
@@ -919,25 +928,19 @@ export function BubbleGraph({ root }: { root: LVNode }) {
             )}
 
             {/* Raster der Matrix: jede Zelle als blasse Kachel, auch ohne Positionen. */}
-            {grid !== null &&
-              grid.rowY.flatMap((y, i) =>
-                grid.colX.map((x, j) => {
-                  const cw = grid.colW[j];
-                  const ch = grid.rowH[i];
-                  if (!isInView(cull, x + cw / 2, y + ch / 2, Math.hypot(cw, ch) / 2)) return null;
-                  return (
-                    <rect
-                      key={`t${i}-${j}`}
-                      x={x}
-                      y={y}
-                      width={cw}
-                      height={ch}
-                      rx={10}
-                      className="graph-tile is-empty"
-                    />
-                  );
-                }),
-              )}
+            {gridRows.flatMap((i) =>
+              gridCols.map((j) => (
+                <rect
+                  key={`t${i}-${j}`}
+                  x={grid!.colX[j]}
+                  y={grid!.rowY[i]}
+                  width={grid!.colW[j]}
+                  height={grid!.rowH[i]}
+                  rx={10}
+                  className="graph-tile is-empty"
+                />
+              )),
+            )}
 
             {visibleGroups.map(({ group, i }) => {
               const n = group.slots.length;
