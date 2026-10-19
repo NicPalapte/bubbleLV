@@ -207,6 +207,32 @@ describe('Wechsel der Gliederung (Entscheidung 0058)', () => {
     }
   });
 
+  it('zeichnet Kacheln nach Anzahl und hebt die unter der Maus samt Achsen hervor', async () => {
+    await loadAndShowGraph();
+    oeffneFilter();
+    fireEvent.click(screen.getByRole('radio', { name: 'Matrix' }));
+    fireEvent.click(
+      within(screen.getByRole('radiogroup', { name: 'Zeilen' })).getByRole('radio', {
+        name: 'Abschnitt',
+      }),
+    );
+    fireEvent.click(
+      within(screen.getByRole('radiogroup', { name: 'Spalten' })).getByRole('radio', {
+        name: 'Einheit',
+      }),
+    );
+    const tiles = [...graph().querySelectorAll('rect.graph-tile:not(.is-empty)')];
+    expect(tiles.length).toBeGreaterThan(0);
+    expect(
+      tiles.every((tile) => /^var\(--heat-[1-5]\)$/.test(tile.getAttribute('fill') ?? '')),
+    ).toBe(true);
+    expect(graph().querySelector('.is-hot')).toBeNull();
+    fireEvent.mouseOver(tiles[0]);
+    expect(tiles[0]).toHaveClass('is-hot');
+    // Eine Zeilen- und eine Spaltenbeschriftung leuchten mit.
+    expect(graph().querySelectorAll('.graph-axis.is-on')).toHaveLength(2);
+  });
+
   it('bietet Abschnitt nur als Zeile an, nicht als Spalte', async () => {
     await loadAndShowGraph();
     oeffneFilter();
