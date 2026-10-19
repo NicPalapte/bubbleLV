@@ -1,6 +1,7 @@
 // Bubble-Graph — der Hauptscreen (docs/decisions/0034-graph-als-hauptscreen.md).
 // Gruppen als Kreise, Positionen als Punkte darin, Lose als gestrichelte Hülle;
-// Gliederung „nach LV" oder „Matrix" (docs/decisions/0035-graph-gliederung.md).
+// Gliederung „nach LV" oder „Matrix" (docs/decisions/0035-graph-gliederung.md),
+// die Matrix mit Spalten als Kacheln (docs/decisions/0058-matrix-kacheln.md).
 // Die Lage rechnet `layoutMap` (rein, ohne DOM); hier wird gezeichnet,
 // verschoben und gezoomt.
 //
@@ -63,6 +64,18 @@ const LEADER_MIN_WIDTH = 760;
 /** Fenster und Leisten über dem Graphen — Schilder weichen ihnen aus. */
 const OVERLAY_SELECTOR = '.ov-glass, .ov-window, .ov-pill';
 const EMPTY_SELECTED: Readonly<Record<string, ReadonlySet<string>>> = {};
+/** Dauer des Gleitens beim Wechsel der Gliederung — wie in index.css, plus Einblenden. */
+const MORPH_MS = 1000;
+/** Ab so vielen Punkten springt der Graph um, statt zu gleiten: sonst ruckelt es. */
+const MORPH_MAX = 3000;
+/** Punkte fliegen von links nach rechts nacheinander los, über diese Spanne. */
+const MORPH_SWEEP_MS = 260;
+
+function prefersReducedMotion(): boolean {
+  return typeof window !== 'undefined' && window.matchMedia !== undefined
+    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    : false;
+}
 
 /** Zeichenbreite der Gruppenbeschriftung in Weltkoordinaten (14px Sans, 10,5px Mono). */
 const SANS_CHAR = 8.6;
@@ -82,8 +95,10 @@ function fitText(text: string, width: number, charWidth: number): string {
   return text.length <= max ? text : `${text.slice(0, Math.max(1, max - 1)).trimEnd()}…`;
 }
 
-/** Rahmen um eine Gruppe samt Beschriftung darüber. */
+/** Rahmen um eine Gruppe samt Beschriftung darüber; bei einer Kachel die Kachel. */
 function groupBox(group: MapGroup): { x0: number; y0: number; x1: number; y1: number } {
+  const { cell } = group;
+  if (cell !== null) return { x0: cell.x, y0: cell.y, x1: cell.x + cell.w, y1: cell.y + cell.h };
   return {
     x0: group.x - group.r,
     y0: group.y - group.r - 40,
@@ -470,12 +485,44 @@ export function BubbleGraph({ root }: { root: LVNode }) {
     if (next !== null) setView(next);
   }
 
+  // ── Wechsel der Gliederung: Punkte gleiten an den neuen Platz (Entscheidung 0058).
+  // Nur bei Gliederung, Zeilen oder Spalten — ein Filterwechsel springt wie bisher.
+  const arrangement = `${layout}|${rows}|${cols ?? ''}`;
+  const [shownArrangement, setShownArrangement] = useState(arrangement);
+  const [morph, setMorph] = useState<{ lo: number; span: number } | null>(null);
+  if (shownArrangement !== arrangement) {
+    setShownArrangement(arrangement);
+    let placed = 0;
+    let lo = Infinity;
+    let hi = -Infinity;
+    for (let slot = 0; slot < map.px.length; slot++) {
+      const x = map.px[slot];
+      if (!Number.isFinite(x)) continue;
+      placed++;
+      lo = Math.min(lo, x);
+      hi = Math.max(hi, x);
+    }
+    setMorph(
+      placed > 0 && placed <= MORPH_MAX && !prefersReducedMotion()
+        ? { lo, span: Math.max(1, hi - lo) }
+        : null,
+    );
+  }
+  useEffect(() => {
+    if (morph === null) return;
+    const timer = window.setTimeout(() => setMorph(null), MORPH_MS + MORPH_SWEEP_MS);
+    return () => window.clearTimeout(timer);
+  }, [morph]);
+  const morphing = morph !== null;
+
   // ── Culling und Detailstufe
   const cull = useMemo(
     () => cullBounds({ tx: view.tx, ty: view.ty, k: view.k, width: w, height: h }),
     [view, w, h],
   );
-  const marks = showHints && marksVisible(view.k);
+  // Während des Gleitens keine Schilder: sie stünden schon am Ziel, die Punkte noch nicht.
+  const rings = showHints && marksVisible(view.k);
+  const marks = rings && !morphing;
 
   const visibleGroups = useMemo(
     () =>
@@ -487,8 +534,8 @@ export function BubbleGraph({ root }: { root: LVNode }) {
 
   /** Gruppen, die so klein sind, dass ihre Punkte als Fläche gezeichnet werden. */
   const isCoarse = useCallback(
-    (group: MapGroup) => group.slots.length > 8 && group.r * view.k < GROUP_LOD_PX,
-    [view.k],
+    (group: MapGroup) => !morphing && group.slots.length > 8 && group.r * view.k < GROUP_LOD_PX,
+    [view.k, morphing],
   );
 
   // ── Klicks: ein Handler am Weltknoten statt einer Funktion je Punkt.
@@ -540,9 +587,20 @@ export function BubbleGraph({ root }: { root: LVNode }) {
 
   // ── Hover: Kurztext als HTML-Tooltip (SVG-Text bricht nicht um).
   const [hoverSlot, setHoverSlot] = useState(-1);
+  // Kachel unter der Maus — auch über einem ihrer Punkte, sonst flackert die Hervorhebung.
+  const [hoverGroup, setHoverGroup] = useState(-1);
   const onWorldOver = (event: ReactMouseEvent<SVGGElement>): void => {
-    const target = (event.target as Element).closest('[data-slot]');
-    setHoverSlot(target === null ? -1 : Number(target.getAttribute('data-slot')));
+    const target = (event.target as Element).closest('[data-slot],[data-group]');
+    const slot = target?.getAttribute('data-slot') ?? null;
+    const group = target?.getAttribute('data-group') ?? null;
+    setHoverSlot(slot === null ? -1 : Number(slot));
+    setHoverGroup(
+      slot !== null ? (map.groupOf[Number(slot)] ?? -1) : group === null ? -1 : Number(group),
+    );
+  };
+  const onWorldLeave = (): void => {
+    setHoverSlot(-1);
+    setHoverGroup(-1);
   };
 
   // ── Tastatur: ein Tab-Stopp am Canvas; Pfeile wandern durch Positionen und Gruppen.
@@ -639,6 +697,8 @@ export function BubbleGraph({ root }: { root: LVNode }) {
     // Gruppenbeschriftungen bleiben lesbar: Schilder legen sich nicht darüber.
     if (14 * view.k >= LABEL_MIN_PX) {
       for (const { group } of visibleGroups) {
+        // Kacheln tragen ihre Angaben in sich, nicht darüber.
+        if (group.cell !== null) continue;
         const text = Math.max(
           group.title.length * SANS_CHAR,
           group.context.length * MONO_CHAR,
@@ -694,6 +754,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
     const card = wrap.querySelector('[data-selection-card]');
     if (
       card !== null &&
+      !morphing &&
       selectedSlot >= 0 &&
       w >= LEADER_MIN_WIDTH &&
       Number.isFinite(map.px[selectedSlot])
@@ -725,6 +786,18 @@ export function BubbleGraph({ root }: { root: LVNode }) {
   const tooltipSlot = hoverSlot >= 0 ? hoverSlot : graphFocused ? focusSlot : -1;
   const cardNode = selectedPosition ?? selectedNode;
 
+  // Kacheln: Farbstufe 1–5 nach Anzahl, bezogen auf die vollste Kachel.
+  const grid = map.axes?.grid ?? null;
+  // „übrige" (gedämpfte Nicht-Treffer) zählt nicht mit, sonst wären alle Kacheln blass.
+  const maxInCell = Math.max(
+    1,
+    ...map.groups.filter((g) => g.cell !== null).map((g) => g.slots.length),
+  );
+  const hotCell = map.groups[hoverGroup]?.cell ?? null;
+  const pickedGroup = selectedSlot >= 0 ? map.groupOf[selectedSlot] : -1;
+  // Punkte: beim Gleiten alle, sonst nur die im Bild.
+  const dotGroups = morphing ? map.groups.map((group, i) => ({ group, i })) : visibleGroups;
+
   return (
     <div
       ref={wrapRef}
@@ -742,7 +815,11 @@ export function BubbleGraph({ root }: { root: LVNode }) {
       <div aria-live="polite" className="sr-only">
         {graphFocused ? focusedLabel : ''}
       </div>
-      <svg width={w} height={h} className="absolute inset-0 block">
+      <svg
+        width={w}
+        height={h}
+        className={`absolute inset-0 block${morphing ? ' graph-morph' : ''}`}
+      >
         <defs>
           {/* 14px-Punktraster hinter dem Graphen — Vorgabe des Design-Systems. */}
           <pattern id="bubble-grid" width="14" height="14" patternUnits="userSpaceOnUse">
@@ -752,185 +829,278 @@ export function BubbleGraph({ root }: { root: LVNode }) {
         <rect width={w} height={h} fill="url(#bubble-grid)" />
 
         <g
-          transform={`translate(${view.tx},${view.ty}) scale(${k})`}
+          className="graph-world"
+          style={{ transform: `translate(${view.tx}px, ${view.ty}px) scale(${k})` }}
           onClick={onWorldClick}
           onDoubleClick={onWorldDoubleClick}
           onMouseOver={onWorldOver}
-          onMouseLeave={() => setHoverSlot(-1)}
+          onMouseLeave={onWorldLeave}
         >
-          {map.hulls.map((hull, h) => {
-            const hits = hitCounts?.hulls[h] ?? hull.slots.length;
-            const width = hull.title.length * 9.4 + 28;
-            return (
-              <g key={hull.id} data-hull={hull.id} opacity={dimLv && hits === 0 ? 0.4 : 1}>
-                <circle
-                  cx={hull.x}
-                  cy={hull.y}
-                  r={hull.r}
-                  fill="var(--los-fill)"
-                  stroke="var(--line2)"
-                  strokeWidth={1.5 / Math.max(k, 0.3)}
-                  strokeDasharray="2 6"
-                  strokeLinecap="round"
-                />
-                <rect
-                  x={hull.x - width / 2}
-                  y={hull.y - hull.r - 15}
-                  width={width}
-                  height={30}
-                  rx={15}
-                  fill="var(--surface)"
-                  stroke="var(--line2)"
-                />
-                <text
-                  x={hull.x}
-                  y={hull.y - hull.r + 5}
-                  textAnchor="middle"
-                  fontFamily="var(--sans)"
-                  fontSize={15}
-                  fontWeight={700}
-                  fill="var(--ink)"
-                >
-                  {hull.title}
-                </text>
-              </g>
-            );
-          })}
+          {/* Schlüssel = Gliederung: bei jedem Wechsel startet das Einblenden neu. */}
+          <g key={arrangement} className="graph-frame">
+            {map.hulls.map((hull, h) => {
+              const hits = hitCounts?.hulls[h] ?? hull.slots.length;
+              const width = hull.title.length * 9.4 + 28;
+              return (
+                <g key={hull.id} data-hull={hull.id} opacity={dimLv && hits === 0 ? 0.4 : 1}>
+                  <circle
+                    cx={hull.x}
+                    cy={hull.y}
+                    r={hull.r}
+                    fill="var(--los-fill)"
+                    stroke="var(--line2)"
+                    strokeWidth={1.5 / Math.max(k, 0.3)}
+                    strokeDasharray="2 6"
+                    strokeLinecap="round"
+                  />
+                  <rect
+                    x={hull.x - width / 2}
+                    y={hull.y - hull.r - 15}
+                    width={width}
+                    height={30}
+                    rx={15}
+                    fill="var(--surface)"
+                    stroke="var(--line2)"
+                  />
+                  <text
+                    x={hull.x}
+                    y={hull.y - hull.r + 5}
+                    textAnchor="middle"
+                    fontFamily="var(--sans)"
+                    fontSize={15}
+                    fontWeight={700}
+                    fill="var(--ink)"
+                  >
+                    {hull.title}
+                  </text>
+                </g>
+              );
+            })}
 
-          {map.axes !== null && (
-            <g aria-label="Achsen">
-              <text x={map.axes.cols[0]?.x ?? 0} y={map.axes.y0 - 34} className="graph-axis-key">
-                {`${map.axes.colKey} →`}
-              </text>
-              {map.axes.cols.map((col) => (
-                <text
-                  key={`c${col.x}`}
-                  x={col.x}
-                  y={map.axes!.y0 - 8}
-                  textAnchor="middle"
-                  className="graph-axis"
-                >
-                  {col.label}
+            {map.axes !== null && (
+              <g aria-label="Achsen">
+                <text x={map.axes.cols[0]?.x ?? 0} y={map.axes.y0 - 34} className="graph-axis-key">
+                  {`${map.axes.colKey} →`}
                 </text>
-              ))}
-              <text
-                x={map.axes.x0 - 10}
-                y={map.axes.y0 - 34}
-                textAnchor="end"
-                className="graph-axis-key"
-              >
-                {`${map.axes.rowKey} ↓`}
-              </text>
-              {map.axes.rows.map((row) => (
+                {map.axes.cols.map((col, j) => (
+                  <text
+                    key={`c${col.x}`}
+                    x={col.x}
+                    y={map.axes!.y0 - 8}
+                    textAnchor="middle"
+                    className={hotCell?.col === j ? 'graph-axis is-on' : 'graph-axis'}
+                  >
+                    {col.label}
+                  </text>
+                ))}
                 <text
-                  key={`r${row.y}`}
-                  x={map.axes!.x0 - 10}
-                  y={row.y + 5}
+                  x={map.axes.x0 - 10}
+                  y={map.axes.y0 - 34}
                   textAnchor="end"
-                  className="graph-axis"
+                  className="graph-axis-key"
                 >
-                  {row.label}
+                  {`${map.axes.rowKey} ↓`}
                 </text>
-              ))}
-            </g>
-          )}
-
-          {visibleGroups.map(({ group, i }) => {
-            const n = group.slots.length;
-            const hits = layout === 'lv' ? (hitCounts?.groups[i] ?? n) : n;
-            const nh = hintsByGroup.get(i) ?? 0;
-            const meta =
-              (dimLv ? `${formatCount(hits)} / ${formatCount(n)}` : formatCount(n)) +
-              ' Pos' +
-              (group.sum === '' ? '' : ` · ${group.sum}`) +
-              (nh > 0 && showHints ? ` · ${formatCount(nh)} ⚠` : '');
-            const coarse = isCoarse(group);
-            const chosen =
-              selectedPosition === null &&
-              selectedNode !== null &&
-              group.nodeId === selectedNode.id;
-            return (
-              <g
-                key={group.key}
-                data-group={i}
-                opacity={group.rest ? 0.55 : dimLv && hits === 0 ? 0.35 : 1}
-                style={{ cursor: 'pointer' }}
-              >
-                <circle
-                  cx={group.x}
-                  cy={group.y}
-                  r={group.r}
-                  fill={n === 0 ? 'none' : coarse ? 'var(--grp-fill-strong)' : 'var(--grp-fill)'}
-                  stroke={chosen ? 'var(--blue)' : 'var(--line2)'}
-                  strokeWidth={(chosen ? 2.5 : 1.2) / Math.max(k, 0.3)}
-                  strokeDasharray={n === 0 || group.rest ? '4 4' : undefined}
-                />
-                {labelFits && (
-                  <>
-                    {group.context !== '' && (
-                      <text
-                        x={group.x}
-                        y={group.y - group.r - 38}
-                        textAnchor="middle"
-                        className="graph-group-context"
-                      >
-                        {fitText(group.context, labelWidth(group), MONO_CHAR)}
-                      </text>
-                    )}
-                    {group.title !== '' && (
-                      <text
-                        x={group.x}
-                        y={group.y - group.r - 22}
-                        textAnchor="middle"
-                        className="graph-group-title"
-                      >
-                        {fitText(group.title, labelWidth(group), SANS_CHAR)}
-                      </text>
-                    )}
-                    <text
-                      x={group.x}
-                      y={group.y - group.r - 8}
-                      textAnchor="middle"
-                      className="graph-group-meta"
-                    >
-                      {fitText(meta, labelWidth(group), MONO_CHAR)}
-                    </text>
-                  </>
-                )}
-                <title>
-                  {[group.context, group.title, meta].filter((line) => line !== '').join('\n')}
-                </title>
+                {map.axes.rows.map((row, i) => (
+                  <text
+                    key={`r${row.y}`}
+                    x={map.axes!.x0 - 10}
+                    y={row.y + 5}
+                    textAnchor="end"
+                    className={hotCell?.row === i ? 'graph-axis is-on' : 'graph-axis'}
+                  >
+                    {row.label}
+                  </text>
+                ))}
               </g>
-            );
-          })}
+            )}
 
-          {visibleGroups.map(({ group }) =>
+            {/* Raster der Matrix: jede Zelle als blasse Kachel, auch ohne Positionen. */}
+            {grid !== null &&
+              grid.rowY.flatMap((y, i) =>
+                grid.colX.map((x, j) => {
+                  const cw = grid.colW[j];
+                  const ch = grid.rowH[i];
+                  if (!isInView(cull, x + cw / 2, y + ch / 2, Math.hypot(cw, ch) / 2)) return null;
+                  return (
+                    <rect
+                      key={`t${i}-${j}`}
+                      x={x}
+                      y={y}
+                      width={cw}
+                      height={ch}
+                      rx={10}
+                      className="graph-tile is-empty"
+                    />
+                  );
+                }),
+              )}
+
+            {visibleGroups.map(({ group, i }) => {
+              const n = group.slots.length;
+              const { cell } = group;
+              if (cell !== null) {
+                const nh = showHints ? (hintsByGroup.get(i) ?? 0) : 0;
+                const count = formatCount(n);
+                const sumFits = (group.sum.length + count.length + 6) * MONO_CHAR < cell.w;
+                const classes = [
+                  'graph-tile',
+                  n === 0 ? 'is-empty' : '',
+                  i === hoverGroup && n > 0 ? 'is-hot' : '',
+                  i === pickedGroup ? 'is-picked' : '',
+                ].join(' ');
+                return (
+                  <g key={group.key} data-group={i} style={{ cursor: 'pointer' }}>
+                    <rect
+                      x={cell.x}
+                      y={cell.y}
+                      width={cell.w}
+                      height={cell.h}
+                      rx={10}
+                      className={classes}
+                      fill={
+                        n === 0
+                          ? undefined
+                          : `var(--heat-${Math.max(1, Math.ceil((5 * n) / maxInCell))})`
+                      }
+                    />
+                    {labelFits && n > 0 && (
+                      <>
+                        <text
+                          x={cell.x + cell.w - 10}
+                          y={cell.y + 17}
+                          textAnchor="end"
+                          className="graph-tile-count"
+                        >
+                          {nh > 0 && <tspan fill="var(--amber)">{`${formatCount(nh)} ⚠  `}</tspan>}
+                          {count}
+                        </text>
+                        {group.sum !== '' && sumFits && (
+                          <text x={cell.x + 10} y={cell.y + 17} className="graph-tile-sum">
+                            {group.sum}
+                          </text>
+                        )}
+                      </>
+                    )}
+                    <title>
+                      {[
+                        map.axes?.rows[cell.row]?.label,
+                        map.axes?.cols[cell.col]?.label,
+                        `${count} Pos${group.sum === '' ? '' : ` · ${group.sum}`}`,
+                      ]
+                        .filter((line) => line !== undefined && line !== '')
+                        .join('\n')}
+                    </title>
+                  </g>
+                );
+              }
+              const hits = layout === 'lv' ? (hitCounts?.groups[i] ?? n) : n;
+              const nh = hintsByGroup.get(i) ?? 0;
+              const meta =
+                (dimLv ? `${formatCount(hits)} / ${formatCount(n)}` : formatCount(n)) +
+                ' Pos' +
+                (group.sum === '' ? '' : ` · ${group.sum}`) +
+                (nh > 0 && showHints ? ` · ${formatCount(nh)} ⚠` : '');
+              const coarse = isCoarse(group);
+              const chosen =
+                selectedPosition === null &&
+                selectedNode !== null &&
+                group.nodeId === selectedNode.id;
+              return (
+                <g
+                  key={group.key}
+                  data-group={i}
+                  opacity={group.rest ? 0.55 : dimLv && hits === 0 ? 0.35 : 1}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <circle
+                    cx={group.x}
+                    cy={group.y}
+                    r={group.r}
+                    fill={n === 0 ? 'none' : coarse ? 'var(--grp-fill-strong)' : 'var(--grp-fill)'}
+                    stroke={chosen ? 'var(--blue)' : 'var(--line2)'}
+                    strokeWidth={(chosen ? 2.5 : 1.2) / Math.max(k, 0.3)}
+                    strokeDasharray={n === 0 || group.rest ? '4 4' : undefined}
+                  />
+                  {labelFits && (
+                    <>
+                      {group.context !== '' && (
+                        <text
+                          x={group.x}
+                          y={group.y - group.r - 38}
+                          textAnchor="middle"
+                          className="graph-group-context"
+                        >
+                          {fitText(group.context, labelWidth(group), MONO_CHAR)}
+                        </text>
+                      )}
+                      {group.title !== '' && (
+                        <text
+                          x={group.x}
+                          y={group.y - group.r - 22}
+                          textAnchor="middle"
+                          className="graph-group-title"
+                        >
+                          {fitText(group.title, labelWidth(group), SANS_CHAR)}
+                        </text>
+                      )}
+                      <text
+                        x={group.x}
+                        y={group.y - group.r - 8}
+                        textAnchor="middle"
+                        className="graph-group-meta"
+                      >
+                        {fitText(meta, labelWidth(group), MONO_CHAR)}
+                      </text>
+                    </>
+                  )}
+                  <title>
+                    {[group.context, group.title, meta].filter((line) => line !== '').join('\n')}
+                  </title>
+                </g>
+              );
+            })}
+          </g>
+
+          {/* Eine flache Liste, Schlüssel = Position: so bleibt jeder Punkt beim Wechsel
+              der Gliederung dasselbe Element und kann an den neuen Platz gleiten. Die Lage
+              steht im transform, die Formen darin um (0, 0). */}
+          {dotGroups.flatMap(({ group }) =>
             isCoarse(group)
-              ? null
+              ? []
               : group.slots.map((slot) => {
-                  const x = map.px[slot];
-                  const y = map.py[slot];
+                  const wx = map.px[slot];
+                  const wy = map.py[slot];
                   const r = radii[slot];
-                  if (!isInView(cull, x, y, r + 12)) return null;
+                  if (!morphing && !isInView(cull, wx, wy, r + 12)) return null;
                   const hit = isHit(slot);
                   if (!hit && hide) return null;
                   const position = index.positions[slot];
                   const fill = colors[slot];
-                  const hint = marks ? hints.get(index.nodes[slot].id)?.severity : undefined;
+                  const hint = rings ? hints.get(index.nodes[slot].id)?.severity : undefined;
                   const type = position.positionType;
+                  const delay =
+                    morph === null
+                      ? undefined
+                      : `${Math.round(((wx - morph.lo) / morph.span) * MORPH_SWEEP_MS)}ms`;
                   return (
                     <g
                       key={slot}
                       data-slot={slot}
                       data-tier="position"
+                      className="graph-dot"
                       opacity={hit ? 1 : 0.22}
-                      style={{ cursor: 'pointer' }}
+                      style={{
+                        cursor: 'pointer',
+                        transform: `translate(${wx}px, ${wy}px)`,
+                        transitionDelay: delay,
+                      }}
                     >
                       {hint !== undefined && (
                         <circle
                           data-hint={hint}
-                          cx={x}
-                          cy={y}
+                          cx={0}
+                          cy={0}
                           r={r + 3}
                           fill="none"
                           stroke={hint === 'beachten' ? 'var(--amber)' : 'var(--mute)'}
@@ -940,8 +1110,8 @@ export function BubbleGraph({ root }: { root: LVNode }) {
                       )}
                       {type === 'BEDARF' ? (
                         <circle
-                          cx={x}
-                          cy={y}
+                          cx={0}
+                          cy={0}
                           r={Math.max(r - 1, 2)}
                           fill="var(--surface)"
                           stroke={fill}
@@ -949,19 +1119,19 @@ export function BubbleGraph({ root }: { root: LVNode }) {
                         />
                       ) : type === 'ALTERNATIV' ? (
                         <rect
-                          x={x - r * 0.8}
-                          y={y - r * 0.8}
+                          x={-r * 0.8}
+                          y={-r * 0.8}
                           width={r * 1.6}
                           height={r * 1.6}
                           fill={fill}
                           stroke="var(--dot-line)"
                           strokeWidth={0.6}
-                          transform={`rotate(45 ${x} ${y})`}
+                          transform="rotate(45)"
                         />
                       ) : (
                         <circle
-                          cx={x}
-                          cy={y}
+                          cx={0}
+                          cy={0}
                           r={r}
                           fill={fill}
                           stroke="var(--dot-line)"
@@ -969,21 +1139,21 @@ export function BubbleGraph({ root }: { root: LVNode }) {
                         />
                       )}
                       {type === 'ZULAGENPOSITION' && (
-                        <circle cx={x} cy={y} r={1.6} fill="var(--surface)" />
+                        <circle cx={0} cy={0} r={1.6} fill="var(--surface)" />
                       )}
                       {slot === selectedSlot && (
                         <>
                           <circle
-                            cx={x}
-                            cy={y}
+                            cx={0}
+                            cy={0}
                             r={r + 6}
                             fill="none"
                             stroke="var(--blue)"
                             strokeWidth={2.5}
                           />
                           <circle
-                            cx={x}
-                            cy={y}
+                            cx={0}
+                            cy={0}
                             r={r + 11}
                             fill="none"
                             stroke="var(--blue)"
@@ -994,8 +1164,8 @@ export function BubbleGraph({ root }: { root: LVNode }) {
                       )}
                       {graphFocused && slot === focusSlot && (
                         <circle
-                          cx={x}
-                          cy={y}
+                          cx={0}
+                          cy={0}
                           r={r + 4}
                           fill="none"
                           stroke="var(--ink)"
@@ -1011,54 +1181,56 @@ export function BubbleGraph({ root }: { root: LVNode }) {
           {/* Eigene Notizen in einer eigenen Ebene über allen Punkten: in einer
               dichten Gruppe verdeckte sonst der nächste Punkt das Schild. Nur über
               die Positionen mit Notiz, nicht über alle. */}
-          {noteSlots.map((slot) => {
-            const x = map.px[slot];
-            const y = map.py[slot];
-            const r = radii[slot];
-            if (!Number.isFinite(x) || !isInView(cull, x, y, r + 12)) return null;
-            const group = map.groups[map.groupOf[slot]];
-            if (group === undefined || isCoarse(group)) return null;
-            const hit = isHit(slot);
-            if (!hit && hide) return null;
-            const id = index.nodes[slot].id;
-            return (
-              <g key={id} opacity={hit ? 1 : 0.22}>
-                <NoteBadges
-                  x={x}
-                  y={y}
-                  r={r}
-                  marker={annotations.markers.get(id) ?? null}
-                  commented={hasComment(annotations, id)}
-                />
-              </g>
-            );
-          })}
+          {!morphing &&
+            noteSlots.map((slot) => {
+              const x = map.px[slot];
+              const y = map.py[slot];
+              const r = radii[slot];
+              if (!Number.isFinite(x) || !isInView(cull, x, y, r + 12)) return null;
+              const group = map.groups[map.groupOf[slot]];
+              if (group === undefined || isCoarse(group)) return null;
+              const hit = isHit(slot);
+              if (!hit && hide) return null;
+              const id = index.nodes[slot].id;
+              return (
+                <g key={id} opacity={hit ? 1 : 0.22}>
+                  <NoteBadges
+                    x={x}
+                    y={y}
+                    r={r}
+                    marker={annotations.markers.get(id) ?? null}
+                    commented={hasComment(annotations, id)}
+                  />
+                </g>
+              );
+            })}
 
           {/* Nummer der Spalte im Vergleich, bildschirmfest neben dem Punkt. */}
-          {compare.map((id, i) => {
-            const slot = index.slotOf.get(id);
-            if (slot === undefined || !Number.isFinite(map.px[slot])) return null;
-            const group = map.groups[map.groupOf[slot]];
-            if (group === undefined || isCoarse(group)) return null;
-            const badge = 7 / k;
-            const cx = map.px[slot] + radii[slot] + badge * 0.6;
-            const cy = map.py[slot] - radii[slot] - badge * 0.6;
-            return (
-              <g key={id} data-compare={i + 1} pointerEvents="none">
-                <circle cx={cx} cy={cy} r={badge} fill="var(--blue)" />
-                <text
-                  x={cx}
-                  y={cy + 3.2 / k}
-                  textAnchor="middle"
-                  fontSize={9 / k}
-                  fontFamily="var(--mono)"
-                  fill="#fff"
-                >
-                  {i + 1}
-                </text>
-              </g>
-            );
-          })}
+          {!morphing &&
+            compare.map((id, i) => {
+              const slot = index.slotOf.get(id);
+              if (slot === undefined || !Number.isFinite(map.px[slot])) return null;
+              const group = map.groups[map.groupOf[slot]];
+              if (group === undefined || isCoarse(group)) return null;
+              const badge = 7 / k;
+              const cx = map.px[slot] + radii[slot] + badge * 0.6;
+              const cy = map.py[slot] - radii[slot] - badge * 0.6;
+              return (
+                <g key={id} data-compare={i + 1} pointerEvents="none">
+                  <circle cx={cx} cy={cy} r={badge} fill="var(--blue)" />
+                  <text
+                    x={cx}
+                    y={cy + 3.2 / k}
+                    textAnchor="middle"
+                    fontSize={9 / k}
+                    fontFamily="var(--mono)"
+                    fill="#fff"
+                  >
+                    {i + 1}
+                  </text>
+                </g>
+              );
+            })}
         </g>
       </svg>
 

@@ -11,7 +11,7 @@
 // erreichen kann (.claude/CLAUDE.md#kritische-constraints).
 
 import type { ColumnConfig } from '../lib/table/columns';
-import type { GraphLayoutId } from '../lib/graph/layoutMap';
+import { SECTION_AXIS, type GraphLayoutId } from '../lib/graph/layoutMap';
 import type { SizeModeId } from '../lib/graph/sizes';
 
 export type ViewMode = 'overview' | 'graph' | 'table';
@@ -342,6 +342,8 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
       return { ...state, graph: { ...state.graph, rows: action.value, cols } };
     }
     case 'graphCols':
+      // Abschnitt nur als Zeile: lange Titel nebeneinander überlappen (Entscheidung 0058).
+      if (action.value === SECTION_AXIS) return state;
       return { ...state, graph: { ...state.graph, cols: action.value } };
     case 'graphHints':
       return { ...state, graph: { ...state.graph, showHints: action.value } };

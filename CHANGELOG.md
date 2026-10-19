@@ -9,6 +9,16 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.23.0 — 19.10.2026 · Matrix als Kacheln
+
+- **Matrix mit Zeilen und Spalten** zeigt jede Zelle als Kachel. Je mehr Positionen darin
+  liegen, desto kräftiger die Farbe. Leere Zellen bleiben blass stehen.
+- **Maus über einer Kachel** hebt sie und ihre Zeile und Spalte blau hervor.
+- **Beim Wechsel der Gliederung** gleiten die Punkte an ihren neuen Platz. Bei sehr großen
+  LVs und bei „Bewegung reduzieren“ im System springt der Graph wie bisher.
+- **Abschnitt** gibt es nur noch als Zeile, nicht mehr als Spalte. Lange Titel standen
+  nebeneinander übereinander.
+
 ## 0.22.0 — 17.10.2026 · Notizen hängen am Inhalt der Position
 
 - **Marker und Kommentare** werden jetzt unter dem Fingerabdruck der Position gespeichert

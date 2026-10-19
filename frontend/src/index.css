@@ -456,6 +456,66 @@ a:hover {
   text-transform: uppercase;
   fill: var(--mute);
 }
+/* Hervorgehobene Zeile/Spalte der Matrix (Maus über einer Kachel). */
+.graph-axis.is-on {
+  fill: var(--blue);
+}
+
+/* Matrix-Kacheln (Entscheidung 0058): Farbe nach Anzahl, blau bei Maus und Auswahl. */
+.graph-tile {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.graph-tile.is-empty {
+  fill: var(--sunken);
+  stroke-dasharray: 3 3;
+}
+.graph-tile.is-hot {
+  stroke: var(--blue);
+  stroke-width: 2;
+  filter: drop-shadow(0 4px 10px rgba(37, 99, 235, 0.22));
+}
+.graph-tile.is-picked {
+  stroke: var(--blue);
+  stroke-width: 2.4;
+}
+.graph-tile-count,
+.graph-tile-sum {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  fill: var(--dim);
+  pointer-events: none;
+}
+.graph-tile-sum {
+  fill: var(--mute);
+}
+
+/* Wechsel der Gliederung (Entscheidung 0058): Punkte und Ausschnitt gleiten an den
+   neuen Platz, Kreise und Kacheln erscheinen danach. Nur solange `graph-morph` am
+   Graphen hängt; Ziehen und Zoomen bleiben ohne Verzögerung. */
+.graph-morph .graph-world,
+.graph-morph .graph-dot {
+  transition: transform 0.9s cubic-bezier(0.5, 0, 0.2, 1);
+}
+.graph-morph .graph-frame {
+  animation: graph-frame-in 0.4s ease 0.5s both;
+}
+@keyframes graph-frame-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .graph-morph .graph-world,
+  .graph-morph .graph-dot,
+  .graph-morph .graph-frame {
+    transition: none;
+    animation: none;
+  }
+}
 
 /* ── Schwebende Flächen über dem Graphen (components/shell/) ── */
 .ov-glass {

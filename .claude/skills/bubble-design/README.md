@@ -66,9 +66,13 @@ information it isn't there.
 - **Selection & hover:** selection = `--blueS` fill + 2px blue left bar + `--blueD` text.
   Hover = a light background change only (`--blueS` on the resize handle, row tint on
   lists). No lift, no scale, no shadow on hover. There is no distinct press state.
-- **Motion:** `.1–.12s ease` on background/border color. That is all. No entrance
-  animations, no bounce, no parallax. The only "animation" is the force-directed bubble
-  layout settling.
+- **Motion:** `.1–.12s ease` on background/border color. No entrance animations, no
+  bounce, no parallax. Only exception: changing the graph arrangement (nach LV ↔ Matrix,
+  rows, columns) glides the dots `.9s`, then fades in circles/tiles — not above 3,000
+  dots, never with `prefers-reduced-motion` (decision 0058).
+- **Matrix tiles:** rows × columns render as `rx 10` tiles filled `--heat-1…5` by count;
+  hovered tile and its axis labels turn blue (tile gets a soft blue shadow), the selected
+  position's tile keeps a blue border (decision 0058).
 - **Transparency/blur:** floating surfaces over the graph use `--glass` /
   `--glass-strong` with `backdrop-filter: blur(14px)`. Nothing else is translucent.
 - **Text:** as little explanatory text as possible. Labels, not sentences; the rest

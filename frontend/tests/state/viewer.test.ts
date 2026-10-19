@@ -10,6 +10,7 @@
 // (Issue #18) und er überlebt den Ansichtswechsel (Issue #19).
 
 import { describe, expect, it } from 'vitest';
+import { SECTION_AXIS } from '../../src/lib/graph/layoutMap';
 import { classifyAndBuild } from '../../src/lib/pipeline/runPipeline';
 import { SIDE_WIDTH_MAX, SIDE_WIDTH_MIN } from '../../src/state/viewState';
 import {
@@ -285,6 +286,12 @@ describe('viewerReducer · Gliederung des Graphen', () => {
     const next = viewerReducer(frei, { type: 'graphRows', value: 'beton' });
     expect(next.view.graph.rows).toBe('beton');
     expect(next.view.graph.cols).toBeNull();
+  });
+
+  it('lässt Abschnitt nicht als Spalte zu — lange Titel überlappen nebeneinander', () => {
+    const state = loadedState();
+    const next = viewerReducer(state, { type: 'graphCols', value: SECTION_AXIS });
+    expect(next.view.graph.cols).toBe(state.view.graph.cols);
   });
 
   it('behält Gliederung und Hinweis-Schalter über einen neuen Import', () => {

@@ -41,7 +41,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0032 | [STLB-Katalog ohne Spalte `positionsart_default`](0032-stlb-katalog-ohne-positionsart.md)                      | ersetzt durch 0044                 | 2026-10-04 |
 | 0033 | [Neuer Look und Dunkelmodus](0033-neuer-look-und-dunkelmodus.md)                                               | akzeptiert                         | 2026-10-05 |
 | 0034 | [Der Graph ist der Hauptscreen](0034-graph-als-hauptscreen.md)                                                 | teilweise ersetzt durch 0038       | 2026-10-05 |
-| 0035 | [Graph: Gliederung „nach LV" oder „frei"](0035-graph-gliederung.md)                                            | ergänzt durch 0040                 | 2026-10-05 |
+| 0035 | [Graph: Gliederung „nach LV" oder „frei"](0035-graph-gliederung.md)                                            | ergänzt durch 0040, 0058           | 2026-10-05 |
 | 0036 | [Alle Rechte vorbehalten statt AGPL](0036-alle-rechte-vorbehalten.md)                                          | akzeptiert                         | 2026-10-05 |
 | 0037 | [Vergleich als Fenster über dem Graphen](0037-vergleichsfenster.md)                                            | akzeptiert                         | 2026-10-05 |
 | 0038 | [Keine Befehlspalette mehr](0038-keine-befehlspalette.md)                                                      | akzeptiert                         | 2026-10-05 |
@@ -64,6 +64,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0055 | [Positions-Hash und Datei-ID im Link](0055-positions-hash.md)                                                  | akzeptiert                         | 2026-10-17 |
 | 0056 | [Anonyme Nutzungszählung mit GoatCounter](0056-anonyme-nutzungszaehlung.md)                                    | akzeptiert                         | 2026-10-17 |
 | 0057 | [Notizen hängen am Positions-Hash](0057-notizen-am-positions-hash.md)                                          | akzeptiert                         | 2026-10-17 |
+| 0058 | [Matrix als Kacheln, Gliederungswechsel gleitet](0058-matrix-kacheln.md)                                       | akzeptiert                         | 2026-10-19 |
 
 ## Wann schreibe ich eine neue Datei?
 
