@@ -23,7 +23,7 @@
   Schema-Kennung `bubble-graph-v1`.
 - **Klein anfangen:** sieben Knotenarten (Dokument, Kapitel, Position, Anforderung, Norm,
   Material, Frist) und sieben Kantenarten (gehört zu, verweist auf, fordert,
-  nennt Norm, betrifft, ähnlich zu, widerspricht). Eine neue Art nur mit Ergänzung dieser
+  nennt Norm, betrifft, ähnlich zu, weicht ab von). Eine neue Art nur mit Ergänzung dieser
   Entscheidung.
 - **Jede Kante trägt ihre Herkunft:**
   - wer sie gefunden hat (Struktur, Regel, Ähnlichkeit, KI, Nutzer),
@@ -31,7 +31,7 @@
   - ob sie ein Vorschlag, bestätigt oder verworfen ist,
   - die Fundstelle im Text, die sie belegt.
 - **Stabile IDs:** Positionen über den Positions-Hash (0055), Dokumente über die
-  Datei-ID, Normen über ihre normierte Bezeichnung. So überlebt der Graph ein neues
+  Datei-ID, Normen über ihre Bezeichnung in Großschreibung mit einfachem Leerraum. So überlebt der Graph ein neues
   Laden und passt zu Notizen und Links.
 - **Läuft im Browser.** Ein Angebot mit 10.000 Positionen und einigen hundert Kapiteln
   ergibt grob einige zehntausend Kanten – das hält der Browser im Speicher.
@@ -78,6 +78,13 @@
 - **Scope-Konflikt:** `docs/scope.md` schließt „mehrere Dateien gleichzeitig“ noch aus.
   Die Dokumentenlandkarte braucht genau das. Vor der ersten Funktion, die Kanten
   erzeugt, muss der Scope angepasst werden (eigene Entscheidung).
+- **Konflikt mit 0049:** Dort gibt es Beziehungen nur als ähnliche Positionen, ohne
+  wertende Prüfregel. Die Kante „weicht ab von“ ist deshalb bewusst als Hinweis benannt,
+  nicht als Urteil („widerspricht“). Erzeugt eine Funktion sie, braucht es eine neue
+  Entscheidung, die 0049 ablöst.
+- **Quelle „KI“ ist ein Vorgriff:** KI-Klassifizierung ist heute out of scope. Das Modell
+  hält nur den Platz frei. Kanten mit Quelle „KI“ erst nach eigener Entscheidung und nur
+  als Vorschlag, den der Nutzer bestätigt.
 - Wo der Graph gespeichert wird (IndexedDB, Projektdatei, später Server), entscheidet
   die jeweilige Funktion. Diese Entscheidung legt nur das Modell fest.
 - Für den Owner: Status von „vorgeschlagen“ auf „akzeptiert“ setzen, wenn das Modell so
