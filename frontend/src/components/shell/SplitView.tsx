@@ -177,6 +177,8 @@ export function SplitView({ root }: { root: LVNode }) {
 
   const divider = (axis: Axis) => {
     const current = axis === 'col' ? workspace.colFrac : workspace.rowFrac;
+    // Die waagerechte Linie endet an der senkrechten — auch während die gezogen wird.
+    const colNow = preview?.axis === 'col' ? preview.frac : workspace.colFrac;
     const frac = preview?.axis === axis ? preview.frac : current;
     const along = `calc(${PAD}px + (100% - ${2 * PAD + GAP}px) * ${frac})`;
     const style =
@@ -187,7 +189,7 @@ export function SplitView({ root }: { root: LVNode }) {
             left: PAD,
             height: GAP,
             width: layout.colDivider
-              ? `calc((100% - ${2 * PAD + GAP}px) * ${workspace.colFrac})`
+              ? `calc((100% - ${2 * PAD + GAP}px) * ${colNow})`
               : `calc(100% - ${2 * PAD}px)`,
           };
     const onKeyDown = (event: KeyboardEvent): void => {

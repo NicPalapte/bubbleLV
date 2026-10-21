@@ -124,6 +124,8 @@ export function SelectionCard({ node, onClose, docked = false }: SelectionCardPr
     setSize,
   });
 
+  // Angedockt schließt der Bereichskopf; ein zweites ✕ mit anderer Wirkung verwirrt.
+  const close = docked ? undefined : onClose;
   const grip = docked ? undefined : (
     <span
       {...handles.grip}
@@ -158,9 +160,9 @@ export function SelectionCard({ node, onClose, docked = false }: SelectionCardPr
       }
     >
       {node.position !== null ? (
-        <PositionDetails node={node} position={node.position} onClose={onClose} grip={grip} />
+        <PositionDetails node={node} position={node.position} onClose={close} grip={grip} />
       ) : (
-        <NodeDetails node={node} onClose={onClose} grip={grip} />
+        <NodeDetails node={node} onClose={close} grip={grip} />
       )}
       {/* Sprung in die Tabelle (WP-Q, Schritt 5; Issue #51): der Klick auf eine
           Bubble öffnet diese Karte — wer die Zeile im Zusammenhang sehen will,
