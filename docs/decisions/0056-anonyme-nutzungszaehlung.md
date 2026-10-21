@@ -13,7 +13,7 @@
 
 ## Entscheidung
 
-- **Dienst: GoatCounter**, Konto `bubblelv` (https://bubblelv.goatcounter.com).
+- **Dienst: GoatCounter**, Konto `bubble` (https://bubble.goatcounter.com; ursprünglich als `bubblelv` geplant).
   Ohne Cookies, quelloffen, für kleine nicht-kommerzielle Seiten kostenlos.
 - **Gezählt wird:**
   - ein Seitenaufruf je Start, immer als Pfad `/`, dazu Bildschirmgröße und die Domain,

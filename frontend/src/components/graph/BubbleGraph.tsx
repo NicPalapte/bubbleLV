@@ -1,7 +1,7 @@
 // Bubble-Graph — der Hauptscreen (docs/decisions/0034-graph-als-hauptscreen.md).
 // Gruppen als Kreise, Positionen als Punkte darin, Lose als gestrichelte Hülle;
 // Gliederung „nach LV" oder „Matrix" (docs/decisions/0035-graph-gliederung.md),
-// die Matrix mit Spalten als Kacheln (docs/decisions/0058-matrix-kacheln.md).
+// die Matrix mit Spalten als Kacheln (docs/decisions/0059-matrix-kacheln.md).
 // Die Lage rechnet `layoutMap` (rein, ohne DOM); hier wird gezeichnet,
 // verschoben und gezoomt.
 //
@@ -485,7 +485,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
     if (next !== null) setView(next);
   }
 
-  // ── Wechsel der Gliederung: Punkte gleiten an den neuen Platz (Entscheidung 0058).
+  // ── Wechsel der Gliederung: Punkte gleiten an den neuen Platz (Entscheidung 0059).
   // Nur bei Gliederung, Zeilen oder Spalten — ein Filterwechsel springt wie bisher.
   const arrangement = `${layout}|${rows}|${cols ?? ''}`;
   const [shownArrangement, setShownArrangement] = useState(arrangement);

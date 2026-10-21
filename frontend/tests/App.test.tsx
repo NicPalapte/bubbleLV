@@ -185,6 +185,7 @@ describe('Viewer', () => {
     fireEvent.change(screen.getByLabelText('Suche'), {
       target: { value: 'zzz-kein-treffer-zzz' },
     });
+    fireEvent.click(await screen.findByRole('radio', { name: 'ausblenden' }));
     await waitFor(() =>
       expect(screen.getByText('Keine Positionen entsprechen den Filtern.')).toBeInTheDocument(),
     );
@@ -202,6 +203,7 @@ describe('Viewer', () => {
     // „Kabel" kommt nur in den Elektroarbeiten vor — im gewählten Abschnitt
     // gibt es keinen Treffer, die Tabelle darf trotzdem nicht leer bleiben.
     fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'Kabel' } });
+    fireEvent.click(await screen.findByRole('radio', { name: 'ausblenden' }));
 
     await waitFor(() => expect(screen.getByText(/LV-weite Treffer/)).toBeInTheDocument());
     expect(within(table).getAllByText('002.001.0010').length).toBeGreaterThan(0);

@@ -461,7 +461,7 @@ a:hover {
   fill: var(--blue);
 }
 
-/* Matrix-Kacheln (Entscheidung 0058): Farbe nach Anzahl, blau bei Maus und Auswahl. */
+/* Matrix-Kacheln (Entscheidung 0059): Farbe nach Anzahl, blau bei Maus und Auswahl. */
 .graph-tile {
   stroke: var(--line);
   stroke-width: 1;
@@ -490,7 +490,7 @@ a:hover {
   fill: var(--mute);
 }
 
-/* Wechsel der Gliederung (Entscheidung 0058): Punkte und Ausschnitt gleiten an den
+/* Wechsel der Gliederung (Entscheidung 0059): Punkte und Ausschnitt gleiten an den
    neuen Platz, Kreise und Kacheln erscheinen danach. Nur solange `graph-morph` am
    Graphen hängt (gut 1 s); in dieser Zeit gleiten auch Ziehen und Zoomen mit,
    sonst folgen sie ohne Verzögerung. */

@@ -169,7 +169,7 @@ describe('Sprung in die Tabelle', () => {
   });
 });
 
-describe('Wechsel der Gliederung (Entscheidung 0058)', () => {
+describe('Wechsel der Gliederung (Entscheidung 0059)', () => {
   function canvas(): SVGSVGElement {
     const svg = graph().querySelector('svg');
     if (svg === null) throw new Error('Graph ohne SVG');

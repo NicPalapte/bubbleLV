@@ -111,6 +111,7 @@ describe('Tabelle · Tastatur', () => {
     await ladeApp();
     await ansicht('Tabelle');
     fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'gibtesnichtimlv' } });
+    fireEvent.click(await screen.findByRole('radio', { name: 'ausblenden' }));
     // Die Suche ist entprellt — warten, bis die Tabelle wirklich leer ist.
     await waitFor(() =>
       expect(

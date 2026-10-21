@@ -6,7 +6,7 @@
 //    der Position), die Lose als gestrichelte Hülle darum.
 //  - „Matrix": Zeilen sind die Werte eines Merkmals, Spalten optional die eines
 //    zweiten. Mit Spalten ist jede Zelle eine Kachel, die Punkte liegen darin in
-//    Reihen (Entscheidung 0058). Ohne Spalten liegen die Gruppen als Kreise gepackt.
+//    Reihen (Entscheidung 0059). Ohne Spalten liegen die Gruppen als Kreise gepackt.
 //
 // Reine Funktion über dem Positions-Index: kein DOM, kein Zoom. Die Gruppenlage
 // hängt nur an Datei, Gliederung, Größe und — beim Ausblenden oder in „Matrix" —

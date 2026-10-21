@@ -342,7 +342,7 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
       return { ...state, graph: { ...state.graph, rows: action.value, cols } };
     }
     case 'graphCols':
-      // Abschnitt nur als Zeile: lange Titel nebeneinander überlappen (Entscheidung 0058).
+      // Abschnitt nur als Zeile: lange Titel nebeneinander überlappen (Entscheidung 0059).
       if (action.value === SECTION_AXIS) return state;
       return { ...state, graph: { ...state.graph, cols: action.value } };
     case 'graphHints':

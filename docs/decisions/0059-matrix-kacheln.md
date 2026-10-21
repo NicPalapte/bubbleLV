@@ -1,4 +1,4 @@
-# 0058 – Matrix als Kacheln, Gliederungswechsel gleitet
+# 0059 – Matrix als Kacheln, Gliederungswechsel gleitet
 
 - **Status:** akzeptiert
 - **Datum:** 2026-10-19
