@@ -72,7 +72,7 @@ export function usageEventOf(action: ViewerAction): UsageEvent | null {
     case 'addComment':
       return action.text.trim() === '' ? null : 'kommentar';
     case 'addHighlight':
-      return 'anstreichung';
+      return action.text.trim() === '' ? null : 'anstreichung';
     case 'tour':
       return action.step === 0 ? 'tour' : null;
     default:
