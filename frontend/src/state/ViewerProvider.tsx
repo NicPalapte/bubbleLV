@@ -73,8 +73,8 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
       annotationAllowList(
         state.annotations,
         state.filter.notes,
-        // Alle IDs braucht nur „Nicht erledigt" — sonst kein Durchlauf über 10k Positionen.
-        state.filter.notes.marker === 'offen' ? index.nodes.map((node) => node.id) : [],
+        // Alle IDs braucht nur „Offen" — sonst kein Durchlauf über 10k Positionen.
+        state.filter.notes.progress === 'offen' ? index.nodes.map((node) => node.id) : [],
       ),
     [state.annotations, state.filter.notes, index],
   );

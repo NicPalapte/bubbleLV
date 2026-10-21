@@ -14,7 +14,13 @@ import { ShortcutsDialog } from './ShortcutsDialog';
 import { NotesImportDialog } from './NotesImportDialog';
 import { AboutMenu } from './AboutMenu';
 import { useMitnehmen } from '../common/useMitnehmen';
-import { commentedIds, MARKER_INFO, MARKERS, markerCounts } from '../../lib/annotations';
+import {
+  commentedIds,
+  IMPORTANT_INFO,
+  markerCounts,
+  PROGRESS,
+  PROGRESS_INFO,
+} from '../../lib/annotations';
 import { FACETS, facetOptionLabel } from '../../lib/facets';
 import { formatCount } from '../../lib/format';
 import { NotesFileError, notesCount, readNotesFile, type NotesFile } from '../../lib/notesFile';
@@ -376,25 +382,36 @@ export function TopBar() {
               </button>
             </div>
 
-            {/* Eigene Marker und Kommentare (Entscheidungen 0047, 0053): erst sichtbar,
-                wenn es welche gibt — sonst wären es leere Knöpfe mehr. */}
-            {MARKERS.map((marker) => (
+            {/* Eigene Marker und Kommentare (Entscheidungen 0047, 0053, 0062): erst
+                sichtbar, wenn es welche gibt — sonst wären es leere Knöpfe mehr. */}
+            {/* Beim Kalkulieren: was noch nicht angefasst ist. */}
+            <NoteFilterButton
+              label="Offen"
+              glyph="○"
+              count={
+                counts.bearbeitung + counts.fertig > 0
+                  ? index.size - counts.bearbeitung - counts.fertig
+                  : 0
+              }
+              on={notes.progress === 'offen'}
+              onClick={() => dispatch({ type: 'toggleProgressFilter', value: 'offen' })}
+            />
+            {PROGRESS.map((progress) => (
               <NoteFilterButton
-                key={marker}
-                label={MARKER_INFO[marker].label}
-                glyph={MARKER_INFO[marker].glyph}
-                count={counts[marker]}
-                on={notes.marker === marker}
-                onClick={() => dispatch({ type: 'toggleMarkerFilter', value: marker })}
+                key={progress}
+                label={PROGRESS_INFO[progress].label}
+                glyph={PROGRESS_INFO[progress].glyph}
+                count={counts[progress]}
+                on={notes.progress === progress}
+                onClick={() => dispatch({ type: 'toggleProgressFilter', value: progress })}
               />
             ))}
-            {/* Beim Kalkulieren: nur, was noch nicht erledigt ist. */}
             <NoteFilterButton
-              label="Nicht erledigt"
-              glyph="○"
-              count={counts.erledigt > 0 ? index.size - counts.erledigt : 0}
-              on={notes.marker === 'offen'}
-              onClick={() => dispatch({ type: 'toggleMarkerFilter', value: 'offen' })}
+              label={IMPORTANT_INFO.label}
+              glyph={IMPORTANT_INFO.glyph}
+              count={counts.wichtig}
+              on={notes.important}
+              onClick={() => dispatch({ type: 'toggleImportantFilter' })}
             />
             <NoteFilterButton
               label="Mit Kommentar"

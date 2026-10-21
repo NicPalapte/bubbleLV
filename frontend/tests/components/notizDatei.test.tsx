@@ -8,7 +8,12 @@ import { IDBFactory } from 'fake-indexeddb';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '../../src/App';
-import { EMPTY_ANNOTATIONS, setMarker, addComment } from '../../src/lib/annotations';
+import {
+  EMPTY_ANNOTATIONS,
+  setImportant,
+  setProgress,
+  addComment,
+} from '../../src/lib/annotations';
 import { buildPositionIndex } from '../../src/lib/index/positionIndex';
 import { notesFileText } from '../../src/lib/notesFile';
 import { runPipeline } from '../../src/lib/pipeline/runPipeline';
@@ -40,7 +45,7 @@ async function speichere(mitNotizen: boolean): Promise<void> {
   );
   if (!mitNotizen) return;
   const hash = positionen()[0].position?.hashes.id ?? '';
-  await saveAnnotations(ID, setMarker(EMPTY_ANNOTATIONS, hash, 'wichtig', 1000));
+  await saveAnnotations(ID, setImportant(EMPTY_ANNOTATIONS, hash, true, 1000));
 }
 
 beforeEach(() => {
@@ -128,7 +133,7 @@ describe('Startseite', () => {
     );
     const datei = downloads.find((d) => d.name.endsWith('.json'));
     expect(datei?.name).toMatch(/^gaeb-xml-beispiel-notizen-.*\.json$/);
-    expect(datei?.text).toContain('"marker": "wichtig"');
+    expect(datei?.text).toContain('"wichtig": true');
   });
 });
 
@@ -153,7 +158,7 @@ describe('Logo-Menü', () => {
     await oeffneGespeicherte();
     const knoten = positionen();
     const notizen = addComment(
-      setMarker(EMPTY_ANNOTATIONS, knoten[0].id, 'erledigt', 1000),
+      setProgress(EMPTY_ANNOTATIONS, knoten[0].id, 'fertig', 1000),
       knoten[1].id,
       'Boden prüfen',
       2000,
@@ -168,7 +173,7 @@ describe('Logo-Menü', () => {
     fireEvent.click(within(fenster).getByRole('button', { name: '2 übernehmen' }));
 
     expect(screen.queryByRole('dialog', { name: 'Notizen laden' })).toBeNull();
-    expect(document.querySelectorAll('[data-note="erledigt"]')).toHaveLength(1);
+    expect(document.querySelectorAll('[data-note="fertig"]')).toHaveLength(1);
     expect(document.querySelectorAll('[data-note="note"]')).toHaveLength(1);
     await waitFor(async () =>
       expect(await readLastLvMeta()).toMatchObject({ marked: 1, comments: 1 }),

@@ -1,20 +1,33 @@
 // Notizen als Datei sichern und wieder laden (Entscheidung 0061).
 //
-// Eine JSON-Datei je LV: Marker und Verlauf je Position, dazu OZ, Kurztext und Menge,
-// damit ein Mensch sie lesen kann und das Laden Positionen auch in einer geänderten
-// Fassung wiederfindet. Zuordnung in drei Stufen (Entscheidung 0055): gleicher
+// Eine JSON-Datei je LV: Fortschritt, „Wichtig" und Verlauf je Position (Entscheidung
+// 0062), dazu OZ, Kurztext und Menge, damit ein Mensch sie lesen kann und das Laden
+// Positionen auch in einer geänderten Fassung wiederfindet. Zuordnung in drei Stufen (Entscheidung 0055): gleicher
 // Positions-Hash, sonst gleicher Text-Fingerabdruck (umnummeriert), sonst gleiche OZ
 // (Text oder Menge geändert). Mehrdeutiges wird nicht zugeordnet. Die Datei entsteht
 // und wird gelesen im Browser — kein Request.
 
-import { isMarker, toEntry, type Annotations, type LogEntry, type Marker } from './annotations';
+import {
+  isOldMarker,
+  isProgress,
+  markedIds,
+  oldIsDone,
+  oldIsImportant,
+  toEntriesOld,
+  toEntry,
+  type Annotations,
+  type LogEntry,
+  type Progress,
+} from './annotations';
 import type { LVNode } from '../types/lvNode';
 
 export const NOTES_FILE_KIND = 'bubble-notizen';
-const NOTES_FILE_VERSION = 1;
+/** Version 2: Fortschritt + Wichtig (Entscheidung 0062). Version 1 (drei Marker) wird gelesen. */
+const NOTES_FILE_VERSION = 2;
 
 type FileEntry =
-  | { readonly zeit: string | null; readonly marker: Marker | null }
+  | { readonly zeit: string | null; readonly fortschritt: Progress | null }
+  | { readonly zeit: string | null; readonly wichtig: boolean }
   | { readonly zeit: string | null; readonly kommentar: string };
 
 export interface NotesFilePosition {
@@ -25,7 +38,8 @@ export interface NotesFilePosition {
   readonly kurztext: string;
   readonly menge: number | null;
   readonly einheit: string | null;
-  readonly marker: Marker | null;
+  readonly fortschritt: Progress | null;
+  readonly wichtig: boolean;
   readonly verlauf: readonly LogEntry[];
 }
 
@@ -53,9 +67,10 @@ function iso(at: number): string | null {
 }
 
 function fileEntry(entry: LogEntry): FileEntry {
-  return entry.kind === 'comment'
-    ? { zeit: iso(entry.at), kommentar: entry.text }
-    : { zeit: iso(entry.at), marker: entry.marker };
+  const zeit = iso(entry.at);
+  if (entry.kind === 'comment') return { zeit, kommentar: entry.text };
+  if (entry.kind === 'progress') return { zeit, fortschritt: entry.progress };
+  return { zeit, wichtig: entry.on };
 }
 
 /**
@@ -71,7 +86,7 @@ export function notesFileText(
 ): string {
   const byId = new Map<string, LVNode>();
   for (const node of nodes) if (node.position !== null) byId.set(node.id, node);
-  const ids = new Set([...annotations.markers.keys(), ...annotations.log.keys()]);
+  const ids = new Set([...markedIds(annotations), ...annotations.log.keys()]);
   const positionen = [...ids].map((id) => {
     const position = byId.get(id)?.position ?? null;
     return {
@@ -81,7 +96,8 @@ export function notesFileText(
       kurztext: position?.shortText ?? '',
       menge: position?.quantity ?? null,
       einheit: position?.unit ?? null,
-      marker: annotations.markers.get(id) ?? null,
+      fortschritt: annotations.progress.get(id) ?? null,
+      wichtig: annotations.important.has(id),
       verlauf: (annotations.log.get(id) ?? []).map(fileEntry),
     };
   });
@@ -108,22 +124,50 @@ function at(value: unknown): number {
 function readEntry(value: unknown): LogEntry | null {
   if (typeof value !== 'object' || value === null) return null;
   const raw = value as Record<string, unknown>;
-  if ('kommentar' in raw)
-    return toEntry({ kind: 'comment', at: at(raw.zeit), text: raw.kommentar });
-  if ('marker' in raw) return toEntry({ kind: 'marker', at: at(raw.zeit), marker: raw.marker });
+  const zeit = at(raw.zeit);
+  if ('kommentar' in raw) return toEntry({ kind: 'comment', at: zeit, text: raw.kommentar });
+  if ('fortschritt' in raw)
+    return toEntry({ kind: 'progress', at: zeit, progress: raw.fortschritt });
+  if ('wichtig' in raw) return toEntry({ kind: 'important', at: zeit, on: raw.wichtig });
   return null;
 }
 
-function readPosition(value: unknown): NotesFilePosition | null {
+/** Version 1: drei Marker; Verlauf und Stand werden wie im Speicher umgedeutet. */
+function readVerlaufV1(value: unknown): LogEntry[] {
+  if (!Array.isArray(value)) return [];
+  return toEntriesOld(
+    value.map((item: unknown) => {
+      if (typeof item !== 'object' || item === null) return null;
+      const raw = item as Record<string, unknown>;
+      const zeit = at(raw.zeit);
+      if ('kommentar' in raw) return { kind: 'comment', at: zeit, text: raw.kommentar };
+      if ('marker' in raw) return { kind: 'marker', at: zeit, marker: raw.marker };
+      return null;
+    }),
+  );
+}
+
+function readPosition(value: unknown, version: number): NotesFilePosition | null {
   if (typeof value !== 'object' || value === null) return null;
   const raw = value as Record<string, unknown>;
   const hash = text(raw.hash);
   if (hash === '') return null;
-  const verlauf = Array.isArray(raw.verlauf)
-    ? raw.verlauf.map(readEntry).filter((entry): entry is LogEntry => entry !== null)
-    : [];
-  const marker = isMarker(raw.marker) ? raw.marker : null;
-  if (marker === null && verlauf.length === 0) return null;
+  let verlauf: LogEntry[];
+  let fortschritt: Progress | null;
+  let wichtig: boolean;
+  if (version === 1) {
+    verlauf = readVerlaufV1(raw.verlauf);
+    const marker = isOldMarker(raw.marker) ? raw.marker : null;
+    fortschritt = oldIsDone(marker) ? 'fertig' : null;
+    wichtig = oldIsImportant(marker);
+  } else {
+    verlauf = Array.isArray(raw.verlauf)
+      ? raw.verlauf.map(readEntry).filter((entry): entry is LogEntry => entry !== null)
+      : [];
+    fortschritt = isProgress(raw.fortschritt) ? raw.fortschritt : null;
+    wichtig = raw.wichtig === true;
+  }
+  if (fortschritt === null && !wichtig && verlauf.length === 0) return null;
   return {
     hash,
     text: text(raw.text),
@@ -131,7 +175,8 @@ function readPosition(value: unknown): NotesFilePosition | null {
     kurztext: text(raw.kurztext),
     menge: typeof raw.menge === 'number' && Number.isFinite(raw.menge) ? raw.menge : null,
     einheit: typeof raw.einheit === 'string' ? raw.einheit : null,
-    marker,
+    fortschritt,
+    wichtig,
     verlauf,
   };
 }
@@ -165,14 +210,15 @@ export function parseNotesFile(content: string): NotesFile {
   if (file.art !== NOTES_FILE_KIND || !Array.isArray(file.positionen)) {
     throw new NotesFileError('Die Datei ist keine Notiz-Datei von Bubble.');
   }
-  if (file.version !== NOTES_FILE_VERSION) {
+  const version = file.version;
+  if (version !== 1 && version !== NOTES_FILE_VERSION) {
     throw new NotesFileError('Die Notiz-Datei stammt aus einer neueren Bubble-Version.');
   }
   return {
     datei: text(file.datei),
     gesichert: at(file.gesichert),
     positionen: file.positionen
-      .map(readPosition)
+      .map((position) => readPosition(position, version))
       .filter((position): position is NotesFilePosition => position !== null),
   };
 }
@@ -252,29 +298,61 @@ export function matchNotes(file: NotesFile, nodes: Iterable<LVNode>): NotesMatch
 }
 
 function entryKey(entry: LogEntry): string {
-  return entry.kind === 'comment'
-    ? `c|${entry.at}|${entry.text}`
-    : `m|${entry.at}|${entry.marker ?? ''}`;
+  if (entry.kind === 'comment') return `c|${entry.at}|${entry.text}`;
+  if (entry.kind === 'progress') return `p|${entry.at}|${entry.progress ?? ''}`;
+  return `w|${entry.at}|${entry.on}`;
 }
 
-/** Zuletzt gesetzter Marker laut Verlauf; `null`, wenn der Verlauf keinen kennt. */
-function lastMarker(entries: readonly LogEntry[]): { marker: Marker | null; at: number } | null {
-  let last: { marker: Marker | null; at: number } | null = null;
+interface Change<T> {
+  readonly at: number;
+  readonly value: T;
+}
+
+/** Letzter Wechsel laut Verlauf; `read` gibt `undefined` für Einträge anderer Art. */
+function lastChange<T>(
+  entries: readonly LogEntry[],
+  read: (entry: LogEntry) => T | undefined,
+): Change<T> | null {
+  let last: Change<T> | null = null;
   for (const entry of entries) {
-    if (entry.kind === 'marker' && (last === null || entry.at >= last.at)) {
-      last = { marker: entry.marker, at: entry.at };
+    const value = read(entry);
+    if (value !== undefined && (last === null || entry.at >= last.at)) {
+      last = { at: entry.at, value };
     }
   }
   return last;
 }
 
+const progressOf = (entry: LogEntry): Progress | null | undefined =>
+  entry.kind === 'progress' ? entry.progress : undefined;
+const importantOf = (entry: LogEntry): boolean | undefined =>
+  entry.kind === 'important' ? entry.on : undefined;
+
+/**
+ * Wert aus Datei oder Sitzung: der zuletzt gesetzte gewinnt. Kennt kein Verlauf einen
+ * Wechsel und ist in der Sitzung nichts gesetzt, gilt der Stand aus der Datei.
+ */
+function pick<T>(
+  own: T,
+  none: T,
+  fromFile: T,
+  mine: Change<T> | null,
+  theirs: Change<T> | null,
+): T {
+  if (theirs !== null && (mine === null || theirs.at > mine.at)) return theirs.value;
+  if (theirs === null && mine === null && own === none) return fromFile;
+  return own;
+}
+
 /**
  * Übernimmt die Notizen aus der Datei. Kommentare werden ergänzt (gleiche bleiben
- * einmal), der Verlauf nach Zeit sortiert. Beim Marker gilt der zuletzt gesetzte.
+ * einmal), der Verlauf nach Zeit sortiert. Bei Fortschritt und „Wichtig" gilt je der
+ * zuletzt gesetzte Stand.
  */
 export function mergeNotes(current: Annotations, matches: readonly NotesMatch[]): Annotations {
   if (matches.length === 0) return current;
-  const markers = new Map(current.markers);
+  const progress = new Map(current.progress);
+  const important = new Set(current.important);
   const log = new Map(current.log);
   for (const { entry, nodeId } of matches) {
     const before = log.get(nodeId) ?? [];
@@ -284,19 +362,30 @@ export function mergeNotes(current: Annotations, matches: readonly NotesMatch[])
     const merged = [...before, ...added].sort((a, b) => a.at - b.at);
     if (merged.length > 0) log.set(nodeId, merged);
 
-    const mine = lastMarker(before);
-    const theirs = lastMarker(entry.verlauf);
-    const ownMarker = markers.get(nodeId) ?? null;
-    let marker: Marker | null = ownMarker;
-    if (theirs !== null && (mine === null || theirs.at > mine.at)) marker = theirs.marker;
-    else if (theirs === null && mine === null && ownMarker === null) marker = entry.marker;
-    if (marker === null) markers.delete(nodeId);
-    else markers.set(nodeId, marker);
+    const p = pick(
+      progress.get(nodeId) ?? null,
+      null,
+      entry.fortschritt,
+      lastChange(before, progressOf),
+      lastChange(entry.verlauf, progressOf),
+    );
+    if (p === null) progress.delete(nodeId);
+    else progress.set(nodeId, p);
+
+    const w = pick(
+      important.has(nodeId),
+      false,
+      entry.wichtig,
+      lastChange(before, importantOf),
+      lastChange(entry.verlauf, importantOf),
+    );
+    if (w) important.add(nodeId);
+    else important.delete(nodeId);
   }
-  return { markers, log };
+  return { progress, important, log };
 }
 
 /** Anzahl der Positionen mit Marker oder Kommentar. */
 export function notesCount(annotations: Annotations): number {
-  return new Set([...annotations.markers.keys(), ...annotations.log.keys()]).size;
+  return new Set([...markedIds(annotations), ...annotations.log.keys()]).size;
 }

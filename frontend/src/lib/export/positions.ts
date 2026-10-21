@@ -9,16 +9,26 @@
 // fehlt, merkt man dagegen erst, wenn die Datei schon weitergereicht ist.
 // Die Zeilen sind die gefilterte Menge — das ist die Zusage aus dem Plan.
 
-import { EMPTY_ANNOTATIONS, formatAt, MARKER_INFO, type Annotations } from '../annotations';
+import {
+  EMPTY_ANNOTATIONS,
+  formatAt,
+  IMPORTANT_INFO,
+  PROGRESS_INFO,
+  type Annotations,
+} from '../annotations';
 import { attributeLabel, attrString, attrStrings } from '../attributes';
 import { materialKatalog } from '../classify/material/katalog';
 import { canonicalUnit, unitLabel } from '../units';
 import { csvText } from './csvText';
 import type { PositionIndex } from '../index/positionIndex';
 
-function markerLabel(notes: Annotations, id: string): string {
-  const marker = notes.markers.get(id);
-  return marker === undefined ? '' : MARKER_INFO[marker].label;
+function progressLabel(notes: Annotations, id: string): string {
+  const progress = notes.progress.get(id);
+  return progress === undefined ? '' : PROGRESS_INFO[progress].label;
+}
+
+function importantLabel(notes: Annotations, id: string): string {
+  return notes.important.has(id) ? IMPORTANT_INFO.label : '';
 }
 
 /** Alle Kommentare einer Position, je Zeile mit Zeitpunkt, älteste zuerst. */
@@ -60,7 +70,8 @@ const COLUMNS: ReadonlyArray<{
   { head: 'Offene Stellen', of: (index, i) => liste(index, i, 'platzhalter') },
   { head: 'Besonderheiten', of: (index, i) => liste(index, i, 'keywords') },
   // Eigene Notizen (Entscheidungen 0047, 0053) — stehen in der Tabelle, also auch hier.
-  { head: 'Marker', of: (index, i, notes) => markerLabel(notes, index.nodes[i].id) },
+  { head: 'Fortschritt', of: (index, i, notes) => progressLabel(notes, index.nodes[i].id) },
+  { head: 'Wichtig', of: (index, i, notes) => importantLabel(notes, index.nodes[i].id) },
   { head: 'Kommentar', of: (index, i, notes) => commentText(notes, index.nodes[i].id) },
   { head: 'Langtext', of: (index, i) => index.positions[i].longText },
 ];

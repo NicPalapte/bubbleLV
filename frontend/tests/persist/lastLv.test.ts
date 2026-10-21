@@ -3,7 +3,7 @@
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { addComment, commentsOf, EMPTY_ANNOTATIONS, setMarker } from '../../src/lib/annotations';
+import { addComment, commentsOf, EMPTY_ANNOTATIONS, setImportant } from '../../src/lib/annotations';
 import {
   clearLastLv,
   newPersistId,
@@ -121,7 +121,7 @@ describe('letzte Datei — Randfälle', () => {
 
 describe('letzte Datei — Markierungen und Kommentare', () => {
   const notizen = addComment(
-    setMarker(EMPTY_ANNOTATIONS, 'p:1', 'wichtig', 1),
+    setImportant(EMPTY_ANNOTATIONS, 'p:1', true, 1),
     'p:2',
     'Boden prüfen',
     2,
@@ -134,7 +134,7 @@ describe('letzte Datei — Markierungen und Kommentare', () => {
 
     expect(await readLastLvMeta()).toEqual({ ...meta, id, marked: 1, comments: 1 });
     const last = await readLastLv();
-    expect([...(last?.annotations.markers ?? [])]).toEqual([['p:1', 'wichtig']]);
+    expect([...(last?.annotations.important ?? [])]).toEqual(['p:1']);
     expect(commentsOf(last?.annotations ?? EMPTY_ANNOTATIONS, 'p:2')).toEqual(['Boden prüfen']);
   });
 

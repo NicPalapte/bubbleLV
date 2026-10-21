@@ -1,4 +1,4 @@
-// Eigene Markierungen und Kommentare (Entscheidung 0047): Positionskarte,
+// Eigene Marker und Kommentare (Entscheidungen 0047, 0061): Positionskarte,
 // Schild am Punkt im Graphen, Filter oben, Speichern zur letzten Datei.
 
 import 'fake-indexeddb/auto';
@@ -16,7 +16,7 @@ import { ViewerProvider } from '../../src/state/ViewerProvider';
 import {
   addComment,
   EMPTY_ANNOTATIONS,
-  setMarker,
+  setImportant,
   type Annotations,
 } from '../../src/lib/annotations';
 import {
@@ -30,7 +30,7 @@ const NAME = 'gaeb-xml-beispiel.x83';
 const FIXTURE = readFileSync(resolve(process.cwd(), '../packages/core/tests/fixtures', NAME));
 const ID = 'test-projekt';
 
-const markiere = (a: Annotations, id: string): Annotations => setMarker(a, id, 'markiert', 1);
+const markiere = (a: Annotations, id: string): Annotations => setImportant(a, id, true, 1);
 const kommentiere = (a: Annotations, id: string, text: string): Annotations =>
   addComment(a, id, text, 1);
 
@@ -67,24 +67,23 @@ describe('Markierungen und Kommentare', () => {
     await oeffneGespeicherte();
     waehlePunkt(0);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Markiert', pressed: false }));
-    expect(screen.getByRole('button', { name: 'Markiert', pressed: true })).toBeInTheDocument();
+    fireEvent.click(await screen.findByRole('button', { name: 'Wichtig', pressed: false }));
+    expect(screen.getByRole('button', { name: 'Wichtig', pressed: true })).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Kommentar zur Position'), {
       target: { value: 'Boden prüfen' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Senden' }));
     expect(screen.getByLabelText('Kommentar zur Position')).toHaveValue('');
-    expect(
-      within(screen.getByRole('list', { name: 'Verlauf' })).getByText('Boden prüfen'),
-    ).toBeInTheDocument();
-    expect(screen.getByText('Marker: Markiert')).toBeInTheDocument();
+    const verlauf = within(screen.getByRole('list', { name: 'Verlauf' }));
+    expect(verlauf.getByText('Boden prüfen')).toBeInTheDocument();
+    expect(verlauf.getByText('Wichtig')).toBeInTheDocument();
 
-    expect(document.querySelectorAll('[data-note="markiert"]')).toHaveLength(1);
+    expect(document.querySelectorAll('[data-note="wichtig"]')).toHaveLength(1);
     expect(document.querySelectorAll('[data-note="note"]')).toHaveLength(1);
     // Schilder liegen hinter allen Punkten im SVG, also immer davor im Bild.
     const punkte = document.querySelectorAll('[data-tier="position"]');
     const letzterPunkt = punkte[punkte.length - 1];
-    const schild = document.querySelector('[data-note="markiert"]');
+    const schild = document.querySelector('[data-note="wichtig"]');
     expect(
       schild !== null &&
         letzterPunkt.compareDocumentPosition(schild) & Node.DOCUMENT_POSITION_FOLLOWING,
@@ -94,7 +93,7 @@ describe('Markierungen und Kommentare', () => {
     );
     // Gespeichert unter dem Positions-Hash, nicht unter der Knoten-ID (Entscheidung 0057).
     const gespeichert = await readLastLv();
-    const [schluessel] = [...(gespeichert?.annotations.markers.keys() ?? [])];
+    const [schluessel] = [...(gespeichert?.annotations.important ?? [])];
     expect(positionHashes()).toContain(schluessel);
   });
 
@@ -106,38 +105,46 @@ describe('Markierungen und Kommentare', () => {
     const hashes = positionHashes();
     await saveAnnotations(ID, kommentiere(markiere(EMPTY_ANNOTATIONS, hashes[0]), hashes[1], 'x'));
     await oeffneGespeicherte();
-    expect(document.querySelectorAll('[data-note="markiert"]')).toHaveLength(1);
+    expect(document.querySelectorAll('[data-note="wichtig"]')).toHaveLength(1);
     expect(document.querySelectorAll('[data-note="note"]')).toHaveLength(1);
   });
 
-  it('Marker-Knopf: Pfeil wählt, merkt die Wahl und ändert einen gesetzten Marker', async () => {
+  it('Fortschritt und „Wichtig" lassen sich unabhängig setzen', async () => {
     render(<App />);
     fireEvent.change(screen.getByLabelText('GAEB-Datei auswählen'), {
       target: { files: [new File([FIXTURE], NAME)] },
     });
     await screen.findByRole('button', { name: '+ Filter' });
     waehlePunkt(0);
-    fireEvent.click(await screen.findByRole('button', { name: 'Marker wählen' }));
-    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
-      '⚑Markiert',
-      '!Wichtig',
-      '✓Erledigt',
+    const fortschritt = within(await screen.findByRole('group', { name: 'Fortschritt' }));
+    expect(fortschritt.getAllByRole('button').map((knopf) => knopf.textContent)).toEqual([
+      'Offen',
+      '◔In Bearbeitung',
+      '✓Fertig',
     ]);
-    fireEvent.click(screen.getByRole('menuitem', { name: /Erledigt/ }));
-    // Gesetzt: der Knopf nimmt ihn weg, der Pfeil bietet die anderen und „aufheben".
-    expect(screen.getByRole('button', { name: 'Erledigt', pressed: true })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Marker wählen' }));
-    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
-      '⚑Markiert',
-      '!Wichtig',
-      '✕Marker aufheben',
-    ]);
-    fireEvent.click(screen.getByRole('menuitem', { name: /Wichtig/ }));
-    expect(screen.getByRole('button', { name: 'Wichtig', pressed: true })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Wichtig', pressed: true }));
-    // Ohne Marker zeigt der Knopf die letzte Wahl und setzt sie mit einem Klick.
+    expect(fortschritt.getByRole('button', { name: 'Offen' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    fireEvent.click(fortschritt.getByRole('button', { name: 'In Bearbeitung' }));
+    expect(document.querySelectorAll('[data-note="bearbeitung"]')).toHaveLength(1);
+    fireEvent.click(fortschritt.getByRole('button', { name: 'Fertig' }));
     fireEvent.click(screen.getByRole('button', { name: 'Wichtig', pressed: false }));
+    expect(fortschritt.getByRole('button', { name: 'Fertig' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
     expect(screen.getByRole('button', { name: 'Wichtig', pressed: true })).toBeInTheDocument();
+    expect(document.querySelectorAll('[data-note="fertig"]')).toHaveLength(1);
+    expect(document.querySelectorAll('[data-note="bearbeitung"]')).toHaveLength(0);
+    const verlauf = within(screen.getByRole('list', { name: 'Verlauf' }));
+    expect(verlauf.getAllByRole('listitem').map((zeile) => zeile.textContent?.slice(16))).toEqual([
+      'In Bearbeitung',
+      'Fertig',
+      'Wichtig',
+    ]);
+    fireEvent.click(fortschritt.getByRole('button', { name: 'Offen' }));
+    expect(verlauf.getByText('Wieder offen')).toBeInTheDocument();
   });
 
   it('bringt die Notizen beim nächsten Öffnen zurück und filtert danach', async () => {
@@ -155,11 +162,11 @@ describe('Markierungen und Kommentare', () => {
     fireEvent.click(screen.getByRole('button', { name: `Letzte Datei öffnen: ${NAME}` }));
     await screen.findByRole('button', { name: '+ Filter' });
 
-    expect(document.querySelectorAll('[data-note="markiert"]')).toHaveLength(1);
+    expect(document.querySelectorAll('[data-note="wichtig"]')).toHaveLength(1);
     expect(document.querySelectorAll('[data-note="note"]')).toHaveLength(1);
 
     const alle = sichtbarePunkte();
-    fireEvent.click(screen.getByRole('button', { name: /Markiert/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Wichtig/ }));
     await waitFor(() => expect(sichtbarePunkte()).toBe(1));
     expect(alle).toBeGreaterThan(1);
   });
@@ -186,8 +193,7 @@ describe('Markierungen und Kommentare', () => {
     });
     await screen.findByRole('button', { name: '+ Filter' });
     waehlePunkt(0);
-    fireEvent.click(await screen.findByRole('button', { name: 'Marker wählen' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Wichtig' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Wichtig', pressed: false }));
     await waitFor(async () => expect(await readLastLvMeta()).toMatchObject({ marked: 1 }));
     expect(screen.queryByText(/wird nicht gespeichert/)).toBeNull();
   });
@@ -199,8 +205,7 @@ describe('Markierungen und Kommentare', () => {
     );
     await oeffneGespeicherte();
     waehlePunkt(0);
-    fireEvent.click(await screen.findByRole('button', { name: 'Marker wählen' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Erledigt' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Fertig' }));
     // Vor Ablauf der Sammelzeit schließen: die Notiz darf nicht verloren gehen.
     fireEvent.click(screen.getByRole('button', { name: /LV schließen/ }));
     await waitFor(async () => expect(await readLastLvMeta()).toMatchObject({ marked: 1 }));

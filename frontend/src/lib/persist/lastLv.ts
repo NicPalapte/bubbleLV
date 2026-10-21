@@ -20,6 +20,7 @@ import {
   commentedIds,
   EMPTY_ANNOTATIONS,
   fromStored,
+  markedIds,
   toStored,
   type Annotations,
 } from '../annotations';
@@ -132,7 +133,7 @@ export async function readLastLvMeta(): Promise<LastLvInfo | null> {
     const annotations = fromStored(notes);
     return {
       ...meta,
-      marked: annotations.markers.size,
+      marked: markedIds(annotations).length,
       comments: commentedIds(annotations).length,
     };
   } catch {

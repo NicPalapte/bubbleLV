@@ -5,7 +5,11 @@
 // liegt bewusst neben `selectionState` und `viewState`, damit ein
 // Ansichtswechsel ihn gar nicht erst anfassen kann.
 
-import { NO_ANNOTATION_FILTER, type AnnotationFilter, type MarkerFilter } from '../lib/annotations';
+import {
+  NO_ANNOTATION_FILTER,
+  type AnnotationFilter,
+  type ProgressFilter,
+} from '../lib/annotations';
 import { EMPTY_FILTERS, type Filters, type Range } from '../lib/matchPos';
 
 /** Nicht-Treffer dämpfen oder ganz ausblenden. */
@@ -39,8 +43,9 @@ export type FilterAction =
   /** Prüfregel stummschalten bzw. wieder zulassen. */
   | { type: 'toggleRule'; id: string }
   | { type: 'toggleCommentFilter' }
-  /** Marker-Filter; derselbe Wert noch einmal schaltet ihn aus. */
-  | { type: 'toggleMarkerFilter'; value: MarkerFilter };
+  | { type: 'toggleImportantFilter' }
+  /** Fortschritts-Filter; derselbe Wert noch einmal schaltet ihn aus. */
+  | { type: 'toggleProgressFilter'; value: ProgressFilter };
 
 export const INITIAL_FILTER_STATE: FilterState = {
   search: '',
@@ -68,9 +73,11 @@ export function filterReducer(state: FilterState, action: FilterAction): FilterS
       return { ...state, hideMode: action.value };
     case 'toggleCommentFilter':
       return { ...state, notes: { ...state.notes, commented: !state.notes.commented } };
-    case 'toggleMarkerFilter': {
-      const marker = state.notes.marker === action.value ? null : action.value;
-      return { ...state, notes: { ...state.notes, marker } };
+    case 'toggleImportantFilter':
+      return { ...state, notes: { ...state.notes, important: !state.notes.important } };
+    case 'toggleProgressFilter': {
+      const progress = state.notes.progress === action.value ? null : action.value;
+      return { ...state, notes: { ...state.notes, progress } };
     }
     case 'toggleRule': {
       const mutedRules = new Set(state.mutedRules);

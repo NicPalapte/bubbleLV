@@ -37,7 +37,7 @@ import {
   visibleColumnKeys,
   type ColumnConfig,
 } from '../../lib/table/columns';
-import { commentsOf, MARKER_INFO, type Annotations } from '../../lib/annotations';
+import { commentsOf, IMPORTANT_INFO, PROGRESS_INFO, type Annotations } from '../../lib/annotations';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { LVNode, PositionSummary } from '../../types/lvNode';
 import type { PositionType } from '@core';
@@ -187,7 +187,7 @@ const COLUMNS: ReadonlyArray<Column<Row>> = [
   },
   // Eigene Notizen (Entscheidungen 0047, 0053): der Inhalt kommt aus dem
   // Viewer-Zustand, `render` wird deshalb in der Tabelle ersetzt (siehe `annotationRender`).
-  { key: 'marked', label: 'Marker', width: 90, sortable: false },
+  { key: 'marked', label: 'Marker', width: 150, sortable: false },
   { key: 'note', label: 'Kommentar', width: 220, sortable: false },
 ];
 
@@ -206,12 +206,18 @@ function searchRender(key: string, query: string): Column<Row>['render'] | undef
 function annotationRender(key: string, annotations: Annotations): Column<Row>['render'] {
   if (key === 'marked') {
     return (r) => {
-      const marker = annotations.markers.get(r.node.id);
-      if (marker === undefined) return '';
-      const info = MARKER_INFO[marker];
+      const progress = annotations.progress.get(r.node.id);
+      const shown = [
+        ...(progress === undefined ? [] : [PROGRESS_INFO[progress]]),
+        ...(annotations.important.has(r.node.id) ? [IMPORTANT_INFO] : []),
+      ];
       return (
-        <span style={{ color: info.fill === 'var(--ink)' ? 'var(--ink)' : info.fill }}>
-          {info.glyph} {info.label}
+        <span className="inline-flex gap-[8px]">
+          {shown.map((info) => (
+            <span key={info.label} style={{ color: info.fill }}>
+              {info.glyph} {info.label}
+            </span>
+          ))}
         </span>
       );
     };

@@ -61,7 +61,7 @@ function headerLabels(): string[] {
 function Notizen() {
   const dispatch = useViewerDispatch();
   useEffect(() => {
-    dispatch({ type: 'setMarker', id: 'position:01.0010', marker: 'wichtig', at: 1 });
+    dispatch({ type: 'setImportant', id: 'position:01.0010', on: true, at: 1 });
     dispatch({ type: 'addComment', id: 'position:01.0010', text: 'Boden prüfen', at: 1 });
   }, [dispatch]);
   return null;
@@ -198,7 +198,7 @@ describe('PositionsTable · Spaltenbreite (Review zu PR #43)', () => {
 
   it('reserviert die Summe der Spaltenbreiten, damit waagerecht gescrollt wird', () => {
     renderTable();
-    const total = 110 + 260 + 70 + 90 + 90 + 120 + 130 + 90 + 90 + 220;
+    const total = 110 + 260 + 70 + 90 + 90 + 120 + 130 + 90 + 150 + 220;
     const header = screen.getAllByRole('row')[0];
     expect(header.style.minWidth).toBe(`${total}px`);
   });

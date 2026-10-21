@@ -21,10 +21,12 @@ describe('usageEventOf', () => {
   });
 
   it('zählt das Setzen eines Markers, nicht das Entfernen', () => {
-    expect(usageEventOf({ type: 'setMarker', id: 'p1', marker: 'wichtig', at: 0 })).toBe(
+    expect(usageEventOf({ type: 'setImportant', id: 'p1', on: true, at: 0 })).toBe('markierung');
+    expect(usageEventOf({ type: 'setImportant', id: 'p1', on: false, at: 0 })).toBeNull();
+    expect(usageEventOf({ type: 'setProgress', id: 'p1', progress: 'fertig', at: 0 })).toBe(
       'markierung',
     );
-    expect(usageEventOf({ type: 'setMarker', id: 'p1', marker: null, at: 0 })).toBeNull();
+    expect(usageEventOf({ type: 'setProgress', id: 'p1', progress: null, at: 0 })).toBeNull();
   });
 
   it('zählt die Tour nur beim Start', () => {

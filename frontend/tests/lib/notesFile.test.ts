@@ -1,7 +1,12 @@
-// Notiz-Datei sichern und laden (Entscheidung 0061): Format, Zuordnung, Zusammenführen.
+// Notiz-Datei sichern und laden (Entscheidungen 0061, 0062): Format, Zuordnung, Zusammenführen.
 
 import { describe, expect, it } from 'vitest';
-import { addComment, EMPTY_ANNOTATIONS, setMarker } from '../../src/lib/annotations';
+import {
+  addComment,
+  EMPTY_ANNOTATIONS,
+  setImportant,
+  setProgress,
+} from '../../src/lib/annotations';
 import {
   matchNotes,
   mergeNotes,
@@ -39,7 +44,7 @@ const QUELLE = { fileName: 'rohbau.x83', fileId: 'abc' };
 
 function gesichert(): string {
   const notizen = addComment(
-    setMarker(EMPTY_ANNOTATIONS, 'p1', 'wichtig', 1000),
+    setImportant(EMPTY_ANNOTATIONS, 'p1', true, 1000),
     'p2',
     'Boden',
     2000,
@@ -55,17 +60,52 @@ describe('notesFileText und parseNotesFile', () => {
     const file = parseNotesFile(text);
     expect(file.datei).toBe('rohbau.x83');
     expect(file.gesichert).toBe(Date.UTC(2026, 9, 21));
-    expect(file.positionen.map((p) => [p.hash, p.text, p.oz, p.marker])).toEqual([
-      ['h1', 't1', '01.0010', 'wichtig'],
-      ['h2', 't2', '01.0020', null],
+    expect(file.positionen.map((p) => [p.hash, p.text, p.oz, p.fortschritt, p.wichtig])).toEqual([
+      ['h1', 't1', '01.0010', null, true],
+      ['h2', 't2', '01.0020', null, false],
     ]);
+    expect(file.positionen[0].verlauf).toEqual([{ kind: 'important', at: 1000, on: true }]);
     expect(file.positionen[1].verlauf).toEqual([{ kind: 'comment', at: 2000, text: 'Boden' }]);
+  });
+
+  it('liest Notiz-Dateien mit drei Markern (Version 1) und deutet sie um', () => {
+    const alt = parseNotesFile(
+      JSON.stringify({
+        art: 'bubble-notizen',
+        version: 1,
+        positionen: [
+          {
+            hash: 'h1',
+            marker: 'erledigt',
+            verlauf: [
+              { zeit: '2026-10-20T10:00:00.000Z', marker: 'markiert' },
+              { zeit: '2026-10-20T11:00:00.000Z', marker: 'erledigt' },
+              { zeit: null, kommentar: 'Boden' },
+            ],
+          },
+          { hash: 'h2', marker: 'wichtig' },
+          { hash: 'h3', marker: 'kaputt' },
+        ],
+      }),
+    );
+    expect(alt.positionen.map((p) => [p.hash, p.fortschritt, p.wichtig])).toEqual([
+      ['h1', 'fertig', false],
+      ['h2', null, true],
+    ]);
+    const zehn = Date.UTC(2026, 9, 20, 10);
+    const elf = Date.UTC(2026, 9, 20, 11);
+    expect(alt.positionen[0].verlauf).toEqual([
+      { kind: 'important', at: zehn, on: true },
+      { kind: 'progress', at: elf, progress: 'fertig' },
+      { kind: 'important', at: elf, on: false },
+      { kind: 'comment', at: 0, text: 'Boden' },
+    ]);
   });
 
   it('meldet fremde, kaputte und zu neue Dateien verständlich', () => {
     expect(() => parseNotesFile('kein json')).toThrow(NotesFileError);
     expect(() => parseNotesFile('{"art":"etwas"}')).toThrow('keine Notiz-Datei');
-    expect(() => parseNotesFile('{"art":"bubble-notizen","version":2,"positionen":[]}')).toThrow(
+    expect(() => parseNotesFile('{"art":"bubble-notizen","version":3,"positionen":[]}')).toThrow(
       'neueren Bubble-Version',
     );
   });
@@ -147,17 +187,26 @@ describe('mergeNotes', () => {
     const vorher = addComment(EMPTY_ANNOTATIONS, 'p2', 'Boden', 2000);
     const nachher = mergeNotes(vorher, matches);
     expect(nachher.log.get('p2')).toEqual([{ kind: 'comment', at: 2000, text: 'Boden' }]);
-    expect(nachher.markers.get('p1')).toBe('wichtig');
+    expect(nachher.important.has('p1')).toBe(true);
     expect(notesCount(nachher)).toBe(2);
   });
 
-  it('nimmt beim Marker den zuletzt gesetzten', () => {
-    const neuer = setMarker(EMPTY_ANNOTATIONS, 'p1', 'erledigt', 5000);
-    expect(mergeNotes(neuer, matches).markers.get('p1')).toBe('erledigt');
-    const aelter = setMarker(EMPTY_ANNOTATIONS, 'p1', 'erledigt', 500);
+  it('nimmt bei „Wichtig" und beim Fortschritt je den zuletzt gesetzten Stand', () => {
+    const neuer = setImportant(
+      setImportant(EMPTY_ANNOTATIONS, 'p1', true, 4000),
+      'p1',
+      false,
+      5000,
+    );
+    expect(mergeNotes(neuer, matches).important.has('p1')).toBe(false);
+    let aelter = setImportant(EMPTY_ANNOTATIONS, 'p1', true, 400);
+    aelter = setImportant(aelter, 'p1', false, 500);
+    aelter = setProgress(aelter, 'p1', 'bearbeitung', 600);
     const nachher = mergeNotes(aelter, matches);
-    expect(nachher.markers.get('p1')).toBe('wichtig');
-    expect(nachher.log.get('p1')?.map((e) => e.at)).toEqual([500, 1000]);
+    expect(nachher.important.has('p1')).toBe(true);
+    // Die Datei kennt keinen Fortschritt: der eigene bleibt.
+    expect(nachher.progress.get('p1')).toBe('bearbeitung');
+    expect(nachher.log.get('p1')?.map((e) => e.at)).toEqual([400, 500, 600, 1000]);
   });
 
   it('lässt die Notizen unverändert, wenn nichts passt', () => {
