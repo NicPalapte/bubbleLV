@@ -1,6 +1,6 @@
 # 0053 – Drei Marker, Kommentar-Verlauf, Mengenstufe, gelernte Begriffe
 
-- **Status:** akzeptiert
+- **Status:** akzeptiert; die drei Marker ersetzt durch 0061
 - **Datum:** 2026-10-16
 - **Betrifft:** eigene Notizen (`frontend/src/lib/annotations.ts`), Matrix
   (`frontend/src/lib/graph/layoutMap.ts`), Langtext-Hervorhebung

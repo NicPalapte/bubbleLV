@@ -47,8 +47,8 @@ const SIDE_PANEL_EVENT = {
 
 /**
  * Ereignis zu einer Viewer-Aktion, sonst null. Zählt nur, dass eine Funktion genutzt
- * wurde — bei `search` und `addComment` nie der Text selbst. `setMarker` zählt nur das
- * Setzen eines Markers, nicht das Entfernen.
+ * wurde — bei `search` und `addComment` nie der Text selbst. Marker zählen nur
+ * beim Setzen, nicht beim Entfernen.
  */
 export function usageEventOf(action: ViewerAction): UsageEvent | null {
   switch (action.type) {
@@ -62,8 +62,10 @@ export function usageEventOf(action: ViewerAction): UsageEvent | null {
       return 'tabelle';
     case 'search':
       return action.value.trim() === '' ? null : 'suche';
-    case 'setMarker':
-      return action.marker === null ? null : 'markierung';
+    case 'setProgress':
+      return action.progress === null ? null : 'markierung';
+    case 'setImportant':
+      return action.on ? 'markierung' : null;
     case 'addComment':
       return action.text.trim() === '' ? null : 'kommentar';
     case 'tour':

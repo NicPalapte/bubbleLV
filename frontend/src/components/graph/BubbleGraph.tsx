@@ -35,7 +35,15 @@ import {
   MIN_ZOOM,
   marksVisible,
 } from '../../lib/graph/constants';
-import { commentedIds, hasComment, MARKER_INFO, type Marker } from '../../lib/annotations';
+import {
+  commentedIds,
+  hasComment,
+  IMPORTANT_INFO,
+  markedIds,
+  PROGRESS_INFO,
+  type MarkerInfo,
+  type Progress,
+} from '../../lib/annotations';
 import { cullBounds, isInView } from '../../lib/graph/culling';
 import { layoutMap, type MapGroup } from '../../lib/graph/layoutMap';
 import { graphOverlayProps, isOverlayEvent } from '../../lib/graph/overlay';
@@ -116,59 +124,77 @@ interface Overlay {
 const NO_OVERLAY: Overlay = { pins: [], leader: null, key: '' };
 
 /**
- * Schilder für den eigenen Marker (⚑ ! ✓) und Kommentar (blaues ✎) oben rechts
- * am Punkt (Entscheidungen 0047, 0053). Der orange Ring bleibt den Prüf-Hinweisen.
+ * Eigene Notizen am Punkt (Entscheidungen 0047, 0053, 0061): Fortschritt als dünner
+ * Ring direkt am Punkt (blau = in Bearbeitung, grün = fertig, dazu ✓ unten rechts),
+ * „Wichtig" (rotes !) und Kommentar (blaues ✎) als Schilder oben rechts. Der orange
+ * Ring etwas weiter außen bleibt den Prüf-Hinweisen.
  */
 function NoteBadges({
   x,
   y,
   r,
-  marker,
+  progress,
+  important,
   commented,
 }: {
   x: number;
   y: number;
   r: number;
-  marker: Marker | null;
+  progress: Progress | null;
+  important: boolean;
   commented: boolean;
 }) {
-  if (marker === null && !commented) return null;
+  if (progress === null && !important && !commented) return null;
   // Mitwachsend, aber nie größer als der Punkt selbst wirkt.
   const br = Math.max(2.6, Math.min(6, r * 0.65));
-  const cy = y - r - br * 0.4;
-  const badges: Array<{ key: string; glyph: string; fill: string; text: string }> = [];
-  if (marker !== null) badges.push({ key: marker, ...MARKER_INFO[marker] });
-  if (commented) badges.push({ key: 'note', glyph: '✎', fill: 'var(--blue)', text: '#fff' });
+  const top = { y: y - r - br * 0.4, x: x + r * 0.7 };
+  const badges: Array<{ key: string; cx: number; cy: number; info: MarkerInfo }> = [];
+  if (important) badges.push({ key: 'wichtig', cx: top.x, cy: top.y, info: IMPORTANT_INFO });
+  if (commented) {
+    const cx = top.x + badges.length * br * 2.1;
+    badges.push({ key: 'note', cx, cy: top.y, info: COMMENT_BADGE });
+  }
+  if (progress === 'fertig') {
+    badges.push({ key: 'fertig', cx: x + r * 0.75, cy: y + r * 0.75, info: PROGRESS_INFO.fertig });
+  }
   return (
     <g pointerEvents="none">
-      {badges.map((badge, i) => {
-        const cx = x + r * 0.7 + i * br * 2.1;
-        return (
-          <g key={badge.key} data-note={badge.key}>
-            <circle
-              cx={cx}
-              cy={cy}
-              r={br}
-              fill={badge.fill}
-              stroke="var(--surface)"
-              strokeWidth={1}
-            />
-            <text
-              x={cx}
-              y={cy}
-              fill={badge.text}
-              fontSize={br * 1.3}
-              textAnchor="middle"
-              dominantBaseline="central"
-            >
-              {badge.glyph}
-            </text>
-          </g>
-        );
-      })}
+      {progress !== null && (
+        <circle
+          data-note={progress}
+          cx={x}
+          cy={y}
+          r={r + 1}
+          fill="none"
+          stroke={PROGRESS_INFO[progress].fill}
+          strokeWidth={Math.max(1.2, Math.min(2.4, r * 0.18))}
+        />
+      )}
+      {badges.map(({ key, cx, cy, info }) => (
+        <g key={key} data-note={key === 'fertig' ? undefined : key}>
+          <circle cx={cx} cy={cy} r={br} fill={info.fill} stroke="var(--surface)" strokeWidth={1} />
+          <text
+            x={cx}
+            y={cy}
+            fill={info.text}
+            fontSize={br * 1.3}
+            textAnchor="middle"
+            dominantBaseline="central"
+          >
+            {info.glyph}
+          </text>
+        </g>
+      ))}
     </g>
   );
 }
+
+const COMMENT_BADGE: MarkerInfo = {
+  label: 'Kommentar',
+  glyph: '✎',
+  fill: 'var(--blue)',
+  text: '#fff',
+};
 
 export function BubbleGraph({ root }: { root: LVNode }) {
   const {
@@ -250,7 +276,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
   // Punkte mit eigener Notiz, für die oberste Ebene der Schilder.
   const noteSlots = useMemo(() => {
     const slots: number[] = [];
-    for (const id of new Set([...annotations.markers.keys(), ...commentedIds(annotations)])) {
+    for (const id of new Set([...markedIds(annotations), ...commentedIds(annotations)])) {
       const slot = index.slotOf.get(id);
       if (slot !== undefined) slots.push(slot);
     }
@@ -1204,7 +1230,8 @@ export function BubbleGraph({ root }: { root: LVNode }) {
                     x={x}
                     y={y}
                     r={r}
-                    marker={annotations.markers.get(id) ?? null}
+                    progress={annotations.progress.get(id) ?? null}
+                    important={annotations.important.has(id)}
                     commented={hasComment(annotations, id)}
                   />
                 </g>

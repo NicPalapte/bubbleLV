@@ -1,60 +1,79 @@
-// Eigene Marker und Kommentar-Verlauf je Position (Entscheidungen 0047, 0053).
+// Eigene Marker und Kommentar-Verlauf je Position (Entscheidungen 0047, 0053, 0061).
 //
 // In der Sitzung ist der Schlüssel die Knoten-ID der Position (lib/tree/buildTree.ts).
 // Gespeichert wird unter dem Positions-Hash (Entscheidung 0055, `hashes.id`): er hängt
 // am Inhalt, nicht an OZ und Reihenfolge, und passt so auch nach Umnummerieren.
 // Umschlüsseln an der Grenze zum Speicher: `storageKeys` + `rekey`.
 //
-// Ein Marker ist eine eigene Notiz, nicht der GAEB-Status (Entscheidung 0051):
-// „Erledigt" heißt „habe ich kalkuliert", nicht „Status geändert".
+// Zwei unabhängige Marker (Entscheidung 0061): Fortschritt (offen → in Bearbeitung →
+// fertig) und „Wichtig". Beides ist eine eigene Notiz, nicht der GAEB-Status
+// (Entscheidung 0051): „Fertig" heißt „habe ich kalkuliert", nicht „Status geändert".
 //
 // Reine Funktionen über einem unveränderlichen Wert; der Zustand liegt im Viewer.
 // Zeitpunkte kommen von außen, damit der Reducer rein bleibt.
 
 import type { LVNode } from '../types/lvNode';
 
-export type Marker = 'markiert' | 'wichtig' | 'erledigt';
+/** Fortschritt; „offen" ist kein Wert, sondern das Fehlen eines Eintrags. */
+export type Progress = 'bearbeitung' | 'fertig';
 
 /** Reihenfolge = Reihenfolge der Knöpfe in der Karte und der Filter oben. */
-export const MARKERS: readonly Marker[] = ['markiert', 'wichtig', 'erledigt'];
+export const PROGRESS: readonly Progress[] = ['bearbeitung', 'fertig'];
 
 export interface MarkerInfo {
   readonly label: string;
   readonly glyph: string;
-  /** Füllung des Schilds am Punkt und des gedrückten Knopfs. */
+  /** Farbe des Rings/Schilds am Punkt und des gedrückten Knopfs. */
   readonly fill: string;
   readonly text: string;
 }
 
-export const MARKER_INFO: Readonly<Record<Marker, MarkerInfo>> = {
-  markiert: { label: 'Markiert', glyph: '⚑', fill: 'var(--ink)', text: 'var(--surface)' },
-  wichtig: { label: 'Wichtig', glyph: '!', fill: 'var(--red)', text: '#fff' },
-  erledigt: { label: 'Erledigt', glyph: '✓', fill: 'var(--greenD)', text: '#fff' },
+export const PROGRESS_INFO: Readonly<Record<Progress, MarkerInfo>> = {
+  bearbeitung: { label: 'In Bearbeitung', glyph: '◔', fill: 'var(--blue)', text: '#fff' },
+  fertig: { label: 'Fertig', glyph: '✓', fill: 'var(--greenD)', text: '#fff' },
 };
 
-/** Ein Eintrag im Verlauf: eigener Kommentar oder Wechsel des Markers. */
+export const IMPORTANT_INFO: MarkerInfo = {
+  label: 'Wichtig',
+  glyph: '!',
+  fill: 'var(--red)',
+  text: '#fff',
+};
+
+/** Ein Eintrag im Verlauf: eigener Kommentar, Fortschritt oder „Wichtig" an/aus. */
 export type LogEntry =
   | { readonly kind: 'comment'; readonly at: number; readonly text: string }
-  | { readonly kind: 'marker'; readonly at: number; readonly marker: Marker | null };
+  | { readonly kind: 'progress'; readonly at: number; readonly progress: Progress | null }
+  | { readonly kind: 'important'; readonly at: number; readonly on: boolean };
 
 export interface Annotations {
-  readonly markers: ReadonlyMap<string, Marker>;
+  readonly progress: ReadonlyMap<string, Progress>;
+  readonly important: ReadonlySet<string>;
   /** Verlauf je Position, älteste zuerst; nur Positionen mit mindestens einem Eintrag. */
   readonly log: ReadonlyMap<string, readonly LogEntry[]>;
 }
 
-export const EMPTY_ANNOTATIONS: Annotations = { markers: new Map(), log: new Map() };
+export const EMPTY_ANNOTATIONS: Annotations = {
+  progress: new Map(),
+  important: new Set(),
+  log: new Map(),
+};
 
-/** Filter „Nicht erledigt": alles außer Erledigt, auch Positionen ohne Marker. */
-export type MarkerFilter = Marker | 'offen';
+/** „Offen" = ohne Fortschritt. */
+export type ProgressFilter = Progress | 'offen';
 
-/** Marker-Filter und „Mit Kommentar" — beide an heißt: beides muss zutreffen. */
+/** Fortschritt, „Wichtig" und „Mit Kommentar" — alles, was an ist, muss zutreffen. */
 export interface AnnotationFilter {
-  readonly marker: MarkerFilter | null;
+  readonly progress: ProgressFilter | null;
+  readonly important: boolean;
   readonly commented: boolean;
 }
 
-export const NO_ANNOTATION_FILTER: AnnotationFilter = { marker: null, commented: false };
+export const NO_ANNOTATION_FILTER: AnnotationFilter = {
+  progress: null,
+  important: false,
+  commented: false,
+};
 
 function withLog(annotations: Annotations, id: string, entries: readonly LogEntry[]): Annotations {
   const log = new Map(annotations.log);
@@ -63,19 +82,36 @@ function withLog(annotations: Annotations, id: string, entries: readonly LogEntr
   return { ...annotations, log };
 }
 
-/** Setzt den Marker (`null` nimmt ihn weg) und schreibt den Wechsel in den Verlauf. */
-export function setMarker(
+function appendLog(annotations: Annotations, id: string, entry: LogEntry): Annotations {
+  return withLog(annotations, id, [...(annotations.log.get(id) ?? []), entry]);
+}
+
+/** Setzt den Fortschritt (`null` = offen) und schreibt den Wechsel in den Verlauf. */
+export function setProgress(
   annotations: Annotations,
   id: string,
-  marker: Marker | null,
+  progress: Progress | null,
   at: number,
 ): Annotations {
-  if ((annotations.markers.get(id) ?? null) === marker) return annotations;
-  const markers = new Map(annotations.markers);
-  if (marker === null) markers.delete(id);
-  else markers.set(id, marker);
-  const entries = [...(annotations.log.get(id) ?? []), { kind: 'marker', at, marker } as const];
-  return withLog({ ...annotations, markers }, id, entries);
+  if ((annotations.progress.get(id) ?? null) === progress) return annotations;
+  const map = new Map(annotations.progress);
+  if (progress === null) map.delete(id);
+  else map.set(id, progress);
+  return appendLog({ ...annotations, progress: map }, id, { kind: 'progress', at, progress });
+}
+
+/** Schaltet „Wichtig" und schreibt den Wechsel in den Verlauf. */
+export function setImportant(
+  annotations: Annotations,
+  id: string,
+  on: boolean,
+  at: number,
+): Annotations {
+  if (annotations.important.has(id) === on) return annotations;
+  const important = new Set(annotations.important);
+  if (on) important.add(id);
+  else important.delete(id);
+  return appendLog({ ...annotations, important }, id, { kind: 'important', at, on });
 }
 
 /** Hängt einen Kommentar an; nur Leerraum zählt als nichts. */
@@ -121,34 +157,41 @@ export function commentedIds(annotations: Annotations): string[] {
   return out;
 }
 
-export function markerCounts(annotations: Annotations): Record<Marker, number> {
-  const counts: Record<Marker, number> = { markiert: 0, wichtig: 0, erledigt: 0 };
-  for (const marker of annotations.markers.values()) counts[marker]++;
+/** Positionen mit Fortschritt oder „Wichtig". */
+export function markedIds(annotations: Annotations): string[] {
+  return [...new Set([...annotations.progress.keys(), ...annotations.important])];
+}
+
+export function markerCounts(annotations: Annotations): Record<Progress | 'wichtig', number> {
+  const counts = { bearbeitung: 0, fertig: 0, wichtig: annotations.important.size };
+  for (const progress of annotations.progress.values()) counts[progress]++;
   return counts;
 }
 
 /**
  * Positionen, die der Filter zulässt — `null`, wenn er aus ist. Als ID-Menge
  * vorberechnet, damit `matchPos` je Position nur einmal nachschlägt.
- * `allIds` braucht nur „Nicht erledigt": dort zählen auch Positionen ohne Notiz.
+ * `allIds` braucht nur „Offen": dort zählen auch Positionen ohne Notiz.
  */
 export function annotationAllowList(
   annotations: Annotations,
   filter: AnnotationFilter,
   allIds: Iterable<string>,
 ): ReadonlySet<string> | null {
-  if (filter.marker === null && !filter.commented) return null;
+  const { progress, important, commented } = filter;
+  if (progress === null && !important && !commented) return null;
   let candidates: Iterable<string>;
-  if (filter.marker === null) candidates = commentedIds(annotations);
-  else if (filter.marker === 'offen') candidates = allIds;
-  else candidates = annotations.markers.keys();
+  if (progress === 'offen') candidates = allIds;
+  else if (progress !== null) candidates = annotations.progress.keys();
+  else if (important) candidates = annotations.important;
+  else candidates = commentedIds(annotations);
 
   const allowed = new Set<string>();
   for (const id of candidates) {
-    const marker = annotations.markers.get(id);
-    if (filter.marker === 'offen' && marker === 'erledigt') continue;
-    if (filter.marker !== null && filter.marker !== 'offen' && marker !== filter.marker) continue;
-    if (filter.commented && !hasComment(annotations, id)) continue;
+    const own = annotations.progress.get(id) ?? 'offen';
+    if (progress !== null && own !== progress) continue;
+    if (important && !annotations.important.has(id)) continue;
+    if (commented && !hasComment(annotations, id)) continue;
     allowed.add(id);
   }
   return allowed;
@@ -189,45 +232,105 @@ export function storageKeys(nodes: Iterable<LVNode>): StorageKeys {
  * Notizen aus v0.21 und älter (Knoten-ID) finden ihre Position direkt.
  */
 export function rekey(annotations: Annotations, keys: ReadonlyMap<string, string>): Annotations {
-  if (annotations.markers.size === 0 && annotations.log.size === 0) return annotations;
+  const { progress, important, log } = annotations;
+  if (progress.size === 0 && important.size === 0 && log.size === 0) return annotations;
   const key = (id: string): string => keys.get(id) ?? id;
   return {
-    markers: new Map([...annotations.markers].map(([id, marker]) => [key(id), marker])),
-    log: new Map([...annotations.log].map(([id, entries]) => [key(id), entries])),
+    progress: new Map([...progress].map(([id, value]) => [key(id), value])),
+    important: new Set([...important].map(key)),
+    log: new Map([...log].map(([id, entries]) => [key(id), entries])),
   };
 }
 
 /**
  * Form für die IndexedDB: Arrays statt Set/Map, damit auch ältere Browser klonen.
- * `v: 3`: Schlüssel ist der Positions-Hash. `v: 2` (drei Marker) und ohne `v`
- * (v0.15, Entscheidung 0047) tragen die Knoten-ID.
+ * `v: 4`: Fortschritt + Wichtig (Entscheidung 0061), Schlüssel ist der Positions-Hash.
+ * Ältere Formen liest `fromStored`: `v: 3` (drei Marker, Hash), `v: 2` (drei Marker,
+ * Knoten-ID) und ohne `v` (v0.15, Entscheidung 0047).
  */
 export interface StoredAnnotations {
-  readonly v: 3;
-  readonly markers: ReadonlyArray<readonly [string, Marker]>;
+  readonly v: 4;
+  readonly progress: ReadonlyArray<readonly [string, Progress]>;
+  readonly important: readonly string[];
   readonly log: ReadonlyArray<readonly [string, readonly LogEntry[]]>;
 }
 
 /** `annotations` muss schon nach Hash geschlüsselt sein (`rekey(…, keys.toHash)`). */
 export function toStored(annotations: Annotations): StoredAnnotations {
-  return { v: 3, markers: [...annotations.markers], log: [...annotations.log] };
+  return {
+    v: 4,
+    progress: [...annotations.progress],
+    important: [...annotations.important],
+    log: [...annotations.log],
+  };
 }
 
-function isMarker(value: unknown): value is Marker {
+function isProgress(value: unknown): value is Progress {
+  return value === 'bearbeitung' || value === 'fertig';
+}
+
+/** Marker bis v0.23: genau einer aus drei je Position. */
+type OldMarker = 'markiert' | 'wichtig' | 'erledigt';
+
+function isOldMarker(value: unknown): value is OldMarker {
   return value === 'markiert' || value === 'wichtig' || value === 'erledigt';
+}
+
+/** „Markiert" und „Wichtig" werden „Wichtig", „Erledigt" wird „Fertig". */
+const oldIsImportant = (marker: OldMarker | null): boolean =>
+  marker === 'markiert' || marker === 'wichtig';
+const oldIsDone = (marker: OldMarker | null): boolean => marker === 'erledigt';
+
+function atOf(raw: Record<string, unknown>): number {
+  return typeof raw.at === 'number' && Number.isFinite(raw.at) ? raw.at : 0;
+}
+
+function commentEntry(raw: Record<string, unknown>): LogEntry | null {
+  if (raw.kind !== 'comment' || typeof raw.text !== 'string' || raw.text.trim() === '') {
+    return null;
+  }
+  return { kind: 'comment', at: atOf(raw), text: raw.text };
 }
 
 function toEntry(value: unknown): LogEntry | null {
   if (typeof value !== 'object' || value === null) return null;
   const raw = value as Record<string, unknown>;
-  const at = typeof raw.at === 'number' && Number.isFinite(raw.at) ? raw.at : 0;
-  if (raw.kind === 'comment' && typeof raw.text === 'string' && raw.text.trim() !== '') {
-    return { kind: 'comment', at, text: raw.text };
+  if (raw.kind === 'progress' && (raw.progress === null || isProgress(raw.progress))) {
+    return { kind: 'progress', at: atOf(raw), progress: raw.progress };
   }
-  if (raw.kind === 'marker' && (raw.marker === null || isMarker(raw.marker))) {
-    return { kind: 'marker', at, marker: raw.marker };
+  if (raw.kind === 'important' && typeof raw.on === 'boolean') {
+    return { kind: 'important', at: atOf(raw), on: raw.on };
   }
-  return null;
+  return commentEntry(raw);
+}
+
+/**
+ * Verlauf bis v0.23: ein Marker-Wechsel wird zu den Wechseln, die er heute bedeutet.
+ * Dazu wird der vorige Marker mitgeführt — „Marker entfernt" sagt allein nicht, was weg ist.
+ */
+function toEntriesOld(entries: readonly unknown[]): LogEntry[] {
+  const out: LogEntry[] = [];
+  let prev: OldMarker | null = null;
+  for (const value of entries) {
+    if (typeof value !== 'object' || value === null) continue;
+    const raw = value as Record<string, unknown>;
+    if (raw.kind !== 'marker') {
+      const comment = commentEntry(raw);
+      if (comment !== null) out.push(comment);
+      continue;
+    }
+    if (raw.marker !== null && !isOldMarker(raw.marker)) continue;
+    const next: OldMarker | null = raw.marker;
+    const at = atOf(raw);
+    if (oldIsDone(prev) !== oldIsDone(next)) {
+      out.push({ kind: 'progress', at, progress: oldIsDone(next) ? 'fertig' : null });
+    }
+    if (oldIsImportant(prev) !== oldIsImportant(next)) {
+      out.push({ kind: 'important', at, on: oldIsImportant(next) });
+    }
+    prev = next;
+  }
+  return out;
 }
 
 function pairs(value: unknown): Array<[string, unknown]> {
@@ -237,33 +340,59 @@ function pairs(value: unknown): Array<[string, unknown]> {
   );
 }
 
+function readLog(
+  value: unknown,
+  read: (entries: unknown[]) => LogEntry[],
+): Map<string, LogEntry[]> {
+  const log = new Map<string, LogEntry[]>();
+  for (const [id, entries] of pairs(value)) {
+    if (!Array.isArray(entries)) continue;
+    const valid = read(entries);
+    if (valid.length > 0) log.set(id, valid);
+  }
+  return log;
+}
+
 /** Gespeicherte Notizen mit ihren Schlüsseln wie gespeichert; danach `rekey(…, keys.toNode)`. */
 export function fromStored(value: unknown): Annotations {
   if (typeof value !== 'object' || value === null) return EMPTY_ANNOTATIONS;
   const raw = value as Record<string, unknown>;
 
-  if (raw.v !== 2 && raw.v !== 3) {
-    // v0.15: eine Markierung (an/aus) und ein Kommentarfeld je Position. Die
-    // Markierung wird „Markiert", der Kommentar ein Eintrag ohne Zeitpunkt.
-    const marked = Array.isArray(raw.marked)
-      ? raw.marked.filter((id): id is string => typeof id === 'string')
-      : [];
-    const log = new Map<string, LogEntry[]>();
-    for (const [id, text] of pairs(raw.notes)) {
-      if (typeof text === 'string' && text.trim() !== '') {
-        log.set(id, [{ kind: 'comment', at: 0, text }]);
-      }
-    }
-    return { markers: new Map(marked.map((id) => [id, 'markiert' as const])), log };
+  if (raw.v === 4) {
+    const progress = new Map<string, Progress>();
+    for (const [id, p] of pairs(raw.progress)) if (isProgress(p)) progress.set(id, p);
+    const important = new Set(
+      Array.isArray(raw.important)
+        ? raw.important.filter((id): id is string => typeof id === 'string')
+        : [],
+    );
+    const log = readLog(raw.log, (entries) =>
+      entries.map(toEntry).filter((entry): entry is LogEntry => entry !== null),
+    );
+    return { progress, important, log };
   }
 
-  const markers = new Map<string, Marker>();
-  for (const [id, marker] of pairs(raw.markers)) if (isMarker(marker)) markers.set(id, marker);
-  const log = new Map<string, LogEntry[]>();
-  for (const [id, entries] of pairs(raw.log)) {
-    if (!Array.isArray(entries)) continue;
-    const valid = entries.map(toEntry).filter((entry): entry is LogEntry => entry !== null);
-    if (valid.length > 0) log.set(id, valid);
+  if (raw.v === 2 || raw.v === 3) {
+    const progress = new Map<string, Progress>();
+    const important = new Set<string>();
+    for (const [id, marker] of pairs(raw.markers)) {
+      if (!isOldMarker(marker)) continue;
+      if (oldIsDone(marker)) progress.set(id, 'fertig');
+      else important.add(id);
+    }
+    return { progress, important, log: readLog(raw.log, toEntriesOld) };
   }
-  return { markers, log };
+
+  // v0.15: eine Markierung (an/aus) und ein Kommentarfeld je Position. Die
+  // Markierung wird „Wichtig", der Kommentar ein Eintrag ohne Zeitpunkt.
+  const marked = Array.isArray(raw.marked)
+    ? raw.marked.filter((id): id is string => typeof id === 'string')
+    : [];
+  const log = new Map<string, LogEntry[]>();
+  for (const [id, text] of pairs(raw.notes)) {
+    if (typeof text === 'string' && text.trim() !== '') {
+      log.set(id, [{ kind: 'comment', at: 0, text }]);
+    }
+  }
+  return { progress: new Map(), important: new Set(marked), log };
 }

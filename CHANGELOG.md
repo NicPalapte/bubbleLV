@@ -9,6 +9,17 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.25.0 — 21.10.2026 · Fortschritt und „Wichtig"
+
+- **Fortschritt je Position:** Offen · In Bearbeitung · Fertig, mit drei Knöpfen unten in
+  der Positionskarte. Im Graphen zeigt ein dünner Ring den Stand: blau = in Bearbeitung,
+  grün = fertig.
+- **„Wichtig" ist ein eigener Knopf** und lässt sich zusätzlich setzen, auch bei „Fertig".
+- **Filter oben:** Offen, In Bearbeitung, Fertig, Wichtig. „Offen" ersetzt „Nicht erledigt".
+- **CSV-Export:** Spalten „Fortschritt" und „Wichtig" statt „Marker".
+- **Bisherige Marker bleiben erhalten:** Markiert und Wichtig werden „Wichtig", Erledigt
+  wird „Fertig".
+
 ## 0.24.0 — 21.10.2026 · Matrix als Kacheln
 
 - **Matrix mit Zeilen und Spalten** zeigt jede Zelle als Kachel. Je mehr Positionen darin
