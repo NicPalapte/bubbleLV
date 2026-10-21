@@ -23,6 +23,8 @@
   - Bereich am Kopf auf einen anderen ziehen = beide tauschen die Plätze.
   - Trennlinien ziehen ändert die Größe, Doppelklick setzt zurück, Pfeiltasten gehen auch.
   - ✕ schließt einen Bereich, „+ Tabelle" usw. in der Kopfleiste holt ihn zurück.
+  - Eine neue Auswahl öffnet den Bereich „Position" wieder, ein Sprung in die Tabelle
+    die Tabelle.
 - **Fenster:** wie bisher. Der Graph füllt die Fläche, Tabelle und Karte schweben darüber.
 - **Graph und Tabelle** lassen sich in beiden Anordnungen in ein eigenes Browserfenster
   auslagern (↗). Der freie Platz wird von den übrigen Bereichen genutzt.

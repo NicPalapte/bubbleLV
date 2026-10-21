@@ -99,6 +99,12 @@ describe('Ansichtszustand der Arbeitsfläche', () => {
     expect(viewerReducer(open, { type: 'paneClosed', pane: 'card', closed: false })).toBe(open);
   });
 
+  it('öffnet den Bereich „Position" wieder, sobald jemand etwas anwählt', () => {
+    const shut = viewerReducer(base, { type: 'paneClosed', pane: 'card', closed: true });
+    const next = viewerReducer(shut, { type: 'selectNode', id: 'irgendwas' });
+    expect(next.view.workspace.closed.card).toBe(false);
+  });
+
   it('begrenzt die Trennlinien und setzt sie mit null zurück', () => {
     const wide = viewerReducer(base, { type: 'splitSize', colFrac: 0.99, rowFrac: 0.01 });
     expect(wide.view.workspace.colFrac).toBe(SPLIT_COL_MAX);
