@@ -91,7 +91,7 @@ describe('Admin-Werkzeuge', () => {
     await ladeDatei();
     // Ohne Admin bietet die Leiste nur Farben zum Anstreichen.
     markiereWort(await langtextBlock());
-    const leiste = await screen.findByRole('toolbar', { name: 'Anstreichen' });
+    const leiste = await screen.findByRole('toolbar', { name: 'Textmarkierung' });
     expect(within(leiste).queryByRole('button', { name: 'Begriff lernen…' })).toBeNull();
     fireEvent.keyDown(document, { key: 'Escape' });
 

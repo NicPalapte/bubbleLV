@@ -1,4 +1,4 @@
-# 0063 – Eigene Anstreichungen im Langtext
+# 0063 – Eigene Textmarkierungen im Langtext
 
 - **Status:** akzeptiert
 - **Datum:** 2026-10-21
@@ -16,12 +16,20 @@
 
 - Text im Langtext auswählen ⇒ kleine Leiste mit drei Farben: Gelb, Orange, Grün.
 - Mit Admin-Zugang steht in derselben Leiste „Begriff lernen…" (0053).
-- Unter dem Langtext: Liste „Meine Anstreichungen" mit ✕ zum Entfernen.
+- Über dem Langtext zeigt der Text-Cursor, dass sich markieren lässt.
+- Unter „Eigenschaften": Abschnitt „Meine Textmarkierungen" als kleine Tabelle
+  (Farbe | Text), ✕ entfernt eine.
+- Label „Meine Textmarkierungen" neben den Fundstellen-Labels blendet die Farben im Text
+  aus. Eine neue Markierung blendet sie wieder ein.
+- In der Oberfläche heißt es „Textmarkierung" (Wunsch des Owners); im Code und in der
+  Notiz-Datei bleibt der Name `Highlight` / `anstreichungen`.
+- Die Zeile „Status" fällt aus den Eigenschaften der Positionskarte. Den Stand zeigt der
+  Fortschritt (0062). Die Spalte „Status" in der Tabelle bleibt vorerst.
 - Gespeichert wird je Position: Farbe, Stelle im Text, angestrichener Text, Zeitpunkt.
   Wie alle Notizen am Positions-Hash, zur letzten Datei in diesem Browser.
 - Findet sich der Text nicht mehr an der Stelle, wird er im ganzen Langtext gesucht.
   Fehlt er ganz, bleibt der Eintrag in der Liste mit „nicht mehr im Text".
-- Notiz-Datei Version 3 mit `anstreichungen`. CSV-Spalte „Anstreichungen".
+- Notiz-Datei Version 3 mit `anstreichungen`. CSV-Spalte „Textmarkierungen".
 - Kein Filter nach Anstreichungen (Wunsch des Owners).
 
 ## Warum

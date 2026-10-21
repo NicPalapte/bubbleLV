@@ -81,7 +81,7 @@ const COLUMNS: ReadonlyArray<{
   { head: 'Fortschritt', of: (index, i, notes) => progressLabel(notes, index.nodes[i].id) },
   { head: 'Wichtig', of: (index, i, notes) => importantLabel(notes, index.nodes[i].id) },
   { head: 'Kommentar', of: (index, i, notes) => commentText(notes, index.nodes[i].id) },
-  { head: 'Anstreichungen', of: (index, i, notes) => paintText(notes, index.nodes[i].id) },
+  { head: 'Textmarkierungen', of: (index, i, notes) => paintText(notes, index.nodes[i].id) },
   { head: 'Langtext', of: (index, i) => index.positions[i].longText },
 ];
 

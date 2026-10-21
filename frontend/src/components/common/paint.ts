@@ -6,6 +6,9 @@
 import { useLayoutEffect, type RefObject } from 'react';
 import { MAX_PAINT_LENGTH, PAINTS, type Highlight, type Paint } from '../../lib/annotations';
 
+/** Titel des Abschnitts und Name des Labels zum Ausblenden. */
+export const PAINT_SECTION = 'Meine Textmarkierungen';
+
 /** Stelle der Anstreichung im Text, -1 wenn ihr Text dort nicht (mehr) vorkommt. */
 export function locate(text: string, mark: Pick<Highlight, 'start' | 'text'>): number {
   if (text.slice(mark.start, mark.start + mark.text.length) === mark.text) return mark.start;

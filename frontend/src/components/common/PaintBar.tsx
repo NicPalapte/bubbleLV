@@ -5,7 +5,8 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { PAINT_INFO, PAINTS, type Highlight, type Paint } from '../../lib/annotations';
-import { locate, type PaintTarget } from './paint';
+import { Section } from './CardParts';
+import { locate, PAINT_SECTION, type PaintTarget } from './paint';
 
 export function PaintBar({
   target,
@@ -43,7 +44,7 @@ export function PaintBar({
     <div
       ref={ref}
       role="toolbar"
-      aria-label="Anstreichen"
+      aria-label="Textmarkierung"
       data-keeps-popover=""
       className="ov-window fixed z-[70] flex items-center gap-[2px] p-[4px]"
       style={{ left, top: target.top }}
@@ -52,8 +53,8 @@ export function PaintBar({
         <button
           key={paint}
           type="button"
-          aria-label={`${PAINT_INFO[paint].label} anstreichen`}
-          title={`${PAINT_INFO[paint].label} anstreichen`}
+          aria-label={`${PAINT_INFO[paint].label} markieren`}
+          title={`${PAINT_INFO[paint].label} markieren`}
           // Vor dem Klick nicht fokussieren: sonst verschwindet die Auswahl im Text.
           onMouseDown={(event) => event.preventDefault()}
           onClick={() => onPaint(paint)}
@@ -84,7 +85,7 @@ export function PaintBar({
   );
 }
 
-/** Liste der eigenen Anstreichungen einer Position; ✕ entfernt eine. */
+/** Abschnitt „Meine Textmarkierungen": Farbe | Text, ✕ entfernt eine. */
 export function PaintList({
   marks,
   text,
@@ -97,20 +98,33 @@ export function PaintList({
 }) {
   if (marks.length === 0) return null;
   return (
-    <div className="flex flex-col gap-[4px]">
-      <span className="font-mono text-[10px] text-mute">Meine Anstreichungen · {marks.length}</span>
-      <ul aria-label="Meine Anstreichungen" className="m-0 flex list-none flex-col gap-[2px] p-0">
+    <Section
+      title={PAINT_SECTION}
+      right={<span className="font-mono text-[10px] text-mute">{marks.length}</span>}
+    >
+      <ul
+        aria-label={PAINT_SECTION}
+        className="m-0 flex list-none flex-col overflow-hidden rounded-[var(--r-md)] border border-line bg-surface p-0"
+      >
         {marks.map((mark, i) => (
           <li
             key={`${mark.start}-${mark.text}`}
-            className="group flex items-center gap-[8px] font-sans text-[12px] text-ink"
+            className={`group grid grid-cols-[88px_1fr_auto] items-center ${
+              i > 0 ? 'border-t border-line' : ''
+            }`}
           >
+            <span className="flex h-full items-center gap-[6px] bg-sunken px-[12px] py-[7px] font-mono text-[10.5px] text-mute">
+              <span
+                aria-hidden="true"
+                className="h-[10px] w-[10px] shrink-0 rounded-full border border-line2"
+                style={{ background: PAINT_INFO[mark.paint].fill }}
+              />
+              {PAINT_INFO[mark.paint].label}
+            </span>
             <span
-              aria-label={PAINT_INFO[mark.paint].label}
-              className="h-[10px] w-[10px] shrink-0 rounded-full border border-line2"
-              style={{ background: PAINT_INFO[mark.paint].fill }}
-            />
-            <span className="min-w-0 flex-1 truncate" title={mark.text}>
+              className="min-w-0 truncate px-[12px] py-[7px] font-sans text-[12px] text-ink"
+              title={mark.text}
+            >
               „{mark.text}“
               {locate(text, mark) < 0 && (
                 <span className="ml-[6px] font-mono text-[10px] text-mute">nicht mehr im Text</span>
@@ -118,16 +132,16 @@ export function PaintList({
             </span>
             <button
               type="button"
-              aria-label="Anstreichung entfernen"
-              title="Anstreichung entfernen"
+              aria-label="Textmarkierung entfernen"
+              title="Textmarkierung entfernen"
               onClick={() => onRemove(i)}
-              className="cursor-pointer border-none bg-transparent p-0 font-mono text-[11px] text-mute opacity-0 hover:text-ink focus-visible:opacity-100 group-hover:opacity-100"
+              className="cursor-pointer border-none bg-transparent px-[12px] py-[7px] font-mono text-[11px] text-mute opacity-0 hover:text-ink focus-visible:opacity-100 group-hover:opacity-100"
             >
               ✕
             </button>
           </li>
         ))}
       </ul>
-    </div>
+    </Section>
   );
 }

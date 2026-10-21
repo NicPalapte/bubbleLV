@@ -9,13 +9,18 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
-## 0.27.0 — 21.10.2026 · Anstreichen im Langtext
+## 0.27.0 — 21.10.2026 · Eigene Textmarkierungen im Langtext
 
-- **Text anstreichen:** Text im Langtext markieren, dann Gelb, Orange oder Grün wählen.
-- **Meine Anstreichungen:** Liste unter dem Langtext, ✕ entfernt eine Anstreichung.
+- **Text markieren:** Text im Langtext auswählen, dann Gelb, Orange oder Grün wählen. Über
+  dem Langtext zeigt der Mauszeiger, dass sich markieren lässt.
+- **Meine Textmarkierungen:** eigene kleine Tabelle unter „Eigenschaften", ✕ entfernt eine.
+- **Ausblenden:** Label „Meine Textmarkierungen" neben den Fundstellen blendet die Farben im
+  Text aus und wieder ein.
 - **Bleibt erhalten** wie Kommentare: zur letzten Datei in diesem Browser und in der
-  Notiz-Datei. Der CSV-Export hat eine Spalte „Anstreichungen".
+  Notiz-Datei. Der CSV-Export hat eine Spalte „Textmarkierungen".
 - **Begriff lernen** (Admin) sitzt jetzt in derselben Leiste.
+- **Positionskarte:** Die Zeile „Status" in den Eigenschaften entfällt. Den Stand zeigt der
+  Fortschritt (0.26.0).
 
 ## 0.26.0 — 21.10.2026 · Fortschritt und „Wichtig"
 

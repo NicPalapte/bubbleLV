@@ -9,7 +9,7 @@ import { LearnPopover } from './LearnPopover';
 import { MAX_TERM_LENGTH, type LearnTarget } from './learnSelection';
 import { NoteBlock } from './NoteBlock';
 import { PaintBar, PaintList } from './PaintBar';
-import { paintSelection, usePaintHighlights, type PaintTarget } from './paint';
+import { PAINT_SECTION, paintSelection, usePaintHighlights, type PaintTarget } from './paint';
 import { shownText } from './shownText';
 import { HintBlock } from '../check/HintBlock';
 import {
@@ -22,7 +22,6 @@ import {
 import { facetOptionLabel, FACETS_BY_ID } from '../../lib/facets';
 import { formatEuro, formatNumber } from '../../lib/format';
 import { categoryOf, keysOfLabel, presentCategories } from '../../lib/spanCategories';
-import { POSITION_STATUS } from '../../lib/status';
 import { headingOf } from '../../lib/tree/heading';
 import { mainSectionOf } from '../../lib/tree/mainSection';
 import { applyTerms } from '../../lib/highlight/terms';
@@ -65,6 +64,7 @@ function SpanLegend({
   hidden,
   onToggle,
 }: {
+  /** Fundstellen-Kategorien, dazu ggf. „Meine Textmarkierungen". */
   labels: ReadonlyArray<{ label: string; color: string; background: string }>;
   counts: ReadonlyMap<string, number>;
   hidden: ReadonlySet<string>;
@@ -161,8 +161,19 @@ export function PositionDetails({
     for (const label of hiddenLabels) for (const key of keysOfLabel(label)) keys.delete(key);
     return keys;
   }, [spans, hiddenLabels]);
+  // „Meine Textmarkierungen" lässt sich wie eine Fundstellen-Kategorie ausblenden.
   // Suche und Legende bauen den Langtext neu auf — dann neu einfärben.
-  usePaintHighlights(longTextRef, marks, [search, spans, activeKeys]);
+  const paintHidden = hiddenLabels.has(PAINT_SECTION);
+  usePaintHighlights(longTextRef, paintHidden ? NO_MARKS : marks, [search, spans, activeKeys]);
+  const legend =
+    marks.length === 0
+      ? categories
+      : [
+          ...categories,
+          { label: PAINT_SECTION, color: 'var(--paint-ink)', background: 'var(--paint-gelb)' },
+        ];
+  const legendCounts =
+    marks.length === 0 ? counts : new Map([...counts, [PAINT_SECTION, marks.length]]);
   const shown = useMemo(
     () => shownText(position.longText, spans, activeKeys),
     [position.longText, spans, activeKeys],
@@ -194,7 +205,6 @@ export function PositionDetails({
   }
   if (priced) rows.push(['GP', formatEuro(node.totalPrice, 0)]);
   rows.push(['Positionstyp', position.positionType]);
-  rows.push(['Status', POSITION_STATUS]);
 
   return (
     <>
@@ -234,10 +244,10 @@ export function PositionDetails({
 
         {position.longText !== '' && (
           <Section title="Langtext">
-            {categories.length > 0 && (
+            {legend.length > 0 && (
               <SpanLegend
-                labels={categories}
-                counts={counts}
+                labels={legend}
+                counts={legendCounts}
                 hidden={hiddenLabels}
                 onToggle={toggleCategory}
               />
@@ -251,7 +261,8 @@ export function PositionDetails({
               }}
               // Die Karte liegt im Graphen, der `select-none` setzt — ohne `select-text`
               // ließe sich weder kopieren noch anstreichen oder ein Begriff markieren.
-              className="select-text whitespace-pre-wrap font-sans text-[13px] leading-[1.62] text-ink"
+              // Text-Cursor: zeigt, dass sich hier markieren lässt.
+              className="cursor-text select-text whitespace-pre-wrap font-sans text-[13px] leading-[1.62] text-ink"
             >
               <Highlighted
                 text={position.longText}
@@ -265,6 +276,13 @@ export function PositionDetails({
                 target={paintTarget}
                 onPaint={(paint) => {
                   paintNow(dispatch, node.id, paint, paintTarget);
+                  // Neu Markiertes soll man sehen, auch wenn die Farben ausgeblendet waren.
+                  setHiddenLabels((current) => {
+                    if (!current.has(PAINT_SECTION)) return current;
+                    const next = new Set(current);
+                    next.delete(PAINT_SECTION);
+                    return next;
+                  });
                   window.getSelection()?.removeAllRanges();
                   setPaintTarget(null);
                 }}
@@ -284,11 +302,6 @@ export function PositionDetails({
             {admin.unlocked && learnTarget !== null && (
               <LearnPopover target={learnTarget} onClose={closeLearn} />
             )}
-            <PaintList
-              marks={marks}
-              text={shown}
-              onRemove={(i) => dispatch({ type: 'removeHighlight', id: node.id, position: i })}
-            />
             {keywords.length > 0 && (
               <div className="flex flex-wrap gap-[4px]">
                 {keywords.map((keyword) => (
@@ -312,6 +325,12 @@ export function PositionDetails({
             </div>
           )}
         </Section>
+
+        <PaintList
+          marks={marks}
+          text={shown}
+          onRemove={(i) => dispatch({ type: 'removeHighlight', id: node.id, position: i })}
+        />
 
         {/* Eigene Notizen zuletzt: erst lesen, was die Datei sagt (Entscheidung 0047). */}
         <NoteBlock positionId={node.id} />

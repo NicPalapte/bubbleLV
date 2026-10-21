@@ -58,42 +58,58 @@ describe('Anstreichen im Langtext', () => {
   it('streicht eine Auswahl an, listet sie, speichert sie und entfernt sie wieder', async () => {
     await ladeDatei();
     const wort = waehleWort(langtext());
-    const leiste = await screen.findByRole('toolbar', { name: 'Anstreichen' });
-    fireEvent.click(within(leiste).getByRole('button', { name: 'Gelb anstreichen' }));
+    const leiste = await screen.findByRole('toolbar', { name: 'Textmarkierung' });
+    fireEvent.click(within(leiste).getByRole('button', { name: 'Gelb markieren' }));
 
-    expect(screen.queryByRole('toolbar', { name: 'Anstreichen' })).toBeNull();
-    const liste = screen.getByRole('list', { name: 'Meine Anstreichungen' });
+    expect(screen.queryByRole('toolbar', { name: 'Textmarkierung' })).toBeNull();
+    const liste = screen.getByRole('list', { name: 'Meine Textmarkierungen' });
     expect(within(liste).getByText(`„${wort}“`)).toBeInTheDocument();
-    expect(screen.getByText('Meine Anstreichungen · 1')).toBeInTheDocument();
+    const abschnitt = screen.getByRole('region', { name: 'Meine Textmarkierungen' });
+    expect(within(abschnitt).getByText('1')).toBeInTheDocument();
 
     await waitFor(async () => expect(await readLastLvMeta()).toMatchObject({ painted: 1 }));
     const gespeichert = await readLastLv();
     const [liste0] = [...(gespeichert?.annotations.highlights.values() ?? [])];
     expect(liste0?.map((mark) => [mark.paint, mark.text])).toEqual([['gelb', wort]]);
 
-    fireEvent.click(within(liste).getByRole('button', { name: 'Anstreichung entfernen' }));
-    expect(screen.queryByRole('list', { name: 'Meine Anstreichungen' })).toBeNull();
+    fireEvent.click(within(liste).getByRole('button', { name: 'Textmarkierung entfernen' }));
+    expect(screen.queryByRole('list', { name: 'Meine Textmarkierungen' })).toBeNull();
     await waitFor(async () => expect(await readLastLvMeta()).toMatchObject({ painted: 0 }));
   });
 
   it('schließt die Leiste mit Escape, ohne anzustreichen', async () => {
     await ladeDatei();
     waehleWort(langtext());
-    await screen.findByRole('toolbar', { name: 'Anstreichen' });
+    await screen.findByRole('toolbar', { name: 'Textmarkierung' });
     fireEvent.keyDown(document, { key: 'Escape' });
-    expect(screen.queryByRole('toolbar', { name: 'Anstreichen' })).toBeNull();
-    expect(screen.queryByRole('list', { name: 'Meine Anstreichungen' })).toBeNull();
+    expect(screen.queryByRole('toolbar', { name: 'Textmarkierung' })).toBeNull();
+    expect(screen.queryByRole('list', { name: 'Meine Textmarkierungen' })).toBeNull();
   });
 
   it('liest die Auswahl nur bei Shift + Auswahltaste neu, nicht bei Shift allein', async () => {
     await ladeDatei();
     const text = langtext();
     waehleWort(text);
-    await screen.findByRole('toolbar', { name: 'Anstreichen' });
+    await screen.findByRole('toolbar', { name: 'Textmarkierung' });
     window.getSelection()?.removeAllRanges();
     fireEvent.keyUp(text, { key: 'Shift', shiftKey: true });
-    expect(screen.getByRole('toolbar', { name: 'Anstreichen' })).toBeInTheDocument();
+    expect(screen.getByRole('toolbar', { name: 'Textmarkierung' })).toBeInTheDocument();
     fireEvent.keyUp(text, { key: 'ArrowLeft', shiftKey: true });
-    expect(screen.queryByRole('toolbar', { name: 'Anstreichen' })).toBeNull();
+    expect(screen.queryByRole('toolbar', { name: 'Textmarkierung' })).toBeNull();
+  });
+
+  it('blendet die eigenen Farben über das Label aus und zeigt keinen Status mehr', async () => {
+    await ladeDatei();
+    waehleWort(langtext());
+    const leiste = await screen.findByRole('toolbar', { name: 'Textmarkierung' });
+    fireEvent.click(within(leiste).getByRole('button', { name: 'Grün markieren' }));
+    const label = screen.getByRole('button', { name: /^Meine Textmarkierungen/ });
+    expect(label).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(label);
+    expect(label).toHaveAttribute('aria-pressed', 'false');
+    // Die Liste bleibt, nur die Farbe im Text ist aus.
+    expect(screen.getByRole('list', { name: 'Meine Textmarkierungen' })).toBeInTheDocument();
+    const eigenschaften = screen.getByRole('region', { name: 'Eigenschaften' });
+    expect(within(eigenschaften).queryByText('Status')).toBeNull();
   });
 });

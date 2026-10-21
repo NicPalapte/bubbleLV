@@ -433,7 +433,7 @@ function notizText(meta: LastLvInfo): string {
   if (meta.comments > 0) {
     teile.push(`✎ ${meta.comments} ${meta.comments === 1 ? 'Kommentar' : 'Kommentare'}`);
   }
-  if (meta.painted > 0) teile.push(`▍ ${meta.painted} mit Anstreichung`);
+  if (meta.painted > 0) teile.push(`▍ ${meta.painted} mit Textmarkierung`);
   return teile.join(' · ');
 }
 
@@ -577,7 +577,7 @@ function LetzteDatei({
               ✎ {meta.comments} {meta.comments === 1 ? 'Kommentar' : 'Kommentare'}
             </span>
           )}
-          {meta.painted > 0 && <span>▍ {meta.painted} mit Anstreichung</span>}
+          {meta.painted > 0 && <span>▍ {meta.painted} mit Textmarkierung</span>}
           <span>{formatWhen(meta.savedAt)}</span>
         </span>
       </span>
