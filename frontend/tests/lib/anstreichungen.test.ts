@@ -1,6 +1,8 @@
 // Eigene Anstreichungen im Langtext (Entscheidung 0063): Datenmodell, Speicher,
 // Stelle im Text wiederfinden, Auswahl lesen.
 
+import { createElement } from 'react';
+import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import {
   addHighlight,
@@ -11,7 +13,9 @@ import {
   toStored,
   type Highlight,
 } from '../../src/lib/annotations';
-import { locate, paintSelection, shownText } from '../../src/components/common/paint';
+import { locate, paintSelection } from '../../src/components/common/paint';
+import { shownText } from '../../src/components/common/shownText';
+import { Highlighted } from '../../src/components/common/Highlighted';
 
 const gelb = (start: number, text: string, at = 1): Highlight => ({
   paint: 'gelb',
@@ -60,6 +64,15 @@ describe('Anstreichungen im Datenmodell', () => {
 describe('Stelle im Langtext', () => {
   it('zeigt `**…**` ohne Sternchen, wie der Langtext', () => {
     expect(shownText('Beton **C30/37** und **XC4**')).toBe('Beton C30/37 und XC4');
+  });
+
+  it('lässt `**` über einer Fundstellen-Grenze stehen, wie der Langtext', () => {
+    const text = 'Beton **C30/37 XC4** fertig';
+    const span = { key: 'norm', label: 'XC4', start: 15, end: 18 };
+    expect(shownText(text, [span])).toBe('Beton **C30/37 XC4** fertig');
+    expect(shownText(text, [span], new Set())).toBe('Beton C30/37 XC4 fertig');
+    const { container } = render(createElement(Highlighted, { text, spans: [span] }));
+    expect(container.textContent).toBe(shownText(text, [span]));
   });
 
   it('nimmt die gespeicherte Stelle, sonst das erste Vorkommen, sonst -1', () => {

@@ -9,7 +9,8 @@ import { LearnPopover } from './LearnPopover';
 import { MAX_TERM_LENGTH, type LearnTarget } from './learnSelection';
 import { NoteBlock } from './NoteBlock';
 import { PaintBar, PaintList } from './PaintBar';
-import { paintSelection, shownText, usePaintHighlights, type PaintTarget } from './paint';
+import { paintSelection, usePaintHighlights, type PaintTarget } from './paint';
+import { shownText } from './shownText';
 import { HintBlock } from '../check/HintBlock';
 import {
   attributeLabel,
@@ -139,7 +140,6 @@ export function PositionDetails({
   const [paintTarget, setPaintTarget] = useState<PaintTarget | null>(null);
   const closePaint = useCallback(() => setPaintTarget(null), []);
   const marks = annotations.highlights.get(node.id) ?? NO_MARKS;
-  const shown = useMemo(() => shownText(position.longText), [position.longText]);
   const readSelection = (): void => {
     if (longTextRef.current !== null) setPaintTarget(paintSelection(longTextRef.current));
   };
@@ -160,6 +160,10 @@ export function PositionDetails({
   }, [spans, hiddenLabels]);
   // Suche und Legende bauen den Langtext neu auf — dann neu einfärben.
   usePaintHighlights(longTextRef, marks, [search, spans, activeKeys]);
+  const shown = useMemo(
+    () => shownText(position.longText, spans, activeKeys),
+    [position.longText, spans, activeKeys],
+  );
 
   const toggleCategory = (label: string): void =>
     setHiddenLabels((current) => {

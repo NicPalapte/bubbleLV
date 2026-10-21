@@ -9,14 +9,6 @@ import { PAINTS, type Highlight, type Paint } from '../../lib/annotations';
 /** Längere Auswahl ist kein Anstreichen mehr, sondern Kopieren. */
 const MAX_LENGTH = 2000;
 
-/**
- * Text, wie der Langtext ihn anzeigt: `**…**` ohne Sternchen (`Highlighted`).
- * Darauf beziehen sich `Highlight.start` und die Auswahl.
- */
-export function shownText(longText: string): string {
-  return longText.replace(/\*\*([^*]+)\*\*/g, '$1');
-}
-
 /** Stelle der Anstreichung im Text, -1 wenn ihr Text dort nicht (mehr) vorkommt. */
 export function locate(text: string, mark: Pick<Highlight, 'start' | 'text'>): number {
   if (text.slice(mark.start, mark.start + mark.text.length) === mark.text) return mark.start;
