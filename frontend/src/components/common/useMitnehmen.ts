@@ -18,6 +18,7 @@ import { trefferProtokollCsv } from '../../lib/export/trefferProtokoll';
 import { filterMask } from '../../lib/index/positionIndex';
 import { matchCount } from '../../lib/tree/matchCounts';
 import { countEvent } from '../../lib/usage/count';
+import { usePaintNames } from '../../state/paintNames';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 
 export interface Mitnehmen {
@@ -43,6 +44,7 @@ export function exportFehler(was: string): string {
 
 export function useMitnehmen(): Mitnehmen {
   const { lv, index, active, filter, matches, nodes, annotations } = useViewer();
+  const { names } = usePaintNames();
   const dispatch = useViewerDispatch();
 
   const absichern = useCallback(
@@ -66,11 +68,11 @@ export function useMitnehmen(): Mitnehmen {
       const mask = active.filtering ? filterMask(index, active) : null;
       downloadText(
         exportFileName(lv.fileName, 'positionen', 'csv'),
-        positionsCsv(index, mask, annotations),
+        positionsCsv(index, mask, annotations, names),
         'csv',
       );
     });
-  }, [lv, index, active, annotations, absichern]);
+  }, [lv, index, active, annotations, names, absichern]);
 
   const trefferAlsCsv = useCallback((): void => {
     if (lv === null) return;
@@ -126,11 +128,11 @@ export function useMitnehmen(): Mitnehmen {
     absichern('Die Notiz-Datei', () => {
       downloadText(
         exportFileName(lv.fileName, 'notizen', 'json'),
-        notesFileText(annotations, index.nodes, lv, Date.now()),
+        notesFileText(annotations, index.nodes, lv, Date.now(), names),
         'json',
       );
     });
-  }, [lv, index, annotations, absichern]);
+  }, [lv, index, annotations, names, absichern]);
 
   return { positionenAlsCsv, trefferAlsCsv, hinweiseAlsMarkdown, drucken, notizenSichern };
 }

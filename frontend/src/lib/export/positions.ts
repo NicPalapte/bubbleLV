@@ -13,10 +13,10 @@ import {
   EMPTY_ANNOTATIONS,
   formatAt,
   IMPORTANT_INFO,
-  PAINT_INFO,
   PROGRESS_INFO,
   type Annotations,
 } from '../annotations';
+import { NO_PAINT_NAMES, paintName, type PaintNames } from '../paintNames';
 import { attributeLabel, attrString, attrStrings } from '../attributes';
 import { materialKatalog } from '../classify/material/katalog';
 import { canonicalUnit, unitLabel } from '../units';
@@ -32,10 +32,10 @@ function importantLabel(notes: Annotations, id: string): string {
   return notes.important.has(id) ? IMPORTANT_INFO.label : '';
 }
 
-/** Eigene Anstreichungen im Langtext, je Zeile „Farbe: Text" (Entscheidung 0063). */
-function paintText(notes: Annotations, id: string): string {
+/** Eigene Textmarkierungen, je Zeile „Name: Text"; ohne Namen die Farbe (Entscheidung 0063). */
+function paintText(notes: Annotations, id: string, names: PaintNames): string {
   return (notes.highlights.get(id) ?? [])
-    .map((mark) => `${PAINT_INFO[mark.paint].label}: ${mark.text}`)
+    .map((mark) => `${paintName(names, mark.paint)}: ${mark.text}`)
     .join('\n');
 }
 
@@ -53,7 +53,7 @@ function commentText(notes: Annotations, id: string): string {
 /** Spalten des Exports, in dieser Reihenfolge. */
 const COLUMNS: ReadonlyArray<{
   head: string;
-  of(index: PositionIndex, slot: number, notes: Annotations): string;
+  of(index: PositionIndex, slot: number, notes: Annotations, names: PaintNames): string;
 }> = [
   { head: 'OZ', of: (index, i) => index.positions[i].oz },
   { head: 'Kurztext', of: (index, i) => index.positions[i].shortText },
@@ -81,7 +81,10 @@ const COLUMNS: ReadonlyArray<{
   { head: 'Fortschritt', of: (index, i, notes) => progressLabel(notes, index.nodes[i].id) },
   { head: 'Wichtig', of: (index, i, notes) => importantLabel(notes, index.nodes[i].id) },
   { head: 'Kommentar', of: (index, i, notes) => commentText(notes, index.nodes[i].id) },
-  { head: 'Textmarkierungen', of: (index, i, notes) => paintText(notes, index.nodes[i].id) },
+  {
+    head: 'Textmarkierungen',
+    of: (index, i, notes, names) => paintText(notes, index.nodes[i].id, names),
+  },
   { head: 'Langtext', of: (index, i) => index.positions[i].longText },
 ];
 
@@ -143,11 +146,12 @@ export function positionsCsv(
   index: PositionIndex,
   mask: Uint8Array | null,
   notes: Annotations = EMPTY_ANNOTATIONS,
+  names: PaintNames = NO_PAINT_NAMES,
 ): string {
   const zeilen: string[][] = [COLUMNS.map((column) => column.head)];
   for (let i = 0; i < index.size; i++) {
     if (mask !== null && mask[i] !== 1) continue;
-    zeilen.push(COLUMNS.map((column) => column.of(index, i, notes)));
+    zeilen.push(COLUMNS.map((column) => column.of(index, i, notes, names)));
   }
   return csvText(zeilen);
 }

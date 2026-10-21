@@ -8,7 +8,7 @@ import { IDBFactory } from 'fake-indexeddb';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import App from '../../src/App';
-import { readLastLv, readLastLvMeta } from '../../src/lib/persist/lastLv';
+import { readLastLv, readLastLvMeta, readPaintNames } from '../../src/lib/persist/lastLv';
 
 const NAME = 'gaeb-xml-beispiel.x83';
 const FIXTURE = readFileSync(resolve(process.cwd(), '../packages/core/tests/fixtures', NAME));
@@ -111,5 +111,26 @@ describe('Anstreichen im Langtext', () => {
     expect(screen.getByRole('list', { name: 'Meine Textmarkierungen' })).toBeInTheDocument();
     const eigenschaften = screen.getByRole('region', { name: 'Eigenschaften' });
     expect(within(eigenschaften).queryByText('Status')).toBeNull();
+  });
+
+  it('benennt Farben, zeigt den Namen in Leiste und Tabelle und speichert ihn', async () => {
+    await ladeDatei();
+    const text = langtext();
+    waehleWort(text);
+    let leiste = await screen.findByRole('toolbar', { name: 'Textmarkierung' });
+    fireEvent.click(within(leiste).getByRole('button', { name: 'Farben benennen…' }));
+    const dialog = screen.getByRole('dialog', { name: 'Farben benennen' });
+    fireEvent.change(within(dialog).getByLabelText('Name für Gelb'), {
+      target: { value: 'wichtig' },
+    });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Übernehmen' }));
+    expect(screen.queryByRole('dialog', { name: 'Farben benennen' })).toBeNull();
+
+    waehleWort(text);
+    leiste = await screen.findByRole('toolbar', { name: 'Textmarkierung' });
+    fireEvent.click(within(leiste).getByRole('button', { name: 'Gelb (wichtig) markieren' }));
+    const liste = screen.getByRole('list', { name: 'Meine Textmarkierungen' });
+    expect(within(liste).getByText('wichtig')).toBeInTheDocument();
+    await waitFor(async () => expect(await readPaintNames()).toEqual({ gelb: 'wichtig' }));
   });
 });

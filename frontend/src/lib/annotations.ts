@@ -50,22 +50,25 @@ export type LogEntry =
   | { readonly kind: 'important'; readonly at: number; readonly on: boolean };
 
 /** Farben zum Anstreichen; Reihenfolge = Reihenfolge der Knöpfe. */
-export const PAINTS = ['gelb', 'orange', 'gruen'] as const;
+export const PAINTS = ['gelb', 'orange', 'gruen', 'blau', 'rosa', 'lila'] as const;
 export type Paint = (typeof PAINTS)[number];
 
 export const PAINT_INFO: Readonly<Record<Paint, { label: string; fill: string }>> = {
   gelb: { label: 'Gelb', fill: 'var(--paint-gelb)' },
   orange: { label: 'Orange', fill: 'var(--paint-orange)' },
   gruen: { label: 'Grün', fill: 'var(--paint-gruen)' },
+  blau: { label: 'Blau', fill: 'var(--paint-blau)' },
+  rosa: { label: 'Rosa', fill: 'var(--paint-rosa)' },
+  lila: { label: 'Lila', fill: 'var(--paint-lila)' },
 };
+
+/** Längere Auswahl ist kein Anstreichen mehr, sondern Kopieren. */
+export const MAX_PAINT_LENGTH = 2000;
 
 /**
  * Eine Anstreichung: `start` ist die Stelle im angezeigten Langtext (ohne `**`). Passt
  * der Text dort nicht mehr, sucht die Anzeige ihn im übrigen Langtext.
  */
-/** Längere Auswahl ist kein Anstreichen mehr, sondern Kopieren. */
-export const MAX_PAINT_LENGTH = 2000;
-
 export interface Highlight {
   readonly paint: Paint;
   readonly start: number;

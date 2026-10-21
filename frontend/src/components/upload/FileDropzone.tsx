@@ -29,6 +29,7 @@ import {
 import { indexNodes } from '../../lib/tree/buildTree';
 import { UNEXPECTED_FAILURE } from '../../lib/pipeline/messages';
 import { countEvent } from '../../lib/usage/count';
+import { usePaintNames } from '../../state/paintNames';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 import { rekey, storageKeys, type Annotations } from '../../lib/annotations';
 import { downloadText, exportFileName } from '../../lib/export/download';
@@ -54,6 +55,7 @@ const DATEI_BLEIBT =
 
 export function FileDropzone() {
   const { loading, error } = useViewer();
+  const { names } = usePaintNames();
   const dispatch = useViewerDispatch();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -215,7 +217,7 @@ export function FileDropzone() {
       const annotations = rekey(gespeichert.annotations, storageKeys(knoten).toNode);
       downloadText(
         exportFileName(lv.fileName, 'notizen', 'json'),
-        notesFileText(annotations, knoten, lv, Date.now()),
+        notesFileText(annotations, knoten, lv, Date.now(), names),
         'json',
       );
       countEvent('notizen-gesichert');

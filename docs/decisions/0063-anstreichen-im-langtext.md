@@ -14,7 +14,14 @@
 
 ## Entscheidung
 
-- Text im Langtext auswählen ⇒ kleine Leiste mit drei Farben: Gelb, Orange, Grün.
+- Text im Langtext auswählen ⇒ kleines Menü mit sechs festen Farben: Gelb, Orange,
+  Grün, Blau, Rosa, Lila.
+- Jede Farbe kann einen eigenen Namen bekommen (z. B. Gelb = wichtig, Grün = Maß), über
+  „Farben benennen…" im Menü. Der Name steht im Menü, in der Tabelle und im CSV.
+  - Gilt in diesem Browser für alle Dateien (IndexedDB, Schlüssel `farbnamen`).
+  - Kommt mit in die Notiz-Datei (`farben`). Beim Laden übernimmt Bubble nur Namen für
+    Farben, die hier noch keinen haben.
+  - Owner-Wahl am 2026-10-21: feste Farben mit eigenen Namen statt frei wählbarer Farben.
 - Mit Admin-Zugang steht in derselben Leiste „Begriff lernen…" (0053).
 - Über dem Langtext zeigt der Text-Cursor, dass sich markieren lässt.
 - Unter „Eigenschaften": Abschnitt „Meine Textmarkierungen" als kleine Tabelle
@@ -41,11 +48,14 @@
 ## Verworfene Alternativen
 
 - **Knopf „Kommentar" in der Leiste:** doppelt zum Kommentar-Verlauf der Position.
+- **Farben frei anlegen (Farbwähler):** mehr Aufwand, Regeln für gelöschte Farben nötig,
+  Lesbarkeit in hell/dunkel nicht gesichert. Feste Farben mit Namen reichen vorerst.
 - **Anstreichung als `<mark>` im DOM:** kollidiert mit Suchtreffern und Fundstellen.
 
 ## Folgen
 
 - Speicherform `v: 5`. `v: 4` wird gelesen (ohne Anstreichungen).
-- Notiz-Datei Version 3. Versionen 1 und 2 werden weiter gelesen.
+- Notiz-Datei Version 3 mit `anstreichungen` und `farben`. Versionen 1 und 2 werden weiter
+  gelesen.
 - Browser ohne die Highlight API (ältere Firefox-Versionen) zeigen nur die Liste,
   nicht die Farbe im Text.

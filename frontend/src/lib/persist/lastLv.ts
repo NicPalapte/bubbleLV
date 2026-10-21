@@ -16,6 +16,7 @@
 // löschen" nimmt sie mit.
 
 import type { LearnedTerm } from '../highlight/terms';
+import { NO_PAINT_NAMES, toPaintNames, type PaintNames } from '../paintNames';
 import {
   commentedIds,
   EMPTY_ANNOTATIONS,
@@ -34,6 +35,8 @@ const KEY_META = 'meta';
 const KEY_BYTES = 'bytes';
 const KEY_NOTES = 'notizen';
 const KEY_TERMS = 'begriffe';
+/** Eigene Namen der Markierfarben (Entscheidung 0063), unabhängig von der Datei. */
+const KEY_PAINT_NAMES = 'farbnamen';
 /** Kennung für Einträge aus v0.14, die noch keine eigene `id` haben. */
 const LEGACY_ID = 'v0.14';
 
@@ -315,6 +318,42 @@ export async function saveLearnedTerms(terms: readonly LearnedTerm[]): Promise<b
       terms.map(({ begriff, kategorie }) => ({ begriff, kategorie })),
       KEY_TERMS,
     );
+    await transactionDone(tx);
+    return true;
+  } catch {
+    return false;
+  } finally {
+    db.close();
+  }
+}
+
+/**
+ * Eigene Namen der Markierfarben. Leer ohne IndexedDB; `null`, wenn das Lesen
+ * scheitert — dann nicht darüber schreiben (wie bei den gelernten Begriffen).
+ */
+export async function readPaintNames(): Promise<PaintNames | null> {
+  if (typeof indexedDB === 'undefined') return NO_PAINT_NAMES;
+  const db = await openDb();
+  if (db === null) return null;
+  try {
+    const stored: unknown = await requestResult(
+      db.transaction(STORE, 'readonly').objectStore(STORE).get(KEY_PAINT_NAMES),
+    );
+    return toPaintNames(stored);
+  } catch {
+    return null;
+  } finally {
+    db.close();
+  }
+}
+
+/** Ersetzt die Namen der Markierfarben. Gibt zurück, ob es geklappt hat. */
+export async function savePaintNames(names: PaintNames): Promise<boolean> {
+  const db = await openDb();
+  if (db === null) return false;
+  try {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).put({ ...names }, KEY_PAINT_NAMES);
     await transactionDone(tx);
     return true;
   } catch {

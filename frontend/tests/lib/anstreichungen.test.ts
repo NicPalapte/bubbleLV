@@ -55,7 +55,7 @@ describe('Anstreichungen im Datenmodell', () => {
       progress: [],
       important: [],
       log: [],
-      highlights: [['h', [gelb(1, 'x'), { paint: 'lila', start: 0, text: 'y' }, 3]]],
+      highlights: [['h', [gelb(1, 'x'), { paint: 'pink', start: 0, text: 'y' }, 3]]],
     });
     expect(kaputt.highlights.get('h')).toEqual([gelb(1, 'x')]);
     expect(toHighlight({ paint: 'gelb', start: 0, text: 'x'.repeat(MAX_PAINT_LENGTH + 1) })).toBe(

@@ -7,6 +7,7 @@ import { useDismiss } from '../common/useDismiss';
 import { formatAt } from '../../lib/annotations';
 import { matchNotes, mergeNotes, type NotesFile, type NotesMatch } from '../../lib/notesFile';
 import { countEvent } from '../../lib/usage/count';
+import { usePaintNames } from '../../state/paintNames';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 
 interface Props {
@@ -59,6 +60,7 @@ function Haken({
 
 export function NotesImportDialog({ file, fileName, onClose }: Props) {
   const { index, annotations } = useViewer();
+  const { adopt: adoptPaintNames } = usePaintNames();
   const dispatch = useViewerDispatch();
   const dialogRef = useRef<HTMLDivElement>(null);
   useDismiss(dialogRef, true, onClose);
@@ -101,6 +103,7 @@ export function NotesImportDialog({ file, fileName, onClose }: Props) {
 
   const uebernehmen = (): void => {
     dispatch({ type: 'setAnnotations', annotations: mergeNotes(annotations, auswahl) });
+    adoptPaintNames(file.farben);
     countEvent('notizen-geladen');
     dispatch({
       type: 'notice',

@@ -8,7 +8,7 @@ import { Highlighted } from './Highlighted';
 import { LearnPopover } from './LearnPopover';
 import { MAX_TERM_LENGTH, type LearnTarget } from './learnSelection';
 import { NoteBlock } from './NoteBlock';
-import { PaintBar, PaintList } from './PaintBar';
+import { PaintBar, PaintList, PaintNamesDialog } from './PaintBar';
 import { PAINT_SECTION, paintSelection, usePaintHighlights, type PaintTarget } from './paint';
 import { shownText } from './shownText';
 import { HintBlock } from '../check/HintBlock';
@@ -142,6 +142,8 @@ export function PositionDetails({
   // Eigene Anstreichungen (Entscheidung 0063).
   const [paintTarget, setPaintTarget] = useState<PaintTarget | null>(null);
   const closePaint = useCallback(() => setPaintTarget(null), []);
+  const [renameAt, setRenameAt] = useState<{ left: number; top: number } | null>(null);
+  const closeRename = useCallback(() => setRenameAt(null), []);
   const marks = annotations.highlights.get(node.id) ?? NO_MARKS;
   const readSelection = (): void => {
     if (longTextRef.current !== null) setPaintTarget(paintSelection(longTextRef.current));
@@ -286,6 +288,10 @@ export function PositionDetails({
                   window.getSelection()?.removeAllRanges();
                   setPaintTarget(null);
                 }}
+                onRename={() => {
+                  setRenameAt({ left: paintTarget.left, top: paintTarget.top });
+                  setPaintTarget(null);
+                }}
                 onLearn={
                   admin.unlocked && paintTarget.text.replace(/\s+/g, ' ').length <= MAX_TERM_LENGTH
                     ? () => {
@@ -298,6 +304,9 @@ export function PositionDetails({
                 }
                 onClose={closePaint}
               />
+            )}
+            {renameAt !== null && (
+              <PaintNamesDialog left={renameAt.left} top={renameAt.top} onClose={closeRename} />
             )}
             {admin.unlocked && learnTarget !== null && (
               <LearnPopover target={learnTarget} onClose={closeLearn} />

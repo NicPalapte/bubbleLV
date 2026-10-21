@@ -24,6 +24,7 @@ import {
   type LogEntry,
   type Progress,
 } from './annotations';
+import { NO_PAINT_NAMES, toPaintNames, type PaintNames } from './paintNames';
 import type { LVNode } from '../types/lvNode';
 
 export const NOTES_FILE_KIND = 'bubble-notizen';
@@ -61,6 +62,8 @@ export interface NotesFilePosition {
 
 export interface NotesFile {
   readonly datei: string;
+  /** Eigene Namen der Markierfarben (Entscheidung 0063). */
+  readonly farben: PaintNames;
   readonly gesichert: number;
   readonly positionen: readonly NotesFilePosition[];
 }
@@ -99,6 +102,7 @@ export function notesFileText(
   nodes: Iterable<LVNode>,
   source: Source,
   now: number,
+  names: PaintNames = NO_PAINT_NAMES,
 ): string {
   const byId = new Map<string, LVNode>();
   for (const node of nodes) if (node.position !== null) byId.set(node.id, node);
@@ -133,6 +137,7 @@ export function notesFileText(
     datei: source.fileName,
     dateiId: source.fileId,
     gesichert: new Date(now).toISOString(),
+    farben: names,
     positionen,
   };
   return `${JSON.stringify(file, null, 2)}\n`;
@@ -259,6 +264,7 @@ export function parseNotesFile(content: string): NotesFile {
   return {
     datei: text(file.datei),
     gesichert: at(file.gesichert),
+    farben: toPaintNames(file.farben),
     positionen: file.positionen
       .map((position) => readPosition(position, version))
       .filter((position): position is NotesFilePosition => position !== null),

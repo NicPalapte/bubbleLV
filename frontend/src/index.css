@@ -991,6 +991,9 @@ a:hover {
   --paint-gelb: #fde68a;
   --paint-orange: #fed7aa;
   --paint-gruen: #bbf7d0;
+  --paint-blau: #bfdbfe;
+  --paint-rosa: #fbcfe8;
+  --paint-lila: #ddd6fe;
   --paint-ink: #152131;
 }
 
@@ -999,6 +1002,9 @@ a:hover {
     --paint-gelb: #e8cd5c;
     --paint-orange: #eeb27a;
     --paint-gruen: #8fd8a8;
+    --paint-blau: #8fb8ee;
+    --paint-rosa: #eea6cb;
+    --paint-lila: #b9a8f0;
   }
 }
 
@@ -1006,6 +1012,9 @@ a:hover {
   --paint-gelb: #e8cd5c;
   --paint-orange: #eeb27a;
   --paint-gruen: #8fd8a8;
+  --paint-blau: #8fb8ee;
+  --paint-rosa: #eea6cb;
+  --paint-lila: #b9a8f0;
 }
 
 ::highlight(paint-gelb) {
@@ -1020,5 +1029,20 @@ a:hover {
 
 ::highlight(paint-gruen) {
   background-color: var(--paint-gruen);
+  color: var(--paint-ink);
+}
+
+::highlight(paint-blau) {
+  background-color: var(--paint-blau);
+  color: var(--paint-ink);
+}
+
+::highlight(paint-rosa) {
+  background-color: var(--paint-rosa);
+  color: var(--paint-ink);
+}
+
+::highlight(paint-lila) {
+  background-color: var(--paint-lila);
   color: var(--paint-ink);
 }
