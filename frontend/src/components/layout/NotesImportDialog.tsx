@@ -76,22 +76,22 @@ export function NotesImportDialog({ file, fileName, onClose }: Props) {
   ];
 
   const rows: Row[] = [
-    ...matching.moved.map((m) => ({
-      key: `u${m.entry.hash}`,
+    ...matching.moved.map((m, i) => ({
+      key: `u${i}`,
       oz: m.entry.oz,
       text: m.entry.kurztext,
       label: `jetzt ${m.node.position?.oz ?? m.node.code}`,
       tone: 'blue' as const,
     })),
-    ...matching.changed.map((m) => ({
-      key: `g${m.entry.hash}`,
+    ...matching.changed.map((m, i) => ({
+      key: `g${i}`,
       oz: m.entry.oz,
       text: m.entry.kurztext,
       label: 'geändert',
       tone: 'amber' as const,
     })),
-    ...matching.missing.map((entry) => ({
-      key: `f${entry.hash}`,
+    ...matching.missing.map((entry, i) => ({
+      key: `f${i}`,
       oz: entry.oz,
       text: entry.kurztext,
       label: 'fehlt',

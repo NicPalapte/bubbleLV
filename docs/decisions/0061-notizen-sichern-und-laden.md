@@ -22,7 +22,8 @@
   (nur Kurz- und Langtext, ohne OZ).
 - **Laden ordnet in drei Stufen zu:** gleicher Positions-Hash → gleich; sonst gleicher
   Text-Hash → umnummeriert; sonst gleiche OZ → geändert. Gibt es den Text oder die OZ
-  mehrfach im LV, wird nichts zugeordnet („nicht gefunden“).
+  mehrfach im LV oder in der Notiz-Datei, wird nichts zugeordnet („nicht gefunden“).
+  Jede Position bekommt höchstens einen Eintrag.
 - Ein Fenster zeigt die vier Gruppen. Umnummerierte und geänderte lassen sich abwählen.
   Übernommen wird erst auf Klick.
 - Passt keine Position inhaltlich (weder gleich noch umnummeriert), stammt die Datei

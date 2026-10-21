@@ -101,6 +101,30 @@ describe('matchNotes', () => {
   });
 });
 
+describe('matchNotes: jede Position nur einmal', () => {
+  function datei(...eintraege: Array<[string, string, string]>) {
+    return parseNotesFile(
+      JSON.stringify({
+        art: 'bubble-notizen',
+        version: 1,
+        positionen: eintraege.map(([hash, text, oz]) => ({ hash, text, oz, marker: 'wichtig' })),
+      }),
+    );
+  }
+
+  it('ordnet zwei gleichlautende Einträge nicht derselben Position zu', () => {
+    const m = matchNotes(datei(['a', 't', '01'], ['b', 't', '02']), [pos('n', '09', 'x', 't')]);
+    expect(m.moved).toHaveLength(0);
+    expect(m.missing.map((e) => e.hash)).toEqual(['a', 'b']);
+  });
+
+  it('lässt eine schon per Hash vergebene Position nicht noch über den Text zu', () => {
+    const m = matchNotes(datei(['x', 't', '01'], ['b', 't', '02']), [pos('n', '09', 'x', 't')]);
+    expect(m.same.map((e) => e.entry.hash)).toEqual(['x']);
+    expect(m.missing.map((e) => e.hash)).toEqual(['b']);
+  });
+});
+
 describe('mergeNotes', () => {
   const file = parseNotesFile(gesichert());
   const matches = matchNotes(file, ALT).same;

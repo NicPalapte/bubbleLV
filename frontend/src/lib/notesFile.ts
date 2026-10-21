@@ -200,17 +200,40 @@ export function matchNotes(file: NotesFile, nodes: Iterable<LVNode>): NotesMatch
   const moved: NotesMatch[] = [];
   const changed: NotesMatch[] = [];
   const missing: NotesFilePosition[] = [];
-  const found = (map: Map<string, LVNode | null>, key: string): LVNode | null =>
-    key === '' ? null : (map.get(key) ?? null);
+  // Jede Position bekommt höchstens einen Eintrag der Datei, sonst mischen sich die
+  // Notizen zweier Positionen. Gleicher Hash hat Vorrang, dann Text, dann OZ.
+  const vergeben = new Set<string>();
+  const nimm = (list: NotesMatch[], entry: NotesFilePosition, node: LVNode): void => {
+    vergeben.add(node.id);
+    list.push({ entry, nodeId: node.id, node });
+  };
+  let offen: NotesFilePosition[] = [];
   for (const entry of file.positionen) {
     const exact = byHash.get(entry.hash);
-    const sameText = exact === undefined ? found(byText, entry.text) : null;
-    const sameOz = exact === undefined && sameText === null ? found(byOz, entry.oz) : null;
-    if (exact !== undefined) same.push({ entry, nodeId: exact.id, node: exact });
-    else if (sameText !== null) moved.push({ entry, nodeId: sameText.id, node: sameText });
-    else if (sameOz !== null) changed.push({ entry, nodeId: sameOz.id, node: sameOz });
-    else missing.push(entry);
+    if (exact !== undefined && !vergeben.has(exact.id)) nimm(same, entry, exact);
+    else offen.push(entry);
   }
+  // Auch auf Seite der Datei eindeutig: zwei Einträge mit gleichem Text (oder gleicher
+  // OZ) könnten beide passen — dann keiner.
+  const stufe = (
+    map: Map<string, LVNode | null>,
+    keyOf: (entry: NotesFilePosition) => string,
+    list: NotesMatch[],
+  ): void => {
+    const anzahl = new Map<string, number>();
+    for (const entry of offen) anzahl.set(keyOf(entry), (anzahl.get(keyOf(entry)) ?? 0) + 1);
+    const rest: NotesFilePosition[] = [];
+    for (const entry of offen) {
+      const key = keyOf(entry);
+      const node = key === '' || anzahl.get(key) !== 1 ? null : (map.get(key) ?? null);
+      if (node !== null && !vergeben.has(node.id)) nimm(list, entry, node);
+      else rest.push(entry);
+    }
+    offen = rest;
+  };
+  stufe(byText, (entry) => entry.text, moved);
+  stufe(byOz, (entry) => entry.oz, changed);
+  missing.push(...offen);
   return { same, moved, changed, missing };
 }
 
