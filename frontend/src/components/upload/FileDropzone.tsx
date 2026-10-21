@@ -31,6 +31,9 @@ import { UNEXPECTED_FAILURE } from '../../lib/pipeline/messages';
 import { countEvent } from '../../lib/usage/count';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 import { rekey, storageKeys, type Annotations } from '../../lib/annotations';
+import { downloadText, exportFileName } from '../../lib/export/download';
+import { notesFileText } from '../../lib/notesFile';
+import { exportFehler } from '../common/useMitnehmen';
 import type { LoadedLV } from '../../lib/pipeline/runPipeline';
 
 /** Ergebnis eines Ladewegs: das LV und, wenn gespeichert, seine Notizen. */
@@ -105,13 +108,13 @@ export function FileDropzone() {
   );
 
   const handleFiles = useCallback(
-    async (files: FileList | null | undefined): Promise<void> => {
-      const file = files?.[0];
+    async (files: readonly File[]): Promise<void> => {
+      const file = files[0];
       if (file === undefined) return;
       // Mehr als eine Datei: die erste wird gelesen, und es wird gesagt (Issue #94).
       // Ein Versionsvergleich oder Merge ist laut docs/scope.md bewusst draußen.
       const vorab =
-        files !== undefined && files !== null && files.length > 1
+        files.length > 1
           ? [
               `Es wurden ${files.length} Dateien abgelegt. Gelesen wird nur „${file.name}". ` +
                 'Es wird immer nur eine Datei gelesen.',
@@ -136,6 +139,19 @@ export function FileDropzone() {
     },
     [run, dispatch],
   );
+
+  /**
+   * Neue Datei gewählt. Hat die gespeicherte Datei Notizen, fragt das Feld „Letzte
+   * Datei" erst nach: die neue Datei ersetzt sie samt Notizen (Entscheidung 0061).
+   */
+  const [wartend, setWartend] = useState<readonly File[] | null>(null);
+  const waehleDateien = (files: FileList | null | undefined): void => {
+    // Kopie: der Dateidialog wird gleich zurückgesetzt, die FileList dann leer.
+    const liste = Array.from(files ?? []);
+    if (liste.length === 0) return;
+    if (letzte !== null && letzte.marked + letzte.comments > 0) setWartend(liste);
+    else void handleFiles(liste);
+  };
 
   const openLetzte = (): void => {
     if (loading) return;
@@ -184,6 +200,33 @@ export function FileDropzone() {
     });
   };
 
+  /**
+   * Notizen der gespeicherten Datei als Notiz-Datei (Entscheidung 0061). Gelöscht wird
+   * erst nach einer zweiten Bestätigung: ob der Browser die Datei wirklich gespeichert
+   * hat (Dialog abgebrochen, Download blockiert), erfährt die Seite nicht.
+   */
+  const sichereNotizen = async (): Promise<boolean> => {
+    try {
+      const gespeichert = await readLastLv();
+      if (gespeichert === null) throw new Error('Keine gespeicherte Datei');
+      // OZ und Kurztext stehen nur in der Datei selbst — also einmal einlesen.
+      const lv = await loadLvFromBytes(gespeichert.bytes, gespeichert.meta.fileName);
+      const knoten = [...indexNodes(lv.tree).values()];
+      const annotations = rekey(gespeichert.annotations, storageKeys(knoten).toNode);
+      downloadText(
+        exportFileName(lv.fileName, 'notizen', 'json'),
+        notesFileText(annotations, knoten, lv, Date.now()),
+        'json',
+      );
+      countEvent('notizen-gesichert');
+      return true;
+    } catch (fehler) {
+      console.error(fehler);
+      dispatch({ type: 'error', message: exportFehler('Die Notiz-Datei') });
+      return false;
+    }
+  };
+
   const openDemo = (demo: DemoLv): void => {
     if (loading) return;
     // Demo-LVs: Notizen gehen, bleiben aber nur in der Sitzung (`persistId` fehlt).
@@ -229,7 +272,7 @@ export function FileDropzone() {
                 // Während ein Import läuft, würde eine zweite Datei den ersten Lauf
                 // überholen und das Ergebnis wäre nicht mehr vorhersagbar.
                 if (loading) return;
-                void handleFiles(event.dataTransfer.files);
+                waehleDateien(event.dataTransfer.files);
               }}
               onClick={openDialog}
               aria-busy={loading}
@@ -266,14 +309,30 @@ export function FileDropzone() {
                 aria-label="GAEB-Datei auswählen"
                 onClick={(event) => event.stopPropagation()}
                 onChange={(event) => {
-                  void handleFiles(event.target.files);
+                  waehleDateien(event.target.files);
                   // Zurücksetzen, damit dieselbe Datei erneut gewählt werden kann.
                   event.target.value = '';
                 }}
               />
             </div>
             {letzte !== null && (
-              <LetzteDatei meta={letzte} loading={loading} onOpen={openLetzte} onForget={vergiss} />
+              <LetzteDatei
+                meta={letzte}
+                loading={loading}
+                onOpen={() => {
+                  setWartend(null);
+                  openLetzte();
+                }}
+                onForget={vergiss}
+                onSaveNotes={sichereNotizen}
+                neueDatei={wartend?.[0]?.name ?? null}
+                onReplace={() => {
+                  const dateien = wartend;
+                  setWartend(null);
+                  if (dateien !== null) void handleFiles(dateien);
+                }}
+                onKeepOld={() => setWartend(null)}
+              />
             )}
           </div>
 
@@ -358,12 +417,128 @@ interface LetzteDateiProps {
   loading: boolean;
   onOpen: () => void;
   onForget: () => void;
+  /** Notizen als Datei sichern; `true`, wenn der Download angestoßen wurde. */
+  onSaveNotes: () => Promise<boolean>;
+  /** Name der neu gewählten Datei, solange die Frage „Ersetzen?" offen ist. */
+  neueDatei: string | null;
+  onReplace: () => void;
+  /** Frage „Ersetzen?" verwerfen; die gespeicherte Datei bleibt. */
+  onKeepOld: () => void;
+}
+
+/** „⚑ 4 mit Marker · ✎ 7 Kommentare" — leer ohne Notizen. */
+function notizText(meta: LastLvInfo): string {
+  const teile: string[] = [];
+  if (meta.marked > 0) teile.push(`⚑ ${meta.marked} mit Marker`);
+  if (meta.comments > 0) {
+    teile.push(`✎ ${meta.comments} ${meta.comments === 1 ? 'Kommentar' : 'Kommentare'}`);
+  }
+  return teile.join(' · ');
 }
 
 /** Feld unter der Ablage: zuletzt geöffnete Datei öffnen oder löschen. */
-function LetzteDatei({ meta, loading, onOpen, onForget }: LetzteDateiProps) {
+function LetzteDatei({
+  meta,
+  loading,
+  onOpen,
+  onForget,
+  onSaveNotes,
+  neueDatei,
+  onReplace,
+  onKeepOld,
+}: LetzteDateiProps) {
   // Löschen fragt im Feld selbst nach; ein Browser-Dialog passt nicht zur Startseite.
   const [fragen, setFragen] = useState(false);
+  const [gesichert, setGesichert] = useState(false);
+  const notizen = notizText(meta);
+  const abbrechen = (): void => {
+    setFragen(false);
+    setGesichert(false);
+  };
+
+  if (neueDatei !== null) {
+    return (
+      <div
+        className="start-recent ask stack warn"
+        role="group"
+        aria-label="Gespeicherte Datei ersetzen"
+      >
+        <span className="start-recent-q">
+          <b>
+            {neueDatei} ersetzt {meta.fileName}
+          </b>
+          <br />
+          {notizen} gehen mit.
+        </span>
+        <span className="start-recent-acts">
+          <button type="button" className="start-btn primary" onClick={onReplace}>
+            Ersetzen
+          </button>
+          <button type="button" className="start-btn" onClick={onOpen}>
+            ↺ {meta.fileName} öffnen
+          </button>
+          <button type="button" className="start-btn" onClick={onKeepOld}>
+            Abbrechen
+          </button>
+        </span>
+      </div>
+    );
+  }
+
+  if (fragen && gesichert) {
+    return (
+      <div
+        className="start-recent ask stack"
+        role="group"
+        aria-label="Gespeichertes Projekt löschen"
+      >
+        <span className="start-recent-q">
+          <b>Notiz-Datei heruntergeladen.</b>
+          <br />
+          Gespeicherte Datei jetzt löschen?
+        </span>
+        <span className="start-recent-acts">
+          <button type="button" className="start-btn danger" onClick={onForget}>
+            Löschen
+          </button>
+          <button type="button" className="start-btn" onClick={abbrechen}>
+            Abbrechen
+          </button>
+        </span>
+      </div>
+    );
+  }
+
+  if (fragen && notizen !== '') {
+    return (
+      <div
+        className="start-recent ask stack"
+        role="group"
+        aria-label="Gespeichertes Projekt löschen"
+      >
+        <span className="start-recent-q">
+          <b>Gespeicherte Datei löschen?</b>
+          <br />
+          {notizen} gehen mit.
+        </span>
+        <span className="start-recent-acts">
+          <button
+            type="button"
+            className="start-btn primary"
+            onClick={() => void onSaveNotes().then(setGesichert)}
+          >
+            Notizen sichern + löschen
+          </button>
+          <button type="button" className="start-btn danger" onClick={onForget}>
+            Löschen
+          </button>
+          <button type="button" className="start-btn" onClick={() => setFragen(false)}>
+            Abbrechen
+          </button>
+        </span>
+      </div>
+    );
+  }
 
   if (fragen) {
     return (

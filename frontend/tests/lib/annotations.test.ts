@@ -1,4 +1,4 @@
-// Eigene Marker und Kommentar-Verlauf (Entscheidungen 0047, 0053, 0061): reine Funktionen.
+// Eigene Marker und Kommentar-Verlauf (Entscheidungen 0047, 0053, 0062): reine Funktionen.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -111,7 +111,7 @@ describe('annotations', () => {
     ).toEqual(a);
   });
 
-  it('übernimmt die drei Marker bis v0.23 samt Verlauf', () => {
+  it('übernimmt die drei Marker bis v0.25 samt Verlauf', () => {
     const alt = fromStored({
       v: 3,
       markers: [

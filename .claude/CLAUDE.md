@@ -116,10 +116,10 @@ fachliche Filter · **Graph als Hauptscreen** auf einem Filterzustand: Seitenfen
 (Überblick mit Import-Log · Filter · Prüfung), Positionskarte, Tabelle und Vergleich
 (max. 4 Positionen) als Fenster darüber (`docs/decisions/0034-graph-als-hauptscreen.md`,
 `docs/decisions/0037-vergleichsfenster.md`) · Beziehungen zwischen Positionen nur als
-ähnliche Positionen im Vergleich, keine wertende Prüfregel (`docs/decisions/0049`) · eigene Marker (Fortschritt Offen/In Bearbeitung/Fertig + Wichtig, `docs/decisions/0061`) + Kommentar-Verlauf je Position zur letzten
+ähnliche Positionen im Vergleich, keine wertende Prüfregel (`docs/decisions/0049`) · eigene Marker (Fortschritt Offen/In Bearbeitung/Fertig + Wichtig, `docs/decisions/0062`) + Kommentar-Verlauf je Position zur letzten
 Datei (`docs/decisions/0047-kommentare-und-markierungen.md`, `docs/decisions/0053`) ·
 gelernte Hervorhebungen im Langtext nur über Admin-Werkzeug (0053) · lokaler Export/Druck über das
-Logo-Menü. Matrix und
+Logo-Menü · Notizen als Datei sichern/laden (`lib/notesFile.ts`, 0061). Matrix und
 Ähnlichkeit sind entfernt (`docs/decisions/0031-drei-ansichten.md`); keine
 Befehlspalette (`docs/decisions/0038-keine-befehlspalette.md`).
 
@@ -148,8 +148,8 @@ LLM-Klassifizierung. Details → @docs/scope.md #out-of-scope
   (`docs/decisions/0051-kein-status-filter.md`)
 - Kein Request, der Fachdaten irgendwohin schickt – bei Unsicherheit nachfragen,
   bevor ein Feature einen eigenen Server voraussetzt. Statische Fremd-Assets
-  (Fonts, CDN-Pakete) sind davon nicht betroffen. Lokale Downloads (CSV/Markdown als
-  Blob) und Browser-Druck sind erlaubt – sie erzeugen keinen Request.
+  (Fonts, CDN-Pakete) sind davon nicht betroffen. Lokale Downloads (CSV/Markdown/
+  Notiz-JSON als Blob) und Browser-Druck sind erlaubt – sie erzeugen keinen Request.
 - **Nutzungszählung nur über `frontend/src/lib/usage/count.ts`** (GoatCounter,
   Entscheidung 0056): nur feste Namen aus `USAGE_EVENTS`. Verboten: Dateinamen, LV-Texte,
   Suchtexte, Filterwerte, Positions-IDs, URL-Fragment mitsenden. Neues Ereignis ⇒ Namen

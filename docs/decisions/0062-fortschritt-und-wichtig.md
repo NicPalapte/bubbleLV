@@ -1,4 +1,4 @@
-# 0061 – Fortschritt und „Wichtig" statt drei Marker
+# 0062 – Fortschritt und „Wichtig" statt drei Marker
 
 - **Status:** akzeptiert
 - **Datum:** 2026-10-21
@@ -46,4 +46,7 @@
 ## Folgen
 
 - Speicherform `v: 4`. Ältere Formen werden gelesen, aber nicht mehr geschrieben.
+- Notiz-Datei (0061) jetzt Version 2 mit `fortschritt` und `wichtig`. Version 1 wird beim
+  Laden umgedeutet wie der Speicher. Beim Zusammenführen gilt für Fortschritt und
+  „Wichtig" je der zuletzt gesetzte Stand.
 - „Fertig" bleibt eine eigene Notiz, kein GAEB-Status (0051).

@@ -59,7 +59,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0050 | [Eingabefelder aus der Datei](0050-eingabefelder-aus-der-datei.md)                                             | akzeptiert                         | 2026-10-15 |
 | 0052 | [Kein Bauteiltyp](0052-kein-bauteiltyp.md)                                                                     | akzeptiert                         | 2026-10-15 |
 | 0051 | [Kein Status-Filter](0051-kein-status-filter.md)                                                               | akzeptiert                         | 2026-10-15 |
-| 0053 | [Drei Marker, Kommentar-Verlauf, Mengenstufe, gelernte Begriffe](0053-marker-verlauf-und-gelernte-begriffe.md) | teilweise ersetzt durch 0061       | 2026-10-16 |
+| 0053 | [Drei Marker, Kommentar-Verlauf, Mengenstufe, gelernte Begriffe](0053-marker-verlauf-und-gelernte-begriffe.md) | teilweise ersetzt durch 0062       | 2026-10-16 |
 | 0054 | [Kern als eigenes Paket im selben Repo](0054-kern-als-paket.md)                                                | akzeptiert                         | 2026-10-17 |
 | 0055 | [Positions-Hash und Datei-ID im Link](0055-positions-hash.md)                                                  | akzeptiert                         | 2026-10-17 |
 | 0056 | [Anonyme Nutzungszählung mit GoatCounter](0056-anonyme-nutzungszaehlung.md)                                    | akzeptiert                         | 2026-10-17 |
@@ -67,7 +67,8 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0058 | [Schalter „Nicht-Treffer" sitzt in der Suche](0058-nicht-treffer-in-der-suche.md)                              | akzeptiert                         | 2026-10-19 |
 | 0059 | [Matrix als Kacheln, Gliederungswechsel gleitet](0059-matrix-kacheln.md)                                       | akzeptiert                         | 2026-10-19 |
 | 0060 | [Wissensgraph als Datenmodell, keine Graph-Datenbank](0060-wissensgraph-als-datenmodell.md)                    | vorgeschlagen                      | 2026-10-21 |
-| 0061 | [Fortschritt und „Wichtig" statt drei Marker](0061-fortschritt-und-wichtig.md)                                 | akzeptiert                         | 2026-10-21 |
+| 0061 | [Notizen als Datei sichern und laden](0061-notizen-sichern-und-laden.md)                                       | akzeptiert                         | 2026-10-21 |
+| 0062 | [Fortschritt und „Wichtig" statt drei Marker](0062-fortschritt-und-wichtig.md)                                 | akzeptiert                         | 2026-10-21 |
 
 ## Wann schreibe ich eine neue Datei?
 

@@ -124,7 +124,7 @@ interface Overlay {
 const NO_OVERLAY: Overlay = { pins: [], leader: null, key: '' };
 
 /**
- * Eigene Notizen am Punkt (Entscheidungen 0047, 0053, 0061): Fortschritt als dünner
+ * Eigene Notizen am Punkt (Entscheidungen 0047, 0053, 0062): Fortschritt als dünner
  * Ring direkt am Punkt (blau = in Bearbeitung, grün = fertig, dazu ✓ unten rechts),
  * „Wichtig" (rotes !) und Kommentar (blaues ✎) als Schilder oben rechts. Der orange
  * Ring etwas weiter außen bleibt den Prüf-Hinweisen.

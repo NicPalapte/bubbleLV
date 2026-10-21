@@ -15,11 +15,12 @@
  */
 const BOM = '\uFEFF';
 
-export type DownloadType = 'csv' | 'markdown';
+export type DownloadType = 'csv' | 'markdown' | 'json';
 
 const MIME: Record<DownloadType, string> = {
   csv: 'text/csv;charset=utf-8',
   markdown: 'text/markdown;charset=utf-8',
+  json: 'application/json;charset=utf-8',
 };
 
 export function downloadText(fileName: string, text: string, type: DownloadType): void {

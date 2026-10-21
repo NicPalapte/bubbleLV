@@ -124,6 +124,8 @@ type LvAction =
   | { type: 'setImportant'; id: string; on: boolean; at: number }
   | { type: 'addComment'; id: string; text: string; at: number }
   | { type: 'removeComment'; id: string; position: number }
+  /** Notizen aus einer Notiz-Datei übernommen (lib/notesFile.ts, `mergeNotes`). */
+  | { type: 'setAnnotations'; annotations: Annotations }
   /** Hinweis anhängen; derselbe Text erscheint nicht doppelt. */
   | { type: 'notice'; message: string }
   | { type: 'dismissNotices' }
@@ -206,6 +208,8 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
               : removeComment(state.annotations, action.id, action.position);
       return annotations === state.annotations ? state : { ...state, annotations };
     }
+    case 'setAnnotations':
+      return { ...state, annotations: action.annotations };
     case 'notice':
       return state.notices.includes(action.message)
         ? state

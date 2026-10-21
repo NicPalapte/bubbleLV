@@ -1,11 +1,12 @@
-// Eigene Marker und Kommentar-Verlauf je Position (Entscheidungen 0047, 0053, 0061).
+// Eigene Marker und Kommentar-Verlauf je Position (Entscheidungen 0047, 0053, 0062).
 //
 // In der Sitzung ist der Schlüssel die Knoten-ID der Position (lib/tree/buildTree.ts).
 // Gespeichert wird unter dem Positions-Hash (Entscheidung 0055, `hashes.id`): er hängt
-// am Inhalt, nicht an OZ und Reihenfolge, und passt so auch nach Umnummerieren.
+// am Inhalt der Datei (OZ, Text, Menge), nicht an der Reihenfolge beim Einlesen.
+// Umnummerierte Positionen findet erst die Notiz-Datei wieder (lib/notesFile.ts).
 // Umschlüsseln an der Grenze zum Speicher: `storageKeys` + `rekey`.
 //
-// Zwei unabhängige Marker (Entscheidung 0061): Fortschritt (offen → in Bearbeitung →
+// Zwei unabhängige Marker (Entscheidung 0062): Fortschritt (offen → in Bearbeitung →
 // fertig) und „Wichtig". Beides ist eine eigene Notiz, nicht der GAEB-Status
 // (Entscheidung 0051): „Fertig" heißt „habe ich kalkuliert", nicht „Status geändert".
 //
@@ -244,7 +245,7 @@ export function rekey(annotations: Annotations, keys: ReadonlyMap<string, string
 
 /**
  * Form für die IndexedDB: Arrays statt Set/Map, damit auch ältere Browser klonen.
- * `v: 4`: Fortschritt + Wichtig (Entscheidung 0061), Schlüssel ist der Positions-Hash.
+ * `v: 4`: Fortschritt + Wichtig (Entscheidung 0062), Schlüssel ist der Positions-Hash.
  * Ältere Formen liest `fromStored`: `v: 3` (drei Marker, Hash), `v: 2` (drei Marker,
  * Knoten-ID) und ohne `v` (v0.15, Entscheidung 0047).
  */
@@ -265,21 +266,21 @@ export function toStored(annotations: Annotations): StoredAnnotations {
   };
 }
 
-function isProgress(value: unknown): value is Progress {
+export function isProgress(value: unknown): value is Progress {
   return value === 'bearbeitung' || value === 'fertig';
 }
 
-/** Marker bis v0.23: genau einer aus drei je Position. */
-type OldMarker = 'markiert' | 'wichtig' | 'erledigt';
+/** Marker bis v0.25: genau einer aus drei je Position. */
+export type OldMarker = 'markiert' | 'wichtig' | 'erledigt';
 
-function isOldMarker(value: unknown): value is OldMarker {
+export function isOldMarker(value: unknown): value is OldMarker {
   return value === 'markiert' || value === 'wichtig' || value === 'erledigt';
 }
 
 /** „Markiert" und „Wichtig" werden „Wichtig", „Erledigt" wird „Fertig". */
-const oldIsImportant = (marker: OldMarker | null): boolean =>
+export const oldIsImportant = (marker: OldMarker | null): boolean =>
   marker === 'markiert' || marker === 'wichtig';
-const oldIsDone = (marker: OldMarker | null): boolean => marker === 'erledigt';
+export const oldIsDone = (marker: OldMarker | null): boolean => marker === 'erledigt';
 
 function atOf(raw: Record<string, unknown>): number {
   return typeof raw.at === 'number' && Number.isFinite(raw.at) ? raw.at : 0;
@@ -292,7 +293,8 @@ function commentEntry(raw: Record<string, unknown>): LogEntry | null {
   return { kind: 'comment', at: atOf(raw), text: raw.text };
 }
 
-function toEntry(value: unknown): LogEntry | null {
+/** Ein Verlaufseintrag aus Speicher oder Notiz-Datei; Unbrauchbares wird `null`. */
+export function toEntry(value: unknown): LogEntry | null {
   if (typeof value !== 'object' || value === null) return null;
   const raw = value as Record<string, unknown>;
   if (raw.kind === 'progress' && (raw.progress === null || isProgress(raw.progress))) {
@@ -305,10 +307,10 @@ function toEntry(value: unknown): LogEntry | null {
 }
 
 /**
- * Verlauf bis v0.23: ein Marker-Wechsel wird zu den Wechseln, die er heute bedeutet.
+ * Verlauf bis v0.25 (Speicher `v: 2/3`, Notiz-Datei Version 1): ein Marker-Wechsel wird zu den Wechseln, die er heute bedeutet.
  * Dazu wird der vorige Marker mitgeführt — „Marker entfernt" sagt allein nicht, was weg ist.
  */
-function toEntriesOld(entries: readonly unknown[]): LogEntry[] {
+export function toEntriesOld(entries: readonly unknown[]): LogEntry[] {
   const out: LogEntry[] = [];
   let prev: OldMarker | null = null;
   for (const value of entries) {

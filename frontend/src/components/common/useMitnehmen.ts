@@ -13,6 +13,7 @@ import { useCallback } from 'react';
 import { checkMarkdown } from '../../lib/export/checkReport';
 import { downloadText, exportFileName } from '../../lib/export/download';
 import { positionsCsv } from '../../lib/export/positions';
+import { notesFileText } from '../../lib/notesFile';
 import { trefferProtokollCsv } from '../../lib/export/trefferProtokoll';
 import { filterMask } from '../../lib/index/positionIndex';
 import { matchCount } from '../../lib/tree/matchCounts';
@@ -28,6 +29,8 @@ export interface Mitnehmen {
   hinweiseAlsMarkdown: () => void;
   /** Druckt die gefilterte Liste, nicht nur das sichtbare Fenster. */
   drucken: () => void;
+  /** Alle eigenen Marker und Kommentare als Notiz-Datei (Entscheidung 0061). */
+  notizenSichern: () => void;
 }
 
 /**
@@ -117,5 +120,17 @@ export function useMitnehmen(): Mitnehmen {
     absichern('Der Druck', () => window.print());
   }, [absichern]);
 
-  return { positionenAlsCsv, trefferAlsCsv, hinweiseAlsMarkdown, drucken };
+  const notizenSichern = useCallback((): void => {
+    if (lv === null) return;
+    countEvent('notizen-gesichert');
+    absichern('Die Notiz-Datei', () => {
+      downloadText(
+        exportFileName(lv.fileName, 'notizen', 'json'),
+        notesFileText(annotations, index.nodes, lv, Date.now()),
+        'json',
+      );
+    });
+  }, [lv, index, annotations, absichern]);
+
+  return { positionenAlsCsv, trefferAlsCsv, hinweiseAlsMarkdown, drucken, notizenSichern };
 }

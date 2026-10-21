@@ -9,7 +9,7 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
-## 0.25.0 — 21.10.2026 · Fortschritt und „Wichtig"
+## 0.26.0 — 21.10.2026 · Fortschritt und „Wichtig"
 
 - **Fortschritt je Position:** Offen · In Bearbeitung · Fertig, mit drei Knöpfen unten in
   der Positionskarte. Im Graphen zeigt ein dünner Ring den Stand: blau = in Bearbeitung,
@@ -17,8 +17,20 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 - **„Wichtig" ist ein eigener Knopf** und lässt sich zusätzlich setzen, auch bei „Fertig".
 - **Filter oben:** Offen, In Bearbeitung, Fertig, Wichtig. „Offen" ersetzt „Nicht erledigt".
 - **CSV-Export:** Spalten „Fortschritt" und „Wichtig" statt „Marker".
+- **Notiz-Datei:** führt Fortschritt und „Wichtig". Ältere Notiz-Dateien lassen sich weiter
+  laden.
 - **Bisherige Marker bleiben erhalten:** Markiert und Wichtig werden „Wichtig", Erledigt
   wird „Fertig".
+
+## 0.25.0 — 21.10.2026 · Notizen sichern und laden
+
+- **Keine Notizen mehr still verlieren:** Öffnest du eine neue Datei und die gespeicherte
+  hat Marker oder Kommentare, fragt Bubble erst: ersetzen oder die gespeicherte öffnen.
+- **Beim Löschen** der gespeicherten Datei gibt es „Notizen sichern + löschen“.
+- **Logo-Menü:** „Notizen sichern“ lädt alle Marker und Kommentare als Datei herunter.
+  „Notizen laden…“ übernimmt sie wieder, auch in eine neue Fassung des LV.
+- **Laden findet Positionen auch nach dem Umnummerieren** (gleicher Text) und zeigt,
+  was gleich, umnummeriert, geändert oder nicht gefunden ist.
 
 ## 0.24.0 — 21.10.2026 · Matrix als Kacheln
 

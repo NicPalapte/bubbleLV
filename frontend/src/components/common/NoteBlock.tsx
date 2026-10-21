@@ -1,4 +1,4 @@
-// Eigene Marker und Kommentar-Verlauf zu einer Position (Entscheidungen 0047, 0053, 0061).
+// Eigene Marker und Kommentar-Verlauf zu einer Position (Entscheidungen 0047, 0053, 0062).
 // Fortschritt und „Wichtig" stehen unten in der Karte bei „Vergleichen", der Verlauf
 // als letzter Block im Inhalt. „Senden" hängt einen Kommentar mit Zeitpunkt an;
 // Marker-Wechsel stehen grau dazwischen. useSaveAnnotations schreibt kurz danach
@@ -121,7 +121,7 @@ const SEGMENT =
 
 /**
  * Fortschritt (Offen · In Bearbeitung · Fertig) und „Wichtig" für die Fußleiste der
- * Positionskarte (Entscheidung 0061). Beides unabhängig: „Fertig" kann wichtig bleiben.
+ * Positionskarte (Entscheidung 0062). Beides unabhängig: „Fertig" kann wichtig bleiben.
  */
 export function MarkerButtons({ positionId }: { positionId: string }) {
   const { annotations } = useViewer();

@@ -43,6 +43,13 @@ export interface AboutMenuProps {
   onTastenkuerzel: () => void;
   /** Export und Druck der gefilterten Menge. Fehlt, solange kein LV geladen ist. */
   mitnehmen?: Mitnehmen;
+  /**
+   * „Notizen laden…" gewählt (Entscheidung 0061); Dateidialog und Fenster hängen in der
+   * Kopfleiste. Fehlt, solange kein LV geladen ist.
+   */
+  onNotizenLaden?: () => void;
+  /** Positionen mit eigener Notiz; „Notizen sichern" erscheint nur, wenn es welche gibt. */
+  notizen?: number;
   /** „Admin-Werkzeuge" gewählt (Entscheidung 0053); Fenster hängt in der Kopfleiste. */
   onAdmin: () => void;
 }
@@ -72,6 +79,8 @@ export function AboutMenu({
   onTour,
   onAnderesLv,
   mitnehmen,
+  onNotizenLaden,
+  notizen,
   onAdmin,
 }: AboutMenuProps) {
   const [open, setOpen] = useState(false);
@@ -159,6 +168,27 @@ export function AboutMenu({
             >
               Drucken
             </PopoverRow>
+            <Trenner />
+            {notizen !== undefined && notizen > 0 && (
+              <PopoverRow
+                onClick={() => nimmMit(mitnehmen.notizenSichern)}
+                title="Alle eigenen Marker und Kommentare als Datei — zum Aufheben oder Weitergeben"
+                trailing={<span className="font-mono text-[10px] text-mute">{notizen}</span>}
+              >
+                Notizen sichern
+              </PopoverRow>
+            )}
+            {onNotizenLaden !== undefined && (
+              <PopoverRow
+                onClick={() => {
+                  setOpen(false);
+                  onNotizenLaden();
+                }}
+                title="Gesicherte Notizen zu diesem LV übernehmen"
+              >
+                Notizen laden…
+              </PopoverRow>
+            )}
             <Trenner />
           </>
         )}
