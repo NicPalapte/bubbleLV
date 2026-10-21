@@ -98,24 +98,26 @@ export function DisplayControls() {
           </Row>
           <Row label="Spalten">
             <ChipGroup label="Spalten" radio>
-              {[{ value: NO_COLS, label: '—' }, ...axes.filter((axis) => axis.value !== rows)].map(
-                (axis) => (
-                  <ValueChip
-                    key={axis.value}
-                    kind="radio"
-                    on={(cols ?? NO_COLS) === axis.value}
-                    title={axis.value === NO_COLS ? 'Keine Spalten' : undefined}
-                    onClick={() =>
-                      dispatch({
-                        type: 'graphCols',
-                        value: axis.value === NO_COLS ? null : axis.value,
-                      })
-                    }
-                  >
-                    {axis.label}
-                  </ValueChip>
-                ),
-              )}
+              {[
+                { value: NO_COLS, label: '—' },
+                // Abschnitt nur als Zeile: lange Titel nebeneinander überlappen (0059).
+                ...axes.filter((axis) => axis.value !== rows && axis.value !== SECTION_AXIS),
+              ].map((axis) => (
+                <ValueChip
+                  key={axis.value}
+                  kind="radio"
+                  on={(cols ?? NO_COLS) === axis.value}
+                  title={axis.value === NO_COLS ? 'Keine Spalten' : undefined}
+                  onClick={() =>
+                    dispatch({
+                      type: 'graphCols',
+                      value: axis.value === NO_COLS ? null : axis.value,
+                    })
+                  }
+                >
+                  {axis.label}
+                </ValueChip>
+              ))}
             </ChipGroup>
           </Row>
         </>

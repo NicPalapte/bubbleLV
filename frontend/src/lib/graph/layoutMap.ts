@@ -5,7 +5,8 @@
 //  - „nach LV": eine Gruppe je Abschnitt der untersten Ebene (der Elternknoten
 //    der Position), die Lose als gestrichelte Hülle darum.
 //  - „Matrix": Zeilen sind die Werte eines Merkmals, Spalten optional die eines
-//    zweiten — eine Matrix. Ohne Spalten liegen die Gruppen gepackt.
+//    zweiten. Mit Spalten ist jede Zelle eine Kachel, die Punkte liegen darin in
+//    Reihen (Entscheidung 0059). Ohne Spalten liegen die Gruppen als Kreise gepackt.
 //
 // Reine Funktion über dem Positions-Index: kein DOM, kein Zoom. Die Gruppenlage
 // hängt nur an Datei, Gliederung, Größe und — beim Ausblenden oder in „Matrix" —
@@ -95,6 +96,18 @@ export interface MapGroup {
   slots: number[];
   /** Sammelgruppe der Nicht-Treffer in „Matrix". */
   rest: boolean;
+  /** Kachel der Zelle (Matrix mit Spalten); sonst `null` — die Gruppe ist ein Kreis. */
+  cell: MapCell | null;
+}
+
+/** Rechteck einer Kachel in Weltkoordinaten, dazu ihre Zeile und Spalte. */
+export interface MapCell {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  row: number;
+  col: number;
 }
 
 export interface MapHull {
@@ -114,6 +127,8 @@ export interface MapAxes {
   cols: ReadonlyArray<{ label: string; x: number }>;
   x0: number;
   y0: number;
+  /** Raster der Kacheln: linke Kante und Breite je Spalte, obere Kante und Höhe je Zeile. */
+  grid: { colX: number[]; colW: number[]; rowY: number[]; rowH: number[] } | null;
 }
 
 export interface MapLayout {
@@ -130,6 +145,12 @@ export interface MapLayout {
 
 /** Platz über einem Kreis für Titel und Kennzeile. */
 const LABEL_SPACE = 40;
+/** Kachel: Rand innen, Kopfzeile für Anzahl und Summe, Abstand zwischen Kacheln. */
+const TILE_PAD = 12;
+const TILE_TOP = 26;
+const TILE_GAP = 10;
+/** Breite einer Spaltenbeschriftung je Zeichen (14px Sans), damit Kacheln sie tragen. */
+const AXIS_CHAR = 8.6;
 const GOLDEN_ANGLE = 2.39996;
 
 function isHit(mask: Uint8Array | null, slot: number): boolean {
@@ -165,6 +186,7 @@ function newGroup(key: string, title: string, slots: number[]): MapGroup {
     r: groupRadius(slots.length),
     slots,
     rest: false,
+    cell: null,
   };
 }
 
@@ -181,16 +203,39 @@ function placeCloud(
   py: Float64Array,
 ) {
   const n = group.slots.length;
-  const amount = (slot: number): number => (quantity[slot] > 0 ? quantity[slot] : 0);
-  const order = [...group.slots].sort(
-    (a, b) => radii[b] - radii[a] || amount(b) - amount(a) || a - b,
-  );
+  const order = bySize(group.slots, radii, quantity);
   const spread = group.r - 12;
   order.forEach((slot, i) => {
     const rr = n === 1 ? 0 : spread * Math.sqrt((i + 0.5) / n);
     const angle = i * GOLDEN_ANGLE;
     px[slot] = group.x + rr * Math.cos(angle);
     py[slot] = group.y + rr * Math.sin(angle);
+  });
+}
+
+/** Reihenfolge in einer Gruppe: größte Punkte zuerst, bei gleicher Größe die größte Menge. */
+function bySize(slots: readonly number[], radii: Float64Array, quantity: Float64Array): number[] {
+  const amount = (slot: number): number => (quantity[slot] > 0 ? quantity[slot] : 0);
+  return [...slots].sort((a, b) => radii[b] - radii[a] || amount(b) - amount(a) || a - b);
+}
+
+/** Positionen in Reihen in die Kachel setzen, jede Reihe mittig — die größten oben links. */
+function placeTile(
+  group: MapGroup & { cell: MapCell },
+  perRow: number,
+  pitch: number,
+  radii: Float64Array,
+  quantity: Float64Array,
+  px: Float64Array,
+  py: Float64Array,
+) {
+  const { cell } = group;
+  const n = group.slots.length;
+  bySize(group.slots, radii, quantity).forEach((slot, i) => {
+    const line = Math.floor(i / perRow);
+    const inLine = Math.min(perRow, n - line * perRow);
+    px[slot] = cell.x + cell.w / 2 + ((i % perRow) - (inLine - 1) / 2) * pitch;
+    py[slot] = cell.y + TILE_TOP + pitch / 2 + line * pitch;
   });
 }
 
@@ -388,12 +433,18 @@ function axisLabel(axis: Axis, value: string): string {
   return value === NO_VALUE ? NO_VALUE : axis.valueLabel(value);
 }
 
+/** Punkte je Reihe (je Spalte der Matrix) und Abstand zweier Punkte in einer Kachel. */
+interface Tiles {
+  perRow: number[];
+  pitch: number;
+}
+
 function layoutFree(
   index: PositionIndex,
   rowAxis: Axis,
   colAxis: Axis | null,
   options: MapOptions,
-): { groups: MapGroup[]; axes: MapAxes | null } {
+): { groups: MapGroup[]; axes: MapAxes | null; tiles: Tiles | null } {
   const rowValues = axisValues(index, rowAxis, options);
   const colValues = colAxis === null ? [null] : axisValues(index, colAxis, options);
 
@@ -454,29 +505,66 @@ function layoutFree(
 
   let axes: MapAxes | null = null;
   let groups: MapGroup[];
+  let tiles: Tiles | null = null;
   if (colAxis !== null && cellGroups.length > 0) {
-    const maxR = Math.max(...cellGroups.map((group) => group.r));
-    const width = 2 * maxR + 70;
-    const height = 2 * maxR + 50;
+    // Kacheln: Spaltenbreite nach der vollsten Zelle der Spalte, Zeilenhöhe nach
+    // der vollsten der Zeile — eine Tabelle, die nur so groß wird, wie sie muss.
+    let maxR = 0;
     for (const group of cellGroups) {
-      group.x = group.col * width;
-      group.y = group.row * height;
+      for (const slot of group.slots) maxR = Math.max(maxR, options.radii[slot]);
+    }
+    const pitch = 2 * (maxR || 4) + 4;
+    const colLabels = colValues.map((value) => (value === null ? '' : axisLabel(colAxis, value)));
+    // Vollste Zelle je Spalte, einmal über alle Zellen statt je Spalte gefiltert.
+    const mostInCol = colValues.map(() => 0);
+    for (const g of cellGroups) mostInCol[g.col] = Math.max(mostInCol[g.col], g.slots.length);
+    const perRow = mostInCol.map((most) => Math.max(3, Math.ceil(Math.sqrt(most * 2.2))));
+    const colW = perRow.map((k, j) =>
+      Math.max(k * pitch + 2 * TILE_PAD, colLabels[j].length * AXIS_CHAR + 16),
+    );
+    const linesInRow = rowValues.map(() => 1);
+    for (const g of cellGroups) {
+      linesInRow[g.row] = Math.max(linesInRow[g.row], Math.ceil(g.slots.length / perRow[g.col]));
+    }
+    const rowH = linesInRow.map((lines) => TILE_TOP + lines * pitch + TILE_PAD - 2);
+    const colX: number[] = [];
+    const rowY: number[] = [];
+    colW.reduce((x, width, j) => ((colX[j] = x), x + width + TILE_GAP), 0);
+    rowH.reduce((y, height, i) => ((rowY[i] = y), y + height + TILE_GAP), 0);
+    for (const group of cellGroups) {
+      const cell: MapCell = {
+        x: colX[group.col],
+        y: rowY[group.row],
+        w: colW[group.col],
+        h: rowH[group.row],
+        row: group.row,
+        col: group.col,
+      };
+      group.cell = cell;
+      group.x = cell.x + cell.w / 2;
+      group.y = cell.y + cell.h / 2;
+      // Für Culling und Detailstufe: der Kreis, der die Kachel umschließt.
+      group.r = Math.hypot(cell.w, cell.h) / 2;
     }
     axes = {
       rowKey: rowAxis.label,
       colKey: colAxis.label,
-      rows: rowValues.map((value, i) => ({ label: axisLabel(rowAxis, value), y: i * height })),
-      cols: colValues.map((value, j) => ({
-        label: value === null ? '' : axisLabel(colAxis, value),
-        x: j * width,
+      rows: rowValues.map((value, i) => ({
+        label: axisLabel(rowAxis, value),
+        y: rowY[i] + rowH[i] / 2,
       })),
-      x0: -maxR - 30,
-      y0: -maxR - 40,
+      cols: colLabels.map((label, j) => ({ label, x: colX[j] + colW[j] / 2 })),
+      x0: -4,
+      y0: -6,
+      grid: { colX, colW, rowY, rowH },
     };
+    tiles = { perRow, pitch };
     groups = cellGroups;
     if (rest.slots.length > 0) {
-      rest.x = (colValues.length - 1) * width + maxR + rest.r + 120;
-      rest.y = ((rowValues.length - 1) * height) / 2;
+      const width = colX[colX.length - 1] + colW[colW.length - 1];
+      const height = rowY[rowY.length - 1] + rowH[rowH.length - 1];
+      rest.x = width + rest.r + 120;
+      rest.y = height / 2;
       groups = [...cellGroups, rest];
     }
   } else {
@@ -490,7 +578,7 @@ function layoutFree(
       groups = [...cellGroups, rest];
     }
   }
-  return { groups, axes };
+  return { groups, axes, tiles };
 }
 
 export function layoutMap(
@@ -505,16 +593,23 @@ export function layoutMap(
   let groups: MapGroup[];
   let hulls: MapHull[] = [];
   let axes: MapAxes | null = null;
+  let tiles: Tiles | null = null;
   const rowAxis = options.layout === 'matrix' ? axisOf(index, parents, options.rows) : null;
   if (rowAxis !== null) {
     const colAxis = options.cols === null ? null : axisOf(index, parents, options.cols);
-    ({ groups, axes } = layoutFree(index, rowAxis, colAxis, options));
+    ({ groups, axes, tiles } = layoutFree(index, rowAxis, colAxis, options));
   } else {
     ({ groups, hulls } = layoutByLv(index, parents, options));
   }
 
   groups.forEach((group, i) => {
-    placeCloud(group, options.radii, index.quantity, px, py);
+    const { cell } = group;
+    if (cell !== null && tiles !== null) {
+      const { perRow, pitch } = tiles;
+      placeTile({ ...group, cell }, perRow[cell.col], pitch, options.radii, index.quantity, px, py);
+    } else {
+      placeCloud(group, options.radii, index.quantity, px, py);
+    }
     for (const slot of group.slots) groupOf[slot] = i;
   });
 
@@ -528,7 +623,16 @@ export function layoutMap(
     y0 = Math.min(y0, y - r - top);
     y1 = Math.max(y1, y + r);
   };
-  for (const group of groups) extend(group.x, group.y, group.r, LABEL_SPACE);
+  for (const group of groups) {
+    const { cell } = group;
+    if (cell === null) extend(group.x, group.y, group.r, LABEL_SPACE);
+    else {
+      x0 = Math.min(x0, cell.x);
+      x1 = Math.max(x1, cell.x + cell.w);
+      y0 = Math.min(y0, cell.y);
+      y1 = Math.max(y1, cell.y + cell.h);
+    }
+  }
   for (const hull of hulls) extend(hull.x, hull.y, hull.r, 16);
   if (axes !== null) {
     x0 = Math.min(x0, axes.x0 - 190);

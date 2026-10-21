@@ -234,6 +234,39 @@ describe('Gliederung „Matrix"', () => {
     expect(xs.size).toBe(cols);
   });
 
+  it('zeichnet mit Spalten jede Zelle als Kachel, die Punkte liegen darin', () => {
+    const map = layoutMap(
+      index,
+      parents,
+      options({ layout: 'matrix', rows: SECTION_AXIS, cols: 'einheit' }),
+    );
+    const grid = map.axes?.grid;
+    expect(grid?.rowY).toHaveLength(map.axes?.rows.length ?? -1);
+    expect(grid?.colX).toHaveLength(map.axes?.cols.length ?? -1);
+    for (const group of map.groups) {
+      const cell = group.cell;
+      expect(cell).not.toBeNull();
+      if (cell === null) continue;
+      // Kachel sitzt im Raster ihrer Zeile und Spalte.
+      expect(cell.x).toBe(grid?.colX[cell.col]);
+      expect(cell.y).toBe(grid?.rowY[cell.row]);
+      for (const slot of group.slots) {
+        expect(map.px[slot]).toBeGreaterThan(cell.x);
+        expect(map.px[slot]).toBeLessThan(cell.x + cell.w);
+        expect(map.py[slot]).toBeGreaterThan(cell.y);
+        expect(map.py[slot]).toBeLessThan(cell.y + cell.h);
+      }
+    }
+    // Kacheln überlappen nicht: Spalten und Zeilen liegen mit Abstand hintereinander.
+    grid?.colX.slice(1).forEach((x, j) => expect(x).toBeGreaterThan(grid.colX[j] + grid.colW[j]));
+    grid?.rowY.slice(1).forEach((y, i) => expect(y).toBeGreaterThan(grid.rowY[i] + grid.rowH[i]));
+  });
+
+  it('bleibt ohne Spalten bei Kreisen', () => {
+    const map = layoutMap(index, parents, options({ layout: 'matrix', rows: 'einheit' }));
+    expect(map.groups.every((group) => group.cell === null)).toBe(true);
+  });
+
   it('nimmt als Achse die gewählten Filterwerte, auch wenn eine Zelle leer bleibt', () => {
     const selected = { einheit: new Set(['m2', 'm3']) };
     const mask = maskOf((slot) => ['m2', 'm3'].includes(index.positions[slot].unit ?? ''));

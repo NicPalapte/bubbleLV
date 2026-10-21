@@ -168,3 +168,78 @@ describe('Sprung in die Tabelle', () => {
     expect(screen.getByRole('main', { name: 'Bubble-Graph' })).toBeInTheDocument();
   });
 });
+
+describe('Wechsel der Gliederung (Entscheidung 0059)', () => {
+  function canvas(): SVGSVGElement {
+    const svg = graph().querySelector('svg');
+    if (svg === null) throw new Error('Graph ohne SVG');
+    return svg;
+  }
+
+  it('lässt die Punkte gleiten, solange gewechselt wird', async () => {
+    await loadAndShowGraph();
+    oeffneFilter();
+    expect(canvas()).not.toHaveClass('graph-morph');
+    fireEvent.click(screen.getByRole('radio', { name: 'Matrix' }));
+    expect(canvas()).toHaveClass('graph-morph');
+    await waitFor(() => expect(canvas()).not.toHaveClass('graph-morph'), { timeout: 3000 });
+  });
+
+  it('springt bei „Bewegung reduzieren" ohne Gleiten', async () => {
+    const before = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: query.includes('reduce'),
+      media: query,
+      onchange: null,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      dispatchEvent: () => false,
+    })) as typeof window.matchMedia;
+    try {
+      await loadAndShowGraph();
+      oeffneFilter();
+      fireEvent.click(screen.getByRole('radio', { name: 'Matrix' }));
+      expect(canvas()).not.toHaveClass('graph-morph');
+    } finally {
+      window.matchMedia = before;
+    }
+  });
+
+  it('zeichnet Kacheln nach Anzahl und hebt die unter der Maus samt Achsen hervor', async () => {
+    await loadAndShowGraph();
+    oeffneFilter();
+    fireEvent.click(screen.getByRole('radio', { name: 'Matrix' }));
+    fireEvent.click(
+      within(screen.getByRole('radiogroup', { name: 'Zeilen' })).getByRole('radio', {
+        name: 'Abschnitt',
+      }),
+    );
+    fireEvent.click(
+      within(screen.getByRole('radiogroup', { name: 'Spalten' })).getByRole('radio', {
+        name: 'Einheit',
+      }),
+    );
+    const tiles = [...graph().querySelectorAll('rect.graph-tile:not(.is-empty)')];
+    expect(tiles.length).toBeGreaterThan(0);
+    expect(
+      tiles.every((tile) => /^var\(--heat-[1-5]\)$/.test(tile.getAttribute('fill') ?? '')),
+    ).toBe(true);
+    expect(graph().querySelector('.is-hot')).toBeNull();
+    fireEvent.mouseOver(tiles[0]);
+    expect(tiles[0]).toHaveClass('is-hot');
+    // Eine Zeilen- und eine Spaltenbeschriftung leuchten mit.
+    expect(graph().querySelectorAll('.graph-axis.is-on')).toHaveLength(2);
+  });
+
+  it('bietet Abschnitt nur als Zeile an, nicht als Spalte', async () => {
+    await loadAndShowGraph();
+    oeffneFilter();
+    fireEvent.click(screen.getByRole('radio', { name: 'Matrix' }));
+    const zeilen = within(screen.getByRole('radiogroup', { name: 'Zeilen' }));
+    const spalten = within(screen.getByRole('radiogroup', { name: 'Spalten' }));
+    expect(zeilen.getByRole('radio', { name: 'Abschnitt' })).toBeInTheDocument();
+    expect(spalten.queryByRole('radio', { name: 'Abschnitt' })).not.toBeInTheDocument();
+  });
+});
