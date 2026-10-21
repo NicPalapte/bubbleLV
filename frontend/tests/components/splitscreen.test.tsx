@@ -153,4 +153,43 @@ describe('Splitscreen', () => {
     fireEvent.click(screen.getByRole('radio', { name: /Split/ }));
     expect(region('Graph')).toBeInTheDocument();
   });
+
+  describe('Tabelle im eigenen Fenster', () => {
+    let frame: HTMLIFrameElement;
+    let popup: Window;
+
+    beforeEach(() => {
+      frame = document.createElement('iframe');
+      document.body.append(frame);
+      popup = frame.contentWindow as Window;
+      popup.close = vi.fn<() => void>();
+      popup.focus = vi.fn<() => void>();
+      vi.spyOn(window, 'open').mockReturnValue(popup);
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+      frame.remove();
+    });
+
+    const fern = (): HTMLElement =>
+      within(popup.document.body).getByRole('region', { name: 'Tabelle — eigenes Fenster' });
+
+    it('bleibt ausgelagert, wenn man auf Fenster wechselt', () => {
+      setup();
+      fireEvent.click(screen.getByRole('button', { name: 'Tabelle in eigenem Fenster öffnen' }));
+      expect(screen.queryByRole('region', { name: 'Tabelle — Bereich' })).toBeNull();
+      expect(fern()).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('radio', { name: /Fenster/ }));
+      expect(fern()).toBeInTheDocument();
+    });
+
+    it('kehrt in ihren Bereich zurück, wenn das zweite Fenster von Hand zugeht', async () => {
+      setup();
+      fireEvent.click(screen.getByRole('button', { name: 'Tabelle in eigenem Fenster öffnen' }));
+      Object.defineProperty(popup, 'closed', { configurable: true, get: () => true });
+      popup.dispatchEvent(new Event('pagehide'));
+      await vi.waitFor(() => expect(region('Tabelle')).toBeInTheDocument());
+    });
+  });
 });

@@ -67,13 +67,11 @@ export function TableWindow() {
   }, [shown, popup, dock]);
 
   const detach = (): void => popOut('table', tableWindow.size.width);
+  // Zweites Fenster von Hand zu: im Splitscreen kehrt die Tabelle in ihren Bereich
+  // zurück (wie der Graph), im Fenster-Layout geht sie zu wie bisher.
   const closedByHand = useCallback((): void => {
     dock('table');
-    dispatch(
-      split
-        ? { type: 'paneClosed', pane: 'table', closed: true }
-        : { type: 'tableWindow', open: false },
-    );
+    if (!split) dispatch({ type: 'tableWindow', open: false });
   }, [dock, dispatch, split]);
 
   if (!shown) return null;

@@ -16,7 +16,7 @@ import {
   type ReactNode,
 } from 'react';
 import { openExternalWindow, type ExternalHost } from '../common/externalWindowHost';
-import { useViewer } from '../../state/viewer';
+import { useViewer, useViewerDispatch } from '../../state/viewer';
 
 /** Bereiche, die in ein eigenes Browserfenster wandern können. */
 export type PopPane = 'graph' | 'table';
@@ -68,6 +68,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const {
     view: { workspace },
   } = useViewer();
+  const dispatch = useViewerDispatch();
   const wide = useWideScreen();
   const [hosts, setHosts] = useState<Record<PopPane, ExternalHost | null>>({
     graph: null,
@@ -77,22 +78,28 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const blockedTimer = useRef<number | undefined>(undefined);
   useEffect(() => () => window.clearTimeout(blockedTimer.current), []);
 
-  const popOut = useCallback((pane: PopPane, width?: number): void => {
-    const popup = POPUP[pane];
-    const host = openExternalWindow(popup.name, popup.title, {
-      width: Math.max(width ?? 0, popup.width),
-      height: popup.height,
-    });
-    window.clearTimeout(blockedTimer.current);
-    if (host === null) {
-      // Ein neuer Klick hält den Hinweis die volle Zeit, kein alter Timer kürzt ab.
-      setBlocked(pane);
-      blockedTimer.current = window.setTimeout(() => setBlocked(null), BLOCKED_HINT_MS);
-      return;
-    }
-    setBlocked(null);
-    setHosts((current) => ({ ...current, [pane]: host }));
-  }, []);
+  const popOut = useCallback(
+    (pane: PopPane, width?: number): void => {
+      const popup = POPUP[pane];
+      const host = openExternalWindow(popup.name, popup.title, {
+        width: Math.max(width ?? 0, popup.width),
+        height: popup.height,
+      });
+      window.clearTimeout(blockedTimer.current);
+      if (host === null) {
+        // Ein neuer Klick hält den Hinweis die volle Zeit, kein alter Timer kürzt ab.
+        setBlocked(pane);
+        blockedTimer.current = window.setTimeout(() => setBlocked(null), BLOCKED_HINT_MS);
+        return;
+      }
+      setBlocked(null);
+      setHosts((current) => ({ ...current, [pane]: host }));
+      // Eine ausgelagerte Tabelle gilt in beiden Anordnungen als offen — sonst
+      // holte ein Wechsel Split → Fenster sie still zurück.
+      if (pane === 'table') dispatch({ type: 'tableWindow', open: true });
+    },
+    [dispatch],
+  );
 
   const dock = useCallback((pane: PopPane): void => {
     setHosts((current) => (current[pane] === null ? current : { ...current, [pane]: null }));
