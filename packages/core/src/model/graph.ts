@@ -20,8 +20,8 @@ export type GraphEdgeKind =
   | 'fordert' // Position/Kapitel → Anforderung
   | 'nennt_norm' // Position/Kapitel/Anforderung → Norm
   | 'betrifft' // Position/Kapitel/Anforderung → Material oder Frist
-  | 'aehnlich_zu' // inhaltlich ähnlich, ungerichtet gemeint
-  | 'weicht_ab_von'; // zwei Angaben passen nicht zusammen; Hinweis, kein Urteil (0049)
+  | 'aehnlichkeit' // inhaltlich ähnlich, ungerichtet gemeint
+  | 'abweichung'; // zwei Angaben passen nicht zusammen; Hinweis, kein Urteil (0049)
 
 /** Wer eine Kante gefunden hat. Steuert, wie sicher sie gilt. */
 export type EdgeSource =
@@ -71,7 +71,7 @@ export interface GraphEdge {
   /** Version der Regel oder des Modells, das die Kante erzeugt hat, z. B. "verweise@1". */
   producer?: string;
   /**
-   * Gegenüberstellung bei `weicht_ab_von`: welcher Wert wo steht,
+   * Gegenüberstellung bei `abweichung`: welcher Wert wo steht,
    * z. B. `{ merkmal: 'beton', werte: ['C30/37', 'C25/30'] }`.
    */
   detail?: Record<string, unknown>;
@@ -85,7 +85,7 @@ export interface ProjectGraph {
 }
 
 /** Ungerichtete Arten: `from`/`to` werden für die ID sortiert. */
-const UNDIRECTED: ReadonlySet<GraphEdgeKind> = new Set(['aehnlich_zu', 'weicht_ab_von']);
+const UNDIRECTED: ReadonlySet<GraphEdgeKind> = new Set(['aehnlichkeit', 'abweichung']);
 
 /**
  * Knoten-ID aus Art und fachlichem Schlüssel.

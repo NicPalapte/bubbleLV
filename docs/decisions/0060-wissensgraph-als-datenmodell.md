@@ -23,7 +23,7 @@
   Schema-Kennung `bubble-graph-v1`.
 - **Klein anfangen:** sieben Knotenarten (Dokument, Kapitel, Position, Anforderung, Norm,
   Material, Frist) und sieben Kantenarten (gehört zu, verweist auf, fordert,
-  nennt Norm, betrifft, ähnlich zu, weicht ab von). Eine neue Art nur mit Ergänzung dieser
+  nennt Norm, betrifft, Ähnlichkeit, Abweichung). Eine neue Art nur mit Ergänzung dieser
   Entscheidung.
 - **Jede Kante trägt ihre Herkunft:**
   - wer sie gefunden hat (Struktur, Regel, Ähnlichkeit, KI, Nutzer),
@@ -79,7 +79,7 @@
   Die Dokumentenlandkarte braucht genau das. Vor der ersten Funktion, die Kanten
   erzeugt, muss der Scope angepasst werden (eigene Entscheidung).
 - **Konflikt mit 0049:** Dort gibt es Beziehungen nur als ähnliche Positionen, ohne
-  wertende Prüfregel. Die Kante „weicht ab von“ ist deshalb bewusst als Hinweis benannt,
+  wertende Prüfregel. Die Kante „Abweichung“ ist deshalb bewusst als Hinweis benannt,
   nicht als Urteil („widerspricht“). Erzeugt eine Funktion sie, braucht es eine neue
   Entscheidung, die 0049 ablöst.
 - **Quelle „KI“ ist ein Vorgriff:** KI-Klassifizierung ist heute out of scope. Das Modell

@@ -32,8 +32,8 @@ describe('graphEdgeId', () => {
   });
 
   it('ist bei ungerichteten Kanten unabhängig von der Reihenfolge', () => {
-    expect(graphEdgeId('weicht_ab_von', 'position:b', 'kapitel:a')).toBe(
-      graphEdgeId('weicht_ab_von', 'kapitel:a', 'position:b'),
+    expect(graphEdgeId('abweichung', 'position:b', 'kapitel:a')).toBe(
+      graphEdgeId('abweichung', 'kapitel:a', 'position:b'),
     );
   });
 
