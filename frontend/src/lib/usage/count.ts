@@ -71,8 +71,9 @@ export function usageEventOf(action: ViewerAction): UsageEvent | null {
       return action.on ? 'markierung' : null;
     case 'addComment':
       return action.text.trim() === '' ? null : 'kommentar';
+    // Gleiche Stelle in gleicher Farbe zählt mit: dafür fehlt hier der Zustand.
     case 'addHighlight':
-      return action.text.trim() === '' ? null : 'anstreichung';
+      return action.text.trim() === '' || action.start < 0 ? null : 'anstreichung';
     case 'tour':
       return action.step === 0 ? 'tour' : null;
     default:

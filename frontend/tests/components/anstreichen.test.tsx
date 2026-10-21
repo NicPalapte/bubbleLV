@@ -84,4 +84,16 @@ describe('Anstreichen im Langtext', () => {
     expect(screen.queryByRole('toolbar', { name: 'Anstreichen' })).toBeNull();
     expect(screen.queryByRole('list', { name: 'Meine Anstreichungen' })).toBeNull();
   });
+
+  it('liest die Auswahl nur bei Shift + Auswahltaste neu, nicht bei Shift allein', async () => {
+    await ladeDatei();
+    const text = langtext();
+    waehleWort(text);
+    await screen.findByRole('toolbar', { name: 'Anstreichen' });
+    window.getSelection()?.removeAllRanges();
+    fireEvent.keyUp(text, { key: 'Shift', shiftKey: true });
+    expect(screen.getByRole('toolbar', { name: 'Anstreichen' })).toBeInTheDocument();
+    fireEvent.keyUp(text, { key: 'ArrowLeft', shiftKey: true });
+    expect(screen.queryByRole('toolbar', { name: 'Anstreichen' })).toBeNull();
+  });
 });

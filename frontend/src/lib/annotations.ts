@@ -63,6 +63,9 @@ export const PAINT_INFO: Readonly<Record<Paint, { label: string; fill: string }>
  * Eine Anstreichung: `start` ist die Stelle im angezeigten Langtext (ohne `**`). Passt
  * der Text dort nicht mehr, sucht die Anzeige ihn im übrigen Langtext.
  */
+/** Längere Auswahl ist kein Anstreichen mehr, sondern Kopieren. */
+export const MAX_PAINT_LENGTH = 2000;
+
 export interface Highlight {
   readonly paint: Paint;
   readonly start: number;
@@ -361,6 +364,7 @@ export function toHighlight(value: unknown): Highlight | null {
   const raw = value as Record<string, unknown>;
   const { paint, start, text } = raw;
   if (!isPaint(paint) || typeof text !== 'string' || text.trim() === '') return null;
+  if (text.length > MAX_PAINT_LENGTH) return null;
   if (typeof start !== 'number' || !Number.isInteger(start) || start < 0) return null;
   return { paint, start, text, at: atOf(raw) };
 }

@@ -30,6 +30,9 @@ import { useAdmin } from '../../state/admin';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { Highlight, Paint } from '../../lib/annotations';
 
+/** Tasten, die mit Shift die Auswahl im Text ändern. */
+const SELECT_KEYS = /^(Arrow|Home$|End$|Page)/;
+
 const NO_MARKS: readonly Highlight[] = [];
 
 // Außerhalb der Komponente: `Date.now()` ist im Render-Pfad nicht rein.
@@ -243,7 +246,8 @@ export function PositionDetails({
               ref={longTextRef}
               onMouseUp={readSelection}
               onKeyUp={(event) => {
-                if (event.shiftKey) readSelection();
+                // Nur Auswahl per Tastatur (Shift + Pfeil, Pos1, Ende), nicht jedes Shift.
+                if (event.shiftKey && SELECT_KEYS.test(event.key)) readSelection();
               }}
               // Die Karte liegt im Graphen, der `select-none` setzt — ohne `select-text`
               // ließe sich weder kopieren noch anstreichen oder ein Begriff markieren.

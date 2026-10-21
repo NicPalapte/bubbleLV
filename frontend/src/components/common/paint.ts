@@ -4,10 +4,7 @@
 // `Highlighted` bleiben unberührt. Browser ohne die API zeigen nur die Liste.
 
 import { useLayoutEffect, type RefObject } from 'react';
-import { PAINTS, type Highlight, type Paint } from '../../lib/annotations';
-
-/** Längere Auswahl ist kein Anstreichen mehr, sondern Kopieren. */
-const MAX_LENGTH = 2000;
+import { MAX_PAINT_LENGTH, PAINTS, type Highlight, type Paint } from '../../lib/annotations';
 
 /** Stelle der Anstreichung im Text, -1 wenn ihr Text dort nicht (mehr) vorkommt. */
 export function locate(text: string, mark: Pick<Highlight, 'start' | 'text'>): number {
@@ -32,7 +29,7 @@ export function paintSelection(container: HTMLElement): PaintTarget | null {
   const raw = range.toString();
   // Leerraum am Rand gehört nicht zur Anstreichung.
   const text = raw.trim();
-  if (text === '' || text.length > MAX_LENGTH) return null;
+  if (text === '' || text.length > MAX_PAINT_LENGTH) return null;
   const before = container.ownerDocument.createRange();
   before.setStart(container, 0);
   before.setEnd(range.startContainer, range.startOffset);

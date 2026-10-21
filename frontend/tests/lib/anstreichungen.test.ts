@@ -2,18 +2,20 @@
 // Stelle im Text wiederfinden, Auswahl lesen.
 
 import { createElement } from 'react';
-import { render } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { render, renderHook } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   addHighlight,
   EMPTY_ANNOTATIONS,
   fromStored,
   rekey,
   removeHighlight,
+  toHighlight,
   toStored,
+  MAX_PAINT_LENGTH,
   type Highlight,
 } from '../../src/lib/annotations';
-import { locate, paintSelection } from '../../src/components/common/paint';
+import { locate, paintSelection, usePaintHighlights } from '../../src/components/common/paint';
 import { shownText } from '../../src/components/common/shownText';
 import { Highlighted } from '../../src/components/common/Highlighted';
 
@@ -56,6 +58,9 @@ describe('Anstreichungen im Datenmodell', () => {
       highlights: [['h', [gelb(1, 'x'), { paint: 'lila', start: 0, text: 'y' }, 3]]],
     });
     expect(kaputt.highlights.get('h')).toEqual([gelb(1, 'x')]);
+    expect(toHighlight({ paint: 'gelb', start: 0, text: 'x'.repeat(MAX_PAINT_LENGTH + 1) })).toBe(
+      null,
+    );
     const v4 = fromStored({ v: 4, progress: [], important: ['h'], log: [] });
     expect(v4.highlights.size).toBe(0);
   });
@@ -106,5 +111,32 @@ describe('Stelle im Langtext', () => {
     expect(paintSelection(box)).toBeNull();
     box.remove();
     draussen.remove();
+  });
+});
+
+describe('Einfärben mit der Highlight-API', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('färbt Stellen über Teilstücke hinweg ein und räumt beim Abbau auf', () => {
+    const registered = new Map<string, Set<Range>>();
+    vi.stubGlobal('CSS', { highlights: registered });
+    vi.stubGlobal('Highlight', class extends Set<Range> {});
+    const box = document.createElement('div');
+    box.innerHTML = 'Beton <mark>C30/37</mark> für Wände';
+    document.body.append(box);
+    const marks = [gelb(3, 'on C30'), { ...gelb(14, 'für'), paint: 'gruen' as const }];
+
+    const { unmount } = renderHook(() => usePaintHighlights({ current: box }, marks, []));
+    const ranges = (paint: string): string[] =>
+      [...(registered.get(`paint-${paint}`) ?? [])].map((range) => range.toString());
+    expect(ranges('gelb')).toEqual(['on C30']);
+    expect(ranges('gruen')).toEqual(['für']);
+
+    unmount();
+    expect(ranges('gelb')).toEqual([]);
+    expect(ranges('gruen')).toEqual([]);
+    box.remove();
   });
 });
