@@ -27,6 +27,8 @@ export const USAGE_EVENTS = [
   'export-treffer',
   'export-markdown',
   'drucken',
+  'notizen-gesichert',
+  'notizen-geladen',
 ] as const;
 
 export type UsageEvent = (typeof USAGE_EVENTS)[number];

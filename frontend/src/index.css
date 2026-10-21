@@ -860,6 +860,26 @@ a:hover {
   color: var(--dim);
 }
 
+/* Frage mit mehr als zwei Knöpfen: Text oben, Knöpfe darunter (Entscheidung 0061). */
+.start-recent.ask.stack {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.start-recent.ask.warn {
+  border-color: var(--amber);
+}
+
+.start-recent-q b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.start-recent-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .start-btn.danger {
   border-color: var(--red);
   background: var(--redS);

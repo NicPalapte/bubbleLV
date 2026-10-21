@@ -67,6 +67,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0058 | [Schalter „Nicht-Treffer" sitzt in der Suche](0058-nicht-treffer-in-der-suche.md)                              | akzeptiert                         | 2026-10-19 |
 | 0059 | [Matrix als Kacheln, Gliederungswechsel gleitet](0059-matrix-kacheln.md)                                       | akzeptiert                         | 2026-10-19 |
 | 0060 | [Wissensgraph als Datenmodell, keine Graph-Datenbank](0060-wissensgraph-als-datenmodell.md)                    | vorgeschlagen                      | 2026-10-21 |
+| 0061 | [Notizen als Datei sichern und laden](0061-notizen-sichern-und-laden.md)                                       | akzeptiert                         | 2026-10-21 |
 
 ## Wann schreibe ich eine neue Datei?
 

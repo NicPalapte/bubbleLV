@@ -2,7 +2,8 @@
 //
 // In der Sitzung ist der Schlüssel die Knoten-ID der Position (lib/tree/buildTree.ts).
 // Gespeichert wird unter dem Positions-Hash (Entscheidung 0055, `hashes.id`): er hängt
-// am Inhalt, nicht an OZ und Reihenfolge, und passt so auch nach Umnummerieren.
+// am Inhalt der Datei (OZ, Text, Menge), nicht an der Reihenfolge beim Einlesen.
+// Umnummerierte Positionen findet erst die Notiz-Datei wieder (lib/notesFile.ts).
 // Umschlüsseln an der Grenze zum Speicher: `storageKeys` + `rekey`.
 //
 // Ein Marker ist eine eigene Notiz, nicht der GAEB-Status (Entscheidung 0051):
@@ -213,11 +214,12 @@ export function toStored(annotations: Annotations): StoredAnnotations {
   return { v: 3, markers: [...annotations.markers], log: [...annotations.log] };
 }
 
-function isMarker(value: unknown): value is Marker {
+export function isMarker(value: unknown): value is Marker {
   return value === 'markiert' || value === 'wichtig' || value === 'erledigt';
 }
 
-function toEntry(value: unknown): LogEntry | null {
+/** Ein Verlaufseintrag aus Speicher oder Notiz-Datei; Unbrauchbares wird `null`. */
+export function toEntry(value: unknown): LogEntry | null {
   if (typeof value !== 'object' || value === null) return null;
   const raw = value as Record<string, unknown>;
   const at = typeof raw.at === 'number' && Number.isFinite(raw.at) ? raw.at : 0;

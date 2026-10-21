@@ -9,6 +9,16 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.25.0 — 21.10.2026 · Notizen sichern und laden
+
+- **Keine Notizen mehr still verlieren:** Öffnest du eine neue Datei und die gespeicherte
+  hat Marker oder Kommentare, fragt Bubble erst: ersetzen oder die gespeicherte öffnen.
+- **Beim Löschen** der gespeicherten Datei gibt es „Notizen sichern + löschen“.
+- **Logo-Menü:** „Notizen sichern“ lädt alle Marker und Kommentare als Datei herunter.
+  „Notizen laden…“ übernimmt sie wieder, auch in eine neue Fassung des LV.
+- **Laden findet Positionen auch nach dem Umnummerieren** (gleicher Text) und zeigt,
+  was gleich, umnummeriert, geändert oder nicht gefunden ist.
+
 ## 0.24.0 — 21.10.2026 · Matrix als Kacheln
 
 - **Matrix mit Zeilen und Spalten** zeigt jede Zelle als Kachel. Je mehr Positionen darin

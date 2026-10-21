@@ -11,11 +11,13 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ReportDialog } from '../report/ReportDialog';
 import { AdminDialog } from './AdminDialog';
 import { ShortcutsDialog } from './ShortcutsDialog';
+import { NotesImportDialog } from './NotesImportDialog';
 import { AboutMenu } from './AboutMenu';
 import { useMitnehmen } from '../common/useMitnehmen';
 import { commentedIds, MARKER_INFO, MARKERS, markerCounts } from '../../lib/annotations';
 import { FACETS, facetOptionLabel } from '../../lib/facets';
 import { formatCount } from '../../lib/format';
+import { NotesFileError, notesCount, parseNotesFile, type NotesFile } from '../../lib/notesFile';
 import { useAdmin } from '../../state/admin';
 import { useViewer, useViewerDispatch, type HideMode } from '../../state/viewer';
 
@@ -150,6 +152,7 @@ export function TopBar() {
   const dispatch = useViewerDispatch();
   const counts = useMemo(() => markerCounts(annotations), [annotations]);
   const commentCount = useMemo(() => commentedIds(annotations).length, [annotations]);
+  const notizAnzahl = useMemo(() => notesCount(annotations), [annotations]);
   const mitnehmen = useMitnehmen();
   const inputRef = useRef<HTMLInputElement>(null);
   /** „Fehler melden" — das Fenster gehört hierher, nicht ins Menü (WP-P, Schritt 6). */
@@ -159,6 +162,23 @@ export function TopBar() {
   /** „Admin-Werkzeuge" aus dem Logo-Menü (Entscheidung 0053). */
   const [adminOffen, setAdminOffen] = useState(false);
   const adminFrei = useAdmin().unlocked;
+  /** „Notizen laden…": versteckter Dateidialog, danach das Ergebnisfenster (0061). */
+  const notizDateiRef = useRef<HTMLInputElement>(null);
+  const [notizDatei, setNotizDatei] = useState<{ file: NotesFile; name: string } | null>(null);
+  const notizenLesen = async (datei: File | undefined): Promise<void> => {
+    if (datei === undefined) return;
+    try {
+      setNotizDatei({ file: parseNotesFile(await datei.text()), name: datei.name });
+    } catch (fehler) {
+      dispatch({
+        type: 'notice',
+        message:
+          fehler instanceof NotesFileError
+            ? fehler.message
+            : 'Die Notiz-Datei konnte nicht gelesen werden.',
+      });
+    }
+  };
 
   // Das Eingabefeld hängt am lokalen Wert, damit Tippen nie auf den Suchlauf
   // wartet; der Viewer-State folgt verzögert nach.
@@ -249,7 +269,21 @@ export function TopBar() {
           onTour={loaded ? () => dispatch({ type: 'tour', step: 0 }) : undefined}
           onAnderesLv={loaded ? () => dispatch({ type: 'clear' }) : undefined}
           mitnehmen={loaded ? mitnehmen : undefined}
+          onNotizenLaden={loaded ? () => notizDateiRef.current?.click() : undefined}
+          notizen={notizAnzahl}
           onAdmin={() => setAdminOffen(true)}
+        />
+        <input
+          ref={notizDateiRef}
+          type="file"
+          accept=".json,application/json"
+          className="hidden"
+          aria-label="Notiz-Datei auswählen"
+          onChange={(event) => {
+            void notizenLesen(event.target.files?.[0]);
+            // Zurücksetzen, damit dieselbe Datei erneut gewählt werden kann.
+            event.target.value = '';
+          }}
         />
         {adminFrei && (
           <button
@@ -393,6 +427,13 @@ export function TopBar() {
 
       {kuerzel && <ShortcutsDialog onClose={() => setKuerzel(false)} />}
       {adminOffen && <AdminDialog onClose={() => setAdminOffen(false)} />}
+      {notizDatei !== null && (
+        <NotesImportDialog
+          file={notizDatei.file}
+          fileName={notizDatei.name}
+          onClose={() => setNotizDatei(null)}
+        />
+      )}
       {melden && (
         <ReportDialog
           context={{ view: view.mode, loaded: lv !== null }}
