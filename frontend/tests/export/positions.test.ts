@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import {
   addComment,
+  addHighlight,
   EMPTY_ANNOTATIONS,
   setImportant,
   setProgress,
@@ -96,8 +97,21 @@ describe('positionsCsv', () => {
     expect(kopf).toContain('Fortschritt');
     expect(kopf).toContain('Wichtig');
     expect(kopf).toContain('Kommentar');
+    expect(kopf).toContain('Textmarkierungen');
     expect(csv).toContain(';Fertig;Wichtig;"Boden; prüfen";');
     expect(datenzeilen(csv)).toHaveLength(index.size);
+  });
+
+  it('schreibt Textmarkierungen mit dem eigenen Namen der Farbe', () => {
+    const id = index.nodes[1].id;
+    const notizen = addHighlight(EMPTY_ANNOTATIONS, id, {
+      paint: 'gruen',
+      start: 0,
+      text: 'Beton',
+      at: 0,
+    });
+    expect(positionsCsv(index, null, notizen)).toContain(';Grün: Beton;');
+    expect(positionsCsv(index, null, notizen, { gruen: 'Maß' })).toContain(';Maß: Beton;');
   });
 
   it('macht aus einer fehlenden Menge kein Feld mit 0', () => {

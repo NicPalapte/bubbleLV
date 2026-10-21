@@ -9,6 +9,21 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.27.0 — 21.10.2026 · Eigene Textmarkierungen im Langtext
+
+- **Text markieren:** Text im Langtext auswählen, dann eine von sechs Farben wählen. Über
+  dem Langtext zeigt der Mauszeiger, dass sich markieren lässt.
+- **Farben benennen:** jede Farbe kann eine Bedeutung bekommen, z. B. Gelb = wichtig,
+  Grün = Maß. Gilt in diesem Browser für alle Dateien und kommt in die Notiz-Datei.
+- **Meine Textmarkierungen:** eigene kleine Tabelle unter „Eigenschaften", ✕ entfernt eine.
+- **Ausblenden:** Label „Meine Textmarkierungen" neben den Fundstellen blendet die Farben im
+  Text aus und wieder ein.
+- **Bleibt erhalten** wie Kommentare: zur letzten Datei in diesem Browser und in der
+  Notiz-Datei. Der CSV-Export hat eine Spalte „Textmarkierungen" (mit dem Namen der Farbe).
+- **Begriff lernen** (Admin) sitzt jetzt in derselben Leiste.
+- **Positionskarte:** Die Zeile „Status" in den Eigenschaften entfällt. Den Stand zeigt der
+  Fortschritt (0.26.0).
+
 ## 0.26.0 — 21.10.2026 · Fortschritt und „Wichtig"
 
 - **Fortschritt je Position:** Offen · In Bearbeitung · Fertig, mit drei Knöpfen unten in

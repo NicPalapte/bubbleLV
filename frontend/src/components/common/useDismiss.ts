@@ -44,8 +44,12 @@ export function useDismiss(
     if (!open) return;
     const list = Array.isArray(refs) ? refs : [refs];
 
+    // Leisten aus einem Popover heraus (Anstreichen, Begriff lernen) hängen per
+    // Portal an <body>, gehören aber zum Popover: `data-keeps-popover`.
     const isOutside = (target: EventTarget | null): boolean =>
-      !list.some((ref) => ref.current?.contains(target as Node) === true);
+      !list.some((ref) => ref.current?.contains(target as Node) === true) &&
+      // Kein `instanceof Element`: im ausgelagerten Fenster ist das ein anderes Element.
+      (target as Element | null)?.closest?.('[data-keeps-popover]') == null;
 
     // Nur für `ignoreDrag` gebraucht: Startpunkt eines möglichen Drags.
     let downOutside = false;

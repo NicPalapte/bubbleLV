@@ -89,9 +89,11 @@ describe('Admin-Werkzeuge', () => {
 
   it('lernt einen Begriff im Langtext und zeigt ihn in der Liste', async () => {
     await ladeDatei();
-    // Ohne Admin öffnet eine Auswahl nichts.
+    // Ohne Admin bietet die Leiste nur Farben zum Anstreichen.
     markiereWort(await langtextBlock());
-    expect(screen.queryByRole('dialog', { name: 'Begriff lernen' })).toBeNull();
+    const leiste = await screen.findByRole('toolbar', { name: 'Textmarkierung' });
+    expect(within(leiste).queryByRole('button', { name: 'Begriff lernen…' })).toBeNull();
+    fireEvent.keyDown(document, { key: 'Escape' });
 
     await oeffneAdmin(PASSWORT);
     // Nach dem Passwort geht das Fenster zu, damit man gleich im Langtext arbeiten kann.
@@ -102,6 +104,7 @@ describe('Admin-Werkzeuge', () => {
     // Der Graph darunter setzt `select-none`; der Langtext muss markierbar bleiben.
     expect(block.querySelector('.whitespace-pre-wrap')).toHaveClass('select-text');
     const wort = markiereWort(block);
+    fireEvent.click(await screen.findByRole('button', { name: 'Begriff lernen…' }));
     const lernen = await screen.findByRole('dialog', { name: 'Begriff lernen' });
     fireEvent.click(within(lernen).getByRole('button', { name: 'Wichtig' }));
 

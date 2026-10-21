@@ -6,8 +6,11 @@ import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
 import { CardHead, GroupPill, PropTable, Section, StatRow } from './CardParts';
 import { Highlighted } from './Highlighted';
 import { LearnPopover } from './LearnPopover';
-import { selectionIn, type LearnTarget } from './learnSelection';
+import { MAX_TERM_LENGTH, type LearnTarget } from './learnSelection';
 import { NoteBlock } from './NoteBlock';
+import { PaintBar, PaintList, PaintNamesDialog } from './PaintBar';
+import { PAINT_SECTION, paintSelection, usePaintHighlights, type PaintTarget } from './paint';
+import { shownText } from './shownText';
 import { HintBlock } from '../check/HintBlock';
 import {
   attributeLabel,
@@ -19,12 +22,34 @@ import {
 import { facetOptionLabel, FACETS_BY_ID } from '../../lib/facets';
 import { formatEuro, formatNumber } from '../../lib/format';
 import { categoryOf, keysOfLabel, presentCategories } from '../../lib/spanCategories';
-import { POSITION_STATUS } from '../../lib/status';
 import { headingOf } from '../../lib/tree/heading';
 import { mainSectionOf } from '../../lib/tree/mainSection';
 import { applyTerms } from '../../lib/highlight/terms';
 import { useAdmin } from '../../state/admin';
-import { useViewer } from '../../state/viewer';
+import { useViewer, useViewerDispatch } from '../../state/viewer';
+import type { Highlight, Paint } from '../../lib/annotations';
+
+/** Tasten, die mit Shift die Auswahl im Text ändern. */
+const SELECT_KEYS = /^(Arrow|Home$|End$|Page)/;
+
+const NO_MARKS: readonly Highlight[] = [];
+
+// Außerhalb der Komponente: `Date.now()` ist im Render-Pfad nicht rein.
+function paintNow(
+  dispatch: ReturnType<typeof useViewerDispatch>,
+  id: string,
+  paint: Paint,
+  target: PaintTarget,
+): void {
+  dispatch({
+    type: 'addHighlight',
+    id,
+    paint,
+    start: target.start,
+    text: target.text,
+    at: Date.now(),
+  });
+}
 import type { LVNode, PositionSummary } from '../../types/lvNode';
 
 /**
@@ -39,6 +64,7 @@ function SpanLegend({
   hidden,
   onToggle,
 }: {
+  /** Fundstellen-Kategorien, dazu ggf. „Meine Textmarkierungen". */
   labels: ReadonlyArray<{ label: string; color: string; background: string }>;
   counts: ReadonlyMap<string, number>;
   hidden: ReadonlySet<string>;
@@ -89,7 +115,9 @@ export function PositionDetails({
     index,
     sectionColors,
     lv,
+    annotations,
   } = useViewer();
+  const dispatch = useViewerDispatch();
   const parent = parents.get(node.id) ?? null;
 
   const positionsart = FACETS_BY_ID.get('positionsart');
@@ -111,6 +139,15 @@ export function PositionDetails({
   const longTextRef = useRef<HTMLDivElement>(null);
   const [learnTarget, setLearnTarget] = useState<LearnTarget | null>(null);
   const closeLearn = useCallback(() => setLearnTarget(null), []);
+  // Eigene Anstreichungen (Entscheidung 0063).
+  const [paintTarget, setPaintTarget] = useState<PaintTarget | null>(null);
+  const closePaint = useCallback(() => setPaintTarget(null), []);
+  const [renameAt, setRenameAt] = useState<{ left: number; top: number } | null>(null);
+  const closeRename = useCallback(() => setRenameAt(null), []);
+  const marks = annotations.highlights.get(node.id) ?? NO_MARKS;
+  const readSelection = (): void => {
+    if (longTextRef.current !== null) setPaintTarget(paintSelection(longTextRef.current));
+  };
   const categories = useMemo(() => presentCategories(spans), [spans]);
   const counts = useMemo(() => {
     const out = new Map<string, number>();
@@ -126,6 +163,23 @@ export function PositionDetails({
     for (const label of hiddenLabels) for (const key of keysOfLabel(label)) keys.delete(key);
     return keys;
   }, [spans, hiddenLabels]);
+  // „Meine Textmarkierungen" lässt sich wie eine Fundstellen-Kategorie ausblenden.
+  // Suche und Legende bauen den Langtext neu auf — dann neu einfärben.
+  const paintHidden = hiddenLabels.has(PAINT_SECTION);
+  usePaintHighlights(longTextRef, paintHidden ? NO_MARKS : marks, [search, spans, activeKeys]);
+  const legend =
+    marks.length === 0
+      ? categories
+      : [
+          ...categories,
+          { label: PAINT_SECTION, color: 'var(--paint-ink)', background: 'var(--paint-gelb)' },
+        ];
+  const legendCounts =
+    marks.length === 0 ? counts : new Map([...counts, [PAINT_SECTION, marks.length]]);
+  const shown = useMemo(
+    () => shownText(position.longText, spans, activeKeys),
+    [position.longText, spans, activeKeys],
+  );
 
   const toggleCategory = (label: string): void =>
     setHiddenLabels((current) => {
@@ -153,7 +207,6 @@ export function PositionDetails({
   }
   if (priced) rows.push(['GP', formatEuro(node.totalPrice, 0)]);
   rows.push(['Positionstyp', position.positionType]);
-  rows.push(['Status', POSITION_STATUS]);
 
   return (
     <>
@@ -193,28 +246,25 @@ export function PositionDetails({
 
         {position.longText !== '' && (
           <Section title="Langtext">
-            {categories.length > 0 && (
+            {legend.length > 0 && (
               <SpanLegend
-                labels={categories}
-                counts={counts}
+                labels={legend}
+                counts={legendCounts}
                 hidden={hiddenLabels}
                 onToggle={toggleCategory}
               />
             )}
             <div
               ref={longTextRef}
-              onMouseUp={
-                admin.unlocked
-                  ? () => {
-                      if (longTextRef.current !== null) {
-                        setLearnTarget(selectionIn(longTextRef.current));
-                      }
-                    }
-                  : undefined
-              }
+              onMouseUp={readSelection}
+              onKeyUp={(event) => {
+                // Nur Auswahl per Tastatur (Shift + Pfeil, Pos1, Ende), nicht jedes Shift.
+                if (event.shiftKey && SELECT_KEYS.test(event.key)) readSelection();
+              }}
               // Die Karte liegt im Graphen, der `select-none` setzt — ohne `select-text`
-              // ließe sich weder kopieren noch im Admin-Modus ein Begriff markieren.
-              className="select-text whitespace-pre-wrap font-sans text-[13px] leading-[1.62] text-ink"
+              // ließe sich weder kopieren noch anstreichen oder ein Begriff markieren.
+              // Text-Cursor: zeigt, dass sich hier markieren lässt.
+              className="cursor-text select-text whitespace-pre-wrap font-sans text-[13px] leading-[1.62] text-ink"
             >
               <Highlighted
                 text={position.longText}
@@ -223,6 +273,41 @@ export function PositionDetails({
                 activeKeys={activeKeys}
               />
             </div>
+            {paintTarget !== null && (
+              <PaintBar
+                target={paintTarget}
+                onPaint={(paint) => {
+                  paintNow(dispatch, node.id, paint, paintTarget);
+                  // Neu Markiertes soll man sehen, auch wenn die Farben ausgeblendet waren.
+                  setHiddenLabels((current) => {
+                    if (!current.has(PAINT_SECTION)) return current;
+                    const next = new Set(current);
+                    next.delete(PAINT_SECTION);
+                    return next;
+                  });
+                  window.getSelection()?.removeAllRanges();
+                  setPaintTarget(null);
+                }}
+                onRename={() => {
+                  setRenameAt({ left: paintTarget.left, top: paintTarget.top });
+                  setPaintTarget(null);
+                }}
+                onLearn={
+                  admin.unlocked && paintTarget.text.replace(/\s+/g, ' ').length <= MAX_TERM_LENGTH
+                    ? () => {
+                        const { left, top } = paintTarget;
+                        const text = paintTarget.text.replace(/\s+/g, ' ');
+                        setPaintTarget(null);
+                        setLearnTarget({ text, left, top });
+                      }
+                    : null
+                }
+                onClose={closePaint}
+              />
+            )}
+            {renameAt !== null && (
+              <PaintNamesDialog left={renameAt.left} top={renameAt.top} onClose={closeRename} />
+            )}
             {admin.unlocked && learnTarget !== null && (
               <LearnPopover target={learnTarget} onClose={closeLearn} />
             )}
@@ -249,6 +334,12 @@ export function PositionDetails({
             </div>
           )}
         </Section>
+
+        <PaintList
+          marks={marks}
+          text={shown}
+          onRemove={(i) => dispatch({ type: 'removeHighlight', id: node.id, position: i })}
+        />
 
         {/* Eigene Notizen zuletzt: erst lesen, was die Datei sagt (Entscheidung 0047). */}
         <NoteBlock positionId={node.id} />

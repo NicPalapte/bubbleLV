@@ -14,6 +14,7 @@ import { Fragment, type CSSProperties, type ReactNode } from 'react';
 import { categoryOf } from '../../lib/spanCategories';
 import type { Span } from '../../lib/classify';
 import { escapeRegExp } from '../../lib/escapeRegExp';
+import { visibleSpans } from './shownText';
 
 interface HighlightedProps {
   text: string;
@@ -91,18 +92,6 @@ function plain(text: string, query: string, keyPrefix: string): ReactNode[] {
         </Fragment>
       ),
     );
-}
-
-/** Die zu zeichnenden Fundstellen: sichtbar, im Text liegend, nach `start`. */
-function visibleSpans(
-  text: string,
-  spans: readonly Span[],
-  activeKeys: ReadonlySet<string> | undefined,
-): Span[] {
-  return spans
-    .filter((span) => activeKeys === undefined || activeKeys.has(span.key))
-    .filter((span) => span.start >= 0 && span.end <= text.length && span.end > span.start)
-    .sort((a, b) => a.start - b.start);
 }
 
 export function Highlighted({ text, query = '', spans, activeKeys }: HighlightedProps) {
