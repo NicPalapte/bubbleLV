@@ -15,7 +15,8 @@ bleibt in der IndexedDB dieses Browsers (`docs/decisions/0046-letzte-datei-im-br
 Begriffe für die Langtext-Hervorhebung (`docs/decisions/0053`); sonst verwirft ein Reload
 den Stand.
 
-Vollständige Projekt-/Ordnerbeschreibung: @README.md
+Technischer Überblick (Aufbau, Ordner, Deployment, Review): @docs/entwicklung.md
+Öffentliche Beschreibung für Besucher: `README.md` – nur Produkt/Vision, keine Agent-/Entwicklerinhalte
 Scope: @docs/scope.md · Plan: @docs/implementation-plan.md · Prüfregeln: @docs/domain/vob-pruefungen.md
 Architektur: @docs/architecture/pipeline.md · @docs/architecture/frontend.md · @docs/architecture/data-model.md
 Entscheidungen: @docs/decisions/README.md · Einrichtung CI/Agenten: @docs/setup/ci-und-agenten.md
