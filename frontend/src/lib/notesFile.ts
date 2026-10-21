@@ -4,9 +4,9 @@
 // 0062), dazu OZ, Kurztext und Menge, damit ein Mensch sie lesen kann und das Laden
 // Positionen auch in einer geänderten Fassung wiederfindet. Seit Version 3 auch die
 // Anstreichungen im Langtext (Entscheidung 0063). Zuordnung in drei Stufen
-// (Entscheidung 0055): gleicher Positions-Hash, sonst gleicher Text-Fingerabdruck (umnummeriert), sonst gleiche OZ
-// (Text oder Menge geändert). Mehrdeutiges wird nicht zugeordnet. Die Datei entsteht
-// und wird gelesen im Browser — kein Request.
+// (Entscheidung 0055): gleicher Positions-Hash, sonst gleicher Text-Fingerabdruck
+// (umnummeriert), sonst gleiche OZ (Text oder Menge geändert). Mehrdeutiges wird
+// nicht zugeordnet. Die Datei entsteht und wird gelesen im Browser — kein Request.
 
 import {
   isOldMarker,
