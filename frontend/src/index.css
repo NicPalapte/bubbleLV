@@ -983,3 +983,42 @@ a:hover {
     break-inside: avoid;
   }
 }
+
+/* ── Eigene Anstreichungen im Langtext (Entscheidung 0063). Über die CSS Custom
+   Highlight API: färbt Textbereiche, ohne das DOM des Langtexts umzubauen. Die
+   Schrift bleibt in beiden Themen dunkel, damit sie auf der hellen Farbe lesbar ist. ── */
+:root {
+  --paint-gelb: #fde68a;
+  --paint-orange: #fed7aa;
+  --paint-gruen: #bbf7d0;
+  --paint-ink: #152131;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --paint-gelb: #e8cd5c;
+    --paint-orange: #eeb27a;
+    --paint-gruen: #8fd8a8;
+  }
+}
+
+:root[data-theme='dark'] {
+  --paint-gelb: #e8cd5c;
+  --paint-orange: #eeb27a;
+  --paint-gruen: #8fd8a8;
+}
+
+::highlight(paint-gelb) {
+  background-color: var(--paint-gelb);
+  color: var(--paint-ink);
+}
+
+::highlight(paint-orange) {
+  background-color: var(--paint-orange);
+  color: var(--paint-ink);
+}
+
+::highlight(paint-gruen) {
+  background-color: var(--paint-gruen);
+  color: var(--paint-ink);
+}

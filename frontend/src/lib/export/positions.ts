@@ -13,6 +13,7 @@ import {
   EMPTY_ANNOTATIONS,
   formatAt,
   IMPORTANT_INFO,
+  PAINT_INFO,
   PROGRESS_INFO,
   type Annotations,
 } from '../annotations';
@@ -29,6 +30,13 @@ function progressLabel(notes: Annotations, id: string): string {
 
 function importantLabel(notes: Annotations, id: string): string {
   return notes.important.has(id) ? IMPORTANT_INFO.label : '';
+}
+
+/** Eigene Anstreichungen im Langtext, je Zeile „Farbe: Text" (Entscheidung 0063). */
+function paintText(notes: Annotations, id: string): string {
+  return (notes.highlights.get(id) ?? [])
+    .map((mark) => `${PAINT_INFO[mark.paint].label}: ${mark.text}`)
+    .join('\n');
 }
 
 /** Alle Kommentare einer Position, je Zeile mit Zeitpunkt, älteste zuerst. */
@@ -73,6 +81,7 @@ const COLUMNS: ReadonlyArray<{
   { head: 'Fortschritt', of: (index, i, notes) => progressLabel(notes, index.nodes[i].id) },
   { head: 'Wichtig', of: (index, i, notes) => importantLabel(notes, index.nodes[i].id) },
   { head: 'Kommentar', of: (index, i, notes) => commentText(notes, index.nodes[i].id) },
+  { head: 'Anstreichungen', of: (index, i, notes) => paintText(notes, index.nodes[i].id) },
   { head: 'Langtext', of: (index, i) => index.positions[i].longText },
 ];
 

@@ -54,6 +54,8 @@ export interface LastLvMeta {
 export interface LastLvInfo extends LastLvMeta {
   readonly marked: number;
   readonly comments: number;
+  /** Positionen mit eigener Anstreichung (Entscheidung 0063). */
+  readonly painted: number;
 }
 
 export interface LastLv {
@@ -135,6 +137,7 @@ export async function readLastLvMeta(): Promise<LastLvInfo | null> {
       ...meta,
       marked: markedIds(annotations).length,
       comments: commentedIds(annotations).length,
+      painted: annotations.highlights.size,
     };
   } catch {
     return null;

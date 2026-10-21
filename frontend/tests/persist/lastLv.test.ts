@@ -19,7 +19,7 @@ import {
 
 const meta = { fileName: 'rohbau.x83', positionCount: 12, savedAt: 1_760_000_000_000 };
 /** Angaben für die Startseite: ohne Notizen zählen beide Zähler 0. */
-const info = { ...meta, marked: 0, comments: 0 };
+const info = { ...meta, marked: 0, comments: 0, painted: 0 };
 
 function bytesOf(text: string): ArrayBuffer {
   return new TextEncoder().encode(text).buffer as ArrayBuffer;
@@ -132,7 +132,7 @@ describe('letzte Datei — Markierungen und Kommentare', () => {
     await saveLastLv({ ...meta, id }, bytesOf('x'));
     expect(await saveAnnotations(id, notizen)).toBe(true);
 
-    expect(await readLastLvMeta()).toEqual({ ...meta, id, marked: 1, comments: 1 });
+    expect(await readLastLvMeta()).toEqual({ ...meta, id, marked: 1, comments: 1, painted: 0 });
     const last = await readLastLv();
     expect([...(last?.annotations.important ?? [])]).toEqual(['p:1']);
     expect(commentsOf(last?.annotations ?? EMPTY_ANNOTATIONS, 'p:2')).toEqual(['Boden prüfen']);

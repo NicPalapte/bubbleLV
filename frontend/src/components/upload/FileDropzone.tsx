@@ -149,7 +149,7 @@ export function FileDropzone() {
     // Kopie: der Dateidialog wird gleich zurückgesetzt, die FileList dann leer.
     const liste = Array.from(files ?? []);
     if (liste.length === 0) return;
-    if (letzte !== null && letzte.marked + letzte.comments > 0) setWartend(liste);
+    if (letzte !== null && letzte.marked + letzte.comments + letzte.painted > 0) setWartend(liste);
     else void handleFiles(liste);
   };
 
@@ -433,6 +433,7 @@ function notizText(meta: LastLvInfo): string {
   if (meta.comments > 0) {
     teile.push(`✎ ${meta.comments} ${meta.comments === 1 ? 'Kommentar' : 'Kommentare'}`);
   }
+  if (meta.painted > 0) teile.push(`▍ ${meta.painted} mit Anstreichung`);
   return teile.join(' · ');
 }
 
@@ -576,6 +577,7 @@ function LetzteDatei({
               ✎ {meta.comments} {meta.comments === 1 ? 'Kommentar' : 'Kommentare'}
             </span>
           )}
+          {meta.painted > 0 && <span>▍ {meta.painted} mit Anstreichung</span>}
           <span>{formatWhen(meta.savedAt)}</span>
         </span>
       </span>

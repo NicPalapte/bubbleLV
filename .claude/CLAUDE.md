@@ -46,9 +46,9 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
   (Auswahl, Zoom, aktive Filter) darf in React-State/Context leben, muss aber einen
   Reload nicht überleben.
 - **IndexedDB nur über `frontend/src/lib/persist/lastLv.ts`:** genau ein Projekt
-  (Original-Bytes + Angaben der zuletzt geöffneten eigenen Datei + Marker/Kommentar-Verlauf
-  je Positions-Hash `hashes.id`, `lib/annotations.ts`, Entscheidung 0057), löschbar auf
-  der Startseite. Dazu, unabhängig von der Datei, die im Admin-Werkzeug gelernten
+  (Original-Bytes + Angaben der zuletzt geöffneten eigenen Datei + Marker, Kommentar-Verlauf
+  und Anstreichungen je Positions-Hash `hashes.id`, `lib/annotations.ts`, Entscheidung 0057),
+  löschbar auf der Startseite. Dazu, unabhängig von der Datei, die im Admin-Werkzeug gelernten
   Begriffe (`lib/highlight/terms.ts`).
   Kein geparstes LV speichern, keine Demo-LVs, keine zweite Datei. Notizen nur schreiben,
   wenn die Projekt-Kennung (`persistIdOf`) noch passt. Fehlt IndexedDB ⇒ still ohne
@@ -118,6 +118,7 @@ fachliche Filter · **Graph als Hauptscreen** auf einem Filterzustand: Seitenfen
 `docs/decisions/0037-vergleichsfenster.md`) · Beziehungen zwischen Positionen nur als
 ähnliche Positionen im Vergleich, keine wertende Prüfregel (`docs/decisions/0049`) · eigene Marker (Fortschritt Offen/In Bearbeitung/Fertig + Wichtig, `docs/decisions/0062`) + Kommentar-Verlauf je Position zur letzten
 Datei (`docs/decisions/0047-kommentare-und-markierungen.md`, `docs/decisions/0053`) ·
+eigene Anstreichungen im Langtext (3 Farben, `docs/decisions/0063`) ·
 gelernte Hervorhebungen im Langtext nur über Admin-Werkzeug (0053) · lokaler Export/Druck über das
 Logo-Menü · Notizen als Datei sichern/laden (`lib/notesFile.ts`, 0061). Matrix und
 Ähnlichkeit sind entfernt (`docs/decisions/0031-drei-ansichten.md`); keine

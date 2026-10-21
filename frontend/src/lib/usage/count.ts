@@ -22,6 +22,7 @@ export const USAGE_EVENTS = [
   'suche',
   'markierung',
   'kommentar',
+  'anstreichung',
   'tour',
   'export-csv',
   'export-treffer',
@@ -70,6 +71,8 @@ export function usageEventOf(action: ViewerAction): UsageEvent | null {
       return action.on ? 'markierung' : null;
     case 'addComment':
       return action.text.trim() === '' ? null : 'kommentar';
+    case 'addHighlight':
+      return 'anstreichung';
     case 'tour':
       return action.step === 0 ? 'tour' : null;
     default:

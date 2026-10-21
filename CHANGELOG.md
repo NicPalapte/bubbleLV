@@ -9,6 +9,14 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.27.0 — 21.10.2026 · Anstreichen im Langtext
+
+- **Text anstreichen:** Text im Langtext markieren, dann Gelb, Orange oder Grün wählen.
+- **Meine Anstreichungen:** Liste unter dem Langtext, ✕ entfernt eine Anstreichung.
+- **Bleibt erhalten** wie Kommentare: zur letzten Datei in diesem Browser und in der
+  Notiz-Datei. Der CSV-Export hat eine Spalte „Anstreichungen".
+- **Begriff lernen** (Admin) sitzt jetzt in derselben Leiste.
+
 ## 0.26.0 — 21.10.2026 · Fortschritt und „Wichtig"
 
 - **Fortschritt je Position:** Offen · In Bearbeitung · Fertig, mit drei Knöpfen unten in

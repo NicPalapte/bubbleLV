@@ -163,7 +163,7 @@ describe('annotations', () => {
     a = addComment(setProgress(a, 'position:02', 'fertig', 5), 'alt', 'x', 6);
 
     const stored = toStored(rekey(a, keys.toHash));
-    expect(stored.v).toBe(4);
+    expect(stored.v).toBe(5);
     expect(stored.important).toEqual(['h1']);
     expect(stored.progress).toEqual([['h2', 'fertig']]);
     // Ohne passende Position bleibt der Schlüssel, die Notiz geht nicht verloren.

@@ -6,8 +6,10 @@ import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
 import { CardHead, GroupPill, PropTable, Section, StatRow } from './CardParts';
 import { Highlighted } from './Highlighted';
 import { LearnPopover } from './LearnPopover';
-import { selectionIn, type LearnTarget } from './learnSelection';
+import { MAX_TERM_LENGTH, type LearnTarget } from './learnSelection';
 import { NoteBlock } from './NoteBlock';
+import { PaintBar, PaintList } from './PaintBar';
+import { paintSelection, shownText, usePaintHighlights, type PaintTarget } from './paint';
 import { HintBlock } from '../check/HintBlock';
 import {
   attributeLabel,
@@ -24,7 +26,27 @@ import { headingOf } from '../../lib/tree/heading';
 import { mainSectionOf } from '../../lib/tree/mainSection';
 import { applyTerms } from '../../lib/highlight/terms';
 import { useAdmin } from '../../state/admin';
-import { useViewer } from '../../state/viewer';
+import { useViewer, useViewerDispatch } from '../../state/viewer';
+import type { Highlight, Paint } from '../../lib/annotations';
+
+const NO_MARKS: readonly Highlight[] = [];
+
+// Außerhalb der Komponente: `Date.now()` ist im Render-Pfad nicht rein.
+function paintNow(
+  dispatch: ReturnType<typeof useViewerDispatch>,
+  id: string,
+  paint: Paint,
+  target: PaintTarget,
+): void {
+  dispatch({
+    type: 'addHighlight',
+    id,
+    paint,
+    start: target.start,
+    text: target.text,
+    at: Date.now(),
+  });
+}
 import type { LVNode, PositionSummary } from '../../types/lvNode';
 
 /**
@@ -89,7 +111,9 @@ export function PositionDetails({
     index,
     sectionColors,
     lv,
+    annotations,
   } = useViewer();
+  const dispatch = useViewerDispatch();
   const parent = parents.get(node.id) ?? null;
 
   const positionsart = FACETS_BY_ID.get('positionsart');
@@ -111,6 +135,14 @@ export function PositionDetails({
   const longTextRef = useRef<HTMLDivElement>(null);
   const [learnTarget, setLearnTarget] = useState<LearnTarget | null>(null);
   const closeLearn = useCallback(() => setLearnTarget(null), []);
+  // Eigene Anstreichungen (Entscheidung 0063).
+  const [paintTarget, setPaintTarget] = useState<PaintTarget | null>(null);
+  const closePaint = useCallback(() => setPaintTarget(null), []);
+  const marks = annotations.highlights.get(node.id) ?? NO_MARKS;
+  const shown = useMemo(() => shownText(position.longText), [position.longText]);
+  const readSelection = (): void => {
+    if (longTextRef.current !== null) setPaintTarget(paintSelection(longTextRef.current));
+  };
   const categories = useMemo(() => presentCategories(spans), [spans]);
   const counts = useMemo(() => {
     const out = new Map<string, number>();
@@ -126,6 +158,8 @@ export function PositionDetails({
     for (const label of hiddenLabels) for (const key of keysOfLabel(label)) keys.delete(key);
     return keys;
   }, [spans, hiddenLabels]);
+  // Suche und Legende bauen den Langtext neu auf — dann neu einfärben.
+  usePaintHighlights(longTextRef, marks, [search, spans, activeKeys]);
 
   const toggleCategory = (label: string): void =>
     setHiddenLabels((current) => {
@@ -203,17 +237,12 @@ export function PositionDetails({
             )}
             <div
               ref={longTextRef}
-              onMouseUp={
-                admin.unlocked
-                  ? () => {
-                      if (longTextRef.current !== null) {
-                        setLearnTarget(selectionIn(longTextRef.current));
-                      }
-                    }
-                  : undefined
-              }
+              onMouseUp={readSelection}
+              onKeyUp={(event) => {
+                if (event.shiftKey) readSelection();
+              }}
               // Die Karte liegt im Graphen, der `select-none` setzt — ohne `select-text`
-              // ließe sich weder kopieren noch im Admin-Modus ein Begriff markieren.
+              // ließe sich weder kopieren noch anstreichen oder ein Begriff markieren.
               className="select-text whitespace-pre-wrap font-sans text-[13px] leading-[1.62] text-ink"
             >
               <Highlighted
@@ -223,9 +252,35 @@ export function PositionDetails({
                 activeKeys={activeKeys}
               />
             </div>
+            {paintTarget !== null && (
+              <PaintBar
+                target={paintTarget}
+                onPaint={(paint) => {
+                  paintNow(dispatch, node.id, paint, paintTarget);
+                  window.getSelection()?.removeAllRanges();
+                  setPaintTarget(null);
+                }}
+                onLearn={
+                  admin.unlocked && paintTarget.text.replace(/\s+/g, ' ').length <= MAX_TERM_LENGTH
+                    ? () => {
+                        const { left, top } = paintTarget;
+                        const text = paintTarget.text.replace(/\s+/g, ' ');
+                        setPaintTarget(null);
+                        setLearnTarget({ text, left, top });
+                      }
+                    : null
+                }
+                onClose={closePaint}
+              />
+            )}
             {admin.unlocked && learnTarget !== null && (
               <LearnPopover target={learnTarget} onClose={closeLearn} />
             )}
+            <PaintList
+              marks={marks}
+              text={shown}
+              onRemove={(i) => dispatch({ type: 'removeHighlight', id: node.id, position: i })}
+            />
             {keywords.length > 0 && (
               <div className="flex flex-wrap gap-[4px]">
                 {keywords.map((keyword) => (

@@ -10,6 +10,8 @@
 // fertig) und „Wichtig". Beides ist eine eigene Notiz, nicht der GAEB-Status
 // (Entscheidung 0051): „Fertig" heißt „habe ich kalkuliert", nicht „Status geändert".
 //
+// Dazu eigene Anstreichungen im Langtext (Entscheidung 0063): Textstelle + Farbe.
+//
 // Reine Funktionen über einem unveränderlichen Wert; der Zustand liegt im Viewer.
 // Zeitpunkte kommen von außen, damit der Reducer rein bleibt.
 
@@ -47,9 +49,32 @@ export type LogEntry =
   | { readonly kind: 'progress'; readonly at: number; readonly progress: Progress | null }
   | { readonly kind: 'important'; readonly at: number; readonly on: boolean };
 
+/** Farben zum Anstreichen; Reihenfolge = Reihenfolge der Knöpfe. */
+export const PAINTS = ['gelb', 'orange', 'gruen'] as const;
+export type Paint = (typeof PAINTS)[number];
+
+export const PAINT_INFO: Readonly<Record<Paint, { label: string; fill: string }>> = {
+  gelb: { label: 'Gelb', fill: 'var(--paint-gelb)' },
+  orange: { label: 'Orange', fill: 'var(--paint-orange)' },
+  gruen: { label: 'Grün', fill: 'var(--paint-gruen)' },
+};
+
+/**
+ * Eine Anstreichung: `start` ist die Stelle im angezeigten Langtext (ohne `**`). Passt
+ * der Text dort nicht mehr, sucht die Anzeige ihn im übrigen Langtext.
+ */
+export interface Highlight {
+  readonly paint: Paint;
+  readonly start: number;
+  readonly text: string;
+  readonly at: number;
+}
+
 export interface Annotations {
   readonly progress: ReadonlyMap<string, Progress>;
   readonly important: ReadonlySet<string>;
+  /** Anstreichungen je Position, nach `start` sortiert; nur Positionen mit welchen. */
+  readonly highlights: ReadonlyMap<string, readonly Highlight[]>;
   /** Verlauf je Position, älteste zuerst; nur Positionen mit mindestens einem Eintrag. */
   readonly log: ReadonlyMap<string, readonly LogEntry[]>;
 }
@@ -57,8 +82,63 @@ export interface Annotations {
 export const EMPTY_ANNOTATIONS: Annotations = {
   progress: new Map(),
   important: new Set(),
+  highlights: new Map(),
   log: new Map(),
 };
+
+/** Gleiche Stelle, gleicher Text: dieselbe Anstreichung. */
+const sameSpot = (a: Highlight, b: Highlight): boolean => a.start === b.start && a.text === b.text;
+
+function withHighlights(
+  annotations: Annotations,
+  id: string,
+  list: readonly Highlight[],
+): Annotations {
+  const highlights = new Map(annotations.highlights);
+  if (list.length === 0) highlights.delete(id);
+  else
+    highlights.set(
+      id,
+      [...list].sort((a, b) => a.start - b.start),
+    );
+  return { ...annotations, highlights };
+}
+
+/** Streicht eine Stelle an; dieselbe Stelle noch einmal wechselt nur die Farbe. */
+export function addHighlight(annotations: Annotations, id: string, mark: Highlight): Annotations {
+  if (mark.text.trim() === '' || mark.start < 0) return annotations;
+  const list = annotations.highlights.get(id) ?? [];
+  const same = list.find((item) => sameSpot(item, mark));
+  if (same?.paint === mark.paint) return annotations;
+  const rest = list.filter((item) => item !== same);
+  return withHighlights(annotations, id, [...rest, mark]);
+}
+
+/** Entfernt die Anstreichung an Stelle `position` der Liste. */
+export function removeHighlight(
+  annotations: Annotations,
+  id: string,
+  position: number,
+): Annotations {
+  const list = annotations.highlights.get(id) ?? [];
+  if (position < 0 || position >= list.length) return annotations;
+  return withHighlights(
+    annotations,
+    id,
+    list.filter((_, i) => i !== position),
+  );
+}
+
+/** Anstreichungen zusammenführen (Notiz-Datei): neue dazu, gleiche Stelle → Farbe aus `more`. */
+export function mergeHighlights(
+  annotations: Annotations,
+  id: string,
+  more: readonly Highlight[],
+): Annotations {
+  let out = annotations;
+  for (const mark of more) out = addHighlight(out, id, mark);
+  return out;
+}
 
 /** „Offen" = ohne Fortschritt. */
 export type ProgressFilter = Progress | 'offen';
@@ -233,37 +313,56 @@ export function storageKeys(nodes: Iterable<LVNode>): StorageKeys {
  * Notizen aus v0.21 und älter (Knoten-ID) finden ihre Position direkt.
  */
 export function rekey(annotations: Annotations, keys: ReadonlyMap<string, string>): Annotations {
-  const { progress, important, log } = annotations;
-  if (progress.size === 0 && important.size === 0 && log.size === 0) return annotations;
+  const { progress, important, highlights, log } = annotations;
+  const empty = progress.size + important.size + highlights.size + log.size === 0;
+  if (empty) return annotations;
   const key = (id: string): string => keys.get(id) ?? id;
   return {
     progress: new Map([...progress].map(([id, value]) => [key(id), value])),
     important: new Set([...important].map(key)),
+    highlights: new Map([...highlights].map(([id, list]) => [key(id), list])),
     log: new Map([...log].map(([id, entries]) => [key(id), entries])),
   };
 }
 
 /**
  * Form für die IndexedDB: Arrays statt Set/Map, damit auch ältere Browser klonen.
- * `v: 4`: Fortschritt + Wichtig (Entscheidung 0062), Schlüssel ist der Positions-Hash.
+ * `v: 5`: dazu Anstreichungen (Entscheidung 0063). `v: 4`: Fortschritt + Wichtig
+ * (Entscheidung 0062). Schlüssel ist der Positions-Hash.
  * Ältere Formen liest `fromStored`: `v: 3` (drei Marker, Hash), `v: 2` (drei Marker,
  * Knoten-ID) und ohne `v` (v0.15, Entscheidung 0047).
  */
 export interface StoredAnnotations {
-  readonly v: 4;
+  readonly v: 5;
   readonly progress: ReadonlyArray<readonly [string, Progress]>;
   readonly important: readonly string[];
+  readonly highlights: ReadonlyArray<readonly [string, readonly Highlight[]]>;
   readonly log: ReadonlyArray<readonly [string, readonly LogEntry[]]>;
 }
 
 /** `annotations` muss schon nach Hash geschlüsselt sein (`rekey(…, keys.toHash)`). */
 export function toStored(annotations: Annotations): StoredAnnotations {
   return {
-    v: 4,
+    v: 5,
     progress: [...annotations.progress],
     important: [...annotations.important],
+    highlights: [...annotations.highlights],
     log: [...annotations.log],
   };
+}
+
+export function isPaint(value: unknown): value is Paint {
+  return (PAINTS as readonly unknown[]).includes(value);
+}
+
+/** Eine Anstreichung aus Speicher oder Notiz-Datei; Unbrauchbares wird `null`. */
+export function toHighlight(value: unknown): Highlight | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const raw = value as Record<string, unknown>;
+  const { paint, start, text } = raw;
+  if (!isPaint(paint) || typeof text !== 'string' || text.trim() === '') return null;
+  if (typeof start !== 'number' || !Number.isInteger(start) || start < 0) return null;
+  return { paint, start, text, at: atOf(raw) };
 }
 
 export function isProgress(value: unknown): value is Progress {
@@ -361,7 +460,7 @@ export function fromStored(value: unknown): Annotations {
   if (typeof value !== 'object' || value === null) return EMPTY_ANNOTATIONS;
   const raw = value as Record<string, unknown>;
 
-  if (raw.v === 4) {
+  if (raw.v === 4 || raw.v === 5) {
     const progress = new Map<string, Progress>();
     for (const [id, p] of pairs(raw.progress)) if (isProgress(p)) progress.set(id, p);
     const important = new Set(
@@ -372,7 +471,17 @@ export function fromStored(value: unknown): Annotations {
     const log = readLog(raw.log, (entries) =>
       entries.map(toEntry).filter((entry): entry is LogEntry => entry !== null),
     );
-    return { progress, important, log };
+    const highlights = new Map<string, Highlight[]>();
+    for (const [id, list] of pairs(raw.highlights)) {
+      if (!Array.isArray(list)) continue;
+      const valid = list.map(toHighlight).filter((mark): mark is Highlight => mark !== null);
+      if (valid.length > 0)
+        highlights.set(
+          id,
+          valid.sort((a, b) => a.start - b.start),
+        );
+    }
+    return { progress, important, highlights, log };
   }
 
   if (raw.v === 2 || raw.v === 3) {
@@ -383,7 +492,7 @@ export function fromStored(value: unknown): Annotations {
       if (oldIsDone(marker)) progress.set(id, 'fertig');
       else important.add(id);
     }
-    return { progress, important, log: readLog(raw.log, toEntriesOld) };
+    return { progress, important, highlights: new Map(), log: readLog(raw.log, toEntriesOld) };
   }
 
   // v0.15: eine Markierung (an/aus) und ein Kommentarfeld je Position. Die
@@ -397,5 +506,5 @@ export function fromStored(value: unknown): Annotations {
       log.set(id, [{ kind: 'comment', at: 0, text }]);
     }
   }
-  return { progress: new Map(), important: new Set(marked), log };
+  return { progress: new Map(), important: new Set(marked), highlights: new Map(), log };
 }
