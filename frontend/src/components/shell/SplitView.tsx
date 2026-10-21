@@ -7,7 +7,14 @@
 // Während des Ziehens wandert nur eine Linie mit; die Bereiche folgen erst beim
 // Loslassen. Sonst müsste der Graph mit ~10k Positionen jeden Frame neu messen.
 
-import { useRef, useState, type DragEvent, type KeyboardEvent, type ReactNode } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type DragEvent,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react';
 import { GraphStage } from './GraphStage';
 import { useWorkspace, type PopPane } from './WorkspaceProvider';
 import { SelectionCard } from '../graph/SelectionCard';
@@ -128,6 +135,8 @@ export function SplitView({ root }: { root: LVNode }) {
   const { hosts, blocked, popOut } = useWorkspace();
   const gridRef = useRef<HTMLDivElement>(null);
   const [dragged, setDragged] = useState<PaneId | null>(null);
+  const dragTimer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(dragTimer.current), []);
   const [over, setOver] = useState<PaneId | null>(null);
   /** Lage der gezogenen Trennlinie, bis sie losgelassen wird. */
   const [preview, setPreview] = useState<{ axis: Axis; frac: number } | null>(null);
@@ -138,6 +147,7 @@ export function SplitView({ root }: { root: LVNode }) {
   const cardNode = selectedPosition ?? selectedNode;
 
   const endDrag = (): void => {
+    window.clearTimeout(dragTimer.current);
     setDragged(null);
     setOver(null);
   };
@@ -331,7 +341,7 @@ export function SplitView({ root }: { root: LVNode }) {
           over={over}
           onDragStart={(id) => {
             // Zustand erst nach dem Start setzen — Chrome bricht den Drag sonst ab.
-            window.setTimeout(() => setDragged(id), 0);
+            dragTimer.current = window.setTimeout(() => setDragged(id), 0);
           }}
           onDragOver={(id) => {
             if (over !== id) setOver(id);
