@@ -81,6 +81,7 @@ function Harness({ without = [] }: { without?: readonly string[] }) {
       {view.side === 'filter' && <div data-tour="layout">gliederung</div>}
       <div data-tour="kpis">kennzahlen</div>
       {has('hints') && <div data-tour="hints">hinweise</div>}
+      <div data-tour="workspace">anordnung</div>
       <div data-tour="table">tabelle</div>
       <div data-tour="menu">menü</div>
       <Tour />

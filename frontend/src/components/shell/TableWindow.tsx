@@ -3,12 +3,14 @@
 // Eigenschaften-Spalte — die Eigenschaften zeigt die Positionskarte.
 //
 // ↗ löst die Tabelle in ein eigenes Browserfenster, etwa für den zweiten
-// Bildschirm (Entscheidung 0039); ↙ dort holt sie zurück.
+// Bildschirm (Entscheidung 0039); ↙ dort holt sie zurück. Das zweite Fenster
+// rendert diese Komponente auch im Splitscreen — dort steht die Tabelle sonst
+// als Bereich in `SplitView` (Entscheidung 0063).
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { ExternalWindow } from '../common/ExternalWindow';
-import { openExternalWindow, type ExternalHost } from '../common/externalWindowHost';
 import { sidePanelSpace } from './SidePanel';
+import { useWorkspace } from './WorkspaceProvider';
 import { useDragResize } from '../common/useDragResize';
 import { PositionsTable } from '../table/PositionsTable';
 import { graphOverlayProps } from '../../lib/graph/overlay';
@@ -24,13 +26,6 @@ import {
 
 /** Abstand zum Rand des Canvas, den das Fenster auch aufgezogen frei lässt. */
 const EDGE_GAP = 16;
-/** Name des zweiten Fensters — ein zweiter Klick übernimmt dasselbe Fenster. */
-const POPUP_NAME = 'bubble-tabelle';
-const POPUP_MIN_WIDTH = 900;
-const POPUP_HEIGHT = 720;
-/** So lange steht der Hinweis, wenn der Browser das Fenster blockiert. */
-const BLOCKED_HINT_MS = 5000;
-
 const ICON_BUTTON =
   'inline-flex h-[28px] w-[28px] cursor-pointer items-center justify-center rounded-[var(--r-sm)] border-none bg-transparent text-mute hover:bg-sunken hover:text-ink';
 
@@ -38,8 +33,10 @@ export function TableWindow() {
   const {
     tree,
     selectedNode,
-    view: { tableWindow, side, sideWidth },
+    view: { tableWindow, side, sideWidth, workspace },
   } = useViewer();
+  const { split, hosts, blocked, popOut, dock } = useWorkspace();
+  const popup = hosts.table;
   const dispatch = useViewerDispatch();
   const ref = useRef<HTMLDivElement>(null);
 
@@ -63,33 +60,21 @@ export function TableWindow() {
     corner: 'right',
   });
 
-  const [popup, setPopup] = useState<ExternalHost | null>(null);
-  const [blocked, setBlocked] = useState(false);
-  const blockedTimer = useRef<number | undefined>(undefined);
-  useEffect(() => () => window.clearTimeout(blockedTimer.current), []);
-  const shown = tableWindow.open && tree !== null;
+  const shown = (split ? !workspace.closed.table : tableWindow.open) && tree !== null;
   // Tabelle von woanders zu (Escape, neues LV): das zweite Fenster geht mit.
-  if (!shown && popup !== null) setPopup(null);
+  useEffect(() => {
+    if (!shown && popup !== null) dock('table');
+  }, [shown, popup, dock]);
 
-  const detach = (): void => {
-    const host = openExternalWindow(POPUP_NAME, 'Bubble — Tabelle', {
-      width: Math.max(tableWindow.size.width, POPUP_MIN_WIDTH),
-      height: POPUP_HEIGHT,
-    });
-    if (host === null) {
-      // Ein neuer Klick hält den Hinweis die volle Zeit, kein alter Timer kürzt ab.
-      window.clearTimeout(blockedTimer.current);
-      setBlocked(true);
-      blockedTimer.current = window.setTimeout(() => setBlocked(false), BLOCKED_HINT_MS);
-      return;
-    }
-    setBlocked(false);
-    setPopup(host);
-  };
+  const detach = (): void => popOut('table', tableWindow.size.width);
   const closedByHand = useCallback((): void => {
-    setPopup(null);
-    dispatch({ type: 'tableWindow', open: false });
-  }, [dispatch]);
+    dock('table');
+    dispatch(
+      split
+        ? { type: 'paneClosed', pane: 'table', closed: true }
+        : { type: 'tableWindow', open: false },
+    );
+  }, [dock, dispatch, split]);
 
   if (!shown) return null;
 
@@ -102,7 +87,7 @@ export function TableWindow() {
             <span className="flex-1" />
             <button
               type="button"
-              onClick={() => setPopup(null)}
+              onClick={() => dock('table')}
               title="Zurück ins Hauptfenster"
               aria-label="Tabelle zurück ins Hauptfenster"
               className={ICON_BUTTON}
@@ -117,6 +102,8 @@ export function TableWindow() {
       </ExternalWindow>
     );
   }
+  // Im Splitscreen steht die Tabelle als Bereich, nicht als Fenster.
+  if (split) return null;
 
   return (
     <section
@@ -149,7 +136,7 @@ export function TableWindow() {
         </span>
         <b className="font-sans text-[13px] font-semibold text-ink">Tabelle</b>
         <span className="flex-1" />
-        {blocked && (
+        {blocked === 'table' && (
           <span role="status" className="font-mono text-[10.5px] text-mute">
             Pop-up blockiert
           </span>

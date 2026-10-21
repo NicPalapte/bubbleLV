@@ -74,6 +74,7 @@ export type {
   SizeModeId,
   ViewMode,
   ViewState,
+  WorkspaceMode,
 } from './viewState';
 
 export interface ViewerState {
@@ -316,7 +317,11 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     case 'ruleRevealed':
     case 'viewScroll':
     case 'panelSize':
-    case 'cardPos': {
+    case 'cardPos':
+    case 'workspaceMode':
+    case 'movePane':
+    case 'paneClosed':
+    case 'splitSize': {
       const view = viewReducer(state.view, action);
       return view === state.view ? state : { ...state, view };
     }

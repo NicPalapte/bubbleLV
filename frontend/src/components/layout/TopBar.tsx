@@ -14,6 +14,7 @@ import { ShortcutsDialog } from './ShortcutsDialog';
 import { NotesImportDialog } from './NotesImportDialog';
 import { AboutMenu } from './AboutMenu';
 import { useMitnehmen } from '../common/useMitnehmen';
+import { WorkspaceBar } from '../shell/WorkspaceBar';
 import {
   commentedIds,
   IMPORTANT_INFO,
@@ -430,6 +431,7 @@ export function TopBar() {
                 ← Graph
               </button>
             )}
+            <WorkspaceBar />
             <button
               type="button"
               onClick={() => dispatch({ type: 'clear' })}

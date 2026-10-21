@@ -9,6 +9,15 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.27.0 — 21.10.2026 · Splitscreen
+
+- **Splitscreen:** Graph, Tabelle und Positionskarte stehen nebeneinander, wie in iTWO.
+  Oben rechts umschalten zwischen **Split** und **Fenster** (wie bisher).
+- **Plätze tauschen:** einen Bereich am Kopf auf einen anderen ziehen.
+- **Größe ändern:** Trennlinien ziehen, Doppelklick setzt zurück.
+- **Bereiche schließen** mit ✕, über „+ …" oben wieder einblenden.
+- **Graph im eigenen Fenster:** wie die Tabelle, z. B. für den zweiten Bildschirm (↗).
+
 ## 0.26.0 — 21.10.2026 · Fortschritt und „Wichtig"
 
 - **Fortschritt je Position:** Offen · In Bearbeitung · Fertig, mit drei Knöpfen unten in

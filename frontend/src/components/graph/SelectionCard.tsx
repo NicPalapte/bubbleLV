@@ -46,6 +46,8 @@ import type { LVNode } from '../../types/lvNode';
 interface SelectionCardProps {
   node: LVNode;
   onClose: () => void;
+  /** Fest im Bereich des Splitscreens (Entscheidung 0063): kein Ziehen, kein Klick-daneben-zu. */
+  docked?: boolean;
 }
 
 /** Abstand zum Rand des Canvas, den die Karte auch aufgezogen frei lässt. */
@@ -85,9 +87,9 @@ function CompareButton({
   );
 }
 
-export function SelectionCard({ node, onClose }: SelectionCardProps) {
+export function SelectionCard({ node, onClose, docked = false }: SelectionCardProps) {
   const ref = useRef<HTMLDivElement>(null);
-  useDismiss(ref, true, onClose, { ignoreDrag: true, yieldToDialogs: true });
+  useDismiss(ref, !docked, onClose, { ignoreDrag: true, yieldToDialogs: true });
 
   const {
     view: { panelSize, cardPos },
@@ -122,7 +124,7 @@ export function SelectionCard({ node, onClose }: SelectionCardProps) {
     setSize,
   });
 
-  const grip = (
+  const grip = docked ? undefined : (
     <span
       {...handles.grip}
       title="Verschieben — ziehen"
@@ -138,14 +140,22 @@ export function SelectionCard({ node, onClose }: SelectionCardProps) {
       ref={ref}
       {...graphOverlayProps}
       data-selection-card=""
-      className="ov-window absolute z-[10] flex flex-col overflow-hidden"
-      style={{
-        right: cardPos.right,
-        top: cardPos.top,
-        width: panelSize.width,
-        height: panelSize.height ?? undefined,
-        maxHeight: `calc(100% - ${cardPos.top + EDGE_GAP + CONTROLS_SPACE}px)`,
-      }}
+      className={
+        docked
+          ? 'relative flex min-h-0 flex-1 flex-col overflow-hidden'
+          : 'ov-window absolute z-[10] flex flex-col overflow-hidden'
+      }
+      style={
+        docked
+          ? undefined
+          : {
+              right: cardPos.right,
+              top: cardPos.top,
+              width: panelSize.width,
+              height: panelSize.height ?? undefined,
+              maxHeight: `calc(100% - ${cardPos.top + EDGE_GAP + CONTROLS_SPACE}px)`,
+            }
+      }
     >
       {node.position !== null ? (
         <PositionDetails node={node} position={node.position} onClose={onClose} grip={grip} />
@@ -184,23 +194,30 @@ export function SelectionCard({ node, onClose }: SelectionCardProps) {
       </div>
       {/* Trefferfläche 18 px, sichtbar sind nur die zwei Haarlinien in der Ecke;
           `currentColor` färbt sie beim Überfahren und bei Fokus blau. */}
-      <button
-        type="button"
-        {...handles.resize}
-        title="Größe ändern — ziehen oder Pfeiltasten"
-        aria-label="Info-Panel in der Größe ändern"
-        className="absolute bottom-0 left-0 z-[1] inline-flex h-[18px] w-[18px] cursor-sw-resize items-end justify-start border-none bg-transparent p-[4px] text-line2 hover:text-blue focus-visible:text-blue"
-      >
-        <svg
-          width="12"
-          height="12"
-          viewBox="0 0 12 12"
-          aria-hidden="true"
-          shapeRendering="geometricPrecision"
+      {!docked && (
+        <button
+          type="button"
+          {...handles.resize}
+          title="Größe ändern — ziehen oder Pfeiltasten"
+          aria-label="Info-Panel in der Größe ändern"
+          className="absolute bottom-0 left-0 z-[1] inline-flex h-[18px] w-[18px] cursor-sw-resize items-end justify-start border-none bg-transparent p-[4px] text-line2 hover:text-blue focus-visible:text-blue"
         >
-          <path d="M0 3.5 L8.5 12 M0 8 L4 12" stroke="currentColor" strokeWidth="1.2" fill="none" />
-        </svg>
-      </button>
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 12 12"
+            aria-hidden="true"
+            shapeRendering="geometricPrecision"
+          >
+            <path
+              d="M0 3.5 L8.5 12 M0 8 L4 12"
+              stroke="currentColor"
+              strokeWidth="1.2"
+              fill="none"
+            />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 // Leiste unten mittig: holt Tabelle und Vergleich als Fenster über den Graphen.
-// Ein Knopf steht nur da, solange sein Fenster zu ist.
+// Ein Knopf steht nur da, solange sein Fenster zu ist. Im Splitscreen steht die
+// Tabelle als Bereich — dann bleibt nur der Vergleich (`tableButton`).
 
 import { formatCount } from '../../lib/format';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
@@ -7,12 +8,12 @@ import { useViewer, useViewerDispatch } from '../../state/viewer';
 const PILL =
   'ov-pill inline-flex h-[36px] cursor-pointer items-center gap-[8px] whitespace-nowrap px-[14px] font-mono text-[11px]';
 
-export function GraphDock() {
+export function GraphDock({ tableButton = true }: { tableButton?: boolean }) {
   const { lv, matches, view, selection } = useViewer();
   const dispatch = useViewerDispatch();
   if (lv === null) return null;
 
-  const showTable = !view.tableWindow.open;
+  const showTable = tableButton && !view.tableWindow.open;
   const showCompare = selection.compare.length > 0 && !view.compareWindow.open;
   if (!showTable && !showCompare) return null;
 
