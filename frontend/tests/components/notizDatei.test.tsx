@@ -118,6 +118,10 @@ describe('Startseite', () => {
     await screen.findByText('⚑ 1 mit Marker');
     fireEvent.click(screen.getByRole('button', { name: 'Gespeicherte Datei löschen' }));
     fireEvent.click(screen.getByRole('button', { name: 'Notizen sichern + löschen' }));
+    // Erst nach zweiter Bestätigung: ob der Browser gespeichert hat, weiß die Seite nicht.
+    await screen.findByText('Notiz-Datei heruntergeladen.');
+    expect(await readLastLvMeta()).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Löschen' }));
     await waitFor(async () => expect(await readLastLvMeta()).toBeNull());
     await waitFor(() =>
       expect(screen.queryByRole('group', { name: 'Gespeichertes Projekt löschen' })).toBeNull(),

@@ -15,7 +15,9 @@
 
 - **Startseite, neue Datei:** Hat die gespeicherte Datei Notizen, fragt Bubble:
   „Ersetzen“, „↺ gespeicherte Datei öffnen“ oder „Abbrechen“. Ohne Notizen keine Frage.
-- **Startseite, ✕:** Mit Notizen gibt es zusätzlich „Notizen sichern + löschen“.
+- **Startseite, ✕:** Mit Notizen gibt es zusätzlich „Notizen sichern + löschen“. Nach dem
+  Download fragt Bubble noch einmal, bevor es löscht: ob der Browser die Datei wirklich
+  gespeichert hat, sieht die Seite nicht.
 - **Logo-Menü:** „Notizen sichern“ (nur wenn es Notizen gibt) und „Notizen laden…“.
 - **Notiz-Datei:** JSON (`*-notizen-<Datum>.json`) mit Marker und Verlauf je Position,
   dazu OZ, Kurztext, Menge und zwei Fingerabdrücke: Positions-Hash und Text-Hash

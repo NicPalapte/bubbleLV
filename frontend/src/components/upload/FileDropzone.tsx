@@ -200,29 +200,31 @@ export function FileDropzone() {
     });
   };
 
-  /** Notizen der gespeicherten Datei als Notiz-Datei, dann löschen (Entscheidung 0061). */
-  const sichernUndVergiss = (): void => {
-    void (async () => {
-      try {
-        const gespeichert = await readLastLv();
-        if (gespeichert === null) throw new Error('Keine gespeicherte Datei');
-        // OZ und Kurztext stehen nur in der Datei selbst — also einmal einlesen.
-        const lv = await loadLvFromBytes(gespeichert.bytes, gespeichert.meta.fileName);
-        const knoten = [...indexNodes(lv.tree).values()];
-        const annotations = rekey(gespeichert.annotations, storageKeys(knoten).toNode);
-        downloadText(
-          exportFileName(lv.fileName, 'notizen', 'json'),
-          notesFileText(annotations, knoten, lv, Date.now()),
-          'json',
-        );
-        countEvent('notizen-gesichert');
-      } catch (fehler) {
-        console.error(fehler);
-        dispatch({ type: 'error', message: exportFehler('Die Notiz-Datei') });
-        return;
-      }
-      vergiss();
-    })();
+  /**
+   * Notizen der gespeicherten Datei als Notiz-Datei (Entscheidung 0061). Gelöscht wird
+   * erst nach einer zweiten Bestätigung: ob der Browser die Datei wirklich gespeichert
+   * hat (Dialog abgebrochen, Download blockiert), erfährt die Seite nicht.
+   */
+  const sichereNotizen = async (): Promise<boolean> => {
+    try {
+      const gespeichert = await readLastLv();
+      if (gespeichert === null) throw new Error('Keine gespeicherte Datei');
+      // OZ und Kurztext stehen nur in der Datei selbst — also einmal einlesen.
+      const lv = await loadLvFromBytes(gespeichert.bytes, gespeichert.meta.fileName);
+      const knoten = [...indexNodes(lv.tree).values()];
+      const annotations = rekey(gespeichert.annotations, storageKeys(knoten).toNode);
+      downloadText(
+        exportFileName(lv.fileName, 'notizen', 'json'),
+        notesFileText(annotations, knoten, lv, Date.now()),
+        'json',
+      );
+      countEvent('notizen-gesichert');
+      return true;
+    } catch (fehler) {
+      console.error(fehler);
+      dispatch({ type: 'error', message: exportFehler('Die Notiz-Datei') });
+      return false;
+    }
   };
 
   const openDemo = (demo: DemoLv): void => {
@@ -322,7 +324,7 @@ export function FileDropzone() {
                   openLetzte();
                 }}
                 onForget={vergiss}
-                onSaveAndForget={sichernUndVergiss}
+                onSaveNotes={sichereNotizen}
                 neueDatei={wartend?.[0]?.name ?? null}
                 onReplace={() => {
                   const dateien = wartend;
@@ -415,8 +417,8 @@ interface LetzteDateiProps {
   loading: boolean;
   onOpen: () => void;
   onForget: () => void;
-  /** Notizen als Datei sichern, dann löschen. */
-  onSaveAndForget: () => void;
+  /** Notizen als Datei sichern; `true`, wenn der Download angestoßen wurde. */
+  onSaveNotes: () => Promise<boolean>;
   /** Name der neu gewählten Datei, solange die Frage „Ersetzen?" offen ist. */
   neueDatei: string | null;
   onReplace: () => void;
@@ -440,14 +442,19 @@ function LetzteDatei({
   loading,
   onOpen,
   onForget,
-  onSaveAndForget,
+  onSaveNotes,
   neueDatei,
   onReplace,
   onKeepOld,
 }: LetzteDateiProps) {
   // Löschen fragt im Feld selbst nach; ein Browser-Dialog passt nicht zur Startseite.
   const [fragen, setFragen] = useState(false);
+  const [gesichert, setGesichert] = useState(false);
   const notizen = notizText(meta);
+  const abbrechen = (): void => {
+    setFragen(false);
+    setGesichert(false);
+  };
 
   if (neueDatei !== null) {
     return (
@@ -478,6 +485,30 @@ function LetzteDatei({
     );
   }
 
+  if (fragen && gesichert) {
+    return (
+      <div
+        className="start-recent ask stack"
+        role="group"
+        aria-label="Gespeichertes Projekt löschen"
+      >
+        <span className="start-recent-q">
+          <b>Notiz-Datei heruntergeladen.</b>
+          <br />
+          Gespeicherte Datei jetzt löschen?
+        </span>
+        <span className="start-recent-acts">
+          <button type="button" className="start-btn danger" onClick={onForget}>
+            Löschen
+          </button>
+          <button type="button" className="start-btn" onClick={abbrechen}>
+            Abbrechen
+          </button>
+        </span>
+      </div>
+    );
+  }
+
   if (fragen && notizen !== '') {
     return (
       <div
@@ -491,7 +522,11 @@ function LetzteDatei({
           {notizen} gehen mit.
         </span>
         <span className="start-recent-acts">
-          <button type="button" className="start-btn primary" onClick={onSaveAndForget}>
+          <button
+            type="button"
+            className="start-btn primary"
+            onClick={() => void onSaveNotes().then(setGesichert)}
+          >
             Notizen sichern + löschen
           </button>
           <button type="button" className="start-btn danger" onClick={onForget}>
