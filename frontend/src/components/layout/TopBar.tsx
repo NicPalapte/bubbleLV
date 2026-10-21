@@ -4,8 +4,10 @@
 // Seit dem neuen Hauptscreen eine schmale Zeile (docs/decisions/0034-graph-als-
 // hauptscreen.md): kein Ansichtsumschalter mehr, die Filter wählt man im
 // Seitenfenster („+ Filter"), hier stehen sie nur als entfernbare Chips.
+// Der Schalter „Nicht-Treffer" sitzt in der Suche, weil er für Suche und alle
+// Filter gilt — in Graph und Tabelle (docs/decisions/0058-nicht-treffer-in-der-suche.md).
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ReportDialog } from '../report/ReportDialog';
 import { AdminDialog } from './AdminDialog';
 import { ShortcutsDialog } from './ShortcutsDialog';
@@ -15,7 +17,7 @@ import { commentedIds, MARKER_INFO, MARKERS, markerCounts } from '../../lib/anno
 import { FACETS, facetOptionLabel } from '../../lib/facets';
 import { formatCount } from '../../lib/format';
 import { useAdmin } from '../../state/admin';
-import { useViewer, useViewerDispatch } from '../../state/viewer';
+import { useViewer, useViewerDispatch, type HideMode } from '../../state/viewer';
 
 /**
  * Wartezeit, bevor eine Eingabe zum Filter wird. Ein Suchlauf zieht Baum, Graph
@@ -72,6 +74,70 @@ function NoteFilterButton({
   );
 }
 
+const HIDE_MODES: ReadonlyArray<{ value: HideMode; label: string; icon: ReactNode }> = [
+  {
+    value: 'dim',
+    label: 'dimmen',
+    icon: (
+      <>
+        <circle cx="12" cy="12" r="8" />
+        <path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor" />
+      </>
+    ),
+  },
+  {
+    value: 'hide',
+    label: 'ausblenden',
+    icon: <circle cx="12" cy="12" r="8" strokeDasharray="3 3" />,
+  },
+];
+
+/** Nicht-Treffer dimmen oder ausblenden — zwei Symbole, Text im Tooltip. */
+function HideModeToggle() {
+  const {
+    filter: { hideMode },
+  } = useViewer();
+  const dispatch = useViewerDispatch();
+  return (
+    <div
+      role="radiogroup"
+      aria-label="Nicht-Treffer"
+      data-tour="hide-mode"
+      className="inline-flex shrink-0 gap-[2px] rounded-[var(--r-pill)] border border-line bg-sunken p-[2px]"
+    >
+      {HIDE_MODES.map((mode) => {
+        const on = mode.value === hideMode;
+        return (
+          <button
+            key={mode.value}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            aria-label={mode.label}
+            title={`Nicht-Treffer ${mode.label}`}
+            onClick={() => dispatch({ type: 'hideMode', value: mode.value })}
+            className={`inline-flex h-[20px] w-[24px] cursor-pointer items-center justify-center rounded-[var(--r-pill)] border-none p-0 ${
+              on ? 'bg-blue text-white' : 'bg-transparent text-dim hover:text-blueD'
+            }`}
+          >
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+            >
+              {mode.icon}
+            </svg>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export function TopBar() {
   const {
     lv,
@@ -79,6 +145,7 @@ export function TopBar() {
     annotations,
     index,
     view,
+    active,
   } = useViewer();
   const dispatch = useViewerDispatch();
   const counts = useMemo(() => markerCounts(annotations), [annotations]);
@@ -259,6 +326,7 @@ export function TopBar() {
               <span className="rounded-[5px] border border-line bg-sunken px-[5px] py-[1px] font-mono text-[10px] text-mute">
                 /
               </span>
+              {active.filtering && <HideModeToggle />}
               <button
                 type="button"
                 aria-pressed={filterOpen}

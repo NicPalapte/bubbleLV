@@ -379,6 +379,7 @@ export function PositionsTable({ root }: { root: LVNode }) {
     view: { table, scroll },
     parents,
     annotations,
+    filter: { hideMode },
   } = useViewer();
   const dispatch = useViewerDispatch();
   // Der Ansichts-Zustand führt den Sortierschlüssel als Zeichenkette: die
@@ -436,23 +437,30 @@ export function PositionsTable({ root }: { root: LVNode }) {
   const scopeRoot = effectiveScope === 'lv' ? lvRoot : root;
   const allRows = effectiveScope === 'lv' ? lvAll : nodeAll;
   const hits = effectiveScope === 'lv' ? lvHits : nodeHits;
+  // „dimmen" zeigt alle Zeilen, Nicht-Treffer blass — wie im Graphen (Entscheidung 0058).
+  const dimming = filtering && hideMode === 'dim';
+  const shown = dimming ? allRows : hits;
+  const hitKeys = useMemo(
+    () => (dimming ? new Set(hits.map((row) => row.node.id)) : null),
+    [dimming, hits],
+  );
 
   const rows = useMemo<Row[]>(() => {
     // Gruppen bleiben in Dokumentreihenfolge; sortiert wird innerhalb der Gruppe.
     const order = new Map<string, number>();
-    for (const row of hits) if (!order.has(row.groupKey)) order.set(row.groupKey, order.size);
-    return [...hits].sort((a, b) => {
+    for (const row of shown) if (!order.has(row.groupKey)) order.set(row.groupKey, order.size);
+    return [...shown].sort((a, b) => {
       const ga = order.get(a.groupKey) ?? 0;
       const gb = order.get(b.groupKey) ?? 0;
       return ga === gb ? compare(a, b, sort.key as SortKey, sort.dir) : ga - gb;
     });
-  }, [hits, sort]);
+  }, [shown, sort]);
 
   const groupCount = new Set(rows.map((row) => row.groupKey)).size;
 
   // Bewusst keine Mengensumme: die Positionen eines Abschnitts haben gemischte
   // Einheiten (m³, m², Stck), eine Summe darüber wäre eine Scheingenauigkeit.
-  const sumPrice = rows.reduce((total, row) => total + row.node.totalPrice, 0);
+  const sumPrice = hits.reduce((total, row) => total + row.node.totalPrice, 0);
   const parent = parents.get(root.id) ?? null;
 
   return (
@@ -483,7 +491,7 @@ export function PositionsTable({ root }: { root: LVNode }) {
         </span>
         <span className="shrink-0 text-line2">·</span>
         <span className="shrink-0">
-          <span className="font-medium text-ink">{formatCount(rows.length)}</span>/
+          <span className="font-medium text-ink">{formatCount(hits.length)}</span>/
           {formatCount(allRows.length)} Pos.
         </span>
         <span className="shrink-0 text-line2">·</span>
@@ -520,6 +528,7 @@ export function PositionsTable({ root }: { root: LVNode }) {
           columns={columns}
           rows={rows}
           rowKey={(row) => row.node.id}
+          dimmed={hitKeys === null ? undefined : (row) => !hitKeys.has(row.node.id)}
           selectedKey={selectedPositionId}
           revealKey={selectedPositionId}
           onPick={(key, event) => {
