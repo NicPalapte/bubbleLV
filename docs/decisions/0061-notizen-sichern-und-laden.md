@@ -25,6 +25,8 @@
   mehrfach im LV, wird nichts zugeordnet („nicht gefunden“).
 - Ein Fenster zeigt die vier Gruppen. Umnummerierte und geänderte lassen sich abwählen.
   Übernommen wird erst auf Klick.
+- Passt keine Position inhaltlich (weder gleich noch umnummeriert), stammt die Datei
+  vermutlich aus einem anderen LV: Hinweis, und „geändert“ ist nicht vorgewählt.
 - **Zusammenführen:** Kommentare werden ergänzt, gleiche nicht doppelt. Beim Marker
   gilt der zuletzt gesetzte.
 

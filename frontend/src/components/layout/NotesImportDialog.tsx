@@ -64,7 +64,10 @@ export function NotesImportDialog({ file, fileName, onClose }: Props) {
   useDismiss(dialogRef, true, onClose);
   const matching = useMemo(() => matchNotes(file, index.nodes), [file, index]);
   const [mitUmnummerierten, setMitUmnummerierten] = useState(true);
-  const [mitGeaenderten, setMitGeaenderten] = useState(true);
+  // Passt keine Position inhaltlich, stammt die Datei wohl aus einem anderen LV: dann
+  // wären Treffer nur über die OZ zufällig. Geänderte dann nur auf ausdrücklichen Haken.
+  const fremd = matching.same.length + matching.moved.length === 0;
+  const [mitGeaenderten, setMitGeaenderten] = useState(!fremd);
 
   const auswahl: NotesMatch[] = [
     ...matching.same,
@@ -148,6 +151,11 @@ export function NotesImportDialog({ file, fileName, onClose }: Props) {
             <Kachel zahl={matching.changed.length} label="geändert" farbe="var(--amber)" />
             <Kachel zahl={matching.missing.length} label="nicht gefunden" farbe="var(--redD)" />
           </div>
+          {fremd && (
+            <p role="note" className="m-0 font-mono text-[11px] text-[var(--amber)]">
+              ⚠ Keine Position stimmt inhaltlich überein. Stammt die Datei aus einem anderen LV?
+            </p>
+          )}
           {rows.length > 0 && (
             <ul aria-label="Prüfen" className="m-0 flex list-none flex-col p-0">
               {rows.map((row) => (

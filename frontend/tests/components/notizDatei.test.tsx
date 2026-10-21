@@ -171,6 +171,27 @@ describe('Logo-Menü', () => {
     );
   });
 
+  it('wählt Treffer nur über die OZ nicht vor, wenn nichts inhaltlich passt', async () => {
+    await speichere(false);
+    await oeffneGespeicherte();
+    const oz = positionen()[0].position?.oz ?? '';
+    const fremd = JSON.stringify({
+      art: 'bubble-notizen',
+      version: 1,
+      datei: 'anderes.x83',
+      positionen: [{ hash: 'fremd', text: 'fremd', oz, marker: 'wichtig', verlauf: [] }],
+    });
+    fireEvent.change(screen.getByLabelText('Notiz-Datei auswählen'), {
+      target: { files: [new File([fremd], 'anderes.json')] },
+    });
+    const fenster = await screen.findByRole('dialog', { name: 'Notizen laden' });
+    expect(within(fenster).getByRole('note')).toHaveTextContent('anderen LV');
+    expect(
+      within(fenster).getByRole('checkbox', { name: 'Geänderte übernehmen' }),
+    ).not.toBeChecked();
+    expect(within(fenster).getByRole('button', { name: '0 übernehmen' })).toBeDisabled();
+  });
+
   it('meldet eine Datei, die keine Notiz-Datei ist', async () => {
     await speichere(false);
     await oeffneGespeicherte();
