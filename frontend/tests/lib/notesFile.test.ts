@@ -9,6 +9,8 @@ import {
   notesCount,
   notesFileText,
   parseNotesFile,
+  readNotesFile,
+  MAX_NOTES_FILE_BYTES,
 } from '../../src/lib/notesFile';
 import type { LVNode } from '../../src/types/lvNode';
 
@@ -66,6 +68,18 @@ describe('notesFileText und parseNotesFile', () => {
     expect(() => parseNotesFile('{"art":"bubble-notizen","version":2,"positionen":[]}')).toThrow(
       'neueren Bubble-Version',
     );
+  });
+});
+
+describe('readNotesFile', () => {
+  it('lehnt zu große Dateien ab, ohne sie zu lesen', async () => {
+    const riesig = { size: MAX_NOTES_FILE_BYTES + 1, text: () => Promise.reject(new Error()) };
+    await expect(readNotesFile(riesig as unknown as Blob)).rejects.toThrow('zu groß');
+  });
+
+  it('liest eine normale Notiz-Datei', async () => {
+    const file = await readNotesFile(new Blob([gesichert()]));
+    expect(file.positionen).toHaveLength(2);
   });
 });
 

@@ -136,6 +136,20 @@ function readPosition(value: unknown): NotesFilePosition | null {
   };
 }
 
+/**
+ * Obergrenze für eine Notiz-Datei. Selbst 10k Positionen mit langen Kommentaren bleiben
+ * weit darunter; größere Dateien würden den Tab beim Lesen nur einfrieren.
+ */
+export const MAX_NOTES_FILE_BYTES = 20 * 1024 * 1024;
+
+/** Liest eine Notiz-Datei aus dem Dateidialog. Wirft `NotesFileError` bei zu großer Datei. */
+export async function readNotesFile(file: Blob): Promise<NotesFile> {
+  if (file.size > MAX_NOTES_FILE_BYTES) {
+    throw new NotesFileError('Die Datei ist zu groß für eine Notiz-Datei (höchstens 20 MB).');
+  }
+  return parseNotesFile(await file.text());
+}
+
 /** Liest eine Notiz-Datei. Wirft `NotesFileError`, wenn es keine ist. */
 export function parseNotesFile(content: string): NotesFile {
   let raw: unknown;

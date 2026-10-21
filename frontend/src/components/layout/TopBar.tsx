@@ -17,7 +17,7 @@ import { useMitnehmen } from '../common/useMitnehmen';
 import { commentedIds, MARKER_INFO, MARKERS, markerCounts } from '../../lib/annotations';
 import { FACETS, facetOptionLabel } from '../../lib/facets';
 import { formatCount } from '../../lib/format';
-import { NotesFileError, notesCount, parseNotesFile, type NotesFile } from '../../lib/notesFile';
+import { NotesFileError, notesCount, readNotesFile, type NotesFile } from '../../lib/notesFile';
 import { useAdmin } from '../../state/admin';
 import { useViewer, useViewerDispatch, type HideMode } from '../../state/viewer';
 
@@ -168,7 +168,7 @@ export function TopBar() {
   const notizenLesen = async (datei: File | undefined): Promise<void> => {
     if (datei === undefined) return;
     try {
-      setNotizDatei({ file: parseNotesFile(await datei.text()), name: datei.name });
+      setNotizDatei({ file: await readNotesFile(datei), name: datei.name });
     } catch (fehler) {
       dispatch({
         type: 'notice',
