@@ -21,8 +21,8 @@
 - **Graph als Datenmodell im Kern, keine Graph-Datenbank.** Typen in
   `packages/core/src/model/graph.ts` (`ProjectGraph`, `GraphNode`, `GraphEdge`),
   Schema-Kennung `bubble-graph-v1`.
-- **Klein anfangen:** acht Knotenarten (Dokument, Kapitel, Position, Anforderung, Norm,
-  Material, Bauteil, Frist) und sieben Kantenarten (gehört zu, verweist auf, fordert,
+- **Klein anfangen:** sieben Knotenarten (Dokument, Kapitel, Position, Anforderung, Norm,
+  Material, Frist) und sieben Kantenarten (gehört zu, verweist auf, fordert,
   nennt Norm, betrifft, ähnlich zu, widerspricht). Eine neue Art nur mit Ergänzung dieser
   Entscheidung.
 - **Jede Kante trägt ihre Herkunft:**
@@ -66,6 +66,10 @@
   nicht für Kanten zwischen Dokumenten und nicht für Herkunft und Bestätigung.
 - **Gleich alle Knotenarten der Vision** (Termin, Kosten, IFC-Objekt) – erst, wenn eine
   Funktion sie braucht.
+- **Bauteil als Knotenart** (z. B. Bohrpfahl, Wand) – vorerst nicht. Die Bauteilerkennung
+  läuft noch nicht verlässlich, der Bauteiltyp wurde deshalb schon entfernt (0052). Ein
+  Bauteil-Knoten auf unsicherer Erkennung würde falsche Kanten erzeugen. Kommt zurück,
+  sobald die Erkennung an echten LVs eine gemessene, gute Trefferquote hat.
 
 ## Folgen
 

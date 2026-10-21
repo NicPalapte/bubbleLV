@@ -10,8 +10,8 @@ export type GraphNodeKind =
   | 'anforderung' // einzelne Vorgabe aus einem Text, z. B. "Sichtbeton SB3"
   | 'norm' // DIN, DIN EN, ZTV …, Schlüssel = normierte Bezeichnung
   | 'material' // Eintrag aus den Materialtabellen (Entscheidung 0045)
-  | 'bauteil' // Bauteil, auf das sich etwas bezieht, z. B. "Bohrpfahl"
   | 'frist'; // Termin- oder Fristangabe
+// Bewusst noch kein 'bauteil': erst wenn die Bauteilerkennung verlässlich läuft (0052, 0060).
 
 /** Wie zwei Knoten zusammenhängen. Richtung: von → nach. */
 export type GraphEdgeKind =
@@ -19,7 +19,7 @@ export type GraphEdgeKind =
   | 'verweist_auf' // ausdrücklicher Verweis im Text, z. B. "gem. Baubeschreibung 3.2"
   | 'fordert' // Position/Kapitel → Anforderung
   | 'nennt_norm' // Position/Kapitel/Anforderung → Norm
-  | 'betrifft' // Position/Kapitel/Anforderung → Material, Bauteil oder Frist
+  | 'betrifft' // Position/Kapitel/Anforderung → Material oder Frist
   | 'aehnlich_zu' // inhaltlich ähnlich, ungerichtet gemeint
   | 'widerspricht'; // zwei Angaben passen nicht zusammen, ungerichtet gemeint
 
