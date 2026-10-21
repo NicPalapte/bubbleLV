@@ -307,7 +307,8 @@ export function toEntry(value: unknown): LogEntry | null {
 }
 
 /**
- * Verlauf bis v0.25 (Speicher `v: 2/3`, Notiz-Datei Version 1): ein Marker-Wechsel wird zu den Wechseln, die er heute bedeutet.
+ * Verlauf bis v0.25 (Speicher `v: 2/3`, Notiz-Datei Version 1): ein Marker-Wechsel wird
+ * zu den Wechseln, die er heute bedeutet.
  * Dazu wird der vorige Marker mitgeführt — „Marker entfernt" sagt allein nicht, was weg ist.
  */
 export function toEntriesOld(entries: readonly unknown[]): LogEntry[] {

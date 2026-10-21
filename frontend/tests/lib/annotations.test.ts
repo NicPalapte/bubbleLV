@@ -26,7 +26,7 @@ import {
 const ids = (set: ReadonlySet<string> | null): string[] => [...(set ?? [])].sort();
 
 describe('annotations', () => {
-  it('führt Fortschritt und „Wichtig" getrennt und schreibt jeden Wechsel in den Verlauf', () => {
+  it('führt Fortschritt und „Wichtig" getrennt und schreibt jeden Wechsel mit', () => {
     let a = setProgress(EMPTY_ANNOTATIONS, 'a', 'bearbeitung', 1);
     a = setImportant(a, 'a', true, 2);
     a = setProgress(a, 'a', 'fertig', 3);

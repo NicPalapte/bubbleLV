@@ -1,8 +1,8 @@
 // Notizen als Datei sichern und wieder laden (Entscheidung 0061).
 //
-// Eine JSON-Datei je LV: Fortschritt, „Wichtig" und Verlauf je Position (Entscheidung 0062), dazu OZ, Kurztext und Menge,
-// damit ein Mensch sie lesen kann und das Laden Positionen auch in einer geänderten
-// Fassung wiederfindet. Zuordnung in drei Stufen (Entscheidung 0055): gleicher
+// Eine JSON-Datei je LV: Fortschritt, „Wichtig" und Verlauf je Position (Entscheidung
+// 0062), dazu OZ, Kurztext und Menge, damit ein Mensch sie lesen kann und das Laden
+// Positionen auch in einer geänderten Fassung wiederfindet. Zuordnung in drei Stufen (Entscheidung 0055): gleicher
 // Positions-Hash, sonst gleicher Text-Fingerabdruck (umnummeriert), sonst gleiche OZ
 // (Text oder Menge geändert). Mehrdeutiges wird nicht zugeordnet. Die Datei entsteht
 // und wird gelesen im Browser — kein Request.
