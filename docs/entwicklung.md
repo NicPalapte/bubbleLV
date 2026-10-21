@@ -39,13 +39,13 @@ Modell ist GAEB-spezifisch. Details: [`docs/architecture/data-model.md`](archite
 
 ### Stack
 
-| Schicht      | Technologie                                         |
-| ------------ | --------------------------------------------------- |
-| App          | Vite · React · TypeScript · Tailwind (`frontend/`)  |
-| GAEB-Parsing | eigener TS-Parser, gekapselt hinter `GaebParser`    |
-| Persistenz   | **keine** — alles im Browser-Speicher einer Session |
-| Testing      | Vitest                                              |
-| Linting      | ESLint + Prettier                                   |
+| Schicht      | Technologie                                                          |
+| ------------ | -------------------------------------------------------------------- |
+| App          | Vite · React · TypeScript · Tailwind (`frontend/`)                   |
+| GAEB-Parsing | eigener TS-Parser, gekapselt hinter `GaebParser`                     |
+| Persistenz   | keine für Fachdaten; nur letzte Datei + Notizen in IndexedDB (0046)  |
+| Testing      | Vitest                                                               |
+| Linting      | ESLint + Prettier                                                    |
 
 Es gibt kein Backend, keine Datenbank, keinen Login. Eine geladene Datei wird per
 `File.arrayBuffer()` im Browser gelesen, geparst, klassifiziert und in React-State
