@@ -1,7 +1,7 @@
-// „Visualisierung" im Seitenfenster über den Filtern: wie der Graph gliedert
-// (docs/decisions/0035-graph-gliederung.md). Der Umgang mit Nicht-Treffern steht
-// in der Suche (TopBar, Entscheidung 0058).
-// Die Größe der Positionen steht unten rechts am Graphen (GraphControls).
+// Gliederung des Graphen (docs/decisions/0035-graph-gliederung.md): nach LV oder
+// als Matrix mit Zeilen und Spalten. Steht seit Issue #154 in der aufklappbaren
+// Darstellung an der Graph-Steuerung (GraphControls), neben der Größe.
+// Der Umgang mit Nicht-Treffern steht in der Suche (TopBar, Entscheidung 0058).
 
 import type { ReactNode } from 'react';
 import { SegmentedControl } from '../ui/SegmentedControl';

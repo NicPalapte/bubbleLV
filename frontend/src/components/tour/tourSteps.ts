@@ -22,7 +22,7 @@ export interface TourStep {
 }
 
 /** Was ein Schritt vor dem Anzeigen am Zustand ändert. */
-export type TourPrepare = 'closeSide' | 'openFilter' | 'closeSelection' | 'ensureSelection';
+export type TourPrepare = 'closeSide' | 'openSettings' | 'closeSelection' | 'ensureSelection';
 
 /** Punkt im Graphen; als Fläche gezeichnete Kreise haben keinen. */
 export const POINT_TARGET = '[data-slot]';
@@ -41,7 +41,7 @@ export const TOUR_STEPS: readonly TourStep[] = [
   {
     target: CARD_TARGET,
     title: 'Positionskarte',
-    text: 'Geld/Menge, Risiko, Norm und Frist sind markiert. „⇄ Vergleichen" legt bis zu vier Positionen nebeneinander.',
+    text: 'Geld/Menge, Risiko, Norm und Frist sind markiert. „Vergleichen" legt bis zu vier Positionen nebeneinander.',
     prepare: ['ensureSelection'],
   },
   {
@@ -55,14 +55,14 @@ export const TOUR_STEPS: readonly TourStep[] = [
     title: 'Filter',
     text: 'Nach Abschnitt, Einheit, Menge und mehr.',
     todo: 'Klick auf „+ Filter"',
-    done: (state) => state.view.side === 'filter',
+    done: (state) => state.view.filterBar,
     prepare: ['closeSide'],
   },
   {
     target: '[data-tour="layout"]',
     title: 'Gliederung',
     text: 'Wie im LV oder als Matrix nach Merkmalen in Zeilen und Spalten.',
-    prepare: ['openFilter'],
+    prepare: ['openSettings'],
   },
   {
     target: '[data-tour="kpis"]',

@@ -8,7 +8,7 @@
 //
 // Zwei unabhängige Marker (Entscheidung 0062): Fortschritt (offen → in Bearbeitung →
 // fertig) und „Wichtig". Beides ist eine eigene Notiz, nicht der GAEB-Status
-// (Entscheidung 0051): „Fertig" heißt „habe ich kalkuliert", nicht „Status geändert".
+// (Entscheidung 0051): „Erledigt" heißt „habe ich kalkuliert", nicht „Status geändert".
 //
 // Dazu eigene Anstreichungen im Langtext (Entscheidung 0063): Textstelle + Farbe.
 //
@@ -33,7 +33,7 @@ export interface MarkerInfo {
 
 export const PROGRESS_INFO: Readonly<Record<Progress, MarkerInfo>> = {
   bearbeitung: { label: 'In Bearbeitung', glyph: '◔', fill: 'var(--blue)', text: '#fff' },
-  fertig: { label: 'Fertig', glyph: '✓', fill: 'var(--greenD)', text: '#fff' },
+  fertig: { label: 'Erledigt', glyph: '✓', fill: 'var(--greenD)', text: '#fff' },
 };
 
 export const IMPORTANT_INFO: MarkerInfo = {
@@ -383,7 +383,7 @@ export function isOldMarker(value: unknown): value is OldMarker {
   return value === 'markiert' || value === 'wichtig' || value === 'erledigt';
 }
 
-/** „Markiert" und „Wichtig" werden „Wichtig", „Erledigt" wird „Fertig". */
+/** „Markiert" und „Wichtig" werden „Wichtig", „Erledigt" bleibt „Erledigt" (Fortschritt `fertig`). */
 export const oldIsImportant = (marker: OldMarker | null): boolean =>
   marker === 'markiert' || marker === 'wichtig';
 export const oldIsDone = (marker: OldMarker | null): boolean => marker === 'erledigt';

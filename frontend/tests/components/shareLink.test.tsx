@@ -88,10 +88,11 @@ describe('Geteilter Link · lesen', () => {
     await waitFor(() => expect(tabellenfenster()).toBeInTheDocument());
     expect(screen.getByRole('main', { name: 'Bubble-Graph' })).toBeInTheDocument();
     expect(screen.getByLabelText('Suche')).toHaveValue('Beton');
-    // Die Facette steht als gesetzter Filter im Reiter „Filter".
+    // Die Facette steht als gesetzter Filter in der Filterleiste.
     fireEvent.click(screen.getByRole('button', { name: '+ Filter' }));
-    const einheit = within(screen.getByRole('region', { name: 'Einheit' }));
-    expect(einheit.getByTitle('m³')).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'Einheit, 1 gewählt' }));
+    const einheit = within(screen.getByRole('group', { name: 'Einheit' }));
+    expect(einheit.getByRole('checkbox', { name: /^m³/ })).toBeChecked();
   });
 
   it('öffnet einen Link auf den Überblick als Reiter im Seitenfenster', async () => {

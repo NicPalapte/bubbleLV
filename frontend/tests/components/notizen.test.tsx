@@ -116,34 +116,41 @@ describe('Markierungen und Kommentare', () => {
     });
     await screen.findByRole('button', { name: '+ Filter' });
     waehlePunkt(0);
-    const fortschritt = within(await screen.findByRole('group', { name: 'Fortschritt' }));
-    expect(fortschritt.getAllByRole('button').map((knopf) => knopf.textContent)).toEqual([
+    // Fortschritt als Knopf mit Auswahlliste in der Titelzeile (Issue #153).
+    const knopf = await screen.findByRole('button', { name: 'Fortschritt' });
+    expect(knopf).toHaveTextContent('Offen');
+    const setze = (wert: string): void => {
+      fireEvent.click(knopf);
+      const liste = within(screen.getByRole('menu', { name: 'Fortschritt' }));
+      fireEvent.click(liste.getByRole('menuitemradio', { name: wert }));
+    };
+    fireEvent.click(knopf);
+    const liste = within(screen.getByRole('menu', { name: 'Fortschritt' }));
+    expect(liste.getAllByRole('menuitemradio').map((eintrag) => eintrag.textContent)).toEqual([
       'Offen',
-      '◔In Bearbeitung',
-      '✓Fertig',
+      'In Bearbeitung',
+      'Erledigt',
     ]);
-    expect(fortschritt.getByRole('button', { name: 'Offen' })).toHaveAttribute(
-      'aria-pressed',
+    expect(liste.getByRole('menuitemradio', { name: 'Offen' })).toHaveAttribute(
+      'aria-checked',
       'true',
     );
-    fireEvent.click(fortschritt.getByRole('button', { name: 'In Bearbeitung' }));
+    fireEvent.click(liste.getByRole('menuitemradio', { name: 'In Bearbeitung' }));
+    expect(screen.queryByRole('menu', { name: 'Fortschritt' })).toBeNull();
     expect(document.querySelectorAll('[data-note="bearbeitung"]')).toHaveLength(1);
-    fireEvent.click(fortschritt.getByRole('button', { name: 'Fertig' }));
+    setze('Erledigt');
     fireEvent.click(screen.getByRole('button', { name: 'Wichtig', pressed: false }));
-    expect(fortschritt.getByRole('button', { name: 'Fertig' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
+    expect(knopf).toHaveTextContent('Erledigt');
     expect(screen.getByRole('button', { name: 'Wichtig', pressed: true })).toBeInTheDocument();
     expect(document.querySelectorAll('[data-note="fertig"]')).toHaveLength(1);
     expect(document.querySelectorAll('[data-note="bearbeitung"]')).toHaveLength(0);
     const verlauf = within(screen.getByRole('list', { name: 'Verlauf' }));
     expect(verlauf.getAllByRole('listitem').map((zeile) => zeile.textContent?.slice(16))).toEqual([
       'In Bearbeitung',
-      'Fertig',
+      'Erledigt',
       'Wichtig',
     ]);
-    fireEvent.click(fortschritt.getByRole('button', { name: 'Offen' }));
+    setze('Offen');
     expect(verlauf.getByText('Wieder offen')).toBeInTheDocument();
   });
 
@@ -166,7 +173,13 @@ describe('Markierungen und Kommentare', () => {
     expect(document.querySelectorAll('[data-note="note"]')).toHaveLength(1);
 
     const alle = sichtbarePunkte();
-    fireEvent.click(screen.getByRole('button', { name: /Wichtig/ }));
+    // Eigene Filter stehen in der Filterleiste unter „Eigene" (Issue #154).
+    fireEvent.click(screen.getByRole('button', { name: '+ Filter' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Eigene' }));
+    const eigene = within(screen.getByRole('group', { name: 'Eigene' }));
+    fireEvent.click(eigene.getByRole('checkbox', { name: /Wichtig/ }));
+    // Aktiv steht der Filter als Chip in der Suche.
+    expect(screen.getByRole('button', { name: 'Wichtig entfernen' })).toBeInTheDocument();
     await waitFor(() => expect(sichtbarePunkte()).toBe(1));
     expect(alle).toBeGreaterThan(1);
   });
@@ -205,7 +218,8 @@ describe('Markierungen und Kommentare', () => {
     );
     await oeffneGespeicherte();
     waehlePunkt(0);
-    fireEvent.click(await screen.findByRole('button', { name: 'Fertig' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Fortschritt' }));
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Erledigt' }));
     // Vor Ablauf der Sammelzeit schließen: die Notiz darf nicht verloren gehen.
     fireEvent.click(screen.getByRole('button', { name: /LV schließen/ }));
     await waitFor(async () => expect(await readLastLvMeta()).toMatchObject({ marked: 1 }));

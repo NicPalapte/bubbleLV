@@ -9,6 +9,19 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.29.0 — 22.10.2026 · Filterleiste und Rechtsklick
+
+- **Filterleiste:** „+ Filter" klappt eine Leiste unter der Suche auf. Je Gruppe ein Knopf
+  mit Auswahlliste und Anzahl. Das Filterfenster entfällt.
+- **Darstellung** (Größe, Gliederung) steckt jetzt im Knopf unten rechts am Graphen.
+- **Positionskarte:** Fortschritt als Auswahlknopf, daneben „!" für Wichtig, beides neben
+  dem Titel. „Fertig" heißt jetzt **„Erledigt"**.
+- **Vergleichen** ist der hervorgehobene Knopf unter der Auswahl.
+- **Langtext:** Markieren allein öffnet nichts mehr. **Rechtsklick** auf die Auswahl
+  bietet Kopieren, Farben und „Anstreichung entfernen".
+- **Rechtsklick auf eine Position** (Graph, Tabelle, Vergleich): Fortschritt, Wichtig,
+  Vergleich, in der Tabelle zeigen, Link kopieren.
+
 ## 0.28.1 — 22.10.2026 · Zoom bleibt beim Größenwechsel
 
 - **Größe der Positionen umschalten** (gleich/Menge/Preis) behält jetzt Zoom und Ausschnitt.

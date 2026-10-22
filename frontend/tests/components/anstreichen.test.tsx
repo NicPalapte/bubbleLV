@@ -1,5 +1,6 @@
-// Eigenes Anstreichen im Langtext (Entscheidung 0063): Text auswählen, Farbe
-// wählen, Liste unter dem Langtext, Entfernen, Speichern zur letzten Datei.
+// Eigenes Anstreichen im Langtext (Entscheidung 0063): Text auswählen, rechts klicken
+// (Issue #155), Farbe wählen, Liste unter dem Langtext, Entfernen, Speichern zur
+// letzten Datei.
 
 import 'fake-indexeddb/auto';
 import { readFileSync } from 'node:fs';
@@ -36,8 +37,8 @@ function langtext(): HTMLElement {
   throw new Error('Keine Position mit Langtext in der Musterdatei');
 }
 
-/** Wählt das erste Wort aus Buchstaben aus, wie mit der Maus. */
-function waehleWort(text: HTMLElement): string {
+/** Wählt das erste Wort aus Buchstaben aus und klickt rechts darauf, wie mit der Maus. */
+function waehleWort(text: HTMLElement, rechtsklick = true): string {
   const walker = document.createTreeWalker(text, NodeFilter.SHOW_TEXT);
   for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
     const match = /\p{L}{5,}/u.exec(node.textContent ?? '');
@@ -49,6 +50,7 @@ function waehleWort(text: HTMLElement): string {
     selection?.removeAllRanges();
     selection?.addRange(range);
     fireEvent.mouseUp(node.parentElement ?? text);
+    if (rechtsklick) fireEvent.contextMenu(node.parentElement ?? text);
     return match[0];
   }
   throw new Error('Kein Wort im Langtext');
@@ -86,16 +88,51 @@ describe('Anstreichen im Langtext', () => {
     expect(screen.queryByRole('list', { name: 'Meine Textmarkierungen' })).toBeNull();
   });
 
-  it('liest die Auswahl nur bei Shift + Auswahltaste neu, nicht bei Shift allein', async () => {
+  it('öffnet bei bloßer Auswahl nichts, erst mit Rechtsklick oder Shift + F10', async () => {
+    await ladeDatei();
+    const text = langtext();
+    waehleWort(text, false);
+    expect(screen.queryByRole('toolbar', { name: 'Textmarkierung' })).toBeNull();
+    fireEvent.keyDown(text, { key: 'F10', shiftKey: true });
+    expect(screen.getByRole('toolbar', { name: 'Textmarkierung' })).toBeInTheDocument();
+  });
+
+  it('lässt ohne Auswahl das Menü des Browsers stehen', async () => {
+    await ladeDatei();
+    const text = langtext();
+    window.getSelection()?.removeAllRanges();
+    // `fireEvent` meldet false, wenn die App das Ereignis abgefangen hat.
+    expect(fireEvent.contextMenu(text)).toBe(true);
+    expect(screen.queryByRole('toolbar', { name: 'Textmarkierung' })).toBeNull();
+  });
+
+  it('kopiert die Auswahl über das eigene Menü', async () => {
+    const kopiert: string[] = [];
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: (wert: string) => (kopiert.push(wert), Promise.resolve()) },
+    });
+    await ladeDatei();
+    const wort = waehleWort(langtext());
+    const menue = await screen.findByRole('toolbar', { name: 'Textmarkierung' });
+    fireEvent.click(within(menue).getByRole('button', { name: 'Kopieren' }));
+    expect(kopiert).toEqual([wort]);
+    expect(screen.queryByRole('toolbar', { name: 'Textmarkierung' })).toBeNull();
+  });
+
+  it('entfernt eine Anstreichung über das Menü auf derselben Stelle', async () => {
     await ladeDatei();
     const text = langtext();
     waehleWort(text);
-    await screen.findByRole('toolbar', { name: 'Textmarkierung' });
-    window.getSelection()?.removeAllRanges();
-    fireEvent.keyUp(text, { key: 'Shift', shiftKey: true });
-    expect(screen.getByRole('toolbar', { name: 'Textmarkierung' })).toBeInTheDocument();
-    fireEvent.keyUp(text, { key: 'ArrowLeft', shiftKey: true });
-    expect(screen.queryByRole('toolbar', { name: 'Textmarkierung' })).toBeNull();
+    let menue = await screen.findByRole('toolbar', { name: 'Textmarkierung' });
+    expect(within(menue).queryByRole('button', { name: 'Anstreichung entfernen' })).toBeNull();
+    fireEvent.click(within(menue).getByRole('button', { name: 'Gelb markieren' }));
+    expect(screen.getByRole('list', { name: 'Meine Textmarkierungen' })).toBeInTheDocument();
+
+    waehleWort(text);
+    menue = await screen.findByRole('toolbar', { name: 'Textmarkierung' });
+    fireEvent.click(within(menue).getByRole('button', { name: 'Anstreichung entfernen' }));
+    expect(screen.queryByRole('list', { name: 'Meine Textmarkierungen' })).toBeNull();
   });
 
   it('blendet die eigenen Farben über das Label aus und zeigt keinen Status mehr', async () => {

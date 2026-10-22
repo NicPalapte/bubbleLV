@@ -1,7 +1,7 @@
 // Gliederung des Graphen (docs/decisions/0035-graph-gliederung.md): „nach LV"
-// und „Matrix" im Seitenfenster unter „Filter" → „Darstellung", Größe und
-// Hinweise an der Steuerung unten rechts — ohne dass Filter, Suche oder Auswahl
-// davon etwas mitbekommen.
+// und „Matrix" mit der Größe in der aufklappbaren „Darstellung" an der Steuerung
+// unten rechts (Issue #154), dazu die Hinweise — ohne dass Filter, Suche oder
+// Auswahl davon etwas mitbekommen. Am Ende das Rechtsklick-Menü (Issue #155).
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -42,6 +42,11 @@ function oeffneFilter(): void {
   fireEvent.click(screen.getByRole('button', { name: '+ Filter' }));
 }
 
+/** Größe und Gliederung an der Steuerung aufklappen. */
+function oeffneDarstellung(): void {
+  fireEvent.click(screen.getByTitle('Darstellung: Größe und Gliederung'));
+}
+
 /** Suchbegriff setzen und warten, bis die entprellte Suche greift. */
 async function search(value: string): Promise<void> {
   fireEvent.change(screen.getByLabelText('Suche'), { target: { value } });
@@ -60,7 +65,7 @@ function graphText(): string {
 describe('Gliederung im Graphen', () => {
   it('beginnt „nach LV" mit einem Kreis je Abschnitt', async () => {
     await loadAndShowGraph();
-    oeffneFilter();
+    oeffneDarstellung();
     expect(screen.getByRole('radio', { name: 'nach LV' })).toBeChecked();
     expect(graph().querySelectorAll('[data-group]').length).toBeGreaterThan(1);
     expect(graph().querySelectorAll('[data-tier="position"]').length).toBeGreaterThan(0);
@@ -70,15 +75,17 @@ describe('Gliederung im Graphen', () => {
 
   it('ordnet „Matrix" nach Merkmalen und macht einen neuen Filter zur Spalte', async () => {
     await loadAndShowGraph();
-    oeffneFilter();
+    oeffneDarstellung();
     fireEvent.click(screen.getByRole('radio', { name: 'Matrix' }));
     expect(screen.getByRole('radiogroup', { name: 'Zeilen' })).toBeInTheDocument();
     // Zeilen nach Einheit: die Gruppen tragen die Einheit als Titel.
     expect(graphText()).toContain('m³');
     expect(graphText()).not.toContain('→');
 
-    const art = within(screen.getByRole('region', { name: 'Positionsart' }));
-    fireEvent.click(art.getAllByRole('button', { pressed: false })[0]);
+    oeffneFilter();
+    fireEvent.click(screen.getByRole('button', { name: 'Positionsart' }));
+    const art = within(screen.getByRole('group', { name: 'Positionsart' }));
+    fireEvent.click(art.getAllByRole('checkbox')[0]);
 
     const spalten = within(screen.getByRole('radiogroup', { name: 'Spalten' }));
     await waitFor(() => expect(spalten.getByRole('radio', { name: 'Positionsart' })).toBeChecked());
@@ -89,7 +96,7 @@ describe('Gliederung im Graphen', () => {
 
   it('lässt Suche und Auswahl beim Umschalten unangetastet', async () => {
     await loadAndShowGraph();
-    oeffneFilter();
+    oeffneDarstellung();
     await search('Beton');
     fireEvent.click(screen.getByRole('radio', { name: 'Matrix' }));
     expect(screen.getByLabelText('Suche')).toHaveValue('Beton');
@@ -120,6 +127,7 @@ describe('Gliederung im Graphen', () => {
 describe('Steuerung am Graphen', () => {
   it('sperrt „Preis" bei einer Datei ohne Preise', async () => {
     await loadAndShowGraph();
+    oeffneDarstellung();
     const groesse = within(screen.getByRole('radiogroup', { name: 'Größe der Positionen' }));
     expect(groesse.getByRole('radio', { name: 'Preis' })).toBeDisabled();
     expect(groesse.getByRole('radio', { name: 'Menge' })).toBeChecked();
@@ -178,7 +186,7 @@ describe('Wechsel der Gliederung (Entscheidung 0059)', () => {
 
   it('lässt die Punkte gleiten, solange gewechselt wird', async () => {
     await loadAndShowGraph();
-    oeffneFilter();
+    oeffneDarstellung();
     expect(canvas()).not.toHaveClass('graph-morph');
     fireEvent.click(screen.getByRole('radio', { name: 'Matrix' }));
     expect(canvas()).toHaveClass('graph-morph');
@@ -199,7 +207,7 @@ describe('Wechsel der Gliederung (Entscheidung 0059)', () => {
     })) as typeof window.matchMedia;
     try {
       await loadAndShowGraph();
-      oeffneFilter();
+      oeffneDarstellung();
       fireEvent.click(screen.getByRole('radio', { name: 'Matrix' }));
       expect(canvas()).not.toHaveClass('graph-morph');
     } finally {
@@ -209,7 +217,7 @@ describe('Wechsel der Gliederung (Entscheidung 0059)', () => {
 
   it('zeichnet Kacheln nach Anzahl und hebt die unter der Maus samt Achsen hervor', async () => {
     await loadAndShowGraph();
-    oeffneFilter();
+    oeffneDarstellung();
     fireEvent.click(screen.getByRole('radio', { name: 'Matrix' }));
     fireEvent.click(
       within(screen.getByRole('radiogroup', { name: 'Zeilen' })).getByRole('radio', {
@@ -235,11 +243,75 @@ describe('Wechsel der Gliederung (Entscheidung 0059)', () => {
 
   it('bietet Abschnitt nur als Zeile an, nicht als Spalte', async () => {
     await loadAndShowGraph();
-    oeffneFilter();
+    oeffneDarstellung();
     fireEvent.click(screen.getByRole('radio', { name: 'Matrix' }));
     const zeilen = within(screen.getByRole('radiogroup', { name: 'Zeilen' }));
     const spalten = within(screen.getByRole('radiogroup', { name: 'Spalten' }));
     expect(zeilen.getByRole('radio', { name: 'Abschnitt' })).toBeInTheDocument();
     expect(spalten.queryByRole('radio', { name: 'Abschnitt' })).not.toBeInTheDocument();
+  });
+});
+
+describe('Rechtsklick im Graphen (Issue #155)', () => {
+  it('setzt Fortschritt und „Wichtig" an einem Punkt, ohne ihn auszuwählen', async () => {
+    await loadAndShowGraph();
+    const punkt = graph().querySelector('[data-slot]') as SVGElement;
+    expect(fireEvent.contextMenu(punkt)).toBe(false);
+    let menue = within(screen.getByRole('menu', { name: /^Position / }));
+    // Offen ist gesetzt, Wichtig nicht.
+    expect(menue.getByRole('menuitemradio', { name: 'Offen' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    fireEvent.click(menue.getByRole('menuitemradio', { name: 'Erledigt' }));
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(document.querySelectorAll('[data-note="fertig"]')).toHaveLength(1);
+    // Keine Karte: der Rechtsklick wählt nichts aus.
+    expect(screen.queryByRole('button', { name: 'Fortschritt' })).not.toBeInTheDocument();
+
+    fireEvent.contextMenu(punkt);
+    menue = within(screen.getByRole('menu', { name: /^Position / }));
+    fireEvent.click(menue.getByRole('menuitemcheckbox', { name: /Wichtig/ }));
+    expect(document.querySelectorAll('[data-note="wichtig"]')).toHaveLength(1);
+  });
+
+  it('nimmt eine Position in den Vergleich und schließt mit Escape', async () => {
+    await loadAndShowGraph();
+    const punkt = graph().querySelector('[data-slot]') as SVGElement;
+    fireEvent.contextMenu(punkt);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Zum Vergleich hinzufügen' }));
+    const fenster = within(screen.getByRole('region', { name: /Positionsvergleich/ }));
+    expect(fenster.getAllByRole('columnheader')).toHaveLength(2);
+    fireEvent.contextMenu(punkt);
+    expect(screen.getByRole('menuitem', { name: 'Aus dem Vergleich nehmen' })).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  });
+
+  it('bietet am Abschnitt nur den Sprung in die Tabelle', async () => {
+    await loadAndShowGraph();
+    fireEvent.contextMenu(graph().querySelector('[data-group] circle') as SVGCircleElement);
+    const menue = within(screen.getByRole('menu', { name: 'Abschnitt' }));
+    expect(menue.getAllByRole('menuitem').map((eintrag) => eintrag.textContent)).toEqual([
+      'In der Tabelle zeigen',
+    ]);
+    fireEvent.click(menue.getByRole('menuitem', { name: 'In der Tabelle zeigen' }));
+    expect(
+      screen.getByRole('region', { name: 'Tabelle — Fenster über dem Graphen' }),
+    ).toBeInTheDocument();
+  });
+
+  it('öffnet dasselbe Menü auf einer Zeile der Tabelle', async () => {
+    await loadAndShowGraph();
+    fireEvent.contextMenu(graph().querySelector('[data-group] circle') as SVGCircleElement);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'In der Tabelle zeigen' }));
+    const tabelle = within(
+      screen.getByRole('region', { name: 'Tabelle — Fenster über dem Graphen' }),
+    );
+    const [zeile] = tabelle.getAllByRole('row').filter((row) => row.id !== '');
+    expect(fireEvent.contextMenu(zeile)).toBe(false);
+    const menue = within(screen.getByRole('menu', { name: /^Position / }));
+    fireEvent.click(menue.getByRole('menuitemradio', { name: 'In Bearbeitung' }));
+    expect(document.querySelectorAll('[data-note="bearbeitung"]').length).toBeGreaterThan(0);
   });
 });

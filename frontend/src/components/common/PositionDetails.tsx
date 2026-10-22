@@ -7,9 +7,15 @@ import { CardHead, GroupPill, PropTable, Section, StatRow } from './CardParts';
 import { Highlighted } from './Highlighted';
 import { LearnPopover } from './LearnPopover';
 import { MAX_TERM_LENGTH, type LearnTarget } from './learnSelection';
-import { NoteBlock } from './NoteBlock';
+import { MarkerHead, NoteBlock } from './NoteBlock';
 import { PaintBar, PaintList, PaintNamesDialog } from './PaintBar';
-import { PAINT_SECTION, paintSelection, usePaintHighlights, type PaintTarget } from './paint';
+import {
+  locate,
+  PAINT_SECTION,
+  paintSelection,
+  usePaintHighlights,
+  type PaintTarget,
+} from './paint';
 import { shownText } from './shownText';
 import { HintBlock } from '../check/HintBlock';
 import {
@@ -28,9 +34,6 @@ import { applyTerms } from '../../lib/highlight/terms';
 import { useAdmin } from '../../state/admin';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { Highlight, Paint } from '../../lib/annotations';
-
-/** Tasten, die mit Shift die Auswahl im Text ändern. */
-const SELECT_KEYS = /^(Arrow|Home$|End$|Page)/;
 
 const NO_MARKS: readonly Highlight[] = [];
 
@@ -51,6 +54,20 @@ function paintNow(
   });
 }
 import type { LVNode, PositionSummary } from '../../types/lvNode';
+
+/**
+ * „Kopieren" im eigenen Menü — das Menü des Browsers fehlt dort. Ohne Clipboard-API
+ * (kein HTTPS) kopiert der alte Befehl die noch stehende Auswahl.
+ */
+function copySelection(fallback: string): void {
+  const selected = window.getSelection()?.toString() ?? '';
+  const clipboard = navigator.clipboard as Clipboard | undefined;
+  const legacy = (): void => {
+    document.execCommand('copy');
+  };
+  if (clipboard === undefined) legacy();
+  else clipboard.writeText(selected === '' ? fallback : selected).catch(legacy);
+}
 
 /**
  * Schalterreihe über dem Langtext: je gefundener Kategorie eine Pille mit
@@ -140,13 +157,32 @@ export function PositionDetails({
   const [learnTarget, setLearnTarget] = useState<LearnTarget | null>(null);
   const closeLearn = useCallback(() => setLearnTarget(null), []);
   // Eigene Anstreichungen (Entscheidung 0063).
-  const [paintTarget, setPaintTarget] = useState<PaintTarget | null>(null);
+  /** Auswahl im Langtext samt eigenen Anstreichungen, die sie berührt (beim Öffnen gemessen). */
+  const [paintTarget, setPaintTarget] = useState<
+    (PaintTarget & { touched: readonly number[] }) | null
+  >(null);
   const closePaint = useCallback(() => setPaintTarget(null), []);
   const [renameAt, setRenameAt] = useState<{ left: number; top: number } | null>(null);
   const closeRename = useCallback(() => setRenameAt(null), []);
   const marks = annotations.highlights.get(node.id) ?? NO_MARKS;
-  const readSelection = (): void => {
-    if (longTextRef.current !== null) setPaintTarget(paintSelection(longTextRef.current));
+  /** Indizes eigener Anstreichungen, die die Auswahl berühren. */
+  const touched = (target: PaintTarget): number[] => {
+    const text = longTextRef.current?.textContent ?? '';
+    const end = target.start + target.text.length;
+    return marks.flatMap((mark, i) => {
+      const at = locate(text, mark);
+      return at >= 0 && at < end && at + mark.text.length > target.start ? [i] : [];
+    });
+  };
+  // Rechtsklick auf eine Auswahl (Issue #155): Menü mit Kopieren und Farben. Eine
+  // Auswahl allein öffnet nichts mehr; ohne Auswahl bleibt das Menü des Browsers.
+  const openPaintMenu = (at: { x: number; y: number } | null): boolean => {
+    if (longTextRef.current === null) return false;
+    const target = paintSelection(longTextRef.current);
+    if (target === null) return false;
+    const placed = at === null ? target : { ...target, left: at.x, top: at.y };
+    setPaintTarget({ ...placed, touched: touched(target) });
+    return true;
   };
   const categories = useMemo(() => presentCategories(spans), [spans]);
   const counts = useMemo(() => {
@@ -221,6 +257,7 @@ export function PositionDetails({
           </>
         }
         title={<Highlighted text={position.shortText} query={search} />}
+        actions={<MarkerHead positionId={node.id} />}
         onClose={onClose}
       />
       <StatRow
@@ -256,11 +293,17 @@ export function PositionDetails({
             )}
             <div
               ref={longTextRef}
-              onMouseUp={readSelection}
-              onKeyUp={(event) => {
-                // Nur Auswahl per Tastatur (Shift + Pfeil, Pos1, Ende), nicht jedes Shift.
-                if (event.shiftKey && SELECT_KEYS.test(event.key)) readSelection();
+              onContextMenu={(event) => {
+                if (openPaintMenu({ x: event.clientX, y: event.clientY })) event.preventDefault();
               }}
+              onKeyDown={(event) => {
+                // Kontextmenü-Taste oder Shift+F10 auf einer Auswahl per Tastatur.
+                const menuKey =
+                  event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey);
+                if (menuKey && openPaintMenu(null)) event.preventDefault();
+              }}
+              // Fokussierbar, damit Kontextmenü-Taste und Shift+F10 hier ankommen.
+              tabIndex={0}
               // Die Karte liegt im Graphen, der `select-none` setzt — ohne `select-text`
               // ließe sich weder kopieren noch anstreichen oder ein Begriff markieren.
               // Text-Cursor: zeigt, dass sich hier markieren lässt.
@@ -288,6 +331,22 @@ export function PositionDetails({
                   window.getSelection()?.removeAllRanges();
                   setPaintTarget(null);
                 }}
+                onCopy={() => {
+                  setPaintTarget(null);
+                  copySelection(paintTarget.text);
+                }}
+                onUnpaint={
+                  paintTarget.touched.length === 0
+                    ? null
+                    : () => {
+                        // Von hinten nach vorn: jedes Entfernen verschiebt die Indizes dahinter.
+                        for (const i of [...paintTarget.touched].reverse()) {
+                          dispatch({ type: 'removeHighlight', id: node.id, position: i });
+                        }
+                        window.getSelection()?.removeAllRanges();
+                        setPaintTarget(null);
+                      }
+                }
                 onRename={() => {
                   setRenameAt({ left: paintTarget.left, top: paintTarget.top });
                   setPaintTarget(null);

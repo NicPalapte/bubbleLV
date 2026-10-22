@@ -33,7 +33,7 @@ export type ViewMode = 'overview' | 'graph' | 'table';
  * Seitenfenster, die Tabelle schwebt als Fenster darüber. `mode` bleibt
  * deshalb immer `graph` — siehe `setViewMode`.
  */
-export type SidePanel = 'overview' | 'filter' | 'check';
+export type SidePanel = 'overview' | 'check';
 export type { GraphLayoutId, SizeModeId };
 export type TableScope = 'node' | 'lv';
 
@@ -188,6 +188,10 @@ export interface ViewState {
   mode: ViewMode;
   /** Offener Reiter im Seitenfenster; `null` = zu. */
   side: SidePanel | null;
+  /** Filterleiste unter der Kopfleiste aufgeklappt (Issue #154). */
+  filterBar: boolean;
+  /** Darstellung (Größe, Gliederung) an der Graph-Steuerung aufgeklappt. */
+  graphSettings: boolean;
   /** Breite des Seitenfensters; am rechten Rand ziehbar. */
   sideWidth: number;
   /** Geführte Tour: aktueller Schritt (`null` = aus) und ob sie schon angeboten war. */
@@ -209,6 +213,8 @@ export type ViewAction =
   | { type: 'setViewMode'; mode: ViewMode }
   /** Seitenfenster auf einen Reiter öffnen; `null` schließt es. */
   | { type: 'sidePanel'; panel: SidePanel | null }
+  | { type: 'filterBar'; open: boolean }
+  | { type: 'graphSettings'; open: boolean }
   | { type: 'sideWidth'; width: number }
   /** Tour auf einen Schritt setzen; `null` beendet sie. Start oder Ende zählen als gesehen. */
   | { type: 'tour'; step: number | null }
@@ -258,6 +264,8 @@ export const INITIAL_VIEW_STATE: ViewState = {
   // (docs/decisions/0034-graph-als-hauptscreen.md).
   mode: 'graph',
   side: null,
+  filterBar: false,
+  graphSettings: false,
   sideWidth: SIDE_WIDTH_DEFAULT,
   tour: { step: null, seen: false },
   tableWindow: { open: false, pos: DEFAULT_TABLE_POS, size: DEFAULT_TABLE_SIZE },
@@ -332,6 +340,10 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
     }
     case 'sidePanel':
       return state.side === action.panel ? state : { ...state, side: action.panel };
+    case 'filterBar':
+      return state.filterBar === action.open ? state : { ...state, filterBar: action.open };
+    case 'graphSettings':
+      return state.graphSettings === action.open ? state : { ...state, graphSettings: action.open };
     case 'tour':
       return state.tour.step === action.step && state.tour.seen
         ? state

@@ -322,6 +322,8 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
 
     case 'setViewMode':
     case 'sidePanel':
+    case 'filterBar':
+    case 'graphSettings':
     case 'sideWidth':
     case 'tour':
     case 'tableWindow':
