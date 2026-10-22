@@ -89,7 +89,7 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
   Zustand getrennt in `filterState` / `selectionState` / `viewState`
 
 ## Code-Style
-- Produktname **Conocto** (`docs/decisions/0066-conocto-look.md`). Alt-Kennungen mit
+- Produktname **Conocto** (`docs/decisions/0068-conocto-look.md`). Alt-Kennungen mit
   `bubble` nicht umbenennen – bricht gespeicherte Daten und Links: `DB_NAME`,
   `NOTES_FILE_KIND`, `bubble-pos-v1`, `bubble-graph-v1`, GoatCounter-Code, Repo `bubbleLV`,
   `@bubble/core`. „Bubble" als Blase im Graphen (`BubbleGraph`) bleibt.

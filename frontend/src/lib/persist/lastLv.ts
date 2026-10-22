@@ -27,7 +27,7 @@ import {
 } from '../annotations';
 
 // Name aus der Zeit vor Conocto — bleibt, sonst wäre die zuletzt geöffnete
-// Datei samt Notizen nach dem Update weg (Entscheidung 0066).
+// Datei samt Notizen nach dem Update weg (Entscheidung 0068).
 const DB_NAME = 'bubble';
 const DB_VERSION = 1;
 const STORE = 'letztesLv';

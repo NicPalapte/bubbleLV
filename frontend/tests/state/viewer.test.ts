@@ -464,3 +464,22 @@ describe('viewerReducer · Tour', () => {
     expect(next.selection).toBe(state.selection);
   });
 });
+
+describe('viewerReducer · Abschnitte der Tabelle zuklappen', () => {
+  it('klappt einzeln auf und zu, `tableCollapse` mit [] klappt alles auf', () => {
+    let state = viewerReducer(base, { type: 'tableToggleSection', id: 'a' });
+    state = viewerReducer(state, { type: 'tableToggleSection', id: 'b' });
+    expect([...state.view.table.collapsed].sort()).toEqual(['a', 'b']);
+    state = viewerReducer(state, { type: 'tableToggleSection', id: 'a' });
+    expect([...state.view.table.collapsed]).toEqual(['b']);
+    state = viewerReducer(state, { type: 'tableCollapse', ids: ['x', 'y'] });
+    expect([...state.view.table.collapsed].sort()).toEqual(['x', 'y']);
+    state = viewerReducer(state, { type: 'tableCollapse', ids: [] });
+    expect(state.view.table.collapsed.size).toBe(0);
+  });
+
+  it('vergisst zugeklappte Abschnitte bei einem neuen LV', () => {
+    const state = viewerReducer(base, { type: 'tableCollapse', ids: ['a'] });
+    expect(loadedState(state).view.table.collapsed.size).toBe(0);
+  });
+});

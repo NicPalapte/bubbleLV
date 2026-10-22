@@ -11,6 +11,7 @@ export function CardHead({
   grip,
   meta,
   title,
+  actions,
   onClose,
 }: {
   /** Ziehgriff der schwebenden Karte; fehlt, wo nichts zu verschieben ist. */
@@ -18,6 +19,8 @@ export function CardHead({
   meta: ReactNode;
   /** Text oder Text mit Suchmarkierung (`Highlighted`). */
   title: ReactNode;
+  /** Knöpfe rechts neben dem Titel, mittig zur ersten Zeile (Fortschritt, „Wichtig"). */
+  actions?: ReactNode;
   onClose?: () => void;
 }) {
   return (
@@ -31,9 +34,12 @@ export function CardHead({
           </button>
         )}
       </div>
-      <h2 className="m-0 font-display text-[18px] font-semibold leading-[1.25] tracking-[-0.3px] text-ink">
-        {title}
-      </h2>
+      <div className="flex min-w-0 items-start gap-[10px]">
+        <h2 className="m-0 min-w-0 flex-1 font-display text-[18px] font-semibold leading-[28px] tracking-[-0.3px] text-ink">
+          {title}
+        </h2>
+        {actions}
+      </div>
     </div>
   );
 }
@@ -139,4 +145,4 @@ export function PropTable({ rows }: { rows: ReadonlyArray<readonly [string, stri
 }
 
 export const CARD_BUTTON =
-  'inline-flex h-[30px] cursor-pointer items-center rounded-[var(--r-sm)] border border-line bg-surface px-[12px] font-mono text-[11.5px] text-ink hover:border-line2 focus-visible:border-blue';
+  'inline-flex h-[30px] cursor-pointer items-center justify-center rounded-[var(--r-sm)] border border-line bg-surface px-[12px] font-mono text-[11.5px] text-ink hover:border-line2 focus-visible:border-blue';

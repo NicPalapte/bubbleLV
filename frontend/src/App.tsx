@@ -22,13 +22,14 @@ function ViewerMitNetz() {
 
 function App() {
   return (
-    <ViewerProvider>
-      <AdminProvider>
+    // Admin außen: der Viewer braucht die gelernten Begriffe für den Filter „Material".
+    <AdminProvider>
+      <ViewerProvider>
         <PaintNamesProvider>
           <ViewerMitNetz />
         </PaintNamesProvider>
-      </AdminProvider>
-    </ViewerProvider>
+      </ViewerProvider>
+    </AdminProvider>
   );
 }
 

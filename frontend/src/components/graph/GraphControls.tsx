@@ -1,7 +1,10 @@
-// Steuerung unten rechts am Graphen: Zoom und Einpassen, Hinweise ein/aus,
-// Größe der Positionen (docs/decisions/0035-graph-gliederung.md). Liest und
-// schreibt Hinweise und Größe direkt im Viewer-Zustand; Zoom gehört dem Graphen.
+// Steuerung unten rechts am Graphen: Zoom und Einpassen, Hinweise ein/aus und die
+// Darstellung — Größe der Positionen und Gliederung (docs/decisions/0035-graph-
+// gliederung.md). Die Darstellung ist eingeklappt; der Knopf nennt den Stand und
+// klappt sie darüber auf (Issue #154: „Visualisierung" kam aus dem Filterfenster).
+// Liest und schreibt direkt im Viewer-Zustand; Zoom gehört dem Graphen.
 
+import { DisplayControls, Row } from '../filter/DisplayControls';
 import { SegmentedControl } from '../ui/SegmentedControl';
 import { SIZE_MODES, type SizeModeId } from '../../lib/graph/sizes';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
@@ -17,7 +20,7 @@ const ZOOM_BUTTON =
   'inline-flex h-[26px] w-[28px] cursor-pointer select-none items-center justify-center rounded-[var(--r-sm)] border-none bg-transparent font-mono text-[14px] leading-none text-dim hover:bg-surface hover:text-ink disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent';
 
 /**
- * Eine Fläche wie im Mockup: Zoom | Hinweise | Größe. Der Zoomwert steht nicht
+ * Eine Fläche wie im Mockup: Zoom | Hinweise | Darstellung. Der Zoomwert steht nicht
  * mehr da — er sagt beim Lesen eines LVs nichts.
  */
 export function GraphControls({ onFit, onFitSelection, onZoom }: GraphControlsProps) {
@@ -25,12 +28,16 @@ export function GraphControls({ onFit, onFitSelection, onZoom }: GraphControlsPr
     lv,
     hints,
     view: {
-      graph: { sizeMode, showHints },
+      graph: { sizeMode, showHints, layout },
+      graphSettings,
     },
   } = useViewer();
   const dispatch = useViewerDispatch();
   const swallow = (event: { stopPropagation: () => void }): void => event.stopPropagation();
   const priceless = (lv?.tree.totalPrice ?? 0) === 0;
+  const summary = `${layout === 'matrix' ? 'Matrix' : 'nach LV'} · ${
+    SIZE_MODES.find((mode) => mode.id === sizeMode)?.label ?? ''
+  }`;
 
   return (
     <div
@@ -94,22 +101,64 @@ export function GraphControls({ onFit, onFitSelection, onZoom }: GraphControlsPr
         </button>
       )}
 
-      <div className="flex items-center gap-[6px]">
-        <span className="pl-[4px] font-mono text-[11px] uppercase tracking-[0.6px] text-mute">
-          Größe
-        </span>
-        <SegmentedControl
-          label="Größe der Positionen"
-          options={SIZE_MODES.map((mode) => ({
-            value: mode.id,
-            label: mode.label,
-            title: mode.id === 'cost' && priceless ? 'Diese Datei führt keine Preise.' : mode.title,
-            disabled: mode.id === 'cost' && priceless,
-          }))}
-          value={sizeMode}
-          onChange={(value) => dispatch({ type: 'sizeMode', value: value as SizeModeId })}
-        />
-      </div>
+      <button
+        type="button"
+        aria-expanded={graphSettings}
+        aria-controls="graph-settings"
+        title="Darstellung: Größe und Gliederung"
+        onClick={() => dispatch({ type: 'graphSettings', open: !graphSettings })}
+        className={`inline-flex h-[28px] cursor-pointer items-center gap-[6px] whitespace-nowrap rounded-[var(--r-sm)] border px-[9px] font-mono text-[11.5px] ${
+          graphSettings
+            ? 'border-blue bg-blueS text-blueD'
+            : 'border-line bg-surface text-dim hover:border-line2 hover:text-ink'
+        }`}
+      >
+        <svg width="14" height="12" viewBox="0 0 14 12" aria-hidden="true">
+          <path d="M1 3h12M1 9h12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+          <circle
+            cx="5"
+            cy="3"
+            r="1.8"
+            fill="var(--surface)"
+            stroke="currentColor"
+            strokeWidth="1.4"
+          />
+          <circle
+            cx="9"
+            cy="9"
+            r="1.8"
+            fill="var(--surface)"
+            stroke="currentColor"
+            strokeWidth="1.4"
+          />
+        </svg>
+        {summary}
+      </button>
+
+      {graphSettings && (
+        <div
+          id="graph-settings"
+          role="group"
+          aria-label="Darstellung"
+          className="ov-glass absolute bottom-[calc(100%+8px)] right-0 flex max-h-[min(420px,60vh)] w-[300px] max-w-[calc(100vw-32px)] flex-col gap-[12px] overflow-auto !rounded-[var(--r-md)] p-[12px]"
+        >
+          <Row label="Größe">
+            <SegmentedControl
+              label="Größe der Positionen"
+              options={SIZE_MODES.map((mode) => ({
+                value: mode.id,
+                label: mode.label,
+                title:
+                  mode.id === 'cost' && priceless ? 'Diese Datei führt keine Preise.' : mode.title,
+                disabled: mode.id === 'cost' && priceless,
+              }))}
+              value={sizeMode}
+              onChange={(value) => dispatch({ type: 'sizeMode', value: value as SizeModeId })}
+            />
+          </Row>
+          <DisplayControls />
+        </div>
+      )}
     </div>
   );
 }

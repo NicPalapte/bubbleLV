@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Design-Tokens des Conocto-Looks (docs/decisions/0066-conocto-look.md):
+/* Design-Tokens des Conocto-Looks (docs/decisions/0068-conocto-look.md):
    colors · typography · spacing · elevation. Die Schriftdateien selbst kommen
    über @fontsource in src/main.tsx. */
 
@@ -14,6 +14,10 @@
 :root {
   --paper: #ffffff;
   --panel: #f5f5f7;
+  /* Abschnittszeilen der Tabelle: Hauptabschnitt kräftig, darunter hell. */
+  --sec1: #e8e8ed;
+  --sec1-ink: #1d1d1f;
+  --sec2: #f5f5f7;
   --white: #ffffff;
   /* Flächen der schwebenden Fenster über dem Graphen. */
   --surface: #ffffff;
@@ -234,6 +238,9 @@
   :root:not([data-theme='light']) {
     --paper: #000000;
     --panel: #1c1c1e;
+    --sec1: #3a3a3c;
+    --sec1-ink: #f5f5f7;
+    --sec2: #2c2c2e;
     --white: #1c1c1e;
     --surface: #1c1c1e;
     --sunken: #2c2c2e;
@@ -312,6 +319,9 @@
 :root[data-theme='dark'] {
   --paper: #000000;
   --panel: #1c1c1e;
+  --sec1: #3a3a3c;
+  --sec1-ink: #f5f5f7;
+  --sec2: #2c2c2e;
   --white: #1c1c1e;
   --surface: #1c1c1e;
   --sunken: #2c2c2e;
@@ -1055,4 +1065,43 @@ a:hover {
 ::highlight(paint-lila) {
   background-color: var(--paint-lila);
   color: var(--paint-ink);
+}
+
+/* Tabelle als Arbeitsliste: Griff zum Ausfüllen per Ziehen (wie in Excel) und die
+   Fläche über den Zellen, die das Ziehen abdeckt. Der Griff erscheint nur an der
+   Zeile unter dem Zeiger und an der gewählten. */
+.fill-handle {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid var(--white);
+  border-radius: 1px;
+  background: var(--blue);
+  cursor: ns-resize;
+  opacity: 0;
+  touch-action: none;
+}
+
+[data-row-key]:hover .fill-handle,
+[data-row-key][aria-selected='true'] .fill-handle {
+  opacity: 1;
+}
+
+.fill-mark {
+  position: absolute;
+  inset: 0;
+  background: rgba(200, 54, 43, 0.12);
+  box-shadow: inset 0 0 0 1px var(--blue);
+  pointer-events: none;
+}
+
+.note-add {
+  opacity: 0;
+}
+
+[data-row-key]:hover .note-add,
+.note-add:focus-visible {
+  opacity: 1;
 }

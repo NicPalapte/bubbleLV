@@ -8,8 +8,9 @@
 // Schreibweise wie in den Materialtabellen (lib/classify/material/stichwort.ts):
 // `#` = eine Zahl, `*` = beliebige Buchstaben, sonst wörtlich, ohne Groß/klein.
 //
-// Gelernte Begriffe färben nur ein — sie werden kein Filter und kein Attribut.
-// Deshalb laufen sie beim Anzeigen einer Position statt in der Klassifizierung.
+// Gelernte Begriffe färben ein und werden kein Attribut; deshalb laufen sie beim
+// Anzeigen einer Position statt in der Klassifizierung. Ausnahme: Begriffe der
+// Kategorie „Material" stehen auch im Filter „Material" (Entscheidung 0066).
 
 import hervorhebungenCsv from '@reference/hervorhebungen.csv?raw';
 import { compileStichworte } from '../classify/material/stichwort';
@@ -99,6 +100,11 @@ function matches(text: string, begriff: string): Array<{ start: number; end: num
     if (match[0].length > 0) out.push({ start, end: start + match[0].length });
   }
   return out;
+}
+
+/** Kommt der Begriff im Text vor? Für den Filter „Material" (lib/index/learnedMaterials.ts). */
+export function termFound(text: string, begriff: string): boolean {
+  return matches(text, begriff).length > 0;
 }
 
 const overlaps = (a: { start: number; end: number }, b: { start: number; end: number }) =>

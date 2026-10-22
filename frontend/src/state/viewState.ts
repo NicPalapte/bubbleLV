@@ -33,7 +33,7 @@ export type ViewMode = 'overview' | 'graph' | 'table';
  * Seitenfenster, die Tabelle schwebt als Fenster darüber. `mode` bleibt
  * deshalb immer `graph` — siehe `setViewMode`.
  */
-export type SidePanel = 'overview' | 'filter' | 'check';
+export type SidePanel = 'overview' | 'check';
 export type { GraphLayoutId, SizeModeId };
 export type TableScope = 'node' | 'lv';
 
@@ -92,6 +92,8 @@ export interface GraphViewState {
    * rendern. Erst beim Verlassen der Ansicht wandert er hierher.
    */
   viewport: Viewport | null;
+  /** Steigt bei „Im Graph zeigen"; der Graph passt dann auf die Auswahl ein. */
+  focus: number;
 }
 
 export interface TableViewState {
@@ -99,6 +101,8 @@ export interface TableViewState {
   scope: TableScope;
   /** `null` = unveränderte Standardspalten; die Tabelle kennt ihre Vorgabe. */
   columns: ColumnConfig | null;
+  /** Zugeklappte Abschnitte (Knoten-IDs); nur diese Sitzung und dieses LV. */
+  collapsed: ReadonlySet<string>;
 }
 
 /** Ort und Größe des Tabellenfensters über dem Graphen. */
@@ -188,6 +192,10 @@ export interface ViewState {
   mode: ViewMode;
   /** Offener Reiter im Seitenfenster; `null` = zu. */
   side: SidePanel | null;
+  /** Filterleiste unter der Kopfleiste aufgeklappt (Issue #154). */
+  filterBar: boolean;
+  /** Darstellung (Größe, Gliederung) an der Graph-Steuerung aufgeklappt. */
+  graphSettings: boolean;
   /** Breite des Seitenfensters; am rechten Rand ziehbar. */
   sideWidth: number;
   /** Geführte Tour: aktueller Schritt (`null` = aus) und ob sie schon angeboten war. */
@@ -209,6 +217,8 @@ export type ViewAction =
   | { type: 'setViewMode'; mode: ViewMode }
   /** Seitenfenster auf einen Reiter öffnen; `null` schließt es. */
   | { type: 'sidePanel'; panel: SidePanel | null }
+  | { type: 'filterBar'; open: boolean }
+  | { type: 'graphSettings'; open: boolean }
   | { type: 'sideWidth'; width: number }
   /** Tour auf einen Schritt setzen; `null` beendet sie. Start oder Ende zählen als gesehen. */
   | { type: 'tour'; step: number | null }
@@ -226,9 +236,15 @@ export type ViewAction =
   | { type: 'graphHints'; value: boolean }
   /** Graph-Ausschnitt sichern — beim Verlassen der Ansicht, nicht je Frame. */
   | { type: 'graphViewport'; viewport: Viewport | null }
+  /** Auf die Auswahl einpassen; holt im Splitscreen den Graphen zurück, falls er zu war. */
+  | { type: 'graphFocus' }
   | { type: 'tableSort'; key: string }
   | { type: 'tableScope'; scope: TableScope }
   | { type: 'tableColumns'; columns: ColumnConfig | null }
+  /** Einen Abschnitt in der Tabelle auf- oder zuklappen. */
+  | { type: 'tableToggleSection'; id: string }
+  /** Mehrere Abschnitte auf einmal: `ids` zuklappen, leere Liste klappt alles auf. */
+  | { type: 'tableCollapse'; ids: readonly string[] }
   | { type: 'toggleRuleOpen'; id: string }
   /** Regel gezielt aufklappen — der Sprung aus dem Graphen soll sie offen finden. */
   | { type: 'openRule'; id: string }
@@ -258,6 +274,8 @@ export const INITIAL_VIEW_STATE: ViewState = {
   // (docs/decisions/0034-graph-als-hauptscreen.md).
   mode: 'graph',
   side: null,
+  filterBar: false,
+  graphSettings: false,
   sideWidth: SIDE_WIDTH_DEFAULT,
   tour: { step: null, seen: false },
   tableWindow: { open: false, pos: DEFAULT_TABLE_POS, size: DEFAULT_TABLE_SIZE },
@@ -270,8 +288,9 @@ export const INITIAL_VIEW_STATE: ViewState = {
     cols: null,
     showHints: true,
     viewport: null,
+    focus: 0,
   },
-  table: { sort: { key: 'oz', dir: 1 }, scope: 'node', columns: null },
+  table: { sort: { key: 'oz', dir: 1 }, scope: 'node', columns: null, collapsed: new Set() },
   overview: { openRules: new Set(), revealRule: null },
   scroll: NO_SCROLL,
   panelSize: DEFAULT_PANEL_SIZE,
@@ -332,6 +351,10 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
     }
     case 'sidePanel':
       return state.side === action.panel ? state : { ...state, side: action.panel };
+    case 'filterBar':
+      return state.filterBar === action.open ? state : { ...state, filterBar: action.open };
+    case 'graphSettings':
+      return state.graphSettings === action.open ? state : { ...state, graphSettings: action.open };
     case 'tour':
       return state.tour.step === action.step && state.tour.seen
         ? state
@@ -405,6 +428,14 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
       return { ...state, graph: { ...state.graph, showHints: action.value } };
     case 'graphViewport':
       return { ...state, graph: { ...state.graph, viewport: action.viewport } };
+    case 'graphFocus':
+      return {
+        ...state,
+        graph: { ...state.graph, focus: state.graph.focus + 1 },
+        workspace: state.workspace.closed.graph
+          ? { ...state.workspace, closed: { ...state.workspace.closed, graph: false } }
+          : state.workspace,
+      };
     case 'tableSort': {
       const { sort } = state.table;
       const dir: 1 | -1 = sort.key === action.key ? ((sort.dir * -1) as 1 | -1) : 1;
@@ -414,6 +445,13 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
       return { ...state, table: { ...state.table, scope: action.scope } };
     case 'tableColumns':
       return { ...state, table: { ...state.table, columns: action.columns } };
+    case 'tableToggleSection': {
+      const collapsed = new Set(state.table.collapsed);
+      if (!collapsed.delete(action.id)) collapsed.add(action.id);
+      return { ...state, table: { ...state.table, collapsed } };
+    }
+    case 'tableCollapse':
+      return { ...state, table: { ...state.table, collapsed: new Set(action.ids) } };
     case 'toggleRuleOpen': {
       // Höchstens eine Regel offen: ihre Funde stehen in der Klappkarte daneben.
       const openRules = new Set(state.overview.openRules.has(action.id) ? [] : [action.id]);

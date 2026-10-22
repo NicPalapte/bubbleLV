@@ -66,7 +66,7 @@ export function Chip({
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: on ? 'var(--blue)' : 'var(--line)',
+            background: on ? 'var(--blueF)' : 'var(--line)',
             color: on ? '#fff' : 'var(--dim)',
             fontSize: 'var(--fs-label)',
             lineHeight: '14px',

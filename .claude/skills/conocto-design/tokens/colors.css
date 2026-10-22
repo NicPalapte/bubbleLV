@@ -2,7 +2,7 @@
    accent, amber = attention. The variables keep their old names: --blue* is the
    ACCENT (selection, buttons, links), not the colour blue.
    Source of truth: frontend/src/index.css (also --cat-*, --heat-*, --bub-*, --dot-*).
-   Decision: docs/decisions/0066-conocto-look.md */
+   Decision: docs/decisions/0068-conocto-look.md */
 :root{
   /* Surfaces */
   --paper:#ffffff;   /* app background / canvas */

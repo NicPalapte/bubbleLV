@@ -91,13 +91,14 @@ describe('Viewer', () => {
       expect(screen.queryByText('GAEB-Datei hierher ziehen')).not.toBeInTheDocument(),
     );
     expect(screen.getByRole('group', { name: /Bubble-Graph/ })).toBeInTheDocument();
-    // Steuerung am Graphen: Größe der Positionen.
+    // Steuerung am Graphen: Größe der Positionen, eingeklappt unter „Darstellung".
+    fireEvent.click(screen.getByTitle('Darstellung: Größe und Gliederung'));
     expect(screen.getByRole('radiogroup', { name: 'Größe der Positionen' })).toBeInTheDocument();
 
-    // Die Filter stehen im Seitenfenster hinter „+ Filter".
+    // Die Filter stehen in der Leiste hinter „+ Filter" (Issue #154).
     fireEvent.click(screen.getByRole('button', { name: '+ Filter' }));
-    const panel = screen.getByRole('complementary', { name: 'Seitenfenster' });
-    expect(within(panel).getByRole('region', { name: 'Positionsart' })).toBeInTheDocument();
+    const bar = screen.getByRole('region', { name: 'Filterleiste' });
+    expect(within(bar).getByRole('button', { name: 'Positionsart' })).toBeInTheDocument();
   });
 
   it('startet nach dem Import im Graphen, ohne offene Fenster', async () => {
@@ -216,17 +217,14 @@ describe('Viewer', () => {
 
     fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'Beton' } });
 
-    // Die Treffer verteilen sich über mehrere Abschnitte und stehen jeweils
-    // unter ihrem Überschriftenpfad.
+    // Die Treffer verteilen sich über mehrere Abschnitte; jede Ebene hat ihre
+    // eigene Kopfzeile.
     const table = await screen.findByRole('grid', { name: 'Positionen' });
     await waitFor(() =>
-      expect(
-        within(table).getByText(/Bauhauptgewerke.+§ 001\.004 · Betonarbeiten/),
-      ).toBeInTheDocument(),
+      expect(within(table).getByText('§ 001.004 · Betonarbeiten')).toBeInTheDocument(),
     );
-    expect(
-      within(table).getByText(/Bauhauptgewerke.+§ 001\.003 · Maurerarbeiten/),
-    ).toBeInTheDocument();
+    expect(within(table).getByText('§ 001.003 · Maurerarbeiten')).toBeInTheDocument();
+    expect(within(table).getAllByText(/Bauhauptgewerke/).length).toBeGreaterThan(0);
   });
 
   it('schließt das Tabellenfenster mit einem Klick, der Graph bleibt stehen', async () => {
@@ -420,19 +418,30 @@ describe('Viewer', () => {
 
   it('bedient die Filter über echte Schaltflächen (Tastatur)', async () => {
     await loadAndWait();
-    fireEvent.click(screen.getByRole('button', { name: '+ Filter' }));
-    const panel = screen.getByRole('complementary', { name: 'Seitenfenster' });
-
     // Umschaltgruppe Gliederung: benannte Radiogruppe statt klickbarer <span>.
-    const layouts = within(panel).getByRole('radiogroup', { name: 'Gliederung' });
+    fireEvent.click(screen.getByTitle('Darstellung: Größe und Gliederung'));
+    const layouts = screen.getByRole('radiogroup', { name: 'Gliederung' });
     // nach LV · Matrix
     expect(within(layouts).getAllByRole('radio').length).toBe(2);
 
-    // Facettenwerte sind Schaltflächen mit Auswahlzustand.
-    const facet = within(panel).getByRole('region', { name: 'Positionsart' });
-    const [option] = within(facet).getAllByRole('button', { pressed: false });
+    // Je Gruppe ein Chip mit aufklappbarer Liste echter Kästchen.
+    fireEvent.click(screen.getByRole('button', { name: '+ Filter' }));
+    const bar = screen.getByRole('region', { name: 'Filterleiste' });
+    const chip = within(bar).getByRole('button', { name: 'Positionsart' });
+    expect(chip).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(chip);
+    expect(chip).toHaveAttribute('aria-expanded', 'true');
+    const [option] = within(within(bar).getByRole('group', { name: 'Positionsart' })).getAllByRole(
+      'checkbox',
+    );
     fireEvent.click(option);
-    await waitFor(() => expect(option).toHaveAttribute('aria-pressed', 'true'));
+    await waitFor(() => expect(option).toBeChecked());
+    // Die Zahl am Chip zeigt die gewählten Werte; Escape schließt erst die Liste.
+    expect(
+      within(bar).getByRole('button', { name: 'Positionsart, 1 gewählt' }),
+    ).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(within(bar).queryByRole('group', { name: 'Positionsart' })).not.toBeInTheDocument();
   });
 
   it('zeigt eine verständliche Fehlermeldung bei nicht unterstützter GAEB-Version', async () => {

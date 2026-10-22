@@ -1,6 +1,7 @@
-// Leiste nach einer Auswahl im Langtext (Entscheidung 0063): sechs Farben zum
-// Markieren, je mit eigenem Namen, dazu „Farben benennen" und mit Admin-Zugang
-// „Begriff lernen" (Entscheidung 0053). Unter den Eigenschaften der Abschnitt
+// Menü beim Rechtsklick auf eine Auswahl im Langtext (Entscheidung 0063, Issue #155):
+// Kopieren, sechs Farben zum Markieren, je mit eigenem Namen, Anstreichung entfernen,
+// dazu „Farben benennen" und mit Admin-Zugang „Begriff lernen" (Entscheidung 0053).
+// Eine Auswahl allein öffnet es nicht mehr. Unter den Eigenschaften der Abschnitt
 // „Meine Textmarkierungen".
 
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
@@ -30,6 +31,8 @@ function useCloseOutside(ref: RefObject<HTMLElement | null>, onClose: () => void
 }
 
 const MENU_WIDTH = 230;
+/** Grobe Höhe des Menüs, damit es unten am Fenster nicht abgeschnitten wird. */
+const MENU_HEIGHT = 340;
 
 const ROW =
   'flex w-full cursor-pointer items-center gap-[8px] rounded-[6px] border-none bg-transparent px-[8px] py-[6px] text-left font-mono text-[12px] text-ink hover:bg-sunken';
@@ -46,13 +49,18 @@ function Swatch({ paint }: { paint: Paint }) {
 
 export function PaintBar({
   target,
+  onCopy,
   onPaint,
+  onUnpaint,
   onRename,
   onLearn,
   onClose,
 }: {
   target: PaintTarget;
+  onCopy: () => void;
   onPaint: (paint: Paint) => void;
+  /** Nur, wenn die Auswahl eine eigene Anstreichung berührt. */
+  onUnpaint: (() => void) | null;
   /** Öffnet „Farben benennen". */
   onRename: () => void;
   /** Nur mit Admin-Zugang und kurzer Auswahl. */
@@ -72,8 +80,22 @@ export function PaintBar({
       aria-orientation="vertical"
       data-keeps-popover=""
       className="ov-window fixed z-[70] flex flex-col gap-[1px] p-[6px]"
-      style={{ left, top: target.top, width: MENU_WIDTH }}
+      style={{
+        left,
+        top: Math.min(target.top, window.innerHeight - MENU_HEIGHT),
+        width: MENU_WIDTH,
+      }}
+      onContextMenu={(event) => event.preventDefault()}
     >
+      <button
+        type="button"
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={onCopy}
+        className={ROW}
+      >
+        Kopieren
+      </button>
+      <span aria-hidden="true" className="mx-[8px] my-[4px] h-px bg-line" />
       {PAINTS.map((paint) => {
         const own = names[paint];
         return (
@@ -98,6 +120,16 @@ export function PaintBar({
           </button>
         );
       })}
+      {onUnpaint !== null && (
+        <button
+          type="button"
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={onUnpaint}
+          className={ROW}
+        >
+          Anstreichung entfernen
+        </button>
+      )}
       <span aria-hidden="true" className="mx-[8px] my-[4px] h-px bg-line" />
       <button
         type="button"

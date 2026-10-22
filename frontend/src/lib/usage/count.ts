@@ -15,7 +15,7 @@ export const USAGE_EVENTS = [
   'letzte-datei-geoeffnet',
   'laden-fehlgeschlagen',
   'seitenfenster-ueberblick',
-  'seitenfenster-filter',
+  'filterleiste',
   'seitenfenster-pruefung',
   'tabelle',
   'vergleich',
@@ -44,7 +44,6 @@ const REPEATABLE: ReadonlySet<UsageEvent> = new Set([
 
 const SIDE_PANEL_EVENT = {
   overview: 'seitenfenster-ueberblick',
-  filter: 'seitenfenster-filter',
   check: 'seitenfenster-pruefung',
 } as const satisfies Record<string, UsageEvent>;
 
@@ -57,6 +56,8 @@ export function usageEventOf(action: ViewerAction): UsageEvent | null {
   switch (action.type) {
     case 'sidePanel':
       return action.panel === null ? null : SIDE_PANEL_EVENT[action.panel];
+    case 'filterBar':
+      return action.open ? 'filterleiste' : null;
     case 'tableWindow':
     case 'compareWindow':
       if (!action.open) return null;

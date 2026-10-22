@@ -68,9 +68,10 @@ export const Popover = forwardRef<HTMLDivElement, PopoverProps>(function Popover
   const parentHost = useContext(PopoverHostContext);
   const host = useHostWindow();
 
-  // Position folgt dem Anker im Viewport statt einem Elternelement — läuft bei
-  // jedem Öffnen sowie bei Resize/Scroll neu, weil ein per Portal gehängtes
-  // Popover sich sonst nicht mitbewegt.
+  // Position folgt dem Anker im Viewport statt einem Elternelement. Ein per Portal
+  // gehängtes Popover bewegt sich sonst nicht mit — auch nicht, wenn nur das Fenster
+  // mit dem Anker gezogen oder in der Größe geändert wird. Darum je Frame messen,
+  // solange es offen ist; geschrieben wird nur bei einer Änderung.
   useLayoutEffect(() => {
     if (!open) return;
     const element = ref.current;
@@ -86,16 +87,26 @@ export const Popover = forwardRef<HTMLDivElement, PopoverProps>(function Popover
         Math.max(VIEWPORT_MARGIN, maxLeft),
       );
       element.style.left = `${left}px`;
-      element.style.top = `${rect.bottom + 6}px`;
+      // Unten kein Platz (z. B. Zelle in der letzten Tabellenzeile): über dem Anker öffnen.
+      const below = rect.bottom + 6;
+      const above = rect.top - 6 - element.offsetHeight;
+      const fitsBelow = below + element.offsetHeight <= host.innerHeight - VIEWPORT_MARGIN;
+      element.style.top = `${fitsBelow || above < VIEWPORT_MARGIN ? below : above}px`;
     };
 
-    place();
-    host.addEventListener('resize', place);
-    host.addEventListener('scroll', place, true);
-    return () => {
-      host.removeEventListener('resize', place);
-      host.removeEventListener('scroll', place, true);
+    let frame = 0;
+    let last = '';
+    const follow = (): void => {
+      const { left, top } = anchor.getBoundingClientRect();
+      const key = `${left}|${top}|${host.innerWidth}`;
+      if (key !== last) {
+        last = key;
+        place();
+      }
+      frame = host.requestAnimationFrame(follow);
     };
+    follow();
+    return () => host.cancelAnimationFrame(frame);
   }, [open, align, anchorRef, host]);
 
   if (!open) return null;

@@ -1,6 +1,6 @@
 // Conocto — Wortmarke: Krake von oben (Kopf + acht Arme, die nach Informationen
 // greifen) + Kleinbuchstaben-Schriftzug. Die einzige illustrative Marke im System
-// (docs/decisions/0066-conocto-look.md).
+// (docs/decisions/0068-conocto-look.md).
 
 /** Acht gleichsinnig geschwungene Arme um den Kopf, Raster 100 × 100. */
 const ARME =

@@ -8,7 +8,7 @@
 //
 // Zwei unabhängige Marker (Entscheidung 0062): Fortschritt (offen → in Bearbeitung →
 // fertig) und „Wichtig". Beides ist eine eigene Notiz, nicht der GAEB-Status
-// (Entscheidung 0051): „Fertig" heißt „habe ich kalkuliert", nicht „Status geändert".
+// (Entscheidung 0051): „Erledigt" heißt „habe ich kalkuliert", nicht „Status geändert".
 //
 // Dazu eigene Anstreichungen im Langtext (Entscheidung 0063): Textstelle + Farbe.
 //
@@ -33,7 +33,7 @@ export interface MarkerInfo {
 
 export const PROGRESS_INFO: Readonly<Record<Progress, MarkerInfo>> = {
   bearbeitung: { label: 'In Bearbeitung', glyph: '◔', fill: 'var(--blue)', text: '#fff' },
-  fertig: { label: 'Fertig', glyph: '✓', fill: 'var(--greenD)', text: '#fff' },
+  fertig: { label: 'Erledigt', glyph: '✓', fill: 'var(--greenD)', text: '#fff' },
 };
 
 export const IMPORTANT_INFO: MarkerInfo = {
@@ -201,6 +201,31 @@ export function setImportant(
   return appendLog({ ...annotations, important }, id, { kind: 'important', at, on });
 }
 
+/** Ein Marker-Wert, der beim Ziehen in der Tabelle auf mehrere Positionen übergeht. */
+export type MarkerValue =
+  | { readonly kind: 'progress'; readonly progress: Progress | null }
+  | { readonly kind: 'important'; readonly on: boolean };
+
+/**
+ * Setzt denselben Marker auf alle `ids` (Ausfüllen per Ziehen, wie in Excel). Jede
+ * Position bekommt ihren eigenen Verlaufseintrag; schon passende bleiben unberührt.
+ */
+export function fillMarker(
+  annotations: Annotations,
+  ids: Iterable<string>,
+  value: MarkerValue,
+  at: number,
+): Annotations {
+  let out = annotations;
+  for (const id of ids) {
+    out =
+      value.kind === 'progress'
+        ? setProgress(out, id, value.progress, at)
+        : setImportant(out, id, value.on, at);
+  }
+  return out;
+}
+
 /** Hängt einen Kommentar an; nur Leerraum zählt als nichts. */
 export function addComment(
   annotations: Annotations,
@@ -231,6 +256,18 @@ export function commentsOf(annotations: Annotations, id: string): string[] {
     if (entry.kind === 'comment') out.push(entry.text);
   }
   return out;
+}
+
+/** Kommentare einer Position, der neueste zuerst — so stehen sie in der Tabelle. */
+export function latestCommentsOf(
+  annotations: Annotations,
+  id: string,
+): Array<{ readonly at: number; readonly text: string }> {
+  const out: Array<{ at: number; text: string }> = [];
+  for (const entry of annotations.log.get(id) ?? []) {
+    if (entry.kind === 'comment') out.push({ at: entry.at, text: entry.text });
+  }
+  return out.reverse();
 }
 
 export function hasComment(annotations: Annotations, id: string): boolean {
@@ -383,7 +420,7 @@ export function isOldMarker(value: unknown): value is OldMarker {
   return value === 'markiert' || value === 'wichtig' || value === 'erledigt';
 }
 
-/** „Markiert" und „Wichtig" werden „Wichtig", „Erledigt" wird „Fertig". */
+/** „Markiert" und „Wichtig" werden „Wichtig", „Erledigt" bleibt „Erledigt" (Fortschritt `fertig`). */
 export const oldIsImportant = (marker: OldMarker | null): boolean =>
   marker === 'markiert' || marker === 'wichtig';
 export const oldIsDone = (marker: OldMarker | null): boolean => marker === 'erledigt';

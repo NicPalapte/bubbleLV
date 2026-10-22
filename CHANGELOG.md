@@ -9,7 +9,7 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
-## 0.30.0 — 22.10.2026 · Conocto
+## 0.31.0 — 22.10.2026 · Conocto
 
 - **Neuer Name:** Bubble heißt jetzt **Conocto**. Con = Construction, Octo = die Krake,
   die mit acht Armen die Informationen aus dem LV greift.
@@ -18,6 +18,37 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
   Knöpfe, Hinweise sind bernsteinfarben.
 - **Neue Schriften:** Titel in Hanken Grotesk, Text in Schibsted Grotesk, eine Stufe größer.
 - Gespeicherte Datei, Notizen und geteilte Links funktionieren weiter.
+
+## 0.30.0 — 22.10.2026 · Tabelle als Arbeitsliste
+
+- **Fortschritt** und **„!"** (Wichtig) direkt in der Tabelle setzen, per Klick. Mit dem
+  Griff unten rechts in der Zelle zieht man den Wert über mehrere Zeilen, wie in Excel.
+  Die Spalte „Status" entfällt in der Tabelle.
+- **Kommentar** über die Spalte eintragen. Die Zelle zeigt den neuesten, ein Klick öffnet
+  den Verlauf, der neueste oben.
+- **Abschnitte** stehen als eigene Zeilen je Ebene, mit Anzahl Positionen und wie viele
+  erledigt sind. Oben bleibt beim Scrollen nur der aktuelle Abschnitt stehen.
+- Abschnitte per Klick **zuklappen**, dazu „Alle zuklappen" / „Alle aufklappen".
+- Menüs öffnen nach oben, wenn unten kein Platz ist.
+
+## 0.29.0 — 22.10.2026 · Filterleiste und Rechtsklick
+
+- **Filterleiste:** „+ Filter" klappt eine Leiste unter der Suche auf. Je Gruppe ein Knopf
+  mit Auswahlliste und Anzahl. Das Filterfenster entfällt.
+- **Filter „Material"** fasst Material und Merkmale zusammen: Material → Beton → Art,
+  Druckfestigkeit, Exposition … Die eigenen Marker stehen unter **„Status"**.
+- Im Filter „Material" stehen jetzt auch **gelernte Material-Begriffe** wie „Stahl".
+- **Reihenfolge der Filter:** Menge, Einheit, Material, Besonderheiten, Normen, Offene
+  Stellen, Positionsart, Positionstyp, Zeitbezug, Status.
+- **Darstellung** (Größe, Gliederung) steckt jetzt im Knopf unten rechts am Graphen.
+- **Positionskarte:** Fortschritt als Auswahlknopf, daneben „!" für Wichtig, beides neben
+  dem Titel. „Fertig" heißt jetzt **„Erledigt"**.
+- **Vergleichen** ist der hervorgehobene Knopf unter der Auswahl.
+- **Langtext:** Markieren allein öffnet nichts mehr. **Rechtsklick** auf die Auswahl
+  bietet Kopieren, Farben und „Anstreichung entfernen".
+- **Rechtsklick auf eine Position** (Graph, Tabelle, Vergleich): Fortschritt, Wichtig,
+  Vergleich, in der Tabelle zeigen, Link kopieren. In der Tabelle: **„Im Graph zeigen"**.
+- Menüs wie „Spalten" bleiben am Knopf, wenn man die Tabelle verschiebt oder ihre Größe ändert.
 
 ## 0.28.1 — 22.10.2026 · Zoom bleibt beim Größenwechsel
 

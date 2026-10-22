@@ -204,13 +204,15 @@ describe('Ohne Maus bedienbar', () => {
     const reiter = (name: string) =>
       within(seitenfenster()).getByRole('tab', { name: new RegExp(`^${name}`) });
     expect(reiter('Überblick')).toHaveAttribute('aria-selected', 'true');
-    expect(reiter('Filter')).toHaveAttribute('tabindex', '-1');
+    expect(reiter('Prüfung')).toHaveAttribute('tabindex', '-1');
 
     fireEvent.keyDown(reiter('Überblick'), { key: 'ArrowRight' });
-    expect(reiter('Filter')).toHaveAttribute('aria-selected', 'true');
-    expect(reiter('Filter')).toHaveFocus();
+    expect(reiter('Prüfung')).toHaveAttribute('aria-selected', 'true');
+    expect(reiter('Prüfung')).toHaveFocus();
 
-    fireEvent.keyDown(reiter('Filter'), { key: 'ArrowLeft' });
+    // Am Rand geht es reihum weiter.
+    fireEvent.keyDown(reiter('Prüfung'), { key: 'ArrowRight' });
+    expect(reiter('Überblick')).toHaveAttribute('aria-selected', 'true');
     fireEvent.keyDown(reiter('Überblick'), { key: 'ArrowLeft' });
     expect(reiter('Prüfung')).toHaveAttribute('aria-selected', 'true');
   });

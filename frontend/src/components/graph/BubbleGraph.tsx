@@ -26,6 +26,7 @@ import {
 } from 'react';
 import { GraphControls } from './GraphControls';
 import { useHostWindow } from '../common/hostWindow';
+import { usePositionMenu } from '../common/positionMenuContext';
 import { sidePanelSpace } from '../shell/SidePanel';
 import {
   GROUP_GAP,
@@ -220,6 +221,7 @@ export function BubbleGraph({ root, cardOverlay = true }: { root: LVNode; cardOv
     selection: { compare },
   } = useViewer();
   const dispatch = useViewerDispatch();
+  const openMenu = usePositionMenu();
   // Im eigenen Browserfenster (Entscheidung 0039) kommen Mausereignisse dort an.
   const hostWindow = useHostWindow();
   const { layout, rows, cols, sizeMode, showHints } = graph;
@@ -535,6 +537,14 @@ export function BubbleGraph({ root, cardOverlay = true }: { root: LVNode; cardOv
     }
   }
 
+  // „Im Graph zeigen" (Rechtsklick in der Tabelle): einmal je Anforderung auf die Auswahl
+  // einpassen. Im Render wie oben, damit kein Frame den alten Ausschnitt zeigt.
+  const [shownFocus, setShownFocus] = useState(graph.focus);
+  if (shownFocus !== graph.focus && w > 0 && h > 0) {
+    setShownFocus(graph.focus);
+    fitSelection();
+  }
+
   // ── Wechsel der Gliederung: Punkte gleiten an den neuen Platz (Entscheidung 0059).
   // Nur bei Gliederung, Zeilen oder Spalten — ein Filterwechsel springt wie bisher.
   const arrangement = `${layout}|${rows}|${cols ?? ''}`;
@@ -626,6 +636,18 @@ export function BubbleGraph({ root, cardOverlay = true }: { root: LVNode; cardOv
     if (group !== undefined) activateGroup(group);
   };
 
+  // Rechtsklick (Issue #155): Menü für Punkt oder Abschnitt, ohne die Auswahl zu ändern.
+  const onWorldContextMenu = (event: ReactMouseEvent<SVGGElement>): void => {
+    const target = (event.target as Element).closest('[data-slot],[data-group]');
+    if (target === null) return;
+    const slot = target.getAttribute('data-slot');
+    const group = slot === null ? map.groups[Number(target.getAttribute('data-group'))] : undefined;
+    const id = slot !== null ? index.nodes[Number(slot)].id : (group?.nodeId ?? null);
+    if (id === null) return;
+    event.preventDefault();
+    openMenu(id, event.clientX, event.clientY, 'graph', event.currentTarget.ownerDocument);
+  };
+
   const onWorldDoubleClick = (event: ReactMouseEvent<SVGGElement>): void => {
     const target = (event.target as Element).closest('[data-group]');
     const group =
@@ -712,6 +734,24 @@ export function BubbleGraph({ root, cardOverlay = true }: { root: LVNode; cardOv
         event.preventDefault();
         fitSelection();
         return;
+      case 'ContextMenu':
+      case 'F10': {
+        // Kontextmenü-Taste oder Shift+F10: das Menü des Punkts mit Fokus.
+        if (event.key === 'F10' && !event.shiftKey) return;
+        event.preventDefault();
+        if (current < 0) return;
+        const dot = wrapRef.current?.querySelector(`[data-slot="${current}"]`);
+        const box = (dot ?? wrapRef.current)?.getBoundingClientRect();
+        if (box === undefined) return;
+        openMenu(
+          index.nodes[current].id,
+          box.left + box.width / 2,
+          box.top + box.height / 2,
+          'graph',
+          event.currentTarget.ownerDocument,
+        );
+        return;
+      }
       default:
         return;
     }
@@ -894,6 +934,7 @@ export function BubbleGraph({ root, cardOverlay = true }: { root: LVNode; cardOv
           style={{ transform: `translate(${view.tx}px, ${view.ty}px) scale(${k})` }}
           onClick={onWorldClick}
           onDoubleClick={onWorldDoubleClick}
+          onContextMenu={onWorldContextMenu}
           onMouseOver={onWorldOver}
           onMouseLeave={onWorldLeave}
         >
