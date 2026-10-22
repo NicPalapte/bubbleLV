@@ -52,6 +52,7 @@ const AXIS_LABELS: Readonly<Record<string, string>> = {
 export function DisplayControls() {
   const {
     lv,
+    summary,
     view: {
       graph: { layout, rows, cols },
     },
@@ -62,8 +63,7 @@ export function DisplayControls() {
   // Nur Merkmale, die in dieser Datei mindestens einen Wert haben; Abschnitt
   // und Mengenstufe stehen immer da, sie kommen aus der Datei selbst.
   const axes = AXIS_IDS.filter(
-    (id) =>
-      id === SECTION_AXIS || id === QUANTITY_AXIS || (lv.summary.facets.get(id)?.size ?? 0) > 0,
+    (id) => id === SECTION_AXIS || id === QUANTITY_AXIS || (summary.facets.get(id)?.size ?? 0) > 0,
   ).map((id) => ({
     value: id,
     label: AXIS_LABELS[id] ?? FACETS_BY_ID.get(id)?.label ?? id,

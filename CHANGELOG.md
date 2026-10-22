@@ -15,6 +15,9 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
   mit Auswahlliste und Anzahl. Das Filterfenster entfällt.
 - **Filter „Material"** fasst Material und Merkmale zusammen: Material → Beton → Art,
   Druckfestigkeit, Exposition … Die eigenen Marker stehen unter **„Status"**.
+- Im Filter „Material" stehen jetzt auch **gelernte Material-Begriffe** wie „Stahl".
+- **Reihenfolge der Filter:** Menge, Einheit, Material, Besonderheiten, Normen, Offene
+  Stellen, Positionsart, Positionstyp, Zeitbezug, Status.
 - **Darstellung** (Größe, Gliederung) steckt jetzt im Knopf unten rechts am Graphen.
 - **Positionskarte:** Fortschritt als Auswahlknopf, daneben „!" für Wichtig, beides neben
   dem Titel. „Fertig" heißt jetzt **„Erledigt"**.

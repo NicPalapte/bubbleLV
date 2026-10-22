@@ -12,6 +12,8 @@ import {
   filterMask,
   type PositionIndex,
 } from '../lib/index/positionIndex';
+import { materialTerms, withLearnedMaterials } from '../lib/index/learnedMaterials';
+import { EMPTY_SUMMARY, summarize, type LVSummary } from '../lib/index/summary';
 import { prepareFilters, type ActiveFilters } from '../lib/matchPos';
 import { measure } from '../lib/perf';
 import { countEvent, usageEventOf } from '../lib/usage/count';
@@ -30,6 +32,7 @@ import {
   type ViewerAction,
   type ViewerDerived,
 } from './viewer';
+import { useAdmin } from './admin';
 import type { LVNode } from '../types/lvNode';
 
 const EMPTY_NODES: ReadonlyMap<string, LVNode> = new Map();
@@ -58,10 +61,25 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
   // Der flache Positions-Index entsteht einmal je geladenem LV. Er muss hier
   // gebaut werden und nicht im Worker: er verweist auf die Baumknoten, und
   // Objektidentität überlebt den structuredClone der Worker-Grenze nicht.
-  const index = useMemo<PositionIndex>(() => {
+  const baseIndex = useMemo<PositionIndex>(() => {
     if (tree === null) return EMPTY_POSITION_INDEX;
     return measure('Positions-Index', () => buildPositionIndex(tree));
   }, [tree]);
+
+  // Als Material gelernte Begriffe zählen in der Facette „Material" mit (Entscheidung
+  // 0066). Nur bei neuem LV oder geänderten Begriffen; ohne Begriffe derselbe Index
+  // und die Zählung aus dem Laden.
+  const { terms } = useAdmin();
+  const learnedMaterials = useMemo(() => materialTerms(terms), [terms]);
+  const index = useMemo<PositionIndex>(
+    () => measure('Gelernte Materialien', () => withLearnedMaterials(baseIndex, learnedMaterials)),
+    [baseIndex, learnedMaterials],
+  );
+  const loadedSummary = state.lv?.summary ?? EMPTY_SUMMARY;
+  const summary = useMemo<LVSummary>(
+    () => (index === baseIndex ? loadedSummary : summarize(index)),
+    [index, baseIndex, loadedSummary],
+  );
 
   // Eine Aufbereitung je Filterwechsel — Trefferzahlen, Tabelle und Überblick
   // rechnen gegen dieselbe.
@@ -125,6 +143,7 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
       nodes: structure.nodes,
       parents: structure.parents,
       index,
+      summary,
       active,
       selectedNode:
         state.selection.nodeId === null
@@ -144,6 +163,7 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
       tree,
       structure,
       index,
+      summary,
       active,
       state.selection.nodeId,
       state.selection.positionId,

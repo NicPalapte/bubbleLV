@@ -13,7 +13,6 @@ import { useDismiss } from '../common/useDismiss';
 import { commentedIds, markerCounts, PROGRESS, PROGRESS_INFO } from '../../lib/annotations';
 import { FACETS, facetOptionLabel, type Facet } from '../../lib/facets';
 import { formatCount } from '../../lib/format';
-import { EMPTY_SUMMARY } from '../../lib/index/summary';
 import { countActiveFilters } from '../../lib/matchPos';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 
@@ -27,6 +26,25 @@ const OPTION =
 
 const HEADING =
   'px-[8px] pb-[2px] pt-[8px] font-mono text-[9.5px] uppercase tracking-[0.7px] text-mute first:pt-[2px]';
+
+/**
+ * Reihenfolge der Chips (Nico, 2026-10-22): Menge, Einheit, Material, dann die übrigen
+ * Facetten wie hier, zuletzt Status. Nicht genannte Facetten hinten.
+ */
+const CHIP_ORDER = [
+  'einheit',
+  'keywords',
+  'normen',
+  'platzhalter',
+  'positionsart',
+  'positionstyp',
+  'fristen',
+];
+const BEFORE_MATERIAL: ReadonlySet<string> = new Set(['einheit']);
+const orderOf = (id: string): number => {
+  const at = CHIP_ORDER.indexOf(id);
+  return at < 0 ? CHIP_ORDER.length : at;
+};
 
 const RESET =
   'cursor-pointer border-none bg-transparent p-0 font-mono text-[10px] font-medium uppercase tracking-[0.7px] text-blueD';
@@ -291,6 +309,7 @@ export function FilterBar() {
   const {
     lv,
     view,
+    summary,
     filter: { filters, notes },
   } = useViewer();
   const dispatch = useViewerDispatch();
@@ -317,7 +336,6 @@ export function FilterBar() {
 
   if (!shown) return null;
 
-  const summary = lv.summary ?? EMPTY_SUMMARY;
   const ownActive =
     (notes.progress === null ? 0 : 1) + (notes.important ? 1 : 0) + (notes.commented ? 1 : 0);
   const anyActive = countActiveFilters(filters) + ownActive > 0;
@@ -325,12 +343,33 @@ export function FilterBar() {
   const present = FACETS.filter((facet) => (summary.facets.get(facet.id)?.size ?? 0) > 0);
   const inMaterial = (facet: Facet): boolean =>
     facet.id === 'material' || facet.material !== undefined;
-  const facets = present.filter((facet) => !inMaterial(facet));
+  const facets = present
+    .filter((facet) => !inMaterial(facet))
+    .sort((a, b) => orderOf(a.id) - orderOf(b.id));
   const materialFacet = present.find((facet) => facet.id === 'material');
   const properties = present.filter((facet) => facet.material !== undefined);
   const materialActive = present
     .filter(inMaterial)
     .reduce((sum, facet) => sum + (filters.facets[facet.id]?.size ?? 0), 0);
+
+  const facetChip = (facet: Facet): ReactNode => {
+    const active = filters.facets[facet.id] ?? EMPTY_SELECTION;
+    return (
+      <GroupChip
+        key={facet.id}
+        label={facet.label}
+        active={active.size}
+        open={openGroup === facet.id}
+        onToggle={() => toggle(facet.id)}
+      >
+        <FacetOptions
+          facet={facet}
+          counts={summary.facets.get(facet.id) ?? new Map()}
+          active={active}
+        />
+      </GroupChip>
+    );
+  };
 
   return (
     <div
@@ -369,6 +408,7 @@ export function FilterBar() {
           </div>
         </GroupChip>
       )}
+      {facets.filter((facet) => BEFORE_MATERIAL.has(facet.id)).map(facetChip)}
       {(materialFacet !== undefined || properties.length > 0) && (
         <GroupChip
           label="Material"
@@ -383,24 +423,7 @@ export function FilterBar() {
           />
         </GroupChip>
       )}
-      {facets.map((facet) => {
-        const active = filters.facets[facet.id] ?? EMPTY_SELECTION;
-        return (
-          <GroupChip
-            key={facet.id}
-            label={facet.label}
-            active={active.size}
-            open={openGroup === facet.id}
-            onToggle={() => toggle(facet.id)}
-          >
-            <FacetOptions
-              facet={facet}
-              counts={summary.facets.get(facet.id) ?? new Map()}
-              active={active}
-            />
-          </GroupChip>
-        );
-      })}
+      {facets.filter((facet) => !BEFORE_MATERIAL.has(facet.id)).map(facetChip)}
       <GroupChip
         label="Status"
         active={ownActive}

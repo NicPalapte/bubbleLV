@@ -45,6 +45,7 @@ import {
 import type { HintIndex } from '../lib/check';
 import { AXIS_FACETS } from '../lib/graph/layoutMap';
 import type { PositionIndex } from '../lib/index/positionIndex';
+import type { LVSummary } from '../lib/index/summary';
 import type { ActiveFilters } from '../lib/matchPos';
 import type { LoadedLV } from '../lib/pipeline/runPipeline';
 import type { SharedState } from '../lib/share/urlState';
@@ -370,6 +371,11 @@ export interface ViewerDerived {
    * (WP-I). Der Baum bleibt die Struktur, dieser Index die Rechenbasis.
    */
   index: PositionIndex;
+  /**
+   * Zähler und Wertebereiche über das ganze LV — aus dem Laden, mit den als Material
+   * gelernten Begriffen ergänzt (Entscheidung 0066). Statt `lv.summary` lesen.
+   */
+  summary: LVSummary;
   /** Aufbereiteter Filter für einen Durchlauf — einmal je Filterwechsel. */
   active: ActiveFilters;
   selectedNode: LVNode | null;

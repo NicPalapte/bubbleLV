@@ -105,3 +105,15 @@ describe('Filterleiste: Material', () => {
     expect(gruppe.getByRole('button', { name: 'Merkmale Beton' })).toBeDisabled();
   });
 });
+
+describe('Filterleiste: Reihenfolge', () => {
+  it('beginnt mit Menge, Einheit, Material und endet mit Status', () => {
+    const leiste = setup();
+    const namen = within(leiste)
+      .getAllByRole('button', { expanded: false })
+      .map((knopf) => knopf.getAttribute('aria-label') ?? knopf.textContent);
+    expect(namen.slice(0, 3)).toEqual(['Menge', 'Einheit', 'Material']);
+    expect(namen.at(-1)).toBe('Status');
+    expect(namen.indexOf('Positionsart')).toBeGreaterThan(namen.indexOf('Normen'));
+  });
+});
