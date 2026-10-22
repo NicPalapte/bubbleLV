@@ -150,7 +150,12 @@ function OwnOptions() {
   const dispatch = useViewerDispatch();
   const counts = useMemo(() => markerCounts(annotations), [annotations]);
   const commented = useMemo(() => commentedIds(annotations).length, [annotations]);
-  const open = index.size - counts.bearbeitung - counts.fertig;
+  // Wie der Filter „Offen": Positionen des Index ohne Fortschritt. Marker an IDs, die
+  // nicht (mehr) im Index stehen, zählen so nicht mit.
+  const open = useMemo(
+    () => index.nodes.filter((node) => !annotations.progress.has(node.id)).length,
+    [index, annotations],
+  );
   return (
     <>
       <Option
