@@ -5,6 +5,7 @@
 
 import { useCallback, useMemo, useRef } from 'react';
 import { sidePanelSpace } from './SidePanel';
+import { usePositionMenu } from '../common/positionMenuContext';
 import { useDragResize } from '../common/useDragResize';
 import { compareRows } from '../../lib/compare/rows';
 import { markCommonWords } from '../../lib/compare/textDiff';
@@ -57,6 +58,7 @@ export function CompareWindow() {
     view: { compareWindow, side, sideWidth },
   } = useViewer();
   const dispatch = useViewerDispatch();
+  const openMenu = usePositionMenu();
   const ref = useRef<HTMLDivElement>(null);
 
   const setPos = useCallback(
@@ -223,6 +225,10 @@ export function CompareWindow() {
               {columns.map(({ node, position }, i) => (
                 <th
                   key={node.id}
+                  onContextMenu={(event) => {
+                    event.preventDefault();
+                    openMenu(node.id, event.clientX, event.clientY, 'compare');
+                  }}
                   className="sticky top-0 z-[2] min-w-[200px] border-b border-line bg-sunken px-[12px] py-[10px] text-left align-top font-normal"
                 >
                   <div className="flex items-center gap-[8px]">

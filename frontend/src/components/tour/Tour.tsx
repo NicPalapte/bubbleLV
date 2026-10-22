@@ -109,9 +109,10 @@ function runPrepare(prepare: TourPrepare, dispatch: ReturnType<typeof useViewerD
   switch (prepare) {
     case 'closeSide':
       dispatch({ type: 'sidePanel', panel: null });
+      dispatch({ type: 'filterBar', open: false });
       return;
-    case 'openFilter':
-      dispatch({ type: 'sidePanel', panel: 'filter' });
+    case 'openSettings':
+      dispatch({ type: 'graphSettings', open: true });
       return;
     case 'closeSelection':
       dispatch({ type: 'closeSelection' });

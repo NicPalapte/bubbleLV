@@ -5,7 +5,8 @@ import { countEvent, countUrl, USAGE_EVENTS, usageEventOf } from '../../src/lib/
 
 describe('usageEventOf', () => {
   it('zählt geöffnete Seitenfenster, aber nicht das Schließen', () => {
-    expect(usageEventOf({ type: 'sidePanel', panel: 'filter' })).toBe('seitenfenster-filter');
+    expect(usageEventOf({ type: 'filterBar', open: true })).toBe('filterleiste');
+    expect(usageEventOf({ type: 'filterBar', open: false })).toBeNull();
     expect(usageEventOf({ type: 'sidePanel', panel: 'check' })).toBe('seitenfenster-pruefung');
     expect(usageEventOf({ type: 'sidePanel', panel: null })).toBeNull();
     expect(usageEventOf({ type: 'tableWindow', open: true })).toBe('tabelle');

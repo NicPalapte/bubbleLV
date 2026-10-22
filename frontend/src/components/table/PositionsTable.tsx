@@ -16,6 +16,7 @@
 
 import { useMemo, useRef, useState } from 'react';
 import { Highlighted } from '../common/Highlighted';
+import { usePositionMenu } from '../common/positionMenuContext';
 import { useDismiss } from '../common/useDismiss';
 import { Chip } from '../ui/Chip';
 import { DataTable, type Column } from '../ui/DataTable';
@@ -388,6 +389,7 @@ export function PositionsTable({ root }: { root: LVNode }) {
     filter: { hideMode },
   } = useViewer();
   const dispatch = useViewerDispatch();
+  const openMenu = usePositionMenu();
   // Der Ansichts-Zustand führt den Sortierschlüssel als Zeichenkette: die
   // Spaltenschlüssel kennt nur diese Komponente. Unbekannte Schlüssel fallen
   // unten in `sortValue` auf „kein Wert" zurück, sortieren also stabil.
@@ -548,6 +550,10 @@ export function PositionsTable({ root }: { root: LVNode }) {
               nodeId: root.id,
               positionId: selectedPositionId === key ? null : key,
             });
+          }}
+          onRowContextMenu={(key, event) => {
+            event.preventDefault();
+            openMenu(key, event.clientX, event.clientY, 'table', event.currentTarget.ownerDocument);
           }}
           initialScrollTop={scroll.table}
           onLeave={(top) => dispatch({ type: 'viewScroll', view: 'table', top })}

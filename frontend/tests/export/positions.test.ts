@@ -98,7 +98,7 @@ describe('positionsCsv', () => {
     expect(kopf).toContain('Wichtig');
     expect(kopf).toContain('Kommentar');
     expect(kopf).toContain('Textmarkierungen');
-    expect(csv).toContain(';Fertig;Wichtig;"Boden; prüfen";');
+    expect(csv).toContain(';Erledigt;Wichtig;"Boden; prüfen";');
     expect(datenzeilen(csv)).toHaveLength(index.size);
   });
 

@@ -2,8 +2,9 @@
 // Befehlspalette gibt es nicht mehr; Strg K holt die Suche, Export und Druck
 // stehen im Logo-Menü (docs/decisions/0038-keine-befehlspalette.md).
 // Seit dem neuen Hauptscreen eine schmale Zeile (docs/decisions/0034-graph-als-
-// hauptscreen.md): kein Ansichtsumschalter mehr, die Filter wählt man im
-// Seitenfenster („+ Filter"), hier stehen sie nur als entfernbare Chips.
+// hauptscreen.md): kein Ansichtsumschalter mehr, die Filter wählt man in der
+// Filterleiste darunter („+ Filter", Issue #154), hier stehen sie nur als
+// entfernbare Chips — auch die eigenen Marker.
 // Der Schalter „Nicht-Treffer" sitzt in der Suche, weil er für Suche und alle
 // Filter gilt — in Graph und Tabelle (docs/decisions/0058-nicht-treffer-in-der-suche.md).
 
@@ -15,13 +16,7 @@ import { NotesImportDialog } from './NotesImportDialog';
 import { AboutMenu } from './AboutMenu';
 import { useMitnehmen } from '../common/useMitnehmen';
 import { WorkspaceBar } from '../shell/WorkspaceBar';
-import {
-  commentedIds,
-  IMPORTANT_INFO,
-  markerCounts,
-  PROGRESS,
-  PROGRESS_INFO,
-} from '../../lib/annotations';
+import { PROGRESS_INFO } from '../../lib/annotations';
 import { FACETS, facetOptionLabel } from '../../lib/facets';
 import { formatCount } from '../../lib/format';
 import { NotesFileError, notesCount, readNotesFile, type NotesFile } from '../../lib/notesFile';
@@ -48,40 +43,6 @@ interface ActiveChip {
 
 const GHOST =
   'inline-flex h-[32px] shrink-0 cursor-pointer items-center gap-[6px] rounded-[var(--r-sm)] border-none bg-transparent px-[10px] font-mono text-[11px] text-dim hover:bg-sunken hover:text-ink';
-
-/** Filterschalter für eigene Notizen; versteckt, solange es nichts zu filtern gibt. */
-function NoteFilterButton({
-  label,
-  glyph,
-  count,
-  on,
-  onClick,
-}: {
-  label: string;
-  glyph: string;
-  count: number;
-  on: boolean;
-  onClick: () => void;
-}) {
-  if (count === 0 && !on) return null;
-  return (
-    <button
-      type="button"
-      aria-pressed={on}
-      onClick={onClick}
-      title={on ? `${label}: Filter aus` : `Nur ${label.toLowerCase()} zeigen`}
-      className={`inline-flex h-[30px] shrink-0 cursor-pointer items-center gap-[6px] whitespace-nowrap rounded-[var(--r-pill)] border px-[11px] font-mono text-[10.5px] shadow-[var(--shadow-sm)] ${
-        on
-          ? 'border-blue bg-blueS text-blueD'
-          : 'border-line bg-surface text-dim hover:border-line2'
-      }`}
-    >
-      <span aria-hidden="true">{glyph}</span>
-      {label}
-      <span className={on ? 'text-blueD' : 'text-mute'}>{count}</span>
-    </button>
-  );
-}
 
 const HIDE_MODES: ReadonlyArray<{ value: HideMode; label: string; icon: ReactNode }> = [
   {
@@ -152,13 +113,10 @@ export function TopBar() {
     lv,
     filter: { filters, search, notes },
     annotations,
-    index,
     view,
     active,
   } = useViewer();
   const dispatch = useViewerDispatch();
-  const counts = useMemo(() => markerCounts(annotations), [annotations]);
-  const commentCount = useMemo(() => commentedIds(annotations).length, [annotations]);
   const notizAnzahl = useMemo(() => notesCount(annotations), [annotations]);
   const mitnehmen = useMitnehmen();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -263,7 +221,28 @@ export function TopBar() {
       remove: () => dispatch({ type: 'setMenge', range: null }),
     });
   }
-  const filterOpen = view.side === 'filter';
+  if (notes.progress !== null) {
+    chips.push({
+      key: 'progress',
+      label: notes.progress === 'offen' ? 'Offen' : PROGRESS_INFO[notes.progress].label,
+      remove: () => dispatch({ type: 'toggleProgressFilter', value: notes.progress ?? 'offen' }),
+    });
+  }
+  if (notes.important) {
+    chips.push({
+      key: 'important',
+      label: 'Wichtig',
+      remove: () => dispatch({ type: 'toggleImportantFilter' }),
+    });
+  }
+  if (notes.commented) {
+    chips.push({
+      key: 'commented',
+      label: 'Mit Kommentar',
+      remove: () => dispatch({ type: 'toggleCommentFilter' }),
+    });
+  }
+  const filterOpen = view.filterBar;
 
   return (
     <>
@@ -350,7 +329,7 @@ export function TopBar() {
               {chips.length > MAX_CHIPS && (
                 <button
                   type="button"
-                  onClick={() => dispatch({ type: 'sidePanel', panel: 'filter' })}
+                  onClick={() => dispatch({ type: 'filterBar', open: true })}
                   className="shrink-0 cursor-pointer whitespace-nowrap border-none bg-transparent p-0 font-mono text-[10px] text-blue"
                 >
                   +{formatCount(chips.length - MAX_CHIPS)} weitere
@@ -370,9 +349,9 @@ export function TopBar() {
               {active.filtering && <HideModeToggle />}
               <button
                 type="button"
-                aria-pressed={filterOpen}
+                aria-expanded={filterOpen}
                 data-tour="filter"
-                onClick={() => dispatch({ type: 'sidePanel', panel: filterOpen ? null : 'filter' })}
+                onClick={() => dispatch({ type: 'filterBar', open: !filterOpen })}
                 className={`inline-flex h-[26px] shrink-0 cursor-pointer items-center whitespace-nowrap rounded-[var(--r-pill)] border px-[10px] font-mono text-[10.5px] ${
                   filterOpen
                     ? 'border-solid border-blue bg-blueS text-blueD'
@@ -382,45 +361,6 @@ export function TopBar() {
                 + Filter
               </button>
             </div>
-
-            {/* Eigene Marker und Kommentare (Entscheidungen 0047, 0053, 0062): erst
-                sichtbar, wenn es welche gibt — sonst wären es leere Knöpfe mehr. */}
-            {/* Beim Kalkulieren: was noch nicht angefasst ist. */}
-            <NoteFilterButton
-              label="Offen"
-              glyph="○"
-              count={
-                counts.bearbeitung + counts.fertig > 0
-                  ? index.size - counts.bearbeitung - counts.fertig
-                  : 0
-              }
-              on={notes.progress === 'offen'}
-              onClick={() => dispatch({ type: 'toggleProgressFilter', value: 'offen' })}
-            />
-            {PROGRESS.map((progress) => (
-              <NoteFilterButton
-                key={progress}
-                label={PROGRESS_INFO[progress].label}
-                glyph={PROGRESS_INFO[progress].glyph}
-                count={counts[progress]}
-                on={notes.progress === progress}
-                onClick={() => dispatch({ type: 'toggleProgressFilter', value: progress })}
-              />
-            ))}
-            <NoteFilterButton
-              label={IMPORTANT_INFO.label}
-              glyph={IMPORTANT_INFO.glyph}
-              count={counts.wichtig}
-              on={notes.important}
-              onClick={() => dispatch({ type: 'toggleImportantFilter' })}
-            />
-            <NoteFilterButton
-              label="Mit Kommentar"
-              glyph="✎"
-              count={commentCount}
-              on={notes.commented}
-              onClick={() => dispatch({ type: 'toggleCommentFilter' })}
-            />
 
             {view.mode !== 'graph' && (
               <button

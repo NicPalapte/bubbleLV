@@ -1,19 +1,14 @@
 // Eigene Marker und Kommentar-Verlauf zu einer Position (Entscheidungen 0047, 0053, 0062).
-// Fortschritt und „Wichtig" stehen unten in der Karte bei „Vergleichen", der Verlauf
+// Fortschritt und „Wichtig" stehen in der Titelzeile der Karte (Issue #153), der Verlauf
 // als letzter Block im Inhalt. „Senden" hängt einen Kommentar mit Zeitpunkt an;
 // Marker-Wechsel stehen grau dazwischen. useSaveAnnotations schreibt kurz danach
 // in den Speicher der letzten Datei.
 
-import { useState } from 'react';
-import { CARD_BUTTON, Section } from './CardParts';
-import {
-  formatAt,
-  IMPORTANT_INFO,
-  PROGRESS,
-  PROGRESS_INFO,
-  type LogEntry,
-  type Progress,
-} from '../../lib/annotations';
+import { useRef, useState } from 'react';
+import { Section } from './CardParts';
+import { PROGRESS_CHOICES, setImportantNow, setProgressNow } from './markers';
+import { useDismiss } from './useDismiss';
+import { formatAt, IMPORTANT_INFO, PROGRESS_INFO, type LogEntry } from '../../lib/annotations';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 
 function entryLine(entry: Exclude<LogEntry, { kind: 'comment' }>): string {
@@ -105,72 +100,87 @@ export function NoteBlock({ positionId }: { positionId: string }) {
   );
 }
 
-type Dispatch = ReturnType<typeof useViewerDispatch>;
+const HEAD_BUTTON =
+  'inline-flex h-[28px] shrink-0 cursor-pointer items-center rounded-[var(--r-sm)] border font-mono text-[10.5px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue';
 
-// Außerhalb der Komponente: `Date.now()` ist im Render-Pfad nicht rein.
-function setProgressNow(dispatch: Dispatch, id: string, progress: Progress | null): void {
-  dispatch({ type: 'setProgress', id, progress, at: Date.now() });
-}
-
-function setImportantNow(dispatch: Dispatch, id: string, on: boolean): void {
-  dispatch({ type: 'setImportant', id, on, at: Date.now() });
-}
-
-const SEGMENT =
-  'inline-flex h-[30px] cursor-pointer items-center gap-[5px] border-none bg-surface px-[9px] font-mono text-[10.5px] text-dim hover:bg-sunken focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue';
-
-/**
- * Fortschritt (Offen · In Bearbeitung · Fertig) und „Wichtig" für die Fußleiste der
- * Positionskarte (Entscheidung 0062). Beides unabhängig: „Fertig" kann wichtig bleiben.
- */
-export function MarkerButtons({ positionId }: { positionId: string }) {
+/** Fortschritt als Knopf mit Auswahlliste (Issue #153): ein Klick auf, ein Klick setzt. */
+function ProgressMenu({ positionId }: { positionId: string }) {
   const { annotations } = useViewer();
   const dispatch = useViewerDispatch();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useDismiss(ref, open, () => setOpen(false));
   const current = annotations.progress.get(positionId) ?? null;
-  const important = annotations.important.has(positionId);
-
-  const segments: Array<{ value: Progress | null; label: string }> = [
-    { value: null, label: 'Offen' },
-    ...PROGRESS.map((value) => ({ value, label: PROGRESS_INFO[value].label })),
-  ];
+  const info = current === null ? null : PROGRESS_INFO[current];
 
   return (
-    <>
-      <div
-        role="group"
+    <div ref={ref} className="relative">
+      <button
+        type="button"
         aria-label="Fortschritt"
-        className="inline-flex overflow-hidden rounded-[var(--r-sm)] border border-line"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+        className={`${HEAD_BUTTON} gap-[6px] border-line bg-surface px-[10px] text-ink hover:border-line2`}
+        style={
+          info === null
+            ? undefined
+            : { background: info.fill, borderColor: info.fill, color: info.text }
+        }
       >
-        {segments.map(({ value, label }, i) => {
-          const on = value === current;
-          const info = value === null ? null : PROGRESS_INFO[value];
-          return (
+        {info === null ? 'Offen' : info.label}
+        <svg width="9" height="6" viewBox="0 0 9 6" aria-hidden="true">
+          <path d="M1 1l3.5 3.5L8 1" fill="none" stroke="currentColor" strokeWidth="1.4" />
+        </svg>
+      </button>
+      {open && (
+        <div
+          role="menu"
+          aria-label="Fortschritt"
+          className="ov-window absolute right-0 top-[34px] z-[20] flex min-w-[170px] flex-col gap-[2px] p-[5px]"
+        >
+          {PROGRESS_CHOICES.map(({ value, label }) => (
             <button
               key={label}
               type="button"
-              aria-pressed={on}
-              onClick={() => setProgressNow(dispatch, positionId, value)}
-              className={`${SEGMENT} ${i > 0 ? 'border-l border-solid border-line' : ''}`}
-              style={
-                on && info !== null
-                  ? { background: info.fill, color: info.text }
-                  : on
-                    ? { background: 'var(--sunken)', color: 'var(--ink)' }
-                    : undefined
-              }
+              role="menuitemradio"
+              aria-checked={value === current}
+              onClick={() => {
+                if (value !== current) setProgressNow(dispatch, positionId, value);
+                setOpen(false);
+              }}
+              className="flex h-[30px] cursor-pointer items-center justify-between gap-[12px] rounded-[var(--r-sm)] border-none bg-transparent px-[8px] text-left font-mono text-[11px] text-ink hover:bg-sunken"
             >
-              {info !== null && <span aria-hidden="true">{info.glyph}</span>}
               {label}
+              {value === current && (
+                <span aria-hidden="true" className="h-[6px] w-[6px] rounded-full bg-blue" />
+              )}
             </button>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Fortschritt und „Wichtig" in der Titelzeile der Positionskarte (Entscheidung 0062,
+ * Issue #153). Beides unabhängig: „Erledigt" kann wichtig bleiben.
+ */
+export function MarkerHead({ positionId }: { positionId: string }) {
+  const { annotations } = useViewer();
+  const dispatch = useViewerDispatch();
+  const important = annotations.important.has(positionId);
+  return (
+    <div className="flex shrink-0 items-center gap-[6px]">
+      <ProgressMenu positionId={positionId} />
       <button
         type="button"
+        aria-label={IMPORTANT_INFO.label}
         aria-pressed={important}
         onClick={() => setImportantNow(dispatch, positionId, !important)}
         title={important ? '„Wichtig" aufheben' : 'Als wichtig markieren'}
-        className={`${CARD_BUTTON} gap-[6px] px-[10px]`}
+        className={`${HEAD_BUTTON} w-[28px] justify-center font-sans text-[14px] font-bold`}
         style={
           important
             ? {
@@ -178,12 +188,15 @@ export function MarkerButtons({ positionId }: { positionId: string }) {
                 borderColor: IMPORTANT_INFO.fill,
                 color: IMPORTANT_INFO.text,
               }
-            : undefined
+            : {
+                background: 'var(--surface)',
+                borderColor: 'var(--line)',
+                color: IMPORTANT_INFO.fill,
+              }
         }
       >
-        <span aria-hidden="true">{IMPORTANT_INFO.glyph}</span>
-        {IMPORTANT_INFO.label}
+        {IMPORTANT_INFO.glyph}
       </button>
-    </>
+    </div>
   );
 }
