@@ -153,7 +153,7 @@ export function clampSideWidth(width: number): number {
 }
 
 /**
- * Anordnung der Arbeitsfläche (Entscheidung 0063): `split` teilt sie in feste
+ * Anordnung der Arbeitsfläche (Entscheidung 0064): `split` teilt sie in feste
  * Bereiche für Graph, Tabelle und Positionskarte, `windows` lässt den Graphen
  * die Fläche füllen und legt Tabelle und Karte als Fenster darüber.
  */

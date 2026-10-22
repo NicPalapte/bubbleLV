@@ -1,7 +1,7 @@
-# 0063 – Splitscreen neben den Fenstern
+# 0064 – Splitscreen neben den Fenstern
 
 - **Status:** akzeptiert
-- **Datum:** 2026-10-21
+- **Datum:** 2026-10-22
 - **Betrifft:** Hauptscreen (`frontend/src/components/shell/`), Ansichtszustand
   (`view.workspace` in `frontend/src/state/viewState.ts`), Kopfleiste
 - **Ergänzt:** 0034 (Graph als Hauptscreen) und 0039 (Tabelle im eigenen Fenster)

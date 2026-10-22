@@ -1,6 +1,7 @@
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { ViewerPage } from './pages/ViewerPage';
 import { AdminProvider } from './state/admin';
+import { PaintNamesProvider } from './state/paintNames';
 import { useViewer } from './state/viewer';
 import { ViewerProvider } from './state/ViewerProvider';
 
@@ -23,7 +24,9 @@ function App() {
   return (
     <ViewerProvider>
       <AdminProvider>
-        <ViewerMitNetz />
+        <PaintNamesProvider>
+          <ViewerMitNetz />
+        </PaintNamesProvider>
       </AdminProvider>
     </ViewerProvider>
   );

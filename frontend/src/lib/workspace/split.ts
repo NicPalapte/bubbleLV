@@ -1,4 +1,4 @@
-// Aufteilung der Arbeitsfläche im Splitscreen (Entscheidung 0063): drei Plätze,
+// Aufteilung der Arbeitsfläche im Splitscreen (Entscheidung 0064): drei Plätze,
 // links oben (`a`), links unten (`b`) und rechts (`c`), je einer für Graph,
 // Tabelle und Positionskarte. Ein geschlossener oder ausgelagerter Bereich gibt
 // seinen Platz frei; die übrigen wachsen in die Lücke. Reine Funktion — die

@@ -1,6 +1,6 @@
 // Hauptscreen (docs/decisions/0034-graph-als-hauptscreen.md): Graph, Tabelle und
 // Positionskarte als Splitscreen oder als Fenster über dem Graphen (Entscheidung
-// 0063); Seitenfenster (Überblick · Filter · Prüfung) schweben darüber.
+// 0064); Seitenfenster (Überblick · Filter · Prüfung) schweben darüber.
 // Alles arbeitet auf **einem** Filterzustand; was eine Ansicht sich
 // merkt, steht in `view` (state/viewState.ts).
 //

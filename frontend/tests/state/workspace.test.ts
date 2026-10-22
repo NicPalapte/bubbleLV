@@ -1,4 +1,4 @@
-// Splitscreen (Entscheidung 0063): Aufteilung der drei Plätze und der
+// Splitscreen (Entscheidung 0064): Aufteilung der drei Plätze und der
 // Ansichtszustand dazu. Kein Schritt hier fasst Filter, Suche oder Auswahl an.
 
 import { describe, expect, it } from 'vitest';

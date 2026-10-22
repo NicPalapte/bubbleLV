@@ -2,28 +2,44 @@
 //
 // Eine JSON-Datei je LV: Fortschritt, „Wichtig" und Verlauf je Position (Entscheidung
 // 0062), dazu OZ, Kurztext und Menge, damit ein Mensch sie lesen kann und das Laden
-// Positionen auch in einer geänderten Fassung wiederfindet. Zuordnung in drei Stufen (Entscheidung 0055): gleicher
-// Positions-Hash, sonst gleicher Text-Fingerabdruck (umnummeriert), sonst gleiche OZ
-// (Text oder Menge geändert). Mehrdeutiges wird nicht zugeordnet. Die Datei entsteht
-// und wird gelesen im Browser — kein Request.
+// Positionen auch in einer geänderten Fassung wiederfindet. Seit Version 3 auch die
+// Anstreichungen im Langtext (Entscheidung 0063). Zuordnung in drei Stufen
+// (Entscheidung 0055): gleicher Positions-Hash, sonst gleicher Text-Fingerabdruck
+// (umnummeriert), sonst gleiche OZ (Text oder Menge geändert). Mehrdeutiges wird
+// nicht zugeordnet. Die Datei entsteht und wird gelesen im Browser — kein Request.
 
 import {
   isOldMarker,
   isProgress,
   markedIds,
+  mergeHighlights,
+  toHighlight,
   oldIsDone,
   oldIsImportant,
   toEntriesOld,
   toEntry,
   type Annotations,
+  type Highlight,
+  type Paint,
   type LogEntry,
   type Progress,
 } from './annotations';
+import { NO_PAINT_NAMES, toPaintNames, type PaintNames } from './paintNames';
 import type { LVNode } from '../types/lvNode';
 
 export const NOTES_FILE_KIND = 'bubble-notizen';
-/** Version 2: Fortschritt + Wichtig (Entscheidung 0062). Version 1 (drei Marker) wird gelesen. */
-const NOTES_FILE_VERSION = 2;
+/**
+ * Version 3: dazu Anstreichungen (0063). Version 2: Fortschritt + Wichtig (0062).
+ * Ältere Versionen werden gelesen, Version 1 (drei Marker) umgedeutet.
+ */
+const NOTES_FILE_VERSION = 3;
+
+interface FilePaint {
+  readonly farbe: Paint;
+  readonly start: number;
+  readonly text: string;
+  readonly zeit: string | null;
+}
 
 type FileEntry =
   | { readonly zeit: string | null; readonly fortschritt: Progress | null }
@@ -40,11 +56,14 @@ export interface NotesFilePosition {
   readonly einheit: string | null;
   readonly fortschritt: Progress | null;
   readonly wichtig: boolean;
+  readonly anstreichungen: readonly Highlight[];
   readonly verlauf: readonly LogEntry[];
 }
 
 export interface NotesFile {
   readonly datei: string;
+  /** Eigene Namen der Markierfarben (Entscheidung 0063). */
+  readonly farben: PaintNames;
   readonly gesichert: number;
   readonly positionen: readonly NotesFilePosition[];
 }
@@ -83,10 +102,15 @@ export function notesFileText(
   nodes: Iterable<LVNode>,
   source: Source,
   now: number,
+  names: PaintNames = NO_PAINT_NAMES,
 ): string {
   const byId = new Map<string, LVNode>();
   for (const node of nodes) if (node.position !== null) byId.set(node.id, node);
-  const ids = new Set([...markedIds(annotations), ...annotations.log.keys()]);
+  const ids = new Set([
+    ...markedIds(annotations),
+    ...annotations.highlights.keys(),
+    ...annotations.log.keys(),
+  ]);
   const positionen = [...ids].map((id) => {
     const position = byId.get(id)?.position ?? null;
     return {
@@ -98,6 +122,12 @@ export function notesFileText(
       einheit: position?.unit ?? null,
       fortschritt: annotations.progress.get(id) ?? null,
       wichtig: annotations.important.has(id),
+      anstreichungen: (annotations.highlights.get(id) ?? []).map((mark): FilePaint => ({
+        farbe: mark.paint,
+        start: mark.start,
+        text: mark.text,
+        zeit: iso(mark.at),
+      })),
       verlauf: (annotations.log.get(id) ?? []).map(fileEntry),
     };
   });
@@ -107,6 +137,7 @@ export function notesFileText(
     datei: source.fileName,
     dateiId: source.fileId,
     gesichert: new Date(now).toISOString(),
+    farben: names,
     positionen,
   };
   return `${JSON.stringify(file, null, 2)}\n`;
@@ -167,7 +198,22 @@ function readPosition(value: unknown, version: number): NotesFilePosition | null
     fortschritt = isProgress(raw.fortschritt) ? raw.fortschritt : null;
     wichtig = raw.wichtig === true;
   }
-  if (fortschritt === null && !wichtig && verlauf.length === 0) return null;
+  const anstreichungen = Array.isArray(raw.anstreichungen)
+    ? raw.anstreichungen
+        .map((item: unknown) => {
+          if (typeof item !== 'object' || item === null) return null;
+          const paint = item as Record<string, unknown>;
+          return toHighlight({
+            paint: paint.farbe,
+            start: paint.start,
+            text: paint.text,
+            at: at(paint.zeit),
+          });
+        })
+        .filter((mark): mark is Highlight => mark !== null)
+    : [];
+  const leer = fortschritt === null && !wichtig && anstreichungen.length === 0;
+  if (leer && verlauf.length === 0) return null;
   return {
     hash,
     text: text(raw.text),
@@ -177,6 +223,7 @@ function readPosition(value: unknown, version: number): NotesFilePosition | null
     einheit: typeof raw.einheit === 'string' ? raw.einheit : null,
     fortschritt,
     wichtig,
+    anstreichungen,
     verlauf,
   };
 }
@@ -211,12 +258,13 @@ export function parseNotesFile(content: string): NotesFile {
     throw new NotesFileError('Die Datei ist keine Notiz-Datei von Bubble.');
   }
   const version = file.version;
-  if (version !== 1 && version !== NOTES_FILE_VERSION) {
+  if (version !== 1 && version !== 2 && version !== NOTES_FILE_VERSION) {
     throw new NotesFileError('Die Notiz-Datei stammt aus einer neueren Bubble-Version.');
   }
   return {
     datei: text(file.datei),
     gesichert: at(file.gesichert),
+    farben: toPaintNames(file.farben),
     positionen: file.positionen
       .map((position) => readPosition(position, version))
       .filter((position): position is NotesFilePosition => position !== null),
@@ -382,10 +430,18 @@ export function mergeNotes(current: Annotations, matches: readonly NotesMatch[])
     if (w) important.add(nodeId);
     else important.delete(nodeId);
   }
-  return { progress, important, log };
+  let out: Annotations = { ...current, progress, important, log };
+  for (const { entry, nodeId } of matches) {
+    out = mergeHighlights(out, nodeId, entry.anstreichungen);
+  }
+  return out;
 }
 
 /** Anzahl der Positionen mit Marker oder Kommentar. */
 export function notesCount(annotations: Annotations): number {
-  return new Set([...markedIds(annotations), ...annotations.log.keys()]).size;
+  return new Set([
+    ...markedIds(annotations),
+    ...annotations.highlights.keys(),
+    ...annotations.log.keys(),
+  ]).size;
 }

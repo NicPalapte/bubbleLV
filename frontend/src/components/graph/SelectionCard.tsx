@@ -46,7 +46,7 @@ import type { LVNode } from '../../types/lvNode';
 interface SelectionCardProps {
   node: LVNode;
   onClose: () => void;
-  /** Fest im Bereich des Splitscreens (Entscheidung 0063): kein Ziehen, kein Klick-daneben-zu. */
+  /** Fest im Bereich des Splitscreens (Entscheidung 0064): kein Ziehen, kein Klick-daneben-zu. */
   docked?: boolean;
 }
 

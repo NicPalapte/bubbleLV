@@ -1,4 +1,4 @@
-// Kopfleiste, rechts: Umschalter Splitscreen | Fenster (Entscheidung 0063) und
+// Kopfleiste, rechts: Umschalter Splitscreen | Fenster (Entscheidung 0064) und
 // je ein Knopf für jeden Bereich, der gerade zu ist oder in einem eigenen
 // Browserfenster steht. Nur auf breiten Bildschirmen — darunter gelten Fenster.
 

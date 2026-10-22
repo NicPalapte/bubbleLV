@@ -35,8 +35,11 @@ import {
   EMPTY_ANNOTATIONS,
   removeComment,
   setImportant,
+  addHighlight,
+  removeHighlight,
   setProgress,
   type Annotations,
+  type Paint,
   type Progress,
 } from '../lib/annotations';
 import type { HintIndex } from '../lib/check';
@@ -123,6 +126,9 @@ type LvAction =
   /** `at` = Zeitpunkt in ms; kommt vom Aufrufer, damit der Reducer rein bleibt. */
   | { type: 'setProgress'; id: string; progress: Progress | null; at: number }
   | { type: 'setImportant'; id: string; on: boolean; at: number }
+  /** Anstreichung im Langtext (Entscheidung 0063); `start` im angezeigten Langtext. */
+  | { type: 'addHighlight'; id: string; paint: Paint; start: number; text: string; at: number }
+  | { type: 'removeHighlight'; id: string; position: number }
   | { type: 'addComment'; id: string; text: string; at: number }
   | { type: 'removeComment'; id: string; position: number }
   /** Notizen aus einer Notiz-Datei übernommen (lib/notesFile.ts, `mergeNotes`). */
@@ -197,16 +203,27 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     }
     case 'setProgress':
     case 'setImportant':
+    case 'addHighlight':
+    case 'removeHighlight':
     case 'addComment':
     case 'removeComment': {
       const annotations =
-        action.type === 'setProgress'
-          ? setProgress(state.annotations, action.id, action.progress, action.at)
-          : action.type === 'setImportant'
-            ? setImportant(state.annotations, action.id, action.on, action.at)
-            : action.type === 'addComment'
-              ? addComment(state.annotations, action.id, action.text, action.at)
-              : removeComment(state.annotations, action.id, action.position);
+        action.type === 'addHighlight'
+          ? addHighlight(state.annotations, action.id, {
+              paint: action.paint,
+              start: action.start,
+              text: action.text,
+              at: action.at,
+            })
+          : action.type === 'removeHighlight'
+            ? removeHighlight(state.annotations, action.id, action.position)
+            : action.type === 'setProgress'
+              ? setProgress(state.annotations, action.id, action.progress, action.at)
+              : action.type === 'setImportant'
+                ? setImportant(state.annotations, action.id, action.on, action.at)
+                : action.type === 'addComment'
+                  ? addComment(state.annotations, action.id, action.text, action.at)
+                  : removeComment(state.annotations, action.id, action.position);
       return annotations === state.annotations ? state : { ...state, annotations };
     }
     case 'setAnnotations':
@@ -289,7 +306,7 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
       const selection = selectionReducer(state.selection, action);
       if (selection === state.selection) return state;
       // Wer eine Position anklickt, will ihre Details sehen — ein geschlossener
-      // Bereich „Position" im Splitscreen geht dafür wieder auf (Entscheidung 0063).
+      // Bereich „Position" im Splitscreen geht dafür wieder auf (Entscheidung 0064).
       const picked = selection.positionId !== null || selection.nodeId !== null;
       const view = picked
         ? viewReducer(state.view, { type: 'paneClosed', pane: 'card', closed: false })

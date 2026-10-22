@@ -49,6 +49,7 @@ export function LearnPopover({ target, onClose }: { target: LearnTarget; onClose
       ref={ref}
       role="dialog"
       aria-label="Begriff lernen"
+      data-keeps-popover=""
       className="ov-window fixed z-[70] flex flex-col gap-[2px] p-[6px]"
       style={{ left, top: target.top, width }}
     >

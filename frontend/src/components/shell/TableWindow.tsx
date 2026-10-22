@@ -5,7 +5,7 @@
 // ↗ löst die Tabelle in ein eigenes Browserfenster, etwa für den zweiten
 // Bildschirm (Entscheidung 0039); ↙ dort holt sie zurück. Das zweite Fenster
 // rendert diese Komponente auch im Splitscreen — dort steht die Tabelle sonst
-// als Bereich in `SplitView` (Entscheidung 0063).
+// als Bereich in `SplitView` (Entscheidung 0064).
 
 import { useCallback, useEffect, useRef } from 'react';
 import { ExternalWindow } from '../common/ExternalWindow';

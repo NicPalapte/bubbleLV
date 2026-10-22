@@ -1,5 +1,5 @@
 // Gemeinsamer Stand der Arbeitsfläche, den Kopfleiste, Splitscreen und Fenster
-// teilen (Entscheidung 0063): ob der Splitscreen gerade gilt und welche Bereiche
+// teilen (Entscheidung 0064): ob der Splitscreen gerade gilt und welche Bereiche
 // in einem eigenen Browserfenster stehen (Entscheidung 0039).
 //
 // Die Fenster selbst sind `Window`-Objekte — sie gehören nicht in den

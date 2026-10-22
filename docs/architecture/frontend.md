@@ -213,7 +213,7 @@ ein `about:blank` derselben App, [0039](../decisions/0039-tabelle-im-eigenen-fen
 Popover und `useDismiss` hören dort über `useHostWindow` auf das richtige Fenster.
 Graph, Tabelle und Positionskarte stehen wahlweise als Splitscreen nebeneinander
 (`view.workspace`, Plätze und Aufteilung in `lib/workspace/split.ts`,
-[0063](../decisions/0063-splitscreen.md)); `Workspace` wählt die Anordnung, die
+[0064](../decisions/0064-splitscreen.md)); `Workspace` wählt die Anordnung, die
 ausgelagerten Fenster stehen in `WorkspaceProvider`, weil `Window`-Objekte nicht in den
 Viewer-Zustand gehören. Auch der Graph kann in ein eigenes Browserfenster.
 Weil jede Ansicht ihren Zustand in `view` ablegt statt in lokalem `useState`,

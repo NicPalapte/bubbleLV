@@ -18,6 +18,9 @@ describe('usageEventOf', () => {
     expect(usageEventOf({ type: 'search', value: '  ' })).toBeNull();
     expect(usageEventOf({ type: 'addComment', id: 'p1', text: 'prüfen', at: 0 })).toBe('kommentar');
     expect(usageEventOf({ type: 'addComment', id: 'p1', text: ' ', at: 0 })).toBeNull();
+    const paint = { type: 'addHighlight', id: 'p1', paint: 'gelb', start: 0, at: 0 } as const;
+    expect(usageEventOf({ ...paint, text: 'Beton' })).toBe('anstreichung');
+    expect(usageEventOf({ ...paint, text: ' ' })).toBeNull();
   });
 
   it('zählt das Setzen eines Markers, nicht das Entfernen', () => {

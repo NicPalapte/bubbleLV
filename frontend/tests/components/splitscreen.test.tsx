@@ -1,4 +1,4 @@
-// Splitscreen (Entscheidung 0063): Graph, Tabelle und Positionskarte als
+// Splitscreen (Entscheidung 0064): Graph, Tabelle und Positionskarte als
 // Bereiche nebeneinander, Umschalter zur Fenster-Anordnung in der Kopfleiste.
 // jsdom kennt kein matchMedia — der Test spielt einen breiten Bildschirm vor.
 

@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   addComment,
+  addHighlight,
   EMPTY_ANNOTATIONS,
   setImportant,
   setProgress,
@@ -102,10 +103,38 @@ describe('notesFileText und parseNotesFile', () => {
     ]);
   });
 
+  it('nimmt Anstreichungen mit und liest Version 2 ohne sie', () => {
+    const notizen = addHighlight(EMPTY_ANNOTATIONS, 'p1', {
+      paint: 'orange',
+      start: 4,
+      text: 'Bewehrung',
+      at: Date.UTC(2026, 9, 21),
+    });
+    const file = parseNotesFile(notesFileText(notizen, ALT, QUELLE, 0));
+    expect(file.positionen.map((p) => [p.hash, p.anstreichungen])).toEqual([
+      ['h1', [{ paint: 'orange', start: 4, text: 'Bewehrung', at: Date.UTC(2026, 9, 21) }]],
+    ]);
+    const v2 = parseNotesFile(
+      JSON.stringify({
+        art: 'bubble-notizen',
+        version: 2,
+        positionen: [{ hash: 'h1', wichtig: true, verlauf: [] }],
+      }),
+    );
+    expect(v2.positionen[0].anstreichungen).toEqual([]);
+
+    const zusammen = mergeNotes(
+      addHighlight(EMPTY_ANNOTATIONS, 'p1', { paint: 'gelb', start: 0, text: 'Beton', at: 1 }),
+      matchNotes(file, ALT).same,
+    );
+    expect(zusammen.highlights.get('p1')?.map((m) => m.text)).toEqual(['Beton', 'Bewehrung']);
+    expect(notesCount(zusammen)).toBe(1);
+  });
+
   it('meldet fremde, kaputte und zu neue Dateien verständlich', () => {
     expect(() => parseNotesFile('kein json')).toThrow(NotesFileError);
     expect(() => parseNotesFile('{"art":"etwas"}')).toThrow('keine Notiz-Datei');
-    expect(() => parseNotesFile('{"art":"bubble-notizen","version":3,"positionen":[]}')).toThrow(
+    expect(() => parseNotesFile('{"art":"bubble-notizen","version":4,"positionen":[]}')).toThrow(
       'neueren Bubble-Version',
     );
   });

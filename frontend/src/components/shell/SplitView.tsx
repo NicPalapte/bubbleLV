@@ -1,4 +1,4 @@
-// Splitscreen (Entscheidung 0063): Graph, Tabelle und Positionskarte stehen
+// Splitscreen (Entscheidung 0064): Graph, Tabelle und Positionskarte stehen
 // nebeneinander statt als Fenster übereinander — näher an der gewohnten
 // Arbeitsweise in iTWO. Drei Plätze (links oben, links unten, rechts); wer
 // einen Bereich am Kopf auf einen anderen zieht, tauscht beide. Die

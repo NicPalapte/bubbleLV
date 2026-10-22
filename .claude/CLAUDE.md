@@ -15,7 +15,8 @@ bleibt in der IndexedDB dieses Browsers (`docs/decisions/0046-letzte-datei-im-br
 Begriffe für die Langtext-Hervorhebung (`docs/decisions/0053`); sonst verwirft ein Reload
 den Stand.
 
-Vollständige Projekt-/Ordnerbeschreibung: @README.md
+Technischer Überblick (Aufbau, Ordner, Deployment, Review): @docs/entwicklung.md
+Öffentliche Beschreibung für Besucher: `README.md` – nur Produkt/Vision, keine Agent-/Entwicklerinhalte
 Scope: @docs/scope.md · Plan: @docs/implementation-plan.md · Prüfregeln: @docs/domain/vob-pruefungen.md
 Architektur: @docs/architecture/pipeline.md · @docs/architecture/frontend.md · @docs/architecture/data-model.md
 Entscheidungen: @docs/decisions/README.md · Einrichtung CI/Agenten: @docs/setup/ci-und-agenten.md
@@ -46,10 +47,11 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
   (Auswahl, Zoom, aktive Filter) darf in React-State/Context leben, muss aber einen
   Reload nicht überleben.
 - **IndexedDB nur über `frontend/src/lib/persist/lastLv.ts`:** genau ein Projekt
-  (Original-Bytes + Angaben der zuletzt geöffneten eigenen Datei + Marker/Kommentar-Verlauf
-  je Positions-Hash `hashes.id`, `lib/annotations.ts`, Entscheidung 0057), löschbar auf
-  der Startseite. Dazu, unabhängig von der Datei, die im Admin-Werkzeug gelernten
-  Begriffe (`lib/highlight/terms.ts`).
+  (Original-Bytes + Angaben der zuletzt geöffneten eigenen Datei + Marker, Kommentar-Verlauf
+  und Textmarkierungen je Positions-Hash `hashes.id`, `lib/annotations.ts`, Entscheidung 0057),
+  löschbar auf der Startseite. Dazu, unabhängig von der Datei, die im Admin-Werkzeug gelernten
+  Begriffe (`lib/highlight/terms.ts`) und die eigenen Namen der Markierfarben
+  (`lib/paintNames.ts`, `state/paintNames.tsx`).
   Kein geparstes LV speichern, keine Demo-LVs, keine zweite Datei. Notizen nur schreiben,
   wenn die Projekt-Kennung (`persistIdOf`) noch passt. Fehlt IndexedDB ⇒ still ohne
   Speicher weiter, kein Fehler (Entscheidungen 0046, 0047, 0053).
@@ -117,9 +119,10 @@ fachliche Filter · **Graph als Hauptscreen** auf einem Filterzustand: Seitenfen
 (max. 4 Positionen) als Fenster darüber (`docs/decisions/0034-graph-als-hauptscreen.md`,
 `docs/decisions/0037-vergleichsfenster.md`); Graph, Tabelle und Positionskarte
 wahlweise als Splitscreen mit tausch- und schließbaren Bereichen (`view.workspace`,
-`docs/decisions/0063-splitscreen.md`) · Beziehungen zwischen Positionen nur als
+`docs/decisions/0064-splitscreen.md`) · Beziehungen zwischen Positionen nur als
 ähnliche Positionen im Vergleich, keine wertende Prüfregel (`docs/decisions/0049`) · eigene Marker (Fortschritt Offen/In Bearbeitung/Fertig + Wichtig, `docs/decisions/0062`) + Kommentar-Verlauf je Position zur letzten
 Datei (`docs/decisions/0047-kommentare-und-markierungen.md`, `docs/decisions/0053`) ·
+eigene Textmarkierungen im Langtext (6 feste Farben mit eigenen Namen, `docs/decisions/0063`) ·
 gelernte Hervorhebungen im Langtext nur über Admin-Werkzeug (0053) · lokaler Export/Druck über das
 Logo-Menü · Notizen als Datei sichern/laden (`lib/notesFile.ts`, 0061). Matrix und
 Ähnlichkeit sind entfernt (`docs/decisions/0031-drei-ansichten.md`); keine

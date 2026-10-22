@@ -29,6 +29,7 @@ import {
 import { indexNodes } from '../../lib/tree/buildTree';
 import { UNEXPECTED_FAILURE } from '../../lib/pipeline/messages';
 import { countEvent } from '../../lib/usage/count';
+import { usePaintNames } from '../../state/paintNames';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 import { rekey, storageKeys, type Annotations } from '../../lib/annotations';
 import { downloadText, exportFileName } from '../../lib/export/download';
@@ -54,6 +55,7 @@ const DATEI_BLEIBT =
 
 export function FileDropzone() {
   const { loading, error } = useViewer();
+  const { names } = usePaintNames();
   const dispatch = useViewerDispatch();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -149,7 +151,7 @@ export function FileDropzone() {
     // Kopie: der Dateidialog wird gleich zurückgesetzt, die FileList dann leer.
     const liste = Array.from(files ?? []);
     if (liste.length === 0) return;
-    if (letzte !== null && letzte.marked + letzte.comments > 0) setWartend(liste);
+    if (letzte !== null && letzte.marked + letzte.comments + letzte.painted > 0) setWartend(liste);
     else void handleFiles(liste);
   };
 
@@ -215,7 +217,7 @@ export function FileDropzone() {
       const annotations = rekey(gespeichert.annotations, storageKeys(knoten).toNode);
       downloadText(
         exportFileName(lv.fileName, 'notizen', 'json'),
-        notesFileText(annotations, knoten, lv, Date.now()),
+        notesFileText(annotations, knoten, lv, Date.now(), names),
         'json',
       );
       countEvent('notizen-gesichert');
@@ -433,6 +435,7 @@ function notizText(meta: LastLvInfo): string {
   if (meta.comments > 0) {
     teile.push(`✎ ${meta.comments} ${meta.comments === 1 ? 'Kommentar' : 'Kommentare'}`);
   }
+  if (meta.painted > 0) teile.push(`▍ ${meta.painted} mit Textmarkierung`);
   return teile.join(' · ');
 }
 
@@ -576,6 +579,7 @@ function LetzteDatei({
               ✎ {meta.comments} {meta.comments === 1 ? 'Kommentar' : 'Kommentare'}
             </span>
           )}
+          {meta.painted > 0 && <span>▍ {meta.painted} mit Textmarkierung</span>}
           <span>{formatWhen(meta.savedAt)}</span>
         </span>
       </span>

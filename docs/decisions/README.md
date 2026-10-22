@@ -69,7 +69,8 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0060 | [Wissensgraph als Datenmodell, keine Graph-Datenbank](0060-wissensgraph-als-datenmodell.md)                    | vorgeschlagen                      | 2026-10-21 |
 | 0061 | [Notizen als Datei sichern und laden](0061-notizen-sichern-und-laden.md)                                       | akzeptiert                         | 2026-10-21 |
 | 0062 | [Fortschritt und „Wichtig" statt drei Marker](0062-fortschritt-und-wichtig.md)                                 | akzeptiert                         | 2026-10-21 |
-| 0063 | [Splitscreen neben den Fenstern](0063-splitscreen.md)                                                          | akzeptiert                         | 2026-10-21 |
+| 0063 | [Eigene Textmarkierungen im Langtext](0063-anstreichen-im-langtext.md)                                         | akzeptiert                         | 2026-10-21 |
+| 0064 | [Splitscreen neben den Fenstern](0064-splitscreen.md)                                                          | akzeptiert                         | 2026-10-22 |
 
 ## Wann schreibe ich eine neue Datei?
 

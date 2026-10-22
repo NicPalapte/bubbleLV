@@ -1,4 +1,4 @@
-// Arbeitsfläche unter der Kopfleiste (Entscheidung 0063). Zwei Anordnungen auf
+// Arbeitsfläche unter der Kopfleiste (Entscheidung 0064). Zwei Anordnungen auf
 // demselben Filter- und Auswahlzustand:
 // - Splitscreen: Graph, Tabelle und Positionskarte als Bereiche nebeneinander.
 // - Fenster: der Graph füllt die Fläche, Tabelle und Karte schweben darüber
