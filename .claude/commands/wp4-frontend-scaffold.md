@@ -2,7 +2,7 @@ Setze **WP-4 · Frontend-Gerüst + Datenschicht** um.
 
 Kontext lesen: @docs/implementation-plan.md @docs/architecture/frontend.md @.claude/CLAUDE.md
 Design-Referenz (nicht ausliefern, nur portieren): `design/claude-design/lv-main.jsx`, `design/claude-design/lv-data.jsx`
-Design-System-Skill: `bubble-design` (`.claude/skills/conocto-design/`) — Tokens (`tokens/*.css`),
+Design-System-Skill: `conocto-design` (`.claude/skills/conocto-design/`) — Tokens (`tokens/*.css`),
 UI-Primitives (`components/core/*.jsx`) und Patterns (`patterns.md`) sind aus denselben
 Prototyp-Dateien abgeleitet; beim Portieren als Referenz für Farben, Typografie, Abstände und
 Komponentenverhalten heranziehen, nicht das bestehende Prototyp-JSX 1:1 kopieren.

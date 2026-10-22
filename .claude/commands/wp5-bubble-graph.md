@@ -2,7 +2,7 @@ Setze **WP-5 · Bubble-Graph portieren** um. Das ist der Kern des Produkts.
 
 Kontext lesen: @docs/implementation-plan.md @docs/architecture/frontend.md @.claude/CLAUDE.md
 Design-Referenz (portieren, nicht 1:1 kopieren): `design/claude-design/lv-graph.jsx`
-Design-System-Skill: `bubble-design` (`.claude/skills/conocto-design/`) — Canvas-Hintergrund
+Design-System-Skill: `conocto-design` (`.claude/skills/conocto-design/`) — Canvas-Hintergrund
 (Blueprint-Grid/Dot-Pattern, `--paper`), Größenkodierung und Motion für die Bubbles siehe
 README "Visual foundations"; Drill-in-Pattern (Graph ⇄ Tabelle) siehe `patterns.md`.
 
