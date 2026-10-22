@@ -74,7 +74,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0065 | [Filterleiste, Kopfzeile der Positionskarte und Rechtsklick-Menü](0065-filterleiste-kopfzeile-rechtsklick.md)  | akzeptiert                         | 2026-10-22 |
 | 0066 | [Als Material gelernte Begriffe stehen im Filter „Material"](0066-gelernte-materialien-im-filter.md)           | akzeptiert                         | 2026-10-22 |
 | 0067 | [Tabelle als Arbeitsliste](0067-tabelle-als-arbeitsliste.md)                                                   | akzeptiert                         | 2026-10-22 |
-| 0068 | [LV als JSON für das Matching-Labor bauonto](0067-lv-export-fuer-bauonto.md)                                   | vorgeschlagen                      | 2026-10-22 |
+| 0068 | [LV als JSON für das Matching-Labor bauonto](0068-lv-export-fuer-bauonto.md)                                   | vorgeschlagen                      | 2026-10-22 |
 
 ## Wann schreibe ich eine neue Datei?
 

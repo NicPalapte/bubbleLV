@@ -1,4 +1,4 @@
-# 0067 – LV als JSON für das Matching-Labor bauonto
+# 0068 – LV als JSON für das Matching-Labor bauonto
 
 - **Status:** vorgeschlagen
 - **Datum:** 2026-10-22

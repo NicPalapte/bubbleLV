@@ -1,4 +1,4 @@
-// GAEB-Datei als JSON mit Positions-Hashes ausgeben (Entscheidung 0067).
+// GAEB-Datei als JSON mit Positions-Hashes ausgeben (Entscheidung 0068).
 // Aufruf: npm run export-lv -- <datei.x83> [ausgabe.json]
 // Ohne Ausgabedatei geht das JSON auf stdout. Braucht Node ab 22.18 (führt .ts direkt aus).
 //
@@ -48,5 +48,12 @@ try {
   fail(`Kein lesbares LV: ${error.message}`);
 }
 
-if (output === undefined) process.stdout.write(json);
-else writeFileSync(output, json);
+if (output === undefined) {
+  process.stdout.write(json);
+} else {
+  try {
+    writeFileSync(output, json);
+  } catch {
+    fail(`Datei nicht schreibbar: ${output}`);
+  }
+}
