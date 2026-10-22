@@ -9,6 +9,11 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.28.1 — 22.10.2026 · Zoom bleibt beim Größenwechsel
+
+- **Größe der Positionen umschalten** (gleich/Menge/Preis) behält jetzt Zoom und Ausschnitt.
+  Eine gewählte Position bleibt an ihrem Platz auf dem Bildschirm.
+
 ## 0.28.0 — 22.10.2026 · Splitscreen
 
 - **Splitscreen:** Graph, Tabelle und Positionskarte stehen nebeneinander, wie in iTWO.

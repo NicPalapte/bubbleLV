@@ -261,6 +261,11 @@ export function BubbleGraph({ root, cardOverlay = true }: { root: LVNode; cardOv
   // springt beim Tippen nicht unter der Maus weg.
   const layoutMask = layout === 'matrix' || hide ? mask : null;
   const selected = layout === 'matrix' ? selectedFacets : EMPTY_SELECTED;
+  // Alles, was die Lage bestimmt, außer der Blasengröße — gleich ⇒ nicht neu einpassen.
+  const lage = useMemo(
+    () => ({ index, parents, layout, rows, cols, layoutMask, hide, selected }),
+    [index, parents, layout, rows, cols, layoutMask, hide, selected],
+  );
   const map = useMemo(
     () =>
       measure('Graph-Layout', () =>
@@ -508,14 +513,26 @@ export function BubbleGraph({ root, cardOverlay = true }: { root: LVNode; cardOv
   // Einmal je Layout einpassen, sobald die Canvas ihre Größe kennt — im Render
   // statt im Effekt (react.dev/learn/you-might-not-need-an-effect). Ein
   // gemerkter Ausschnitt gilt beim ersten Mal als eingepasst.
-  const [fittedMap, setFittedMap] = useState<typeof map | null>(
-    graph.viewport !== null ? map : null,
+  const [fitted, setFitted] = useState<{ map: typeof map; lage: typeof lage } | null>(
+    graph.viewport !== null ? { map, lage } : null,
   );
   // Gedämpfte Filterwechsel lassen das Layout stehen; nur eine neue Lage passt neu ein.
-  if (fittedMap !== map && w > 0 && h > 0) {
-    setFittedMap(map);
-    const next = fitView();
-    if (next !== null) setView(next);
+  // Nur die Blasengröße gewechselt (Issue #152): der Ausschnitt bleibt, eine gewählte
+  // Position bleibt am selben Bildschirmpunkt — sie rückt beim Neupacken etwas.
+  if (fitted?.map !== map && w > 0 && h > 0) {
+    setFitted({ map, lage });
+    if (fitted !== null && fitted.lage === lage) {
+      const dx = fitted.map.px[selectedSlot] - map.px[selectedSlot];
+      const dy = fitted.map.py[selectedSlot] - map.py[selectedSlot];
+      if (selectedSlot >= 0 && Number.isFinite(dx) && Number.isFinite(dy)) {
+        // Absolut aus dem Render-Stand, nicht als Updater: ein doppelter Render
+        // (StrictMode) setzt denselben Wert statt zweimal zu verschieben.
+        setView({ ...view, tx: view.tx + dx * view.k, ty: view.ty + dy * view.k });
+      }
+    } else {
+      const next = fitView();
+      if (next !== null) setView(next);
+    }
   }
 
   // ── Wechsel der Gliederung: Punkte gleiten an den neuen Platz (Entscheidung 0059).
