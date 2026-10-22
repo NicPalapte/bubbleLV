@@ -525,11 +525,9 @@ export function BubbleGraph({ root, cardOverlay = true }: { root: LVNode; cardOv
       const dx = fitted.map.px[selectedSlot] - map.px[selectedSlot];
       const dy = fitted.map.py[selectedSlot] - map.py[selectedSlot];
       if (selectedSlot >= 0 && Number.isFinite(dx) && Number.isFinite(dy)) {
-        setView((current) => ({
-          ...current,
-          tx: current.tx + dx * current.k,
-          ty: current.ty + dy * current.k,
-        }));
+        // Absolut aus dem Render-Stand, nicht als Updater: ein doppelter Render
+        // (StrictMode) setzt denselben Wert statt zweimal zu verschieben.
+        setView({ ...view, tx: view.tx + dx * view.k, ty: view.ty + dy * view.k });
       }
     } else {
       const next = fitView();
