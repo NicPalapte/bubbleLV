@@ -1,14 +1,12 @@
 // LV als JSON für Werkzeuge außerhalb des Browsers, z. B. das Matching-Labor
-// bauonto (Entscheidung 0065). Jede Position trägt ihre Hashes, damit fremde
+// bauonto (Entscheidung 0067). Jede Position trägt ihre Hashes, damit fremde
 // Werkzeuge Kanten an dieselbe Position hängen wie Bubble (Entscheidung 0055).
 
-import { hashPositions, type PositionHashes } from '../hash/positionHash';
+import { hashPositions, POSITION_HASH_SCHEMA, type PositionHashes } from '../hash/positionHash';
 import type { LVDraft, PositionDraft, SectionDraft } from '../model/lvDraft';
 
 /** Schema-Kennung; ändert sich nur mit einer neuen Entscheidung. */
 export const LV_EXPORT_SCHEMA = 'bubble-lv-export-v1';
-/** Normierung der Positions-Hashes, die dieser Export enthält. */
-export const POSITION_HASH_SCHEMA = 'bubble-pos-v1';
 
 export type LvExportPosition = Omit<PositionDraft, 'attributes'> & { hashes: PositionHashes };
 

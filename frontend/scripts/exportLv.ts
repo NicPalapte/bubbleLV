@@ -1,6 +1,6 @@
-// GAEB-Datei als JSON mit Positions-Hashes ausgeben (Entscheidung 0065).
+// GAEB-Datei als JSON mit Positions-Hashes ausgeben (Entscheidung 0067).
 // Aufruf: npm run export-lv -- <datei.x83> [ausgabe.json]
-// Ohne Ausgabedatei geht das JSON auf stdout.
+// Ohne Ausgabedatei geht das JSON auf stdout. Braucht Node ab 22.18 (führt .ts direkt aus).
 //
 // Der Kern läuft im Browser und braucht DOMParser; in Node liefert ihn jsdom.
 // Vite lädt den Kern als Quelltext, wie in der App — kein eigener Build.
@@ -12,11 +12,13 @@ import { runnerImport } from 'vite';
 
 type Core = typeof import('../../packages/core/src/index.ts');
 
-const [input, output] = process.argv.slice(2);
-if (input === undefined) {
-  console.error('Aufruf: npm run export-lv -- <datei.x83> [ausgabe.json]');
-  process.exit(2);
+function fail(message: string, code = 1): never {
+  console.error(message);
+  process.exit(code);
 }
+
+const [input, output] = process.argv.slice(2);
+if (input === undefined) fail('Aufruf: npm run export-lv -- <datei.x83> [ausgabe.json]', 2);
 
 globalThis.DOMParser = new JSDOM('').window.DOMParser;
 
@@ -26,9 +28,25 @@ const { module: core } = await runnerImport<Core>(corePath, {
   logLevel: 'error',
 });
 
-const bytes = new Uint8Array(readFileSync(input));
-const draft = core.mapToLvDraft(core.getGaebParser().parse(bytes, input));
-const json = `${JSON.stringify(core.toLvExport(draft, core.fileIdOf(bytes)), null, 2)}\n`;
+let bytes: Uint8Array;
+try {
+  bytes = new Uint8Array(readFileSync(input));
+} catch {
+  fail(`Datei nicht lesbar: ${input}`);
+}
+
+let json: string;
+try {
+  const draft = core.mapToLvDraft(core.getGaebParser().parse(bytes, input));
+  json = `${JSON.stringify(core.toLvExport(draft, core.fileIdOf(bytes)), null, 2)}\n`;
+} catch (error) {
+  const known =
+    error instanceof core.GAEBParseError ||
+    error instanceof core.GAEBValidationError ||
+    error instanceof core.GAEBVersionError;
+  if (!known) throw error;
+  fail(`Kein lesbares LV: ${error.message}`);
+}
 
 if (output === undefined) process.stdout.write(json);
 else writeFileSync(output, json);

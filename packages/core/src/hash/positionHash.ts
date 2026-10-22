@@ -15,7 +15,7 @@ const PART_LENGTH = 16;
 /** Länge der Datei-ID im Link. */
 const FILE_ID_LENGTH = 12;
 /** Version der Normierung. Ändert sich die Normierung, ändern sich alle Hashes. */
-const SCHEMA = 'bubble-pos-v1';
+export const POSITION_HASH_SCHEMA = 'bubble-pos-v1';
 
 export interface PositionHashes {
   /** Gesamt-Hash, eindeutig in der Datei; bei Gleichstand mit `-2`, `-3` … */
@@ -44,7 +44,7 @@ function normQuantity(quantity: number | null): string {
 }
 
 function part(fields: readonly string[], length: number): string {
-  return sha256HexOfText(JSON.stringify([SCHEMA, ...fields])).slice(0, length);
+  return sha256HexOfText(JSON.stringify([POSITION_HASH_SCHEMA, ...fields])).slice(0, length);
 }
 
 /** Hashes einer einzelnen Position, noch ohne Eindeutigkeits-Zusatz. */

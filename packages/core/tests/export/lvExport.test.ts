@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { LV_EXPORT_SCHEMA, toLvExport, type LvExportSection } from '../../src/export/lvExport';
 import { getGaebParser, mapToLvDraft } from '../../src/gaeb';
-import { fileIdOf, hashPositions } from '../../src/hash/positionHash';
+import { fileIdOf, hashPositions, POSITION_HASH_SCHEMA } from '../../src/hash/positionHash';
 import type { LVDraft, PositionDraft, SectionDraft } from '../../src/model/lvDraft';
 import { FIXTURE_DIR } from '../support/fixtures';
 
@@ -26,7 +26,7 @@ describe('toLvExport', () => {
     const exported = toLvExport(draft, fileId);
 
     expect(exported.schema).toBe(LV_EXPORT_SCHEMA);
-    expect(exported.positionHashSchema).toBe('bubble-pos-v1');
+    expect(exported.positionHashSchema).toBe(POSITION_HASH_SCHEMA);
     expect(exported.fileId).toBe(fileId);
     expect(exported.projectName).toBe('Testprojekt Umbau');
     expect(exported.client).toBe('Muster AG');
