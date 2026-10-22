@@ -4,4 +4,18 @@
 export * from './model/lvDraft';
 export * from './model/graph';
 export * from './gaeb';
-export { fileIdOf, hashPosition, hashPositions, type PositionHashes } from './hash/positionHash';
+export {
+  fileIdOf,
+  hashPosition,
+  hashPositions,
+  POSITION_HASH_SCHEMA,
+  type PositionHashes,
+} from './hash/positionHash';
+export {
+  LV_EXPORT_SCHEMA,
+  toLvExport,
+  type LvExport,
+  type LvExportLot,
+  type LvExportPosition,
+  type LvExportSection,
+} from './export/lvExport';
