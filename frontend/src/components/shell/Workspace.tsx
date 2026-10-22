@@ -29,7 +29,7 @@ function GraphPopout({ root }: { root: LVNode }) {
     <ExternalWindow host={host} onClosed={() => dock('graph')}>
       <section aria-label="Graph — eigenes Fenster" className="flex min-h-0 flex-1 flex-col">
         <div className="flex h-[38px] shrink-0 items-center gap-[10px] border-b border-line bg-surface pl-[12px] pr-[6px]">
-          <b className="font-sans text-[13px] font-semibold text-ink">Graph</b>
+          <b className="font-display text-[14px] font-semibold text-ink">Graph</b>
           <span className="flex-1" />
           <button
             type="button"
@@ -60,7 +60,7 @@ function WindowsLayout({ root }: { root: LVNode }) {
       {hosts.graph === null ? (
         <GraphStage root={root} cardOverlay />
       ) : (
-        <div className="absolute inset-0 flex items-center justify-center font-mono text-[11px] text-mute">
+        <div className="absolute inset-0 flex items-center justify-center font-mono text-[12px] text-mute">
           Graph im eigenen Fenster
         </div>
       )}

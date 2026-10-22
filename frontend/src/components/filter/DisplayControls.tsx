@@ -24,7 +24,7 @@ const LAYOUTS: ReadonlyArray<{ value: GraphLayoutId; label: string; title: strin
 const NO_COLS = '';
 
 /** Kleine Großbuchstaben-Beschriftung wie im Mockup (`.cap`). */
-export const CAP = 'font-mono text-[10px] font-medium uppercase tracking-[0.7px] text-mute';
+export const CAP = 'font-mono text-[11px] font-medium uppercase tracking-[0.7px] text-mute';
 
 export function Row({
   label,

@@ -83,7 +83,7 @@ export interface RuleStatus {
   /**
    * `true`, sobald der Owner den Norm-Verweis bestätigt hat. Solange `false`,
    * zeigt die Oberfläche den Verweis ausdrücklich als „zu bestätigen" —
-   * Bubble behauptet keine Fundstelle in der Norm, die niemand geprüft hat
+   * Conocto behauptet keine Fundstelle in der Norm, die niemand geprüft hat
    * (docs/domain/vob-pruefungen.md#was-der-owner-bestätigen-muss).
    */
   refConfirmed: boolean;

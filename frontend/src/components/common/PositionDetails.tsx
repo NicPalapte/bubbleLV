@@ -81,7 +81,7 @@ function SpanLegend({
             aria-pressed={on}
             onClick={() => onToggle(category.label)}
             title={on ? `${category.label} ausblenden` : `${category.label} einblenden`}
-            className="inline-flex h-[24px] cursor-pointer items-center gap-[6px] rounded-[var(--r-pill)] border px-[9px] font-mono text-[10px]"
+            className="inline-flex h-[24px] cursor-pointer items-center gap-[6px] rounded-[var(--r-pill)] border px-[9px] font-mono text-[11px]"
             style={{
               borderColor: on ? 'transparent' : 'var(--line)',
               background: on ? category.background : 'transparent',
@@ -214,7 +214,7 @@ export function PositionDetails({
         grip={grip}
         meta={
           <>
-            <span className="shrink-0 font-mono text-[11px] text-dim">{position.oz}</span>
+            <span className="shrink-0 font-mono text-[12px] text-dim">{position.oz}</span>
             {main !== null && mainColor !== undefined && (
               <GroupPill color={mainColor}>{headingOf(main)}</GroupPill>
             )}
@@ -264,7 +264,7 @@ export function PositionDetails({
               // Die Karte liegt im Graphen, der `select-none` setzt — ohne `select-text`
               // ließe sich weder kopieren noch anstreichen oder ein Begriff markieren.
               // Text-Cursor: zeigt, dass sich hier markieren lässt.
-              className="cursor-text select-text whitespace-pre-wrap font-sans text-[13px] leading-[1.62] text-ink"
+              className="cursor-text select-text whitespace-pre-wrap font-sans text-[14px] leading-[1.62] text-ink"
             >
               <Highlighted
                 text={position.longText}
@@ -316,7 +316,7 @@ export function PositionDetails({
                 {keywords.map((keyword) => (
                   <span
                     key={keyword}
-                    className="rounded-[var(--r-pill)] bg-sunken px-[8px] py-[2px] font-mono text-[10px] text-dim"
+                    className="rounded-[var(--r-pill)] bg-sunken px-[8px] py-[2px] font-mono text-[11px] text-dim"
                   >
                     {keyword}
                   </span>
@@ -329,7 +329,7 @@ export function PositionDetails({
         <Section title="Eigenschaften">
           <PropTable rows={rows} />
           {meta !== null && (
-            <div className="font-mono text-[10px] text-mute">
+            <div className="font-mono text-[11px] text-mute">
               {meta.classifier} · Ruleset {meta.ruleset} · v{meta.version}
             </div>
           )}

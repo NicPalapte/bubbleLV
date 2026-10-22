@@ -6,7 +6,7 @@ import { formatCount } from '../../lib/format';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 
 const PILL =
-  'ov-pill inline-flex h-[36px] cursor-pointer items-center gap-[8px] whitespace-nowrap px-[14px] font-mono text-[11px]';
+  'ov-pill inline-flex h-[36px] cursor-pointer items-center gap-[8px] whitespace-nowrap px-[14px] font-mono text-[12px]';
 
 export function GraphDock({ tableButton = true }: { tableButton?: boolean }) {
   const { lv, matches, view, selection } = useViewer();

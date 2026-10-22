@@ -47,7 +47,7 @@ function umgebung({ view, loaded }: IssueContext): string[] {
     // Genau die Angaben aus „Über diese App": Versionsnummer, Commit und
     // Datum in derselben Schreibweise. Der Nutzer soll den Stand in seiner
     // Meldung wiedererkennen, ohne ihn umrechnen zu müssen.
-    `- Bubble-Stand: v${APP_VERSION} (${BUILD_ID}${datum === '' ? '' : ` · ${datum}`})`,
+    `- Conocto-Stand: v${APP_VERSION} (${BUILD_ID}${datum === '' ? '' : ` · ${datum}`})`,
     `- Ansicht: ${view}`,
     `- Datei geladen: ${loaded ? 'ja' : 'nein'}`,
     `- Browser: ${nav?.userAgent ?? 'unbekannt'}`,
@@ -84,7 +84,7 @@ export function issueBody(context: IssueContext, beschreibung = ''): string {
 }
 
 /** Betreff — kurz, und ohne einen einzigen Inhalt aus der Datei. */
-const BETREFF = 'Fehler in Bubble';
+const BETREFF = 'Fehler in Conocto';
 
 /**
  * Fertiger Link auf das vorbefüllte GitHub-Formular. Braucht ein Konto:

@@ -1,4 +1,4 @@
-// Bubble — DataTable: flex-based zebra table with sortable mono header.
+// Conocto — DataTable: flex-based zebra table with sortable mono header.
 export function DataTable({ columns, rows, rowKey, selectedKey, onPick, empty = 'Keine Einträge.', sort, onSort }) {
   return (
     <div style={{ display:'flex', flexDirection:'column', flex:1, minHeight:0, background:'var(--white)' }}>

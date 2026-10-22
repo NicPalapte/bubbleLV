@@ -82,8 +82,8 @@ export function collectThirdParty(root: string): string {
   }
   const entries = [...seen.keys()].sort().map((key) => seen.get(key) as string);
   return [
-    'Bubble — Bausteine Dritter und ihre Lizenzen',
-    'Bubble selbst: alle Rechte vorbehalten (siehe LICENSE im Repository).',
+    'Conocto — Bausteine Dritter und ihre Lizenzen',
+    'Conocto selbst: alle Rechte vorbehalten (siehe LICENSE im Repository).',
     ...entries,
     ADAPTED_CODE,
   ].join(`\n\n${'='.repeat(78)}\n\n`);

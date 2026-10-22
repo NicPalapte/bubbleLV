@@ -6,7 +6,7 @@
 
 ## Der eine Satz
 
-**Bubble macht ein Leistungsverzeichnis lesbar.** Es zeigt jede Information, die in der
+**Conocto macht ein Leistungsverzeichnis lesbar.** Es zeigt jede Information, die in der
 Datei steckt, hebt das Wichtige hervor und macht die Beziehungen zwischen Positionen
 sichtbar — im Browser, ohne Server, ohne dass die Datei den Rechner verlässt.
 
@@ -74,7 +74,7 @@ im Graphen.
 **Obergrenze: 50 MB je Datei** (`MAX_FILE_BYTES` in `lib/pipeline/loadLv.ts`). 10.000
 Positionen sind rund 5 MB XML, 50 MB liegen also beim Neunfachen des Richtwerts. Der
 XML-Parser läuft im Haupt-Thread; eine größere Datei würde die Oberfläche dort lange
-blockieren. Darüber lehnt Bubble die Datei **vor dem Lesen** mit einer Meldung ab, die
+blockieren. Darüber lehnt Conocto die Datei **vor dem Lesen** mit einer Meldung ab, die
 die Grenze nennt. Zusätzlich gilt eine Obergrenze von 100 verschachtelten Abschnitten;
 reale LVs gliedern in wenigen Ebenen.
 
@@ -112,12 +112,12 @@ Hervorhebung:
 
 ### 4 · VOB-Check
 
-Eigene Säule, weil sie als einzige **bewertet** statt nur beschreibt. Bubble prüft die
+Eigene Säule, weil sie als einzige **bewertet** statt nur beschreibt. Conocto prüft die
 geladene Datei gegen einen Katalog von Regeln und zeigt Hinweise — jede Regel mit
 Norm-Verweis, jeder Hinweis mit Sprung zur Fundstelle.
 
 - Regelkatalog, Norm-Verweise und offene Bestätigungen: [`domain/vob-pruefungen.md`](domain/vob-pruefungen.md)
-- **Kein Rechtsrat, keine Vollständigkeit.** Bubble sagt „hier lohnt ein Blick", nicht
+- **Kein Rechtsrat, keine Vollständigkeit.** Conocto sagt „hier lohnt ein Blick", nicht
   „das ist unzulässig". Die Formulierung im UI hält sich daran.
 - Regeln sind einzeln abschaltbar und liefern nie einen Fehler, wenn Referenzdaten
   fehlen — sie greifen dann einfach nicht.
@@ -162,7 +162,7 @@ Die Tabelle kann in ein eigenes Browserfenster wandern, etwa auf den zweiten Bil
 
 ### 7 · Beziehungen zwischen Positionen
 
-Der Punkt, den Bubble heute gar nicht kann. Drei Ausprägungen, alle aus denselben
+Der Punkt, den Conocto heute gar nicht kann. Drei Ausprägungen, alle aus denselben
 Merkmalen berechnet:
 
 - **Ähnlichkeit** — Positionen mit ähnlichem Text und gleichen Merkmalen werden
@@ -199,9 +199,9 @@ Bewusst **nicht** Teil dieses Produkts. Anfragen dazu werden abgelehnt oder vert
 | **Mehrere Dateien gleichzeitig**                    | Zwei LVs vergleichen (Versionsstände, Nachträge) und x83+x84 zusammenführen: **perspektivisch gewollt, jetzt draußen**                   |
 | LLM-Klassifizierung                                 | setzt einen Server voraus                                                                                                                |
 | Aufgaben, Zuständigkeit, Vergabepakete, NU-Anfragen | braucht Persistenz; erlaubt sind nur eigene Markierungen und Kommentare je Position zur letzten Datei (Entscheidung 0047)                |
-| Bieterfragen **verwalten**                          | Bubble liefert nur die Liste der Unklarheiten (UC-6)                                                                                     |
+| Bieterfragen **verwalten**                          | Conocto liefert nur die Liste der Unklarheiten (UC-6)                                                                                     |
 | Status **ändern**                                   | Status bleibt Anzeige, Default `OPEN` aus dem Import, kein Filter (0051)                                                                 |
-| EP-Kalkulation, Preisdatenbank                      | das ist iTwo, nicht Bubble                                                                                                               |
+| EP-Kalkulation, Preisdatenbank                      | das ist iTwo, nicht Conocto                                                                                                               |
 | GAEB-Export, Excel-/Manuell-Import                  | Datenmodell bleibt offen dafür, Wege werden nicht gebaut                                                                                 |
 | Multi-Tenant / SaaS                                 | nie                                                                                                                                      |
 

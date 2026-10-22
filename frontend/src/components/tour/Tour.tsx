@@ -3,7 +3,7 @@
 // fängt keine Klicks ab — wer mag, klickt das markierte Element selbst; manche
 // Schritte warten genau darauf (`done` in tourSteps.ts).
 //
-// Nach dem ersten LV einer Sitzung bietet Bubble die Tour einmal an.
+// Nach dem ersten LV einer Sitzung bietet Conocto die Tour einmal an.
 // Das Angebot steht über der Legende: feste Teile bleiben stehen, Neues weicht aus. Ob sie
 // schon angeboten war, steht nur im React-State: ein Reload bietet sie wieder
 // an, gespeichert wird nichts (.claude/CLAUDE.md, kein localStorage).
@@ -29,7 +29,7 @@ const CARD_SPACE = 190;
 const EDGE = 12;
 
 const BUTTON =
-  'h-[28px] cursor-pointer rounded-[var(--r-sm)] border px-[10px] font-mono text-[10.5px]';
+  'h-[28px] cursor-pointer rounded-[var(--r-sm)] border px-[10px] font-mono text-[11.5px]';
 
 interface Box {
   top: number;
@@ -262,7 +262,7 @@ export function Tour() {
         aria-label="Tour anbieten"
         className="ov-glass absolute bottom-[112px] left-[16px] z-[12] flex items-center gap-[10px] py-[8px] pl-[14px] pr-[8px] lg:bottom-[68px]"
       >
-        <span className="font-sans text-[13px] text-ink">Neu hier?</span>
+        <span className="font-sans text-[14px] text-ink">Neu hier?</span>
         <button
           type="button"
           onClick={() => go(0)}
@@ -274,7 +274,7 @@ export function Tour() {
           type="button"
           onClick={() => go(null)}
           aria-label="Tour nicht anzeigen"
-          className="cursor-pointer border-none bg-transparent px-[6px] font-mono text-[11px] text-mute hover:text-ink"
+          className="cursor-pointer border-none bg-transparent px-[6px] font-mono text-[12px] text-mute hover:text-ink"
         >
           ✕
         </button>
@@ -317,20 +317,20 @@ export function Tour() {
         }}
       >
         <div className="flex items-baseline justify-between gap-[8px]">
-          <b className="font-sans text-[14px] font-semibold text-ink">{step.title}</b>
-          <span className="font-mono text-[10px] text-mute">
+          <b className="font-display text-[14px] font-semibold text-ink">{step.title}</b>
+          <span className="font-mono text-[11px] text-mute">
             {index + 1} / {TOUR_STEPS.length}
           </span>
         </div>
-        <p className="m-0 font-sans text-[12.5px] leading-[1.45] text-dim">{step.text}</p>
+        <p className="m-0 font-sans text-[13.5px] leading-[1.45] text-dim">{step.text}</p>
         {waiting && step.todo !== undefined && (
-          <p className="m-0 font-mono text-[10.5px] text-blueD">→ {step.todo}</p>
+          <p className="m-0 font-mono text-[11.5px] text-blueD">→ {step.todo}</p>
         )}
         <div className="mt-[2px] flex items-center gap-[6px]">
           <button
             type="button"
             onClick={() => go(null)}
-            className="cursor-pointer border-none bg-transparent p-0 font-mono text-[10.5px] text-mute hover:text-ink"
+            className="cursor-pointer border-none bg-transparent p-0 font-mono text-[11.5px] text-mute hover:text-ink"
           >
             Beenden
           </button>

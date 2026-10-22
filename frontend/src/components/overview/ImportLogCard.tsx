@@ -35,7 +35,7 @@ export function ImportLogCard() {
 
   if (log.entries.length === 0 && notices.length === 0) {
     return (
-      <p className="font-sans text-[12px] text-dim">
+      <p className="font-sans text-[13px] text-dim">
         Beim Import ist nichts aufgefallen: alle {formatPositions(log.total)} haben Einheit und
         Menge.
       </p>
@@ -44,11 +44,11 @@ export function ImportLogCard() {
 
   return (
     <div>
-      <p className="font-sans text-[11.5px] leading-[1.5] text-dim">
+      <p className="font-sans text-[12.5px] leading-[1.5] text-dim">
         Gilt für die ganze Datei, nicht für den Filter — {formatPositions(log.total)} gelesen.
       </p>
       {notices.map((notice) => (
-        <p key={notice} className="mt-[6px] font-mono text-[10.5px] leading-[1.6] text-blueD">
+        <p key={notice} className="mt-[6px] font-mono text-[11.5px] leading-[1.6] text-blueD">
           {notice}
         </p>
       ))}
@@ -62,16 +62,18 @@ export function ImportLogCard() {
               aria-expanded={isOpen}
               className="flex w-full cursor-pointer items-baseline gap-[8px] border-none bg-transparent p-0 text-left"
             >
-              <span className="font-sans text-[12.5px] font-semibold text-ink">{entry.title}</span>
-              <span className="font-mono text-[10px]" style={{ color: LEVEL_COLOR[entry.level] }}>
+              <span className="font-display text-[13.5px] font-semibold text-ink">
+                {entry.title}
+              </span>
+              <span className="font-mono text-[11px]" style={{ color: LEVEL_COLOR[entry.level] }}>
                 {formatPositions(entry.positionIds.length)}
               </span>
               <span className="flex-1" />
-              <span aria-hidden="true" className="font-mono text-[10px] text-mute">
+              <span aria-hidden="true" className="font-mono text-[11px] text-mute">
                 {isOpen ? '▾' : '▸'}
               </span>
             </button>
-            <p className="mt-[2px] font-sans text-[11px] leading-[1.5] text-dim">{entry.note}</p>
+            <p className="mt-[2px] font-sans text-[12px] leading-[1.5] text-dim">{entry.note}</p>
             {isOpen && (
               <div className="mt-[6px] border-t border-grid">
                 {entry.positionIds.slice(0, MAX_ROWS).map((id) => {
@@ -83,17 +85,17 @@ export function ImportLogCard() {
                       onClick={() => jumpTo(id)}
                       className="flex w-full cursor-pointer items-baseline gap-[10px] border-none border-b border-solid border-grid bg-transparent px-0 py-[4px] text-left"
                     >
-                      <span className="w-[110px] shrink-0 font-mono text-[10px] text-dim">
+                      <span className="w-[110px] shrink-0 font-mono text-[11px] text-dim">
                         {position?.oz ?? '—'}
                       </span>
-                      <span className="min-w-0 flex-1 truncate font-sans text-[11.5px] text-ink">
+                      <span className="min-w-0 flex-1 truncate font-sans text-[12.5px] text-ink">
                         {position?.shortText ?? 'Position nicht gefunden'}
                       </span>
                     </button>
                   );
                 })}
                 {entry.positionIds.length > MAX_ROWS && (
-                  <p className="mt-[4px] font-mono text-[10px] text-mute">
+                  <p className="mt-[4px] font-mono text-[11px] text-mute">
                     {formatCount(entry.positionIds.length - MAX_ROWS)} weitere
                   </p>
                 )}

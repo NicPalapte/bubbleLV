@@ -86,7 +86,7 @@ bubble/
 │   ├── src/
 │   └── tests/
 │       └── fixtures/             # echte GAEB DA XML-Testdateien
-├── frontend/                     # Viewer (Bubble), liest den Kern über @core
+├── frontend/                     # Viewer (Conocto), liest den Kern über @core
 │   ├── src/
 │   │   ├── lib/
 │   │   │   ├── classify/         # RuleBasedClassifier (TS-Port aus WP-2)

@@ -1,11 +1,11 @@
-// Bubble — Popover: die einzige erhobene Fläche im System (der einzige Schatten).
+// Conocto — Popover: die einzige erhobene Fläche im System (der einzige Schatten).
 // Hängt per Portal an <body> und positioniert sich absolut zum Viewport, ausgehend
 // von `anchorRef` — nicht mehr `position: relative`+`absolute` im Elternelement.
 // Grund: die Filter-Chip-Reihe in der Kopfleiste muss bei schmalen Fenstern
 // scrollen bzw. Chips in ein Overflow-Menü verschieben können (Issue #24); ein
 // scrollender/verschachtelter Container hätte ein kind-positioniertes Popover
 // abgeschnitten. Portiert (Grundform) aus
-// .claude/skills/bubble-design/components/core/Popover.jsx.
+// .claude/skills/conocto-design/components/core/Popover.jsx.
 //
 // Verschachtelung: ein Popover, das aus einem anderen Popover heraus geöffnet
 // wird (Facetten-Chip im Menü „Weitere Filter“), hängt sich per Portal in das
@@ -221,7 +221,7 @@ export function PopoverRow({
             border: `1px solid ${on ? 'var(--blue)' : 'var(--line2)'}`,
             background: on ? 'var(--blue)' : 'var(--white)',
             color: '#fff',
-            fontSize: 10,
+            fontSize: 11,
             lineHeight: 1,
             display: 'inline-flex',
             alignItems: 'center',

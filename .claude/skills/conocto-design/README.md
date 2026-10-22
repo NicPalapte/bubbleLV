@@ -1,6 +1,6 @@
-# Bubble — Design System
+# Conocto — Design System
 
-**Bubble** is a German-language *LV-Viewer* (Leistungsverzeichnis / bill-of-quantities viewer)
+**Conocto** (formerly Bubble) is a German-language *LV-Viewer* (Leistungsverzeichnis / bill-of-quantities viewer)
 for construction estimating and procurement. It turns a flat LV into a navigable structure:
 a bubble graph of lots and sections, a filterable position table, and analytics views for
 Vergabepakete (procurement packages), Nachunternehmer (subcontractors), Bieterfragen
@@ -30,26 +30,25 @@ No external Figma file or repo was provided; the code is the ground truth.
 
 ## Visual foundations
 
-**The metaphor is a blueprint / technical drawing.** Light cool paper, hairline rules,
-monospace annotation, square corners. Nothing is decorative; if a pixel doesn't carry
-information it isn't there.
+**Since 2026-10-22 the product is called Conocto** (Con = construction, Octo = an octopus
+whose eight arms reach for the information in an LV). Look: Apple-like, clean, minimal
+(docs/decisions/0066-conocto-look.md). The sections below that describe the prototype
+(blueprint, mono) are history; the tokens in `tokens/` and `frontend/src/index.css` win.
 
-- **Background:** `--paper #f5f7fa`. The bubble canvas adds a 24px blueprint grid
-  (`.bp-canvas`) or a 14px dot pattern behind the graph. Panels and tables sit on
-  `--white`; sunken/zebra areas on `--panel #fbfcfd`. No images, no gradients as
-  background, no texture.
-- **Color:** one accent — blue `#2563eb`. Blue means *selected / active / interactive*
-  and nothing else. Amber `#d97706` = "offen / needs attention"; green `#0f8a4c` =
-  "geprüft / cheapest bid"; red `#b91c1c`/`#dc2626` = expired document or price over
-  estimate. Counts are neutral grey unless they represent something a human must act on.
-  Categorical color (Vergabepakete, team roles) is generated in **oklch** with a fixed
-  L/C and varying hue — `packageColors(hue)` in `components/core/PackageTag.jsx`.
-  Max ~2 saturated hues on screen at once outside those identity dots.
-- **Type:** IBM Plex Mono is the *interface* font — every label, number, code, chip,
-  table cell. Space Grotesk (600/700) is used only for **names of things**: the wordmark,
-  section/position/lot titles, and `Langtext` prose. Sizes are deliberately tiny:
-  8px micro-labels, 9px uppercase section labels (letter-spacing .6), 10–11px rows,
-  15–18px titles. Uppercase + letterspacing marks *labels*; sentence case marks *content*.
+- **Background:** pure white `--paper #ffffff` (light), black `#000000` (dark). Panels and
+  floating surfaces `#ffffff` / `#1c1c1e`; sunken/hover areas `#f5f5f7` / `#2c2c2e`. A faint
+  dot or line grid behind the graph. No images, no gradients as background, no texture.
+- **Color:** one accent — Ziegelrot `#c8362b` (dark `#e5554a`), kept in the `--blue*`
+  variables for historic reasons. It means *selected / active / interactive* and nothing
+  else. Amber = "offen / needs attention / Hinweis"; green = "geprüft / erledigt"; rose
+  `--red` = errors only. Graph dots and section fills are muted grey-warm tones
+  (`--dot-*`, `--cat-*`), never saturated.
+- **Type:** Schibsted Grotesk is the interface and text font — labels, numbers, OZ, table
+  cells, Langtext. Hanken Grotesk (600/700) is used for **titles**: wordmark, window and
+  card titles, position titles, graph group titles (`--display`, Tailwind `font-display`).
+  No monospace font; no `tabular-nums` (Schibsted widens `.` and `,` with it). Sizes 11–14px
+  for UI, 15–19px for titles. Uppercase + letterspacing marks *labels*; sentence case
+  marks *content*.
 - **Elevation (since 2026-10-05):** the graph is the stage; everything above it floats.
   Floating surfaces (top bar, side panel, position card, windows, menus, start cards)
   get `--shadow` (large) or `--shadow-sm` (capsules, selected segment) plus a 1px
@@ -63,7 +62,7 @@ information it isn't there.
   (`tokens/colors.css`). Dark applies via `prefers-color-scheme` unless the user picks
   Hell/Dunkel in the logo menu (`data-theme` on `<html>`, session only, no storage).
   Never hard-code a hex color in a component — use a variable.
-- **Selection & hover:** selection = `--blueS` fill + 2px blue left bar + `--blueD` text.
+- **Selection & hover:** selection = `--blueS` fill + 2px accent left bar + `--blueD` text.
   Hover = a light background change only (`--blueS` on the resize handle, row tint on
   lists). No lift, no scale, no shadow on hover. There is no distinct press state.
 - **Motion:** `.1–.12s ease` on background/border color. No entrance animations, no
@@ -71,15 +70,15 @@ information it isn't there.
   rows, columns) glides the dots `.9s`, then fades in circles/tiles — not above 3,000
   dots, never with `prefers-reduced-motion` (decision 0059).
 - **Matrix tiles:** rows × columns render as `rx 10` tiles filled `--heat-1…5` by count;
-  hovered tile and its axis labels turn blue (tile gets a soft blue shadow), the selected
-  position's tile keeps a blue border (decision 0059).
+  hovered tile and its axis labels take the accent (tile gets a soft accent shadow), the
+  selected position's tile keeps an accent border (decision 0059).
 - **Transparency/blur:** floating surfaces over the graph use `--glass` /
   `--glass-strong` with `backdrop-filter: blur(14px)`. Nothing else is translucent.
 - **Text:** as little explanatory text as possible. Labels, not sentences; the rest
   must be discoverable by clicking (decision of the owner, 2026-10-05).
 - **Filtering is visual, not destructive:** non-matching items either dim
   (`opacity .32` positions, `.4` sections) or hide, user's choice. Counts render as
-  `matching/total` with the matching half in blue.
+  `matching/total` with the matching half in the accent.
 - **Density:** the whole scale is 4/6/8/12/16px. Table rows are 9px vertical padding,
   tree rows 4–5px. Panels are 236px (left) and 320px (right), both drag-resizable with
   a 5px handle. Sizes live in session state only — never localStorage.
@@ -88,7 +87,7 @@ information it isn't there.
 ## Iconography
 
 There is **no icon library and no icon font.** Icons are *typographic*: single Unicode
-glyphs set in IBM Plex Mono, usually inside an 18px square with a 1px border
+glyphs set in the text font, usually inside an 18px square with a 1px border
 (`--size-icon-tile`). The full vocabulary in use:
 
 `▸ ▾` disclosure · `▣` Vergabepakete · `⊞` Nachunternehmer · `?` Bieterfragen ·
@@ -96,11 +95,11 @@ glyphs set in IBM Plex Mono, usually inside an 18px square with a 1px border
 `←` zurück · `‹ ›` collapse/expand · `↑ ↓` sort · `↗` open document · `✕` remove ·
 `⚠` warning · `§` section marker · `∑ ∅` totals/average · `·` separator.
 
-**No emoji, ever.** The only drawn SVG in the system is the logo mark (three linked
-circles) and the data visualisations (bubbles, treemap, sunburst), which are data, not
+**No emoji, ever.** The only drawn SVG in the system is the logo mark (octopus from
+above: round head, eight curved arms) and the data visualisations (bubbles, treemap, sunburst), which are data, not
 decoration. If you need a new icon, prefer another Unicode glyph in the same weight over
 importing an icon set. There is no supplied logo file beyond the inline
-`BubbleLogo` component.
+`ConoctoLogo` component (`ConoctoMark` for the mark alone) and `frontend/public/favicon.svg`.
 
 ## Content fundamentals
 

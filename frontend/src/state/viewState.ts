@@ -179,7 +179,7 @@ export const INITIAL_WORKSPACE: WorkspaceState = {
 
 export interface TourState {
   step: number | null;
-  /** Einmal je Sitzung: nach dem ersten LV bietet Bubble die Tour an, danach nicht mehr. */
+  /** Einmal je Sitzung: nach dem ersten LV bietet Conocto die Tour an, danach nicht mehr. */
   seen: boolean;
 }
 

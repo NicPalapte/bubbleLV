@@ -121,7 +121,7 @@ describe('Tabelle abkoppeln', () => {
     expect(within(fern).getByText('Wand 01.01.0010')).toBeInTheDocument();
     // Ohne die Stile des Hauptfensters stünde dort ungestaltetes HTML.
     expect(popup.document.head.querySelector('style')?.textContent).toContain('bg-paper');
-    expect(popup.document.title).toBe('Bubble — Tabelle');
+    expect(popup.document.title).toBe('Conocto — Tabelle');
   });
 
   it('gleicht neue Stile ab, ohne die vorhandenen neu anzulegen', async () => {

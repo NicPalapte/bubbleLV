@@ -1,9 +1,9 @@
-# Bubble
+# Conocto
 
-**Ein Leistungsverzeichnis auf einen Blick verstehen.** Bubble öffnet deine GAEB-Datei im
+**Ein Leistungsverzeichnis auf einen Blick verstehen.** Conocto öffnet deine GAEB-Datei im
 Browser, zeigt jede Position als Punkt in einem Graphen und hebt hervor, worauf es ankommt.
 
-**[→ Bubble im Browser öffnen](https://nicpalapte.github.io/bubbleLV/)** · kostenlose Beta
+**[→ Conocto im Browser öffnen](https://nicpalapte.github.io/bubbleLV/)** · kostenlose Beta
 
 Kein Server · kein Upload · kein Konto
 
@@ -12,10 +12,10 @@ Kein Server · kein Upload · kein Konto
 ## Für wen
 
 Für **Bauunternehmen**, die ein LV bekommen und schnell wissen wollen, was drinsteckt:
-Umfang, Mengen, Risiken, offene Angaben. Meist kommt das LV **ohne Preise** (X83) — Bubble
+Umfang, Mengen, Risiken, offene Angaben. Meist kommt das LV **ohne Preise** (X83) — Conocto
 ist genau dafür gebaut. Angebote mit Preisen (X84, X86) gehen auch.
 
-## Was Bubble kann
+## Was Conocto kann
 
 - **Das ganze LV als Graph** — gegliedert nach Abschnitt oder Mengeneinheit, oder als
   Matrix aus beidem. Große LVs mit bis zu ~10.000 Positionen laufen flüssig.
@@ -53,11 +53,11 @@ weiterhin ohne Server und ohne Upload.
 
 ## Beta und Feedback
 
-Bubble ist in der **öffentlichen Beta**. Was sich geändert hat, steht im
+Conocto ist in der **öffentlichen Beta**. Was sich geändert hat, steht im
 [Changelog](CHANGELOG.md). Fehler oder Ideen gern als
 [Issue](https://github.com/NicPalapte/bubbleLV/issues).
 
-Bubble kalkuliert nicht und ersetzt keine AVA-Software. Es hilft beim Lesen.
+Conocto kalkuliert nicht und ersetzt keine AVA-Software. Es hilft beim Lesen.
 
 ## Für Entwickler
 

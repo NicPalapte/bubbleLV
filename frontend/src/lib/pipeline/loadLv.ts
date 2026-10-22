@@ -38,7 +38,7 @@ function toLoadError(failure: PipelineFailure, cause?: unknown): LVLoadError {
 }
 
 /**
- * Größte Datei, die Bubble liest (Issue #93). 10.000 Positionen sind rund 5 MB
+ * Größte Datei, die Conocto liest (Issue #93). 10.000 Positionen sind rund 5 MB
  * XML; 50 MB sind damit gut das Neunfache des Richtwerts in docs/scope.md. Der
  * XML-Parser läuft im Haupt-Thread, eine größere Datei würde die Oberfläche
  * dort lange blockieren.
@@ -64,7 +64,7 @@ function pruefeGroesse(bytes: number, fileName: string): void {
   throw new LVLoadError(
     'size',
     `${fileName} ist zu groß (${formatMegabytes(bytes)} MB). ` +
-      `Bubble liest Dateien bis ${MAX_FILE_BYTES / (1024 * 1024)} MB.`,
+      `Conocto liest Dateien bis ${MAX_FILE_BYTES / (1024 * 1024)} MB.`,
   );
 }
 

@@ -32,7 +32,7 @@ export function ValueChip({
       role={kind === 'radio' ? 'radio' : undefined}
       aria-checked={kind === 'radio' ? on : undefined}
       aria-pressed={kind === 'toggle' ? on : undefined}
-      className={`inline-flex h-[26px] max-w-full cursor-pointer items-center gap-[6px] rounded-[var(--r-pill)] border px-[10px] font-mono text-[10.5px] ${
+      className={`inline-flex h-[26px] max-w-full cursor-pointer items-center gap-[6px] rounded-[var(--r-pill)] border px-[10px] font-mono text-[11.5px] ${
         on
           ? 'border-blue bg-blueS text-blueD'
           : 'border-line bg-surface text-ink hover:border-line2'
@@ -40,7 +40,7 @@ export function ValueChip({
     >
       <span className="truncate">{children}</span>
       {count !== undefined && (
-        <span className={`text-[10px] ${on ? 'text-blueD' : 'text-mute'}`}>
+        <span className={`text-[11px] ${on ? 'text-blueD' : 'text-mute'}`}>
           {formatCount(count)}
         </span>
       )}

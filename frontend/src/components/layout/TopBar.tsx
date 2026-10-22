@@ -47,7 +47,7 @@ interface ActiveChip {
 }
 
 const GHOST =
-  'inline-flex h-[32px] shrink-0 cursor-pointer items-center gap-[6px] rounded-[var(--r-sm)] border-none bg-transparent px-[10px] font-mono text-[11px] text-dim hover:bg-sunken hover:text-ink';
+  'inline-flex h-[32px] shrink-0 cursor-pointer items-center gap-[6px] rounded-[var(--r-sm)] border-none bg-transparent px-[10px] font-mono text-[12px] text-dim hover:bg-sunken hover:text-ink';
 
 /** Filterschalter für eigene Notizen; versteckt, solange es nichts zu filtern gibt. */
 function NoteFilterButton({
@@ -70,7 +70,7 @@ function NoteFilterButton({
       aria-pressed={on}
       onClick={onClick}
       title={on ? `${label}: Filter aus` : `Nur ${label.toLowerCase()} zeigen`}
-      className={`inline-flex h-[30px] shrink-0 cursor-pointer items-center gap-[6px] whitespace-nowrap rounded-[var(--r-pill)] border px-[11px] font-mono text-[10.5px] shadow-[var(--shadow-sm)] ${
+      className={`inline-flex h-[30px] shrink-0 cursor-pointer items-center gap-[6px] whitespace-nowrap rounded-[var(--r-pill)] border px-[11px] font-mono text-[11.5px] shadow-[var(--shadow-sm)] ${
         on
           ? 'border-blue bg-blueS text-blueD'
           : 'border-line bg-surface text-dim hover:border-line2'
@@ -297,7 +297,7 @@ export function TopBar() {
             type="button"
             onClick={() => setAdminOffen(true)}
             title="Admin-Werkzeuge"
-            className="-ml-[8px] inline-flex h-[20px] shrink-0 cursor-pointer items-center rounded-[var(--r-pill)] border-none bg-[var(--violetS)] px-[8px] font-mono text-[10px] text-[var(--violetD)]"
+            className="-ml-[8px] inline-flex h-[20px] shrink-0 cursor-pointer items-center rounded-[var(--r-pill)] border-none bg-[var(--violetS)] px-[8px] font-mono text-[11px] text-[var(--violetD)]"
           >
             Admin
           </button>
@@ -313,12 +313,12 @@ export function TopBar() {
             <div className="hidden min-w-0 max-w-[300px] shrink flex-col border-l border-line pl-[12px] leading-tight md:flex">
               <b
                 aria-hidden="true"
-                className="truncate font-sans text-[13px] font-semibold text-ink"
+                className="truncate font-display text-[14px] font-semibold text-ink"
                 title={lv.projectName ?? lv.fileName}
               >
                 {lv.projectName ?? lv.fileName}
               </b>
-              <span className="truncate font-mono text-[10px] text-mute" title={lv.fileName}>
+              <span className="truncate font-mono text-[11px] text-mute" title={lv.fileName}>
                 {lv.fileName}
                 {lv.client !== null && ` · ${lv.client}`}
               </span>
@@ -334,12 +334,12 @@ export function TopBar() {
               {chips.slice(0, MAX_CHIPS).map((chip) => (
                 <span
                   key={chip.key}
-                  className="inline-flex h-[24px] max-w-[160px] shrink-0 items-center gap-[6px] rounded-[var(--r-pill)] bg-blueS pl-[9px] pr-[6px] font-mono text-[10.5px] text-blueD"
+                  className="inline-flex h-[24px] max-w-[160px] shrink-0 items-center gap-[6px] rounded-[var(--r-pill)] bg-blueS pl-[9px] pr-[6px] font-mono text-[11.5px] text-blueD"
                 >
                   <span className="truncate">{chip.label}</span>
                   <button
                     type="button"
-                    className="cursor-pointer border-none bg-transparent px-[3px] py-0 text-[10px] leading-none text-blueD opacity-70 hover:opacity-100"
+                    className="cursor-pointer border-none bg-transparent px-[3px] py-0 text-[11px] leading-none text-blueD opacity-70 hover:opacity-100"
                     onClick={chip.remove}
                     aria-label={`${chip.label} entfernen`}
                   >
@@ -351,7 +351,7 @@ export function TopBar() {
                 <button
                   type="button"
                   onClick={() => dispatch({ type: 'sidePanel', panel: 'filter' })}
-                  className="shrink-0 cursor-pointer whitespace-nowrap border-none bg-transparent p-0 font-mono text-[10px] text-blue"
+                  className="shrink-0 cursor-pointer whitespace-nowrap border-none bg-transparent p-0 font-mono text-[11px] text-blue"
                 >
                   +{formatCount(chips.length - MAX_CHIPS)} weitere
                 </button>
@@ -362,9 +362,9 @@ export function TopBar() {
                 onChange={(event) => changeSearch(event.target.value)}
                 placeholder="Positionen, OZ, Langtext durchsuchen"
                 aria-label="Suche"
-                className="min-w-[60px] flex-1 border-none bg-transparent font-mono text-[12px] text-ink outline-none placeholder:text-mute"
+                className="min-w-[60px] flex-1 border-none bg-transparent font-mono text-[13px] text-ink outline-none placeholder:text-mute"
               />
-              <span className="rounded-[5px] border border-line bg-sunken px-[5px] py-[1px] font-mono text-[10px] text-mute">
+              <span className="rounded-[5px] border border-line bg-sunken px-[5px] py-[1px] font-mono text-[11px] text-mute">
                 /
               </span>
               {active.filtering && <HideModeToggle />}
@@ -373,7 +373,7 @@ export function TopBar() {
                 aria-pressed={filterOpen}
                 data-tour="filter"
                 onClick={() => dispatch({ type: 'sidePanel', panel: filterOpen ? null : 'filter' })}
-                className={`inline-flex h-[26px] shrink-0 cursor-pointer items-center whitespace-nowrap rounded-[var(--r-pill)] border px-[10px] font-mono text-[10.5px] ${
+                className={`inline-flex h-[26px] shrink-0 cursor-pointer items-center whitespace-nowrap rounded-[var(--r-pill)] border px-[10px] font-mono text-[11.5px] ${
                   filterOpen
                     ? 'border-solid border-blue bg-blueS text-blueD'
                     : 'border-dashed border-line2 bg-transparent text-dim hover:border-solid hover:border-blue hover:bg-blueS hover:text-blueD'

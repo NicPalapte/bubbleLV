@@ -1,4 +1,4 @@
-// Bubble — Popover: the only elevated surface in the system. Anchor it in a relative parent.
+// Conocto — Popover: the only elevated surface in the system. Anchor it in a relative parent.
 export function Popover({ open, children, width = 244, align = 'left' }) {
   if (!open) return null;
   return (

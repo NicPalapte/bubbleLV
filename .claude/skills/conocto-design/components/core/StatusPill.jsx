@@ -1,4 +1,4 @@
-// Bubble — StatusPill: LV workflow status (geprüft / offen / entwurf).
+// Conocto — StatusPill: LV workflow status (geprüft / offen / entwurf).
 const STATUS = {
   'geprüft': { bg:'var(--greenS)', fg:'var(--greenD)', dot:'var(--greenD)' },
   'offen':   { bg:'var(--amberS)', fg:'var(--amber)',  dot:'var(--amber)' },

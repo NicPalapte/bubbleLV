@@ -21,7 +21,7 @@ const EMPTY_SELECTION: ReadonlySet<string> = new Set();
 function Heading({ children, right }: { children: React.ReactNode; right?: React.ReactNode }) {
   return (
     <div className="flex flex-wrap items-baseline justify-between gap-x-[10px] gap-y-[4px]">
-      <h2 className="m-0 inline-flex items-center gap-[8px] font-sans text-[14px] font-bold tracking-[-0.2px] text-ink">
+      <h2 className="m-0 inline-flex items-center gap-[8px] font-display text-[14px] font-bold tracking-[-0.2px] text-ink">
         {children}
       </h2>
       {right}
@@ -30,7 +30,7 @@ function Heading({ children, right }: { children: React.ReactNode; right?: React
 }
 
 const RESET =
-  'cursor-pointer border-none bg-transparent p-0 font-mono text-[10px] font-medium uppercase tracking-[0.7px] text-blueD';
+  'cursor-pointer border-none bg-transparent p-0 font-mono text-[11px] font-medium uppercase tracking-[0.7px] text-blueD';
 
 function FacetSection({
   facet,
@@ -85,7 +85,7 @@ function FacetSection({
           <button
             type="button"
             onClick={() => setAll(true)}
-            className="h-[26px] cursor-pointer rounded-[var(--r-pill)] border border-dashed border-line2 bg-transparent px-[10px] font-mono text-[10.5px] text-dim hover:border-blue hover:text-blueD"
+            className="h-[26px] cursor-pointer rounded-[var(--r-pill)] border border-dashed border-line2 bg-transparent px-[10px] font-mono text-[11.5px] text-dim hover:border-blue hover:text-blueD"
           >
             alle {formatCount(entries.length)}
           </button>
@@ -129,7 +129,7 @@ export function FilterPanel() {
         >
           Filter
           {activeCount > 0 && (
-            <span className="rounded-[var(--r-pill)] bg-blueS px-[8px] py-[2px] font-mono text-[10px] font-medium text-blueD">
+            <span className="rounded-[var(--r-pill)] bg-blueS px-[8px] py-[2px] font-mono text-[11px] font-medium text-blueD">
               {formatCount(activeCount)}
             </span>
           )}

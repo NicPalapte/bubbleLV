@@ -25,7 +25,7 @@ export function LargestQuantities({
 }) {
   const [chosen, setChosen] = useState<string | null>(null);
   if (units.length === 0) {
-    return <p className="font-mono text-[10px] text-mute">Keine Mengen im aktuellen Filter.</p>;
+    return <p className="font-mono text-[11px] text-mute">Keine Mengen im aktuellen Filter.</p>;
   }
 
   const shown = units.slice(0, MAX_UNITS);
@@ -59,13 +59,13 @@ export function LargestQuantities({
             className="flex w-full cursor-pointer items-baseline gap-[8px] border-none border-b border-solid border-grid bg-transparent px-0 py-[4px] text-left"
           >
             <span
-              className="w-[92px] shrink-0 truncate font-mono text-[10px]"
+              className="w-[92px] shrink-0 truncate font-mono text-[11px]"
               style={{ color: item.nodeId === selectedId ? 'var(--blueD)' : 'var(--dim)' }}
             >
               {item.oz}
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block truncate font-sans text-[11.5px] text-ink">
+              <span className="block truncate font-sans text-[12.5px] text-ink">
                 {item.shortText}
               </span>
               <span
@@ -77,7 +77,7 @@ export function LargestQuantities({
               />
             </span>
             {/* Die Einheit steht schon auf dem gewählten Knopf. */}
-            <span className="shrink-0 whitespace-nowrap text-right font-mono text-[10px] text-ink">
+            <span className="shrink-0 whitespace-nowrap text-right font-mono text-[11px] text-ink">
               {formatNumber(item.quantity)}
             </span>
           </button>

@@ -33,11 +33,11 @@ function Kpi({
       }`}
     >
       <span
-        className={`font-sans text-[17px] font-semibold leading-tight ${warn ? 'text-amberD' : 'text-ink'}`}
+        className={`font-display text-[17px] font-semibold leading-tight ${warn ? 'text-amberD' : 'text-ink'}`}
       >
         {value}
       </span>
-      <span className="font-mono text-[10px] uppercase tracking-[0.6px] text-mute">{label}</span>
+      <span className="font-mono text-[11px] uppercase tracking-[0.6px] text-mute">{label}</span>
     </button>
   );
 }
@@ -70,7 +70,7 @@ export function KpiCapsule() {
           matches.filtering ? (
             <>
               {formatCount(hits)}{' '}
-              <small className="font-mono text-[10px] font-normal text-mute">
+              <small className="font-mono text-[11px] font-normal text-mute">
                 von {formatCount(root.positionCount)}
               </small>
             </>
@@ -87,7 +87,7 @@ export function KpiCapsule() {
           <>
             {formatCount(sections)}{' '}
             {lots > 1 && (
-              <small className="font-mono text-[10px] font-normal text-mute">
+              <small className="font-mono text-[11px] font-normal text-mute">
                 in {formatCount(lots)} Losen
               </small>
             )}

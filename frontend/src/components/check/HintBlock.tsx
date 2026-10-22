@@ -45,7 +45,7 @@ function RuleHints({
       }`}
     >
       <div
-        className={`flex flex-wrap items-baseline gap-[6px] font-mono text-[10.5px] font-semibold ${
+        className={`flex flex-wrap items-baseline gap-[6px] font-mono text-[11.5px] font-semibold ${
           strong ? 'text-amberD' : 'text-dim'
         }`}
       >
@@ -63,14 +63,14 @@ function RuleHints({
         {flags.map((flag, index) => (
           <li
             key={`${flag.id}-${index}`}
-            className="font-sans text-[11.5px] leading-[1.5] text-ink"
+            className="font-sans text-[12.5px] leading-[1.5] text-ink"
           >
             {flag.title}
           </li>
         ))}
       </ul>
       {rule !== undefined && rule.ruleRef !== '' && (
-        <p className="m-0 font-mono text-[10px] text-dim">
+        <p className="m-0 font-mono text-[11px] text-dim">
           {rule.ruleRef} · Hinweis, keine Bewertung
           {!rule.refConfirmed && (
             <span
@@ -86,7 +86,7 @@ function RuleHints({
       <button
         type="button"
         onClick={() => onJump(ruleId, positionId)}
-        className="cursor-pointer self-start border-none bg-transparent p-0 font-mono text-[10px] text-dim underline underline-offset-2 hover:text-blue focus-visible:text-blue"
+        className="cursor-pointer self-start border-none bg-transparent p-0 font-mono text-[11px] text-dim underline underline-offset-2 hover:text-blue focus-visible:text-blue"
       >
         In der Prüfung zeigen
       </button>

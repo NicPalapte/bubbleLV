@@ -97,7 +97,7 @@ function TypeMark({ type }: { type: PositionType }) {
       <span
         title={mark.title}
         aria-hidden="true"
-        className="mr-[6px] inline-block rounded-[var(--r-sm)] border border-line px-[4px] font-mono text-[10px] uppercase text-ink"
+        className="mr-[6px] inline-block rounded-[var(--r-sm)] border border-line px-[4px] font-mono text-[11px] uppercase text-ink"
       >
         {mark.label}
       </span>
@@ -239,7 +239,7 @@ const DEFAULT_WIDTHS: Readonly<Record<string, number>> = Object.fromEntries(
 const DEFAULT_COLUMN_CONFIG: ColumnConfig = defaultColumnConfig(DEFAULT_ORDER, DEFAULT_WIDTHS);
 
 const ICON_BUTTON =
-  'inline-flex h-[18px] w-[18px] cursor-pointer items-center justify-center border border-line bg-white p-0 font-mono text-[10px] leading-none text-dim disabled:cursor-default disabled:opacity-30';
+  'inline-flex h-[18px] w-[18px] cursor-pointer items-center justify-center border border-line bg-white p-0 font-mono text-[11px] leading-none text-dim disabled:cursor-default disabled:opacity-30';
 
 /** Popover „Spalten": ein-/ausblenden per Kästchen, verschieben per Pfeil. */
 function ColumnPicker({
@@ -295,7 +295,7 @@ function ColumnPicker({
                   aria-label={column.label}
                   title={shown ? 'Ausblenden' : 'Einblenden'}
                   onClick={() => onChange(toggleColumn(config, key))}
-                  className="flex min-w-0 flex-1 cursor-pointer items-center gap-[8px] border-none bg-transparent p-0 text-left font-mono text-[10px] text-ink disabled:cursor-default"
+                  className="flex min-w-0 flex-1 cursor-pointer items-center gap-[8px] border-none bg-transparent p-0 text-left font-mono text-[11px] text-ink disabled:cursor-default"
                 >
                   <span
                     aria-hidden="true"
@@ -306,7 +306,7 @@ function ColumnPicker({
                       border: `1px solid ${shown ? 'var(--blue)' : 'var(--line2)'}`,
                       background: shown ? 'var(--blue)' : 'var(--white)',
                       color: '#fff',
-                      fontSize: 10,
+                      fontSize: 11,
                       lineHeight: 1,
                       display: 'inline-flex',
                       alignItems: 'center',
@@ -472,7 +472,7 @@ export function PositionsTable({ root }: { root: LVNode }) {
   return (
     <div className="absolute inset-0 flex flex-col overflow-hidden bg-white">
       <div
-        className="flex min-w-0 shrink-0 items-center gap-[10px] overflow-hidden border-b border-line bg-panel px-[12px] font-mono text-[10px] text-dim"
+        className="flex min-w-0 shrink-0 items-center gap-[10px] overflow-hidden border-b border-line bg-panel px-[12px] font-mono text-[11px] text-dim"
         style={{ height: 'var(--h-view-head)' }}
       >
         {/* Auf LV-Ebene gibt es nichts darüber; das Fenster schließt sein eigenes ✕. */}
@@ -482,7 +482,7 @@ export function PositionsTable({ root }: { root: LVNode }) {
             onClick={() => dispatch({ type: 'selectNode', id: parent.id })}
             title="Eine Ebene höher"
             aria-label="Eine Ebene höher"
-            className="shrink-0 cursor-pointer border-none bg-transparent px-[4px] font-mono text-[13px] leading-none text-blue"
+            className="shrink-0 cursor-pointer border-none bg-transparent px-[4px] font-mono text-[14px] leading-none text-blue"
           >
             ←
           </button>
@@ -490,7 +490,7 @@ export function PositionsTable({ root }: { root: LVNode }) {
         {scopeRoot.code !== '' && (
           <span className="shrink-0 tracking-[0.6px] text-mute">§ {scopeRoot.code}</span>
         )}
-        <span className="min-w-0 truncate font-sans text-[12px] font-semibold text-ink">
+        <span className="min-w-0 truncate font-display text-[13px] font-semibold text-ink">
           {effectiveScope === 'lv' && scopeRoot === lvRoot
             ? 'Ganzes LV'
             : (scopeRoot.label ?? 'Ohne Bezeichnung')}
@@ -527,7 +527,7 @@ export function PositionsTable({ root }: { root: LVNode }) {
       </div>
 
       {columns.length === 0 ? (
-        <p className="m-0 p-[16px] font-mono text-[10px] text-mute">Alle Spalten ausgeblendet.</p>
+        <p className="m-0 p-[16px] font-mono text-[11px] text-mute">Alle Spalten ausgeblendet.</p>
       ) : (
         <DataTable
           label="Positionen"

@@ -79,7 +79,7 @@ function CompareButton({
       className={
         inCompare || blocked
           ? `${CARD_BUTTON} disabled:cursor-default disabled:opacity-50`
-          : 'h-[30px] cursor-pointer rounded-[var(--r-sm)] border border-blue bg-blue px-[12px] font-mono text-[10.5px] text-white hover:bg-blueD'
+          : 'h-[30px] cursor-pointer rounded-[var(--r-sm)] border border-blue bg-blue px-[12px] font-mono text-[11.5px] text-white hover:bg-blueD'
       }
     >
       {inCompare ? '✓ Vergleich' : '⇄ Vergleichen'}
@@ -131,7 +131,7 @@ export function SelectionCard({ node, onClose, docked = false }: SelectionCardPr
       {...handles.grip}
       title="Verschieben — ziehen"
       aria-label="Karte verschieben"
-      className="-ml-[4px] inline-flex shrink-0 cursor-grab items-center rounded-[var(--r-sm)] px-[3px] text-[12px] leading-none text-mute hover:text-ink active:cursor-grabbing"
+      className="-ml-[4px] inline-flex shrink-0 cursor-grab items-center rounded-[var(--r-sm)] px-[3px] text-[13px] leading-none text-mute hover:text-ink active:cursor-grabbing"
     >
       ⠿
     </span>

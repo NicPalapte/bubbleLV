@@ -1,5 +1,5 @@
-// Bubble — StatusPill: LV-Workflow-Status (geprüft / offen / entwurf).
-// Portiert aus .claude/skills/bubble-design/components/core/StatusPill.jsx.
+// Conocto — StatusPill: LV-Workflow-Status (geprüft / offen / entwurf).
+// Portiert aus .claude/skills/conocto-design/components/core/StatusPill.jsx.
 // Im MVP entsteht aus dem Import nur „offen"; der Wert ist reine Anzeige und
 // nicht editierbar (docs/decisions/0051-kein-status-filter.md).
 

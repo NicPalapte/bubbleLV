@@ -1,5 +1,5 @@
-// Bubble — DataTable: flex-basierte Zebra-Tabelle mit sortierbarem Mono-Kopf.
-// Portiert aus .claude/skills/bubble-design/components/core/DataTable.jsx.
+// Conocto — DataTable: flex-basierte Zebra-Tabelle mit sortierbarem Mono-Kopf.
+// Portiert aus .claude/skills/conocto-design/components/core/DataTable.jsx.
 //
 // Ergänzungen gegenüber der Skill-Vorlage:
 //  - `sortable` je Spalte: Status und Exposition lassen sich nicht sinnvoll sortieren.

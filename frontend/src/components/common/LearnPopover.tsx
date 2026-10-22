@@ -53,7 +53,7 @@ export function LearnPopover({ target, onClose }: { target: LearnTarget; onClose
       className="ov-window fixed z-[70] flex flex-col gap-[2px] p-[6px]"
       style={{ left, top: target.top, width }}
     >
-      <span className="break-words px-[8px] py-[4px] font-mono text-[10px] text-mute">
+      <span className="break-words px-[8px] py-[4px] font-mono text-[11px] text-mute">
         „{begriff}“ immer hervorheben als
       </span>
       {TERM_CATEGORIES.map((category) => (
@@ -65,7 +65,7 @@ export function LearnPopover({ target, onClose }: { target: LearnTarget; onClose
             window.getSelection()?.removeAllRanges();
             onClose();
           }}
-          className="flex cursor-pointer items-center gap-[8px] rounded-[6px] border-none bg-transparent px-[8px] py-[6px] text-left font-mono text-[11px] text-ink hover:bg-sunken"
+          className="flex cursor-pointer items-center gap-[8px] rounded-[6px] border-none bg-transparent px-[8px] py-[6px] text-left font-mono text-[12px] text-ink hover:bg-sunken"
         >
           <span
             aria-hidden="true"
@@ -76,7 +76,7 @@ export function LearnPopover({ target, onClose }: { target: LearnTarget; onClose
         </button>
       ))}
       {pattern !== null && (
-        <label className="flex cursor-pointer items-center gap-[8px] border-t border-line px-[8px] pb-[2px] pt-[6px] font-mono text-[10.5px] text-dim">
+        <label className="flex cursor-pointer items-center gap-[8px] border-t border-line px-[8px] pb-[2px] pt-[6px] font-mono text-[11.5px] text-dim">
           <input
             type="checkbox"
             checked={asPattern}

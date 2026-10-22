@@ -1,4 +1,4 @@
-// Bubble — PropField: micro-label over value. Use inside a 2-col grid (gap '0 18px').
+// Conocto — PropField: micro-label over value. Use inside a 2-col grid (gap '0 18px').
 export function PropField({ label, value }) {
   return (
     <div style={{ padding:'5px 0' }}>

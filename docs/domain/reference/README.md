@@ -34,7 +34,7 @@ Pflege: [`../../setup/pruefregeln.md`](../../setup/pruefregeln.md).
 - **`bestaetigt`** — der Owner hat Inhalt und Absatz-Nummer geprüft. Die Oberfläche
   zeigt den Verweis ohne Zusatz.
 - **`zu_bestaetigen`** — die Regel läuft, der Verweis wird aber sichtbar als
-  „Verweis zu bestätigen" markiert. Bubble behauptet keine Fundstelle in der Norm,
+  „Verweis zu bestätigen" markiert. Conocto behauptet keine Fundstelle in der Norm,
   die niemand geprüft hat.
 - **`aus`** — die Regel läuft nicht und steht auch nicht in der Prüfliste. Ein Wort in
   dieser Spalte schaltet sie ab, ohne Code-Änderung.

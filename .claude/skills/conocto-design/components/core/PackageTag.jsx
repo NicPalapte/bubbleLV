@@ -1,4 +1,4 @@
-// Bubble — PackageTag / PackageDots: Vergabepaket identity (oklch hue family).
+// Conocto — PackageTag / PackageDots: Vergabepaket identity (oklch hue family).
 export function PackageTag({ pkg }) {
   return (
     <span style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'3px 9px',

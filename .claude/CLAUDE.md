@@ -1,7 +1,7 @@
-# Bubble – Coding Agent
+# Conocto – Coding Agent
 
 ## Projektbeschreibung
-Bubble macht **ein Leistungsverzeichnis lesbar**: es zeigt jede Information, die in der
+Conocto macht **ein Leistungsverzeichnis lesbar**: es zeigt jede Information, die in der
 Datei steckt, hebt das Wichtige hervor und macht die Beziehungen zwischen Positionen
 sichtbar. Das ist die einzige Aufgabe — alles, was nicht dem Verstehen einer geladenen
 Datei dient, gehört nicht in dieses Produkt.
@@ -40,8 +40,8 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
   Klassifizieren, Filtern, Rendern – läuft im Browser und darf keinen eigenen
   Server voraussetzen. Fachdaten verlassen den Browser nie.
 - Statische Fremd-Assets (Webfonts, npm-Pakete, CDN-Ressourcen) sind **erlaubt**;
-  sie transportieren keine Nutzdaten. IBM Plex Mono und Space Grotesk werden über
-  `@fontsource/*` selbst gehostet und im Bundle ausgeliefert (`frontend/src/main.tsx`) –
+  sie transportieren keine Nutzdaten. Hanken Grotesk (Titel) und Schibsted Grotesk (Text)
+  werden über `@fontsource/*` selbst gehostet und im Bundle ausgeliefert (`frontend/src/main.tsx`) –
   kein Fremdaufruf an Google Fonts.
 - **Kein `localStorage`/`sessionStorage`/Cookies für Fachdaten.** Reiner UI-Zustand
   (Auswahl, Zoom, aktive Filter) darf in React-State/Context leben, muss aber einen
@@ -89,6 +89,13 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
   Zustand getrennt in `filterState` / `selectionState` / `viewState`
 
 ## Code-Style
+- Produktname **Conocto** (`docs/decisions/0066-conocto-look.md`). Alt-Kennungen mit
+  `bubble` nicht umbenennen – bricht gespeicherte Daten und Links: `DB_NAME`,
+  `NOTES_FILE_KIND`, `bubble-pos-v1`, `bubble-graph-v1`, GoatCounter-Code, Repo `bubbleLV`,
+  `@bubble/core`. „Bubble" als Blase im Graphen (`BubbleGraph`) bleibt.
+- Farben nur über CSS-Variablen aus `frontend/src/index.css`; `--blue*` ist der
+  Ziegelrot-Akzent (Auswahl, Interaktion). Hinweise amber, nie rot. Titel `font-display`
+  (Hanken Grotesk), sonst Schibsted Grotesk; kein `tabular-nums` (verbreitert `.` und `,`).
 - Strikte TS-Types überall – kein `any` ohne Kommentar
 - Kurze, gezielte Kommentare nur bei nicht-offensichtlichem WARUM (z. B. GAEB-Format-
   Eigenheiten)

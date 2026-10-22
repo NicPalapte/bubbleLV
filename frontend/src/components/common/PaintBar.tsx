@@ -32,7 +32,7 @@ function useCloseOutside(ref: RefObject<HTMLElement | null>, onClose: () => void
 const MENU_WIDTH = 230;
 
 const ROW =
-  'flex w-full cursor-pointer items-center gap-[8px] rounded-[6px] border-none bg-transparent px-[8px] py-[6px] text-left font-mono text-[11px] text-ink hover:bg-sunken';
+  'flex w-full cursor-pointer items-center gap-[8px] rounded-[6px] border-none bg-transparent px-[8px] py-[6px] text-left font-mono text-[12px] text-ink hover:bg-sunken';
 
 function Swatch({ paint }: { paint: Paint }) {
   return (
@@ -93,7 +93,7 @@ export function PaintBar({
             <Swatch paint={paint} />
             <span className="min-w-0 flex-1 truncate">{own ?? PAINT_INFO[paint].label}</span>
             {own !== undefined && (
-              <span className="shrink-0 text-[10px] text-mute">{PAINT_INFO[paint].label}</span>
+              <span className="shrink-0 text-[11px] text-mute">{PAINT_INFO[paint].label}</span>
             )}
           </button>
         );
@@ -171,14 +171,14 @@ export function PaintNamesDialog({
             onKeyDown={(event) => {
               if (event.key === 'Enter') close();
             }}
-            className="h-[28px] min-w-0 flex-1 rounded-[6px] border border-line bg-surface px-[8px] font-mono text-[11px] text-ink focus:border-blue focus:outline-none"
+            className="h-[28px] min-w-0 flex-1 rounded-[6px] border border-line bg-surface px-[8px] font-mono text-[12px] text-ink focus:border-blue focus:outline-none"
           />
         </label>
       ))}
       <button
         type="button"
         onClick={close}
-        className="mt-[4px] h-[28px] cursor-pointer self-end rounded-[6px] border border-line bg-surface px-[12px] font-mono text-[11px] text-ink hover:border-line2"
+        className="mt-[4px] h-[28px] cursor-pointer self-end rounded-[6px] border border-line bg-surface px-[12px] font-mono text-[12px] text-ink hover:border-line2"
       >
         Übernehmen
       </button>
@@ -203,7 +203,7 @@ export function PaintList({
   return (
     <Section
       title={PAINT_SECTION}
-      right={<span className="font-mono text-[10px] text-mute">{marks.length}</span>}
+      right={<span className="font-mono text-[11px] text-mute">{marks.length}</span>}
     >
       <ul
         aria-label={PAINT_SECTION}
@@ -216,7 +216,7 @@ export function PaintList({
               i > 0 ? 'border-t border-line' : ''
             }`}
           >
-            <span className="flex h-full items-center gap-[6px] bg-sunken px-[12px] py-[7px] font-mono text-[10.5px] text-mute">
+            <span className="flex h-full items-center gap-[6px] bg-sunken px-[12px] py-[7px] font-mono text-[11.5px] text-mute">
               <span
                 aria-hidden="true"
                 className="h-[10px] w-[10px] shrink-0 rounded-full border border-line2"
@@ -225,12 +225,12 @@ export function PaintList({
               <span className="min-w-0 truncate">{paintName(names, mark.paint)}</span>
             </span>
             <span
-              className="min-w-0 truncate px-[12px] py-[7px] font-sans text-[12px] text-ink"
+              className="min-w-0 truncate px-[12px] py-[7px] font-sans text-[13px] text-ink"
               title={mark.text}
             >
               „{mark.text}“
               {locate(text, mark) < 0 && (
-                <span className="ml-[6px] font-mono text-[10px] text-mute">nicht mehr im Text</span>
+                <span className="ml-[6px] font-mono text-[11px] text-mute">nicht mehr im Text</span>
               )}
             </span>
             <button
@@ -238,7 +238,7 @@ export function PaintList({
               aria-label="Textmarkierung entfernen"
               title="Textmarkierung entfernen"
               onClick={() => onRemove(i)}
-              className="cursor-pointer border-none bg-transparent px-[12px] py-[7px] font-mono text-[11px] text-mute opacity-0 hover:text-ink focus-visible:opacity-100 group-hover:opacity-100"
+              className="cursor-pointer border-none bg-transparent px-[12px] py-[7px] font-mono text-[12px] text-mute opacity-0 hover:text-ink focus-visible:opacity-100 group-hover:opacity-100"
             >
               ✕
             </button>

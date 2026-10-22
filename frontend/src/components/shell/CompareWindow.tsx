@@ -29,7 +29,7 @@ const EDGE_GAP = 16;
 /** So viele Vorschläge stehen unter „Ähnlich". */
 const MAX_SUGGESTIONS = 5;
 
-const CAP = 'font-mono text-[10px] font-medium uppercase tracking-[0.6px] text-mute';
+const CAP = 'font-mono text-[11px] font-medium uppercase tracking-[0.6px] text-mute';
 const LABEL_CELL = `sticky left-0 z-[1] w-[110px] min-w-[110px] border-b border-line bg-sunken px-[12px] py-[8px] text-left align-top ${CAP}`;
 const VALUE_CELL = 'min-w-[200px] border-b border-line px-[12px] py-[8px] align-top';
 
@@ -161,12 +161,12 @@ export function CompareWindow() {
         title="Verschieben — ziehen"
         className="flex h-[40px] shrink-0 cursor-grab items-center gap-[10px] border-b border-line pl-[10px] pr-[6px] active:cursor-grabbing"
       >
-        <span aria-hidden="true" className="text-[10px] tracking-[-2px] text-mute">
+        <span aria-hidden="true" className="text-[11px] tracking-[-2px] text-mute">
           ⋮⋮
         </span>
-        <b className="font-sans text-[13px] font-semibold text-ink">Positionsvergleich</b>
+        <b className="font-display text-[14px] font-semibold text-ink">Positionsvergleich</b>
         {columns.length > 1 && (
-          <span className="font-mono text-[10.5px] text-mute">
+          <span className="font-mono text-[11.5px] text-mute">
             {formatCount(differing)} {differing === 1 ? 'Unterschied' : 'Unterschiede'}
           </span>
         )}
@@ -175,7 +175,7 @@ export function CompareWindow() {
           type="button"
           onMouseDown={(event) => event.stopPropagation()}
           onClick={() => dispatch({ type: 'clearCompare' })}
-          className="h-[28px] cursor-pointer rounded-[var(--r-sm)] border-none bg-transparent px-[10px] font-mono text-[11px] text-dim hover:bg-sunken hover:text-ink"
+          className="h-[28px] cursor-pointer rounded-[var(--r-sm)] border-none bg-transparent px-[10px] font-mono text-[12px] text-dim hover:bg-sunken hover:text-ink"
         >
           leeren
         </button>
@@ -192,7 +192,7 @@ export function CompareWindow() {
       </div>
 
       {columns.length < MAX_COMPARE && (
-        <div className="flex shrink-0 flex-wrap items-center gap-[6px] border-b border-line bg-surface px-[12px] py-[10px] font-mono text-[10.5px]">
+        <div className="flex shrink-0 flex-wrap items-center gap-[6px] border-b border-line bg-surface px-[12px] py-[10px] font-mono text-[11.5px]">
           <span className={CAP}>Ähnlich</span>
           {suggestions.length === 0 ? (
             <span className="text-mute">keine gleichartigen Positionen</span>
@@ -207,7 +207,7 @@ export function CompareWindow() {
               >
                 + {node.position?.oz}
                 {node.position !== null && amount(node.position) !== '' && (
-                  <span className="text-[10px] text-mute">{amount(node.position)}</span>
+                  <span className="text-[11px] text-mute">{amount(node.position)}</span>
                 )}
               </button>
             ))
@@ -216,7 +216,7 @@ export function CompareWindow() {
       )}
 
       <div className="min-h-0 flex-1 overflow-auto bg-surface">
-        <table className="w-full border-separate border-spacing-0 font-mono text-[11px]">
+        <table className="w-full border-separate border-spacing-0 font-mono text-[12px]">
           <thead>
             <tr>
               <th className={`${LABEL_CELL} top-0 z-[3]`} />
@@ -226,14 +226,14 @@ export function CompareWindow() {
                   className="sticky top-0 z-[2] min-w-[200px] border-b border-line bg-sunken px-[12px] py-[10px] text-left align-top font-normal"
                 >
                   <div className="flex items-center gap-[8px]">
-                    <span className="inline-flex h-[20px] w-[20px] shrink-0 items-center justify-center rounded-full bg-blue text-[10px] text-white">
+                    <span className="inline-flex h-[20px] w-[20px] shrink-0 items-center justify-center rounded-full bg-blue text-[11px] text-white">
                       {i + 1}
                     </span>
                     <button
                       type="button"
                       onClick={() => select(node)}
                       title="In der Positionskarte zeigen"
-                      className="cursor-pointer border-none bg-transparent p-0 font-mono text-[11px] text-ink hover:text-blue"
+                      className="cursor-pointer border-none bg-transparent p-0 font-mono text-[12px] text-ink hover:text-blue"
                     >
                       {position.oz}
                     </button>
@@ -246,7 +246,7 @@ export function CompareWindow() {
                       ✕
                     </button>
                   </div>
-                  <div className="mt-[6px] font-sans text-[12.5px] font-semibold leading-[1.3] text-ink">
+                  <div className="mt-[6px] font-display text-[13.5px] font-semibold leading-[1.3] text-ink">
                     {position.shortText}
                   </div>
                 </th>
@@ -283,7 +283,7 @@ export function CompareWindow() {
               {longTexts.map((parts, i) => (
                 <td
                   key={columns[i].node.id}
-                  className={`${VALUE_CELL} whitespace-pre-wrap font-sans text-[12px] leading-[1.55] text-ink`}
+                  className={`${VALUE_CELL} whitespace-pre-wrap font-sans text-[13px] leading-[1.55] text-ink`}
                 >
                   {parts.length === 0 ? (
                     <span className="text-mute">—</span>

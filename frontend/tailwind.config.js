@@ -1,6 +1,6 @@
 /** @type {import('tailwindcss').Config} */
-// Farben/Fonts spiegeln die Design-Tokens aus .claude/skills/bubble-design/tokens/
-// wider; die CSS-Variablen selbst stehen in src/index.css.
+// Farben/Fonts spiegeln die Design-Tokens wider; die CSS-Variablen selbst stehen
+// in src/index.css (docs/decisions/0066-conocto-look.md).
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
@@ -33,6 +33,7 @@ export default {
       fontFamily: {
         mono: 'var(--mono)',
         sans: 'var(--sans)',
+        display: 'var(--display)',
       },
     },
   },

@@ -4,7 +4,7 @@
 // Erkannt wird ausschließlich die **Bezeichnung, die dasteht** — es wird nichts
 // aufgelöst, ergänzt oder auf Gültigkeit geprüft. "DIN EN 206" heißt hier: diese
 // Zeichenfolge steht im Langtext, an dieser Stelle. Ob die Norm einschlägig oder
-// zurückgezogen ist, sagt Bubble nicht (docs/domain/README.md).
+// zurückgezogen ist, sagt Conocto nicht (docs/domain/README.md).
 
 import { collect, dropContained, findAll, tidy, type Hit } from './spans';
 import type { Extractor, ExtractorContext, ExtractorResult } from './types';

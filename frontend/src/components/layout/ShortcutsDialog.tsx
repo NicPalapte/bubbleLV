@@ -75,7 +75,7 @@ export function ShortcutsDialog({ onClose }: { onClose: () => void }) {
         className="ov-window max-h-[84vh] w-[min(480px,calc(100vw-32px))] overflow-auto"
       >
         <div className="flex h-[44px] items-center border-b border-line pl-[16px] pr-[6px]">
-          <b className="flex-1 font-sans text-[14px] font-semibold text-ink">Tastenkürzel</b>
+          <b className="flex-1 font-display text-[14px] font-semibold text-ink">Tastenkürzel</b>
           <button
             type="button"
             onClick={onClose}
@@ -88,7 +88,7 @@ export function ShortcutsDialog({ onClose }: { onClose: () => void }) {
         <div className="flex flex-col gap-[14px] p-[16px]">
           {groups(modKey()).map((group) => (
             <section key={group.title} aria-label={group.title}>
-              <h3 className="mb-[6px] font-mono text-[10px] font-medium uppercase tracking-[0.6px] text-mute">
+              <h3 className="mb-[6px] font-mono text-[11px] font-medium uppercase tracking-[0.6px] text-mute">
                 {group.title}
               </h3>
               <dl className="m-0 flex flex-col gap-[4px]">
@@ -98,13 +98,13 @@ export function ShortcutsDialog({ onClose }: { onClose: () => void }) {
                       {item.keys.map((key) => (
                         <kbd
                           key={key}
-                          className="rounded-[5px] border border-line bg-sunken px-[6px] py-[1px] font-mono text-[10.5px] text-ink"
+                          className="rounded-[5px] border border-line bg-sunken px-[6px] py-[1px] font-mono text-[11.5px] text-ink"
                         >
                           {key}
                         </kbd>
                       ))}
                     </dt>
-                    <dd className="m-0 font-sans text-[12.5px] text-ink">{item.label}</dd>
+                    <dd className="m-0 font-sans text-[13.5px] text-ink">{item.label}</dd>
                   </div>
                 ))}
               </dl>

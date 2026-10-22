@@ -1,4 +1,4 @@
-// Bubble — SegmentedControl: hard-edged toggle group (Hervorheben/Ausblenden, size modes).
+// Conocto — SegmentedControl: hard-edged toggle group (Hervorheben/Ausblenden, size modes).
 export function SegmentedControl({ options, value, onChange }) {
   return (
     <div style={{ display:'flex', border:'1px solid var(--line)', flexShrink:0 }}>

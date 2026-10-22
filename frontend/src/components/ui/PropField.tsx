@@ -1,5 +1,5 @@
-// Bubble — PropField: Mikro-Label über dem Wert, im 2-Spalten-Raster.
-// Portiert aus .claude/skills/bubble-design/components/core/PropField.jsx.
+// Conocto — PropField: Mikro-Label über dem Wert, im 2-Spalten-Raster.
+// Portiert aus .claude/skills/conocto-design/components/core/PropField.jsx.
 
 import type { ReactNode } from 'react';
 

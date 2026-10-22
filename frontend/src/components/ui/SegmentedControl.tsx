@@ -1,6 +1,6 @@
-// Bubble — SegmentedControl: hartkantige Umschaltgruppe (Hervorheben/Ausblenden,
+// Conocto — SegmentedControl: hartkantige Umschaltgruppe (Hervorheben/Ausblenden,
 // Größenmodi). Portiert aus
-// .claude/skills/bubble-design/components/core/SegmentedControl.jsx.
+// .claude/skills/conocto-design/components/core/SegmentedControl.jsx.
 
 export interface SegmentedOption {
   value: string;
@@ -57,7 +57,7 @@ export function SegmentedControl({ options, value, onChange, label }: SegmentedC
               borderRadius: 5,
               cursor: disabled ? 'not-allowed' : 'pointer',
               fontFamily: 'var(--mono)',
-              fontSize: 10,
+              fontSize: 11,
               background: on ? 'var(--surface)' : 'transparent',
               boxShadow: on ? 'var(--shadow-sm)' : 'none',
               color: on

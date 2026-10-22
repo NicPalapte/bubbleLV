@@ -1,4 +1,4 @@
-// Bubble — Chip: square filter/tag toggle with optional count badge.
+// Conocto — Chip: square filter/tag toggle with optional count badge.
 export function Chip({ children, on = false, dashed = false, count, onClick, title }) {
   return (
     <button title={title} onClick={onClick} style={{

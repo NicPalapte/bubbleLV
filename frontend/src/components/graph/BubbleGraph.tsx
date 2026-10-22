@@ -927,7 +927,7 @@ export function BubbleGraph({ root, cardOverlay = true }: { root: LVNode; cardOv
                     x={hull.x}
                     y={hull.y - hull.r + 5}
                     textAnchor="middle"
-                    fontFamily="var(--sans)"
+                    fontFamily="var(--display)"
                     fontSize={15}
                     fontWeight={700}
                     fill="var(--ink)"
@@ -1278,7 +1278,7 @@ export function BubbleGraph({ root, cardOverlay = true }: { root: LVNode; cardOv
                     x={cx}
                     y={cy + 3.2 / k}
                     textAnchor="middle"
-                    fontSize={9 / k}
+                    fontSize={10 / k}
                     fontFamily="var(--mono)"
                     fill="#fff"
                   >
@@ -1347,7 +1347,7 @@ export function BubbleGraph({ root, cardOverlay = true }: { root: LVNode; cardOv
                   x={pin.box.x + 9}
                   y={pin.box.y + 15}
                   fontFamily="var(--mono)"
-                  fontSize={10}
+                  fontSize={11}
                   fill={strong ? 'var(--amberD)' : 'var(--dim)'}
                 >
                   {pin.anchor.label}
@@ -1360,7 +1360,7 @@ export function BubbleGraph({ root, cardOverlay = true }: { root: LVNode; cardOv
 
       {tooltipSlot >= 0 && Number.isFinite(map.px[tooltipSlot]) && (
         <div
-          className="pointer-events-none absolute z-[11] max-w-[260px] rounded-[var(--r-sm)] bg-ink px-[8px] py-[6px] font-mono text-[10px] leading-[1.4] text-white"
+          className="pointer-events-none absolute z-[11] max-w-[260px] rounded-[var(--r-sm)] bg-ink px-[8px] py-[6px] font-mono text-[11px] leading-[1.4] text-white"
           style={{
             left: Math.min(
               Math.max(0, view.tx + map.px[tooltipSlot] * k + radii[tooltipSlot] * k + 10),

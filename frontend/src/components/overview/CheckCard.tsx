@@ -126,8 +126,10 @@ export function CheckCard() {
   return (
     <div>
       <p className="flex items-baseline gap-[8px] pb-[6px]">
-        <span className="font-sans text-[15px] font-semibold text-ink">{formatCount(gesamt)}</span>
-        <span className="font-mono text-[10.5px] text-mute">
+        <span className="font-display text-[15px] font-semibold text-ink">
+          {formatCount(gesamt)}
+        </span>
+        <span className="font-mono text-[11.5px] text-mute">
           {gesamt === 1 ? 'Hinweis' : 'Hinweise'} · {sichtbar.length} Regeln
           {matches.filtering && ' · im aktuellen Filter'}
         </span>
@@ -138,7 +140,7 @@ export function CheckCard() {
         if (inGruppe.length === 0) return null;
         return (
           <div key={category}>
-            <p className="pb-[4px] pt-[10px] font-mono text-[9px] uppercase tracking-[.6px] text-mute">
+            <p className="pb-[4px] pt-[10px] font-mono text-[10px] uppercase tracking-[.6px] text-mute">
               {CATEGORY_LABELS[category]}
             </p>
             {inGruppe.map((rule) => {
@@ -166,17 +168,17 @@ export function CheckCard() {
                     disabled={!canOpen}
                     aria-expanded={open}
                     title={rule.label}
-                    className={`min-w-0 cursor-pointer truncate border-none bg-transparent p-0 text-left font-sans text-[12.5px] font-semibold disabled:cursor-default ${
+                    className={`min-w-0 cursor-pointer truncate border-none bg-transparent p-0 text-left font-display text-[13.5px] font-semibold disabled:cursor-default ${
                       open ? 'text-blueD' : 'text-ink'
                     } ${muted ? 'opacity-45' : ''}`}
                   >
-                    <span className="mr-[6px] font-mono text-[10px] font-normal text-mute">
+                    <span className="mr-[6px] font-mono text-[11px] font-normal text-mute">
                       {rule.id}
                     </span>
                     {rule.label}
                   </button>
                   <span
-                    className={`min-w-[24px] rounded-[var(--r-pill)] px-[6px] py-[1px] text-center font-mono text-[10.5px] tabular-nums ${
+                    className={`min-w-[24px] rounded-[var(--r-pill)] px-[6px] py-[1px] text-center font-mono text-[11.5px] tabular-nums ${
                       rule.severity === 'beachten'
                         ? 'bg-amberS font-semibold text-amberD'
                         : 'bg-sunken text-dim'
@@ -184,7 +186,7 @@ export function CheckCard() {
                   >
                     {formatCount(count)}
                   </span>
-                  <span aria-hidden="true" className="font-mono text-[11px] text-mute">
+                  <span aria-hidden="true" className="font-mono text-[12px] text-mute">
                     {canOpen ? '›' : ''}
                   </span>
                 </section>
@@ -195,7 +197,7 @@ export function CheckCard() {
       })}
 
       {ohneTreffer.length > 0 && (
-        <p className="mt-[10px] border-t border-grid pt-[8px] font-mono text-[10.5px] text-mute">
+        <p className="mt-[10px] border-t border-grid pt-[8px] font-mono text-[11.5px] text-mute">
           Ohne Treffer: {ohneTreffer.map((rule) => rule.id).join(', ')}
         </p>
       )}
@@ -203,14 +205,14 @@ export function CheckCard() {
         <section
           key={rule.id}
           aria-label={`${rule.id} ${rule.label}`}
-          className="mt-[6px] font-mono text-[10.5px] text-mute"
+          className="mt-[6px] font-mono text-[11.5px] text-mute"
         >
           <span className="mr-[6px]">{rule.id}</span>
           <span>inaktiv</span>
           {rule.inactiveReason !== null && <span className="block">{rule.inactiveReason}</span>}
         </section>
       ))}
-      <p className="mt-[12px] font-mono text-[10px] text-mute">Hinweise, kein Rechtsrat.</p>
+      <p className="mt-[12px] font-mono text-[11px] text-mute">Hinweise, kein Rechtsrat.</p>
     </div>
   );
 }
@@ -246,7 +248,7 @@ export function CheckFlyout({ left }: { left: number }) {
       className="ov-glass absolute top-[88px] z-[10] flex w-[300px] max-w-[calc(100%-32px)] flex-col overflow-hidden"
     >
       <div className="flex shrink-0 items-center gap-[8px] border-b border-line px-[14px] py-[10px]">
-        <span className="min-w-0 flex-1 truncate font-sans text-[13px] font-semibold text-ink">
+        <span className="min-w-0 flex-1 truncate font-display text-[14px] font-semibold text-ink">
           {rule.id} · {formatCount(flags.length)} {flags.length === 1 ? 'Fund' : 'Funde'}
         </span>
         <button
@@ -260,10 +262,10 @@ export function CheckFlyout({ left }: { left: number }) {
       </div>
       <div className="min-h-0 flex-1 overflow-auto px-[14px] pb-[14px] pt-[10px]">
         {rule.hint !== '' && (
-          <p className="mb-[4px] font-sans text-[11.5px] leading-[1.5] text-dim">{rule.hint}</p>
+          <p className="mb-[4px] font-sans text-[12.5px] leading-[1.5] text-dim">{rule.hint}</p>
         )}
         {rule.ruleRef !== '' && (
-          <p className="mb-[8px] font-mono text-[10px] text-mute">
+          <p className="mb-[8px] font-mono text-[11px] text-mute">
             {rule.ruleRef}
             {!rule.refConfirmed && (
               <span
@@ -293,14 +295,14 @@ export function CheckFlyout({ left }: { left: number }) {
               }`}
             >
               <span className="flex min-w-0 gap-[8px]">
-                <span className="shrink-0 font-mono text-[10px] text-dim">
+                <span className="shrink-0 font-mono text-[11px] text-dim">
                   {position?.oz ?? '—'}
                 </span>
-                <span className="min-w-0 truncate font-sans text-[11.5px] text-ink">
+                <span className="min-w-0 truncate font-sans text-[12.5px] text-ink">
                   {position?.shortText ?? 'Position nicht gefunden'}
                 </span>
               </span>
-              <span className="mt-[1px] block font-mono text-[10px] text-mute">{flag.title}</span>
+              <span className="mt-[1px] block font-mono text-[11px] text-mute">{flag.title}</span>
             </button>
           );
         })}

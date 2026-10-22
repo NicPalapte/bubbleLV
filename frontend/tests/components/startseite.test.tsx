@@ -88,7 +88,7 @@ describe('Über diese App', () => {
     // der später in seiner Meldung steht — Stand und Datum.
     expect(panel.getByText(new RegExp(BUILD_ID))).toBeInTheDocument();
     const text = issueBody({ view: 'table', loaded: false });
-    expect(text).toContain(`Bubble-Stand: v${APP_VERSION} (${BUILD_ID}`);
+    expect(text).toContain(`Conocto-Stand: v${APP_VERSION} (${BUILD_ID}`);
     const datum = buildDate();
     if (datum !== '') {
       expect(panel.getByText(new RegExp(datum.replace(/\./g, '\\.')))).toBeInTheDocument();

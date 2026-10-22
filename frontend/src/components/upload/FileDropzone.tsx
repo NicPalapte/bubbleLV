@@ -6,7 +6,7 @@
 // Datei bleibt in der IndexedDB dieses Browsers (Entscheidung 0046, lib/persist).
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { BubbleLogo } from '../ui/BubbleLogo';
+import { ConoctoLogo } from '../ui/ConoctoLogo';
 import { DEMO_LVS, loadDemoLv, type DemoLv } from '../../lib/pipeline/loadDemoLv';
 import { GAEB_ENDUNGEN } from '@core';
 import { formatPositions, formatWhen } from '../../lib/format';
@@ -249,8 +249,8 @@ export function FileDropzone() {
     <div className="start">
       <div className="start-in">
         <div className="start-brand">
-          <BubbleLogo size={40} />
-          <h1 className="sr-only">bubble – LV-Viewer</h1>
+          <ConoctoLogo size={40} />
+          <h1 className="sr-only">conocto – LV-Viewer</h1>
           <p className="start-tag">Erlebe dein Leistungsverzeichnis wie nie zuvor.</p>
         </div>
 
@@ -374,7 +374,7 @@ export function FileDropzone() {
         {error !== null && (
           <div
             role="alert"
-            className="w-full rounded-[var(--r-md)] border px-[12px] py-[10px] text-left font-mono text-[10.5px] leading-[1.6]"
+            className="w-full rounded-[var(--r-md)] border px-[12px] py-[10px] text-left font-mono text-[11.5px] leading-[1.6]"
             style={{ borderColor: 'var(--red)', background: 'var(--redS)', color: 'var(--redD)' }}
           >
             {error}

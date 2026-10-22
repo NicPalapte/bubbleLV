@@ -1,6 +1,6 @@
 # 0033 – Neuer Look und Dunkelmodus
 
-- **Status:** akzeptiert
+- **Status:** Farben und Schriften ersetzt durch 0066, Rest akzeptiert
 - **Datum:** 2026-10-05
 - **Betrifft:** Frontend, Design-System
 
@@ -22,7 +22,7 @@ Nico hat den neuen Look im Mockup abgenommen.
   „Hell" oder „Dunkel" wählen.
 - Die Wahl gilt nur bis zum Neuladen. Sie wird nicht gespeichert.
 - So wenig Erklärtext wie möglich. Der Rest muss sich durch Klicken erschließen.
-- Die Regeln stehen in `.claude/skills/bubble-design/README.md`.
+- Die Regeln stehen in `.claude/skills/conocto-design/README.md`.
 
 ## Warum
 

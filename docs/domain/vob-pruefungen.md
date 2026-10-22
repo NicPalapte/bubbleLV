@@ -7,8 +7,8 @@
 
 ## Was der VOB-Check ist — und was nicht
 
-- Bubble liest die geladene Datei und zeigt **Hinweise zum Prüfen**.
-- Bubble gibt **keinen Rechtsrat** und behauptet keine Vollständigkeit.
+- Conocto liest die geladene Datei und zeigt **Hinweise zum Prüfen**.
+- Conocto gibt **keinen Rechtsrat** und behauptet keine Vollständigkeit.
 - Die Erkennung läuft über Textmuster. Fehlalarme sind eingeplant, deshalb:
   - jede Meldung zeigt die **Fundstelle im Text**, nie nur ein Urteil,
   - jede Regel ist **einzeln abschaltbar**,
@@ -33,7 +33,7 @@ Status, Norm-Verweis, Name, Kategorie, Schwere und Hinweistext je Regel stehen i
 in [`reference/pruefregeln-stichworte.csv`](reference/pruefregeln-stichworte.csv) — nicht
 im Code. Im Code steht nur, wie eine Regel sucht und rechnet. Eine
 Regel mit Status `zu_bestaetigen` läuft, ihr Verweis erscheint aber sichtbar als
-**„Verweis zu bestätigen"**: Bubble zeigt den Fund (eine Tatsache über die Datei),
+**„Verweis zu bestätigen"**: Conocto zeigt den Fund (eine Tatsache über die Datei),
 behauptet aber keine Fundstelle in der Norm, die niemand geprüft hat. Mit
 `status = aus` verschwindet eine Regel vollständig, ohne Code-Änderung.
 
@@ -47,7 +47,7 @@ Spalte **Konfidenz**: `sicher` = Inhalt und Fundstelle in der Norm geprüft.
 muss der Owner bestätigen, bevor sie im UI angezeigt wird. `bestätigt` = vom Owner
 bestätigt (Status in `reference/pruefregeln.csv`).
 
-| ID  | Bubble findet                                                                                                                                                                                    | Norm-Verweis                                                                                                                                                                                                                                      | Konfidenz                                        | Umsetzbar                                                                                                                                                           |
+| ID  | Conocto findet                                                                                                                                                                                    | Norm-Verweis                                                                                                                                                                                                                                      | Konfidenz                                        | Umsetzbar                                                                                                                                                           |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | V1  | Bedarfs- oder Alternativposition im LV; der Titel je Fund nennt, welche der beiden (früher V11 für Alternativpositionen)                                                                         | VOB/A § 7 Abs. 1 Nr. 4                                                                                                                                                                                                                            | bestätigt                                        | sofort — `positionType` liefert das direkt                                                                                                                          |
 | V2  | Angehängte Stundenlohnarbeiten, besonders in größerem Umfang                                                                                                                                     | VOB/A § 7 Abs. 1 Nr. 4 Satz 2 · Abrechnung: VOB/B § 15                                                                                                                                                                                            | bestätigt                                        | sofort — Einheit `h`/`Std` plus Stichworte                                                                                                                          |

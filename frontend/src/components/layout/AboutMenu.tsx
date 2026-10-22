@@ -16,7 +16,7 @@
 
 import { useCallback, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { BubbleLogo } from '../ui/BubbleLogo';
+import { ConoctoLogo } from '../ui/ConoctoLogo';
 import { Popover, PopoverRow } from '../ui/Popover';
 import { SegmentedControl } from '../ui/SegmentedControl';
 import { useDismiss } from '../common/useDismiss';
@@ -66,7 +66,7 @@ function Trenner() {
 /** Zeile ohne Schaltflächen-Verhalten — reine Angabe, nichts zum Anklicken. */
 function Angabe({ label, wert }: { label: string; wert: string }) {
   return (
-    <div className="flex items-center justify-between gap-[8px] px-[10px] py-[6px] font-mono text-[10.5px]">
+    <div className="flex items-center justify-between gap-[8px] px-[10px] py-[6px] font-mono text-[11.5px]">
       <span className="text-mute">{label}</span>
       <span className="text-ink">{wert}</span>
     </div>
@@ -114,20 +114,20 @@ export function AboutMenu({
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         aria-haspopup="menu"
-        // Ohne eigenen Namen hieße die Schaltfläche „bubble ▾" — das sagt
+        // Ohne eigenen Namen hieße die Schaltfläche „conocto ▾" — das sagt
         // niemandem, was sie tut, weder am Bildschirmleser noch im Test.
         aria-label="Über diese App"
         data-tour="menu"
         title="Über diese App: Version, Änderungen, Fehler melden"
         className="mx-[8px] flex cursor-pointer items-center gap-[6px] rounded-[var(--r-sm)] border-none bg-transparent px-[8px] py-[5px] hover:bg-sunken aria-expanded:bg-sunken"
       >
-        <BubbleLogo size={22} />
-        <span className="font-mono text-[10px] text-mute">▾</span>
+        <ConoctoLogo size={22} />
+        <span className="font-mono text-[11px] text-mute">▾</span>
       </button>
       <Popover ref={popoverRef} open={open} width={272} anchorRef={anchorRef}>
         <div className="flex flex-col gap-[2px] px-[10px] pb-[8px] pt-[8px]">
-          <span className="font-sans text-[15px] font-bold text-ink">bubble</span>
-          <span className="font-mono text-[10px] text-mute">
+          <span className="font-display text-[15px] font-bold text-ink">conocto</span>
+          <span className="font-mono text-[11px] text-mute">
             <span>v{APP_VERSION}</span> · <span>{stand}</span>
           </span>
         </div>
@@ -173,7 +173,7 @@ export function AboutMenu({
               <PopoverRow
                 onClick={() => nimmMit(mitnehmen.notizenSichern)}
                 title="Alle eigenen Marker und Kommentare als Datei — zum Aufheben oder Weitergeben"
-                trailing={<span className="font-mono text-[10px] text-mute">{notizen}</span>}
+                trailing={<span className="font-mono text-[11px] text-mute">{notizen}</span>}
               >
                 Notizen sichern
               </PopoverRow>
@@ -208,7 +208,7 @@ export function AboutMenu({
             window.open(LIZENZEN_URL, '_blank', 'noopener,noreferrer');
             setOpen(false);
           }}
-          title="Bubble: alle Rechte vorbehalten. Dazu die Lizenzen der verwendeten Bausteine"
+          title="Conocto: alle Rechte vorbehalten. Dazu die Lizenzen der verwendeten Bausteine"
         >
           Lizenzen ↗
         </PopoverRow>

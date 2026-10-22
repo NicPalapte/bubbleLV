@@ -23,7 +23,7 @@ function pathOf(curve: ParetoModel['curve']): string {
 export function ParetoCard({ pareto }: { pareto: ParetoModel | null }) {
   if (pareto === null) {
     return (
-      <p className="font-sans text-[11.5px] leading-[1.5] text-dim">
+      <p className="font-sans text-[12.5px] leading-[1.5] text-dim">
         Ohne Preise lässt sich keine Rangfolge nach Summe bilden — diese Datei führt keine. Die
         Mengen je Einheit daneben tragen dann die Aussage.
       </p>
@@ -33,7 +33,7 @@ export function ParetoCard({ pareto }: { pareto: ParetoModel | null }) {
   const percent = (pareto.share * 100).toLocaleString('de-DE', { maximumFractionDigits: 1 });
   return (
     <>
-      <p className="font-sans text-[13px] text-ink">
+      <p className="font-sans text-[14px] text-ink">
         <span className="font-semibold">{formatCount(pareto.positions)}</span> Positionen ({percent}{' '}
         %) tragen 80 % der Summe
       </p>
@@ -64,7 +64,7 @@ export function ParetoCard({ pareto }: { pareto: ParetoModel | null }) {
         />
         <path d={pathOf(pareto.curve)} fill="none" stroke="var(--ink)" strokeWidth="0.8" />
       </svg>
-      <p className="mt-[4px] font-mono text-[10px] text-mute">
+      <p className="mt-[4px] font-mono text-[11px] text-mute">
         waagerecht: Anteil der Positionen · senkrecht: kumulierte Summe
       </p>
     </>

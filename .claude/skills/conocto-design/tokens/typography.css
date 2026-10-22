@@ -1,0 +1,32 @@
+/* Conocto — Typography. Webfonts are self-hosted via @fontsource/hanken-grotesk
+   and @fontsource/schibsted-grotesk (imported in frontend/src/main.tsx), not
+   loaded from Google Fonts. Decision: docs/decisions/0066-conocto-look.md */
+:root{
+  --display:'Hanken Grotesk', ui-sans-serif, system-ui, sans-serif; /* titles, wordmark */
+  --sans:'Schibsted Grotesk', ui-sans-serif, system-ui, sans-serif; /* all other text */
+  --mono:var(--sans); /* legacy name — no monospace font any more */
+
+  /* Sizes — dense but readable. */
+  --fs-micro:11px;     /* uppercase eyebrow inside property rows */
+  --fs-label:11px;     /* SECTION LABELS, badges, meta */
+  --fs-meta:11px;      /* chips, dropdown rows, secondary meta */
+  --fs-body:11.5px;    /* list rows, task text */
+  --fs-row:12px;       /* table cells, tree rows — the workhorse size */
+  --fs-cell:13px;      /* body default, toolbar strong text */
+  --fs-prose:13.5px;   /* Langtext / longer German prose */
+  --fs-title-sm:15px;
+  --fs-title:16px;     /* position title */
+  --fs-title-lg:19px;  /* section / lot title */
+
+  --lh-tight:1.3;
+  --lh-prose:1.55;
+
+  --ls-label:.6px;     /* uppercase labels */
+  --ls-caps:.5px;
+  --ls-title:-0.2px;   /* display 15px+ */
+
+  --fw-regular:400;
+  --fw-medium:500;
+  --fw-semi:600;
+  --fw-bold:700;
+}

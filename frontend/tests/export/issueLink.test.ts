@@ -42,7 +42,7 @@ describe('issueUrl', () => {
     // Die schärfere Probe: nicht „diese Werte fehlen", sondern „mehr als das
     // steht gar nicht drin". Eine Zahl aus der Datei fiele damit auf, auch
     // wenn niemand vorher an sie gedacht hat.
-    const erlaubt = ['Bubble-Stand', 'Ansicht', 'Datei geladen', 'Browser', 'Sprache', 'Fenster'];
+    const erlaubt = ['Conocto-Stand', 'Ansicht', 'Datei geladen', 'Browser', 'Sprache', 'Fenster'];
     const angaben = issueBody({ view: 'matrix', loaded: true })
       .split('\n')
       .filter((zeile) => zeile.startsWith('- '))
@@ -55,7 +55,7 @@ describe('issueUrl', () => {
     expect(body).toContain('- Ansicht: graph');
     expect(body).toContain('- Datei geladen: ja');
     expect(body).toContain('- Browser:');
-    expect(body).toContain('- Bubble-Stand:');
+    expect(body).toContain('- Conocto-Stand:');
   });
 
   it('sagt auch, wenn gar keine Datei geladen ist', () => {

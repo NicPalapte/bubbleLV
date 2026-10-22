@@ -5,7 +5,7 @@
 // würde die Hälfte der Pauschalpositionen übersehen.
 //
 // **Nur der Filter führt zusammen.** Tabelle und Eigenschaften-Panel zeigen
-// weiter den Wortlaut aus der Datei: Bubble macht ein LV lesbar, es schreibt es
+// weiter den Wortlaut aus der Datei: Conocto macht ein LV lesbar, es schreibt es
 // nicht um.
 //
 // Zwei Stufen:

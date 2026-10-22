@@ -73,7 +73,7 @@ function CrashPanel({
   const start = bereich === 'start';
   const app = bereich === 'app';
   const ueberschrift = app
-    ? 'Bubble ist abgestürzt.'
+    ? 'Conocto ist abgestürzt.'
     : start
       ? 'Das Laden ist abgestürzt.'
       : 'Diese Ansicht ist abgestürzt.';
@@ -95,11 +95,11 @@ function CrashPanel({
         role="alert"
         className="w-full max-w-[540px] border border-line bg-white px-[32px] py-[28px]"
       >
-        <div className="font-sans text-[15px] font-semibold text-ink">{ueberschrift}</div>
-        <div className="mt-[10px] font-mono text-[10.5px] leading-[1.7] text-mute">
+        <div className="font-display text-[15px] font-semibold text-ink">{ueberschrift}</div>
+        <div className="mt-[10px] font-mono text-[11.5px] leading-[1.7] text-mute">
           {lage} {weiter}
         </div>
-        <pre className="mt-[14px] overflow-auto border border-line bg-paper px-[10px] py-[8px] font-mono text-[10px] leading-[1.6] text-ink">
+        <pre className="mt-[14px] overflow-auto border border-line bg-paper px-[10px] py-[8px] font-mono text-[11px] leading-[1.6] text-ink">
           {meldung}
         </pre>
         <div className="mt-[16px] flex flex-wrap gap-[8px]">

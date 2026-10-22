@@ -33,7 +33,7 @@ const MODES: readonly { value: WorkspaceMode; label: string; icon: ReactNode }[]
 ];
 
 const CHIP =
-  'inline-flex h-[28px] shrink-0 cursor-pointer items-center gap-[5px] whitespace-nowrap rounded-[var(--r-pill)] border border-line bg-surface px-[10px] font-mono text-[10.5px] text-ink hover:border-blue hover:text-blueD';
+  'inline-flex h-[28px] shrink-0 cursor-pointer items-center gap-[5px] whitespace-nowrap rounded-[var(--r-pill)] border border-line bg-surface px-[10px] font-mono text-[11.5px] text-ink hover:border-blue hover:text-blueD';
 
 export function WorkspaceBar() {
   const workspace = useOptionalWorkspace();
@@ -88,7 +88,7 @@ export function WorkspaceBar() {
               role="radio"
               aria-checked={on}
               onClick={() => dispatch({ type: 'workspaceMode', mode: option.value })}
-              className={`inline-flex h-[24px] cursor-pointer items-center gap-[5px] rounded-[var(--r-pill)] border-none px-[9px] font-mono text-[10.5px] ${
+              className={`inline-flex h-[24px] cursor-pointer items-center gap-[5px] rounded-[var(--r-pill)] border-none px-[9px] font-mono text-[11.5px] ${
                 on
                   ? 'bg-surface text-ink shadow-[var(--shadow-sm)]'
                   : 'bg-transparent text-dim hover:text-blueD'

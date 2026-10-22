@@ -27,6 +27,8 @@ import {
 import { NO_PAINT_NAMES, toPaintNames, type PaintNames } from './paintNames';
 import type { LVNode } from '../types/lvNode';
 
+// Kennung aus der Zeit vor dem Namen Conocto — bleibt, sonst ließen sich
+// gesicherte Notiz-Dateien nicht mehr laden (Entscheidung 0066).
 export const NOTES_FILE_KIND = 'bubble-notizen';
 /**
  * Version 3: dazu Anstreichungen (0063). Version 2: Fortschritt + Wichtig (0062).
@@ -248,18 +250,18 @@ export function parseNotesFile(content: string): NotesFile {
   try {
     raw = JSON.parse(content);
   } catch {
-    throw new NotesFileError('Die Datei ist keine Notiz-Datei von Bubble.');
+    throw new NotesFileError('Die Datei ist keine Notiz-Datei von Conocto.');
   }
   if (typeof raw !== 'object' || raw === null) {
-    throw new NotesFileError('Die Datei ist keine Notiz-Datei von Bubble.');
+    throw new NotesFileError('Die Datei ist keine Notiz-Datei von Conocto.');
   }
   const file = raw as Record<string, unknown>;
   if (file.art !== NOTES_FILE_KIND || !Array.isArray(file.positionen)) {
-    throw new NotesFileError('Die Datei ist keine Notiz-Datei von Bubble.');
+    throw new NotesFileError('Die Datei ist keine Notiz-Datei von Conocto.');
   }
   const version = file.version;
   if (version !== 1 && version !== 2 && version !== NOTES_FILE_VERSION) {
-    throw new NotesFileError('Die Notiz-Datei stammt aus einer neueren Bubble-Version.');
+    throw new NotesFileError('Die Notiz-Datei stammt aus einer neueren Conocto-Version.');
   }
   return {
     datei: text(file.datei),

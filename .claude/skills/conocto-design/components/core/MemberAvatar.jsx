@@ -1,4 +1,4 @@
-// Bubble — MemberAvatar: initials in a role-colored ring, optional name + role.
+// Conocto — MemberAvatar: initials in a role-colored ring, optional name + role.
 export function MemberAvatar({ member, size = 22, showName = false, onClick }) {
   const initials = member.name.replace(/\.\s?/g, '').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
   return (

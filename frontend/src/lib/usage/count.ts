@@ -115,7 +115,7 @@ export function countUrl(path: string, event: boolean): string {
     // Herkunft nur als Domain (z. B. google.com), ohne Pfad und Suchbegriffe.
     const referrer = referrerOrigin();
     if (referrer !== null) params.set('r', referrer);
-    // Bildschirmgröße zeigt, ob Bubble auf Tablet oder Smartphone genutzt wird.
+    // Bildschirmgröße zeigt, ob Conocto auf Tablet oder Smartphone genutzt wird.
     params.set('s', `${screen.width},${screen.height},${window.devicePixelRatio || 1}`);
   }
   return `${COUNT_URL}?${params.toString()}`;

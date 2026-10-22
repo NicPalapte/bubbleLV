@@ -33,12 +33,12 @@ components are just assigned to `window`. Either style works; keep one per file.
 
 Two copies of these components exist. They serve different purposes — do not merge them.
 
-- `.claude/skills/bubble-design/components/core/*.jsx` — **this kit**. Reference
+- `.claude/skills/conocto-design/components/core/*.jsx` — **this kit**. Reference
   implementations for throwaway prototypes that run on browser-Babel without a build
   step. Not shipped, not type-checked (outside `frontend/tsconfig.app.json`
   `include: ["src"]`), not linted (`frontend/eslint.config.js` covers `**/*.{ts,tsx}`).
 - `frontend/src/components/ui/*.tsx` — **the production version**. This is what the app
-  renders and what the Bubble MVP is judged on.
+  renders and what the Conocto MVP is judged on.
 
 Rules:
 
@@ -74,4 +74,4 @@ not in the app; the reason is binding, see `docs/scope.md#out-of-scope`.
 | SegmentedControl | `core/SegmentedControl.jsx` | `SegmentedControl.tsx` |
 | PackageTag, PackageDots, packageColors | `core/PackageTag.jsx` | — Vergabepakete are out of scope |
 | EmptyState | `core/EmptyState.jsx` | `EmptyState.tsx` |
-| BubbleLogo | `core/BubbleLogo.jsx` | `BubbleLogo.tsx` |
+| ConoctoLogo | `core/ConoctoLogo.jsx` | `ConoctoLogo.tsx` |

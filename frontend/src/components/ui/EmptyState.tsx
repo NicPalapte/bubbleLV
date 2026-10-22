@@ -1,6 +1,6 @@
-// Bubble — EmptyState: Platzhalter mit gestrichelter Linie. Leerzustände sind
+// Conocto — EmptyState: Platzhalter mit gestrichelter Linie. Leerzustände sind
 // eine kurze Nominalphrase, nie eine Entschuldigung (README des Design-Systems).
-// Portiert aus .claude/skills/bubble-design/components/core/EmptyState.jsx.
+// Portiert aus .claude/skills/conocto-design/components/core/EmptyState.jsx.
 
 import type { ReactNode } from 'react';
 
