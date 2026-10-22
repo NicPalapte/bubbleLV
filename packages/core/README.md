@@ -8,6 +8,8 @@ Bubble (`frontend/`) ist der Viewer und liest nur über `src/index.ts`.
 - `src/model/` – neutrales Datenmodell (`LVDraft`: Los › Abschnitt › Position)
 - `src/gaeb/` – GAEB-Importer (einzige Stelle mit GAEB-XML-Wissen)
 - `src/hash/` – Datei-ID und Positions-Hashes (Entscheidung 0055)
+- `src/export/` – LV als JSON mit Hashes für bauonto (Entscheidung 0065,
+  Kommandozeile: `cd frontend && npm run export-lv -- <datei.x83>`)
 
 ## Regeln
 
