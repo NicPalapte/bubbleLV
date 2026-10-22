@@ -1,6 +1,7 @@
 // Rechtsklick-Menü auf eine Position (Issue #155): auf einem Punkt im Graphen, einer
 // Zeile der Tabelle und einer Karte im Vergleich. Die Einträge wirken wie die Knöpfe
-// der Positionskarte. Ein Abschnitt bekommt nur „In der Tabelle zeigen".
+// der Positionskarte. Ein Abschnitt bekommt nur die Sprünge: aus dem Graphen in die
+// Tabelle, aus Tabelle und Vergleich in den Graphen (und in die Tabelle).
 //
 // Der Rechtsklick selbst ändert weder Filter noch Auswahl (ein Filterzustand,
 // .claude/CLAUDE.md); erst ein Eintrag wie „In der Tabelle zeigen" wählt aus.
@@ -20,7 +21,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { PROGRESS_CHOICES, setImportantNow, setProgressNow } from './markers';
-import { MenuContext, type OpenMenu } from './positionMenuContext';
+import { MenuContext, type MenuSource, type OpenMenu } from './positionMenuContext';
 import { useJumpToPosition } from './useJumpToPosition';
 import { IMPORTANT_INFO } from '../../lib/annotations';
 import { EMPTY_SHARED, sharedHash } from '../../lib/share/urlState';
@@ -31,6 +32,7 @@ interface MenuTarget {
   /** Ort im Fenster (clientX/Y des Klicks). */
   x: number;
   y: number;
+  from: MenuSource;
   doc: Document;
 }
 
@@ -190,17 +192,33 @@ function Menu({ target, onClose }: { target: MenuTarget; onClose: () => void }) 
           </button>
         </>
       )}
-      <button
-        type="button"
-        role="menuitem"
-        onClick={run(() => {
-          if (position !== null) jumpToPosition(id);
-          else dispatch({ type: 'openInTable', id });
-        })}
-        className={ITEM}
-      >
-        In der Tabelle zeigen
-      </button>
+      {target.from !== 'graph' && (
+        <button
+          type="button"
+          role="menuitem"
+          onClick={run(() => {
+            if (position !== null) jumpToPosition(id, { stayInView: true });
+            else dispatch({ type: 'selectNode', id });
+            dispatch({ type: 'graphFocus' });
+          })}
+          className={ITEM}
+        >
+          Im Graph zeigen
+        </button>
+      )}
+      {target.from !== 'table' && (
+        <button
+          type="button"
+          role="menuitem"
+          onClick={run(() => {
+            if (position !== null) jumpToPosition(id);
+            else dispatch({ type: 'openInTable', id });
+          })}
+          className={ITEM}
+        >
+          In der Tabelle zeigen
+        </button>
+      )}
       {position !== null && (
         <button
           type="button"
@@ -232,7 +250,7 @@ function Menu({ target, onClose }: { target: MenuTarget; onClose: () => void }) 
 export function PositionMenuProvider({ children }: { children: ReactNode }) {
   const [target, setTarget] = useState<MenuTarget | null>(null);
   const open = useCallback<OpenMenu>(
-    (id, x, y, doc = document) => setTarget({ id, x, y, doc }),
+    (id, x, y, from, doc = document) => setTarget({ id, x, y, from, doc }),
     [],
   );
   const close = useCallback(() => setTarget(null), []);

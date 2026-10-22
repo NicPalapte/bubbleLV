@@ -1,5 +1,5 @@
 // Filterleiste unter der Kopfleiste (Issue #154): ein Chip je Gruppe mit Liste,
-// der Mengenregler und „Eigene"; Escape schließt erst die Liste, dann die Leiste.
+// der Mengenregler und „Status"; Escape schließt erst die Liste, dann die Leiste.
 
 import { readFileSync } from 'node:fs';
 import { fireEvent, render, screen, within } from '@testing-library/react';
@@ -60,10 +60,10 @@ describe('Filterleiste', () => {
     expect(minimum).toHaveValue(minimum.getAttribute('min'));
   });
 
-  it('führt die eigenen Marker unter „Eigene" und setzt alle zurück', () => {
+  it('führt die eigenen Marker unter „Status" und setzt alle zurück', () => {
     const leiste = setup();
-    fireEvent.click(within(leiste).getByRole('button', { name: 'Eigene' }));
-    const eigene = within(within(leiste).getByRole('group', { name: 'Eigene' }));
+    fireEvent.click(within(leiste).getByRole('button', { name: 'Status' }));
+    const eigene = within(within(leiste).getByRole('group', { name: 'Status' }));
     expect(
       eigene.getAllByRole('checkbox').map((kasten) => kasten.closest('label')?.textContent),
     ).toEqual(['Offen28', 'In Bearbeitung0', 'Erledigt0', 'Wichtig0', 'Mit Kommentar0']);
@@ -75,12 +75,33 @@ describe('Filterleiste', () => {
 
   it('schließt mit Escape erst die Liste, dann die Leiste', () => {
     const leiste = setup();
-    const chip = within(leiste).getByRole('button', { name: 'Eigene' });
+    const chip = within(leiste).getByRole('button', { name: 'Status' });
     fireEvent.click(chip);
     fireEvent.keyDown(window, { key: 'Escape' });
-    expect(within(leiste).queryByRole('group', { name: 'Eigene' })).toBeNull();
+    expect(within(leiste).queryByRole('group', { name: 'Status' })).toBeNull();
     chip.focus();
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(screen.queryByRole('region', { name: 'Filterleiste' })).toBeNull();
+  });
+});
+
+describe('Filterleiste: Material', () => {
+  it('ordnet die Merkmale unter ihr Material und klappt sie auf', () => {
+    const leiste = setup();
+    fireEvent.click(within(leiste).getByRole('button', { name: 'Material' }));
+    const gruppe = within(within(leiste).getByRole('group', { name: 'Material' }));
+    // Druckfestigkeit steht nicht mehr als eigener Chip in der Leiste.
+    expect(within(leiste).queryByRole('button', { name: 'Druckfestigkeit' })).toBeNull();
+    expect(gruppe.queryByText('Druckfestigkeit')).toBeNull();
+
+    fireEvent.click(gruppe.getByRole('button', { name: 'Merkmale Beton' }));
+    expect(gruppe.getByText('Druckfestigkeit')).toBeInTheDocument();
+    const [wert] = gruppe
+      .getAllByRole('checkbox')
+      .filter((box) => /^C\d/.test(box.closest('label')?.textContent ?? ''));
+    fireEvent.click(wert);
+    expect(within(leiste).getByRole('button', { name: 'Material, 1 gewählt' })).toBeInTheDocument();
+    // Mit aktivem Merkmal bleibt das Material aufgeklappt.
+    expect(gruppe.getByRole('button', { name: 'Merkmale Beton' })).toBeDisabled();
   });
 });

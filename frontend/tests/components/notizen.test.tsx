@@ -173,10 +173,10 @@ describe('Markierungen und Kommentare', () => {
     expect(document.querySelectorAll('[data-note="note"]')).toHaveLength(1);
 
     const alle = sichtbarePunkte();
-    // Eigene Filter stehen in der Filterleiste unter „Eigene" (Issue #154).
+    // Eigene Filter stehen in der Filterleiste unter „Status" (Issue #154).
     fireEvent.click(screen.getByRole('button', { name: '+ Filter' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Eigene' }));
-    const eigene = within(screen.getByRole('group', { name: 'Eigene' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Status' }));
+    const eigene = within(screen.getByRole('group', { name: 'Status' }));
     fireEvent.click(eigene.getByRole('checkbox', { name: /Wichtig/ }));
     // Aktiv steht der Filter als Chip in der Suche.
     expect(screen.getByRole('button', { name: 'Wichtig entfernen' })).toBeInTheDocument();

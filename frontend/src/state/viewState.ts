@@ -92,6 +92,8 @@ export interface GraphViewState {
    * rendern. Erst beim Verlassen der Ansicht wandert er hierher.
    */
   viewport: Viewport | null;
+  /** Steigt bei „Im Graph zeigen"; der Graph passt dann auf die Auswahl ein. */
+  focus: number;
 }
 
 export interface TableViewState {
@@ -232,6 +234,8 @@ export type ViewAction =
   | { type: 'graphHints'; value: boolean }
   /** Graph-Ausschnitt sichern — beim Verlassen der Ansicht, nicht je Frame. */
   | { type: 'graphViewport'; viewport: Viewport | null }
+  /** Auf die Auswahl einpassen; holt im Splitscreen den Graphen zurück, falls er zu war. */
+  | { type: 'graphFocus' }
   | { type: 'tableSort'; key: string }
   | { type: 'tableScope'; scope: TableScope }
   | { type: 'tableColumns'; columns: ColumnConfig | null }
@@ -278,6 +282,7 @@ export const INITIAL_VIEW_STATE: ViewState = {
     cols: null,
     showHints: true,
     viewport: null,
+    focus: 0,
   },
   table: { sort: { key: 'oz', dir: 1 }, scope: 'node', columns: null },
   overview: { openRules: new Set(), revealRule: null },
@@ -417,6 +422,14 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
       return { ...state, graph: { ...state.graph, showHints: action.value } };
     case 'graphViewport':
       return { ...state, graph: { ...state.graph, viewport: action.viewport } };
+    case 'graphFocus':
+      return {
+        ...state,
+        graph: { ...state.graph, focus: state.graph.focus + 1 },
+        workspace: state.workspace.closed.graph
+          ? { ...state.workspace, closed: { ...state.workspace.closed, graph: false } }
+          : state.workspace,
+      };
     case 'tableSort': {
       const { sort } = state.table;
       const dir: 1 | -1 = sort.key === action.key ? ((sort.dir * -1) as 1 | -1) : 1;

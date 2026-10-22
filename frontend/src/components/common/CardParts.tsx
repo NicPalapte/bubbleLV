@@ -145,4 +145,4 @@ export function PropTable({ rows }: { rows: ReadonlyArray<readonly [string, stri
 }
 
 export const CARD_BUTTON =
-  'inline-flex h-[30px] cursor-pointer items-center rounded-[var(--r-sm)] border border-line bg-surface px-[12px] font-mono text-[10.5px] text-ink hover:border-line2 focus-visible:border-blue';
+  'inline-flex h-[30px] cursor-pointer items-center justify-center rounded-[var(--r-sm)] border border-line bg-surface px-[12px] font-mono text-[10.5px] text-ink hover:border-line2 focus-visible:border-blue';

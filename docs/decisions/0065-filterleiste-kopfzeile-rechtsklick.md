@@ -26,7 +26,9 @@
 - **Fußzeile der Auswahlkarte:** „Vergleichen" als hervorgehobener Hauptknopf;
   „Im Vergleich", wenn die Position schon drin ist.
 - **Filter:** „+ Filter" klappt eine Leiste unter der Kopfleiste auf. Ein Chip je Gruppe
-  (Menge, Facetten, „Eigene") öffnet eine Liste mit Kästchen und Anzahl. Aktive Filter
+  (Menge, Facetten, „Material", „Status") öffnet eine Liste mit Kästchen und Anzahl.
+  „Material" ordnet die Merkmale unter ihr Material (Beton → Art, Druckfestigkeit,
+  Exposition …), aufklappbar je Material. „Status" sind die eigenen Marker. Aktive Filter
   stehen weiter als Chips in der Suche. Das Seitenfenster hat nur noch Überblick und
   Prüfung.
 - **Darstellung** (Größe, Gliederung) sitzt eingeklappt in der Graph-Steuerung unten
@@ -35,9 +37,9 @@
   Umschalt+F10) auf die Auswahl öffnet das Menü: Kopieren, sechs Farben, „Anstreichung
   entfernen". Ohne Auswahl bleibt das normale Browser-Menü.
 - **Rechtsklick auf eine Position** im Graphen, in der Tabelle und im Vergleich öffnet
-  ein Menü: Fortschritt, Wichtig, Vergleich, In der Tabelle zeigen, Link kopieren.
-  Ein Abschnitt bekommt nur „In der Tabelle zeigen" (das Link-Format kennt keine
-  Abschnitte).
+  ein Menü: Fortschritt, Wichtig, Vergleich, Link kopieren und der Sprung in die jeweils
+  andere Ansicht („In der Tabelle zeigen" bzw. „Im Graph zeigen"). Ein Abschnitt bekommt
+  nur die Sprünge (das Link-Format kennt keine Abschnitte).
 - Der Rechtsklick ändert weder Filter noch Auswahl.
 
 ## Warum

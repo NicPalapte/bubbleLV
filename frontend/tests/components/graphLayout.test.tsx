@@ -345,5 +345,12 @@ describe('Rechtsklick im Graphen (Issue #155)', () => {
     const menue = within(screen.getByRole('menu', { name: /^Position / }));
     fireEvent.click(menue.getByRole('menuitemradio', { name: 'In Bearbeitung' }));
     expect(document.querySelectorAll('[data-note="bearbeitung"]').length).toBeGreaterThan(0);
+
+    // Aus der Tabelle geht es in den Graphen, nicht noch einmal in die Tabelle.
+    fireEvent.contextMenu(zeile);
+    const zweites = within(screen.getByRole('menu', { name: /^Position / }));
+    expect(zweites.queryByRole('menuitem', { name: 'In der Tabelle zeigen' })).toBeNull();
+    fireEvent.click(zweites.getByRole('menuitem', { name: 'Im Graph zeigen' }));
+    expect(screen.getByRole('button', { name: 'Fortschritt' })).toBeInTheDocument();
   });
 });

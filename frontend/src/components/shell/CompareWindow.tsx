@@ -227,7 +227,7 @@ export function CompareWindow() {
                   key={node.id}
                   onContextMenu={(event) => {
                     event.preventDefault();
-                    openMenu(node.id, event.clientX, event.clientY);
+                    openMenu(node.id, event.clientX, event.clientY, 'compare');
                   }}
                   className="sticky top-0 z-[2] min-w-[200px] border-b border-line bg-sunken px-[12px] py-[10px] text-left align-top font-normal"
                 >

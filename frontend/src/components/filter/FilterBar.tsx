@@ -1,6 +1,7 @@
 // Filterleiste unter der Kopfleiste (Issue #154): „+ Filter" klappt sie auf. Ein Chip
-// je Gruppe öffnet eine Auswahlliste; dazu „Eigene" für Fortschritt, „Wichtig" und
-// Kommentare. Nur Oberfläche: Filter und matchPos sind dieselben wie vorher, die
+// je Gruppe öffnet eine Auswahlliste. „Material" fasst das Material und seine Merkmale
+// zusammen (Material → Beton → Art, Druckfestigkeit …), „Status" Fortschritt, „Wichtig"
+// und Kommentare. Nur Oberfläche: Filter und matchPos sind dieselben wie vorher, die
 // aktiven Filter stehen weiter als Chips in der Suche (TopBar).
 //
 // Escape schließt zuerst eine offene Liste, dann — wenn der Fokus in der Leiste
@@ -23,6 +24,9 @@ const CHIP =
 
 const OPTION =
   'flex min-h-[30px] cursor-pointer items-center gap-[8px] rounded-[var(--r-sm)] px-[8px] font-mono text-[11px] text-ink hover:bg-sunken';
+
+const HEADING =
+  'px-[8px] pb-[2px] pt-[8px] font-mono text-[9.5px] uppercase tracking-[0.7px] text-mute first:pt-[2px]';
 
 const RESET =
   'cursor-pointer border-none bg-transparent p-0 font-mono text-[10px] font-medium uppercase tracking-[0.7px] text-blueD';
@@ -114,10 +118,13 @@ function FacetOptions({
   facet,
   counts,
   active,
+  only,
 }: {
   facet: Facet;
   counts: ReadonlyMap<string, number>;
   active: ReadonlySet<string>;
+  /** Nur diesen Wert zeigen (Material-Zeile in der Gruppe „Material"). */
+  only?: string;
 }) {
   const dispatch = useViewerDispatch();
   const toggle = (value: string): void => {
@@ -127,15 +134,17 @@ function FacetOptions({
   };
   return (
     <>
-      {[...counts].map(([value, count]) => (
-        <Option
-          key={value}
-          label={facetOptionLabel(facet, value)}
-          count={count}
-          checked={active.has(value)}
-          onChange={() => toggle(value)}
-        />
-      ))}
+      {[...counts]
+        .filter(([value]) => only === undefined || value === only)
+        .map(([value, count]) => (
+          <Option
+            key={value}
+            label={facetOptionLabel(facet, value)}
+            count={count}
+            checked={active.has(value)}
+            onChange={() => toggle(value)}
+          />
+        ))}
     </>
   );
 }
@@ -158,6 +167,7 @@ function OwnOptions() {
   );
   return (
     <>
+      <div className={HEADING}>Fortschritt</div>
       <Option
         label="Offen"
         count={open}
@@ -173,7 +183,7 @@ function OwnOptions() {
           onChange={() => dispatch({ type: 'toggleProgressFilter', value: progress })}
         />
       ))}
-      <div className="mx-[2px] my-[4px] h-px shrink-0 bg-line" />
+      <div className={HEADING}>Markierung</div>
       <Option
         label="Wichtig"
         count={counts.wichtig}
@@ -186,6 +196,93 @@ function OwnOptions() {
         checked={notes.commented}
         onChange={() => dispatch({ type: 'toggleCommentFilter' })}
       />
+    </>
+  );
+}
+
+/** Material mit seinen Merkmalen darunter; Merkmale klappen je Material auf. */
+function MaterialOptions({
+  material,
+  properties,
+  facets,
+}: {
+  /** Facette `material`, falls die Datei Materialien führt. */
+  material: Facet | undefined;
+  properties: readonly Facet[];
+  facets: ReadonlyMap<string, ReadonlyMap<string, number>>;
+}) {
+  const {
+    filter: { filters },
+  } = useViewer();
+  const [openNames, setOpenNames] = useState<ReadonlySet<string>>(new Set());
+  const materialCounts = material === undefined ? undefined : facets.get(material.id);
+  // Auch ein Material ohne eigenen Treffer zeigen, wenn nur seine Merkmale gefunden wurden.
+  const names = [
+    ...new Set([
+      ...(materialCounts?.keys() ?? []),
+      ...properties.flatMap((facet) => (facet.material === undefined ? [] : [facet.material])),
+    ]),
+  ];
+  const activeOf = (facet: Facet): ReadonlySet<string> =>
+    filters.facets[facet.id] ?? EMPTY_SELECTION;
+  return (
+    <>
+      {names.map((name) => {
+        const own = properties.filter((facet) => facet.material === name);
+        const anyActive = own.some((facet) => activeOf(facet).size > 0);
+        const open = openNames.has(name) || anyActive;
+        const toggle = (): void => {
+          const next = new Set(openNames);
+          if (!next.delete(name)) next.add(name);
+          setOpenNames(next);
+        };
+        return (
+          <div key={name} className="flex flex-col gap-[1px]">
+            <div className="flex items-center gap-[2px]">
+              <div className="min-w-0 flex-1">
+                {material !== undefined && materialCounts?.has(name) === true ? (
+                  <FacetOptions
+                    facet={material}
+                    counts={materialCounts}
+                    active={activeOf(material)}
+                    only={name}
+                  />
+                ) : (
+                  <div className={`${OPTION} cursor-default`}>{name}</div>
+                )}
+              </div>
+              {own.length > 0 && (
+                <button
+                  type="button"
+                  aria-expanded={open}
+                  aria-label={`Merkmale ${name}`}
+                  onClick={toggle}
+                  disabled={anyActive}
+                  className="inline-flex h-[26px] w-[26px] shrink-0 cursor-pointer items-center justify-center rounded-[var(--r-sm)] border-none bg-transparent text-mute hover:bg-sunken hover:text-ink disabled:cursor-default disabled:hover:bg-transparent"
+                >
+                  <span className={open ? '' : '-rotate-90'}>
+                    <Chevron />
+                  </span>
+                </button>
+              )}
+            </div>
+            {open && (
+              <div className="ml-[14px] flex flex-col gap-[1px] border-l border-line pl-[6px]">
+                {own.map((facet) => (
+                  <div key={facet.id} className="flex flex-col gap-[1px]">
+                    <div className={HEADING}>{facet.subLabel ?? facet.label}</div>
+                    <FacetOptions
+                      facet={facet}
+                      counts={facets.get(facet.id) ?? new Map()}
+                      active={activeOf(facet)}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </>
   );
 }
@@ -225,7 +322,15 @@ export function FilterBar() {
     (notes.progress === null ? 0 : 1) + (notes.important ? 1 : 0) + (notes.commented ? 1 : 0);
   const anyActive = countActiveFilters(filters) + ownActive > 0;
   const toggle = (id: string): void => setOpenGroup(openGroup === id ? null : id);
-  const facets = FACETS.filter((facet) => (summary.facets.get(facet.id)?.size ?? 0) > 0);
+  const present = FACETS.filter((facet) => (summary.facets.get(facet.id)?.size ?? 0) > 0);
+  const inMaterial = (facet: Facet): boolean =>
+    facet.id === 'material' || facet.material !== undefined;
+  const facets = present.filter((facet) => !inMaterial(facet));
+  const materialFacet = present.find((facet) => facet.id === 'material');
+  const properties = present.filter((facet) => facet.material !== undefined);
+  const materialActive = present
+    .filter(inMaterial)
+    .reduce((sum, facet) => sum + (filters.facets[facet.id]?.size ?? 0), 0);
 
   return (
     <div
@@ -264,6 +369,20 @@ export function FilterBar() {
           </div>
         </GroupChip>
       )}
+      {(materialFacet !== undefined || properties.length > 0) && (
+        <GroupChip
+          label="Material"
+          active={materialActive}
+          open={openGroup === 'material-gruppe'}
+          onToggle={() => toggle('material-gruppe')}
+        >
+          <MaterialOptions
+            material={materialFacet}
+            properties={properties}
+            facets={summary.facets}
+          />
+        </GroupChip>
+      )}
       {facets.map((facet) => {
         const active = filters.facets[facet.id] ?? EMPTY_SELECTION;
         return (
@@ -283,10 +402,10 @@ export function FilterBar() {
         );
       })}
       <GroupChip
-        label="Eigene"
+        label="Status"
         active={ownActive}
-        open={openGroup === 'eigene'}
-        onToggle={() => toggle('eigene')}
+        open={openGroup === 'status'}
+        onToggle={() => toggle('status')}
       >
         <OwnOptions />
       </GroupChip>

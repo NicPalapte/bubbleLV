@@ -13,6 +13,8 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 - **Filterleiste:** „+ Filter" klappt eine Leiste unter der Suche auf. Je Gruppe ein Knopf
   mit Auswahlliste und Anzahl. Das Filterfenster entfällt.
+- **Filter „Material"** fasst Material und Merkmale zusammen: Material → Beton → Art,
+  Druckfestigkeit, Exposition … Die eigenen Marker stehen unter **„Status"**.
 - **Darstellung** (Größe, Gliederung) steckt jetzt im Knopf unten rechts am Graphen.
 - **Positionskarte:** Fortschritt als Auswahlknopf, daneben „!" für Wichtig, beides neben
   dem Titel. „Fertig" heißt jetzt **„Erledigt"**.
@@ -20,7 +22,8 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 - **Langtext:** Markieren allein öffnet nichts mehr. **Rechtsklick** auf die Auswahl
   bietet Kopieren, Farben und „Anstreichung entfernen".
 - **Rechtsklick auf eine Position** (Graph, Tabelle, Vergleich): Fortschritt, Wichtig,
-  Vergleich, in der Tabelle zeigen, Link kopieren.
+  Vergleich, in der Tabelle zeigen, Link kopieren. In der Tabelle: **„Im Graph zeigen"**.
+- Menüs wie „Spalten" bleiben am Knopf, wenn man die Tabelle verschiebt oder ihre Größe ändert.
 
 ## 0.28.1 — 22.10.2026 · Zoom bleibt beim Größenwechsel
 

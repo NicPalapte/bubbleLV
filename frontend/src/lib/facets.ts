@@ -15,6 +15,13 @@ export interface Facet {
   /** Anzeigename eines Werts, falls er vom Rohwert abweicht. */
   optionLabel?(value: string): string;
   sortValues?(values: string[]): string[];
+  /**
+   * Merkmal eines Materials: Anzeigename des Materials (Wert der Facette `material`).
+   * Die Filterleiste ordnet es dort unter (Material → Beton → Art …).
+   */
+  material?: string;
+  /** Kurzname unter dem Material, z. B. „Art" statt „Art (Beton)". */
+  subLabel?: string;
 }
 
 const POSITIONSART_LABELS: Record<string, string> = {
@@ -47,6 +54,9 @@ function byOrder(order: readonly string[]) {
     });
 }
 
+/** Druckfestigkeit und Exposition kommen aus eigenen Extraktoren, gehören aber zum Beton. */
+const BETON = materialKatalog().find((material) => material.id === 'beton')?.name;
+
 function single(value: string | null): string[] {
   return value === null ? [] : [value];
 }
@@ -63,11 +73,13 @@ export const FACETS: readonly Facet[] = [
     id: 'beton',
     label: 'Druckfestigkeit',
     get: (p) => single(attrString(p.attributes, 'beton')),
+    material: BETON,
   },
   {
     id: 'expo',
     label: 'Exposition',
     get: (p) => attrStrings(p.attributes, 'expo'),
+    material: BETON,
   },
   // Material und seine Merkmale aus den Materialtabellen (Entscheidung 0045):
   // eine neue Tabelle bringt ihre Filter mit.
@@ -81,6 +93,8 @@ export const FACETS: readonly Facet[] = [
       id: merkmal.key,
       label: `${merkmal.name} (${material.name})`,
       get: (p) => attrStrings(p.attributes, merkmal.key),
+      material: material.name,
+      subLabel: merkmal.name,
       // Reihenfolge wie in der Tabelle, nicht alphabetisch.
       sortValues: byOrder(merkmal.werte.flatMap(({ wert }) => (wert === null ? [] : [wert]))),
     })),

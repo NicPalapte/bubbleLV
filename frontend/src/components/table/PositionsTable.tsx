@@ -553,7 +553,7 @@ export function PositionsTable({ root }: { root: LVNode }) {
           }}
           onRowContextMenu={(key, event) => {
             event.preventDefault();
-            openMenu(key, event.clientX, event.clientY, event.currentTarget.ownerDocument);
+            openMenu(key, event.clientX, event.clientY, 'table', event.currentTarget.ownerDocument);
           }}
           initialScrollTop={scroll.table}
           onLeave={(top) => dispatch({ type: 'viewScroll', view: 'table', top })}
