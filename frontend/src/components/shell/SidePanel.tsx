@@ -1,11 +1,11 @@
-// Seitenfenster links über dem Graphen: Überblick, Filter, Prüfung. Früher drei
-// eigene Ansichten; jetzt Reiter, damit der Graph immer sichtbar bleibt
-// (docs/decisions/0034-graph-als-hauptscreen.md).
+// Seitenfenster links über dem Graphen: Überblick und Prüfung. Früher eigene
+// Ansichten; jetzt Reiter, damit der Graph immer sichtbar bleibt
+// (docs/decisions/0034-graph-als-hauptscreen.md). Die Filter stehen seit Issue #154
+// in der Filterleiste unter der Kopfleiste.
 
 import { useMemo, useRef } from 'react';
 import type { KeyboardEvent, MouseEvent } from 'react';
 import { CheckCard, CheckFlyout } from '../overview/CheckCard';
-import { FilterPanel } from '../filter/FilterPanel';
 import { OverviewView } from '../overview/OverviewView';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 import { formatCount } from '../../lib/format';
@@ -23,7 +23,6 @@ const KEY_STEP = 16;
 
 const TABS: ReadonlyArray<{ id: Panel; label: string }> = [
   { id: 'overview', label: 'Überblick' },
-  { id: 'filter', label: 'Filter' },
   { id: 'check', label: 'Prüfung' },
 ];
 
@@ -136,7 +135,6 @@ export function SidePanel() {
         >
           <ErrorBoundary key={side} bereich={side} dateiGeladen>
             {side === 'overview' && <OverviewView />}
-            {side === 'filter' && <FilterPanel />}
             {side === 'check' && (
               <div className="absolute inset-0 overflow-auto px-[14px] py-[14px]">
                 <CheckCard />

@@ -103,7 +103,7 @@ frontend/
         │   └── {MatrixView,AxisPicker}.tsx
         ├── print/PrintView.tsx           # Druckansicht, unvirtualisiert (WP-P)
         ├── table/PositionsTable.tsx
-        ├── filter/{FilterStrip,FacetButton,RangeButton}.tsx
+        ├── filter/{FilterBar,RangeSlider,DisplayControls}.tsx
         ├── common/{Highlighted.tsx,useOutsideClose.ts}
         └── ui/                           # Design-System-Bausteine (s. u.)
 ```

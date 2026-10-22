@@ -73,7 +73,7 @@ function markiereWort(block: HTMLElement): string {
     const selection = window.getSelection();
     selection?.removeAllRanges();
     selection?.addRange(range);
-    fireEvent.mouseUp(node.parentElement ?? block);
+    fireEvent.contextMenu(node.parentElement ?? block);
     return match[0];
   }
   throw new Error('Kein Wort im Langtext');

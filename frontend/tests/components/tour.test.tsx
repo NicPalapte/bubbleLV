@@ -74,11 +74,11 @@ function Harness({ without = [] }: { without?: readonly string[] }) {
       <button
         type="button"
         data-tour="filter"
-        onClick={() => dispatch({ type: 'sidePanel', panel: 'filter' })}
+        onClick={() => dispatch({ type: 'filterBar', open: true })}
       >
         + Filter
       </button>
-      {view.side === 'filter' && <div data-tour="layout">gliederung</div>}
+      {view.graphSettings && <div data-tour="layout">gliederung</div>}
       <div data-tour="kpis">kennzahlen</div>
       {has('hints') && <div data-tour="hints">hinweise</div>}
       <div data-tour="workspace">anordnung</div>

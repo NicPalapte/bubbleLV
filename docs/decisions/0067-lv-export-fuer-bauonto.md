@@ -1,4 +1,4 @@
-# 0065 – LV als JSON für das Matching-Labor bauonto
+# 0067 – LV als JSON für das Matching-Labor bauonto
 
 - **Status:** vorgeschlagen
 - **Datum:** 2026-10-22
@@ -19,7 +19,9 @@
 - Die Klassifizierung (`attributes`) ist nicht dabei. Sie lebt im Viewer.
 - Ein Kommandozeilen-Werkzeug ruft den Kern auf:
   `cd frontend && npm run export-lv -- <datei.x83> [ausgabe.json]`.
-- Es läuft lokal in Node. Die Datei verlässt den Rechner nicht.
+- Es läuft lokal in Node ab Version 22.18 (führt TypeScript direkt aus, steht in
+  `frontend/package.json` unter `engines`). Die Datei verlässt den Rechner nicht.
+- Kaputte oder fremde Dateien enden mit einer kurzen Meldung, nicht mit einem Programmabbruch.
 
 ## Warum
 
