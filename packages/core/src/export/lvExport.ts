@@ -1,5 +1,5 @@
 // LV als JSON für Werkzeuge außerhalb des Browsers, z. B. das Matching-Labor
-// bauonto (Entscheidung 0067). Jede Position trägt ihre Hashes, damit fremde
+// bauonto (Entscheidung 0068). Jede Position trägt ihre Hashes, damit fremde
 // Werkzeuge Kanten an dieselbe Position hängen wie Bubble (Entscheidung 0055).
 
 import { hashPositions, POSITION_HASH_SCHEMA, type PositionHashes } from '../hash/positionHash';

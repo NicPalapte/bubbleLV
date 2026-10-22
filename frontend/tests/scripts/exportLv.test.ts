@@ -33,4 +33,14 @@ describe('npm run export-lv', () => {
     expect(result.status).toBe(1);
     expect(result.stderr).toMatch(/^Datei nicht lesbar/);
   }, 30_000);
+
+  it('meldet eine nicht schreibbare Ausgabedatei', () => {
+    const result = run(
+      resolve(FIXTURES, 'sample.X83'),
+      resolve(FIXTURES, 'gibt-es-nicht', 'ausgabe.json'),
+    );
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toMatch(/^Datei nicht schreibbar/);
+  }, 30_000);
 });
