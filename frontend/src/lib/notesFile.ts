@@ -28,7 +28,7 @@ import { NO_PAINT_NAMES, toPaintNames, type PaintNames } from './paintNames';
 import type { LVNode } from '../types/lvNode';
 
 // Kennung aus der Zeit vor dem Namen Conocto — bleibt, sonst ließen sich
-// gesicherte Notiz-Dateien nicht mehr laden (Entscheidung 0068).
+// gesicherte Notiz-Dateien nicht mehr laden (Entscheidung 0069).
 export const NOTES_FILE_KIND = 'bubble-notizen';
 /**
  * Version 3: dazu Anstreichungen (0063). Version 2: Fortschritt + Wichtig (0062).

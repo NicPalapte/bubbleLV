@@ -22,4 +22,4 @@ never red, Hanken Grotesk for titles and wordmark, Schibsted Grotesk for all oth
 (no monospace font, no Inter/Space Grotesk/IBM Plex), rounded floating surfaces with soft
 shadows over the graph, square table rows, no icon library (Unicode glyphs only), no emoji,
 no imagery. Minimal explanatory text.
-Rules since 2026-10-22: docs/decisions/0068-conocto-look.md (replaces the look of 0033).
+Rules since 2026-10-22: docs/decisions/0069-conocto-look.md (replaces the look of 0033).

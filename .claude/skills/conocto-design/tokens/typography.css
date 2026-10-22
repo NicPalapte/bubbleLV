@@ -1,6 +1,6 @@
 /* Conocto — Typography. Webfonts are self-hosted via @fontsource/hanken-grotesk
    and @fontsource/schibsted-grotesk (imported in frontend/src/main.tsx), not
-   loaded from Google Fonts. Decision: docs/decisions/0068-conocto-look.md */
+   loaded from Google Fonts. Decision: docs/decisions/0069-conocto-look.md */
 :root{
   --display:'Hanken Grotesk', ui-sans-serif, system-ui, sans-serif; /* titles, wordmark */
   --sans:'Schibsted Grotesk', ui-sans-serif, system-ui, sans-serif; /* all other text */

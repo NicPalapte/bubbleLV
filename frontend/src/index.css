@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Design-Tokens des Conocto-Looks (docs/decisions/0068-conocto-look.md):
+/* Design-Tokens des Conocto-Looks (docs/decisions/0069-conocto-look.md):
    colors · typography · spacing · elevation. Die Schriftdateien selbst kommen
    über @fontsource in src/main.tsx. */
 

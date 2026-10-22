@@ -32,7 +32,7 @@ No external Figma file or repo was provided; the code is the ground truth.
 
 **Since 2026-10-22 the product is called Conocto** (Con = construction, Octo = an octopus
 whose eight arms reach for the information in an LV). Look: Apple-like, clean, minimal
-(docs/decisions/0068-conocto-look.md). The sections below that describe the prototype
+(docs/decisions/0069-conocto-look.md). The sections below that describe the prototype
 (blueprint, mono) are history; the tokens in `tokens/` and `frontend/src/index.css` win.
 
 - **Background:** pure white `--paper #ffffff` (light), black `#000000` (dark). Panels and

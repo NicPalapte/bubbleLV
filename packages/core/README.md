@@ -1,13 +1,15 @@
 # @bubble/core – der neutrale Kern
 
 Hier liegt alles, was ein LV **ist** – unabhängig davon, wie es angezeigt wird.
-Bubble (`frontend/`) ist der Viewer und liest nur über `src/index.ts`.
+Conocto (`frontend/`) ist der Viewer und liest nur über `src/index.ts`.
 
 ## Inhalt
 
 - `src/model/` – neutrales Datenmodell (`LVDraft`: Los › Abschnitt › Position)
 - `src/gaeb/` – GAEB-Importer (einzige Stelle mit GAEB-XML-Wissen)
 - `src/hash/` – Datei-ID und Positions-Hashes (Entscheidung 0055)
+- `src/export/` – LV als JSON mit Hashes für bauonto (Entscheidung 0068,
+  Kommandozeile: `cd frontend && npm run export-lv -- <datei.x83>`)
 
 ## Regeln
 

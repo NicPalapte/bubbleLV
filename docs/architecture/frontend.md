@@ -136,7 +136,7 @@ CSS-Variablen in `src/index.css`, übernommen aus `conocto-design/tokens/`; die 
 und Schriftfamilien sind zusätzlich in `tailwind.config.js` als Theme-Erweiterung
 verfügbar. Die Markenschriften Hanken Grotesk (Titel) und Schibsted Grotesk (Text)
 kommen selbst gehostet über `@fontsource/*` (`src/main.tsx`), kein Aufruf an Google
-Fonts. Look und Farben: `docs/decisions/0068-conocto-look.md`.
+Fonts. Look und Farben: `docs/decisions/0069-conocto-look.md`.
 
 ## Datenfluss
 

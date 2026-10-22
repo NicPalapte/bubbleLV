@@ -4,11 +4,15 @@
   "version": "0.31.0",
   "license": "UNLICENSED",
   "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b tsconfig.app.json && vite build",
     "typecheck": "tsc -b",
     "preview": "vite preview",
+    "export-lv": "node scripts/exportLv.ts",
     "test": "vitest run",
     "lint": "eslint . && cd ../packages/core && eslint .",
     "format": "prettier --write \"{src,tests}/**/*.{ts,tsx,css}\" \"../packages/core/{src,tests}/**/*.ts\"",
@@ -24,6 +28,7 @@
     "@eslint/js": "^10.0.1",
     "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.2",
+    "@types/jsdom": "^21.1.7",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",

@@ -1,6 +1,6 @@
 # 0033 – Neuer Look und Dunkelmodus
 
-- **Status:** Farben und Schriften ersetzt durch 0068, Rest akzeptiert
+- **Status:** Farben und Schriften ersetzt durch 0069, Rest akzeptiert
 - **Datum:** 2026-10-05
 - **Betrifft:** Frontend, Design-System
 

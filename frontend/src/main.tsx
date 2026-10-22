@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-// Selbst gehostete Markenschriften (docs/decisions/0068-conocto-look.md) statt
+// Selbst gehostete Markenschriften (docs/decisions/0069-conocto-look.md) statt
 // Google Fonts — kein Fremdaufruf beim Laden der App. Hanken Grotesk trägt Titel
 // und Wortmarke, Schibsted Grotesk den übrigen Text.
 import '@fontsource/hanken-grotesk/500.css';
