@@ -25,8 +25,8 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from 'react';
 import { GraphControls } from './GraphControls';
+import { useHostWindow } from '../common/hostWindow';
 import { sidePanelSpace } from '../shell/SidePanel';
-import { SelectionCard } from './SelectionCard';
 import {
   GROUP_GAP,
   GROUP_LOD_PX,
@@ -196,7 +196,11 @@ const COMMENT_BADGE: MarkerInfo = {
   text: '#fff',
 };
 
-export function BubbleGraph({ root }: { root: LVNode }) {
+/**
+ * `cardOverlay`: die Positionskarte schwebt über dem Graphen (Fenster-Layout) —
+ * beim Einpassen bleibt rechts ihr Platz frei. Im Splitscreen steht sie daneben.
+ */
+export function BubbleGraph({ root, cardOverlay = true }: { root: LVNode; cardOverlay?: boolean }) {
   const {
     lv,
     index,
@@ -216,6 +220,8 @@ export function BubbleGraph({ root }: { root: LVNode }) {
     selection: { compare },
   } = useViewer();
   const dispatch = useViewerDispatch();
+  // Im eigenen Browserfenster (Entscheidung 0039) kommen Mausereignisse dort an.
+  const hostWindow = useHostWindow();
   const { layout, rows, cols, sizeMode, showHints } = graph;
 
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -237,7 +243,8 @@ export function BubbleGraph({ root }: { root: LVNode }) {
       if (rect.width > 0 && rect.height > 0) setSize({ w: rect.width, h: rect.height });
     };
     measureSize();
-    const observer = new ResizeObserver(measureSize);
+    const Observer = element.ownerDocument.defaultView?.ResizeObserver ?? ResizeObserver;
+    const observer = new Observer(measureSize);
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
@@ -366,13 +373,13 @@ export function BubbleGraph({ root }: { root: LVNode }) {
       drag.current.on = false;
       setPanning(false);
     };
-    window.addEventListener('mousemove', move);
-    window.addEventListener('mouseup', up);
+    hostWindow.addEventListener('mousemove', move);
+    hostWindow.addEventListener('mouseup', up);
     return () => {
-      window.removeEventListener('mousemove', move);
-      window.removeEventListener('mouseup', up);
+      hostWindow.removeEventListener('mousemove', move);
+      hostWindow.removeEventListener('mouseup', up);
     };
-  }, []);
+  }, [hostWindow]);
 
   const onMouseDown = (event: ReactMouseEvent<HTMLDivElement>): void => {
     if (event.button !== 0) return;
@@ -433,7 +440,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
   );
 
   // ── Einpassen
-  const cardOpen = selectedPosition !== null || selectedNode !== null;
+  const cardOpen = cardOverlay && (selectedPosition !== null || selectedNode !== null);
   const viewAround = useCallback(
     (box: { x0: number; y0: number; x1: number; y1: number }, maxZoom: number): View | null => {
       if (w === 0 || h === 0) return null;
@@ -813,7 +820,6 @@ export function BubbleGraph({ root }: { root: LVNode }) {
   const dimLv = layout === 'lv' && filtering && !hide;
 
   const tooltipSlot = hoverSlot >= 0 ? hoverSlot : graphFocused ? focusSlot : -1;
-  const cardNode = selectedPosition ?? selectedNode;
 
   // Kacheln: Farbstufe 1–5 nach Anzahl, bezogen auf die vollste Kachel.
   const grid = map.axes?.grid ?? null;
@@ -1358,10 +1364,6 @@ export function BubbleGraph({ root }: { root: LVNode }) {
             </span>
           )}
         </div>
-      )}
-
-      {cardNode !== null && (
-        <SelectionCard node={cardNode} onClose={() => dispatch({ type: 'closeSelection' })} />
       )}
 
       <GraphControls

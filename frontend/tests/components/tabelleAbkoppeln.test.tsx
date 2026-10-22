@@ -5,6 +5,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GraphDock } from '../../src/components/shell/GraphDock';
 import { TableWindow } from '../../src/components/shell/TableWindow';
+import { WorkspaceProvider } from '../../src/components/shell/WorkspaceProvider';
 import { classifyAndBuild } from '../../src/lib/pipeline/runPipeline';
 import { ViewerProvider } from '../../src/state/ViewerProvider';
 import { useViewerDispatch } from '../../src/state/viewer';
@@ -92,9 +93,11 @@ function renderTable(open: Window | null) {
   const spy = vi.spyOn(window, 'open').mockReturnValue(open);
   render(
     <ViewerProvider>
-      <Steuerung />
-      <TableWindow />
-      <GraphDock />
+      <WorkspaceProvider>
+        <Steuerung />
+        <TableWindow />
+        <GraphDock />
+      </WorkspaceProvider>
     </ViewerProvider>,
   );
   fireEvent.click(screen.getByRole('button', { name: 'vorbereiten' }));

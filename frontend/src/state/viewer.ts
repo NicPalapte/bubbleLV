@@ -77,6 +77,7 @@ export type {
   SizeModeId,
   ViewMode,
   ViewState,
+  WorkspaceMode,
 } from './viewState';
 
 export interface ViewerState {
@@ -301,7 +302,17 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     }
 
     case 'selectNode':
-    case 'selectPosition':
+    case 'selectPosition': {
+      const selection = selectionReducer(state.selection, action);
+      if (selection === state.selection) return state;
+      // Wer eine Position anklickt, will ihre Details sehen — ein geschlossener
+      // Bereich „Position" im Splitscreen geht dafür wieder auf (Entscheidung 0064).
+      const picked = selection.positionId !== null || selection.nodeId !== null;
+      const view = picked
+        ? viewReducer(state.view, { type: 'paneClosed', pane: 'card', closed: false })
+        : state.view;
+      return { ...state, selection, view };
+    }
     case 'hover':
     case 'back':
     case 'closeSelection': {
@@ -333,7 +344,11 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     case 'ruleRevealed':
     case 'viewScroll':
     case 'panelSize':
-    case 'cardPos': {
+    case 'cardPos':
+    case 'workspaceMode':
+    case 'movePane':
+    case 'paneClosed':
+    case 'splitSize': {
       const view = viewReducer(state.view, action);
       return view === state.view ? state : { ...state, view };
     }

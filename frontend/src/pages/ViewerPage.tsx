@@ -1,6 +1,6 @@
-// Hauptscreen (docs/decisions/0034-graph-als-hauptscreen.md): der Graph füllt
-// die Fläche, alles andere schwebt darüber — Kennzahlen, Seitenfenster
-// (Überblick · Filter · Prüfung), Positionskarte und Tabelle als Fenster.
+// Hauptscreen (docs/decisions/0034-graph-als-hauptscreen.md): Graph, Tabelle und
+// Positionskarte als Splitscreen oder als Fenster über dem Graphen (Entscheidung
+// 0064); Seitenfenster (Überblick · Filter · Prüfung) schweben darüber.
 // Alles arbeitet auf **einem** Filterzustand; was eine Ansicht sich
 // merkt, steht in `view` (state/viewState.ts).
 //
@@ -10,16 +10,10 @@
 
 import { Profiler, useCallback, useEffect, type ReactNode } from 'react';
 import { NoticeBar } from '../components/layout/NoticeBar';
-import { BubbleGraph } from '../components/graph/BubbleGraph';
-import { GraphHeader } from '../components/graph/GraphHeader';
 import { TopBar } from '../components/layout/TopBar';
 import { PrintView } from '../components/print/PrintView';
-import { CompareWindow } from '../components/shell/CompareWindow';
-import { GraphDock } from '../components/shell/GraphDock';
-import { KpiCapsule } from '../components/shell/KpiCapsule';
-import { SidePanel } from '../components/shell/SidePanel';
-import { TableWindow } from '../components/shell/TableWindow';
-import { Tour } from '../components/tour/Tour';
+import { Workspace } from '../components/shell/Workspace';
+import { WorkspaceProvider } from '../components/shell/WorkspaceProvider';
 import { FileDropzone } from '../components/upload/FileDropzone';
 import { ErrorBoundary } from '../components/common/ErrorBoundary';
 import { useSaveAnnotations } from '../components/common/useSaveAnnotations';
@@ -71,44 +65,38 @@ export function ViewerPage() {
           ganze Bildschirm-Hülle zurück (Kopfleiste, Baum, Panels), damit das
           Blatt die Liste trägt und nicht die Bedienung. */}
       <PrintView />
-      <div className="nur-bildschirm flex h-full flex-col bg-paper">
-        <header>
-          <TopBar />
-          <NoticeBar />
-        </header>
+      <WorkspaceProvider>
+        <div className="nur-bildschirm flex h-full flex-col bg-paper">
+          <header>
+            <TopBar />
+            <NoticeBar />
+          </header>
 
-        {/*
+          {/*
           Zweites, engeres Netz (Issue #73): stürzt eine Ansicht ab, bleiben
           Kopfleiste, Filter und die übrigen Ansichten bedienbar. Der `key`
           sorgt dafür, dass ein Ansichtswechsel mit einem frischen Netz
           beginnt — sonst bliebe die Fehlerseite der Matrix im Graphen stehen.
         */}
-        <ErrorBoundary
-          key={tree === null ? 'leer' : viewMode}
-          bereich={tree === null ? 'start' : viewMode}
-          dateiGeladen={tree !== null}
-        >
-          {tree === null && (
-            <main aria-label="LV-Ansicht" className="relative flex-1 overflow-hidden bg-paper">
-              <FileDropzone />
-            </main>
-          )}
+          <ErrorBoundary
+            key={tree === null ? 'leer' : viewMode}
+            bereich={tree === null ? 'start' : viewMode}
+            dateiGeladen={tree !== null}
+          >
+            {tree === null && (
+              <main aria-label="LV-Ansicht" className="relative flex-1 overflow-hidden bg-paper">
+                <FileDropzone />
+              </main>
+            )}
 
-          {tree !== null && viewMode === 'graph' && (
-            // Der Graph ist die Bühne; alles andere schwebt darüber.
-            <main aria-label="Bubble-Graph" className="relative flex-1 overflow-hidden bg-paper">
-              <BubbleGraph root={tree} />
-              <GraphHeader root={tree} />
-              <KpiCapsule />
-              <SidePanel />
-              <TableWindow />
-              <CompareWindow />
-              <GraphDock />
-              <Tour />
-            </main>
-          )}
-        </ErrorBoundary>
-      </div>
+            {tree !== null && viewMode === 'graph' && (
+              <main aria-label="Bubble-Graph" className="relative flex-1 overflow-hidden bg-paper">
+                <Workspace root={tree} />
+              </main>
+            )}
+          </ErrorBoundary>
+        </div>
+      </WorkspaceProvider>
     </ViewTiming>
   );
 }

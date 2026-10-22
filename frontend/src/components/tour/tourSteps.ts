@@ -76,9 +76,14 @@ export const TOUR_STEPS: readonly TourStep[] = [
     text: 'Ringe und Schilder im Graphen ein- und ausblenden.',
   },
   {
+    target: '[data-tour="workspace"]',
+    title: 'Anordnung',
+    text: 'Split oder Fenster. Im Split einen Bereich am Kopf auf einen anderen ziehen.',
+  },
+  {
     target: '[data-tour="table"]',
     title: 'Tabelle',
-    text: 'Öffnet als Fenster. Verschieben, Größe ändern oder auf einen zweiten Bildschirm holen.',
+    text: 'Alle Positionen als Liste. ↗ holt sie auf einen zweiten Bildschirm.',
   },
   {
     target: '[data-tour="menu"]',
