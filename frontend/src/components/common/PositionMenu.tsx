@@ -207,12 +207,17 @@ function Menu({ target, onClose }: { target: MenuTarget; onClose: () => void }) 
           role="menuitem"
           onClick={run(() => {
             const link = positionLink(target.doc, position.hashes.id, lv?.fileId ?? null);
+            const failed = (): void =>
+              dispatch({ type: 'notice', message: 'Link konnte nicht kopiert werden.' });
+            // Ohne sicheren Kontext fehlt die Zwischenablage; writeText kann auch sofort werfen.
             const clipboard = target.doc.defaultView?.navigator.clipboard;
-            if (clipboard === undefined) return;
-            clipboard.writeText(link).then(
-              () => dispatch({ type: 'notice', message: 'Link zur Position kopiert.' }),
-              () => dispatch({ type: 'notice', message: 'Link konnte nicht kopiert werden.' }),
-            );
+            if (clipboard === undefined) return failed();
+            Promise.resolve()
+              .then(() => clipboard.writeText(link))
+              .then(
+                () => dispatch({ type: 'notice', message: 'Link zur Position kopiert.' }),
+                failed,
+              );
           })}
           className={ITEM}
         >

@@ -301,6 +301,27 @@ describe('Rechtsklick im Graphen (Issue #155)', () => {
     ).toBeInTheDocument();
   });
 
+  it('kopiert den Link zur Position und meldet, wenn das nicht geht', async () => {
+    const kopiert: string[] = [];
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: (wert: string) => (kopiert.push(wert), Promise.resolve()) },
+    });
+    await loadAndShowGraph();
+    const punkt = graph().querySelector('[data-slot]') as SVGElement;
+    fireEvent.contextMenu(punkt);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Link zur Position kopieren' }));
+    expect(await screen.findByText('Link zur Position kopiert.')).toBeInTheDocument();
+    expect(kopiert).toHaveLength(1);
+    expect(kopiert[0]).toContain('#');
+    expect(kopiert[0]).toContain('pos=');
+
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
+    fireEvent.contextMenu(punkt);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Link zur Position kopieren' }));
+    expect(await screen.findByText('Link konnte nicht kopiert werden.')).toBeInTheDocument();
+  });
+
   it('öffnet dasselbe Menü auf einer Zeile der Tabelle', async () => {
     await loadAndShowGraph();
     fireEvent.contextMenu(graph().querySelector('[data-group] circle') as SVGCircleElement);
