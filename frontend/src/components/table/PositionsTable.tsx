@@ -13,21 +13,37 @@
 // Komponente wird beim Ansichtswechsel abgebaut, der Zustand soll ihn aber
 // überleben. Persistenz über die Sitzung hinaus gibt es weiterhin nicht —
 // kein localStorage.
+//
+// Arbeitsliste: Fortschritt, „Wichtig" und Kommentar lassen sich direkt in der Zeile
+// setzen; Fortschritt und „Wichtig" per Griff über mehrere Zeilen ziehen (wie in
+// Excel). Abschnitte stehen als eigene Kopfzeilen je Ebene und lassen sich zuklappen.
 
-import { useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
 import { Highlighted } from '../common/Highlighted';
+import {
+  fillMarkerNow,
+  PROGRESS_CHOICES,
+  setImportantNow,
+  setProgressNow,
+} from '../common/markers';
 import { usePositionMenu } from '../common/positionMenuContext';
 import { useDismiss } from '../common/useDismiss';
 import { Chip } from '../ui/Chip';
-import { DataTable, type Column } from '../ui/DataTable';
+import { DataTable, type Column, type GroupHead } from '../ui/DataTable';
 import { Popover, PopoverHead } from '../ui/Popover';
 import { SegmentedControl } from '../ui/SegmentedControl';
-import { StatusPill } from '../ui/StatusPill';
 import { attrString, attrStrings } from '../../lib/attributes';
 import { facetOptionLabel, FACETS_BY_ID } from '../../lib/facets';
 import { formatCount, formatEuro, formatNumber } from '../../lib/format';
 import { createPositionFilter } from '../../lib/index/positionIndex';
-import { POSITION_STATUS } from '../../lib/status';
 import { flat, searchSnippet } from '../../lib/searchSnippet';
 import { headingOf } from '../../lib/tree/heading';
 import {
@@ -38,7 +54,14 @@ import {
   visibleColumnKeys,
   type ColumnConfig,
 } from '../../lib/table/columns';
-import { commentsOf, IMPORTANT_INFO, PROGRESS_INFO, type Annotations } from '../../lib/annotations';
+import {
+  formatAt,
+  IMPORTANT_INFO,
+  latestCommentsOf,
+  type Annotations,
+  type MarkerValue,
+  type Progress,
+} from '../../lib/annotations';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { LVNode, PositionSummary } from '../../types/lvNode';
 import type { PositionType } from '@core';
@@ -50,9 +73,10 @@ type Scope = 'node' | 'lv';
 interface Row {
   node: LVNode;
   position: PositionSummary;
-  /** Überschrift, unter der die Zeile in der Tabelle steht. */
+  /** Direkter Abschnitt der Zeile — innerhalb davon wird sortiert. */
   groupKey: string;
-  groupLabel: string;
+  /** Abschnitte zwischen Tabellenkopf und Zeile, äußerster zuerst. */
+  trail: readonly LVNode[];
 }
 
 /**
@@ -66,15 +90,7 @@ function collectRows(scopeRoot: LVNode): Row[] {
     if (node.kind === 'position') {
       if (node.position === null) return;
       const parent = trail[trail.length - 1] ?? scopeRoot;
-      out.push({
-        node,
-        position: node.position,
-        groupKey: parent.id,
-        groupLabel:
-          trail.length === 0
-            ? headingOf(scopeRoot)
-            : trail.map((step) => headingOf(step)).join('  ›  '),
-      });
+      out.push({ node, position: node.position, groupKey: parent.id, trail });
       return;
     }
     const next = node === scopeRoot ? trail : [...trail, node];
@@ -157,6 +173,11 @@ const COLUMNS: ReadonlyArray<Column<Row>> = [
     align: 'right',
     render: (r) => formatEuro(r.position.unitPrice),
   },
+  // Eigene Notizen (Entscheidungen 0047, 0053, 0062): der Inhalt kommt aus dem
+  // Viewer-Zustand, `render` wird deshalb in der Tabelle ersetzt (siehe `annotationRender`).
+  { key: 'progress', label: 'Fortschritt', width: 130, sortable: false },
+  { key: 'important', label: 'Wichtig', short: '!', width: 44, align: 'center', sortable: false },
+  { key: 'note', label: 'Kommentar', width: 240, sortable: false },
   {
     key: 'positionsart',
     label: 'Positionsart',
@@ -179,17 +200,6 @@ const COLUMNS: ReadonlyArray<Column<Row>> = [
       return expo.length === 0 ? beton : `${beton} · ${expo.join(', ')}`;
     },
   },
-  {
-    key: 'status',
-    label: 'Status',
-    width: 90,
-    sortable: false,
-    render: () => <StatusPill status={POSITION_STATUS} />,
-  },
-  // Eigene Notizen (Entscheidungen 0047, 0053): der Inhalt kommt aus dem
-  // Viewer-Zustand, `render` wird deshalb in der Tabelle ersetzt (siehe `annotationRender`).
-  { key: 'marked', label: 'Marker', width: 150, sortable: false },
-  { key: 'note', label: 'Kommentar', width: 220, sortable: false },
 ];
 
 /**
@@ -203,32 +213,279 @@ function searchRender(key: string, query: string): Column<Row>['render'] | undef
   return undefined;
 }
 
+type FillColumn = 'progress' | 'important';
+
+/** Was die Zellen der Notiz-Spalten zum Zeichnen brauchen. */
+interface NoteCells {
+  annotations: Annotations;
+  /** Zellen, die das laufende Ziehen gerade abdeckt. */
+  filling: { column: FillColumn; ids: ReadonlySet<string> } | null;
+  openMenu: (kind: 'progress' | 'comment', id: string, anchor: HTMLElement) => void;
+  toggleImportant: (id: string) => void;
+  startFill: (event: ReactPointerEvent<HTMLElement>, id: string, column: FillColumn) => void;
+}
+
+/** Klicks in den Notiz-Zellen wählen die Zeile nicht mit aus. */
+const stop = (event: ReactMouseEvent): void => event.stopPropagation();
+
+/** Griff unten rechts in der Zelle: ziehen übernimmt den Wert in andere Zeilen. */
+function FillHandle({
+  onPointerDown,
+}: {
+  onPointerDown: (event: ReactPointerEvent<HTMLElement>) => void;
+}) {
+  return (
+    <span
+      aria-hidden="true"
+      className="fill-handle"
+      title="Ziehen, um den Wert in andere Zeilen zu übernehmen"
+      onPointerDown={onPointerDown}
+      onClick={stop}
+    />
+  );
+}
+
+/** Blaue Fläche über einer Zelle, solange das Ziehen sie abdeckt. */
+function FillMark() {
+  return <span aria-hidden="true" className="fill-mark" />;
+}
+
+/** Fortschritt in der Zeile: helle Fläche statt der vollen Farbe der Karte. */
+const PROGRESS_CELL: Readonly<Record<Progress, { label: string; bg: string; fg: string }>> = {
+  bearbeitung: { label: 'In Bearbeitung', bg: 'var(--blueS)', fg: 'var(--blueD)' },
+  fertig: { label: 'Erledigt', bg: 'var(--greenS)', fg: 'var(--greenD)' },
+};
+
+const CELL_BUTTON =
+  '-my-[3px] inline-flex h-[20px] max-w-full cursor-pointer align-middle items-center justify-center rounded-[var(--r-pill)] border border-transparent bg-transparent px-[9px] text-center font-mono text-[10.5px] leading-none hover:border-line2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue';
+
 /** Spalten aus den eigenen Markern und Kommentaren. */
-function annotationRender(key: string, annotations: Annotations): Column<Row>['render'] {
-  if (key === 'marked') {
+function annotationRender(key: string, cells: NoteCells): Column<Row>['render'] {
+  const { annotations, filling } = cells;
+  const covered = (column: FillColumn, id: string): boolean =>
+    filling !== null && filling.column === column && filling.ids.has(id);
+  if (key === 'progress') {
     return (r) => {
-      const progress = annotations.progress.get(r.node.id);
-      const shown = [
-        ...(progress === undefined ? [] : [PROGRESS_INFO[progress]]),
-        ...(annotations.important.has(r.node.id) ? [IMPORTANT_INFO] : []),
-      ];
+      const id = r.node.id;
+      const progress = annotations.progress.get(id);
+      const look = progress === undefined ? null : PROGRESS_CELL[progress];
       return (
-        <span className="inline-flex gap-[8px]">
-          {shown.map((info) => (
-            <span key={info.label} style={{ color: info.fill }}>
-              {info.glyph} {info.label}
-            </span>
-          ))}
-        </span>
+        <>
+          {covered('progress', id) && <FillMark />}
+          <button
+            type="button"
+            aria-label={`Fortschritt ${r.position.oz}`}
+            aria-haspopup="menu"
+            onClick={(event) => {
+              stop(event);
+              cells.openMenu('progress', id, event.currentTarget);
+            }}
+            className={`${CELL_BUTTON} ${look === null ? 'text-mute' : ''}`}
+            style={look === null ? undefined : { background: look.bg, color: look.fg }}
+          >
+            {look === null ? 'Offen' : look.label}
+          </button>
+          <FillHandle onPointerDown={(event) => cells.startFill(event, id, 'progress')} />
+        </>
+      );
+    };
+  }
+  if (key === 'important') {
+    return (r) => {
+      const id = r.node.id;
+      const on = annotations.important.has(id);
+      return (
+        <>
+          {covered('important', id) && <FillMark />}
+          <button
+            type="button"
+            aria-label={`${IMPORTANT_INFO.label} ${r.position.oz}`}
+            aria-pressed={on}
+            title={on ? '„Wichtig" aufheben' : 'Als wichtig markieren'}
+            onClick={(event) => {
+              stop(event);
+              cells.toggleImportant(id);
+            }}
+            className="-my-[3px] inline-flex h-[20px] w-[20px] cursor-pointer align-middle items-center justify-center rounded-[var(--r-sm)] border font-sans text-[12px] font-bold leading-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            style={
+              on
+                ? {
+                    background: IMPORTANT_INFO.fill,
+                    borderColor: IMPORTANT_INFO.fill,
+                    color: IMPORTANT_INFO.text,
+                  }
+                : { background: 'transparent', borderColor: 'var(--line)', color: 'var(--line2)' }
+            }
+          >
+            {IMPORTANT_INFO.glyph}
+          </button>
+          <FillHandle onPointerDown={(event) => cells.startFill(event, id, 'important')} />
+        </>
       );
     };
   }
   if (key === 'note') {
-    return (r) => (
-      <span className="text-blue">{commentsOf(annotations, r.node.id).join(' · ')}</span>
-    );
+    return (r) => {
+      const id = r.node.id;
+      const comments = latestCommentsOf(annotations, id);
+      const newest = comments[0];
+      return (
+        <button
+          type="button"
+          aria-label={`Kommentar ${r.position.oz}`}
+          aria-haspopup="dialog"
+          onClick={(event) => {
+            stop(event);
+            cells.openMenu('comment', id, event.currentTarget);
+          }}
+          className="flex w-full min-w-0 cursor-text items-center gap-[6px] border-none bg-transparent p-0 text-left font-mono text-[11px]"
+        >
+          {newest === undefined ? (
+            <span className="note-add text-mute">+ Kommentar</span>
+          ) : (
+            <>
+              <span className="min-w-0 truncate text-blue">{newest.text}</span>
+              {comments.length > 1 && (
+                <span className="shrink-0 rounded-[var(--r-pill)] border border-line2 px-[5px] text-[10px] text-dim">
+                  +{comments.length - 1}
+                </span>
+              )}
+            </>
+          )}
+        </button>
+      );
+    };
   }
   return undefined;
+}
+
+/** Kommentar schreiben und den Verlauf lesen, der neueste zuerst. */
+function CommentEditor({
+  id,
+  oz,
+  annotations,
+  onClose,
+}: {
+  id: string;
+  oz: string;
+  annotations: Annotations;
+  onClose: () => void;
+}) {
+  const dispatch = useViewerDispatch();
+  const [draft, setDraft] = useState('');
+  const comments = latestCommentsOf(annotations, id);
+  const save = (): void => {
+    if (draft.trim() !== '') {
+      dispatch({ type: 'addComment', id, text: draft, at: Date.now() });
+    }
+    onClose();
+  };
+  return (
+    <div
+      role="dialog"
+      aria-label={`Kommentare ${oz}`}
+      className="flex w-[300px] max-w-full flex-col gap-[8px] p-[6px]"
+    >
+      <span className="font-mono text-[10px] text-dim">{oz}</span>
+      <textarea
+        // Das Fenster geht für genau diese Eingabe auf.
+        autoFocus
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            save();
+          } else if (event.key === 'Escape') {
+            event.stopPropagation();
+            onClose();
+          }
+        }}
+        placeholder="Neuer Kommentar (Enter speichert)"
+        aria-label="Neuer Kommentar"
+        rows={2}
+        className="min-w-0 resize-y rounded-[var(--r-md)] border border-line bg-panel px-[8px] py-[6px] font-mono text-[12px] leading-[1.5] text-ink outline-none placeholder:text-mute focus:border-blue"
+      />
+      <div className="flex justify-end gap-[6px]">
+        <button
+          type="button"
+          onClick={onClose}
+          className="inline-flex h-[26px] cursor-pointer items-center justify-center rounded-[var(--r-pill)] border border-line bg-surface px-[12px] text-center font-mono text-[11px] text-ink"
+        >
+          Abbrechen
+        </button>
+        <button
+          type="button"
+          onClick={save}
+          disabled={draft.trim() === ''}
+          className="inline-flex h-[26px] cursor-pointer items-center justify-center rounded-[var(--r-pill)] border-none bg-blue px-[12px] text-center font-mono text-[11px] text-white disabled:cursor-default disabled:opacity-40"
+        >
+          Speichern
+        </button>
+      </div>
+      {comments.length > 0 && (
+        <ol
+          aria-label="Kommentare, der neueste zuerst"
+          className="m-0 flex max-h-[220px] list-none flex-col gap-[6px] overflow-auto p-0"
+        >
+          {comments.map((comment, i) => (
+            <li key={`${comment.at}-${i}`} className="border-t border-grid pt-[6px]">
+              <span className="block font-mono text-[10px] text-mute">{formatAt(comment.at)}</span>
+              <p className="m-0 whitespace-pre-wrap break-words font-mono text-[12px] leading-[1.5] text-ink">
+                {comment.text}
+              </p>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
+
+/** Auswahl des Fortschritts, wie in der Positionskarte. */
+function ProgressChoices({
+  current,
+  onPick,
+}: {
+  current: Progress | null;
+  onPick: (value: Progress | null) => void;
+}) {
+  return (
+    <div role="menu" aria-label="Fortschritt" className="flex flex-col gap-[2px]">
+      {PROGRESS_CHOICES.map(({ value, label }) => (
+        <button
+          key={label}
+          type="button"
+          role="menuitemradio"
+          aria-checked={value === current}
+          onClick={() => onPick(value)}
+          className="flex h-[30px] cursor-pointer items-center justify-between gap-[12px] rounded-[var(--r-sm)] border-none bg-transparent px-[8px] text-left font-mono text-[11px] text-ink hover:bg-sunken"
+        >
+          {label}
+          {value === current && (
+            <span aria-hidden="true" className="h-[6px] w-[6px] rounded-full bg-blue" />
+          )}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Kopfzeile eines Abschnitts: Name, Anzahl Positionen, wie viele erledigt sind. */
+function sectionInfo(count: number, done: number): GroupHead['info'] {
+  const share = count === 0 ? 0 : Math.round((done / count) * 100);
+  return (
+    <span className="inline-flex items-center gap-[10px]">
+      <span>{formatCount(count)} Pos.</span>
+      <span
+        aria-hidden="true"
+        className="inline-block h-[5px] w-[48px] overflow-hidden rounded-full bg-line"
+      >
+        <span className="block h-full bg-greenD" style={{ width: `${share}%` }} />
+      </span>
+      <span>{formatCount(done)} erledigt</span>
+    </span>
+  );
 }
 
 const COLUMNS_BY_KEY = new Map(COLUMNS.map((column) => [column.key, column]));
@@ -400,17 +657,32 @@ export function PositionsTable({ root }: { root: LVNode }) {
   const setColumnConfig = (columns: ColumnConfig): void =>
     dispatch({ type: 'tableColumns', columns });
 
-  const columns = useMemo<Column<Row>[]>(
-    () =>
-      visibleColumnKeys(columnConfig).flatMap((key) => {
-        const column = COLUMNS_BY_KEY.get(key);
-        if (column === undefined) return [];
-        const render =
-          annotationRender(key, annotations) ?? searchRender(key, active.query) ?? column.render;
-        return [{ ...column, render, width: columnConfig.widths[key] }];
-      }),
-    [columnConfig, active.query, annotations],
-  );
+  const { collapsed } = table;
+
+  // Offenes Menü in einer Notiz-Zelle: Fortschritt oder Kommentar. Der Anker ist der
+  // Knopf in der Zelle; Popover richtet sich an ihm aus.
+  const [menu, setMenu] = useState<{ kind: 'progress' | 'comment'; id: string } | null>(null);
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  // Popover und useDismiss erwarten ein Ref-Objekt; der Knopf kommt aus dem Klick.
+  const menuAnchor = useMemo(() => ({ current: anchor }), [anchor]);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const closeMenu = (): void => setMenu(null);
+  useDismiss([menuAnchor, menuRef], menu !== null, closeMenu);
+  // Die Tabelle ist virtualisiert: scrollt der Anker weg, verliert das Menü seinen Platz.
+  useEffect(() => {
+    if (menu === null) return;
+    const body = anchor?.closest('[data-table-body]');
+    if (body === null || body === undefined) return;
+    // Nur senkrecht: waagerecht bleibt die Zeile gezeichnet, der Anker also da.
+    const top = body.scrollTop;
+    const close = (): void => {
+      if (body.scrollTop !== top) setMenu(null);
+    };
+    body.addEventListener('scroll', close);
+    return () => body.removeEventListener('scroll', close);
+  }, [menu, anchor]);
+
+  const [fill, setFill] = useState<{ column: FillColumn; from: string; to: string } | null>(null);
 
   // Eine Prüffunktion je Filterwechsel statt einer Ableitung je Zeile: sie
   // schlägt den Treffer im flachen Positions-Index nach (WP-I, Schritt 3).
@@ -457,14 +729,188 @@ export function PositionsTable({ root }: { root: LVNode }) {
     // Gruppen bleiben in Dokumentreihenfolge; sortiert wird innerhalb der Gruppe.
     const order = new Map<string, number>();
     for (const row of shown) if (!order.has(row.groupKey)) order.set(row.groupKey, order.size);
-    return [...shown].sort((a, b) => {
+    const sorted = [...shown].sort((a, b) => {
       const ga = order.get(a.groupKey) ?? 0;
       const gb = order.get(b.groupKey) ?? 0;
       return ga === gb ? compare(a, b, sort.key as SortKey, sort.dir) : ga - gb;
     });
+    // Ebenen, die alle Zeilen teilen (z. B. das LV selbst über der ersten Gliederung),
+    // sagen nichts und kosten eine Zeile. Der direkte Abschnitt bleibt immer stehen.
+    const first = sorted[0]?.trail ?? [];
+    let common = Math.min(...sorted.map((row) => row.trail.length - 1), first.length);
+    for (const row of sorted) {
+      let same = 0;
+      while (same < common && row.trail[same] === first[same]) same++;
+      common = same;
+    }
+    return common <= 0 ? sorted : sorted.map((row) => ({ ...row, trail: row.trail.slice(common) }));
   }, [shown, sort]);
 
-  const groupCount = new Set(rows.map((row) => row.groupKey)).size;
+  // Zeilen, die gerade zu sehen sind — das Ziehen läuft über diese Reihenfolge.
+  const visibleIds = useMemo(
+    () =>
+      rows
+        .filter((row) => !row.trail.some((step) => collapsed.has(step.id)))
+        .map((row) => row.node.id),
+    [rows, collapsed],
+  );
+
+  const fillIds = useMemo(() => {
+    if (fill === null) return null;
+    const a = visibleIds.indexOf(fill.from);
+    const b = visibleIds.indexOf(fill.to);
+    if (a < 0 || b < 0) return [fill.from];
+    return visibleIds.slice(Math.min(a, b), Math.max(a, b) + 1);
+  }, [fill, visibleIds]);
+
+  /**
+   * Ausfüllen per Ziehen (wie in Excel): Griff fassen, über die Zeilen ziehen, loslassen.
+   * Die Zeile unter dem Zeiger kommt aus `data-row-key`; am Rand scrollt die Tabelle mit.
+   * Fenster und Dokument des Griffs — bei abgekoppelter Tabelle das zweite Fenster.
+   */
+  const startFill = useCallback(
+    (event: ReactPointerEvent<HTMLElement>, id: string, column: FillColumn): void => {
+      if (event.button !== 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+      setMenu(null);
+      const handle = event.currentTarget;
+      const doc = handle.ownerDocument;
+      const win = doc.defaultView ?? window;
+      const body = handle.closest<HTMLElement>('[data-table-body]');
+      // Waagerecht zählt nur die Spalte des Griffs, egal wohin der Zeiger abdriftet.
+      const cell = handle.closest<HTMLElement>('[role="gridcell"]') ?? handle;
+      const cellRect = cell.getBoundingClientRect();
+      const x = cellRect.left + cellRect.width / 2;
+      let y = event.clientY;
+      let to = id;
+      setFill({ column, from: id, to: id });
+
+      const pick = (): void => {
+        const area = body?.getBoundingClientRect();
+        const probeY =
+          area === undefined ? y : Math.min(area.bottom - 2, Math.max(area.top + 40, y));
+        const key = doc
+          .elementFromPoint(x, probeY)
+          ?.closest('[data-row-key]')
+          ?.getAttribute('data-row-key');
+        if (key === null || key === undefined || key === to) return;
+        to = key;
+        setFill({ column, from: id, to });
+      };
+      const move = (moveEvent: PointerEvent): void => {
+        y = moveEvent.clientY;
+        pick();
+      };
+      const timer = win.setInterval(() => {
+        if (body === null) return;
+        const area = body.getBoundingClientRect();
+        if (y > area.bottom - 24) body.scrollTop += 16;
+        else if (y < area.top + 40) body.scrollTop -= 16;
+        else return;
+        pick();
+      }, 40);
+      const up = (): void => {
+        win.clearInterval(timer);
+        win.removeEventListener('pointermove', move);
+        win.removeEventListener('pointerup', up);
+        win.removeEventListener('pointercancel', up);
+        doc.body.style.cursor = '';
+        doc.body.style.userSelect = '';
+        // Wert der Quelle beim Griff; Reihenfolge der Zeilen ändert sich beim Ziehen nicht.
+        const a = visibleIds.indexOf(id);
+        const b = visibleIds.indexOf(to);
+        const ids = a < 0 || b < 0 ? [] : visibleIds.slice(Math.min(a, b), Math.max(a, b) + 1);
+        const value: MarkerValue =
+          column === 'progress'
+            ? { kind: 'progress', progress: annotations.progress.get(id) ?? null }
+            : { kind: 'important', on: annotations.important.has(id) };
+        fillMarkerNow(
+          dispatch,
+          ids.filter((other) => other !== id),
+          value,
+        );
+        setFill(null);
+      };
+      doc.body.style.cursor = 'ns-resize';
+      doc.body.style.userSelect = 'none';
+      win.addEventListener('pointermove', move);
+      win.addEventListener('pointerup', up);
+      win.addEventListener('pointercancel', up);
+    },
+    [visibleIds, annotations, dispatch],
+  );
+
+  const filling = useMemo(
+    () =>
+      fill === null || fillIds === null ? null : { column: fill.column, ids: new Set(fillIds) },
+    [fill, fillIds],
+  );
+
+  const columns = useMemo<Column<Row>[]>(() => {
+    const cells: NoteCells = {
+      annotations,
+      filling,
+      openMenu: (kind, id, element) => {
+        setAnchor(element);
+        setMenu((open) => (open?.kind === kind && open.id === id ? null : { kind, id }));
+      },
+      toggleImportant: (id) => setImportantNow(dispatch, id, !annotations.important.has(id)),
+      startFill,
+    };
+    return visibleColumnKeys(columnConfig).flatMap((key) => {
+      const column = COLUMNS_BY_KEY.get(key);
+      if (column === undefined) return [];
+      const render =
+        annotationRender(key, cells) ?? searchRender(key, active.query) ?? column.render;
+      return [{ ...column, render, width: columnConfig.widths[key] }];
+    });
+  }, [columnConfig, active.query, annotations, filling, dispatch, startFill]);
+
+  // Kopfzeile je Abschnitt: Name, Anzahl der gezeigten Positionen, davon erledigt.
+  const heads = useMemo(() => {
+    const counts = new Map<string, { node: LVNode; count: number; done: number }>();
+    for (const row of rows) {
+      const done = annotations.progress.get(row.node.id) === 'fertig' ? 1 : 0;
+      for (const step of row.trail) {
+        const entry = counts.get(step.id) ?? { node: step, count: 0, done: 0 };
+        entry.count++;
+        entry.done += done;
+        counts.set(step.id, entry);
+      }
+    }
+    const out = new Map<string, GroupHead>();
+    for (const [id, { node, count, done }] of counts) {
+      out.set(id, { key: id, label: headingOf(node), info: sectionInfo(count, done) });
+    }
+    return out;
+  }, [rows, annotations]);
+
+  const group = useMemo(
+    () =>
+      heads.size === 0
+        ? undefined
+        : (row: Row): GroupHead[] => row.trail.flatMap((step) => heads.get(step.id) ?? []),
+    [heads],
+  );
+
+  const sectionIds = useMemo(() => [...heads.keys()], [heads]);
+
+  // Eine neue Auswahl (Graph, Rechtsklick „In der Tabelle zeigen") klappt ihren Abschnitt
+  // auf — sonst landete der Sprung in einem zugeklappten Abschnitt im Leeren.
+  const followed = useRef(selectedPositionId);
+  useEffect(() => {
+    if (followed.current === selectedPositionId) return;
+    followed.current = selectedPositionId;
+    if (selectedPositionId === null) return;
+    const row = rows.find((candidate) => candidate.node.id === selectedPositionId);
+    const hidden = row?.trail.filter((step) => collapsed.has(step.id)) ?? [];
+    if (hidden.length === 0) return;
+    const open = new Set(hidden.map((step) => step.id));
+    dispatch({ type: 'tableCollapse', ids: [...collapsed].filter((id) => !open.has(id)) });
+  }, [selectedPositionId, rows, collapsed, dispatch]);
+
+  const menuRow = menu === null ? undefined : rows.find((row) => row.node.id === menu.id);
 
   // Bewusst keine Mengensumme: die Positionen eines Abschnitts haben gemischte
   // Einheiten (m³, m², Stck), eine Summe darüber wäre eine Scheingenauigkeit.
@@ -524,6 +970,17 @@ export function PositionsTable({ root }: { root: LVNode }) {
               onChange={(value) => dispatch({ type: 'tableScope', scope: value as Scope })}
             />
           )}
+          {sectionIds.length > 0 && (
+            <Chip
+              on={false}
+              onClick={() =>
+                dispatch({ type: 'tableCollapse', ids: collapsed.size > 0 ? [] : sectionIds })
+              }
+              title="Alle Abschnitte auf- oder zuklappen"
+            >
+              {collapsed.size > 0 ? 'Alle aufklappen' : 'Alle zuklappen'}
+            </Chip>
+          )}
           <ColumnPicker config={columnConfig} onChange={setColumnConfig} />
         </span>
       </div>
@@ -560,19 +1017,49 @@ export function PositionsTable({ root }: { root: LVNode }) {
           empty="Keine Positionen entsprechen den Filtern."
           sort={sort}
           onSort={(key) => dispatch({ type: 'tableSort', key })}
-          group={
-            groupCount > 1 ? (row) => ({ key: row.groupKey, label: row.groupLabel }) : undefined
-          }
+          group={group}
+          collapsed={collapsed}
+          onToggleGroup={(id) => dispatch({ type: 'tableToggleSection', id })}
           cellTitle={(row, column) =>
             column.key === 'shortText'
               ? row.position.shortText
               : column.key === 'note'
-                ? commentsOf(annotations, row.node.id).join('\n') || undefined
+                ? latestCommentsOf(annotations, row.node.id)
+                    .map((comment) => comment.text)
+                    .join('\n') || undefined
                 : undefined
           }
           onResize={(key, width) => setColumnConfig(resizeColumn(columnConfig, key, width))}
         />
       )}
+      <Popover
+        ref={menuRef}
+        open={menu !== null && menuRow !== undefined}
+        width={menu?.kind === 'comment' ? 300 : 170}
+        align={menu?.kind === 'comment' ? 'right' : 'left'}
+        anchorRef={menuAnchor}
+      >
+        {menu !== null && menuRow !== undefined && menu.kind === 'progress' && (
+          <ProgressChoices
+            current={annotations.progress.get(menu.id) ?? null}
+            onPick={(value) => {
+              if (value !== (annotations.progress.get(menu.id) ?? null)) {
+                setProgressNow(dispatch, menu.id, value);
+              }
+              closeMenu();
+            }}
+          />
+        )}
+        {menu !== null && menuRow !== undefined && menu.kind === 'comment' && (
+          <CommentEditor
+            key={menu.id}
+            id={menu.id}
+            oz={menuRow.position.oz}
+            annotations={annotations}
+            onClose={closeMenu}
+          />
+        )}
+      </Popover>
     </div>
   );
 }

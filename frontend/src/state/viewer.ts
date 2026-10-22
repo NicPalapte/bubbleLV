@@ -33,12 +33,14 @@ import {
 import {
   addComment,
   EMPTY_ANNOTATIONS,
+  fillMarker,
   removeComment,
   setImportant,
   addHighlight,
   removeHighlight,
   setProgress,
   type Annotations,
+  type MarkerValue,
   type Paint,
   type Progress,
 } from '../lib/annotations';
@@ -127,6 +129,8 @@ type LvAction =
   /** `at` = Zeitpunkt in ms; kommt vom Aufrufer, damit der Reducer rein bleibt. */
   | { type: 'setProgress'; id: string; progress: Progress | null; at: number }
   | { type: 'setImportant'; id: string; on: boolean; at: number }
+  /** Ausfüllen per Ziehen in der Tabelle: ein Wert auf viele Positionen. */
+  | { type: 'fillMarker'; ids: readonly string[]; value: MarkerValue; at: number }
   /** Anstreichung im Langtext (Entscheidung 0063); `start` im angezeigten Langtext. */
   | { type: 'addHighlight'; id: string; paint: Paint; start: number; text: string; at: number }
   | { type: 'removeHighlight'; id: string; position: number }
@@ -204,6 +208,7 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     }
     case 'setProgress':
     case 'setImportant':
+    case 'fillMarker':
     case 'addHighlight':
     case 'removeHighlight':
     case 'addComment':
@@ -222,9 +227,11 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
               ? setProgress(state.annotations, action.id, action.progress, action.at)
               : action.type === 'setImportant'
                 ? setImportant(state.annotations, action.id, action.on, action.at)
-                : action.type === 'addComment'
-                  ? addComment(state.annotations, action.id, action.text, action.at)
-                  : removeComment(state.annotations, action.id, action.position);
+                : action.type === 'fillMarker'
+                  ? fillMarker(state.annotations, action.ids, action.value, action.at)
+                  : action.type === 'addComment'
+                    ? addComment(state.annotations, action.id, action.text, action.at)
+                    : removeComment(state.annotations, action.id, action.position);
       return annotations === state.annotations ? state : { ...state, annotations };
     }
     case 'setAnnotations':
@@ -343,6 +350,8 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     case 'tableSort':
     case 'tableScope':
     case 'tableColumns':
+    case 'tableToggleSection':
+    case 'tableCollapse':
     case 'toggleRuleOpen':
     case 'openRule':
     case 'ruleRevealed':

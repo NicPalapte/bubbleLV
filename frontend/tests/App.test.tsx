@@ -217,17 +217,14 @@ describe('Viewer', () => {
 
     fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'Beton' } });
 
-    // Die Treffer verteilen sich über mehrere Abschnitte und stehen jeweils
-    // unter ihrem Überschriftenpfad.
+    // Die Treffer verteilen sich über mehrere Abschnitte; jede Ebene hat ihre
+    // eigene Kopfzeile.
     const table = await screen.findByRole('grid', { name: 'Positionen' });
     await waitFor(() =>
-      expect(
-        within(table).getByText(/Bauhauptgewerke.+§ 001\.004 · Betonarbeiten/),
-      ).toBeInTheDocument(),
+      expect(within(table).getByText('§ 001.004 · Betonarbeiten')).toBeInTheDocument(),
     );
-    expect(
-      within(table).getByText(/Bauhauptgewerke.+§ 001\.003 · Maurerarbeiten/),
-    ).toBeInTheDocument();
+    expect(within(table).getByText('§ 001.003 · Maurerarbeiten')).toBeInTheDocument();
+    expect(within(table).getAllByText(/Bauhauptgewerke/).length).toBeGreaterThan(0);
   });
 
   it('schließt das Tabellenfenster mit einem Klick, der Graph bleibt stehen', async () => {

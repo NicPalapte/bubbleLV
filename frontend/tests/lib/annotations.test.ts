@@ -6,8 +6,10 @@ import {
   annotationAllowList,
   commentsOf,
   EMPTY_ANNOTATIONS,
+  fillMarker,
   fromStored,
   hasComment,
+  latestCommentsOf,
   markerCounts,
   rekey,
   removeComment,
@@ -26,6 +28,31 @@ import {
 const ids = (set: ReadonlySet<string> | null): string[] => [...(set ?? [])].sort();
 
 describe('annotations', () => {
+  it('setzt beim Ausfüllen denselben Marker auf alle Positionen, je mit Verlauf', () => {
+    let a = setProgress(EMPTY_ANNOTATIONS, 'b', 'fertig', 1);
+    a = fillMarker(a, ['a', 'b', 'c'], { kind: 'progress', progress: 'fertig' }, 2);
+    expect([...a.progress.keys()].sort()).toEqual(['a', 'b', 'c']);
+    // `b` war schon erledigt: kein zweiter Eintrag.
+    expect(a.log.get('b')).toHaveLength(1);
+    expect(a.log.get('a')).toEqual([{ kind: 'progress', at: 2, progress: 'fertig' }]);
+    a = fillMarker(a, ['a', 'c'], { kind: 'progress', progress: null }, 3);
+    expect([...a.progress.keys()]).toEqual(['b']);
+    a = fillMarker(a, ['a', 'b'], { kind: 'important', on: true }, 4);
+    expect([...a.important].sort()).toEqual(['a', 'b']);
+    expect(fillMarker(a, ['a', 'b'], { kind: 'important', on: true }, 5)).toBe(a);
+  });
+
+  it('liefert die Kommentare mit dem neuesten zuerst', () => {
+    let a = addComment(EMPTY_ANNOTATIONS, 'a', 'erster', 1);
+    a = setImportant(a, 'a', true, 2);
+    a = addComment(a, 'a', 'zweiter', 3);
+    expect(latestCommentsOf(a, 'a')).toEqual([
+      { at: 3, text: 'zweiter' },
+      { at: 1, text: 'erster' },
+    ]);
+    expect(latestCommentsOf(a, 'x')).toEqual([]);
+  });
+
   it('führt Fortschritt und „Wichtig" getrennt und schreibt jeden Wechsel mit', () => {
     let a = setProgress(EMPTY_ANNOTATIONS, 'a', 'bearbeitung', 1);
     a = setImportant(a, 'a', true, 2);
