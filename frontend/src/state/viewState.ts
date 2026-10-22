@@ -101,6 +101,8 @@ export interface TableViewState {
   scope: TableScope;
   /** `null` = unveränderte Standardspalten; die Tabelle kennt ihre Vorgabe. */
   columns: ColumnConfig | null;
+  /** Zugeklappte Abschnitte (Knoten-IDs); nur diese Sitzung und dieses LV. */
+  collapsed: ReadonlySet<string>;
 }
 
 /** Ort und Größe des Tabellenfensters über dem Graphen. */
@@ -239,6 +241,10 @@ export type ViewAction =
   | { type: 'tableSort'; key: string }
   | { type: 'tableScope'; scope: TableScope }
   | { type: 'tableColumns'; columns: ColumnConfig | null }
+  /** Einen Abschnitt in der Tabelle auf- oder zuklappen. */
+  | { type: 'tableToggleSection'; id: string }
+  /** Mehrere Abschnitte auf einmal: `ids` zuklappen, leere Liste klappt alles auf. */
+  | { type: 'tableCollapse'; ids: readonly string[] }
   | { type: 'toggleRuleOpen'; id: string }
   /** Regel gezielt aufklappen — der Sprung aus dem Graphen soll sie offen finden. */
   | { type: 'openRule'; id: string }
@@ -284,7 +290,7 @@ export const INITIAL_VIEW_STATE: ViewState = {
     viewport: null,
     focus: 0,
   },
-  table: { sort: { key: 'oz', dir: 1 }, scope: 'node', columns: null },
+  table: { sort: { key: 'oz', dir: 1 }, scope: 'node', columns: null, collapsed: new Set() },
   overview: { openRules: new Set(), revealRule: null },
   scroll: NO_SCROLL,
   panelSize: DEFAULT_PANEL_SIZE,
@@ -439,6 +445,13 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
       return { ...state, table: { ...state.table, scope: action.scope } };
     case 'tableColumns':
       return { ...state, table: { ...state.table, columns: action.columns } };
+    case 'tableToggleSection': {
+      const collapsed = new Set(state.table.collapsed);
+      if (!collapsed.delete(action.id)) collapsed.add(action.id);
+      return { ...state, table: { ...state.table, collapsed } };
+    }
+    case 'tableCollapse':
+      return { ...state, table: { ...state.table, collapsed: new Set(action.ids) } };
     case 'toggleRuleOpen': {
       // Höchstens eine Regel offen: ihre Funde stehen in der Klappkarte daneben.
       const openRules = new Set(state.overview.openRules.has(action.id) ? [] : [action.id]);
