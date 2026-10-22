@@ -737,8 +737,9 @@ export function PositionsTable({ root }: { root: LVNode }) {
     // Ebenen, die alle Zeilen teilen (z. B. das LV selbst über der ersten Gliederung),
     // sagen nichts und kosten eine Zeile. Der direkte Abschnitt bleibt immer stehen.
     const first = sorted[0]?.trail ?? [];
-    let common = Math.min(...sorted.map((row) => row.trail.length - 1), first.length);
+    let common = first.length;
     for (const row of sorted) {
+      common = Math.min(common, row.trail.length - 1);
       let same = 0;
       while (same < common && row.trail[same] === first[same]) same++;
       common = same;
@@ -755,13 +756,21 @@ export function PositionsTable({ root }: { root: LVNode }) {
     [rows, collapsed],
   );
 
+  // Zeilen von `from` bis `to` in Anzeigereihenfolge; `null`, wenn eine fehlt.
+  const spanOf = useMemo(() => {
+    const at = new Map(visibleIds.map((id, i) => [id, i]));
+    return (from: string, to: string): string[] | null => {
+      const a = at.get(from);
+      const b = at.get(to);
+      if (a === undefined || b === undefined) return null;
+      return visibleIds.slice(Math.min(a, b), Math.max(a, b) + 1);
+    };
+  }, [visibleIds]);
+
   const fillIds = useMemo(() => {
     if (fill === null) return null;
-    const a = visibleIds.indexOf(fill.from);
-    const b = visibleIds.indexOf(fill.to);
-    if (a < 0 || b < 0) return [fill.from];
-    return visibleIds.slice(Math.min(a, b), Math.max(a, b) + 1);
-  }, [fill, visibleIds]);
+    return spanOf(fill.from, fill.to) ?? [fill.from];
+  }, [fill, spanOf]);
 
   /**
    * Ausfüllen per Ziehen (wie in Excel): Griff fassen, über die Zeilen ziehen, loslassen.
@@ -818,9 +827,7 @@ export function PositionsTable({ root }: { root: LVNode }) {
         doc.body.style.cursor = '';
         doc.body.style.userSelect = '';
         // Wert der Quelle beim Griff; Reihenfolge der Zeilen ändert sich beim Ziehen nicht.
-        const a = visibleIds.indexOf(id);
-        const b = visibleIds.indexOf(to);
-        const ids = a < 0 || b < 0 ? [] : visibleIds.slice(Math.min(a, b), Math.max(a, b) + 1);
+        const ids = spanOf(id, to) ?? [];
         const value: MarkerValue =
           column === 'progress'
             ? { kind: 'progress', progress: annotations.progress.get(id) ?? null }
@@ -838,7 +845,7 @@ export function PositionsTable({ root }: { root: LVNode }) {
       win.addEventListener('pointerup', up);
       win.addEventListener('pointercancel', up);
     },
-    [visibleIds, annotations, dispatch],
+    [spanOf, annotations, dispatch],
   );
 
   const filling = useMemo(

@@ -246,6 +246,15 @@ const ozCells = (): string[] =>
     .flatMap((row) => (row.getAttribute('data-row-key') === null ? [] : [row]))
     .map((row) => within(row).getAllByRole('gridcell')[0]!.textContent ?? '');
 
+/** Wählt eine Position aus, wie ein Klick im Graphen. */
+function Auswahl({ id }: { id: string | null }) {
+  const dispatch = useViewerDispatch();
+  useEffect(() => {
+    if (id !== null) dispatch({ type: 'selectPosition', nodeId: null, positionId: id });
+  }, [dispatch, id]);
+  return null;
+}
+
 describe('PositionsTable · Arbeitsliste', () => {
   it('setzt den Fortschritt per Klick in der Zelle', () => {
     renderTable();
@@ -336,5 +345,34 @@ describe('PositionsTable · Arbeitsliste', () => {
     expect(ozCells()).toHaveLength(3);
     click(screen.getByRole('button', { name: 'Alle zuklappen' }));
     expect(ozCells()).toEqual([]);
+  });
+
+  it('klappt den Abschnitt einer neuen Auswahl auf', () => {
+    const { rerender } = render(
+      <ViewerProvider>
+        <Auswahl id={null} />
+        <PositionsTable root={lv} />
+      </ViewerProvider>,
+    );
+    click(screen.getByRole('button', { name: /§ 01 · Erdarbeiten/ }));
+    expect(ozCells()).toEqual(['02.0010']);
+    rerender(
+      <ViewerProvider>
+        <Auswahl id="position:01.01.0020" />
+        <PositionsTable root={lv} />
+      </ViewerProvider>,
+    );
+    expect(ozCells()).toEqual(['01.01.0010', '01.01.0020', '02.0010']);
+  });
+
+  it('zeigt Ebenen, die alle Zeilen teilen, nicht als eigene Kopfzeile', () => {
+    render(
+      <ViewerProvider>
+        <PositionsTable root={group('', 'LV', [lv.children[0]!])} />
+      </ViewerProvider>,
+    );
+    // Alle Zeilen liegen in „01 · Erdarbeiten": nur der direkte Abschnitt bleibt.
+    expect(screen.queryByRole('button', { name: /§ 01 · Erdarbeiten/ })).toBeNull();
+    expect(screen.getByRole('button', { name: /§ 01\.01 · Aushub/ })).toBeTruthy();
   });
 });
