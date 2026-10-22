@@ -59,14 +59,24 @@ import type { LVNode, PositionSummary } from '../../types/lvNode';
  * „Kopieren" im eigenen Menü — das Menü des Browsers fehlt dort. Ohne Clipboard-API
  * (kein HTTPS) kopiert der alte Befehl die noch stehende Auswahl.
  */
-function copySelection(fallback: string): void {
+function copySelection(fallback: string, onFail: () => void): void {
   const selected = window.getSelection()?.toString() ?? '';
   const clipboard = navigator.clipboard as Clipboard | undefined;
   const legacy = (): void => {
-    document.execCommand('copy');
+    let copied: boolean;
+    try {
+      copied = document.execCommand('copy');
+    } catch {
+      copied = false;
+    }
+    if (!copied) onFail();
   };
-  if (clipboard === undefined) legacy();
-  else clipboard.writeText(selected === '' ? fallback : selected).catch(legacy);
+  if (clipboard === undefined) return legacy();
+  try {
+    clipboard.writeText(selected === '' ? fallback : selected).catch(legacy);
+  } catch {
+    legacy();
+  }
 }
 
 /**
@@ -333,7 +343,9 @@ export function PositionDetails({
                 }}
                 onCopy={() => {
                   setPaintTarget(null);
-                  copySelection(paintTarget.text);
+                  copySelection(paintTarget.text, () =>
+                    dispatch({ type: 'notice', message: 'Text konnte nicht kopiert werden.' }),
+                  );
                 }}
                 onUnpaint={
                   paintTarget.touched.length === 0

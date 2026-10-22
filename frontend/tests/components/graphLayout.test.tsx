@@ -288,6 +288,17 @@ describe('Rechtsklick im Graphen (Issue #155)', () => {
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 
+  it('sperrt „Zum Vergleich hinzufügen", wenn der Vergleich voll ist', async () => {
+    await loadAndShowGraph();
+    const punkte = [...graph().querySelectorAll('[data-slot]')];
+    for (const punkt of punkte.slice(0, 4)) {
+      fireEvent.contextMenu(punkt);
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Zum Vergleich hinzufügen' }));
+    }
+    fireEvent.contextMenu(punkte[4]);
+    expect(screen.getByRole('menuitem', { name: 'Zum Vergleich hinzufügen' })).toBeDisabled();
+  });
+
   it('bietet am Abschnitt nur den Sprung in die Tabelle', async () => {
     await loadAndShowGraph();
     fireEvent.contextMenu(graph().querySelector('[data-group] circle') as SVGCircleElement);

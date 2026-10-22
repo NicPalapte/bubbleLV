@@ -120,6 +120,15 @@ describe('Anstreichen im Langtext', () => {
     expect(screen.queryByRole('toolbar', { name: 'Textmarkierung' })).toBeNull();
   });
 
+  it('meldet, wenn Kopieren nicht geht', async () => {
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
+    await ladeDatei();
+    waehleWort(langtext());
+    const menue = await screen.findByRole('toolbar', { name: 'Textmarkierung' });
+    fireEvent.click(within(menue).getByRole('button', { name: 'Kopieren' }));
+    expect(await screen.findByText('Text konnte nicht kopiert werden.')).toBeInTheDocument();
+  });
+
   it('entfernt eine Anstreichung über das Menü auf derselben Stelle', async () => {
     await ladeDatei();
     const text = langtext();
