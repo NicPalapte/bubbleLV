@@ -12,6 +12,10 @@
 :root {
   --paper: #eef2f7;
   --panel: #f8fafc;
+  /* Abschnittszeilen der Tabelle: Hauptabschnitt kräftig, darunter hell. */
+  --sec1: #d9e5f4;
+  --sec1-ink: #0f2a4d;
+  --sec2: #edf2f8;
   --white: #ffffff;
   /* Flächen der schwebenden Fenster über dem Graphen. */
   --surface: #ffffff;
@@ -223,6 +227,9 @@
   :root:not([data-theme='light']) {
     --paper: #0e141c;
     --panel: #121a24;
+    --sec1: #22344c;
+    --sec1-ink: #e3ecfa;
+    --sec2: #1b2633;
     --white: #18212d;
     --surface: #18212d;
     --sunken: #141c27;
@@ -301,6 +308,9 @@
 :root[data-theme='dark'] {
   --paper: #0e141c;
   --panel: #121a24;
+  --sec1: #22344c;
+  --sec1-ink: #e3ecfa;
+  --sec2: #1b2633;
   --white: #18212d;
   --surface: #18212d;
   --sunken: #141c27;
@@ -1045,4 +1055,43 @@ a:hover {
 ::highlight(paint-lila) {
   background-color: var(--paint-lila);
   color: var(--paint-ink);
+}
+
+/* Tabelle als Arbeitsliste: Griff zum Ausfüllen per Ziehen (wie in Excel) und die
+   Fläche über den Zellen, die das Ziehen abdeckt. Der Griff erscheint nur an der
+   Zeile unter dem Zeiger und an der gewählten. */
+.fill-handle {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid var(--white);
+  border-radius: 1px;
+  background: var(--blue);
+  cursor: ns-resize;
+  opacity: 0;
+  touch-action: none;
+}
+
+[data-row-key]:hover .fill-handle,
+[data-row-key][aria-selected='true'] .fill-handle {
+  opacity: 1;
+}
+
+.fill-mark {
+  position: absolute;
+  inset: 0;
+  background: rgba(37, 99, 235, 0.12);
+  box-shadow: inset 0 0 0 1px var(--blue);
+  pointer-events: none;
+}
+
+.note-add {
+  opacity: 0;
+}
+
+[data-row-key]:hover .note-add,
+.note-add:focus-visible {
+  opacity: 1;
 }

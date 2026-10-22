@@ -5,8 +5,10 @@
 //  - `sortable` je Spalte: Status und Exposition lassen sich nicht sinnvoll sortieren.
 //  - ARIA-Rollen (table/row/columnheader/cell): das Markup ist aus Flex-Divs gebaut,
 //    ohne die Rollen ist es für Screenreader und Tests keine Tabelle.
-//  - `group`: eine Kopfzeile beim Gruppenwechsel — die Positionstabelle zeigt
-//    Filtertreffer nach Überschriften gruppiert (Issue #12).
+//  - `group`: Kopfzeilen je Abschnittsebene — die Positionstabelle zeigt
+//    Filtertreffer nach Überschriften gruppiert (Issue #12). Jede Ebene hat eine
+//    eigene Zeile und lässt sich zuklappen (`collapsed`, `onToggleGroup`); oben
+//    stehen bleibt nur der Abschnitt, in dem die oberste Zeile liegt.
 //  - Fenster-Virtualisierung: bei 10k Positionen dauerte „Ganzes LV" 10,6 s und
 //    Sortieren 10 s, weil jede Zeile neun DOM-Zellen bekam (Issue #22). Gezeichnet
 //    wird nur der sichtbare Ausschnitt — Prinzip wie `Tree.tsx` (Issue #23), hier
@@ -22,7 +24,6 @@
 //    gerade gezeichneten Inhalt an (bei Virtualisierung: das sichtbare Fenster).
 
 import {
-  Fragment,
   useCallback,
   useEffect,
   useId,
@@ -42,7 +43,9 @@ export interface Column<T> {
   label: string;
   /** Breite in Pixeln — Spalten sind flex-basis, nie auto. */
   width: number;
-  align?: 'left' | 'right';
+  align?: 'left' | 'right' | 'center';
+  /** Kurzer Kopf, wenn `label` nicht in die Spalte passt (z. B. „!"); `label` bleibt Name. */
+  short?: string;
   /** Tinten-Farbe, Gewicht 500 — genau eine Spalte je Tabelle. */
   primary?: boolean;
   sortable?: boolean;
@@ -78,11 +81,15 @@ export interface DataTableProps<T> {
   /** Zeile blass zeichnen — Nicht-Treffer im Modus „dimmen" (Entscheidung 0058). */
   dimmed?: (row: T) => boolean;
   /**
-   * Gruppenzuordnung einer Zeile. Wechselt der Schlüssel gegenüber der
-   * vorigen Zeile, steht darüber eine Kopfzeile. Die Zeilen müssen dafür
-   * bereits nach Gruppen sortiert ankommen.
+   * Abschnittspfad einer Zeile, äußerster zuerst. Für jede Ebene, die gegenüber
+   * der vorigen Zeile wechselt, steht darüber eine Kopfzeile. Die Zeilen müssen
+   * dafür bereits nach Abschnitten sortiert ankommen.
    */
-  group?: (row: T) => GroupHead;
+  group?: (row: T) => readonly GroupHead[];
+  /** Zugeklappte Abschnitte (`GroupHead.key`): Kopfzeile bleibt, Inhalt fällt weg. */
+  collapsed?: ReadonlySet<string>;
+  /** Klick auf eine Kopfzeile; ohne Callback lassen sich Abschnitte nicht zuklappen. */
+  onToggleGroup?: (key: string) => void;
   /**
    * Breite einer Spalte per Zieh-Griff ändern; ohne Callback gibt es keinen
    * Griff. Doppelklick auf den Griff liefert die Breite des breitesten
@@ -183,26 +190,69 @@ function Filler() {
   return <div aria-hidden="true" style={{ flex: '1 1 0', minWidth: 0 }} />;
 }
 
-type GroupHead = { key: string; label: ReactNode } | null;
+export interface GroupHead {
+  key: string;
+  label: ReactNode;
+  /** Rechts in der Kopfzeile, z. B. Anzahl und Fortschritt. */
+  info?: ReactNode;
+}
 
 /**
- * Zu jeder Zeile der Gruppenkopf, der über ihr stehen muss — also nur bei der
- * ersten Zeile einer Gruppe. Bewusst außerhalb der Komponente, damit im Render
- * nichts fortgeschrieben wird.
+ * Eine gezeichnete Zeile: Abschnittskopf oder Datenzeile. `parent` ist der
+ * Index des nächsthöheren Kopfs in `items` (-1 = keiner) — er steht oben, solange
+ * die Zeile die oberste ist.
  */
-function groupHeads<T>(
+type Item<T> =
+  | { kind: 'head'; head: GroupHead; level: number; closed: boolean; parent: number }
+  | { kind: 'row'; row: T; parent: number };
+
+/**
+ * Kopf- und Datenzeilen in Anzeigereihenfolge. Unter einem zugeklappten Abschnitt
+ * fällt alles weg, auch tiefere Köpfe. Bewusst außerhalb der Komponente, damit im
+ * Render nichts fortgeschrieben wird.
+ */
+function layoutItems<T>(
   rows: readonly T[],
-  group: ((row: T) => GroupHead) | undefined,
-): readonly GroupHead[] {
-  if (group === undefined) return rows.map(() => null);
-  let open: string | null = null;
-  return rows.map((row) => {
-    const head = group(row);
-    if (head === null || head.key === open) return null;
-    open = head.key;
-    return head;
-  });
+  group: ((row: T) => readonly GroupHead[]) | undefined,
+  collapsed: ReadonlySet<string>,
+): Item<T>[] {
+  if (group === undefined) return rows.map((row) => ({ kind: 'row', row, parent: -1 }));
+  const items: Item<T>[] = [];
+  // Offener Pfad: Schlüssel und Item-Index je Ebene (-1 = Kopf liegt unter einem zugeklappten).
+  let openKeys: string[] = [];
+  let openItems: number[] = [];
+  for (const row of rows) {
+    const path = group(row);
+    let same = 0;
+    while (same < path.length && same < openKeys.length && path[same]!.key === openKeys[same]) {
+      same++;
+    }
+    openKeys = openKeys.slice(0, same);
+    openItems = openItems.slice(0, same);
+    for (let level = same; level < path.length; level++) {
+      const head = path[level]!;
+      const hidden = openKeys.some((key) => collapsed.has(key));
+      openKeys.push(head.key);
+      if (hidden) {
+        openItems.push(-1);
+        continue;
+      }
+      items.push({
+        kind: 'head',
+        head,
+        level,
+        closed: collapsed.has(head.key),
+        parent: openItems[level - 1] ?? -1,
+      });
+      openItems.push(items.length - 1);
+    }
+    if (openKeys.some((key) => collapsed.has(key))) continue;
+    items.push({ kind: 'row', row, parent: openItems[openItems.length - 1] ?? -1 });
+  }
+  return items;
 }
+
+const NO_KEYS: ReadonlySet<string> = new Set();
 
 /** Zeilen über/unter dem Fenster, damit beim Scrollen nichts aufblitzt. */
 const OVERSCAN_PX = 240;
@@ -225,26 +275,122 @@ const UNMEASURED = 0;
  */
 export const UNMEASURED_ROWS = 40;
 
-function GroupHeadRow({ head, style }: { head: ReactNode; style?: CSSProperties }) {
+/** Feste Höhe einer Kopfzeile: alle Ebenen gleich hoch, sonst stimmen die Offsets nicht. */
+const HEAD_ROW_HEIGHT = 32;
+
+function GroupHeadRow({
+  head,
+  level,
+  closed,
+  onToggle,
+  width,
+  style,
+}: {
+  head: GroupHead;
+  level: number;
+  closed: boolean;
+  onToggle?: () => void;
+  /** Sichtbare Breite: der Inhalt bleibt beim waagerechten Scrollen links stehen. */
+  width?: number;
+  style?: CSSProperties;
+}) {
+  const top = level === 0;
+  const label = (
+    <>
+      {onToggle !== undefined && (
+        <span
+          aria-hidden="true"
+          style={{
+            display: 'inline-block',
+            width: 10,
+            fontSize: 9,
+            color: 'var(--dim)',
+            transform: closed ? 'rotate(-90deg)' : undefined,
+            transition: 'transform 120ms',
+          }}
+        >
+          ▼
+        </span>
+      )}
+      <span style={{ ...CLIPPED, minWidth: 0 }}>{head.label}</span>
+    </>
+  );
   return (
+    // Die ganze Zeile klappt; der Knopf darin trägt Tastatur und aria-expanded,
+    // sein Klick kommt über das Bubbeln hier an.
     <div
       role="row"
+      onClick={onToggle}
       style={{
         display: 'flex',
-        padding: '7px 12px',
-        background: 'var(--paper)',
-        borderTop: '1px solid var(--line)',
-        borderBottom: '1px solid var(--grid)',
-        fontFamily: 'var(--mono)',
-        fontSize: 'var(--fs-label)',
-        letterSpacing: 'var(--ls-label)',
-        color: 'var(--dim)',
+        alignItems: 'center',
+        height: HEAD_ROW_HEIGHT,
+        cursor: onToggle === undefined ? undefined : 'pointer',
+        userSelect: 'none',
+        background: top ? 'var(--sec1)' : 'var(--sec2)',
+        color: top ? 'var(--sec1-ink)' : 'var(--ink)',
+        borderBottom: '1px solid var(--line)',
+        fontFamily: 'var(--sans)',
+        fontSize: top ? 12.5 : 12,
+        fontWeight: 600,
         boxSizing: 'border-box',
         ...style,
       }}
     >
-      <div role="gridcell" style={{ flex: 1, minWidth: 0 }}>
-        {head}
+      <div
+        role="gridcell"
+        style={{
+          position: 'sticky',
+          left: 0,
+          flex: width === undefined ? 1 : `0 0 ${width}px`,
+          minWidth: 0,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+          paddingRight: 12,
+          paddingLeft: 12 + level * 16,
+          boxSizing: 'border-box',
+        }}
+      >
+        {onToggle === undefined ? (
+          <span style={{ display: 'flex', minWidth: 0, gap: 8 }}>{label}</span>
+        ) : (
+          <button
+            type="button"
+            aria-expanded={!closed}
+            title={closed ? 'Abschnitt aufklappen' : 'Abschnitt zuklappen'}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              minWidth: 0,
+              maxWidth: '100%',
+              padding: 0,
+              border: 'none',
+              background: 'transparent',
+              font: 'inherit',
+              color: 'inherit',
+              cursor: 'pointer',
+              textAlign: 'left',
+            }}
+          >
+            {label}
+          </button>
+        )}
+        {head.info !== undefined && (
+          <span
+            style={{
+              marginLeft: 'auto',
+              flexShrink: 0,
+              fontFamily: 'var(--mono)',
+              fontSize: 10.5,
+              fontWeight: 400,
+              color: 'var(--dim)',
+            }}
+          >
+            {head.info}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -265,11 +411,24 @@ export function DataTable<T>({
   cellTitle,
   dimmed,
   group,
+  collapsed = NO_KEYS,
+  onToggleGroup,
   onResize,
   initialScrollTop = 0,
   onLeave,
 }: DataTableProps<T>) {
-  const heads = useMemo(() => groupHeads(rows, group), [rows, group]);
+  const items = useMemo(() => layoutItems(rows, group, collapsed), [rows, group, collapsed]);
+  // Sichtbare Datenzeilen und ihr Platz in `items` — Tastatur und Sprung arbeiten darauf.
+  const { visibleRows, itemOf } = useMemo(() => {
+    const list: T[] = [];
+    const at: number[] = [];
+    items.forEach((item, i) => {
+      if (item.kind !== 'row') return;
+      list.push(item.row);
+      at.push(i);
+    });
+    return { visibleRows: list, itemOf: at };
+  }, [items]);
 
   const bodyRef = useRef<HTMLDivElement>(null);
   const headRef = useRef<HTMLDivElement>(null);
@@ -279,13 +438,17 @@ export function DataTable<T>({
   // Laufende Position ohne Zustandswechsel — sie wird beim Abbau gemeldet.
   const scrollRef = useRef(initialScrollTop);
   const [viewport, setViewport] = useState(UNMEASURED);
+  const [viewportWidth, setViewportWidth] = useState(UNMEASURED);
   const [rowHeight, setRowHeight] = useState(UNMEASURED);
   const [headHeight, setHeadHeight] = useState(UNMEASURED);
 
   useLayoutEffect(() => {
     const element = bodyRef.current;
     if (element === null) return;
-    const measure = (): void => setViewport(element.clientHeight);
+    const measure = (): void => {
+      setViewport(element.clientHeight);
+      setViewportWidth(element.clientWidth);
+    };
     measure();
     // Der Beobachter des eigenen Fensters: ein fremder meldet in einem zweiten
     // Fenster (abgekoppelte Tabelle) nicht zuverlässig.
@@ -314,19 +477,17 @@ export function DataTable<T>({
     if (headProbeHeight > 0) setHeadHeight(headProbeHeight);
   });
 
-  // Kumulierte Offsets: rowTop[i] ist die Position, an der Zeile i (inkl.
-  // ihres eigenen Gruppenkopfs, falls vorhanden) beginnt.
-  const rowTop = useMemo(() => {
-    const offsets = new Array<number>(rows.length + 1);
+  // Kumulierte Offsets: itemTop[i] ist die Position, an der Kopf- oder Datenzeile i beginnt.
+  const itemTop = useMemo(() => {
+    const offsets = new Array<number>(items.length + 1);
     offsets[0] = 0;
-    for (let i = 0; i < rows.length; i++) {
-      const extra = heads[i] !== null ? headHeight : 0;
-      offsets[i + 1] = offsets[i] + extra + rowHeight;
+    for (let i = 0; i < items.length; i++) {
+      offsets[i + 1] = offsets[i]! + (items[i]!.kind === 'head' ? headHeight : rowHeight);
     }
     return offsets;
-  }, [rows.length, heads, rowHeight]);
+  }, [items, headHeight, rowHeight]);
 
-  const totalHeight = rowTop[rows.length] ?? 0;
+  const totalHeight = itemTop[items.length] ?? 0;
   const measured = viewport > UNMEASURED && rowHeight > UNMEASURED;
 
   // Gewählte Zeile ins Fenster holen — einmal je Wechsel, und nur, wenn sie
@@ -340,17 +501,31 @@ export function DataTable<T>({
     if (!measured || revealed.current === revealKey) return;
     const element = bodyRef.current;
     if (element === null) return;
-    const index = rows.findIndex((row) => rowKey(row) === revealKey);
+    const index = visibleRows.findIndex((row) => rowKey(row) === revealKey);
     if (index < 0) return;
     revealed.current = revealKey;
-    const top = rowTop[index] + (heads[index] !== null ? headHeight : 0);
-    const bottom = rowTop[index + 1];
-    if (top >= element.scrollTop && bottom <= element.scrollTop + viewport) return;
+    const item = itemOf[index]!;
+    const top = itemTop[item]!;
+    const bottom = itemTop[item + 1]!;
+    // Oben verdeckt der stehende Abschnittskopf eine Zeile.
+    const pinRoom = group === undefined ? 0 : headHeight;
+    if (top >= element.scrollTop + pinRoom && bottom <= element.scrollTop + viewport) return;
     const next = Math.max(0, top - viewport / 2 + rowHeight / 2);
     element.scrollTop = next;
     scrollRef.current = next;
     setScrollTop(next);
-  }, [revealKey, measured, rows, rowKey, rowTop, heads, headHeight, viewport, rowHeight]);
+  }, [
+    revealKey,
+    measured,
+    visibleRows,
+    itemOf,
+    rowKey,
+    itemTop,
+    group,
+    headHeight,
+    viewport,
+    rowHeight,
+  ]);
 
   // ── Tastatur ──────────────────────────────────────────────────────────────
   // Dieselbe Bedeutung wie im Baum (layout/Tree.tsx): die Pfeiltasten bewegen
@@ -371,8 +546,8 @@ export function DataTable<T>({
   }
 
   const activeIndex = useMemo(
-    () => (activeKey === null ? -1 : rows.findIndex((row) => rowKey(row) === activeKey)),
-    [activeKey, rows, rowKey],
+    () => (activeKey === null ? -1 : visibleRows.findIndex((row) => rowKey(row) === activeKey)),
+    [activeKey, visibleRows, rowKey],
   );
 
   /** Zeile ins Fenster holen — die Tabelle ist virtualisiert. */
@@ -380,27 +555,29 @@ export function DataTable<T>({
     (index: number): void => {
       const element = bodyRef.current;
       if (element === null || !measured) return;
-      const top = rowTop[index] + (heads[index] !== null ? headHeight : 0);
-      const bottom = rowTop[index + 1];
-      if (top >= element.scrollTop && bottom <= element.scrollTop + viewport) return;
-      const next = top < element.scrollTop ? top : bottom - viewport;
+      const item = itemOf[index]!;
+      const top = itemTop[item]!;
+      const bottom = itemTop[item + 1]!;
+      const pinRoom = group === undefined ? 0 : headHeight;
+      if (top >= element.scrollTop + pinRoom && bottom <= element.scrollTop + viewport) return;
+      const next = top < element.scrollTop + pinRoom ? top - pinRoom : bottom - viewport;
       const geklemmt = Math.max(0, next);
       element.scrollTop = geklemmt;
       scrollRef.current = geklemmt;
       setScrollTop(geklemmt);
     },
-    [measured, rowTop, heads, headHeight, viewport],
+    [measured, itemOf, itemTop, group, headHeight, viewport],
   );
 
   const moveTo = useCallback(
     (index: number): void => {
-      const geklemmt = Math.max(0, Math.min(rows.length - 1, index));
-      const row = rows[geklemmt];
+      const geklemmt = Math.max(0, Math.min(visibleRows.length - 1, index));
+      const row = visibleRows[geklemmt];
       if (row === undefined) return;
       setActiveKey(rowKey(row));
       revealRow(geklemmt);
     },
-    [rows, rowKey, revealRow],
+    [visibleRows, rowKey, revealRow],
   );
 
   const onKeyDown = useCallback(
@@ -410,7 +587,7 @@ export function DataTable<T>({
       // bis hierher und wählte nebenbei eine Zeile aus — mitsamt Panel und
       // Graph, obwohl jemand nur sortieren wollte.
       if (event.target !== event.currentTarget) return;
-      if (rows.length === 0) return;
+      if (visibleRows.length === 0) return;
       // Ohne aktive Zeile beginnt jede Bewegung oben.
       const current = activeIndex < 0 ? 0 : activeIndex;
       const seite = Math.max(1, Math.floor(viewport / Math.max(1, rowHeight)) - 1);
@@ -438,12 +615,12 @@ export function DataTable<T>({
           return;
         case 'End':
           event.preventDefault();
-          moveTo(rows.length - 1);
+          moveTo(visibleRows.length - 1);
           return;
         case 'Enter':
         case ' ': {
           event.preventDefault();
-          const row = rows[current];
+          const row = visibleRows[current];
           if (row !== undefined) onPick?.(rowKey(row), event);
           return;
         }
@@ -451,7 +628,7 @@ export function DataTable<T>({
           return;
       }
     },
-    [rows, rowKey, activeIndex, moveTo, onPick, viewport, rowHeight],
+    [visibleRows, rowKey, activeIndex, moveTo, onPick, viewport, rowHeight],
   );
 
   const totalWidth = columns.reduce((sum, column) => sum + column.width, 0);
@@ -478,30 +655,41 @@ export function DataTable<T>({
   // Ohne gemessenes Layout (jsdom in Tests, erster Frame) gibt es kein Fenster:
   // gezeichnet wird dann nur der Anfang, begrenzt auf UNMEASURED_ROWS.
   let first = 0;
-  let last = Math.min(rows.length, UNMEASURED_ROWS);
+  let last = Math.min(items.length, UNMEASURED_ROWS);
   if (measured) {
     const from = Math.max(0, scrollTop - OVERSCAN_PX);
     const to = scrollTop + viewport + OVERSCAN_PX;
-    // rowTop ist monoton steigend — binäre Suche statt linearem Scan über bis
+    // itemTop ist monoton steigend — binäre Suche statt linearem Scan über bis
     // zu 10k Einträge je Scroll-Event.
-    first = Math.max(0, lowerBound(rowTop, from) - 1);
-    last = Math.min(rows.length, lowerBound(rowTop, to));
+    first = Math.max(0, lowerBound(itemTop, from) - 1);
+    last = Math.min(items.length, lowerBound(itemTop, to));
   }
 
-  // Aktuell sichtbare Gruppe — Ersatz für einen echten "sticky"-Effekt, der
-  // mit absolut positionierten, virtualisierten Zeilen nicht mehr greift.
-  const pinnedHead = useMemo(() => {
+  // Stehender Abschnittskopf — Ersatz für "position: sticky", das mit absolut
+  // positionierten, virtualisierten Zeilen nicht greift. Es steht nur der Abschnitt
+  // der obersten Zeile, nicht der ganze Pfad darüber.
+  const pinned = useMemo(() => {
     // Ohne gemessenes Layout (jsdom, erster Frame) sind alle Offsets 0 — dann
-    // stünde hier fälschlich die letzte statt gar keine Gruppe, und ihr Label
-    // erschiene doppelt (Balken + vollständig ungewindowte Zeilen).
-    if (group === undefined || !measured) return null;
-    let current: ReactNode = null;
-    for (let i = 0; i < rows.length; i++) {
-      if (rowTop[i + 1] > scrollTop) break;
-      if (heads[i] !== null) current = heads[i]!.label;
+    // stünde hier ein falscher Kopf, und sein Label erschiene doppelt.
+    if (group === undefined || !measured || items.length === 0 || scrollTop <= 0) return null;
+    const top = Math.min(items.length - 1, lowerBound(itemTop, scrollTop + 1) - 1);
+    const item = items[top]!;
+    // Ein Kopf, der ganz zu sehen ist, braucht keinen Doppelgänger.
+    if (item.kind === 'head' && itemTop[top]! >= scrollTop) return null;
+    const index = item.kind === 'head' ? top : item.parent;
+    if (index < 0) return null;
+    const head = items[index];
+    if (head === undefined || head.kind !== 'head') return null;
+    // Der nächste Kopf schiebt den stehenden nach oben weg.
+    let shift = 0;
+    for (let i = top + 1; i < items.length && itemTop[i]! < scrollTop + headHeight; i++) {
+      if (items[i]!.kind === 'head') {
+        shift = itemTop[i]! - scrollTop - headHeight;
+        break;
+      }
     }
-    return current;
-  }, [group, measured, rows.length, rowTop, scrollTop, heads]);
+    return { head, shift };
+  }, [group, measured, items, itemTop, scrollTop, headHeight]);
 
   return (
     // `grid` statt `table`: die Tabelle ist bedienbar, nicht nur lesbar — sie
@@ -510,7 +698,9 @@ export function DataTable<T>({
       role="grid"
       aria-label={label}
       tabIndex={0}
-      aria-activedescendant={activeIndex < 0 ? undefined : rowDomId(rowKey(rows[activeIndex]))}
+      aria-activedescendant={
+        activeIndex < 0 ? undefined : rowDomId(rowKey(visibleRows[activeIndex]!))
+      }
       onKeyDown={onKeyDown}
       // Wer die Tabelle mit Tab erreicht, muss sehen, wo er steht: ohne aktive
       // Zeile zeigte der Fokus sonst gar nichts an.
@@ -520,7 +710,7 @@ export function DataTable<T>({
         // Spaltenkopf markierte sonst Zeile 1 als aktiv, obwohl niemand mit
         // der Tastatur unterwegs ist.
         if (event.target !== event.currentTarget) return;
-        if (activeKey === null && rows.length > 0) setActiveKey(rowKey(rows[0]));
+        if (activeKey === null && visibleRows.length > 0) setActiveKey(rowKey(visibleRows[0]!));
       }}
       style={{
         display: 'flex',
@@ -593,14 +783,14 @@ export function DataTable<T>({
                     }}
                   >
                     <span data-column={column.key} data-head="1">
-                      {column.label}
+                      {column.short ?? column.label}
                     </span>{' '}
                     {active ? (sort.dir > 0 ? '↑' : '↓') : ''}
                   </button>
                 ) : (
                   <span style={{ padding: '10px 12px', ...CLIPPED }}>
                     <span data-column={column.key} data-head="1">
-                      {column.label}
+                      {column.short ?? column.label}
                     </span>
                   </span>
                 )}
@@ -619,164 +809,190 @@ export function DataTable<T>({
         </div>
       </div>
 
-      {/*
-        Ersatz für "position: sticky" auf der Gruppenkopfzeile: die steckt jetzt
-        unter den virtualisierten, absolut positionierten Zeilen und würde nicht
-        mehr kleben. Dieser Balken sitzt oberhalb des Scroll-Containers und zeigt
-        die Gruppe, in der man sich gerade befindet.
+      <div style={{ position: 'relative', flex: 1, minHeight: 0, display: 'flex' }}>
+        {/*
+        Ersatz für "position: sticky" auf der Kopfzeile: sie steckt unter den
+        virtualisierten, absolut positionierten Zeilen und würde nicht kleben. Dieser
+        Balken liegt über der obersten Zeile des Scroll-Containers.
       */}
-      {pinnedHead !== null && <GroupHeadRow head={pinnedHead} />}
+        {pinned !== null && (
+          <div
+            data-pinned-head=""
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: viewportWidth > 0 ? viewportWidth : '100%',
+              height: headHeight,
+              overflow: 'hidden',
+              zIndex: 2,
+              boxShadow: '0 2px 6px rgba(21, 33, 49, 0.10)',
+            }}
+          >
+            <GroupHeadRow
+              head={pinned.head.head}
+              level={pinned.head.level}
+              closed={pinned.head.closed}
+              width={viewportWidth > 0 ? viewportWidth : undefined}
+              onToggle={
+                onToggleGroup === undefined ? undefined : () => onToggleGroup(pinned.head.head.key)
+              }
+              style={{ transform: `translateY(${pinned.shift}px)` }}
+            />
+          </div>
+        )}
 
-      <div
-        ref={bodyRef}
-        onScroll={(event) => {
-          scrollRef.current = event.currentTarget.scrollTop;
-          setScrollTop(event.currentTarget.scrollTop);
-          if (headRef.current !== null) headRef.current.scrollLeft = event.currentTarget.scrollLeft;
-        }}
-        style={{ flex: 1, overflow: 'auto', position: 'relative' }}
-      >
-        {/* Unsichtbare Messzeilen: liefern die reale Höhe einer Daten- bzw.
+        <div
+          ref={bodyRef}
+          data-table-body=""
+          onScroll={(event) => {
+            scrollRef.current = event.currentTarget.scrollTop;
+            setScrollTop(event.currentTarget.scrollTop);
+            if (headRef.current !== null)
+              headRef.current.scrollLeft = event.currentTarget.scrollLeft;
+          }}
+          style={{ flex: 1, minWidth: 0, overflow: 'auto', position: 'relative' }}
+        >
+          {/* Unsichtbare Messzeilen: liefern die reale Höhe einer Daten- bzw.
             Gruppenkopfzeile, ohne den Elternflow zu beeinflussen. */}
-        <div
-          ref={rowProbeRef}
-          aria-hidden="true"
-          style={{
-            position: 'absolute',
-            visibility: 'hidden',
-            pointerEvents: 'none',
-            display: 'flex',
-          }}
-        >
           <div
-            style={{
-              padding: 'var(--pad-row)',
-              fontFamily: 'var(--mono)',
-              fontSize: 'var(--fs-row)',
-            }}
-          >
-            X
-          </div>
-        </div>
-        {group !== undefined && (
-          <div
-            ref={headProbeRef}
+            ref={rowProbeRef}
             aria-hidden="true"
-            style={{ position: 'absolute', visibility: 'hidden', pointerEvents: 'none' }}
-          >
-            <GroupHeadRow head="X" />
-          </div>
-        )}
-
-        {rows.length === 0 && (
-          <div
             style={{
-              padding: '40px 16px',
-              textAlign: 'center',
-              color: 'var(--mute)',
-              fontSize: 'var(--fs-row)',
+              position: 'absolute',
+              visibility: 'hidden',
+              pointerEvents: 'none',
+              display: 'flex',
             }}
           >
-            {empty}
+            <div
+              style={{
+                padding: 'var(--pad-row)',
+                fontFamily: 'var(--mono)',
+                fontSize: 'var(--fs-row)',
+              }}
+            >
+              X
+            </div>
           </div>
-        )}
+          {group !== undefined && (
+            <div
+              ref={headProbeRef}
+              aria-hidden="true"
+              style={{ position: 'absolute', visibility: 'hidden', pointerEvents: 'none' }}
+            >
+              <GroupHeadRow head={{ key: 'X', label: 'X' }} level={0} closed={false} />
+            </div>
+          )}
 
-        <div
-          style={{
-            height: measured ? totalHeight : undefined,
-            minWidth: totalWidth,
-            position: 'relative',
-          }}
-        >
-          {rows.slice(first, last).map((row, offset) => {
-            const index = first + offset;
-            const key = rowKey(row);
-            const selected = selectedKey === key;
-            const head = heads[index];
-            const top = measured ? rowTop[index] + (head !== null ? headHeight : 0) : undefined;
-            const rowMarkup = (
-              <div
-                key={key}
-                id={rowDomId(key)}
-                role="row"
-                aria-selected={selected}
-                onClick={(event) => onPick?.(key, event)}
-                onContextMenu={
-                  onRowContextMenu === undefined
-                    ? undefined
-                    : (event) => onRowContextMenu(key, event)
-                }
-                style={{
-                  display: 'flex',
-                  borderBottom: '1px solid var(--grid)',
-                  cursor: onPick === undefined ? 'default' : 'pointer',
-                  // Die aktive Zeile ist die, auf der die Tastatur steht; die
-                  // gewählte ist blau. Beide zugleich sichtbar zu halten
-                  // braucht zwei verschiedene Mittel — Fläche und Kante.
-                  outline: key === activeKey ? '1px solid var(--blue)' : 'none',
-                  outlineOffset: '-1px',
-                  background: selected
-                    ? 'var(--blueS)'
-                    : index % 2 === 1
-                      ? 'var(--panel)'
-                      : 'var(--white)',
-                  fontFamily: 'var(--mono)',
-                  fontSize: 'var(--fs-row)',
-                  opacity: dimmed?.(row) === true ? 0.4 : undefined,
-                  ...(measured
-                    ? { position: 'absolute', top, left: 0, right: 0, boxSizing: 'border-box' }
-                    : {}),
-                }}
-              >
-                {columns.map((column) => (
-                  <div
-                    key={column.key}
-                    role="gridcell"
-                    title={cellTitle?.(row, column)}
-                    style={{
-                      flex: `0 0 ${column.width}px`,
-                      minWidth: 0,
-                      padding: 'var(--pad-row)',
-                      borderRight: '1px solid var(--grid)',
-                      textAlign: column.align ?? 'left',
-                      color: column.primary === true ? 'var(--ink)' : 'var(--dim)',
-                      fontWeight: column.primary === true ? 500 : 400,
-                      ...CLIPPED,
-                    }}
-                  >
-                    {/* Innerer Messknoten: sein scrollWidth ist die Inhaltsbreite
-                        ohne Zellenabstand — Grundlage für „an Inhalt anpassen". */}
-                    <span data-column={column.key} style={CLIPPED}>
-                      {column.render === undefined ? '—' : column.render(row)}
-                    </span>
-                  </div>
-                ))}
-                <Filler />
-              </div>
-            );
+          {rows.length === 0 && (
+            <div
+              style={{
+                padding: '40px 16px',
+                textAlign: 'center',
+                color: 'var(--mute)',
+                fontSize: 'var(--fs-row)',
+              }}
+            >
+              {empty}
+            </div>
+          )}
 
-            if (head === null || head === undefined) return rowMarkup;
-            const headTop = measured ? rowTop[index] : undefined;
-            return (
-              <Fragment key={`group:${head.key}`}>
-                <GroupHeadRow
-                  head={head.label}
-                  style={
-                    measured
-                      ? {
-                          position: 'absolute',
-                          top: headTop,
-                          left: 0,
-                          right: 0,
-                          boxSizing: 'border-box',
-                        }
-                      : undefined
+          <div
+            style={{
+              height: measured ? totalHeight : undefined,
+              minWidth: totalWidth,
+              position: 'relative',
+            }}
+          >
+            {items.slice(first, last).map((item, offset) => {
+              const index = first + offset;
+              const top = measured ? itemTop[index] : undefined;
+              const placed: CSSProperties = measured
+                ? { position: 'absolute', top, left: 0, right: 0, boxSizing: 'border-box' }
+                : {};
+              if (item.kind === 'head') {
+                const { key: headKey } = item.head;
+                return (
+                  <GroupHeadRow
+                    key={`group:${headKey}`}
+                    head={item.head}
+                    level={item.level}
+                    closed={item.closed}
+                    width={viewportWidth > 0 ? viewportWidth : undefined}
+                    onToggle={
+                      onToggleGroup === undefined ? undefined : () => onToggleGroup(headKey)
+                    }
+                    style={placed}
+                  />
+                );
+              }
+              const { row } = item;
+              const key = rowKey(row);
+              const selected = selectedKey === key;
+              return (
+                <div
+                  key={key}
+                  id={rowDomId(key)}
+                  data-row-key={key}
+                  role="row"
+                  aria-selected={selected}
+                  onClick={(event) => onPick?.(key, event)}
+                  onContextMenu={
+                    onRowContextMenu === undefined
+                      ? undefined
+                      : (event) => onRowContextMenu(key, event)
                   }
-                />
-                {rowMarkup}
-              </Fragment>
-            );
-          })}
+                  style={{
+                    display: 'flex',
+                    borderBottom: '1px solid var(--grid)',
+                    cursor: onPick === undefined ? 'default' : 'pointer',
+                    // Die aktive Zeile ist die, auf der die Tastatur steht; die
+                    // gewählte ist blau. Beide zugleich sichtbar zu halten
+                    // braucht zwei verschiedene Mittel — Fläche und Kante.
+                    outline: key === activeKey ? '1px solid var(--blue)' : 'none',
+                    outlineOffset: '-1px',
+                    background: selected
+                      ? 'var(--blueS)'
+                      : index % 2 === 1
+                        ? 'var(--panel)'
+                        : 'var(--white)',
+                    fontFamily: 'var(--mono)',
+                    fontSize: 'var(--fs-row)',
+                    opacity: dimmed?.(row) === true ? 0.4 : undefined,
+                    ...placed,
+                  }}
+                >
+                  {columns.map((column) => (
+                    <div
+                      key={column.key}
+                      role="gridcell"
+                      data-cell={column.key}
+                      title={cellTitle?.(row, column)}
+                      style={{
+                        position: 'relative',
+                        flex: `0 0 ${column.width}px`,
+                        minWidth: 0,
+                        padding: 'var(--pad-row)',
+                        borderRight: '1px solid var(--grid)',
+                        textAlign: column.align ?? 'left',
+                        color: column.primary === true ? 'var(--ink)' : 'var(--dim)',
+                        fontWeight: column.primary === true ? 500 : 400,
+                        ...CLIPPED,
+                      }}
+                    >
+                      {/* Innerer Messknoten: sein scrollWidth ist die Inhaltsbreite
+                        ohne Zellenabstand — Grundlage für „an Inhalt anpassen". */}
+                      <span data-column={column.key} style={CLIPPED}>
+                        {column.render === undefined ? '—' : column.render(row)}
+                      </span>
+                    </div>
+                  ))}
+                  <Filler />
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

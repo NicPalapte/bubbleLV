@@ -1,7 +1,7 @@
 // Eigene Marker setzen (Entscheidung 0062): von der Positionskarte und vom
 // Rechtsklick-Menü (Issue #155) gleich, damit beide denselben Verlauf schreiben.
 
-import { PROGRESS, PROGRESS_INFO, type Progress } from '../../lib/annotations';
+import { PROGRESS, PROGRESS_INFO, type MarkerValue, type Progress } from '../../lib/annotations';
 import type { useViewerDispatch } from '../../state/viewer';
 
 type Dispatch = ReturnType<typeof useViewerDispatch>;
@@ -13,6 +13,14 @@ export function setProgressNow(dispatch: Dispatch, id: string, progress: Progres
 
 export function setImportantNow(dispatch: Dispatch, id: string, on: boolean): void {
   dispatch({ type: 'setImportant', id, on, at: Date.now() });
+}
+
+export function fillMarkerNow(
+  dispatch: Dispatch,
+  ids: readonly string[],
+  value: MarkerValue,
+): void {
+  if (ids.length > 0) dispatch({ type: 'fillMarker', ids, value, at: Date.now() });
 }
 
 /** Offen + die gesetzten Werte, in der Reihenfolge der Auswahlliste. */

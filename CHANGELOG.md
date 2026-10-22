@@ -9,6 +9,18 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.30.0 — 22.10.2026 · Tabelle als Arbeitsliste
+
+- **Fortschritt** und **„!"** (Wichtig) direkt in der Tabelle setzen, per Klick. Mit dem
+  Griff unten rechts in der Zelle zieht man den Wert über mehrere Zeilen, wie in Excel.
+  Die Spalte „Status" entfällt in der Tabelle.
+- **Kommentar** über die Spalte eintragen. Die Zelle zeigt den neuesten, ein Klick öffnet
+  den Verlauf, der neueste oben.
+- **Abschnitte** stehen als eigene Zeilen je Ebene, mit Anzahl Positionen und wie viele
+  erledigt sind. Oben bleibt beim Scrollen nur der aktuelle Abschnitt stehen.
+- Abschnitte per Klick **zuklappen**, dazu „Alle zuklappen" / „Alle aufklappen".
+- Menüs öffnen nach oben, wenn unten kein Platz ist.
+
 ## 0.29.0 — 22.10.2026 · Filterleiste und Rechtsklick
 
 - **Filterleiste:** „+ Filter" klappt eine Leiste unter der Suche auf. Je Gruppe ein Knopf

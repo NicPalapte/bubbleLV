@@ -87,7 +87,11 @@ export const Popover = forwardRef<HTMLDivElement, PopoverProps>(function Popover
         Math.max(VIEWPORT_MARGIN, maxLeft),
       );
       element.style.left = `${left}px`;
-      element.style.top = `${rect.bottom + 6}px`;
+      // Unten kein Platz (z. B. Zelle in der letzten Tabellenzeile): über dem Anker öffnen.
+      const below = rect.bottom + 6;
+      const above = rect.top - 6 - element.offsetHeight;
+      const fitsBelow = below + element.offsetHeight <= host.innerHeight - VIEWPORT_MARGIN;
+      element.style.top = `${fitsBelow || above < VIEWPORT_MARGIN ? below : above}px`;
     };
 
     let frame = 0;
