@@ -55,7 +55,7 @@ function Passwort({ onDone }: { onDone: () => void }) {
         />
         <button
           type="submit"
-          className="inline-flex h-[32px] cursor-pointer items-center rounded-[var(--r-pill)] border-none bg-blue px-[14px] font-mono text-[12px] text-white"
+          className="inline-flex h-[32px] cursor-pointer items-center rounded-[var(--r-pill)] border-none bg-blueF px-[14px] font-mono text-[12px] text-white"
         >
           Öffnen
         </button>

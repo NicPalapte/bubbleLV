@@ -79,7 +79,7 @@ function CompareButton({
       className={
         inCompare || blocked
           ? `${CARD_BUTTON} disabled:cursor-default disabled:opacity-50`
-          : 'h-[30px] cursor-pointer rounded-[var(--r-sm)] border border-blue bg-blue px-[12px] font-mono text-[11.5px] text-white hover:bg-blueD'
+          : 'h-[30px] cursor-pointer rounded-[var(--r-sm)] border border-blueF bg-blueF px-[12px] font-mono text-[11.5px] text-white hover:bg-blueFH'
       }
     >
       {inCompare ? '✓ Vergleich' : '⇄ Vergleichen'}

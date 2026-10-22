@@ -266,7 +266,7 @@ export function Tour() {
         <button
           type="button"
           onClick={() => go(0)}
-          className={`${BUTTON} border-blue bg-blue text-white hover:bg-blueD`}
+          className={`${BUTTON} border-blueF bg-blueF text-white hover:bg-blueFH`}
         >
           Kurze Tour
         </button>
@@ -350,7 +350,7 @@ export function Tour() {
             className={
               waiting
                 ? `${BUTTON} border-line bg-surface text-dim hover:bg-sunken`
-                : `${BUTTON} border-blue bg-blue text-white hover:bg-blueD`
+                : `${BUTTON} border-blueF bg-blueF text-white hover:bg-blueFH`
             }
           >
             {last ? 'Fertig' : waiting ? 'Überspringen' : 'Weiter'}

@@ -126,7 +126,7 @@ function HideModeToggle() {
             title={`Nicht-Treffer ${mode.label}`}
             onClick={() => dispatch({ type: 'hideMode', value: mode.value })}
             className={`inline-flex h-[20px] w-[24px] cursor-pointer items-center justify-center rounded-[var(--r-pill)] border-none p-0 ${
-              on ? 'bg-blue text-white' : 'bg-transparent text-dim hover:text-blueD'
+              on ? 'bg-blueF text-white' : 'bg-transparent text-dim hover:text-blueD'
             }`}
           >
             <svg

@@ -21,6 +21,7 @@
   --blue:#c8362b;
   --blueS:#fbebe9;   /* selected row / active chip background */
   --blueD:#a52a21;   /* text on --blueS, links */
+  --blueF:#c8362b; --blueFH:#a52a21; /* fill under white text, both modes (AA) */
   --cyan:#0e7490;    /* "Verweise" text marking only */
 
   /* Semantic — warnings are amber, never red (red = brand + selection) */

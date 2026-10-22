@@ -226,7 +226,7 @@ export function CompareWindow() {
                   className="sticky top-0 z-[2] min-w-[200px] border-b border-line bg-sunken px-[12px] py-[10px] text-left align-top font-normal"
                 >
                   <div className="flex items-center gap-[8px]">
-                    <span className="inline-flex h-[20px] w-[20px] shrink-0 items-center justify-center rounded-full bg-blue text-[11px] text-white">
+                    <span className="inline-flex h-[20px] w-[20px] shrink-0 items-center justify-center rounded-full bg-blueF text-[11px] text-white">
                       {i + 1}
                     </span>
                     <button

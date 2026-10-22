@@ -34,6 +34,10 @@
   --blue: #c8362b;
   --blueS: #fbebe9;
   --blueD: #a52a21;
+  /* Fläche unter weißer Schrift (Knöpfe, Häkchen). In beiden Modi gleich: #e5554a
+     käme mit Weiß nur auf 3,7:1, #c8362b auf 5,2:1, #a52a21 auf 7:1 (WCAG AA). */
+  --blueF: #c8362b;
+  --blueFH: #a52a21;
   --cyan: #0e7490;
   /* Weiche Tönung zu --cyan, gleiche Helligkeit wie --blueS/--greenS;
      Fundstellen-Markierung „Verweise" (WP-J). */
@@ -668,13 +672,13 @@ a:hover {
 }
 
 .start-btn.primary {
-  border-color: var(--blue);
-  background: var(--blue);
+  border-color: var(--blueF);
+  background: var(--blueF);
   color: #fff;
 }
 
 .start-btn.primary:hover {
-  background: var(--blueD);
+  background: var(--blueFH);
 }
 
 .start-ring {

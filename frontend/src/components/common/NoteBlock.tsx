@@ -91,7 +91,7 @@ export function NoteBlock({ positionId }: { positionId: string }) {
           onClick={send}
           disabled={draft.trim() === ''}
           title="Senden (Strg+Enter)"
-          className="inline-flex h-[32px] cursor-pointer items-center rounded-[var(--r-pill)] border-none bg-blue px-[14px] font-mono text-[12px] text-white disabled:cursor-default disabled:opacity-40"
+          className="inline-flex h-[32px] cursor-pointer items-center rounded-[var(--r-pill)] border-none bg-blueF px-[14px] font-mono text-[12px] text-white disabled:cursor-default disabled:opacity-40"
         >
           Senden
         </button>
