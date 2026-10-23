@@ -78,6 +78,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0069 | [Neuer Name Conocto und Apple-Look](0069-conocto-look.md)                                                      | akzeptiert                         | 2026-10-22 |
 | 0070 | [Splitscreen nahtlos, Bereiche stapelbar](0070-splitscreen-nahtlos-stapeln.md)                                 | akzeptiert                         | 2026-10-23 |
 | 0071 | [Kurzumfrage nach einigen Minuten Nutzung](0071-kurzumfrage.md)                                                | akzeptiert                         | 2026-10-23 |
+| 0072 | [Begleitdokument als PDF anstreichen und verknüpfen](0072-begleitdokument-pdf.md)                              | akzeptiert                         | 2026-10-23 |
 
 ## Wann schreibe ich eine neue Datei?
 

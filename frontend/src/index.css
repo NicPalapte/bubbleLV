@@ -1067,6 +1067,112 @@ a:hover {
   color: var(--paint-ink);
 }
 
+/* ── Begleitdokument als PDF (Entscheidung 0072): Textebene von PDF.js über dem
+   Seitenbild. Der Text ist unsichtbar, nur auswählbar; Maße kommen aus PDF.js
+   (`--total-scale-factor` an der Seite). Gekürzt aus pdfjs-dist/web/pdf_viewer.css.
+   Die Ebene multipliziert sich mit dem Bild darunter — so wirkt eine Anstreichung
+   wie ein Textmarker, die Schrift im PDF bleibt schwarz. Die Seite bleibt auch im
+   dunklen Thema weiß, deshalb feste helle Farben. ── */
+.doc-page .textLayer {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+  opacity: 1;
+  line-height: 1;
+  text-align: initial;
+  letter-spacing: normal;
+  word-spacing: normal;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+  transform-origin: 0 0;
+  caret-color: transparent;
+  mix-blend-mode: multiply;
+  z-index: 0;
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+}
+
+.doc-page .textLayer :is(span, br) {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+  user-select: text;
+}
+
+.doc-page .textLayer > :not(.markedContent),
+.doc-page .textLayer .markedContent span:not(.markedContent) {
+  z-index: 1;
+  --font-height: 0;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  --scale-x: 1;
+  --rotate: 0deg;
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+
+.doc-page .textLayer .markedContent {
+  display: contents;
+}
+
+.doc-page .textLayer ::selection {
+  background: rgb(0 90 255 / 0.3);
+  color: transparent;
+}
+
+::highlight(docpaint-gelb) {
+  background-color: #fde68a;
+  color: transparent;
+}
+
+::highlight(docpaint-orange) {
+  background-color: #fed7aa;
+  color: transparent;
+}
+
+::highlight(docpaint-gruen) {
+  background-color: #bbf7d0;
+  color: transparent;
+}
+
+::highlight(docpaint-blau) {
+  background-color: #bfdbfe;
+  color: transparent;
+}
+
+::highlight(docpaint-rosa) {
+  background-color: #fbcfe8;
+  color: transparent;
+}
+
+::highlight(docpaint-lila) {
+  background-color: #ddd6fe;
+  color: transparent;
+}
+
+/* Nur verknüpft, nicht angestrichen: Unterstrich im Akzent. */
+::highlight(doclink) {
+  background-color: #fbebe9;
+  color: transparent;
+  text-decoration: underline 2px #c8362b;
+}
+
+::highlight(docsearch) {
+  background-color: #ffe08a;
+  color: transparent;
+}
+
+::highlight(docsearch-current) {
+  background-color: #ffb347;
+  color: transparent;
+}
+
+::highlight(docflash) {
+  background-color: #ffb3aa;
+  color: transparent;
+}
+
 /* Tabelle als Arbeitsliste: Griff zum Ausfüllen per Ziehen (wie in Excel) und die
    Fläche über den Zellen, die das Ziehen abdeckt. Der Griff erscheint nur an der
    Zeile unter dem Zeiger und an der gewählten. */

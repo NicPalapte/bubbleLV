@@ -1,12 +1,13 @@
 // Aufteilung der Arbeitsfläche im Splitscreen (Entscheidungen 0064 und 0070):
 // fünf Plätze in drei Spalten — links Überblick und Prüfung (`sideTop`,
 // `sideBottom`), in der Mitte Graph und Tabelle (`a`, `b`), rechts die
-// Positionskarte (`c`). Jeder Platz trägt einen Stapel von Bereichen; liegen
+// Positionskarte (`c`). Das Begleitdokument (Entscheidung 0072) liegt anfangs als
+// Reiter neben der Tabelle. Jeder Platz trägt einen Stapel von Bereichen; liegen
 // mehrere darauf, zeigt er sie als Reiter. Ein Platz ohne sichtbaren Bereich
 // gibt seine Fläche frei, eine leere Spalte ebenso. Reine Funktionen — die
 // Komponente rechnet nur noch Anteile in CSS um.
 
-export type PaneId = 'graph' | 'table' | 'card' | 'overview' | 'check';
+export type PaneId = 'graph' | 'table' | 'card' | 'overview' | 'check' | 'doc';
 export type SlotId = 'sideTop' | 'sideBottom' | 'a' | 'b' | 'c';
 export type ColumnId = 'side' | 'main' | 'right';
 /** Spalten mit zwei Plätzen übereinander. */
@@ -18,9 +19,10 @@ export const PANE_LABEL: Readonly<Record<PaneId, string>> = {
   card: 'Position',
   overview: 'Überblick',
   check: 'Prüfung',
+  doc: 'Dokument',
 };
 
-export const PANES: readonly PaneId[] = ['graph', 'table', 'card', 'overview', 'check'];
+export const PANES: readonly PaneId[] = ['graph', 'table', 'card', 'overview', 'check', 'doc'];
 export const SLOTS: readonly SlotId[] = ['sideTop', 'sideBottom', 'a', 'b', 'c'];
 export const COLUMNS: readonly ColumnId[] = ['side', 'main', 'right'];
 export const COLUMN_SLOTS: Readonly<Record<ColumnId, readonly SlotId[]>> = {
@@ -36,6 +38,7 @@ export const HOME: Readonly<Record<PaneId, SlotId>> = {
   graph: 'a',
   table: 'b',
   card: 'c',
+  doc: 'b',
 };
 
 export type Stacks = Readonly<Record<SlotId, readonly PaneId[]>>;
@@ -48,7 +51,13 @@ export interface Arrangement {
 }
 
 export const INITIAL_ARRANGEMENT: Arrangement = {
-  stacks: { sideTop: ['overview'], sideBottom: ['check'], a: ['graph'], b: ['table'], c: ['card'] },
+  stacks: {
+    sideTop: ['overview'],
+    sideBottom: ['check'],
+    a: ['graph'],
+    b: ['table', 'doc'],
+    c: ['card'],
+  },
   front: { sideTop: 'overview', sideBottom: 'check', a: 'graph', b: 'table', c: 'card' },
 };
 

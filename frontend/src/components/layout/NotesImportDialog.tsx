@@ -102,7 +102,10 @@ export function NotesImportDialog({ file, fileName, onClose }: Props) {
   ];
 
   const uebernehmen = (): void => {
-    dispatch({ type: 'setAnnotations', annotations: mergeNotes(annotations, auswahl) });
+    dispatch({
+      type: 'setAnnotations',
+      annotations: mergeNotes(annotations, auswahl, file.dokumente),
+    });
     adoptPaintNames(file.farben);
     countEvent('notizen-geladen');
     dispatch({

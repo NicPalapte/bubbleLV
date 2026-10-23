@@ -10,11 +10,21 @@
 // fertig) und „Wichtig". Beides ist eine eigene Notiz, nicht der GAEB-Status
 // (Entscheidung 0051): „Erledigt" heißt „habe ich kalkuliert", nicht „Status geändert".
 //
-// Dazu eigene Anstreichungen im Langtext (Entscheidung 0063): Textstelle + Farbe.
+// Dazu eigene Anstreichungen im Langtext (Entscheidung 0063): Textstelle + Farbe,
+// und Stellen in Begleitdokumenten samt Verknüpfung (Entscheidung 0072, lib/docs/).
 //
 // Reine Funktionen über einem unveränderlichen Wert; der Zustand liegt im Viewer.
 // Zeitpunkte kommen von außen, damit der Reducer rein bleibt.
 
+import { isPaint, MAX_PAINT_LENGTH, type Paint } from './paints';
+import {
+  EMPTY_DOC_NOTES,
+  fromStoredDocNotes,
+  rekeyDocNotes,
+  toStoredDocNotes,
+  type DocNotes,
+  type StoredDocNotes,
+} from './docs/docNotes';
 import type { LVNode } from '../types/lvNode';
 
 /** Fortschritt; „offen" ist kein Wert, sondern das Fehlen eines Eintrags. */
@@ -49,21 +59,9 @@ export type LogEntry =
   | { readonly kind: 'progress'; readonly at: number; readonly progress: Progress | null }
   | { readonly kind: 'important'; readonly at: number; readonly on: boolean };
 
-/** Farben zum Anstreichen; Reihenfolge = Reihenfolge der Knöpfe. */
-export const PAINTS = ['gelb', 'orange', 'gruen', 'blau', 'rosa', 'lila'] as const;
-export type Paint = (typeof PAINTS)[number];
-
-export const PAINT_INFO: Readonly<Record<Paint, { label: string; fill: string }>> = {
-  gelb: { label: 'Gelb', fill: 'var(--paint-gelb)' },
-  orange: { label: 'Orange', fill: 'var(--paint-orange)' },
-  gruen: { label: 'Grün', fill: 'var(--paint-gruen)' },
-  blau: { label: 'Blau', fill: 'var(--paint-blau)' },
-  rosa: { label: 'Rosa', fill: 'var(--paint-rosa)' },
-  lila: { label: 'Lila', fill: 'var(--paint-lila)' },
-};
-
-/** Längere Auswahl ist kein Anstreichen mehr, sondern Kopieren. */
-export const MAX_PAINT_LENGTH = 2000;
+// Farben zum Anstreichen liegen in lib/paints.ts — auch die Begleitdokumente nutzen
+// sie (lib/docs/docNotes.ts), ohne diese Datei zu importieren.
+export { MAX_PAINT_LENGTH, PAINT_INFO, PAINTS, isPaint, type Paint } from './paints';
 
 /**
  * Eine Anstreichung: `start` ist die Stelle im angezeigten Langtext (ohne `**`). Passt
@@ -83,6 +81,8 @@ export interface Annotations {
   readonly highlights: ReadonlyMap<string, readonly Highlight[]>;
   /** Verlauf je Position, älteste zuerst; nur Positionen mit mindestens einem Eintrag. */
   readonly log: ReadonlyMap<string, readonly LogEntry[]>;
+  /** Stellen in Begleitdokumenten (Entscheidung 0072). */
+  readonly documents: DocNotes;
 }
 
 export const EMPTY_ANNOTATIONS: Annotations = {
@@ -90,6 +90,7 @@ export const EMPTY_ANNOTATIONS: Annotations = {
   important: new Set(),
   highlights: new Map(),
   log: new Map(),
+  documents: EMPTY_DOC_NOTES,
 };
 
 /** Gleiche Stelle, gleicher Text: dieselbe Anstreichung. */
@@ -356,8 +357,9 @@ export function storageKeys(nodes: Iterable<LVNode>): StorageKeys {
  * Notizen aus v0.21 und älter (Knoten-ID) finden ihre Position direkt.
  */
 export function rekey(annotations: Annotations, keys: ReadonlyMap<string, string>): Annotations {
-  const { progress, important, highlights, log } = annotations;
-  const empty = progress.size + important.size + highlights.size + log.size === 0;
+  const { progress, important, highlights, log, documents } = annotations;
+  const empty =
+    progress.size + important.size + highlights.size + log.size + documents.marks.length === 0;
   if (empty) return annotations;
   const key = (id: string): string => keys.get(id) ?? id;
   return {
@@ -365,37 +367,37 @@ export function rekey(annotations: Annotations, keys: ReadonlyMap<string, string
     important: new Set([...important].map(key)),
     highlights: new Map([...highlights].map(([id, list]) => [key(id), list])),
     log: new Map([...log].map(([id, entries]) => [key(id), entries])),
+    documents: rekeyDocNotes(documents, keys),
   };
 }
 
 /**
  * Form für die IndexedDB: Arrays statt Set/Map, damit auch ältere Browser klonen.
+ * `v: 6`: dazu Stellen in Begleitdokumenten (Entscheidung 0072).
  * `v: 5`: dazu Anstreichungen (Entscheidung 0063). `v: 4`: Fortschritt + Wichtig
  * (Entscheidung 0062). Schlüssel ist der Positions-Hash.
  * Ältere Formen liest `fromStored`: `v: 3` (drei Marker, Hash), `v: 2` (drei Marker,
  * Knoten-ID) und ohne `v` (v0.15, Entscheidung 0047).
  */
 export interface StoredAnnotations {
-  readonly v: 5;
+  readonly v: 6;
   readonly progress: ReadonlyArray<readonly [string, Progress]>;
   readonly important: readonly string[];
   readonly highlights: ReadonlyArray<readonly [string, readonly Highlight[]]>;
   readonly log: ReadonlyArray<readonly [string, readonly LogEntry[]]>;
+  readonly documents: StoredDocNotes;
 }
 
 /** `annotations` muss schon nach Hash geschlüsselt sein (`rekey(…, keys.toHash)`). */
 export function toStored(annotations: Annotations): StoredAnnotations {
   return {
-    v: 5,
+    v: 6,
     progress: [...annotations.progress],
     important: [...annotations.important],
     highlights: [...annotations.highlights],
     log: [...annotations.log],
+    documents: toStoredDocNotes(annotations.documents),
   };
-}
-
-export function isPaint(value: unknown): value is Paint {
-  return (PAINTS as readonly unknown[]).includes(value);
 }
 
 /** Eine Anstreichung aus Speicher oder Notiz-Datei; Unbrauchbares wird `null`. */
@@ -504,7 +506,7 @@ export function fromStored(value: unknown): Annotations {
   if (typeof value !== 'object' || value === null) return EMPTY_ANNOTATIONS;
   const raw = value as Record<string, unknown>;
 
-  if (raw.v === 4 || raw.v === 5) {
+  if (raw.v === 4 || raw.v === 5 || raw.v === 6) {
     const progress = new Map<string, Progress>();
     for (const [id, p] of pairs(raw.progress)) if (isProgress(p)) progress.set(id, p);
     const important = new Set(
@@ -525,7 +527,8 @@ export function fromStored(value: unknown): Annotations {
           valid.sort((a, b) => a.start - b.start),
         );
     }
-    return { progress, important, highlights, log };
+    const documents = raw.v === 6 ? fromStoredDocNotes(raw.documents) : EMPTY_DOC_NOTES;
+    return { progress, important, highlights, log, documents };
   }
 
   if (raw.v === 2 || raw.v === 3) {
@@ -536,7 +539,13 @@ export function fromStored(value: unknown): Annotations {
       if (oldIsDone(marker)) progress.set(id, 'fertig');
       else important.add(id);
     }
-    return { progress, important, highlights: new Map(), log: readLog(raw.log, toEntriesOld) };
+    return {
+      progress,
+      important,
+      highlights: new Map(),
+      log: readLog(raw.log, toEntriesOld),
+      documents: EMPTY_DOC_NOTES,
+    };
   }
 
   // v0.15: eine Markierung (an/aus) und ein Kommentarfeld je Position. Die
@@ -550,5 +559,11 @@ export function fromStored(value: unknown): Annotations {
       log.set(id, [{ kind: 'comment', at: 0, text }]);
     }
   }
-  return { progress: new Map(), important: new Set(marked), highlights: new Map(), log };
+  return {
+    progress: new Map(),
+    important: new Set(marked),
+    highlights: new Map(),
+    log,
+    documents: EMPTY_DOC_NOTES,
+  };
 }

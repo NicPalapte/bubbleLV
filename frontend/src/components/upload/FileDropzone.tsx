@@ -151,7 +151,8 @@ export function FileDropzone() {
     // Kopie: der Dateidialog wird gleich zurückgesetzt, die FileList dann leer.
     const liste = Array.from(files ?? []);
     if (liste.length === 0) return;
-    if (letzte !== null && letzte.marked + letzte.comments + letzte.painted > 0) setWartend(liste);
+    if (letzte !== null && letzte.marked + letzte.comments + letzte.painted + letzte.docMarks > 0)
+      setWartend(liste);
     else void handleFiles(liste);
   };
 
@@ -436,6 +437,7 @@ function notizText(meta: LastLvInfo): string {
     teile.push(`✎ ${meta.comments} ${meta.comments === 1 ? 'Kommentar' : 'Kommentare'}`);
   }
   if (meta.painted > 0) teile.push(`▍ ${meta.painted} mit Textmarkierung`);
+  if (meta.docMarks > 0) teile.push(`▤ ${meta.docMarks} im Dokument`);
   return teile.join(' · ');
 }
 
@@ -580,6 +582,7 @@ function LetzteDatei({
             </span>
           )}
           {meta.painted > 0 && <span>▍ {meta.painted} mit Textmarkierung</span>}
+          {meta.docMarks > 0 && <span>▤ {meta.docMarks} im Dokument</span>}
           <span>{formatWhen(meta.savedAt)}</span>
         </span>
       </span>

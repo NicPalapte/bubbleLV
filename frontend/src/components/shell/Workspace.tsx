@@ -3,12 +3,14 @@
 // - Splitscreen: Graph, Tabelle und Positionskarte als Bereiche nebeneinander.
 // - Fenster: der Graph füllt die Fläche, Tabelle und Karte schweben darüber
 //   (docs/decisions/0034-graph-als-hauptscreen.md).
-// Vergleich, Tour und Kurzumfrage liegen in beiden Anordnungen darüber, das Seitenfenster
-// (Überblick · Prüfung) nur in der Fenster-Anordnung. Graph und Tabelle können in ein eigenes
+// Das Begleitdokument (Entscheidung 0072) ist im Splitscreen ein Bereich, sonst ein
+// Fenster. Vergleich, Tour und Kurzumfrage liegen in beiden Anordnungen darüber, das
+// Seitenfenster (Überblick · Prüfung) nur in der Fenster-Anordnung. Graph und Tabelle können in ein eigenes
 // Browserfenster wandern (Entscheidung 0039).
 
 import { SurveyCard } from '../survey/SurveyCard';
 import { CompareWindow } from './CompareWindow';
+import { DocWindow } from './DocWindow';
 import { GraphDock } from './GraphDock';
 import { GraphStage } from './GraphStage';
 import { SidePanel } from './SidePanel';
@@ -81,8 +83,9 @@ export function Workspace({ root }: { root: LVNode }) {
       {/* Im Splitscreen sind Überblick und Prüfung eigene Bereiche (Entscheidung 0070). */}
       {!split && <SidePanel />}
       <TableWindow />
+      <DocWindow />
       <CompareWindow />
-      <GraphDock tableButton={!split} />
+      <GraphDock tableButton={!split} docButton={!split} />
       <Tour />
       <SurveyCard />
     </>

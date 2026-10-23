@@ -15,7 +15,8 @@ gehört nicht in dieses Produkt.
 
 **Weiterhin nicht verhandelbar:** kein Backend, keine Datenbank, kein Login, keine
 Persistenz über die Session hinaus — außer der zuletzt geöffneten Datei im Browser
-samt eigenen Markern und Kommentaren dazu (Entscheidungen 0046, 0047) und der im
+samt eigenen Markern und Kommentaren dazu (Entscheidungen 0046, 0047), den Stellen in
+Begleit-PDFs (ohne das PDF selbst, Entscheidung 0072) und der im
 Admin-Werkzeug gelernten Begriffe für die Langtext-Hervorhebung (Entscheidung 0053). Statische Fremd-Assets (Webfonts, npm-Pakete) sind
 erlaubt, sie transportieren keine Nutzdaten.
 
@@ -192,6 +193,14 @@ Bisher galt „kein Export". Das wird gelockert, weil es die Architektur nicht b
   ([`decisions/0071-kurzumfrage.md`](decisions/0071-kurzumfrage.md)). Auswahl als feste
   Zählereignisse, Freitext nur über das eigene Mailprogramm. Kein Formular-Dienst.
 
+### 10 · Begleitdokument (PDF)
+
+- Ein PDF (Baubeschreibung, Vorbemerkungen, Gutachten) im Fenster „Dokument“ lesen,
+  durchsuchen, in 6 Farben anstreichen und Stellen **von Hand** mit Positionen
+  verknüpfen (Entscheidung 0072).
+- Keine Interpretation: keine automatische Hervorhebung, keine Vorschläge.
+- Gespeichert werden nur die Stellen, nie das PDF.
+
 ---
 
 ## Out of Scope {#out-of-scope}
@@ -201,8 +210,8 @@ Bewusst **nicht** Teil dieses Produkts. Anfragen dazu werden abgelehnt oder vert
 | Bereich                                             | Anmerkung                                                                                                                                |
 | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | Jede Server-Komponente, DB, Login, SSO              | unverändert die härteste Regel                                                                                                           |
-| Persistenz über die Session hinaus                  | kein `localStorage`, keine Cookies; IndexedDB nur für die zuletzt geöffnete Datei, ihre Notizen und gelernte Begriffe (0046, 0047, 0053) |
-| **Mehrere Dateien gleichzeitig**                    | Zwei LVs vergleichen (Versionsstände, Nachträge) und x83+x84 zusammenführen: **perspektivisch gewollt, jetzt draußen**                   |
+| Persistenz über die Session hinaus                  | kein `localStorage`, keine Cookies; IndexedDB nur für die zuletzt geöffnete Datei, ihre Notizen (auch PDF-Stellen) und gelernte Begriffe (0046, 0047, 0053, 0072) |
+| **Mehrere Dateien gleichzeitig**                    | Zwei LVs vergleichen (Versionsstände, Nachträge) und x83+x84 zusammenführen: **perspektivisch gewollt, jetzt draußen**. Ein Begleit-PDF neben dem LV ist erlaubt (0072)                   |
 | LLM-Klassifizierung                                 | setzt einen Server voraus                                                                                                                |
 | Aufgaben, Zuständigkeit, Vergabepakete, NU-Anfragen | braucht Persistenz; erlaubt sind nur eigene Markierungen und Kommentare je Position zur letzten Datei (Entscheidung 0047)                |
 | Bieterfragen **verwalten**                          | Conocto liefert nur die Liste der Unklarheiten (UC-6)                                                                                     |

@@ -38,14 +38,20 @@ export function WorkspaceBar() {
   const {
     view: {
       workspace: { mode, closed },
+      docWindow,
     },
   } = useViewer();
   const dispatch = useViewerDispatch();
   if (workspace === null || !workspace.wide) return null;
   const { split, hosts, dock } = workspace;
 
-  const away = (['graph', 'table'] as const).filter((pane: PopPane) => hosts[pane] !== null);
-  const shut = split ? PANES.filter((pane) => closed[pane]) : [];
+  const away = (['graph', 'table', 'doc'] as const).filter((pane: PopPane) => hosts[pane] !== null);
+  // Im Fenster-Layout öffnet „+ Dokument" das Fenster (Entscheidung 0072).
+  const shut = split
+    ? PANES.filter((pane) => closed[pane])
+    : docWindow.open
+      ? []
+      : ['doc' as const];
 
   return (
     <div className="flex shrink-0 items-center gap-[6px]">
@@ -64,7 +70,13 @@ export function WorkspaceBar() {
         <button
           key={pane}
           type="button"
-          onClick={() => dispatch({ type: 'paneClosed', pane, closed: false })}
+          onClick={() =>
+            dispatch(
+              pane === 'doc'
+                ? { type: 'docWindow', open: true }
+                : { type: 'paneClosed', pane, closed: false },
+            )
+          }
           title={`${LABEL[pane]} wieder einblenden`}
           className={CHIP}
         >

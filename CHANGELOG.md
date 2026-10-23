@@ -9,6 +9,17 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.36.0 — 23.10.2026 · Dokument (PDF)
+
+- **Neues Fenster „Dokument“:** ein PDF (z. B. Baubeschreibung) neben dem LV lesen und
+  durchsuchen. Im Split als Bereich, im Fenster-Modus schwebend, mit ↗ auf den zweiten
+  Bildschirm.
+- **Anstreichen:** Text markieren, Rechtsklick, Farbe wählen — wie im Langtext.
+- **Verknüpfen:** im selben Menü „Mit Position verknüpfen…“. Die Positionskarte zeigt die
+  Stellen unter „Im Dokument“; ein Klick springt hin.
+- Gespeichert werden nur die Stellen, nicht das PDF. Nach dem Neuladen das PDF erneut
+  öffnen, die Stellen sind wieder da. Auch in der Notiz-Datei enthalten.
+
 ## 0.35.0 — 23.10.2026 · Auswahl und Hinweise dezenter
 
 - **Ausgewählte Position:** kein Ring mehr. Der Punkt wird ziegelrot und etwas größer.

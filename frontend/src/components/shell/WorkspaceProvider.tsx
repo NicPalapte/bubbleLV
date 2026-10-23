@@ -19,7 +19,7 @@ import { openExternalWindow, type ExternalHost } from '../common/externalWindowH
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 
 /** Bereiche, die in ein eigenes Browserfenster wandern können. */
-export type PopPane = 'graph' | 'table';
+export type PopPane = 'graph' | 'table' | 'doc';
 
 /** Unter dieser Breite fehlt der Platz für drei Bereiche — dann gelten Fenster. */
 const SPLIT_MEDIA = '(min-width: 1024px)';
@@ -30,6 +30,7 @@ const POPUP: Record<PopPane, { name: string; title: string; width: number; heigh
   // Name des zweiten Fensters — ein zweiter Klick übernimmt dasselbe Fenster.
   table: { name: 'bubble-tabelle', title: 'Conocto — Tabelle', width: 900, height: 720 },
   graph: { name: 'bubble-graph', title: 'Conocto — Graph', width: 1200, height: 800 },
+  doc: { name: 'bubble-dokument', title: 'Conocto — Dokument', width: 900, height: 1000 },
 };
 
 export interface WorkspaceApi {
@@ -73,6 +74,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [hosts, setHosts] = useState<Record<PopPane, ExternalHost | null>>({
     graph: null,
     table: null,
+    doc: null,
   });
   const [blocked, setBlocked] = useState<PopPane | null>(null);
   const blockedTimer = useRef<number | undefined>(undefined);

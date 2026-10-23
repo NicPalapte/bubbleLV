@@ -18,6 +18,7 @@ import {
 } from './paint';
 import { shownText } from './shownText';
 import { HintBlock, HintCount } from '../check/HintBlock';
+import { DocLinks } from '../docs/DocLinks';
 import {
   attributeLabel,
   attrMeta,
@@ -412,6 +413,8 @@ export function PositionDetails({
           text={shown}
           onRemove={(i) => dispatch({ type: 'removeHighlight', id: node.id, position: i })}
         />
+
+        <DocLinks positionId={node.id} />
 
         {/* Eigene Notizen zuletzt: erst lesen, was die Datei sagt (Entscheidung 0047). */}
         <NoteBlock positionId={node.id} />
