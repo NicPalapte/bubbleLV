@@ -1,4 +1,4 @@
-// Bubble — EmptyState: dashed-rule placeholder / add affordance.
+// Conocto — EmptyState: dashed-rule placeholder / add affordance.
 export function EmptyState({ children, action = false, onClick }) {
   return action
     ? <div onClick={onClick} style={{ marginTop:8, padding:'5px 8px', border:'1px dashed var(--line2)',

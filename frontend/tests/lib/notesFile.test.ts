@@ -135,7 +135,7 @@ describe('notesFileText und parseNotesFile', () => {
     expect(() => parseNotesFile('kein json')).toThrow(NotesFileError);
     expect(() => parseNotesFile('{"art":"etwas"}')).toThrow('keine Notiz-Datei');
     expect(() => parseNotesFile('{"art":"bubble-notizen","version":4,"positionen":[]}')).toThrow(
-      'neueren Bubble-Version',
+      'neueren Conocto-Version',
     );
   });
 });

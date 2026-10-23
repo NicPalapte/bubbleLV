@@ -21,7 +21,7 @@ export function UnitTotals({
 }) {
   if (units.length === 0) {
     return (
-      <p className="font-mono text-[10px] text-mute">
+      <p className="font-mono text-[11px] text-mute">
         Keine Mengen im aktuellen Filter — die Datei führt hier keine.
       </p>
     );
@@ -35,7 +35,7 @@ export function UnitTotals({
       {/* Spaltenköpfe: ohne sie ist die Zahl vor „n Pos." nicht als Menge erkennbar. */}
       <div
         aria-hidden="true"
-        className="flex items-baseline gap-[8px] pb-[3px] font-mono text-[10px] tracking-[0.6px] text-mute"
+        className="flex items-baseline gap-[8px] pb-[3px] font-mono text-[11px] tracking-[0.6px] text-mute"
       >
         <span className="w-[52px] shrink-0">EINHEIT</span>
         <span className="min-w-0 flex-1" />
@@ -52,7 +52,7 @@ export function UnitTotals({
           className="flex w-full cursor-pointer items-baseline gap-[8px] border-none border-b border-solid border-grid bg-transparent px-0 py-[5px] text-left"
         >
           <span
-            className="w-[52px] shrink-0 truncate font-mono text-[10px]"
+            className="w-[52px] shrink-0 truncate font-mono text-[11px]"
             style={{ color: active.has(unit.key) ? 'var(--blueD)' : 'var(--dim)' }}
           >
             {unit.label}
@@ -66,16 +66,16 @@ export function UnitTotals({
               }}
             />
           </span>
-          <span className="w-[110px] shrink-0 text-right font-mono text-[10px] text-ink">
+          <span className="w-[110px] shrink-0 text-right font-mono text-[11px] text-ink">
             {formatNumber(unit.quantity, 0)}
           </span>
-          <span className="w-[70px] shrink-0 text-right font-mono text-[10px] text-mute">
+          <span className="w-[70px] shrink-0 text-right font-mono text-[11px] text-mute">
             {formatCount(unit.count)}
           </span>
         </button>
       ))}
       {units.length > rows.length && (
-        <p className="mt-[6px] font-mono text-[10px] text-mute">
+        <p className="mt-[6px] font-mono text-[11px] text-mute">
           {formatCount(units.length - rows.length)} weitere Einheiten
         </p>
       )}

@@ -63,7 +63,7 @@ describe('ErrorBoundary', () => {
         <Kaputt />
       </ErrorBoundary>,
     );
-    expect(screen.getByText(/Bubble ist abgestürzt/)).toBeInTheDocument();
+    expect(screen.getByText(/Conocto ist abgestürzt/)).toBeInTheDocument();
   });
 
   it('verspricht auf der Startseite keine Ansichten, die es dort nicht gibt', () => {
@@ -119,7 +119,7 @@ describe('ErrorBoundary', () => {
     const fenster = screen.getByRole('dialog', { name: 'Fehler melden' });
     const feld = within(fenster).getByLabelText(/Was ist passiert/) as HTMLTextAreaElement;
 
-    // Vorbelegt — und löschbar. Was Bubble selbst beiträgt, ist nachweislich
+    // Vorbelegt — und löschbar. Was Conocto selbst beiträgt, ist nachweislich
     // frei von Inhalten der Datei; eine Fehlermeldung aus fremdem Code ist es
     // nicht zwingend. Also muss der Nutzer sie entfernen können.
     expect(feld.value).toContain('Kurztext war undefined');

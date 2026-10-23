@@ -114,7 +114,7 @@ function TypeMark({ type }: { type: PositionType }) {
       <span
         title={mark.title}
         aria-hidden="true"
-        className="mr-[6px] inline-block rounded-[var(--r-sm)] border border-line px-[4px] font-mono text-[10px] uppercase text-ink"
+        className="mr-[6px] inline-block rounded-[var(--r-sm)] border border-line px-[4px] font-mono text-[11px] uppercase text-ink"
       >
         {mark.label}
       </span>
@@ -257,7 +257,7 @@ const PROGRESS_CELL: Readonly<Record<Progress, { label: string; bg: string; fg: 
 };
 
 const CELL_BUTTON =
-  '-my-[3px] inline-flex h-[20px] max-w-full cursor-pointer align-middle items-center justify-center rounded-[var(--r-pill)] border border-transparent bg-transparent px-[9px] text-center font-mono text-[10.5px] leading-none hover:border-line2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue';
+  '-my-[3px] inline-flex h-[20px] max-w-full cursor-pointer align-middle items-center justify-center rounded-[var(--r-pill)] border border-transparent bg-transparent px-[9px] text-center font-mono text-[11.5px] leading-none hover:border-line2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue';
 
 /** Spalten aus den eigenen Markern und Kommentaren. */
 function annotationRender(key: string, cells: NoteCells): Column<Row>['render'] {
@@ -306,7 +306,7 @@ function annotationRender(key: string, cells: NoteCells): Column<Row>['render'] 
               stop(event);
               cells.toggleImportant(id);
             }}
-            className="-my-[3px] inline-flex h-[20px] w-[20px] cursor-pointer align-middle items-center justify-center rounded-[var(--r-sm)] border font-sans text-[12px] font-bold leading-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            className="-my-[3px] inline-flex h-[20px] w-[20px] cursor-pointer align-middle items-center justify-center rounded-[var(--r-sm)] border font-display text-[13px] font-bold leading-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
             style={
               on
                 ? {
@@ -338,7 +338,7 @@ function annotationRender(key: string, cells: NoteCells): Column<Row>['render'] 
             stop(event);
             cells.openMenu('comment', id, event.currentTarget);
           }}
-          className="flex w-full min-w-0 cursor-text items-center gap-[6px] border-none bg-transparent p-0 text-left font-mono text-[11px]"
+          className="flex w-full min-w-0 cursor-text items-center gap-[6px] border-none bg-transparent p-0 text-left font-mono text-[12px]"
         >
           {newest === undefined ? (
             <span className="note-add text-mute">+ Kommentar</span>
@@ -346,7 +346,7 @@ function annotationRender(key: string, cells: NoteCells): Column<Row>['render'] 
             <>
               <span className="min-w-0 truncate text-blue">{newest.text}</span>
               {comments.length > 1 && (
-                <span className="shrink-0 rounded-[var(--r-pill)] border border-line2 px-[5px] text-[10px] text-dim">
+                <span className="shrink-0 rounded-[var(--r-pill)] border border-line2 px-[5px] text-[11px] text-dim">
                   +{comments.length - 1}
                 </span>
               )}
@@ -386,7 +386,7 @@ function CommentEditor({
       aria-label={`Kommentare ${oz}`}
       className="flex w-[300px] max-w-full flex-col gap-[8px] p-[6px]"
     >
-      <span className="font-mono text-[10px] text-dim">{oz}</span>
+      <span className="font-mono text-[11px] text-dim">{oz}</span>
       <textarea
         // Das Fenster geht für genau diese Eingabe auf.
         autoFocus
@@ -404,13 +404,13 @@ function CommentEditor({
         placeholder="Neuer Kommentar (Enter speichert)"
         aria-label="Neuer Kommentar"
         rows={2}
-        className="min-w-0 resize-y rounded-[var(--r-md)] border border-line bg-panel px-[8px] py-[6px] font-mono text-[12px] leading-[1.5] text-ink outline-none placeholder:text-mute focus:border-blue"
+        className="min-w-0 resize-y rounded-[var(--r-md)] border border-line bg-panel px-[8px] py-[6px] font-mono text-[13px] leading-[1.5] text-ink outline-none placeholder:text-mute focus:border-blue"
       />
       <div className="flex justify-end gap-[6px]">
         <button
           type="button"
           onClick={onClose}
-          className="inline-flex h-[26px] cursor-pointer items-center justify-center rounded-[var(--r-pill)] border border-line bg-surface px-[12px] text-center font-mono text-[11px] text-ink"
+          className="inline-flex h-[26px] cursor-pointer items-center justify-center rounded-[var(--r-pill)] border border-line bg-surface px-[12px] text-center font-mono text-[12px] text-ink"
         >
           Abbrechen
         </button>
@@ -418,7 +418,7 @@ function CommentEditor({
           type="button"
           onClick={save}
           disabled={draft.trim() === ''}
-          className="inline-flex h-[26px] cursor-pointer items-center justify-center rounded-[var(--r-pill)] border-none bg-blue px-[12px] text-center font-mono text-[11px] text-white disabled:cursor-default disabled:opacity-40"
+          className="inline-flex h-[26px] cursor-pointer items-center justify-center rounded-[var(--r-pill)] border-none bg-blueF px-[12px] text-center font-mono text-[12px] text-white disabled:cursor-default disabled:opacity-40"
         >
           Speichern
         </button>
@@ -430,8 +430,8 @@ function CommentEditor({
         >
           {comments.map((comment, i) => (
             <li key={`${comment.at}-${i}`} className="border-t border-grid pt-[6px]">
-              <span className="block font-mono text-[10px] text-mute">{formatAt(comment.at)}</span>
-              <p className="m-0 whitespace-pre-wrap break-words font-mono text-[12px] leading-[1.5] text-ink">
+              <span className="block font-mono text-[11px] text-mute">{formatAt(comment.at)}</span>
+              <p className="m-0 whitespace-pre-wrap break-words font-mono text-[13px] leading-[1.5] text-ink">
                 {comment.text}
               </p>
             </li>
@@ -459,7 +459,7 @@ function ProgressChoices({
           role="menuitemradio"
           aria-checked={value === current}
           onClick={() => onPick(value)}
-          className="flex h-[30px] cursor-pointer items-center justify-between gap-[12px] rounded-[var(--r-sm)] border-none bg-transparent px-[8px] text-left font-mono text-[11px] text-ink hover:bg-sunken"
+          className="flex h-[30px] cursor-pointer items-center justify-between gap-[12px] rounded-[var(--r-sm)] border-none bg-transparent px-[8px] text-left font-mono text-[12px] text-ink hover:bg-sunken"
         >
           {label}
           {value === current && (
@@ -497,7 +497,7 @@ const DEFAULT_WIDTHS: Readonly<Record<string, number>> = Object.fromEntries(
 const DEFAULT_COLUMN_CONFIG: ColumnConfig = defaultColumnConfig(DEFAULT_ORDER, DEFAULT_WIDTHS);
 
 const ICON_BUTTON =
-  'inline-flex h-[18px] w-[18px] cursor-pointer items-center justify-center border border-line bg-white p-0 font-mono text-[10px] leading-none text-dim disabled:cursor-default disabled:opacity-30';
+  'inline-flex h-[18px] w-[18px] cursor-pointer items-center justify-center border border-line bg-white p-0 font-mono text-[11px] leading-none text-dim disabled:cursor-default disabled:opacity-30';
 
 /** Popover „Spalten": ein-/ausblenden per Kästchen, verschieben per Pfeil. */
 function ColumnPicker({
@@ -553,7 +553,7 @@ function ColumnPicker({
                   aria-label={column.label}
                   title={shown ? 'Ausblenden' : 'Einblenden'}
                   onClick={() => onChange(toggleColumn(config, key))}
-                  className="flex min-w-0 flex-1 cursor-pointer items-center gap-[8px] border-none bg-transparent p-0 text-left font-mono text-[10px] text-ink disabled:cursor-default"
+                  className="flex min-w-0 flex-1 cursor-pointer items-center gap-[8px] border-none bg-transparent p-0 text-left font-mono text-[11px] text-ink disabled:cursor-default"
                 >
                   <span
                     aria-hidden="true"
@@ -561,10 +561,10 @@ function ColumnPicker({
                       width: 12,
                       height: 12,
                       flexShrink: 0,
-                      border: `1px solid ${shown ? 'var(--blue)' : 'var(--line2)'}`,
-                      background: shown ? 'var(--blue)' : 'var(--white)',
+                      border: `1px solid ${shown ? 'var(--blueF)' : 'var(--line2)'}`,
+                      background: shown ? 'var(--blueF)' : 'var(--white)',
                       color: '#fff',
-                      fontSize: 10,
+                      fontSize: 11,
                       lineHeight: 1,
                       display: 'inline-flex',
                       alignItems: 'center',
@@ -927,7 +927,7 @@ export function PositionsTable({ root }: { root: LVNode }) {
   return (
     <div className="absolute inset-0 flex flex-col overflow-hidden bg-white">
       <div
-        className="flex min-w-0 shrink-0 items-center gap-[10px] overflow-hidden border-b border-line bg-panel px-[12px] font-mono text-[10px] text-dim"
+        className="flex min-w-0 shrink-0 items-center gap-[10px] overflow-hidden border-b border-line bg-panel px-[12px] font-mono text-[11px] text-dim"
         style={{ height: 'var(--h-view-head)' }}
       >
         {/* Auf LV-Ebene gibt es nichts darüber; das Fenster schließt sein eigenes ✕. */}
@@ -937,7 +937,7 @@ export function PositionsTable({ root }: { root: LVNode }) {
             onClick={() => dispatch({ type: 'selectNode', id: parent.id })}
             title="Eine Ebene höher"
             aria-label="Eine Ebene höher"
-            className="shrink-0 cursor-pointer border-none bg-transparent px-[4px] font-mono text-[13px] leading-none text-blue"
+            className="shrink-0 cursor-pointer border-none bg-transparent px-[4px] font-mono text-[14px] leading-none text-blue"
           >
             ←
           </button>
@@ -945,7 +945,7 @@ export function PositionsTable({ root }: { root: LVNode }) {
         {scopeRoot.code !== '' && (
           <span className="shrink-0 tracking-[0.6px] text-mute">§ {scopeRoot.code}</span>
         )}
-        <span className="min-w-0 truncate font-sans text-[12px] font-semibold text-ink">
+        <span className="min-w-0 truncate font-display text-[13px] font-semibold text-ink">
           {effectiveScope === 'lv' && scopeRoot === lvRoot
             ? 'Ganzes LV'
             : (scopeRoot.label ?? 'Ohne Bezeichnung')}
@@ -993,7 +993,7 @@ export function PositionsTable({ root }: { root: LVNode }) {
       </div>
 
       {columns.length === 0 ? (
-        <p className="m-0 p-[16px] font-mono text-[10px] text-mute">Alle Spalten ausgeblendet.</p>
+        <p className="m-0 p-[16px] font-mono text-[11px] text-mute">Alle Spalten ausgeblendet.</p>
       ) : (
         <DataTable
           label="Positionen"

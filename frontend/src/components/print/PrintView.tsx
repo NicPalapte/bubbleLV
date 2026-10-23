@@ -79,15 +79,15 @@ export function PrintView() {
 
   return (
     <div className="nur-druck">
-      <h1 className="font-sans text-[16px] font-semibold text-ink">
+      <h1 className="font-display text-[16px] font-semibold text-ink">
         {lv.projectName ?? lv.fileName}
       </h1>
-      <p className="font-mono text-[10px] text-dim">
+      <p className="font-mono text-[11px] text-dim">
         {lv.fileName} · {formatPositions(zeilen.length)}
         {active.filtering ? ` im aktuellen Filter, von ${index.size}` : ''} ·{' '}
         {new Date().toLocaleDateString('de-DE')}
       </p>
-      <table className="w-full border-collapse font-mono text-[10px]">
+      <table className="w-full border-collapse font-mono text-[11px]">
         <thead>
           <tr>
             {kopf.map((head) => (

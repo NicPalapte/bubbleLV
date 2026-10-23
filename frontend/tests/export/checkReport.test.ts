@@ -68,7 +68,7 @@ describe('checkMarkdown', () => {
   });
 
   it('schreibt einen unbestätigten Norm-Verweis als solchen aus', () => {
-    // Bubble behauptet keine Fundstelle in einer Norm, die niemand geprüft hat
+    // Conocto behauptet keine Fundstelle in einer Norm, die niemand geprüft hat
     // — auch nicht in einer Datei, die weitergereicht wird.
     // Alle ausgelieferten Verweise sind bestätigt — V1 wird hier als offen gesetzt.
     const check = {

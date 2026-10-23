@@ -1,4 +1,4 @@
-// Bubble — TreeRow: one line of the LV structure tree (section or position).
+// Conocto — TreeRow: one line of the LV structure tree (section or position).
 export function TreeRow({ depth = 0, code, label, open, leaf = false, selected = false,
   accent, status, count, dimmed = false, onClick }) {
   return (

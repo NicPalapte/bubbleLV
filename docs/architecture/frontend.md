@@ -111,14 +111,14 @@ frontend/
 ## Design-System
 
 Die Bausteine unter `components/ui/` sind 1:1-Ports der Referenz-Komponenten aus
-`.claude/skills/bubble-design/components/core/` (JSX → TSX): `BubbleLogo`, `Chip`,
+`.claude/skills/conocto-design/components/core/` (JSX → TSX): `ConoctoLogo`, `Chip`,
 `StatusPill`, `PropField`/`PropGrid`, `PanelHeader`/`BlockLabel`,
 `Popover`/`PopoverHead`/`PopoverRow`, `SegmentedControl`, `EmptyState`, `DataTable`,
 `TreeRow`. Sie arbeiten wie im Skill mit Inline-Styles auf CSS-Variablen — Tailwind
 bleibt für das Seiten-Layout zuständig.
 
 Die `.tsx` hier sind die gültige Fassung, die `.jsx` im Skill bleiben Prototyp-Vorlagen;
-Regeln dazu in `.claude/skills/bubble-design/components/USAGE.md` (§ Source of truth),
+Regeln dazu in `.claude/skills/conocto-design/components/USAGE.md` (§ Source of truth),
 Begründung in [`0004`](../decisions/0004-design-kit-und-frontend.md).
 
 **Nicht portiert:** `MemberAvatar` und `PackageTag` (Zuständigkeit und Vergabepakete
@@ -132,11 +132,11 @@ Zeilenklick klappt zusätzlich **auf** (nie zu) — sonst verschwände beim Ankl
 genau das, was man sehen will.
 
 **Design-Tokens** (Farben, Typografie, Maße, Elevation) stehen vollständig als
-CSS-Variablen in `src/index.css`, übernommen aus `bubble-design/tokens/`; die Farben
+CSS-Variablen in `src/index.css`, übernommen aus `conocto-design/tokens/`; die Farben
 und Schriftfamilien sind zusätzlich in `tailwind.config.js` als Theme-Erweiterung
-verfügbar. Die Markenschriften IBM Plex Mono und Space Grotesk kommen über Google
-Fonts (`index.html`) — die Einbindung liegt an genau einer Stelle, damit ein Wechsel
-auf selbst gehostete Schriften (`@fontsource/*`) lokal bleibt.
+verfügbar. Die Markenschriften Hanken Grotesk (Titel) und Schibsted Grotesk (Text)
+kommen selbst gehostet über `@fontsource/*` (`src/main.tsx`), kein Aufruf an Google
+Fonts. Look und Farben: `docs/decisions/0069-conocto-look.md`.
 
 ## Datenfluss
 

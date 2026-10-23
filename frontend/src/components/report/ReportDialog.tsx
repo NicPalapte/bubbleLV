@@ -31,7 +31,7 @@ export interface ReportDialogProps {
   /**
    * Startwert für „Was ist passiert?" — die Fehlerseite legt die Meldung des
    * Absturzes hier ab und **nicht** in den fertigen Meldetext. Grund: der
-   * Meldetext ist schreibgeschützt, dieses Feld nicht. Was Bubble selbst
+   * Meldetext ist schreibgeschützt, dieses Feld nicht. Was Conocto selbst
    * beiträgt, ist nachweislich frei von Inhalten der Datei; eine
    * Fehlermeldung aus fremdem Code ist es nicht zwingend — also gehört sie
    * dorthin, wo der Nutzer sie lesen und löschen kann.
@@ -150,7 +150,7 @@ export function ReportDialog({ context, vorbelegung = '', onClose }: ReportDialo
 
           <p style={{ color: 'var(--mute)', lineHeight: 1.6 }}>
             Aus der geladenen Datei steht nichts in der Meldung: kein Dateiname, keine Positionen,
-            keine Mengen oder Preise. Nur Browser, Fenstergröße, Bubble-Stand und die Ansicht.
+            keine Mengen oder Preise. Nur Browser, Fenstergröße, Conocto-Stand und die Ansicht.
             Vertrauliches aus dem LV gehört auch nicht in das Feld oben.
           </p>
 
@@ -181,7 +181,7 @@ export function ReportDialog({ context, vorbelegung = '', onClose }: ReportDialo
               onClick={() => {
                 window.location.href = mailtoUrl(context, beschreibung);
               }}
-              title="Öffnet eine neue Mail an das Bubble-Team"
+              title="Öffnet eine neue Mail an das Conocto-Team"
             >
               ✉ Als E-Mail öffnen
             </Chip>

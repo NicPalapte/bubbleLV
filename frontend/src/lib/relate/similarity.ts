@@ -431,7 +431,7 @@ function compareMerkmale(positions: readonly PositionSummary[]): {
 
 /**
  * Name der Gruppe: der häufigste Kurztext, bei Gleichstand der kürzere. Er
- * stammt immer aus der Datei — Bubble erfindet keine Überschrift.
+ * stammt immer aus der Datei — Conocto erfindet keine Überschrift.
  */
 function labelOf(positions: readonly PositionSummary[]): string {
   const counts = new Map<string, number>();

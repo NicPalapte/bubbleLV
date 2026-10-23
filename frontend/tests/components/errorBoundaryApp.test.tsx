@@ -54,7 +54,7 @@ describe('Absturz einer Ansicht in der App', () => {
     expect(within(seite).getByText(new RegExp(MELDUNG))).toBeInTheDocument();
 
     // Die innere Grenze hat gegriffen, nicht die äußere.
-    expect(screen.queryByText(/Bubble ist abgestürzt/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Conocto ist abgestürzt/)).not.toBeInTheDocument();
     expect(screen.getByRole('banner')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '+ Filter' })).toBeInTheDocument();
   });

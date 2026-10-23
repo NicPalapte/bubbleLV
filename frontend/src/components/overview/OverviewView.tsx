@@ -100,7 +100,7 @@ export function OverviewView() {
     <div ref={attachScroll} onScroll={onScroll} className="absolute inset-0 overflow-auto">
       <div className="flex flex-col gap-[12px] px-[14px] py-[14px]">
         <div>
-          <p className="m-0 font-sans text-[13px] font-semibold text-ink">
+          <p className="m-0 font-display text-[14px] font-semibold text-ink">
             {formatPositions(metrics.positions)}
             {metrics.filtering && (
               <span className="font-normal text-dim">

@@ -37,7 +37,7 @@ export function RangeSlider({ label, bounds, active, onChange, renderHead }: Ran
   return (
     <section aria-label={label} className="flex flex-col gap-[6px]">
       {renderHead(isActive)}
-      <div className="px-[2px] font-mono text-[10.5px]">
+      <div className="px-[2px] font-mono text-[11.5px]">
         <div className="mb-[2px] flex justify-between text-ink">
           <span className={isActive ? 'text-blueD' : undefined}>{formatCount(low)}</span>
           <span className={isActive ? 'text-blueD' : undefined}>{formatCount(high)}</span>

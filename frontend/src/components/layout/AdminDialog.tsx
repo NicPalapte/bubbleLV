@@ -51,16 +51,16 @@ function Passwort({ onDone }: { onDone: () => void }) {
           placeholder="Passwort"
           autoComplete="off"
           autoFocus
-          className="h-[32px] min-w-0 flex-1 rounded-[var(--r-pill)] border border-line bg-panel px-[12px] font-mono text-[12px] text-ink outline-none focus:border-blue"
+          className="h-[32px] min-w-0 flex-1 rounded-[var(--r-pill)] border border-line bg-panel px-[12px] font-mono text-[13px] text-ink outline-none focus:border-blue"
         />
         <button
           type="submit"
-          className="inline-flex h-[32px] cursor-pointer items-center rounded-[var(--r-pill)] border-none bg-blue px-[14px] font-mono text-[11px] text-white"
+          className="inline-flex h-[32px] cursor-pointer items-center rounded-[var(--r-pill)] border-none bg-blueF px-[14px] font-mono text-[12px] text-white"
         >
           Öffnen
         </button>
       </div>
-      {wrong && <span className="font-mono text-[10.5px] text-redD">Passwort falsch</span>}
+      {wrong && <span className="font-mono text-[11.5px] text-redD">Passwort falsch</span>}
     </form>
   );
 }
@@ -70,11 +70,11 @@ function Zeile({ term, eigen }: { term: LearnedTerm; eigen: boolean }) {
   const color = term.kategorie === 'aus' ? 'var(--mute)' : categoryOf(term.kategorie).color;
   return (
     <tr className="border-b border-line">
-      <td className="px-[16px] py-[6px] font-mono text-[11.5px] text-ink">{term.begriff}</td>
-      <td className="px-[8px] py-[6px] font-mono text-[11px]" style={{ color }}>
+      <td className="px-[16px] py-[6px] font-mono text-[12.5px] text-ink">{term.begriff}</td>
+      <td className="px-[8px] py-[6px] font-mono text-[12px]" style={{ color }}>
         {TERM_LABELS[term.kategorie]}
       </td>
-      <td className="px-[8px] py-[6px] font-mono text-[10.5px] text-mute">
+      <td className="px-[8px] py-[6px] font-mono text-[11.5px] text-mute">
         {eigen ? 'von dir' : 'Tabelle'}
       </td>
       <td className="w-[36px] pr-[10px] text-right">
@@ -112,7 +112,7 @@ function Begriffe({ onClose }: { onClose: () => void }) {
             downloadText('hervorhebungen.csv', termsCsv([...table, ...learned]), 'csv')
           }
           title="Tabelle samt deinen Begriffen — ersetzt docs/domain/reference/hervorhebungen.csv"
-          className="inline-flex h-[28px] cursor-pointer items-center rounded-[var(--r-pill)] border border-line bg-surface px-[12px] font-mono text-[10.5px] text-ink hover:border-line2 disabled:cursor-default disabled:opacity-40"
+          className="inline-flex h-[28px] cursor-pointer items-center rounded-[var(--r-pill)] border border-line bg-surface px-[12px] font-mono text-[11.5px] text-ink hover:border-line2 disabled:cursor-default disabled:opacity-40"
         >
           Als CSV herunterladen
         </button>
@@ -122,13 +122,13 @@ function Begriffe({ onClose }: { onClose: () => void }) {
             lock();
             onClose();
           }}
-          className="inline-flex h-[28px] cursor-pointer items-center rounded-[var(--r-pill)] border border-line bg-surface px-[12px] font-mono text-[10.5px] text-ink hover:border-line2"
+          className="inline-flex h-[28px] cursor-pointer items-center rounded-[var(--r-pill)] border border-line bg-surface px-[12px] font-mono text-[11.5px] text-ink hover:border-line2"
         >
           Admin beenden
         </button>
       </div>
       {table.length + learned.length === 0 ? (
-        <p className="m-0 px-[16px] pb-[16px] font-mono text-[11px] text-mute">
+        <p className="m-0 px-[16px] pb-[16px] font-mono text-[12px] text-mute">
           Im Langtext einer Position Text markieren, dann Kategorie wählen.
         </p>
       ) : (
@@ -168,7 +168,7 @@ export function AdminDialog({ onClose }: { onClose: () => void }) {
         className="ov-window max-h-[84vh] w-[min(560px,calc(100vw-32px))] overflow-auto"
       >
         <div className="flex h-[44px] items-center border-b border-line pl-[16px] pr-[6px]">
-          <b className="flex-1 font-sans text-[14px] font-semibold text-ink">Admin-Werkzeuge</b>
+          <b className="flex-1 font-display text-[14px] font-semibold text-ink">Admin-Werkzeuge</b>
           <button
             type="button"
             onClick={onClose}

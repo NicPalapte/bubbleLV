@@ -91,7 +91,7 @@ export function GraphControls({ onFit, onFitSelection, onZoom }: GraphControlsPr
           data-tour="hints"
           title="Hinweis-Ringe und -Schilder im Graphen ein- oder ausblenden"
           onClick={() => dispatch({ type: 'graphHints', value: !showHints })}
-          className={`h-[28px] cursor-pointer whitespace-nowrap rounded-[var(--r-sm)] border px-[10px] font-mono text-[10.5px] ${
+          className={`h-[28px] cursor-pointer whitespace-nowrap rounded-[var(--r-sm)] border px-[10px] font-mono text-[11.5px] ${
             showHints
               ? 'border-amber bg-amberS text-amberD'
               : 'border-line bg-sunken text-mute line-through'
@@ -107,7 +107,7 @@ export function GraphControls({ onFit, onFitSelection, onZoom }: GraphControlsPr
         aria-controls="graph-settings"
         title="Darstellung: Größe und Gliederung"
         onClick={() => dispatch({ type: 'graphSettings', open: !graphSettings })}
-        className={`inline-flex h-[28px] cursor-pointer items-center gap-[6px] whitespace-nowrap rounded-[var(--r-sm)] border px-[9px] font-mono text-[10.5px] ${
+        className={`inline-flex h-[28px] cursor-pointer items-center gap-[6px] whitespace-nowrap rounded-[var(--r-sm)] border px-[9px] font-mono text-[11.5px] ${
           graphSettings
             ? 'border-blue bg-blueS text-blueD'
             : 'border-line bg-surface text-dim hover:border-line2 hover:text-ink'

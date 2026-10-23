@@ -1,5 +1,5 @@
-// Bubble — Chip: eckiger Filter-/Tag-Toggle mit optionalem Zähler-Badge.
-// Portiert aus .claude/skills/bubble-design/components/core/Chip.jsx.
+// Conocto — Chip: eckiger Filter-/Tag-Toggle mit optionalem Zähler-Badge.
+// Portiert aus .claude/skills/conocto-design/components/core/Chip.jsx.
 
 import type { ReactNode } from 'react';
 
@@ -66,7 +66,7 @@ export function Chip({
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: on ? 'var(--blue)' : 'var(--line)',
+            background: on ? 'var(--blueF)' : 'var(--line)',
             color: on ? '#fff' : 'var(--dim)',
             fontSize: 'var(--fs-label)',
             lineHeight: '14px',

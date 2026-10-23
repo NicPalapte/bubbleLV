@@ -81,7 +81,7 @@ export function TableWindow() {
       <ExternalWindow host={popup} onClosed={closedByHand}>
         <section aria-label="Tabelle — eigenes Fenster" className="flex min-h-0 flex-1 flex-col">
           <div className="flex h-[38px] shrink-0 items-center gap-[10px] border-b border-line bg-surface pl-[12px] pr-[6px]">
-            <b className="font-sans text-[13px] font-semibold text-ink">Tabelle</b>
+            <b className="font-display text-[14px] font-semibold text-ink">Tabelle</b>
             <span className="flex-1" />
             <button
               type="button"
@@ -129,13 +129,13 @@ export function TableWindow() {
         title="Verschieben — ziehen"
         className="flex h-[38px] shrink-0 cursor-grab items-center gap-[10px] border-b border-line pl-[12px] pr-[6px] active:cursor-grabbing"
       >
-        <span aria-hidden="true" className="text-[10px] tracking-[-2px] text-mute">
+        <span aria-hidden="true" className="text-[11px] tracking-[-2px] text-mute">
           ⋮⋮
         </span>
-        <b className="font-sans text-[13px] font-semibold text-ink">Tabelle</b>
+        <b className="font-display text-[14px] font-semibold text-ink">Tabelle</b>
         <span className="flex-1" />
         {blocked === 'table' && (
-          <span role="status" className="font-mono text-[10.5px] text-mute">
+          <span role="status" className="font-mono text-[11.5px] text-mute">
             Pop-up blockiert
           </span>
         )}

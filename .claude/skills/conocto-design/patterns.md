@@ -1,4 +1,4 @@
-# Bubble — Patterns
+# Conocto — Patterns (prototype history)
 
 Above component level. Copy these shapes; don't invent new ones.
 

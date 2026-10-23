@@ -87,7 +87,7 @@ export function GraphHeader({ root }: { root: LVNode }) {
     <>
       {keineTreffer && (
         <div className="pointer-events-none absolute left-1/2 top-[16px] z-[7] flex -translate-x-1/2 gap-[8px]">
-          <span className="ov-pill inline-flex h-[32px] items-center px-[14px] font-mono text-[11px] text-dim">
+          <span className="ov-pill inline-flex h-[32px] items-center px-[14px] font-mono text-[12px] text-dim">
             Keine Treffer
           </span>
         </div>
@@ -97,7 +97,7 @@ export function GraphHeader({ root }: { root: LVNode }) {
       <div
         ref={legendRef}
         aria-label="Legende"
-        className="ov-glass absolute bottom-[16px] left-[16px] z-[7] hidden max-w-[calc(50%-100px)] flex-col gap-[6px] !rounded-[var(--r-md)] px-[12px] py-[8px] font-mono text-[10px] text-dim lg:flex"
+        className="ov-glass absolute bottom-[16px] left-[16px] z-[7] hidden max-w-[calc(50%-100px)] flex-col gap-[6px] !rounded-[var(--r-md)] px-[12px] py-[8px] font-mono text-[11px] text-dim lg:flex"
       >
         <div className="flex flex-wrap items-center gap-x-[12px] gap-y-[4px]">
           <span className="inline-flex items-center gap-[5px]">

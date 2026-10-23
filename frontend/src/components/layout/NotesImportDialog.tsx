@@ -36,7 +36,7 @@ function Kachel({ zahl, label, farbe }: { zahl: number; label: string; farbe: st
       <span className="font-mono text-[18px] font-semibold" style={{ color: farbe }}>
         {zahl}
       </span>
-      <span className="font-mono text-[10px] text-dim">{label}</span>
+      <span className="font-mono text-[11px] text-dim">{label}</span>
     </div>
   );
 }
@@ -51,7 +51,7 @@ function Haken({
   onChange: (value: boolean) => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-[8px] font-mono text-[11px] text-ink">
+    <label className="flex cursor-pointer items-center gap-[8px] font-mono text-[12px] text-ink">
       <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
       {label}
     </label>
@@ -133,7 +133,7 @@ export function NotesImportDialog({ file, fileName, onClose }: Props) {
         className="ov-window flex max-h-[84vh] w-[min(560px,calc(100vw-32px))] flex-col"
       >
         <div className="flex h-[44px] shrink-0 items-center border-b border-line pl-[16px] pr-[6px]">
-          <b className="flex-1 font-sans text-[14px] font-semibold text-ink">Notizen laden</b>
+          <b className="flex-1 font-display text-[14px] font-semibold text-ink">Notizen laden</b>
           <button
             type="button"
             onClick={onClose}
@@ -145,8 +145,8 @@ export function NotesImportDialog({ file, fileName, onClose }: Props) {
         </div>
         <div className="flex min-h-0 flex-col gap-[14px] overflow-auto p-[16px]">
           <div className="flex flex-col gap-[2px]">
-            <span className="font-mono text-[12px] font-semibold text-ink">{fileName}</span>
-            {herkunft !== '' && <span className="font-mono text-[10px] text-dim">{herkunft}</span>}
+            <span className="font-mono text-[13px] font-semibold text-ink">{fileName}</span>
+            {herkunft !== '' && <span className="font-mono text-[11px] text-dim">{herkunft}</span>}
           </div>
           <div className="grid grid-cols-2 gap-[8px] sm:grid-cols-4">
             <Kachel zahl={matching.same.length} label="gleich" farbe="var(--greenD)" />
@@ -155,7 +155,7 @@ export function NotesImportDialog({ file, fileName, onClose }: Props) {
             <Kachel zahl={matching.missing.length} label="nicht gefunden" farbe="var(--redD)" />
           </div>
           {fremd && (
-            <p role="note" className="m-0 font-mono text-[11px] text-[var(--amber)]">
+            <p role="note" className="m-0 font-mono text-[12px] text-[var(--amber)]">
               ⚠ Keine Position stimmt inhaltlich überein. Stammt die Datei aus einem anderen LV?
             </p>
           )}
@@ -164,14 +164,14 @@ export function NotesImportDialog({ file, fileName, onClose }: Props) {
               {rows.map((row) => (
                 <li
                   key={row.key}
-                  className="grid grid-cols-[96px_minmax(0,1fr)_auto] items-center gap-[10px] border-t border-line py-[6px] font-mono text-[11px]"
+                  className="grid grid-cols-[96px_minmax(0,1fr)_auto] items-center gap-[10px] border-t border-line py-[6px] font-mono text-[12px]"
                 >
                   <span className="text-ink">{row.oz || '–'}</span>
-                  <span className="truncate font-sans font-semibold text-ink" title={row.text}>
+                  <span className="truncate font-display font-semibold text-ink" title={row.text}>
                     {row.text || '–'}
                   </span>
                   <span
-                    className={`rounded-[var(--r-pill)] px-[8px] py-[1px] text-[10px] ${TONE[row.tone]}`}
+                    className={`rounded-[var(--r-pill)] px-[8px] py-[1px] text-[11px] ${TONE[row.tone]}`}
                   >
                     {row.label}
                   </span>

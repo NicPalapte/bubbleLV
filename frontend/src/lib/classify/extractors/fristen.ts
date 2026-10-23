@@ -8,7 +8,7 @@
 // als eigener Filterwert die Facette zumüllt.
 //
 // Bewertet wird nichts: dass eine Frist knapp oder ein Winterbau teuer ist, sagt
-// Bubble nicht.
+// Conocto nicht.
 
 import { collect, tidy, type Hit } from './spans';
 import type { Extractor, ExtractorContext, ExtractorResult } from './types';

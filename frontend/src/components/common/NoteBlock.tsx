@@ -36,7 +36,7 @@ export function NoteBlock({ positionId }: { positionId: string }) {
             entry.kind !== 'comment' ? (
               <li
                 key={`${entry.at}-${i}`}
-                className="flex gap-[8px] px-[2px] font-mono text-[10px] text-mute"
+                className="flex gap-[8px] px-[2px] font-mono text-[11px] text-mute"
               >
                 <span>{formatAt(entry.at)}</span>
                 <span>{entryLine(entry)}</span>
@@ -46,7 +46,7 @@ export function NoteBlock({ positionId }: { positionId: string }) {
                 key={`${entry.at}-${i}`}
                 className="group flex flex-col gap-[2px] rounded-[var(--r-md)] border border-line bg-panel px-[10px] py-[7px]"
               >
-                <div className="flex items-center gap-[8px] font-mono text-[10px] text-mute">
+                <div className="flex items-center gap-[8px] font-mono text-[11px] text-mute">
                   <span>{formatAt(entry.at)}</span>
                   <button
                     type="button"
@@ -58,7 +58,7 @@ export function NoteBlock({ positionId }: { positionId: string }) {
                     ✕
                   </button>
                 </div>
-                <p className="m-0 whitespace-pre-wrap break-words font-mono text-[12px] leading-[1.5] text-ink">
+                <p className="m-0 whitespace-pre-wrap break-words font-mono text-[13px] leading-[1.5] text-ink">
                   {entry.text}
                 </p>
               </li>
@@ -79,20 +79,20 @@ export function NoteBlock({ positionId }: { positionId: string }) {
           placeholder="Kommentar schreiben"
           aria-label="Kommentar zur Position"
           rows={2}
-          className="min-w-0 flex-1 resize-y rounded-[var(--r-md)] border border-line bg-panel px-[10px] py-[8px] font-mono text-[12px] leading-[1.5] text-ink outline-none placeholder:text-mute focus:border-blue"
+          className="min-w-0 flex-1 resize-y rounded-[var(--r-md)] border border-line bg-panel px-[10px] py-[8px] font-mono text-[13px] leading-[1.5] text-ink outline-none placeholder:text-mute focus:border-blue"
         />
         <button
           type="button"
           onClick={send}
           disabled={draft.trim() === ''}
           title="Senden (Strg+Enter)"
-          className="inline-flex h-[32px] cursor-pointer items-center rounded-[var(--r-pill)] border-none bg-blue px-[14px] font-mono text-[11px] text-white disabled:cursor-default disabled:opacity-40"
+          className="inline-flex h-[32px] cursor-pointer items-center rounded-[var(--r-pill)] border-none bg-blueF px-[14px] font-mono text-[12px] text-white disabled:cursor-default disabled:opacity-40"
         >
           Senden
         </button>
       </div>
       {persistId === null && (
-        <span className="font-mono text-[10px] text-mute">
+        <span className="font-mono text-[11px] text-mute">
           Nur für diese Sitzung, wird nicht gespeichert.
         </span>
       )}
@@ -101,7 +101,7 @@ export function NoteBlock({ positionId }: { positionId: string }) {
 }
 
 const HEAD_BUTTON =
-  'inline-flex h-[28px] shrink-0 cursor-pointer items-center rounded-[var(--r-sm)] border font-mono text-[10.5px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue';
+  'inline-flex h-[28px] shrink-0 cursor-pointer items-center rounded-[var(--r-sm)] border font-mono text-[11.5px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue';
 
 /** Fortschritt als Knopf mit Auswahlliste (Issue #153): ein Klick auf, ein Klick setzt. */
 function ProgressMenu({ positionId }: { positionId: string }) {
@@ -149,7 +149,7 @@ function ProgressMenu({ positionId }: { positionId: string }) {
                 if (value !== current) setProgressNow(dispatch, positionId, value);
                 setOpen(false);
               }}
-              className="flex h-[30px] cursor-pointer items-center justify-between gap-[12px] rounded-[var(--r-sm)] border-none bg-transparent px-[8px] text-left font-mono text-[11px] text-ink hover:bg-sunken"
+              className="flex h-[30px] cursor-pointer items-center justify-between gap-[12px] rounded-[var(--r-sm)] border-none bg-transparent px-[8px] text-left font-mono text-[12px] text-ink hover:bg-sunken"
             >
               {label}
               {value === current && (
@@ -180,7 +180,7 @@ export function MarkerHead({ positionId }: { positionId: string }) {
         aria-pressed={important}
         onClick={() => setImportantNow(dispatch, positionId, !important)}
         title={important ? '„Wichtig" aufheben' : 'Als wichtig markieren'}
-        className={`${HEAD_BUTTON} w-[28px] justify-center font-sans text-[14px] font-bold`}
+        className={`${HEAD_BUTTON} w-[28px] justify-center font-display text-[14px] font-bold`}
         style={
           important
             ? {

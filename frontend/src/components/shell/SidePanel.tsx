@@ -103,7 +103,7 @@ export function SidePanel() {
               // den Reiter (WAI-ARIA Tabs, Issue #105).
               tabIndex={side === tab.id ? 0 : -1}
               onClick={() => dispatch({ type: 'sidePanel', panel: tab.id })}
-              className={`flex h-[30px] flex-1 cursor-pointer items-center justify-center gap-[6px] rounded-[var(--r-sm)] border-none px-[8px] font-mono text-[11px] ${
+              className={`flex h-[30px] flex-1 cursor-pointer items-center justify-center gap-[6px] rounded-[var(--r-sm)] border-none px-[8px] font-mono text-[12px] ${
                 side === tab.id
                   ? 'bg-surface text-ink shadow-[var(--shadow-sm)]'
                   : 'bg-transparent text-dim hover:text-ink'
@@ -111,7 +111,7 @@ export function SidePanel() {
             >
               {tab.label}
               {tab.id === 'check' && hintCount > 0 && (
-                <span className="rounded-[var(--r-pill)] bg-amberS px-[6px] text-[10px] text-amberD">
+                <span className="rounded-[var(--r-pill)] bg-amberS px-[6px] text-[11px] text-amberD">
                   {formatCount(hintCount)}
                 </span>
               )}

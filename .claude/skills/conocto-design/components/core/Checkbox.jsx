@@ -1,4 +1,4 @@
-// Bubble — Checkbox: square, 12–14px, blue when checked. No native input.
+// Conocto — Checkbox: square, 12–14px, blue when checked. No native input.
 export function Checkbox({ checked, onChange, size = 14 }) {
   return (
     <span onClick={onChange} style={{ width:size, height:size, flexShrink:0, cursor:'pointer',

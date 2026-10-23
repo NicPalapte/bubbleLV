@@ -1,4 +1,4 @@
-/* Bubble — element defaults. Import last. */
+/* Conocto — element defaults. Import last. */
 *,*::before,*::after{box-sizing:border-box}
 html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink);font-family:var(--mono);font-size:12px}
 button{font:inherit;color:inherit}

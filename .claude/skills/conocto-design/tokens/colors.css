@@ -1,0 +1,48 @@
+/* Conocto — Color. Pure white and neutral greys (Apple-like), one brick-red
+   accent, amber = attention. The variables keep their old names: --blue* is the
+   ACCENT (selection, buttons, links), not the colour blue.
+   Source of truth: frontend/src/index.css (also --cat-*, --heat-*, --bub-*, --dot-*).
+   Decision: docs/decisions/0069-conocto-look.md */
+:root{
+  /* Surfaces */
+  --paper:#ffffff;   /* app background / canvas */
+  --panel:#f5f5f7;   /* zebra rows, sub-toolbars, inset blocks */
+  --white:#ffffff;   /* panels, tables, popovers */
+  --surface:#ffffff; /* floating windows and cards over the graph */
+  --sunken:#f5f5f7;  /* segmented-control track, hover rows */
+
+  /* Lines — four steps, thinnest to strongest */
+  --grid:#f2f2f5; --grid2:#e8e8ed; --line:#e5e5ea; --line2:#d1d1d6;
+
+  /* Text */
+  --ink:#1d1d1f; --dim:#515156; --mute:#636368; /* mute ≥5:1 on light surfaces */
+
+  /* Accent — Ziegelrot. Selection + interaction, never decoration */
+  --blue:#c8362b;
+  --blueS:#fbebe9;   /* selected row / active chip background */
+  --blueD:#a52a21;   /* text on --blueS, links */
+  --blueF:#c8362b; --blueFH:#a52a21; /* fill under white text, both modes (AA) */
+  --cyan:#0e7490;    /* "Verweise" text marking only */
+
+  /* Semantic — warnings are amber, never red (red = brand + selection) */
+  --amber:#b36200;  --amberS:#fff4e5;   /* offen / needs attention */
+  --greenD:#1a7f3c; --greenS:#e6f4ea;   /* geprüft / erledigt */
+  --red:#be123c;    --redD:#9f1239;   --redS:#ffe4e9;     /* errors only (rose, distinct from the accent) */
+}
+
+/* Dark — black and Apple greys. Applies with the system setting unless the user
+   picked "Hell", or when "Dunkel" is picked in the logo menu (data-theme). */
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#000000; --panel:#1c1c1e; --white:#1c1c1e; --surface:#1c1c1e; --sunken:#2c2c2e;
+  --grid:#111113; --grid2:#1c1c1e; --line:#38383a; --line2:#48484a;
+  --ink:#f5f5f7; --dim:#aeaeb2; --mute:#98989d;
+  --blue:#e5554a; --blueS:#3a1a17; --blueD:#ff8a80; --cyan:#3fb2cc;
+  --amber:#ffb340; --amberS:#3a2a12; --greenD:#30d158; --greenS:#0f2e1a;
+  --red:#ff6482; --redD:#ff9fb2; --redS:#3d1a24; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#000000; --panel:#1c1c1e; --white:#1c1c1e; --surface:#1c1c1e; --sunken:#2c2c2e;
+  --grid:#111113; --grid2:#1c1c1e; --line:#38383a; --line2:#48484a;
+  --ink:#f5f5f7; --dim:#aeaeb2; --mute:#98989d;
+  --blue:#e5554a; --blueS:#3a1a17; --blueD:#ff8a80; --cyan:#3fb2cc;
+  --amber:#ffb340; --amberS:#3a2a12; --greenD:#30d158; --greenS:#0f2e1a;
+  --red:#ff6482; --redD:#ff9fb2; --redS:#3d1a24; color-scheme:dark}

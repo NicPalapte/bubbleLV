@@ -37,7 +37,7 @@ export const DEMO_LVS: readonly DemoLv[] = [
   {
     id: 'angebot',
     label: 'Demo mit Preisen',
-    title: 'Bubble Demo-LV 3.3 · Angebot mit Preisen',
+    title: 'Conocto Demo-LV 3.3 · Angebot mit Preisen',
     hint: 'Angebot (x84) mit Einheitspreisen — 78 Positionen, rund 1,6 Mio. €.',
     fileName: 'bubble-demo-angebot.x84',
     url: angebotUrl,

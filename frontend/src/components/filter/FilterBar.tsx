@@ -19,10 +19,10 @@ import { useViewer, useViewerDispatch } from '../../state/viewer';
 const EMPTY_SELECTION: ReadonlySet<string> = new Set();
 
 const CHIP =
-  'inline-flex h-[30px] shrink-0 cursor-pointer items-center gap-[6px] whitespace-nowrap rounded-[var(--r-pill)] border px-[12px] font-mono text-[10.5px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue';
+  'inline-flex h-[30px] shrink-0 cursor-pointer items-center gap-[6px] whitespace-nowrap rounded-[var(--r-pill)] border px-[12px] font-mono text-[11.5px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue';
 
 const OPTION =
-  'flex min-h-[30px] cursor-pointer items-center gap-[8px] rounded-[var(--r-sm)] px-[8px] font-mono text-[11px] text-ink hover:bg-sunken';
+  'flex min-h-[30px] cursor-pointer items-center gap-[8px] rounded-[var(--r-sm)] px-[8px] font-mono text-[12px] text-ink hover:bg-sunken';
 
 const HEADING =
   'px-[8px] pb-[2px] pt-[8px] font-mono text-[9.5px] uppercase tracking-[0.7px] text-mute first:pt-[2px]';
@@ -47,7 +47,7 @@ const orderOf = (id: string): number => {
 };
 
 const RESET =
-  'cursor-pointer border-none bg-transparent p-0 font-mono text-[10px] font-medium uppercase tracking-[0.7px] text-blueD';
+  'cursor-pointer border-none bg-transparent p-0 font-mono text-[11px] font-medium uppercase tracking-[0.7px] text-blueD';
 
 function Chevron() {
   return (
@@ -127,7 +127,7 @@ function Option({
       <span className="min-w-0 flex-1 truncate" title={label}>
         {label}
       </span>
-      <span className="shrink-0 text-[10px] text-mute">{formatCount(count)}</span>
+      <span className="shrink-0 text-[11px] text-mute">{formatCount(count)}</span>
     </label>
   );
 }

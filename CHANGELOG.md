@@ -1,13 +1,23 @@
 # Änderungen
 
-Was sich in Bubble von Version zu Version geändert hat — in der Sprache der Anwendung,
+Was sich in Conocto (bis Version 0.29: Bubble) von Version zu Version geändert hat — in der Sprache der Anwendung,
 nicht in der des Codes. Neueste Version oben.
 
 Die Nummern folgen [Semantic Versioning](https://semver.org/lang/de/): die **mittlere**
 Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** bleibt
-`0`, solange Bubble in der Beta ist.
+`0`, solange Conocto in der Beta ist.
 
 ---
+
+## 0.31.0 — 22.10.2026 · Conocto
+
+- **Neuer Name:** Bubble heißt jetzt **Conocto**. Con = Construction, Octo = die Krake,
+  die mit acht Armen die Informationen aus dem LV greift.
+- **Neues Logo:** die Krake von oben, in Ziegelrot. Auch im Browser-Tab.
+- **Neuer Look:** hell reines Weiß, dunkel Schwarz und Grau. Ziegelrot zeigt Auswahl und
+  Knöpfe, Hinweise sind bernsteinfarben.
+- **Neue Schriften:** Titel in Hanken Grotesk, Text in Schibsted Grotesk, eine Stufe größer.
+- Gespeicherte Datei, Notizen und geteilte Links funktionieren weiter.
 
 ## 0.30.0 — 22.10.2026 · Tabelle als Arbeitsliste
 

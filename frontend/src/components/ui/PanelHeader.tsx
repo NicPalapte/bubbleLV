@@ -1,5 +1,5 @@
-// Bubble — PanelHeader: Objektkopf oben im Seitenpanel (Eyebrow + Titel + Status).
-// Portiert aus .claude/skills/bubble-design/components/core/PanelHeader.jsx.
+// Conocto — PanelHeader: Objektkopf oben im Seitenpanel (Eyebrow + Titel + Status).
+// Portiert aus .claude/skills/conocto-design/components/core/PanelHeader.jsx.
 
 import type { ReactNode } from 'react';
 
@@ -39,7 +39,7 @@ export function PanelHeader({ eyebrow, title, right, size = 18 }: PanelHeaderPro
       </div>
       <div
         style={{
-          fontFamily: 'var(--sans)',
+          fontFamily: 'var(--display)',
           fontSize: size,
           fontWeight: 600,
           color: 'var(--ink)',

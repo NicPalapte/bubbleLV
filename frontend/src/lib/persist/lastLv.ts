@@ -6,7 +6,7 @@
 //
 // Alles bleibt in der IndexedDB dieses Browsers, kein Request. Fehlt IndexedDB
 // (privates Fenster, gesperrte Website-Daten, Tests), gibt jede Funktion still
-// `null` bzw. nichts zurück — Bubble läuft dann wie ohne Speicher.
+// `null` bzw. nichts zurück — Conocto läuft dann wie ohne Speicher.
 //
 // Seit Entscheidung 0047 liegen hier auch die eigenen Markierungen und Kommentare
 // zu genau dieser Datei. Eine neue Datei beginnt ohne sie.
@@ -26,6 +26,8 @@ import {
   type Annotations,
 } from '../annotations';
 
+// Name aus der Zeit vor Conocto — bleibt, sonst wäre die zuletzt geöffnete
+// Datei samt Notizen nach dem Update weg (Entscheidung 0069).
 const DB_NAME = 'bubble';
 const DB_VERSION = 1;
 const STORE = 'letztesLv';

@@ -2,53 +2,59 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Design-Tokens, 1:1 aus .claude/skills/bubble-design/tokens/ übernommen
-   (colors · typography · spacing · elevation). Die Schriftdateien selbst kommen
-   über den <link> in index.html. */
+/* Design-Tokens des Conocto-Looks (docs/decisions/0069-conocto-look.md):
+   colors · typography · spacing · elevation. Die Schriftdateien selbst kommen
+   über @fontsource in src/main.tsx. */
 
-/* ── Farben — kühle Blueprint-Palette, ein blauer Akzent, Amber = Achtung.
+/* ── Farben — reines Weiß und neutrale Grautöne, ein ziegelroter Akzent,
+   Amber = Achtung. Die Variablen heißen aus Gewohnheit noch --blue*: --blue ist
+   der Akzent (Auswahl, Knöpfe, Links), nicht die Farbe Blau.
    Hell ist der Standard; der dunkle Satz steht unten (Abschnitt „Dunkel") und
    greift über das System oder den Schalter im Logo-Menü (`data-theme`). ── */
 :root {
-  --paper: #eef2f7;
-  --panel: #f8fafc;
+  --paper: #ffffff;
+  --panel: #f5f5f7;
   /* Abschnittszeilen der Tabelle: Hauptabschnitt kräftig, darunter hell. */
-  --sec1: #d9e5f4;
-  --sec1-ink: #0f2a4d;
-  --sec2: #edf2f8;
+  --sec1: #e8e8ed;
+  --sec1-ink: #1d1d1f;
+  --sec2: #f5f5f7;
   --white: #ffffff;
   /* Flächen der schwebenden Fenster über dem Graphen. */
   --surface: #ffffff;
-  --sunken: #f5f8fb;
-  --glass: rgba(255, 255, 255, 0.8);
-  --glass-strong: rgba(255, 255, 255, 0.93);
+  --sunken: #f5f5f7;
+  --glass: rgba(255, 255, 255, 0.82);
+  --glass-strong: rgba(255, 255, 255, 0.94);
 
-  --grid: #e4ebf3;
-  --grid2: #d6e0ec;
-  --line: #dde5ee;
-  --line2: #c3d0de;
+  --grid: #f2f2f5;
+  --grid2: #e8e8ed;
+  --line: #e5e5ea;
+  --line2: #d1d1d6;
 
-  --ink: #152131;
+  --ink: #1d1d1f;
   /* Beide ≥5:1 auf allen hellen Flächen inkl. --blueS (WCAG AA, Issue #105). */
-  --dim: #4f6175;
-  --mute: #53657a;
+  --dim: #515156;
+  --mute: #636368;
 
-  --blue: #2563eb;
-  --blueS: #e3ecfe;
-  --blueD: #1d4ed8;
-  --cyan: #0891b2;
+  --blue: #c8362b;
+  --blueS: #fbebe9;
+  --blueD: #a52a21;
+  /* Fläche unter weißer Schrift (Knöpfe, Häkchen). In beiden Modi gleich: #e5554a
+     käme mit Weiß nur auf 3,7:1, #c8362b auf 5,2:1, #a52a21 auf 7:1 (WCAG AA). */
+  --blueF: #c8362b;
+  --blueFH: #a52a21;
+  --cyan: #0e7490;
   /* Weiche Tönung zu --cyan, gleiche Helligkeit wie --blueS/--greenS;
      Fundstellen-Markierung „Verweise" (WP-J). */
-  --cyanS: #cfeaf2;
+  --cyanS: #d6ecf1;
 
-  --amber: #c26a05;
-  --amberS: #fdf0d8;
-  --greenD: #0f8a4c;
-  --greenS: #dcf2e5;
-  --red: #c42525;
-  --redD: #a81d1d;
+  --amber: #b36200;
+  --amberS: #fff4e5;
+  --greenD: #1a7f3c;
+  --greenS: #e6f4ea;
+  --red: #be123c;
+  --redD: #9f1239;
   /* Weiche Tönung zu --red; Fundstellen-Markierung „Offene Stellen" (WP-J). */
-  --redS: #fde3e3;
+  --redS: #ffe4e9;
   /* Fundstellen-Markierung „Maße" (Entscheidung 0053); ≥5:1 auf --violetS. */
   --violetD: #6d28d9;
   --violetS: #ede5fd;
@@ -62,88 +68,93 @@
    damit Beschriftungen ohne zweite Textfarbe auskommen.
    Zuordnung und Begründung: docs/decisions/0013-gewerk-farbskala.md ── */
 :root {
-  --cat-1: #a9c8f5;
-  --cat-2: #a5dded;
-  --cat-3: #9fd6cb;
-  --cat-4: #a9ddb4;
-  --cat-5: #d7e3a1;
-  --cat-6: #f6d79a;
-  --cat-7: #eeb6a2;
-  --cat-8: #edb7c9;
-  --cat-9: #c9bdee;
-  --cat-10: #bdc9d6;
+  --cat-1: #c5d0dc;
+  --cat-2: #bfd8d1;
+  --cat-3: #d5d9bd;
+  --cat-4: #e6d2bb;
+  --cat-5: #e0c4c4;
+  --cat-6: #d1c5de;
+  --cat-7: #bfcae2;
+  --cat-8: #ccd9c3;
+  --cat-9: #e0d8c6;
+  --cat-10: #c9c9ce;
   /* Positionen ohne Abschnitt — bewusst farblos, nicht "elfte Farbe". */
-  --cat-none: #e4ecf4;
+  --cat-none: #f2f2f5;
 
   /* Fünf Stufen einer Skala für die Matrix (WP-O): hier trennt die Farbe
      nicht, sie misst — deshalb ein Ton in fünf Sättigungen statt fünf Töne.
-     Bewusst Cyan und nicht Blau: Blau ist im System Auswahl und Interaktion,
-     eine gefilterte Zelle muss sich von einer vollen unterscheiden lassen.
+     Bewusst ein kühles Grau und nicht der Akzent: der Akzent ist im System
+     Auswahl und Interaktion, eine gefilterte Zelle muss sich von einer vollen
+     unterscheiden lassen.
      Alle Stufen tragen --ink lesbar (Kontrast ≥ 6:1). */
-  --heat-1: #e8f3f7;
-  --heat-2: #cbe8f1;
-  --heat-3: #a6d8e7;
-  --heat-4: #7cc4da;
-  --heat-5: #4fadc9;
+  --heat-1: #f2f4f7;
+  --heat-2: #dfe5ec;
+  --heat-3: #c7d1dd;
+  --heat-4: #a9b7c8;
+  --heat-5: #8b9db3;
 }
 
-/* ── Bubble-Graph — kräftigere Töne als die Panel-Flächen, damit sich die
-   Ebene einer Bubble ablesen lässt: Blau (Los) → Cyan (Abschnitte) → Grau
-   (Gruppen), Amber bleibt die Position. ── */
+/* ── Bubble-Graph — neutrale Grautöne, je Ebene eine Stufe dunkler gerandet,
+   damit sich die Ebene einer Bubble ablesen lässt; die Position ist sandfarben,
+   der Akzent bleibt der Auswahl vorbehalten. ── */
 :root {
   --bub-project: #ffffff;
-  --bub-project-line: #1a2533;
-  --bub-lot: #b3cdfb;
-  --bub-lot-line: #1d4ed8;
-  --bub-section: #b2e2f0;
-  --bub-section-line: #0e7490;
-  --bub-subsection: #cfe9f3;
-  --bub-subsection-line: #0891b2;
-  --bub-group: #d6e1ee;
-  --bub-group-line: #59708a;
-  --bub-position: #fbd49a;
-  --bub-position-line: #b45309;
-  --bub-cluster: #eaf0f7;
-  --bub-cluster-line: #4a5b70;
-  --bub-edge: #6b7d92; /* kräftiger als vorher, damit Kanten vom Raster abheben */
+  --bub-project-line: #1d1d1f;
+  --bub-lot: #f2f2f7;
+  --bub-lot-line: #8e8e93;
+  --bub-section: #e9e9ee;
+  --bub-section-line: #6e6e73;
+  --bub-subsection: #f2f2f7;
+  --bub-subsection-line: #8e8e93;
+  --bub-group: #ececf0;
+  --bub-group-line: #6e6e73;
+  --bub-position: #efe6dc;
+  --bub-position-line: #9a7b5f;
+  --bub-cluster: #f2f2f7;
+  --bub-cluster-line: #636368;
+  --bub-edge: #8e8e93; /* kräftiger als vorher, damit Kanten vom Raster abheben */
   /* Graph-Karte (docs/decisions/0035-graph-gliederung.md): Los-Hülle, Gruppenkreis,
      Gruppe als Fläche (Detailstufe), Punkt ohne Abschnitt, Rand der Punkte. */
   /* Punktfarben im Graphen: die hellen Kategorie-Töne in beiden Themen — auf dunkler
      Fläche tragen sie als Punkt, die dunklen Flächentöne von --cat-* nicht. */
-  --dot-1: #a9c8f5;
-  --dot-2: #a5dded;
-  --dot-3: #9fd6cb;
-  --dot-4: #a9ddb4;
-  --dot-5: #d7e3a1;
-  --dot-6: #f6d79a;
-  --dot-7: #eeb6a2;
-  --dot-8: #edb7c9;
-  --dot-9: #c9bdee;
-  --dot-10: #bdc9d6;
-  --los-fill: rgba(37, 99, 235, 0.025);
+  --dot-1: #8fa3b8;
+  --dot-2: #86b0a3;
+  --dot-3: #a9ad85;
+  --dot-4: #c4a27f;
+  --dot-5: #bf8f8f;
+  --dot-6: #a493bd;
+  --dot-7: #8e9fc4;
+  --dot-8: #9bb08f;
+  --dot-9: #bcae8f;
+  --dot-10: #9a9aa1;
+  --los-fill: rgba(0, 0, 0, 0.02);
   --grp-fill: rgba(255, 255, 255, 0.72);
-  --grp-fill-strong: #d9e4f0;
-  --dot-none: #8ea3ba;
-  --dot-line: rgba(21, 33, 49, 0.3);
-  --amberD: #8f4d03;
+  --grp-fill-strong: #ececf0;
+  --dot-none: #aeaeb2;
+  --dot-line: rgba(0, 0, 0, 0.25);
+  --amberD: #8a4b00;
 }
 
-/* ── Typografie — IBM Plex Mono ist die Interface-Schrift; Space Grotesk
-   trägt ausschließlich Namen von Dingen (Wortmarke, Titel, Langtext). ── */
+/* ── Typografie — Schibsted Grotesk ist die Text- und Interface-Schrift,
+   Hanken Grotesk trägt Titel und Wortmarke (--display). --mono heißt aus
+   Gewohnheit so, ist aber keine Festbreitenschrift mehr. Bewusst ohne
+   tabular-nums: Schibsted setzt damit auch Punkt und Komma auf Ziffernbreite,
+   OZ und Mengen zerfallen dann in Einzelzeichen. ── */
 :root {
-  --mono: 'IBM Plex Mono', ui-monospace, monospace;
-  --sans: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --display: 'Hanken Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --sans: 'Schibsted Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --mono: var(--sans);
 
-  --fs-micro: 10px; /* Untergrenze lesbarer Schrift (Issue #105) */
-  --fs-label: 10px;
-  --fs-meta: 10px;
-  --fs-body: 10.5px;
-  --fs-row: 11px;
-  --fs-cell: 12px;
-  --fs-prose: 12.5px;
-  --fs-title-sm: 14px;
-  --fs-title: 15px;
-  --fs-title-lg: 18px;
+  --fs-micro: 11px; /* Untergrenze lesbarer Schrift (Issue #105) */
+  --fs-label: 11px;
+  --fs-meta: 11px;
+  --fs-body: 11.5px;
+  --fs-row: 12px;
+  --fs-cell: 13px;
+  --fs-prose: 13.5px;
+  --fs-title-sm: 15px;
+  --fs-title: 16px;
+  --fs-title-lg: 19px;
 
   --lh-tight: 1.3;
   --lh-prose: 1.55;
@@ -204,13 +215,13 @@
 /* ── Elevation & Motion — weiche Schatten heben schwebende Flächen vom Graphen
    ab; Rahmen bleiben, damit die Kanten auch ohne Schatten lesbar sind. ── */
 :root {
-  --shadow: 0 1px 2px rgba(21, 33, 49, 0.06), 0 8px 28px rgba(21, 33, 49, 0.1);
-  --shadow-sm: 0 1px 2px rgba(21, 33, 49, 0.06), 0 2px 8px rgba(21, 33, 49, 0.06);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 28px rgba(0, 0, 0, 0.08);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(0, 0, 0, 0.05);
   --shadow-popover: var(--shadow);
-  --shadow-hairline: 0 1px 0 rgba(21, 33, 49, 0.02);
+  --shadow-hairline: 0 1px 0 rgba(0, 0, 0, 0.02);
   --scrim: rgba(255, 255, 255, 0.94);
-  --backdrop: rgba(21, 33, 49, 0.12);
-  --spot: rgba(21, 33, 49, 0.42);
+  --backdrop: rgba(0, 0, 0, 0.12);
+  --spot: rgba(0, 0, 0, 0.42);
 
   --dur-fast: 0.1s;
   --dur-base: 0.12s;
@@ -225,80 +236,80 @@
    Sitzung — kein localStorage (.claude/CLAUDE.md). ── */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --paper: #0e141c;
-    --panel: #121a24;
-    --sec1: #22344c;
-    --sec1-ink: #e3ecfa;
-    --sec2: #1b2633;
-    --white: #18212d;
-    --surface: #18212d;
-    --sunken: #141c27;
-    --glass: rgba(22, 30, 42, 0.78);
-    --glass-strong: rgba(22, 30, 42, 0.94);
-    --grid: #1a2431;
-    --grid2: #223044;
-    --line: #263345;
-    --line2: #33445a;
-    --ink: #e6edf6;
-    --dim: #9aabbf;
-    --mute: #8d9db1;
-    --blue: #5b8cff;
-    --blueS: #1b2b4d;
-    --blueD: #9dbaff;
+    --paper: #000000;
+    --panel: #1c1c1e;
+    --sec1: #3a3a3c;
+    --sec1-ink: #f5f5f7;
+    --sec2: #2c2c2e;
+    --white: #1c1c1e;
+    --surface: #1c1c1e;
+    --sunken: #2c2c2e;
+    --glass: rgba(28, 28, 30, 0.8);
+    --glass-strong: rgba(28, 28, 30, 0.94);
+    --grid: #111113;
+    --grid2: #1c1c1e;
+    --line: #38383a;
+    --line2: #48484a;
+    --ink: #f5f5f7;
+    --dim: #aeaeb2;
+    --mute: #98989d;
+    --blue: #e5554a;
+    --blueS: #3a1a17;
+    --blueD: #ff8a80;
     --cyan: #3fb2cc;
     --cyanS: #133944;
-    --amber: #f0a03a;
+    --amber: #ffb340;
     --amberS: #3a2a12;
-    --greenD: #3fbf7f;
-    --greenS: #123222;
-    --red: #ff6b6b;
-    --redD: #ff9a9a;
-    --redS: #3d1a1d;
+    --greenD: #30d158;
+    --greenS: #0f2e1a;
+    --red: #ff6482;
+    --redD: #ff9fb2;
+    --redS: #3d1a24;
     --violetD: #c4b0fc;
     --violetS: #2a1f48;
     --violetD: #c4b0fc;
     --violetS: #2a1f48;
-    --cat-1: #2b4470;
-    --cat-2: #1f4f5c;
-    --cat-3: #1f5148;
-    --cat-4: #284f33;
-    --cat-5: #4a5221;
-    --cat-6: #5c4a1e;
-    --cat-7: #5c3527;
-    --cat-8: #5a2f40;
-    --cat-9: #3e3466;
-    --cat-10: #33404e;
-    --cat-none: #1b2533;
-    --heat-1: #12303a;
-    --heat-2: #164556;
-    --heat-3: #1b5c71;
-    --heat-4: #20768f;
-    --heat-5: #2a92ad;
-    --bub-project: #18212d;
-    --bub-project-line: #e6edf6;
-    --bub-lot: #22406f;
-    --bub-lot-line: #9dbaff;
-    --bub-section: #1d4f5d;
-    --bub-section-line: #5fc6dc;
-    --bub-subsection: #183f4a;
-    --bub-subsection-line: #3fb2cc;
-    --bub-group: #233042;
-    --bub-group-line: #8ea2b8;
-    --bub-position: #6b4a1c;
-    --bub-position-line: #f0a03a;
-    --bub-cluster: #1c2533;
-    --bub-cluster-line: #9aabbf;
-    --bub-edge: #6c7f95;
-    --los-fill: rgba(91, 140, 255, 0.04);
-    --grp-fill: rgba(24, 33, 45, 0.78);
-    --grp-fill-strong: #27374c;
-    --dot-none: #6f86a0;
-    --dot-line: rgba(255, 255, 255, 0.42);
-    --amberD: #f5c27a;
+    --cat-1: #3a4452;
+    --cat-2: #34473f;
+    --cat-3: #45482f;
+    --cat-4: #4d3f30;
+    --cat-5: #4a3434;
+    --cat-6: #40384c;
+    --cat-7: #343e52;
+    --cat-8: #3a4836;
+    --cat-9: #4a4536;
+    --cat-10: #3a3a3e;
+    --cat-none: #1c1c1e;
+    --heat-1: #1a1d22;
+    --heat-2: #252b33;
+    --heat-3: #323b47;
+    --heat-4: #41505f;
+    --heat-5: #53657a;
+    --bub-project: #1c1c1e;
+    --bub-project-line: #f5f5f7;
+    --bub-lot: #26262a;
+    --bub-lot-line: #8e8e93;
+    --bub-section: #2c2c2e;
+    --bub-section-line: #98989d;
+    --bub-subsection: #232326;
+    --bub-subsection-line: #8e8e93;
+    --bub-group: #2c2c2e;
+    --bub-group-line: #8e8e93;
+    --bub-position: #4a3b2c;
+    --bub-position-line: #d8b48a;
+    --bub-cluster: #1c1c1e;
+    --bub-cluster-line: #aeaeb2;
+    --bub-edge: #636366;
+    --los-fill: rgba(255, 255, 255, 0.03);
+    --grp-fill: rgba(28, 28, 30, 0.78);
+    --grp-fill-strong: #2c2c2e;
+    --dot-none: #636366;
+    --dot-line: rgba(255, 255, 255, 0.4);
+    --amberD: #ffcc80;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 30px rgba(0, 0, 0, 0.35);
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.25);
     --shadow-hairline: 0 1px 0 rgba(0, 0, 0, 0.2);
-    --scrim: rgba(22, 30, 42, 0.92);
+    --scrim: rgba(28, 28, 30, 0.92);
     --backdrop: rgba(0, 0, 0, 0.45);
     --spot: rgba(0, 0, 0, 0.6);
     color-scheme: dark;
@@ -306,76 +317,76 @@
 }
 
 :root[data-theme='dark'] {
-  --paper: #0e141c;
-  --panel: #121a24;
-  --sec1: #22344c;
-  --sec1-ink: #e3ecfa;
-  --sec2: #1b2633;
-  --white: #18212d;
-  --surface: #18212d;
-  --sunken: #141c27;
-  --glass: rgba(22, 30, 42, 0.78);
-  --glass-strong: rgba(22, 30, 42, 0.94);
-  --grid: #1a2431;
-  --grid2: #223044;
-  --line: #263345;
-  --line2: #33445a;
-  --ink: #e6edf6;
-  --dim: #9aabbf;
-  --mute: #8d9db1;
-  --blue: #5b8cff;
-  --blueS: #1b2b4d;
-  --blueD: #9dbaff;
+  --paper: #000000;
+  --panel: #1c1c1e;
+  --sec1: #3a3a3c;
+  --sec1-ink: #f5f5f7;
+  --sec2: #2c2c2e;
+  --white: #1c1c1e;
+  --surface: #1c1c1e;
+  --sunken: #2c2c2e;
+  --glass: rgba(28, 28, 30, 0.8);
+  --glass-strong: rgba(28, 28, 30, 0.94);
+  --grid: #111113;
+  --grid2: #1c1c1e;
+  --line: #38383a;
+  --line2: #48484a;
+  --ink: #f5f5f7;
+  --dim: #aeaeb2;
+  --mute: #98989d;
+  --blue: #e5554a;
+  --blueS: #3a1a17;
+  --blueD: #ff8a80;
   --cyan: #3fb2cc;
   --cyanS: #133944;
-  --amber: #f0a03a;
+  --amber: #ffb340;
   --amberS: #3a2a12;
-  --greenD: #3fbf7f;
-  --greenS: #123222;
-  --red: #ff6b6b;
-  --redD: #ff9a9a;
-  --redS: #3d1a1d;
-  --cat-1: #2b4470;
-  --cat-2: #1f4f5c;
-  --cat-3: #1f5148;
-  --cat-4: #284f33;
-  --cat-5: #4a5221;
-  --cat-6: #5c4a1e;
-  --cat-7: #5c3527;
-  --cat-8: #5a2f40;
-  --cat-9: #3e3466;
-  --cat-10: #33404e;
-  --cat-none: #1b2533;
-  --heat-1: #12303a;
-  --heat-2: #164556;
-  --heat-3: #1b5c71;
-  --heat-4: #20768f;
-  --heat-5: #2a92ad;
-  --bub-project: #18212d;
-  --bub-project-line: #e6edf6;
-  --bub-lot: #22406f;
-  --bub-lot-line: #9dbaff;
-  --bub-section: #1d4f5d;
-  --bub-section-line: #5fc6dc;
-  --bub-subsection: #183f4a;
-  --bub-subsection-line: #3fb2cc;
-  --bub-group: #233042;
-  --bub-group-line: #8ea2b8;
-  --bub-position: #6b4a1c;
-  --bub-position-line: #f0a03a;
-  --bub-cluster: #1c2533;
-  --bub-cluster-line: #9aabbf;
-  --bub-edge: #6c7f95;
-  --los-fill: rgba(91, 140, 255, 0.04);
-  --grp-fill: rgba(24, 33, 45, 0.78);
-  --grp-fill-strong: #27374c;
-  --dot-none: #6f86a0;
-  --dot-line: rgba(255, 255, 255, 0.42);
-  --amberD: #f5c27a;
+  --greenD: #30d158;
+  --greenS: #0f2e1a;
+  --red: #ff6482;
+  --redD: #ff9fb2;
+  --redS: #3d1a24;
+  --cat-1: #3a4452;
+  --cat-2: #34473f;
+  --cat-3: #45482f;
+  --cat-4: #4d3f30;
+  --cat-5: #4a3434;
+  --cat-6: #40384c;
+  --cat-7: #343e52;
+  --cat-8: #3a4836;
+  --cat-9: #4a4536;
+  --cat-10: #3a3a3e;
+  --cat-none: #1c1c1e;
+  --heat-1: #1a1d22;
+  --heat-2: #252b33;
+  --heat-3: #323b47;
+  --heat-4: #41505f;
+  --heat-5: #53657a;
+  --bub-project: #1c1c1e;
+  --bub-project-line: #f5f5f7;
+  --bub-lot: #26262a;
+  --bub-lot-line: #8e8e93;
+  --bub-section: #2c2c2e;
+  --bub-section-line: #98989d;
+  --bub-subsection: #232326;
+  --bub-subsection-line: #8e8e93;
+  --bub-group: #2c2c2e;
+  --bub-group-line: #8e8e93;
+  --bub-position: #4a3b2c;
+  --bub-position-line: #d8b48a;
+  --bub-cluster: #1c1c1e;
+  --bub-cluster-line: #aeaeb2;
+  --bub-edge: #636366;
+  --los-fill: rgba(255, 255, 255, 0.03);
+  --grp-fill: rgba(28, 28, 30, 0.78);
+  --grp-fill-strong: #2c2c2e;
+  --dot-none: #636366;
+  --dot-line: rgba(255, 255, 255, 0.4);
+  --amberD: #ffcc80;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 30px rgba(0, 0, 0, 0.35);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.25);
   --shadow-hairline: 0 1px 0 rgba(0, 0, 0, 0.2);
-  --scrim: rgba(22, 30, 42, 0.92);
+  --scrim: rgba(28, 28, 30, 0.92);
   --backdrop: rgba(0, 0, 0, 0.45);
   --spot: rgba(0, 0, 0, 0.6);
   color-scheme: dark;
@@ -427,7 +438,7 @@ a:hover {
   background: transparent;
 }
 
-/* Blueprint-Raster hinter dem Bubble-Graph. */
+/* Feines Raster hinter dem Bubble-Graph. */
 .bp-canvas {
   background: var(--paper);
   background-image:
@@ -439,7 +450,7 @@ a:hover {
 
 /* Beschriftung im Graphen: Gruppen, Achsen der Matrix („frei"). */
 .graph-group-title {
-  font-family: var(--sans);
+  font-family: var(--display);
   font-size: 14px;
   font-weight: 600;
   fill: var(--ink);
@@ -447,21 +458,21 @@ a:hover {
 .graph-group-context,
 .graph-group-meta {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11.5px;
   fill: var(--dim);
 }
 .graph-group-context {
   fill: var(--mute);
 }
 .graph-axis {
-  font-family: var(--sans);
+  font-family: var(--display);
   font-size: 14px;
   font-weight: 600;
   fill: var(--ink);
 }
 .graph-axis-key {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.6px;
   text-transform: uppercase;
   fill: var(--mute);
@@ -471,7 +482,7 @@ a:hover {
   fill: var(--blue);
 }
 
-/* Matrix-Kacheln (Entscheidung 0059): Farbe nach Anzahl, blau bei Maus und Auswahl. */
+/* Matrix-Kacheln (Entscheidung 0059): Farbe nach Anzahl, Akzent bei Maus und Auswahl. */
 .graph-tile {
   stroke: var(--line);
   stroke-width: 1;
@@ -483,7 +494,7 @@ a:hover {
 .graph-tile.is-hot {
   stroke: var(--blue);
   stroke-width: 2;
-  filter: drop-shadow(0 4px 10px rgba(37, 99, 235, 0.22));
+  filter: drop-shadow(0 4px 10px rgba(200, 54, 43, 0.22));
 }
 .graph-tile.is-picked {
   stroke: var(--blue);
@@ -492,7 +503,7 @@ a:hover {
 .graph-tile-count,
 .graph-tile-sum {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11.5px;
   fill: var(--dim);
   pointer-events: none;
 }
@@ -642,13 +653,13 @@ a:hover {
 }
 
 .start-sub {
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--dim);
 }
 
 .start-meta {
   max-width: 320px;
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.5;
   color: var(--mute);
 }
@@ -662,7 +673,7 @@ a:hover {
   border: 1px solid var(--line);
   border-radius: var(--r-pill);
   background: var(--surface);
-  font-size: 11.5px;
+  font-size: 12.5px;
   cursor: pointer;
 }
 
@@ -671,13 +682,13 @@ a:hover {
 }
 
 .start-btn.primary {
-  border-color: var(--blue);
-  background: var(--blue);
+  border-color: var(--blueF);
+  background: var(--blueF);
   color: #fff;
 }
 
 .start-btn.primary:hover {
-  background: var(--blueD);
+  background: var(--blueFH);
 }
 
 .start-ring {
@@ -731,7 +742,7 @@ a:hover {
   flex-wrap: wrap;
   justify-content: center;
   gap: 8px 22px;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--dim);
 }
 
@@ -757,7 +768,7 @@ a:hover {
 }
 
 .start-tip-lock {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--greenD);
 }
 
@@ -796,7 +807,7 @@ a:hover {
   height: 30px;
   margin: 0;
   padding: 0 14px;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .start-recent-ic {
@@ -821,7 +832,7 @@ a:hover {
 
 .start-recent-name {
   overflow: hidden;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -831,9 +842,8 @@ a:hover {
   display: flex;
   flex-wrap: wrap;
   gap: 2px 10px;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--mute);
-  font-variant-numeric: tabular-nums;
 }
 
 .start-recent-mk {
@@ -851,7 +861,7 @@ a:hover {
   border-radius: 50%;
   background: none;
   color: var(--mute);
-  font-size: 13px;
+  font-size: 14px;
   cursor: pointer;
 }
 
@@ -866,7 +876,7 @@ a:hover {
 }
 
 .start-recent-q {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--dim);
 }
 
@@ -1004,7 +1014,7 @@ a:hover {
   --paint-blau: #bfdbfe;
   --paint-rosa: #fbcfe8;
   --paint-lila: #ddd6fe;
-  --paint-ink: #152131;
+  --paint-ink: #1d1d1f;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -1082,7 +1092,7 @@ a:hover {
 .fill-mark {
   position: absolute;
   inset: 0;
-  background: rgba(37, 99, 235, 0.12);
+  background: rgba(200, 54, 43, 0.12);
   box-shadow: inset 0 0 0 1px var(--blue);
   pointer-events: none;
 }

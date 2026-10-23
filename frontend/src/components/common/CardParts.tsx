@@ -35,7 +35,7 @@ export function CardHead({
         )}
       </div>
       <div className="flex min-w-0 items-start gap-[10px]">
-        <h2 className="m-0 min-w-0 flex-1 font-sans text-[18px] font-semibold leading-[28px] tracking-[-0.3px] text-ink">
+        <h2 className="m-0 min-w-0 flex-1 font-display text-[18px] font-semibold leading-[28px] tracking-[-0.3px] text-ink">
           {title}
         </h2>
         {actions}
@@ -49,7 +49,7 @@ export function GroupPill({ color, children }: { color: string; children: string
   return (
     <span
       title={children}
-      className="inline-flex min-w-0 items-center gap-[6px] rounded-[var(--r-pill)] bg-sunken py-[2px] pl-[6px] pr-[8px] font-mono text-[10px] text-dim"
+      className="inline-flex min-w-0 items-center gap-[6px] rounded-[var(--r-pill)] bg-sunken py-[2px] pl-[6px] pr-[8px] font-mono text-[11px] text-dim"
     >
       <span
         aria-hidden="true"
@@ -77,16 +77,16 @@ export function StatRow({ stats }: { stats: readonly Stat[] }) {
     >
       {stats.map((stat) => (
         <div key={stat.label} className="min-w-0">
-          <div className="font-mono text-[10px] text-mute">{stat.label}</div>
+          <div className="font-mono text-[11px] text-mute">{stat.label}</div>
           <div
-            className={`mt-[2px] truncate font-sans text-[15px] font-semibold ${
+            className={`mt-[2px] truncate font-display text-[15px] font-semibold ${
               stat.empty === true ? 'text-mute' : 'text-ink'
             }`}
             title={stat.value}
           >
             {stat.value}
             {stat.unit !== undefined && (
-              <small className="ml-[3px] font-mono text-[10px] font-normal text-mute">
+              <small className="ml-[3px] font-mono text-[11px] font-normal text-mute">
                 {stat.unit}
               </small>
             )}
@@ -109,7 +109,7 @@ export function Section({
   return (
     <section aria-label={title} className="flex flex-col gap-[8px]">
       <div className="flex items-baseline justify-between gap-[8px]">
-        <span className="font-mono text-[10px] text-mute">{title}</span>
+        <span className="font-mono text-[11px] text-mute">{title}</span>
         {right}
       </div>
       {children}
@@ -119,20 +119,20 @@ export function Section({
 
 /** Zweispaltige Eigenschaftstabelle mit Rahmen und Radius. */
 export function PropTable({ rows }: { rows: ReadonlyArray<readonly [string, string]> }) {
-  if (rows.length === 0) return <div className="font-mono text-[10.5px] text-mute">–</div>;
+  if (rows.length === 0) return <div className="font-mono text-[11.5px] text-mute">–</div>;
   return (
     <dl className="m-0 grid grid-cols-[auto_1fr] overflow-hidden rounded-[var(--r-md)] border border-line bg-surface">
       {rows.map(([label, value], index) => (
         <div key={`${label}-${index}`} className="contents">
           <dt
-            className={`bg-sunken px-[12px] py-[7px] font-mono text-[10.5px] text-mute ${
+            className={`bg-sunken px-[12px] py-[7px] font-mono text-[11.5px] text-mute ${
               index > 0 ? 'border-t border-line' : ''
             }`}
           >
             {label}
           </dt>
           <dd
-            className={`m-0 min-w-0 break-words px-[12px] py-[7px] font-mono text-[10.5px] text-ink ${
+            className={`m-0 min-w-0 break-words px-[12px] py-[7px] font-mono text-[11.5px] text-ink ${
               index > 0 ? 'border-t border-line' : ''
             }`}
           >
@@ -145,4 +145,4 @@ export function PropTable({ rows }: { rows: ReadonlyArray<readonly [string, stri
 }
 
 export const CARD_BUTTON =
-  'inline-flex h-[30px] cursor-pointer items-center justify-center rounded-[var(--r-sm)] border border-line bg-surface px-[12px] font-mono text-[10.5px] text-ink hover:border-line2 focus-visible:border-blue';
+  'inline-flex h-[30px] cursor-pointer items-center justify-center rounded-[var(--r-sm)] border border-line bg-surface px-[12px] font-mono text-[11.5px] text-ink hover:border-line2 focus-visible:border-blue';

@@ -38,7 +38,7 @@ export function NodeDetails({
         meta={
           <>
             {node.code !== '' && (
-              <span className="shrink-0 font-mono text-[11px] text-dim">{node.code}</span>
+              <span className="shrink-0 font-mono text-[12px] text-dim">{node.code}</span>
             )}
             <GroupPill color="var(--line2)">{kind}</GroupPill>
           </>
@@ -64,7 +64,7 @@ export function NodeDetails({
               {children.map((child) => (
                 <li
                   key={child.id}
-                  className="flex items-center gap-[8px] border-b border-line py-[6px] font-mono text-[10.5px] last:border-b-0"
+                  className="flex items-center gap-[8px] border-b border-line py-[6px] font-mono text-[11.5px] last:border-b-0"
                 >
                   <span className="w-[52px] shrink-0 text-mute">{child.code}</span>
                   <span className="min-w-0 flex-1 truncate text-ink">

@@ -208,7 +208,7 @@ describe('Logo-Menü', () => {
       target: { files: [new File(['{}'], 'falsch.json')] },
     });
     expect(
-      await screen.findByText('Die Datei ist keine Notiz-Datei von Bubble.'),
+      await screen.findByText('Die Datei ist keine Notiz-Datei von Conocto.'),
     ).toBeInTheDocument();
   });
 });

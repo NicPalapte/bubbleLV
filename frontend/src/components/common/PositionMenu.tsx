@@ -41,7 +41,7 @@ const MENU_WIDTH = 240;
 const EDGE = 8;
 
 const ITEM =
-  'flex h-[30px] w-full shrink-0 cursor-pointer items-center gap-[8px] rounded-[var(--r-sm)] border-none bg-transparent px-[8px] text-left font-mono text-[11px] text-ink hover:bg-sunken focus-visible:bg-sunken focus-visible:outline-none';
+  'flex h-[30px] w-full shrink-0 cursor-pointer items-center gap-[8px] rounded-[var(--r-sm)] border-none bg-transparent px-[8px] text-left font-mono text-[12px] text-ink hover:bg-sunken focus-visible:bg-sunken focus-visible:outline-none';
 
 function Mark({ on }: { on: boolean }) {
   return (
@@ -146,7 +146,7 @@ function Menu({ target, onClose }: { target: MenuTarget; onClose: () => void }) 
       className="ov-window fixed z-[70] flex flex-col gap-[1px] p-[5px]"
       style={{ left: place.left, top: place.top, width: MENU_WIDTH }}
     >
-      <div className="truncate px-[8px] pb-[5px] pt-[3px] font-mono text-[10px] text-mute">
+      <div className="truncate px-[8px] pb-[5px] pt-[3px] font-mono text-[11px] text-mute">
         {title.trim()}
       </div>
       {position !== null && (
@@ -173,7 +173,7 @@ function Menu({ target, onClose }: { target: MenuTarget; onClose: () => void }) 
             onClick={run(() => setImportantNow(dispatch, id, !important))}
             className={ITEM}
           >
-            <span aria-hidden="true" className="font-sans font-bold text-red">
+            <span aria-hidden="true" className="font-display font-bold text-red">
               {IMPORTANT_INFO.glyph}
             </span>
             {IMPORTANT_INFO.label}

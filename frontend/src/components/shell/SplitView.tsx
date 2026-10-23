@@ -113,10 +113,10 @@ function Pane({
         onDragEnd={onDragEnd}
         className="flex h-[36px] shrink-0 cursor-grab items-center gap-[8px] border-b border-line pl-[10px] pr-[5px] active:cursor-grabbing"
       >
-        <span aria-hidden="true" className="text-[12px] leading-none text-mute">
+        <span aria-hidden="true" className="text-[13px] leading-none text-mute">
           ⠿
         </span>
-        <b className="flex-1 font-sans text-[13px] font-semibold text-ink">{PANE_LABEL[pane]}</b>
+        <b className="flex-1 font-display text-[14px] font-semibold text-ink">{PANE_LABEL[pane]}</b>
         {actions}
       </div>
       {children}
@@ -254,7 +254,7 @@ export function SplitView({ root }: { root: LVNode }) {
   const popButton = (pane: PopPane) => (
     <>
       {blocked === pane && (
-        <span role="status" className="font-mono text-[10.5px] text-mute">
+        <span role="status" className="font-mono text-[11.5px] text-mute">
           Pop-up blockiert
         </span>
       )}
@@ -299,7 +299,7 @@ export function SplitView({ root }: { root: LVNode }) {
           onClose={() => dispatch({ type: 'closeSelection' })}
         />
       ) : (
-        <div className="flex flex-1 items-center justify-center font-mono text-[11px] text-mute">
+        <div className="flex flex-1 items-center justify-center font-mono text-[12px] text-mute">
           Keine Auswahl
         </div>
       ),
@@ -358,7 +358,7 @@ export function SplitView({ root }: { root: LVNode }) {
       {layout.colDivider && divider('col')}
       {layout.rowDivider && divider('row')}
       {shown.length === 0 && (
-        <div className="flex items-center justify-center font-mono text-[11px] text-mute">
+        <div className="flex items-center justify-center font-mono text-[12px] text-mute">
           Alle Bereiche geschlossen
         </div>
       )}

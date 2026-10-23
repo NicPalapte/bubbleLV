@@ -1,7 +1,7 @@
 # @bubble/core – der neutrale Kern
 
 Hier liegt alles, was ein LV **ist** – unabhängig davon, wie es angezeigt wird.
-Bubble (`frontend/`) ist der Viewer und liest nur über `src/index.ts`.
+Conocto (`frontend/`) ist der Viewer und liest nur über `src/index.ts`.
 
 ## Inhalt
 

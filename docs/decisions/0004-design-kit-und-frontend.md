@@ -7,7 +7,7 @@
 ## Worum geht's
 
 Dieselben UI-Bausteine liegen zweimal im Repo: als `.jsx` im Design-Skill
-(`.claude/skills/bubble-design/components/core/`) und als `.tsx` in der App
+(`.claude/skills/conocto-design/components/core/`) und als `.tsx` in der App
 (`frontend/src/components/ui/`). Bisher stand nirgends, welche Fassung gilt.
 Wer die falsche Datei änderte, sah keine Wirkung – und merkte es nicht.
 
@@ -49,7 +49,7 @@ Wer die falsche Datei änderte, sah keine Wirkung – und merkte es nicht.
 ## Folgen
 
 - Für den Repo-Owner ändert sich nichts, es ist kein Handgriff nötig.
-- Die Regeln stehen in `.claude/skills/bubble-design/components/USAGE.md`
+- Die Regeln stehen in `.claude/skills/conocto-design/components/USAGE.md`
   (Abschnitt „Source of truth") – dort schaut der Agent hin, bevor er das Kit anfasst.
 - Die Inventar-Tabelle in derselben Datei nennt zu jedem Baustein die `.tsx` –
   oder den Grund, warum es keine gibt (`MemberAvatar`, `PackageTag`, `Checkbox`).

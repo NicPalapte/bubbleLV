@@ -1,4 +1,4 @@
-// Bubble — PanelHeader: object header at the top of a side panel (§ code + title + status).
+// Conocto — PanelHeader: object header at the top of a side panel (§ code + title + status).
 export function PanelHeader({ eyebrow, title, right, size = 18 }) {
   return (
     <div style={{ padding:'var(--pad-panel-head)', borderBottom:'1px solid var(--line)' }}>
