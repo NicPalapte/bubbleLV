@@ -9,6 +9,14 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.35.0 — 23.10.2026 · Auswahl und Hinweise dezenter
+
+- **Ausgewählte Position:** kein Ring mehr. Der Punkt wird ziegelrot und etwas größer.
+  Die gestrichelte Linie zur Karte bleibt.
+- **Prüfhinweise auf der Karte:** Oben steht nur noch die Zahl, z. B. „⚠ 2 Hinweise“.
+  Ein Klick rollt zur Liste am Ende der Karte: je Regel eine Zeile mit Fundstelle und
+  Norm-Verweis.
+
 ## 0.33.0 — 23.10.2026 · Kurzumfrage
 
 - **Feedback:** Nach 4 Minuten mit geöffneter Datei fragt Conocto einmal unten rechts nach:

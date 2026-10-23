@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest';
 import type { ReactNode } from 'react';
 import { BubbleGraph } from '../../src/components/graph/BubbleGraph';
 import { GraphHeader } from '../../src/components/graph/GraphHeader';
-import { HintBlock } from '../../src/components/check/HintBlock';
+import { HintBlock, HintCount } from '../../src/components/check/HintBlock';
 import { hintsByPosition } from '../../src/lib/check';
 import { runPipeline } from '../../src/lib/pipeline/runPipeline';
 import { ViewerProvider } from '../../src/state/ViewerProvider';
@@ -77,6 +77,7 @@ function Harness({
       <span data-testid="offene-regeln">{[...openRules].join(',')}</span>
       <span data-testid="holt-regel">{revealRule ?? ''}</span>
       <span data-testid="auswahl">{gewaehlt ?? ''}</span>
+      <HintCount positionId={positionId} target={{ current: null }} />
       <HintBlock positionId={positionId} />
       {children}
     </>
@@ -108,10 +109,18 @@ describe('HintBlock', () => {
     expect(within(block).getAllByRole('listitem')).toHaveLength(erwartet);
   });
 
+  it('nennt im Kartenkopf nur die Zahl der Hinweise', () => {
+    const erwartet = hints.get(MIT_V1 as string)?.flags.length ?? 0;
+    renderBlock(MIT_V1 as string);
+    const wort = erwartet === 1 ? 'Hinweis' : 'Hinweise';
+    expect(screen.getByRole('button', { name: `⚠ ${erwartet} ${wort}` })).toBeInTheDocument();
+  });
+
   it('bleibt ganz weg, wo nichts gefunden wurde — keine leere Überschrift', () => {
     expect(hints.has(OHNE_HINWEIS)).toBe(false);
     renderBlock(OHNE_HINWEIS);
     expect(screen.queryByRole('region', { name: 'Hinweise' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^⚠ \d+ Hinweis/ })).toBeNull();
   });
 
   it('verschwindet, sobald die Regel in der Prüfung abgeschaltet wird', () => {

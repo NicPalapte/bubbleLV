@@ -17,7 +17,7 @@ import {
   type PaintTarget,
 } from './paint';
 import { shownText } from './shownText';
-import { HintBlock } from '../check/HintBlock';
+import { HintBlock, HintCount } from '../check/HintBlock';
 import {
   attributeLabel,
   attrMeta,
@@ -164,6 +164,7 @@ export function PositionDetails({
     [position.longText, position.attributes, admin.terms],
   );
   const longTextRef = useRef<HTMLDivElement>(null);
+  const hintsRef = useRef<HTMLElement>(null);
   const [learnTarget, setLearnTarget] = useState<LearnTarget | null>(null);
   const closeLearn = useCallback(() => setLearnTarget(null), []);
   // Eigene Anstreichungen (Entscheidung 0063).
@@ -264,6 +265,7 @@ export function PositionDetails({
             {main !== null && mainColor !== undefined && (
               <GroupPill color={mainColor}>{headingOf(main)}</GroupPill>
             )}
+            <HintCount positionId={node.id} target={hintsRef} />
           </>
         }
         title={<Highlighted text={position.shortText} query={search} />}
@@ -287,10 +289,6 @@ export function PositionDetails({
       />
 
       <div className="flex min-h-0 flex-1 flex-col gap-[16px] overflow-auto px-[16px] pb-[16px] pt-[14px]">
-        {/* Hinweise vor dem Langtext: wer eine Position aufmacht, soll zuerst
-            sehen, ob an ihr etwas auffällt (WP-R, R1). */}
-        <HintBlock positionId={node.id} />
-
         {position.longText !== '' && (
           <Section title="Langtext">
             {legend.length > 0 && (
@@ -405,6 +403,9 @@ export function PositionDetails({
             </div>
           )}
         </Section>
+
+        {/* Hinweise dezent am Ende; der Kopf zeigt nur ihre Zahl (WP-R, R1). */}
+        <HintBlock ref={hintsRef} positionId={node.id} />
 
         <PaintList
           marks={marks}
