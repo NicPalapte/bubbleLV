@@ -70,6 +70,8 @@ function clampZoom(value: number): number {
 const FIT_SELECTION_MAX_ZOOM = 2.5;
 /** Unter dieser Breite hat die Linie zur Karte keinen Platz. */
 const LEADER_MIN_WIDTH = 760;
+/** So viel größer zeichnet der Graph die ausgewählte Position. */
+const PICKED_SCALE = 1.2;
 /** Fenster und Leisten über dem Graphen — Schilder weichen ihnen aus. */
 const OVERLAY_SELECTOR = '.ov-glass, .ov-window, .ov-pill';
 const EMPTY_SELECTED: Readonly<Record<string, ReadonlySet<string>>> = {};
@@ -857,7 +859,7 @@ export function BubbleGraph({ root, cardOverlay = true }: { root: LVNode; cardOv
       const py = map.py[selectedSlot] * view.k + view.ty;
       const tx = c.left - base.left;
       const ty = Math.min(Math.max(py, c.top - base.top + 30), c.bottom - base.top - 30);
-      const startX = px + (radii[selectedSlot] + 11) * view.k;
+      const startX = px + (radii[selectedSlot] * PICKED_SCALE + 4) * view.k;
       if (startX < tx - 10 && (isHit(selectedSlot) || !hide)) {
         const mx = (startX + tx) / 2;
         leader = { d: `M${startX},${py} C${mx},${py} ${mx},${ty} ${tx},${ty}`, x: tx, y: ty };
@@ -1167,12 +1169,17 @@ export function BubbleGraph({ root, cardOverlay = true }: { root: LVNode; cardOv
               : group.slots.map((slot) => {
                   const wx = map.px[slot];
                   const wy = map.py[slot];
-                  const r = radii[slot];
+                  const picked = slot === selectedSlot;
+                  const r = picked ? radii[slot] * PICKED_SCALE : radii[slot];
                   if (!morphing && !isInView(cull, wx, wy, r + 12)) return null;
                   const hit = isHit(slot);
                   if (!hit && hide) return null;
                   const position = index.positions[slot];
-                  const fill = colors[slot];
+                  // Auswahl ohne Ring: Akzentfarbe und etwas größer, feiner Rand in
+                  // Flächenfarbe trennt sie von Nachbarn.
+                  const fill = picked ? 'var(--blue)' : colors[slot];
+                  const edge = picked ? 'var(--surface)' : 'var(--dot-line)';
+                  const edgeWidth = picked ? 1.5 : 0.6;
                   const hint = rings ? hints.get(index.nodes[slot].id)?.severity : undefined;
                   const type = position.positionType;
                   const delay =
@@ -1220,8 +1227,8 @@ export function BubbleGraph({ root, cardOverlay = true }: { root: LVNode; cardOv
                           width={r * 1.6}
                           height={r * 1.6}
                           fill={fill}
-                          stroke="var(--dot-line)"
-                          strokeWidth={0.6}
+                          stroke={edge}
+                          strokeWidth={edgeWidth}
                           transform="rotate(45)"
                         />
                       ) : (
@@ -1230,33 +1237,12 @@ export function BubbleGraph({ root, cardOverlay = true }: { root: LVNode; cardOv
                           cy={0}
                           r={r}
                           fill={fill}
-                          stroke="var(--dot-line)"
-                          strokeWidth={0.6}
+                          stroke={edge}
+                          strokeWidth={edgeWidth}
                         />
                       )}
                       {type === 'ZULAGENPOSITION' && (
                         <circle cx={0} cy={0} r={1.6} fill="var(--surface)" />
-                      )}
-                      {slot === selectedSlot && (
-                        <>
-                          <circle
-                            cx={0}
-                            cy={0}
-                            r={r + 6}
-                            fill="none"
-                            stroke="var(--blue)"
-                            strokeWidth={2.5}
-                          />
-                          <circle
-                            cx={0}
-                            cy={0}
-                            r={r + 11}
-                            fill="none"
-                            stroke="var(--blue)"
-                            strokeWidth={1}
-                            opacity={0.35}
-                          />
-                        </>
                       )}
                       {graphFocused && slot === focusSlot && (
                         <circle
