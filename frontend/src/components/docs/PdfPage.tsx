@@ -4,7 +4,7 @@
 // sichtbaren Bereichs kommt — ein Dokument mit 300 Seiten zeichnet nur die paar,
 // die man sieht.
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { PDFPageProxy, RenderTask } from 'pdfjs-dist';
 import { useDocHighlights, rangeIn, type DocHighlightItem } from './docHighlights';
 import type { DocMark } from '../../lib/docs/docNotes';
@@ -25,7 +25,7 @@ interface Badge {
   readonly top: number;
 }
 
-export function PdfPage({
+function PdfPageView({
   doc,
   page,
   scale,
@@ -80,12 +80,16 @@ export function PdfPage({
   useEffect(() => {
     if (!near || proxy !== null) return;
     let alive = true;
-    void doc.pdf.getPage(page).then((loaded) => {
-      if (!alive) return;
-      const view = loaded.getViewport({ scale: 1 });
-      onSize(page, { width: view.width, height: view.height });
-      setProxy(loaded);
-    });
+    doc.pdf.getPage(page).then(
+      (loaded) => {
+        if (!alive) return;
+        const view = loaded.getViewport({ scale: 1 });
+        onSize(page, { width: view.width, height: view.height });
+        setProxy(loaded);
+      },
+      // Dokument während des Ladens geschlossen oder Seite defekt: Seite bleibt leer.
+      () => undefined,
+    );
     return () => {
       alive = false;
     };
@@ -239,3 +243,6 @@ export function PdfPage({
     </div>
   );
 }
+
+/** Gekapselt: beim Scrollen ändert sich nur die Seitenanzeige, nicht jede Seite. */
+export const PdfPage = memo(PdfPageView);

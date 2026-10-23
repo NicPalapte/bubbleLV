@@ -174,11 +174,34 @@ export function rekeyDocNotes(notes: DocNotes, keys: ReadonlyMap<string, string>
 export function mergeDocNotes(notes: DocNotes, more: DocNotes): DocNotes {
   let out = notes;
   for (const [id, info] of more.docs) if (!out.docs.has(id)) out = registerDoc(out, id, info);
+  if (more.marks.length === 0) return out;
+  // Einmal über eine Tabelle statt Stelle für Stelle über `put`: Notiz-Dateien und der
+  // Speicher können viele Stellen bringen, und `put` sortiert jedes Mal alles neu.
+  const keyOf = (spot: DocSpot): string =>
+    `${spot.doc}\u0000${spot.page}\u0000${spot.start}\u0000${spot.text}`;
+  const byKey = new Map(out.marks.map((mark) => [keyOf(mark), mark]));
+  let changed = false;
   for (const mark of more.marks) {
-    if (mark.paint !== null) out = paintDocMark(out, mark, mark.paint, mark.at);
-    out = linkDocMark(out, mark, mark.links, mark.at);
+    if (!validSpot(mark)) continue;
+    const key = keyOf(mark);
+    let known = byKey.get(key) ?? null;
+    if (mark.paint !== null && known?.paint !== mark.paint) {
+      known = { ...spotOf(mark), paint: mark.paint, links: known?.links ?? [], at: mark.at };
+      byKey.set(key, known);
+      changed = true;
+    }
+    if (mark.links.length === 0) continue;
+    const links = [...new Set([...(known?.links ?? []), ...mark.links])];
+    if (known !== null && links.length === known.links.length) continue;
+    byKey.set(key, {
+      ...spotOf(mark),
+      paint: known?.paint ?? null,
+      links,
+      at: known?.at ?? mark.at,
+    });
+    changed = true;
   }
-  return out;
+  return changed ? { ...out, marks: [...byKey.values()].sort(order) } : out;
 }
 
 /** Form für IndexedDB und Notiz-Datei: Arrays statt Map. */

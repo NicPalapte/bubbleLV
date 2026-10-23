@@ -530,12 +530,15 @@ export function mergeNotes(
     else important.delete(nodeId);
   }
   let out: Annotations = { ...current, progress, important, log };
-  let documents = mergeDocNotes(current.documents, dokumente);
+  const linked: DocMark[] = [];
   for (const { entry, nodeId } of matches) {
     out = mergeHighlights(out, nodeId, entry.anstreichungen);
-    const linked = entry.dokumentstellen.map((mark) => ({ ...mark, links: [nodeId] }));
-    documents = mergeDocNotes(documents, { docs: new Map(), marks: linked });
+    for (const mark of entry.dokumentstellen) linked.push({ ...mark, links: [nodeId] });
   }
+  const documents = mergeDocNotes(mergeDocNotes(current.documents, dokumente), {
+    docs: new Map(),
+    marks: linked,
+  });
   return { ...out, documents };
 }
 

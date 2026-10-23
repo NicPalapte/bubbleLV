@@ -351,22 +351,26 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
   };
   const touchedNow = picked === null ? [] : touched(picked);
 
-  const badge = (mark: DocMark) => {
-    const first = mark.links[0];
-    const slot = index.slotOf.get(first);
-    const oz = slot === undefined ? '?' : (index.nodes[slot].position?.oz ?? '?');
-    return (
-      <button
-        type="button"
-        onClick={() => jumpToPosition(first, { stayInView: true })}
-        title="Verknüpfte Position wählen"
-        className="cursor-pointer rounded-[6px] border border-blue bg-white px-[5px] py-[1px] font-mono text-[10.5px] text-[#a52a21] shadow-[var(--shadow-sm)] hover:bg-[#fbebe9]"
-      >
-        {oz}
-        {mark.links.length > 1 ? ` +${mark.links.length - 1}` : ''}
-      </button>
-    );
-  };
+  // Stabil, damit `PdfPage` (memo) beim Scrollen nicht alle Seiten neu rendert.
+  const badge = useCallback(
+    (mark: DocMark) => {
+      const first = mark.links[0];
+      const slot = index.slotOf.get(first);
+      const oz = slot === undefined ? '?' : (index.nodes[slot].position?.oz ?? '?');
+      return (
+        <button
+          type="button"
+          onClick={() => jumpToPosition(first, { stayInView: true })}
+          title="Verknüpfte Position wählen"
+          className="cursor-pointer rounded-[6px] border border-blue bg-white px-[5px] py-[1px] font-mono text-[10.5px] text-[#a52a21] shadow-[var(--shadow-sm)] hover:bg-[#fbebe9]"
+        >
+          {oz}
+          {mark.links.length > 1 ? ` +${mark.links.length - 1}` : ''}
+        </button>
+      );
+    },
+    [index, jumpToPosition],
+  );
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">

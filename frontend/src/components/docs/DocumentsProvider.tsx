@@ -88,20 +88,18 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
           void opened.pdf.loadingTask.destroy();
           return;
         }
-        dispatch({
-          type: 'docRegister',
-          doc: opened.id,
-          name: opened.name,
-          pages: opened.pdf.numPages,
-        });
-        setDocs((current) => {
-          const same = current.find((doc) => doc.id === opened.id);
-          if (same !== undefined) {
-            void opened.pdf.loadingTask.destroy();
-            return current;
-          }
-          return [...current, opened];
-        });
+        if (docsRef.current.some((doc) => doc.id === opened.id)) {
+          // Schon offen: nur nach vorn holen, nicht doppelt anmelden oder zählen.
+          void opened.pdf.loadingTask.destroy();
+        } else {
+          dispatch({
+            type: 'docRegister',
+            doc: opened.id,
+            name: opened.name,
+            pages: opened.pdf.numPages,
+          });
+          setDocs((current) => [...current, opened]);
+        }
         setActiveId(opened.id);
         dispatch({ type: 'docWindow', open: true });
       } catch (caught) {

@@ -181,6 +181,27 @@ describe('Notiz-Datei Version 4', () => {
     expect(file.dokumente).toBe(EMPTY_DOC_NOTES);
   });
 
+  it('führt doppelte Stellen zusammen, auch bei vielen Stellen', () => {
+    const viele = Array.from({ length: 5000 }, (_, i) => ({
+      ...OTHER,
+      page: (i % 50) + 1,
+      start: i,
+      paint: 'gelb' as const,
+      links: [`p${i % 7}`],
+      at: i,
+    }));
+    const doppelt = viele.map((mark) => ({ ...mark, paint: null, links: ['q'], at: 0 }));
+    const merged = mergeDocNotes(EMPTY_DOC_NOTES, {
+      docs: new Map(),
+      marks: [...viele, ...doppelt],
+    });
+    expect(merged.marks).toHaveLength(5000);
+    expect(merged.marks[0]).toMatchObject({ page: 1, start: 0, paint: 'gelb', links: ['p0', 'q'] });
+    expect(merged.marks.every((mark, i, all) => i === 0 || all[i - 1].page <= mark.page)).toBe(
+      true,
+    );
+  });
+
   it('zusammenführen ohne Treffer nimmt trotzdem die Dokumentstellen mit', () => {
     const more = paintDocMark(EMPTY_DOC_NOTES, OTHER, 'gelb', 1);
     expect(mergeDocNotes(EMPTY_DOC_NOTES, more).marks).toHaveLength(1);
