@@ -2,7 +2,14 @@
 // Auswahl zählt als festes Ereignis; Freitext geht nur über das eigene Mailprogramm.
 
 import { useState } from 'react';
-import { feedbackMailto, PAY_OPTIONS, RATINGS, type Pay, type Rating } from '../../lib/survey';
+import {
+  feedbackMailto,
+  MAX_FEEDBACK_TEXT,
+  PAY_OPTIONS,
+  RATINGS,
+  type Pay,
+  type Rating,
+} from '../../lib/survey';
 import { countEvent } from '../../lib/usage/count';
 import { useSurvey } from '../../state/survey';
 
@@ -23,8 +30,32 @@ export function SurveyCard() {
   const [rating, setRating] = useState<Rating | null>(null);
   const [pay, setPay] = useState<Pay | null>(null);
   const [text, setText] = useState('');
+  // Nach dem Senden mit Freitext: Dank statt Fragen. Ohne Mailprogramm passiert beim
+  // `mailto:` nichts — dann liegt der Text wenigstens in der Zwischenablage.
+  const [mailed, setMailed] = useState(false);
 
   if (!survey.open) return null;
+
+  if (mailed) {
+    return (
+      <section
+        aria-label="Kurzumfrage"
+        className="ov-glass fixed bottom-[72px] right-[16px] z-[30] flex w-[300px] max-w-[calc(100vw-32px)] items-start justify-between gap-[8px] p-[14px]"
+      >
+        <p className="m-0 font-sans text-[13px] text-ink">
+          Danke! Dein Text liegt auch in der Zwischenablage, falls sich kein Mailprogramm öffnet.
+        </p>
+        <button
+          type="button"
+          onClick={survey.later}
+          aria-label="Umfrage schließen"
+          className="cursor-pointer border-none bg-transparent px-[4px] font-mono text-[12px] text-mute hover:text-ink"
+        >
+          ✕
+        </button>
+      </section>
+    );
+  }
 
   const empty = rating === null && pay === null && text.trim() === '';
 
@@ -86,6 +117,7 @@ export function SurveyCard() {
           value={text}
           onChange={(event) => setText(event.target.value)}
           rows={2}
+          maxLength={MAX_FEEDBACK_TEXT}
           placeholder="optional, geht per E-Mail"
           className="resize-none rounded-[var(--r-sm)] border border-line bg-surface p-[6px] font-sans text-[12.5px] text-ink outline-none focus:border-blue"
         />
@@ -103,12 +135,14 @@ export function SurveyCard() {
           type="button"
           disabled={empty}
           onClick={() => {
-            survey.submit({ rating, pay });
-            if (text.trim() !== '') {
-              countEvent('umfrage-freitext-mail');
-              // Übergibt nur an das Mailprogramm; abschicken muss man dort selbst.
-              window.location.href = feedbackMailto(text);
-            }
+            const withText = text.trim() !== '';
+            survey.submit({ rating, pay }, !withText);
+            if (!withText) return;
+            countEvent('umfrage-freitext-mail');
+            setMailed(true);
+            void navigator.clipboard?.writeText(text.trim()).catch(() => undefined);
+            // Übergibt nur an das Mailprogramm; abschicken muss man dort selbst.
+            window.location.href = feedbackMailto(text);
           }}
           className={`${BUTTON} border-blueF bg-blueF text-white hover:bg-blueFH disabled:cursor-default disabled:opacity-50`}
         >

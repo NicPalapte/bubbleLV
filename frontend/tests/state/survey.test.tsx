@@ -9,7 +9,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SurveyCard } from '../../src/components/survey/SurveyCard';
 import { clearLastLv, readSurveyDone, saveSurveyDone } from '../../src/lib/persist/lastLv';
 import { runPipeline } from '../../src/lib/pipeline/runPipeline';
-import { feedbackMailto, SURVEY_DELAY_MS, surveyEvents } from '../../src/lib/survey';
+import {
+  feedbackMailto,
+  MAX_FEEDBACK_TEXT,
+  SURVEY_DELAY_MS,
+  surveyEvents,
+} from '../../src/lib/survey';
 import { USAGE_EVENTS } from '../../src/lib/usage/count';
 import { SurveyProvider, useSurvey } from '../../src/state/survey';
 import { useViewerDispatch } from '../../src/state/viewer';
@@ -130,6 +135,28 @@ describe('Kurzumfrage', () => {
     fireEvent.click(senden);
     expect(card()).toBeNull();
     await waitFor(async () => expect(await readSurveyDone()).toBe('beantwortet'));
+  });
+
+  it('dankt nach Freitext und legt ihn in die Zwischenablage', async () => {
+    const writeText = vi.fn(() => Promise.resolve());
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    renderSurvey();
+    fireEvent.click(screen.getByRole('button', { name: 'Feedback geben' }));
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: ' Mehr Filter ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Senden' }));
+    expect(writeText).toHaveBeenCalledWith('Mehr Filter');
+    expect(card()).toHaveTextContent('Danke!');
+    await waitFor(async () => expect(await readSurveyDone()).toBe('beantwortet'));
+  });
+
+  it('begrenzt den Freitext, damit der Mail-Link nicht zu lang wird', () => {
+    renderSurvey();
+    fireEvent.click(screen.getByRole('button', { name: 'Feedback geben' }));
+    expect(screen.getByRole('textbox')).toHaveAttribute('maxLength', String(MAX_FEEDBACK_TEXT));
+    // Üblicher Text: ein Fünftel Leerzeichen, ab und zu ein Umlaut.
+    const satz = 'Für die Kalkulation fehlt mir ein Export der Mengen je Abschnitt. ';
+    const text = satz.repeat(20).slice(0, MAX_FEEDBACK_TEXT);
+    expect(feedbackMailto(text).length).toBeLessThan(1800);
   });
 
   it('lässt sich über das Logo-Menü jederzeit öffnen, auch ohne Wartezeit', () => {

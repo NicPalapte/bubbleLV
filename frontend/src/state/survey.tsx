@@ -27,7 +27,8 @@ interface SurveyValue {
   /** Schließen; in dieser Sitzung erscheint sie nicht mehr von selbst. */
   later(): void;
   never(): void;
-  submit(answers: SurveyAnswers): void;
+  /** Antworten zählen und merken; `close: false` lässt die Karte für den Dank offen. */
+  submit(answers: SurveyAnswers, close?: boolean): void;
 }
 
 const SurveyContext = createContext<SurveyValue | null>(null);
@@ -89,8 +90,8 @@ export function SurveyProvider({ children }: { children: ReactNode }) {
         countEvent('umfrage-abgelehnt');
         finish('abgelehnt');
       },
-      submit: (answers) => {
-        setOpen(false);
+      submit: (answers, close = true) => {
+        if (close) setOpen(false);
         for (const event of surveyEvents(answers)) countEvent(event);
         finish('beantwortet');
       },

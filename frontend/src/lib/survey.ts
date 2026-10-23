@@ -36,6 +36,13 @@ export function surveyEvents(answers: SurveyAnswers): UsageEvent[] {
 
 const BETREFF = 'Conocto: Feedback';
 
+/**
+ * Längster Freitext. Kodiert wird jedes Leerzeichen zu drei Zeichen, Umlaute zu sechs;
+ * so bleibt der `mailto:`-Link unter der Grenze, ab der Mailprogramme ihn still
+ * verwerfen (`MAILTO_GRENZE` = 1800 in ReportDialog.tsx).
+ */
+export const MAX_FEEDBACK_TEXT = 500;
+
 /** Öffnet das Mailprogramm mit dem Freitext; Antworten der Auswahl stehen nicht darin. */
 export function feedbackMailto(text: string): string {
   const params = new URLSearchParams({ subject: BETREFF, body: text.trim() });
