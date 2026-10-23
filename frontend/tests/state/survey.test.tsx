@@ -159,6 +159,16 @@ describe('Kurzumfrage', () => {
     expect(feedbackMailto(text).length).toBeLessThan(1800);
   });
 
+  it('beginnt beim erneuten Öffnen leer', () => {
+    renderSurvey();
+    fireEvent.click(screen.getByRole('button', { name: 'Feedback geben' }));
+    fireEvent.click(screen.getByRole('button', { name: '4' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Senden' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Feedback geben' }));
+    expect(screen.getByRole('button', { name: '4' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: 'Senden' })).toBeDisabled();
+  });
+
   it('lässt sich über das Logo-Menü jederzeit öffnen, auch ohne Wartezeit', () => {
     renderSurvey();
     fireEvent.click(screen.getByRole('button', { name: 'Feedback geben' }));

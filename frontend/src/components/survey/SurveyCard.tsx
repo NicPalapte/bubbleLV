@@ -27,14 +27,19 @@ function choiceClass(on: boolean): string {
 
 export function SurveyCard() {
   const survey = useSurvey();
+  // Eigene Komponente für den Inhalt: beim Schließen fällt sie weg, so beginnt jedes
+  // Öffnen leer und ein zweites „Senden" wiederholt keine alte Antwort.
+  return survey.open ? <SurveyForm /> : null;
+}
+
+function SurveyForm() {
+  const survey = useSurvey();
   const [rating, setRating] = useState<Rating | null>(null);
   const [pay, setPay] = useState<Pay | null>(null);
   const [text, setText] = useState('');
   // Nach dem Senden mit Freitext: Dank statt Fragen. Ohne Mailprogramm passiert beim
   // `mailto:` nichts — dann liegt der Text wenigstens in der Zwischenablage.
   const [mailed, setMailed] = useState(false);
-
-  if (!survey.open) return null;
 
   if (mailed) {
     return (

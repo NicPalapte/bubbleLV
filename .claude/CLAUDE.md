@@ -133,7 +133,8 @@ Bereichen (`view.workspace`, `docs/decisions/0064-splitscreen.md`,
 Datei (`docs/decisions/0047-kommentare-und-markierungen.md`, `docs/decisions/0053`) ·
 eigene Textmarkierungen im Langtext (6 feste Farben mit eigenen Namen, `docs/decisions/0063`) ·
 gelernte Hervorhebungen im Langtext nur über Admin-Werkzeug (0053) · lokaler Export/Druck über das
-Logo-Menü · Notizen als Datei sichern/laden (`lib/notesFile.ts`, 0061). Matrix und
+Logo-Menü · Notizen als Datei sichern/laden (`lib/notesFile.ts`, 0061) · freiwillige Kurzumfrage
+zum Produkt (Owner-Wunsch, `docs/decisions/0071-kurzumfrage.md`). Matrix und
 Ähnlichkeit sind entfernt (`docs/decisions/0031-drei-ansichten.md`); keine
 Befehlspalette (`docs/decisions/0038-keine-befehlspalette.md`).
 
