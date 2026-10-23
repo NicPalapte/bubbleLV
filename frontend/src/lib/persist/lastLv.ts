@@ -13,10 +13,12 @@
 //
 // Seit Entscheidung 0053 außerdem die Begriffe, die der Admin im Langtext gelernt
 // hat. Sie hängen an keiner Datei: weder eine neue Datei noch „Letzte Datei
-// löschen" nimmt sie mit.
+// löschen" nimmt sie mit. Ebenso die Farbnamen (0063) und der Merker der
+// Kurzumfrage (0071).
 
 import type { LearnedTerm } from '../highlight/terms';
 import { NO_PAINT_NAMES, toPaintNames, type PaintNames } from '../paintNames';
+import { toSurveyDone, type SurveyDone } from '../survey';
 import {
   commentedIds,
   EMPTY_ANNOTATIONS,
@@ -39,6 +41,8 @@ const KEY_NOTES = 'notizen';
 const KEY_TERMS = 'begriffe';
 /** Eigene Namen der Markierfarben (Entscheidung 0063), unabhängig von der Datei. */
 const KEY_PAINT_NAMES = 'farbnamen';
+/** Kurzumfrage beantwortet oder abgelehnt (Entscheidung 0071), unabhängig von der Datei. */
+const KEY_SURVEY = 'umfrage';
 /** Kennung für Einträge aus v0.14, die noch keine eigene `id` haben. */
 const LEGACY_ID = 'v0.14';
 
@@ -356,6 +360,41 @@ export async function savePaintNames(names: PaintNames): Promise<boolean> {
   try {
     const tx = db.transaction(STORE, 'readwrite');
     tx.objectStore(STORE).put({ ...names }, KEY_PAINT_NAMES);
+    await transactionDone(tx);
+    return true;
+  } catch {
+    return false;
+  } finally {
+    db.close();
+  }
+}
+
+/**
+ * Ob die Kurzumfrage erledigt ist. Ohne IndexedDB `null` — dann fragt sie in jeder
+ * Sitzung höchstens einmal, ohne Fehler.
+ */
+export async function readSurveyDone(): Promise<SurveyDone | null> {
+  const db = await openDb();
+  if (db === null) return null;
+  try {
+    const stored: unknown = await requestResult(
+      db.transaction(STORE, 'readonly').objectStore(STORE).get(KEY_SURVEY),
+    );
+    return toSurveyDone(stored);
+  } catch {
+    return null;
+  } finally {
+    db.close();
+  }
+}
+
+/** Merkt sich, dass die Umfrage beantwortet oder abgelehnt ist. */
+export async function saveSurveyDone(done: SurveyDone): Promise<boolean> {
+  const db = await openDb();
+  if (db === null) return false;
+  try {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).put(done, KEY_SURVEY);
     await transactionDone(tx);
     return true;
   } catch {

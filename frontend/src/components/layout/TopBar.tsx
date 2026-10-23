@@ -21,6 +21,7 @@ import { FACETS, facetOptionLabel } from '../../lib/facets';
 import { formatCount } from '../../lib/format';
 import { NotesFileError, notesCount, readNotesFile, type NotesFile } from '../../lib/notesFile';
 import { useAdmin } from '../../state/admin';
+import { useSurvey } from '../../state/survey';
 import { useViewer, useViewerDispatch, type HideMode } from '../../state/viewer';
 
 /**
@@ -117,6 +118,7 @@ export function TopBar() {
     active,
   } = useViewer();
   const dispatch = useViewerDispatch();
+  const survey = useSurvey();
   const notizAnzahl = useMemo(() => notesCount(annotations), [annotations]);
   const mitnehmen = useMitnehmen();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -253,6 +255,7 @@ export function TopBar() {
           onFehlerMelden={() => setMelden(true)}
           onTastenkuerzel={() => setKuerzel(true)}
           onTour={loaded ? () => dispatch({ type: 'tour', step: 0 }) : undefined}
+          onFeedback={loaded ? survey.show : undefined}
           onAnderesLv={loaded ? () => dispatch({ type: 'clear' }) : undefined}
           mitnehmen={loaded ? mitnehmen : undefined}
           onNotizenLaden={loaded ? () => notizDateiRef.current?.click() : undefined}

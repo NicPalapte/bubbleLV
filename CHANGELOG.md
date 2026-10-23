@@ -9,6 +9,15 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.33.0 — 23.10.2026 · Kurzumfrage
+
+- **Feedback:** Nach 4 Minuten mit geöffneter Datei fragt Conocto einmal unten rechts nach:
+  Wie hilfreich? (1–5), Würdest du dafür zahlen?, Was fehlt dir?
+- Die Auswahl zählt anonym mit, ohne Text. Freitext geht nur per E-Mail über dein
+  Mailprogramm.
+- **Nicht mehr fragen** merkt sich der Browser. Jederzeit wieder über das Logo-Menü:
+  „Feedback geben“.
+
 ## 0.32.0 — 23.10.2026 · Splitscreen nahtlos
 
 - **Nahtlos:** Die Bereiche im Split sind keine Karten mehr. Sie trennt nur noch eine feine

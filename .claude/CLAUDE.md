@@ -50,8 +50,9 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
   (Original-Bytes + Angaben der zuletzt geöffneten eigenen Datei + Marker, Kommentar-Verlauf
   und Textmarkierungen je Positions-Hash `hashes.id`, `lib/annotations.ts`, Entscheidung 0057),
   löschbar auf der Startseite. Dazu, unabhängig von der Datei, die im Admin-Werkzeug gelernten
-  Begriffe (`lib/highlight/terms.ts`) und die eigenen Namen der Markierfarben
-  (`lib/paintNames.ts`, `state/paintNames.tsx`).
+  Begriffe (`lib/highlight/terms.ts`), die eigenen Namen der Markierfarben
+  (`lib/paintNames.ts`, `state/paintNames.tsx`) und der Merker der Kurzumfrage
+  (`state/survey.tsx`, Schlüssel `umfrage`, Entscheidung 0071).
   Kein geparstes LV speichern, keine Demo-LVs, keine zweite Datei. Notizen nur schreiben,
   wenn die Projekt-Kennung (`persistIdOf`) noch passt. Fehlt IndexedDB ⇒ still ohne
   Speicher weiter, kein Fehler (Entscheidungen 0046, 0047, 0053).

@@ -30,6 +30,20 @@ export const USAGE_EVENTS = [
   'drucken',
   'notizen-gesichert',
   'notizen-geladen',
+  // Kurzumfrage (Entscheidung 0071): nur feste Antwortstufen, nie Freitext.
+  'umfrage-gezeigt',
+  'umfrage-abgelehnt',
+  'umfrage-beantwortet',
+  'umfrage-note-1',
+  'umfrage-note-2',
+  'umfrage-note-3',
+  'umfrage-note-4',
+  'umfrage-note-5',
+  'umfrage-zahlen-nein',
+  'umfrage-zahlen-bis-10',
+  'umfrage-zahlen-bis-30',
+  'umfrage-zahlen-mehr',
+  'umfrage-freitext-mail',
 ] as const;
 
 export type UsageEvent = (typeof USAGE_EVENTS)[number];
