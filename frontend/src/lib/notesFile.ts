@@ -42,7 +42,8 @@ import type { LVNode } from '../types/lvNode';
 // gesicherte Notiz-Dateien nicht mehr laden (Entscheidung 0069).
 export const NOTES_FILE_KIND = 'bubble-notizen';
 /**
- * Version 4: dazu Stellen in Begleitdokumenten (0072). Version 3: dazu Anstreichungen (0063). Version 2: Fortschritt + Wichtig (0062).
+ * Version 4: dazu Stellen in Begleitdokumenten (0072). Version 3: dazu Anstreichungen (0063).
+ * Version 2: Fortschritt + Wichtig (0062).
  * Ältere Versionen werden gelesen, Version 1 (drei Marker) umgedeutet.
  */
 const NOTES_FILE_VERSION = 4;

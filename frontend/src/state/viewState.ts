@@ -124,7 +124,7 @@ export const DEFAULT_TABLE_POS: CardPos = { right: 16, top: 320 };
 export const DEFAULT_COMPARE_POS: CardPos = { right: 412, top: 90 };
 export const DEFAULT_COMPARE_SIZE: PanelSize = { width: 640, height: 460 };
 
-/** Dokumentfenster (Entscheidung 0072): oben links neben der Positionskarte, hoch genug für eine Seite. */
+/** Dokumentfenster (Entscheidung 0072): neben der Positionskarte, hoch genug für eine Seite. */
 export const DEFAULT_DOC_POS: CardPos = { right: 412, top: 16 };
 export const DEFAULT_DOC_SIZE: PanelSize = { width: 680, height: 640 };
 

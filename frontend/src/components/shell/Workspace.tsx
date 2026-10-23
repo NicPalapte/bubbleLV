@@ -5,8 +5,8 @@
 //   (docs/decisions/0034-graph-als-hauptscreen.md).
 // Das Begleitdokument (Entscheidung 0072) ist im Splitscreen ein Bereich, sonst ein
 // Fenster. Vergleich, Tour und Kurzumfrage liegen in beiden Anordnungen darüber, das
-// Seitenfenster (Überblick · Prüfung) nur in der Fenster-Anordnung. Graph und Tabelle können in ein eigenes
-// Browserfenster wandern (Entscheidung 0039).
+// Seitenfenster (Überblick · Prüfung) nur in der Fenster-Anordnung. Graph, Tabelle und
+// Dokument können in ein eigenes Browserfenster wandern (Entscheidung 0039).
 
 import { SurveyCard } from '../survey/SurveyCard';
 import { CompareWindow } from './CompareWindow';
