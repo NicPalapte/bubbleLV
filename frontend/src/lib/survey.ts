@@ -4,7 +4,7 @@
 // nie Text. Freitext verlässt den Browser nur, wenn man ihn selbst ans Mailprogramm
 // übergibt (`mailto:`, kein Request).
 
-import { meldeMail } from './export/issueLink';
+import { MAILTO_GRENZE, meldeMail } from './export/issueLink';
 import type { UsageEvent } from './usage/count';
 
 /** Aktive Nutzungszeit mit geöffneter Datei, bevor die Umfrage einmal erscheint. */
@@ -36,18 +36,29 @@ export function surveyEvents(answers: SurveyAnswers): UsageEvent[] {
 
 const BETREFF = 'Conocto: Feedback';
 
-/**
- * Längster Freitext. Kodiert wird jedes Leerzeichen zu drei Zeichen, Umlaute zu sechs;
- * so bleibt der `mailto:`-Link unter der Grenze, ab der Mailprogramme ihn still
- * verwerfen (`MAILTO_GRENZE` = 1800 in ReportDialog.tsx).
- */
+/** Längster Freitext im Eingabefeld; üblicher Text passt damit ganz in den Mail-Link. */
 export const MAX_FEEDBACK_TEXT = 500;
 
-/** Öffnet das Mailprogramm mit dem Freitext; Antworten der Auswahl stehen nicht darin. */
-export function feedbackMailto(text: string): string {
-  const params = new URLSearchParams({ subject: BETREFF, body: text.trim() });
+function mailtoFor(body: string): string {
+  const params = new URLSearchParams({ subject: BETREFF, body });
   // `URLSearchParams` kodiert Leerzeichen als „+"; im Mailtext stünde sonst ein Plus.
   return `mailto:${meldeMail()}?${params.toString().replace(/\+/g, '%20')}`;
+}
+
+/**
+ * Öffnet das Mailprogramm mit dem Freitext; Antworten der Auswahl stehen nicht darin.
+ * Umlaute und Emojis kodieren zu sechs bis zwölf Zeichen — wird der Link länger als
+ * `MAILTO_GRENZE`, wird der Text gekürzt statt still verworfen.
+ */
+export function feedbackMailto(text: string): string {
+  // Nach Zeichen, nicht nach UTF-16-Einheiten kürzen: sonst zerfällt ein Emoji.
+  let chars = [...text.trim()];
+  let url = mailtoFor(chars.join(''));
+  while (url.length > MAILTO_GRENZE && chars.length > 0) {
+    chars = chars.slice(0, Math.max(0, chars.length - 10));
+    url = mailtoFor(`${chars.join('')} …`);
+  }
+  return url;
 }
 
 /** Gespeicherter Stand: nach Antwort oder „Nicht mehr fragen" erscheint sie nicht mehr. */

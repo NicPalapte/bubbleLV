@@ -22,6 +22,13 @@ const REPO = 'https://github.com/NicPalapte/bubbleLV';
  */
 const MELDE_MAIL_TEILE = ['Y29udGFjdGJ1YmJsZQ==', 'aWNsb3VkLmNvbQ=='] as const;
 
+/**
+ * Ab hier wird ein `mailto:`-Link riskant: Windows gibt ihn über die
+ * Kommandozeile an das Mailprogramm weiter und schneidet bei etwa 2000 Zeichen
+ * ab — ohne Rückmeldung. Dann ist Kopieren der sichere Weg.
+ */
+export const MAILTO_GRENZE = 1800;
+
 /** Klartext-Adresse für den `mailto:`-Link. Nie in die Oberfläche schreiben. */
 export function meldeMail(): string {
   return MELDE_MAIL_TEILE.map((teil) => atob(teil)).join('@');

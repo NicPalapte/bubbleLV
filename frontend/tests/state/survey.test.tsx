@@ -145,7 +145,7 @@ describe('Kurzumfrage', () => {
     fireEvent.change(screen.getByRole('textbox'), { target: { value: ' Mehr Filter ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Senden' }));
     expect(writeText).toHaveBeenCalledWith('Mehr Filter');
-    expect(card()).toHaveTextContent('Danke!');
+    await waitFor(() => expect(card()).toHaveTextContent('Zwischenablage'));
     await waitFor(async () => expect(await readSurveyDone()).toBe('beantwortet'));
   });
 
@@ -156,7 +156,12 @@ describe('Kurzumfrage', () => {
     // Üblicher Text: ein Fünftel Leerzeichen, ab und zu ein Umlaut.
     const satz = 'Für die Kalkulation fehlt mir ein Export der Mengen je Abschnitt. ';
     const text = satz.repeat(20).slice(0, MAX_FEEDBACK_TEXT);
+    expect(feedbackMailto(text)).toContain('Abschnitt.%20F');
     expect(feedbackMailto(text).length).toBeLessThan(1800);
+    // Schlimmster Fall: nur Umlaute und Emojis — gekürzt statt still verworfen.
+    const lang = feedbackMailto('ä😀'.repeat(MAX_FEEDBACK_TEXT / 2));
+    expect(lang.length).toBeLessThanOrEqual(1800);
+    expect(decodeURIComponent(lang)).toContain('😀 …');
   });
 
   it('beginnt beim erneuten Öffnen leer', () => {
@@ -190,6 +195,18 @@ describe('Antworten', () => {
       'umfrage-beantwortet',
       'umfrage-zahlen-nein',
     ]);
+  });
+
+  it('sagt nichts von der Zwischenablage, wenn der Browser das Kopieren verweigert', async () => {
+    const writeText = vi.fn(() => Promise.reject(new Error('verweigert')));
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    renderSurvey();
+    fireEvent.click(screen.getByRole('button', { name: 'Feedback geben' }));
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Mehr Filter' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Senden' }));
+    await readStored();
+    expect(card()).toHaveTextContent('Danke!');
+    expect(card()).not.toHaveTextContent('Zwischenablage');
   });
 
   it('Freitext geht nur in den Mail-Link, mit Leerzeichen statt Plus', () => {

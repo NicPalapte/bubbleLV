@@ -40,6 +40,8 @@ function SurveyForm() {
   // Nach dem Senden mit Freitext: Dank statt Fragen. Ohne Mailprogramm passiert beim
   // `mailto:` nichts — dann liegt der Text wenigstens in der Zwischenablage.
   const [mailed, setMailed] = useState(false);
+  // Nur behaupten, was stimmt: der Browser kann das Kopieren verweigern.
+  const [copied, setCopied] = useState(false);
 
   if (mailed) {
     return (
@@ -48,7 +50,9 @@ function SurveyForm() {
         className="ov-glass fixed bottom-[72px] right-[16px] z-[30] flex w-[300px] max-w-[calc(100vw-32px)] items-start justify-between gap-[8px] p-[14px]"
       >
         <p className="m-0 font-sans text-[13px] text-ink">
-          Danke! Dein Text liegt auch in der Zwischenablage, falls sich kein Mailprogramm öffnet.
+          {copied
+            ? 'Danke! Dein Text liegt auch in der Zwischenablage, falls sich kein Mailprogramm öffnet.'
+            : 'Danke!'}
         </p>
         <button
           type="button"
@@ -145,7 +149,10 @@ function SurveyForm() {
             if (!withText) return;
             countEvent('umfrage-freitext-mail');
             setMailed(true);
-            void navigator.clipboard?.writeText(text.trim()).catch(() => undefined);
+            void navigator.clipboard
+              ?.writeText(text.trim())
+              .then(() => setCopied(true))
+              .catch(() => undefined);
             // Übergibt nur an das Mailprogramm; abschicken muss man dort selbst.
             window.location.href = feedbackMailto(text);
           }}
