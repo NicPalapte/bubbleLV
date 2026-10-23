@@ -3,7 +3,15 @@
 // Farben) an genau einer Stelle — Baum, Graph, Tabelle und Überblick
 // bekommen dasselbe Ergebnis (Issue #18, WP-L).
 
-import { useCallback, useMemo, useReducer, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { annotationAllowList } from '../lib/annotations';
 import { EMPTY_HINTS, hintsByPosition, type HintIndex } from '../lib/check';
 import {
@@ -33,6 +41,9 @@ import {
   type ViewerDerived,
 } from './viewer';
 import { useAdmin } from './admin';
+import { readWorkspace, saveWorkspace } from '../lib/persist/lastLv';
+import { toStoredWorkspace } from '../lib/workspace/split';
+import { INITIAL_WORKSPACE } from './viewState';
 import type { LVNode } from '../types/lvNode';
 
 const EMPTY_NODES: ReadonlyMap<string, LVNode> = new Map();
@@ -49,6 +60,28 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
     const event = usageEventOf(action);
     if (event !== null) countEvent(event);
   }, []);
+
+  // Letzte Anordnung im Splitscreen (Entscheidung 0073): erst lesen, dann schreiben —
+  // sonst würde der Anfangszustand die gemerkte Anordnung überschreiben.
+  const [layoutRead, setLayoutRead] = useState(false);
+  useEffect(() => {
+    let active = true;
+    void readWorkspace().then((raw) => {
+      if (!active) return;
+      const stored = toStoredWorkspace(raw, INITIAL_WORKSPACE.closed);
+      if (stored !== null) rawDispatch({ type: 'workspaceRestore', workspace: stored });
+      setLayoutRead(true);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+  const layoutQueue = useRef<Promise<unknown>>(Promise.resolve());
+  const { workspace } = state.view;
+  useEffect(() => {
+    if (!layoutRead) return;
+    layoutQueue.current = layoutQueue.current.then(() => saveWorkspace(workspace));
+  }, [workspace, layoutRead]);
 
   const tree = state.lv?.tree ?? null;
   const { search, filters } = state.filter;

@@ -11,11 +11,15 @@ import {
   readLastLv,
   readLastLvMeta,
   readLearnedTerms,
+  readWorkspace,
   saveAnnotations,
   saveLastLv,
   saveLearnedTerms,
+  saveWorkspace,
   touchLastLv,
 } from '../../src/lib/persist/lastLv';
+import { INITIAL_WORKSPACE } from '../../src/state/viewState';
+import { edgePane, toStoredWorkspace } from '../../src/lib/workspace/split';
 
 const meta = { fileName: 'rohbau.x83', positionCount: 12, savedAt: 1_760_000_000_000 };
 /** Angaben für die Startseite: ohne Notizen zählen beide Zähler 0. */
@@ -211,5 +215,17 @@ describe('gelernte Begriffe (Entscheidung 0053)', () => {
     expect(await readLearnedTerms()).toBeNull();
     open.mockRestore();
     expect(await readLearnedTerms()).toEqual([{ begriff: 'SB#', kategorie: 'wichtig' }]);
+  });
+});
+
+describe('Anordnung im Splitscreen (Entscheidung 0073)', () => {
+  it('liest die gespeicherte Anordnung zurück und übersteht „Letzte Datei löschen"', async () => {
+    expect(await readWorkspace()).toBeUndefined();
+    const moved = { ...INITIAL_WORKSPACE, ...edgePane(INITIAL_WORKSPACE, 'table', 'bottom') };
+    expect(await saveWorkspace(moved)).toBe(true);
+    await clearLastLv();
+    const back = toStoredWorkspace(await readWorkspace(), INITIAL_WORKSPACE.closed);
+    expect(back?.root).toEqual(moved.root);
+    expect(back?.closed).toEqual(moved.closed);
   });
 });

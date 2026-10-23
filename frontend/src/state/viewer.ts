@@ -390,9 +390,13 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     case 'workspaceMode':
     case 'swapPanes':
     case 'stackPane':
+    case 'splitPane':
+    case 'edgePane':
     case 'paneFront':
     case 'paneClosed':
-    case 'splitSize': {
+    case 'splitSize':
+    case 'workspaceReset':
+    case 'workspaceRestore': {
       const view = viewReducer(state.view, action);
       return view === state.view ? state : { ...state, view };
     }

@@ -13,12 +13,13 @@
 //
 // Seit Entscheidung 0053 außerdem die Begriffe, die der Admin im Langtext gelernt
 // hat. Sie hängen an keiner Datei: weder eine neue Datei noch „Letzte Datei
-// löschen" nimmt sie mit. Ebenso die Farbnamen (0063) und der Merker der
-// Kurzumfrage (0071).
+// löschen" nimmt sie mit. Ebenso die Farbnamen (0063), der Merker der
+// Kurzumfrage (0071) und die letzte Anordnung im Splitscreen (0073).
 
 import type { LearnedTerm } from '../highlight/terms';
 import { NO_PAINT_NAMES, toPaintNames, type PaintNames } from '../paintNames';
 import { toSurveyDone, type SurveyDone } from '../survey';
+import type { StoredWorkspace } from '../workspace/split';
 import {
   commentedIds,
   EMPTY_ANNOTATIONS,
@@ -43,6 +44,8 @@ const KEY_TERMS = 'begriffe';
 const KEY_PAINT_NAMES = 'farbnamen';
 /** Kurzumfrage beantwortet oder abgelehnt (Entscheidung 0071), unabhängig von der Datei. */
 const KEY_SURVEY = 'umfrage';
+/** Letzte Anordnung im Splitscreen (Entscheidung 0073), unabhängig von der Datei. */
+const KEY_WORKSPACE = 'anordnung';
 /** Kennung für Einträge aus v0.14, die noch keine eigene `id` haben. */
 const LEGACY_ID = 'v0.14';
 
@@ -398,6 +401,41 @@ export async function saveSurveyDone(done: SurveyDone): Promise<boolean> {
   try {
     const tx = db.transaction(STORE, 'readwrite');
     tx.objectStore(STORE).put(done, KEY_SURVEY);
+    await transactionDone(tx);
+    return true;
+  } catch {
+    return false;
+  } finally {
+    db.close();
+  }
+}
+
+/**
+ * Letzte Anordnung im Splitscreen, ungeprüft — `toStoredWorkspace` prüft sie.
+ * `undefined`, wenn nichts gespeichert ist oder das Lesen scheitert.
+ */
+export async function readWorkspace(): Promise<unknown> {
+  const db = await openDb();
+  if (db === null) return undefined;
+  try {
+    return await requestResult(
+      db.transaction(STORE, 'readonly').objectStore(STORE).get(KEY_WORKSPACE),
+    );
+  } catch {
+    return undefined;
+  } finally {
+    db.close();
+  }
+}
+
+/** Ersetzt die gemerkte Anordnung. Gibt zurück, ob es geklappt hat. */
+export async function saveWorkspace(workspace: StoredWorkspace): Promise<boolean> {
+  const db = await openDb();
+  if (db === null) return false;
+  try {
+    const tx = db.transaction(STORE, 'readwrite');
+    const { mode, closed, root } = workspace;
+    tx.objectStore(STORE).put({ mode, closed, root }, KEY_WORKSPACE);
     await transactionDone(tx);
     return true;
   } catch {

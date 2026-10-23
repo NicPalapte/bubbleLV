@@ -76,9 +76,10 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0067 | [Tabelle als Arbeitsliste](0067-tabelle-als-arbeitsliste.md)                                                   | akzeptiert                         | 2026-10-22 |
 | 0068 | [LV als JSON für das Matching-Labor bauonto](0068-lv-export-fuer-bauonto.md)                                   | vorgeschlagen                      | 2026-10-22 |
 | 0069 | [Neuer Name Conocto und Apple-Look](0069-conocto-look.md)                                                      | akzeptiert                         | 2026-10-22 |
-| 0070 | [Splitscreen nahtlos, Bereiche stapelbar](0070-splitscreen-nahtlos-stapeln.md)                                 | akzeptiert                         | 2026-10-23 |
+| 0070 | [Splitscreen nahtlos, Bereiche stapelbar](0070-splitscreen-nahtlos-stapeln.md)                                 | teilweise ersetzt durch 0073       | 2026-10-23 |
 | 0071 | [Kurzumfrage nach einigen Minuten Nutzung](0071-kurzumfrage.md)                                                | akzeptiert                         | 2026-10-23 |
 | 0072 | [Begleitdokument als PDF anstreichen und verknüpfen](0072-begleitdokument-pdf.md)                              | akzeptiert                         | 2026-10-23 |
+| 0073 | [Splitscreen frei teilen, letzte Anordnung merken](0073-splitscreen-frei-teilen-und-merken.md)                 | akzeptiert                         | 2026-10-23 |
 
 ## Wann schreibe ich eine neue Datei?
 

@@ -1,6 +1,6 @@
 # 0070 – Splitscreen nahtlos, mit Überblick und Prüfung, Bereiche stapelbar
 
-- **Status:** akzeptiert
+- **Status:** teilweise ersetzt durch 0073 (freie Aufteilung statt fünf fester Plätze)
 - **Datum:** 2026-10-23
 - **Betrifft:** Splitscreen (`frontend/src/components/shell/SplitView.tsx`,
   `frontend/src/lib/workspace/split.ts`), Ansichtszustand (`view.workspace` in

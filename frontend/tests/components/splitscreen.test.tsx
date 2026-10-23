@@ -1,8 +1,9 @@
-// Splitscreen (Entscheidungen 0064, 0070): Graph, Tabelle, Positionskarte, Überblick und Prüfung als
+// Splitscreen (Entscheidungen 0064, 0070, 0073): Graph, Tabelle, Positionskarte, Überblick und Prüfung als
 // Bereiche nebeneinander, Umschalter zur Fenster-Anordnung in der Kopfleiste.
-// jsdom kennt kein matchMedia — der Test spielt einen breiten Bildschirm vor.
+// jsdom kennt kein matchMedia — der Test spielt einen breiten Bildschirm vor. Ebenso
+// keine Maße: die Arbeitsfläche ist hier 1000 × 600 px groß.
 
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, createEvent, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Workspace } from '../../src/components/shell/Workspace';
 import { WorkspaceBar } from '../../src/components/shell/WorkspaceBar';
@@ -132,25 +133,40 @@ describe('Splitscreen', () => {
     });
     return { dataTransfer };
   };
+  const fläche = (): void => {
+    const grid = document.querySelector<HTMLElement>('[data-split-grid]')!;
+    grid.getBoundingClientRect = () =>
+      ({ left: 0, top: 0, width: 1000, height: 600, right: 1000, bottom: 600 }) as DOMRect;
+  };
+  /** Loslassen an der Stelle (x, y) der Arbeitsfläche. */
+  const lasse = (dataTransfer: object, clientX: number, clientY: number): void => {
+    const ablage = document.querySelector<HTMLElement>('[data-drop="split"]')!;
+    // jsdom kennt kein DragEvent — die Lage muss von Hand ans Ereignis.
+    for (const make of [createEvent.dragOver, createEvent.drop]) {
+      const event = make(ablage, { dataTransfer });
+      Object.defineProperties(event, { clientX: { value: clientX }, clientY: { value: clientY } });
+      fireEvent(ablage, event);
+    }
+  };
 
-  it('tauscht Plätze per Ziehen auf die Fläche', async () => {
+  it('tauscht Plätze per Ziehen in die Mitte', async () => {
     setup();
+    fläche();
     const { dataTransfer } = await ziehe('table');
-    const fläche = document.querySelector<HTMLElement>('[data-drop="a"]')!;
-    fireEvent.dragOver(fläche, { dataTransfer });
-    fireEvent.drop(fläche, { dataTransfer });
+    // Mitte des Graphen (Spalte bis 641 px, Zeile bis 336 px)
+    lasse(dataTransfer, 320, 170);
     expect(region('Tabelle').style.top).toBe('calc(0% + 32px)');
     expect(region('Graph').style.top).not.toBe('calc(0% + 32px)');
   });
 
-  it('stapelt per Ziehen auf die Kopfzeile und löst den Reiter wieder', async () => {
+  it('stapelt per Ziehen auf die Kopfzeile und löst den Reiter an einem Rand wieder', async () => {
     setup();
+    fläche();
     fireEvent.click(screen.getByRole('button', { name: '+ Prüfung' }));
     expect(region('Prüfung')).toBeInTheDocument();
     let { dataTransfer } = await ziehe('check');
-    const kopf = document.querySelector<HTMLElement>('[data-slot="c"]')!;
-    fireEvent.dragOver(kopf, { dataTransfer });
-    fireEvent.drop(kopf, { dataTransfer });
+    // Kopfzeile der Position (rechte Spalte ab 720 px)
+    lasse(dataTransfer, 860, 10);
     const reiter = screen.getByRole('tablist', { name: 'Gestapelte Bereiche' });
     expect(within(reiter).getByRole('tab', { name: /Prüfung/ })).toHaveAttribute(
       'aria-selected',
@@ -161,11 +177,26 @@ describe('Splitscreen', () => {
     expect(document.querySelector('[data-pane="check"]')).toHaveAttribute('aria-hidden', 'true');
 
     ({ dataTransfer } = await ziehe('check'));
-    const eigene = document.querySelector<HTMLElement>('[data-drop="c"]')!;
-    fireEvent.dragOver(eigene, { dataTransfer });
-    fireEvent.drop(eigene, { dataTransfer });
+    // unterer Rand des eigenen Stapels ⇒ eigener Platz unter der Position
+    lasse(dataTransfer, 860, 560);
     expect(screen.queryByRole('tablist', { name: 'Gestapelte Bereiche' })).toBeNull();
-    expect(region('Prüfung').style.left).toBe('0%');
+    expect(region('Prüfung').style.left).toBe(region('Position').style.left);
+    expect(region('Prüfung').style.top).not.toBe('calc(0% + 32px)');
+  });
+
+  it('am rechten Außenrand läuft die Tabelle über die volle Höhe; ↺ setzt zurück', async () => {
+    setup();
+    fläche();
+    expect(screen.queryByRole('button', { name: 'Anordnung zurücksetzen' })).toBeNull();
+    const { dataTransfer } = await ziehe('table');
+    lasse(dataTransfer, 995, 300);
+    expect(region('Tabelle').style.top).toBe('calc(0% + 32px)');
+    const breite = Number(/calc\(([\d.]+)%/.exec(region('Tabelle').style.width)?.[1]);
+    expect(breite).toBeGreaterThan(25);
+    expect(breite).toBeLessThan(35);
+    expect(region('Tabelle').style.left).not.toBe('0%');
+    fireEvent.click(screen.getByRole('button', { name: 'Anordnung zurücksetzen' }));
+    expect(region('Tabelle').style.top).not.toBe('calc(0% + 32px)');
   });
 
   it('setzt die Breite per Pfeiltaste, ohne die Grenzen zu verlassen', () => {
