@@ -70,12 +70,13 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0061 | [Notizen als Datei sichern und laden](0061-notizen-sichern-und-laden.md)                                       | akzeptiert                         | 2026-10-21 |
 | 0062 | [Fortschritt und „Wichtig" statt drei Marker](0062-fortschritt-und-wichtig.md)                                 | akzeptiert                         | 2026-10-21 |
 | 0063 | [Eigene Textmarkierungen im Langtext](0063-anstreichen-im-langtext.md)                                         | akzeptiert                         | 2026-10-21 |
-| 0064 | [Splitscreen neben den Fenstern](0064-splitscreen.md)                                                          | akzeptiert                         | 2026-10-22 |
+| 0064 | [Splitscreen neben den Fenstern](0064-splitscreen.md)                                                          | teilweise ersetzt durch 0070       | 2026-10-22 |
 | 0065 | [Filterleiste, Kopfzeile der Positionskarte und Rechtsklick-Menü](0065-filterleiste-kopfzeile-rechtsklick.md)  | akzeptiert                         | 2026-10-22 |
 | 0066 | [Als Material gelernte Begriffe stehen im Filter „Material"](0066-gelernte-materialien-im-filter.md)           | akzeptiert                         | 2026-10-22 |
 | 0067 | [Tabelle als Arbeitsliste](0067-tabelle-als-arbeitsliste.md)                                                   | akzeptiert                         | 2026-10-22 |
 | 0068 | [LV als JSON für das Matching-Labor bauonto](0068-lv-export-fuer-bauonto.md)                                   | vorgeschlagen                      | 2026-10-22 |
 | 0069 | [Neuer Name Conocto und Apple-Look](0069-conocto-look.md)                                                      | akzeptiert                         | 2026-10-22 |
+| 0070 | [Splitscreen nahtlos, Bereiche stapelbar](0070-splitscreen-nahtlos-stapeln.md)                                 | akzeptiert                         | 2026-10-23 |
 
 ## Wann schreibe ich eine neue Datei?
 

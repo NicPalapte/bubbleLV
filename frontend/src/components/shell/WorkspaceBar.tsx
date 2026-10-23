@@ -4,10 +4,8 @@
 
 import type { ReactNode } from 'react';
 import { useOptionalWorkspace, type PopPane } from './WorkspaceProvider';
-import { PANES, type PaneId } from '../../lib/workspace/split';
+import { PANES, PANE_LABEL as LABEL } from '../../lib/workspace/split';
 import { useViewer, useViewerDispatch, type WorkspaceMode } from '../../state/viewer';
-
-const LABEL: Record<PaneId, string> = { graph: 'Graph', table: 'Tabelle', card: 'Position' };
 
 const MODES: readonly { value: WorkspaceMode; label: string; icon: ReactNode }[] = [
   {
