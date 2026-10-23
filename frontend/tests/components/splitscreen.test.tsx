@@ -133,10 +133,10 @@ describe('Splitscreen', () => {
     });
     return { dataTransfer };
   };
-  const fläche = (): void => {
+  const fläche = (width = 1000): void => {
     const grid = document.querySelector<HTMLElement>('[data-split-grid]')!;
     grid.getBoundingClientRect = () =>
-      ({ left: 0, top: 0, width: 1000, height: 600, right: 1000, bottom: 600 }) as DOMRect;
+      ({ left: 0, top: 0, width, height: 600, right: width, bottom: 600 }) as DOMRect;
   };
   /** Loslassen an der Stelle (x, y) der Arbeitsfläche. */
   const lasse = (dataTransfer: object, clientX: number, clientY: number): void => {
@@ -197,6 +197,15 @@ describe('Splitscreen', () => {
     expect(region('Tabelle').style.left).not.toBe('0%');
     fireEvent.click(screen.getByRole('button', { name: 'Anordnung zurücksetzen' }));
     expect(region('Tabelle').style.top).not.toBe('calc(0% + 32px)');
+  });
+
+  it('am Außenrand nichts, wenn die neue Spalte zu schmal würde', async () => {
+    setup();
+    fläche(500);
+    const vorher = region('Tabelle').style.left;
+    const { dataTransfer } = await ziehe('table');
+    lasse(dataTransfer, 495, 300);
+    expect(region('Tabelle').style.left).toBe(vorher);
   });
 
   it('setzt die Breite per Pfeiltaste, ohne die Grenzen zu verlassen', () => {

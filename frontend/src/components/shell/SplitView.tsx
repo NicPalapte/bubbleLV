@@ -167,10 +167,21 @@ export function SplitView({ root }: { root: LVNode }) {
     const py = clientY - box.top;
     const source = leafOf(workspace.root, dragged);
     const alone = places.length === 1 && shownIn(source, visible).length < 2;
-    if (!alone) {
-      if (px < OUTER) return { kind: 'edge', side: 'left' };
-      if (px > box.width - OUTER) return { kind: 'edge', side: 'right' };
-      if (py > box.height - OUTER) return { kind: 'edge', side: 'bottom' };
+    const outer: Side | null =
+      px < OUTER
+        ? 'left'
+        : px > box.width - OUTER
+          ? 'right'
+          : py > box.height - OUTER
+            ? 'bottom'
+            : null;
+    if (outer !== null) {
+      if (alone) return null;
+      // Wie beim Teilen: nur, wenn die neue Fläche noch nutzbar groß ist.
+      const next = edgePane(workspace, dragged, outer);
+      const r = splitLayout(next.root, visible).frames[leafOf(next.root, dragged).id];
+      const roomy = r !== undefined && r.w * box.width >= MIN_W && r.h * box.height >= MIN_H;
+      return roomy ? { kind: 'edge', side: outer } : null;
     }
     const place = places.find((entry) => {
       const r = layout.frames[entry.id];
