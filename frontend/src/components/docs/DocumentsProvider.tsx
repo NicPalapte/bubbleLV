@@ -80,8 +80,14 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
     async (file: File): Promise<void> => {
       setBusy(true);
       setError(null);
+      const startLv = lvRef.current;
       try {
         const opened = await openPdf(file);
+        // Während des Lesens ein anderes LV geladen: Das PDF gehört nicht mehr dazu.
+        if (lvRef.current !== startLv) {
+          void opened.pdf.loadingTask.destroy();
+          return;
+        }
         dispatch({
           type: 'docRegister',
           doc: opened.id,
@@ -139,7 +145,12 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
       text = doc.pdf
         .getPage(page)
         .then((proxy) => proxy.getTextContent())
-        .then((content) => content.items.map((item) => ('str' in item ? item.str : '')).join(''));
+        .then((content) => content.items.map((item) => ('str' in item ? item.str : '')).join(''))
+        .catch(() => {
+          // Defekte Seite oder Dokument geschlossen: ohne Text weiter, später neu versuchen.
+          texts.current.delete(key);
+          return '';
+        });
       texts.current.set(key, text);
     }
     return text;
