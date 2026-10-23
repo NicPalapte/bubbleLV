@@ -39,6 +39,8 @@ export interface AboutMenuProps {
   onAnderesLv?: () => void;
   /** „Tour" gewählt. Fehlt, solange kein LV geladen ist — die Tour zeigt auf den Graphen. */
   onTour?: () => void;
+  /** „Feedback geben" gewählt (Entscheidung 0071). Fehlt, solange kein LV geladen ist. */
+  onFeedback?: () => void;
   /** „Tastenkürzel" gewählt; das Fenster hängt wie „Fehler melden" in der Kopfleiste. */
   onTastenkuerzel: () => void;
   /** Export und Druck der gefilterten Menge. Fehlt, solange kein LV geladen ist. */
@@ -77,6 +79,7 @@ export function AboutMenu({
   onFehlerMelden,
   onTastenkuerzel,
   onTour,
+  onFeedback,
   onAnderesLv,
   mitnehmen,
   onNotizenLaden,
@@ -241,6 +244,17 @@ export function AboutMenu({
         >
           Fehler melden
         </PopoverRow>
+        {onFeedback !== undefined && (
+          <PopoverRow
+            onClick={() => {
+              setOpen(false);
+              onFeedback();
+            }}
+            title="Drei kurze Fragen zu Conocto"
+          >
+            Feedback geben
+          </PopoverRow>
+        )}
         <PopoverRow
           onClick={() => {
             setOpen(false);

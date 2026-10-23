@@ -38,4 +38,7 @@ technisch IP-Adresse und Browsertyp an GoatCounter).
 ## Zahlen lesen
 
 - **Pages:** `/` sind Seitenaufrufe; die übrigen Einträge sind die Ereignisse.
+- **Kurzumfrage** (Entscheidung 0071): `umfrage-gezeigt`, `umfrage-beantwortet`,
+  `umfrage-abgelehnt`, `umfrage-note-1` … `umfrage-note-5`, `umfrage-zahlen-nein` /
+  `-bis-10` / `-bis-30` / `-mehr`, `umfrage-freitext-mail`. Freitext kommt nur per E-Mail.
 - **Visitors** zählt Besucher ohne Cookies.

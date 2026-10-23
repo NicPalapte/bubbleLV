@@ -186,6 +186,12 @@ Bisher galt „kein Export". Das wird gelockert, weil es die Architektur nicht b
 - **Kein GAEB-Export** — das bleibt draußen (Rückschreiben in die Vergabekette ist ein
   anderes Produkt).
 
+### 9 · Feedback zum Produkt
+
+- **Kurzumfrage** nach einigen Minuten Nutzung, auf Wunsch des Owners für den Bedarfstest
+  ([`decisions/0071-kurzumfrage.md`](decisions/0071-kurzumfrage.md)). Auswahl als feste
+  Zählereignisse, Freitext nur über das eigene Mailprogramm. Kein Formular-Dienst.
+
 ---
 
 ## Out of Scope {#out-of-scope}

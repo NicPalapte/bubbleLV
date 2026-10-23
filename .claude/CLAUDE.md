@@ -50,8 +50,9 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
   (Original-Bytes + Angaben der zuletzt geöffneten eigenen Datei + Marker, Kommentar-Verlauf
   und Textmarkierungen je Positions-Hash `hashes.id`, `lib/annotations.ts`, Entscheidung 0057),
   löschbar auf der Startseite. Dazu, unabhängig von der Datei, die im Admin-Werkzeug gelernten
-  Begriffe (`lib/highlight/terms.ts`) und die eigenen Namen der Markierfarben
-  (`lib/paintNames.ts`, `state/paintNames.tsx`).
+  Begriffe (`lib/highlight/terms.ts`), die eigenen Namen der Markierfarben
+  (`lib/paintNames.ts`, `state/paintNames.tsx`) und der Merker der Kurzumfrage
+  (`state/survey.tsx`, Schlüssel `umfrage`, Entscheidung 0071).
   Kein geparstes LV speichern, keine Demo-LVs, keine zweite Datei. Notizen nur schreiben,
   wenn die Projekt-Kennung (`persistIdOf`) noch passt. Fehlt IndexedDB ⇒ still ohne
   Speicher weiter, kein Fehler (Entscheidungen 0046, 0047, 0053).
@@ -132,7 +133,8 @@ Bereichen (`view.workspace`, `docs/decisions/0064-splitscreen.md`,
 Datei (`docs/decisions/0047-kommentare-und-markierungen.md`, `docs/decisions/0053`) ·
 eigene Textmarkierungen im Langtext (6 feste Farben mit eigenen Namen, `docs/decisions/0063`) ·
 gelernte Hervorhebungen im Langtext nur über Admin-Werkzeug (0053) · lokaler Export/Druck über das
-Logo-Menü · Notizen als Datei sichern/laden (`lib/notesFile.ts`, 0061). Matrix und
+Logo-Menü · Notizen als Datei sichern/laden (`lib/notesFile.ts`, 0061) · freiwillige Kurzumfrage
+zum Produkt (Owner-Wunsch, `docs/decisions/0071-kurzumfrage.md`). Matrix und
 Ähnlichkeit sind entfernt (`docs/decisions/0031-drei-ansichten.md`); keine
 Befehlspalette (`docs/decisions/0038-keine-befehlspalette.md`).
 

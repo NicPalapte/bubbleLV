@@ -16,15 +16,13 @@ import { useCallback, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Chip } from '../ui/Chip';
 import { useDismiss } from '../common/useDismiss';
-import { issueBody, issueUrl, mailtoUrl, type IssueContext } from '../../lib/export/issueLink';
-
-/**
- * Ab hier wird der `mailto:`-Link riskant: Windows gibt ihn über die
- * Kommandozeile an das Mailprogramm weiter und schneidet bei etwa 2000 Zeichen
- * ab — ohne Rückmeldung. Dann ist Kopieren der sichere Weg, und das Fenster
- * sagt es auch.
- */
-const MAILTO_GRENZE = 1800;
+import {
+  issueBody,
+  issueUrl,
+  MAILTO_GRENZE,
+  mailtoUrl,
+  type IssueContext,
+} from '../../lib/export/issueLink';
 
 export interface ReportDialogProps {
   context: IssueContext;
