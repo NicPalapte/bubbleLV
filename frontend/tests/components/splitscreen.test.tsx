@@ -1,4 +1,4 @@
-// Splitscreen (Entscheidung 0064): Graph, Tabelle und Positionskarte als
+// Splitscreen (Entscheidungen 0064, 0070): Graph, Tabelle, Positionskarte, Überblick und Prüfung als
 // Bereiche nebeneinander, Umschalter zur Fenster-Anordnung in der Kopfleiste.
 // jsdom kennt kein matchMedia — der Test spielt einen breiten Bildschirm vor.
 
@@ -123,18 +123,49 @@ describe('Splitscreen', () => {
     expect(region('Tabelle')).toBeInTheDocument();
   });
 
-  it('tauscht Plätze per Ziehen am Kopf', async () => {
-    setup();
+  const ziehe = async (pane: string): Promise<{ dataTransfer: object }> => {
     const dataTransfer = { setData: vi.fn(), effectAllowed: '', dropEffect: '' };
-    const kopf = within(region('Tabelle')).getByTitle('Ziehen, um den Platz zu tauschen');
+    const kopf = document.querySelector<HTMLElement>(`[data-tab="${pane}"]`)!;
     fireEvent.dragStart(kopf, { dataTransfer });
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
-    fireEvent.dragOver(region('Graph'), { dataTransfer });
-    fireEvent.drop(region('Graph'), { dataTransfer });
-    expect(region('Tabelle').style.gridRow).toBe('1');
-    expect(region('Graph').style.gridRow).toBe('2');
+    return { dataTransfer };
+  };
+
+  it('tauscht Plätze per Ziehen auf die Fläche', async () => {
+    setup();
+    const { dataTransfer } = await ziehe('table');
+    const fläche = document.querySelector<HTMLElement>('[data-drop="a"]')!;
+    fireEvent.dragOver(fläche, { dataTransfer });
+    fireEvent.drop(fläche, { dataTransfer });
+    expect(region('Tabelle').style.top).toBe('calc(0% + 32px)');
+    expect(region('Graph').style.top).not.toBe('calc(0% + 32px)');
+  });
+
+  it('stapelt per Ziehen auf die Kopfzeile und löst den Reiter wieder', async () => {
+    setup();
+    fireEvent.click(screen.getByRole('button', { name: '+ Prüfung' }));
+    expect(region('Prüfung')).toBeInTheDocument();
+    let { dataTransfer } = await ziehe('check');
+    const kopf = document.querySelector<HTMLElement>('[data-slot="c"]')!;
+    fireEvent.dragOver(kopf, { dataTransfer });
+    fireEvent.drop(kopf, { dataTransfer });
+    const reiter = screen.getByRole('tablist', { name: 'Gestapelte Bereiche' });
+    expect(within(reiter).getByRole('tab', { name: /Prüfung/ })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    fireEvent.click(within(reiter).getByRole('tab', { name: /Position/ }));
+    expect(region('Position')).not.toHaveAttribute('aria-hidden');
+    expect(document.querySelector('[data-pane="check"]')).toHaveAttribute('aria-hidden', 'true');
+
+    ({ dataTransfer } = await ziehe('check'));
+    const eigene = document.querySelector<HTMLElement>('[data-drop="c"]')!;
+    fireEvent.dragOver(eigene, { dataTransfer });
+    fireEvent.drop(eigene, { dataTransfer });
+    expect(screen.queryByRole('tablist', { name: 'Gestapelte Bereiche' })).toBeNull();
+    expect(region('Prüfung').style.left).toBe('0%');
   });
 
   it('setzt die Breite per Pfeiltaste, ohne die Grenzen zu verlassen', () => {
@@ -143,6 +174,8 @@ describe('Splitscreen', () => {
     expect(linie).toHaveAttribute('aria-valuenow', '64');
     fireEvent.keyDown(linie, { key: 'ArrowRight' });
     expect(linie).toHaveAttribute('aria-valuenow', '66');
+    for (let i = 0; i < 20; i++) fireEvent.keyDown(linie, { key: 'ArrowRight' });
+    expect(linie).toHaveAttribute('aria-valuenow', '88');
   });
 
   it('wechselt auf Fenster: der Graph füllt die Fläche, die Bereiche verschwinden', () => {

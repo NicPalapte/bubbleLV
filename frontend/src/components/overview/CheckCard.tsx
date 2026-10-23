@@ -221,7 +221,7 @@ export function CheckCard() {
  * Klappkarte neben dem Seitenfenster: Hinweistext, Verweis und Funde der
  * aufgeklappten Regel. Ein Fund wählt die Position im Graphen aus.
  */
-export function CheckFlyout({ left }: { left: number }) {
+export function CheckFlyout({ left }: { left?: number }) {
   const {
     lv,
     nodes,
@@ -240,12 +240,21 @@ export function CheckFlyout({ left }: { left: number }) {
   return (
     <section
       aria-label={`Funde ${rule.id}`}
-      // Fehlt rechts der Platz, legt sie sich über das Seitenfenster.
-      style={{
-        left: `min(${left}px, calc(100% - 316px))`,
-        bottom: 'max(64px, calc(var(--legend-space, 0px) + 28px))',
-      }}
-      className="ov-glass absolute top-[88px] z-[10] flex w-[300px] max-w-[calc(100%-32px)] flex-col overflow-hidden"
+      // Fehlt rechts der Platz, legt sie sich über das Seitenfenster. Ohne `left`
+      // steht sie im Bereich „Prüfung" des Splitscreens unter der Liste.
+      style={
+        left === undefined
+          ? undefined
+          : {
+              left: `min(${left}px, calc(100% - 316px))`,
+              bottom: 'max(64px, calc(var(--legend-space, 0px) + 28px))',
+            }
+      }
+      className={
+        left === undefined
+          ? 'flex max-h-[55%] shrink-0 flex-col overflow-hidden border-t border-line bg-surface'
+          : 'ov-glass absolute top-[88px] z-[10] flex w-[300px] max-w-[calc(100%-32px)] flex-col overflow-hidden'
+      }
     >
       <div className="flex shrink-0 items-center gap-[8px] border-b border-line px-[14px] py-[10px]">
         <span className="min-w-0 flex-1 truncate font-display text-[14px] font-semibold text-ink">

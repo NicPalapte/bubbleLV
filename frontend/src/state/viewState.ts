@@ -14,15 +14,19 @@ import type { ColumnConfig } from '../lib/table/columns';
 import { SECTION_AXIS, type GraphLayoutId } from '../lib/graph/layoutMap';
 import type { SizeModeId } from '../lib/graph/sizes';
 import {
-  SPLIT_COL_DEFAULT,
-  SPLIT_COL_MAX,
-  SPLIT_COL_MIN,
-  SPLIT_ROW_DEFAULT,
+  INITIAL_ARRANGEMENT,
+  ROWS_DEFAULT,
   SPLIT_ROW_MAX,
   SPLIT_ROW_MIN,
+  WIDTHS_DEFAULT,
+  bringToFront,
   clampFrac,
-  movePane,
+  stackPane,
+  swapPanes,
+  type Arrangement,
+  type ColumnWidths,
   type PaneId,
+  type RowColumn,
   type SlotId,
 } from '../lib/workspace/split';
 
@@ -163,23 +167,28 @@ export function clampSideWidth(width: number): number {
  */
 export type WorkspaceMode = 'split' | 'windows';
 
-export interface WorkspaceState {
+export interface WorkspaceState extends Arrangement {
   mode: WorkspaceMode;
-  /** Welcher Bereich auf welchem Platz steht. */
-  slots: Readonly<Record<SlotId, PaneId>>;
   /** Im Splitscreen geschlossene Bereiche; das Fenster-Layout hat eigene Schalter. */
   closed: Readonly<Record<PaneId, boolean>>;
-  colFrac: number;
-  rowFrac: number;
+  widths: ColumnWidths;
+  rows: Readonly<Record<RowColumn, number>>;
 }
 
 export const INITIAL_WORKSPACE: WorkspaceState = {
   mode: 'split',
-  slots: { a: 'graph', b: 'table', c: 'card' },
-  closed: { graph: false, table: false, card: false },
-  colFrac: SPLIT_COL_DEFAULT,
-  rowFrac: SPLIT_ROW_DEFAULT,
+  ...INITIAL_ARRANGEMENT,
+  // Überblick und Prüfung öffnet erst, wer sie braucht (Entscheidung 0070).
+  closed: { graph: false, table: false, card: false, overview: true, check: true },
+  widths: WIDTHS_DEFAULT,
+  rows: ROWS_DEFAULT,
 };
+
+/** Öffnet einen Bereich im Splitscreen und legt ihn in seinem Stapel nach vorn. */
+function showPane(workspace: WorkspaceState, pane: PaneId): WorkspaceState {
+  const front = bringToFront(workspace, pane);
+  return front.closed[pane] ? { ...front, closed: { ...front.closed, [pane]: false } } : front;
+}
 
 export interface TourState {
   step: number | null;
@@ -257,11 +266,20 @@ export type ViewAction =
   | { type: 'cardPos'; pos: CardPos }
   /** Splitscreen oder Fenster — fasst Filter, Suche und Auswahl nie an. */
   | { type: 'workspaceMode'; mode: WorkspaceMode }
-  /** Bereich auf einen anderen Platz legen; der bisherige Inhaber tauscht. */
-  | { type: 'movePane'; pane: PaneId; to: SlotId }
+  /** Zwei Bereiche tauschen Platz und Reiter-Stelle (Entscheidung 0070). */
+  | { type: 'swapPanes'; a: PaneId; b: PaneId }
+  /** Bereich als Reiter auf einen Platz legen — auch auf einen freien, um ihn zu lösen. */
+  | { type: 'stackPane'; pane: PaneId; to: SlotId }
+  /** Reiter nach vorn holen. */
+  | { type: 'paneFront'; pane: PaneId }
+  /** Öffnen legt den Bereich auch nach vorn; ein offener bleibt, wo er ist. */
   | { type: 'paneClosed'; pane: PaneId; closed: boolean }
   /** Trennlinien im Splitscreen; fehlender Wert bleibt, `null` setzt zurück. */
-  | { type: 'splitSize'; colFrac?: number | null; rowFrac?: number | null };
+  | {
+      type: 'splitSize';
+      widths?: ColumnWidths | null;
+      row?: { column: RowColumn; frac: number | null };
+    };
 
 const NO_SCROLL: Readonly<Record<ViewMode, number>> = {
   overview: 0,
@@ -341,16 +359,20 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
       // (Befehle, Sprünge, Links), bekommt den Graphen mit dem passenden Fenster.
       const next =
         action.mode === 'overview'
-          ? state.side === 'overview'
-            ? state
-            : { ...state, side: 'overview' as const }
+          ? viewReducer(state, { type: 'sidePanel', panel: 'overview' })
           : action.mode === 'table'
             ? viewReducer(state, { type: 'tableWindow', open: true })
             : state;
       return next.mode === 'graph' ? next : { ...next, mode: 'graph' };
     }
-    case 'sidePanel':
-      return state.side === action.panel ? state : { ...state, side: action.panel };
+    case 'sidePanel': {
+      // Im Splitscreen ist derselbe Reiter ein eigener Bereich (Entscheidung 0070).
+      const workspace =
+        action.panel === null ? state.workspace : showPane(state.workspace, action.panel);
+      return state.side === action.panel && workspace === state.workspace
+        ? state
+        : { ...state, side: action.panel, workspace };
+    }
     case 'filterBar':
       return state.filterBar === action.open ? state : { ...state, filterBar: action.open };
     case 'graphSettings':
@@ -368,16 +390,10 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
     }
     case 'tableWindow': {
       // Wer die Tabelle anfordert (Sprung aus der Karte, Link), bekommt sie auch
-      // im Splitscreen zurück, falls ihr Bereich zu war.
-      const reopen = action.open && state.workspace.closed.table;
-      if (state.tableWindow.open === action.open && !reopen) return state;
-      return {
-        ...state,
-        tableWindow: { ...state.tableWindow, open: action.open },
-        workspace: reopen
-          ? { ...state.workspace, closed: { ...state.workspace.closed, table: false } }
-          : state.workspace,
-      };
+      // im Splitscreen zu sehen — geöffnet und vorn im Stapel.
+      const workspace = action.open ? showPane(state.workspace, 'table') : state.workspace;
+      if (state.tableWindow.open === action.open && workspace === state.workspace) return state;
+      return { ...state, tableWindow: { ...state.tableWindow, open: action.open }, workspace };
     }
     case 'compareWindow':
       return state.compareWindow.open === action.open
@@ -432,9 +448,7 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
       return {
         ...state,
         graph: { ...state.graph, focus: state.graph.focus + 1 },
-        workspace: state.workspace.closed.graph
-          ? { ...state.workspace, closed: { ...state.workspace.closed, graph: false } }
-          : state.workspace,
+        workspace: showPane(state.workspace, 'graph'),
       };
     case 'tableSort': {
       const { sort } = state.table;
@@ -487,37 +501,46 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
             workspace: { ...state.workspace, mode: action.mode },
             graph: { ...state.graph, viewport: null },
           };
-    case 'movePane': {
-      const slots = movePane(state.workspace.slots, action.pane, action.to);
-      return slots === state.workspace.slots
-        ? state
-        : { ...state, workspace: { ...state.workspace, slots } };
+    case 'swapPanes': {
+      const workspace = swapPanes(state.workspace, action.a, action.b);
+      return workspace === state.workspace ? state : { ...state, workspace };
+    }
+    case 'stackPane': {
+      const workspace = stackPane(state.workspace, action.pane, action.to);
+      return workspace === state.workspace ? state : { ...state, workspace };
+    }
+    case 'paneFront': {
+      const workspace = bringToFront(state.workspace, action.pane);
+      return workspace === state.workspace ? state : { ...state, workspace };
     }
     case 'paneClosed':
       if (state.workspace.closed[action.pane] === action.closed) return state;
       return {
         ...state,
-        workspace: {
-          ...state.workspace,
-          closed: { ...state.workspace.closed, [action.pane]: action.closed },
-        },
+        workspace: action.closed
+          ? {
+              ...state.workspace,
+              closed: { ...state.workspace.closed, [action.pane]: true },
+            }
+          : showPane(state.workspace, action.pane),
       };
     case 'splitSize': {
       const { workspace } = state;
-      const colFrac =
-        action.colFrac === undefined
-          ? workspace.colFrac
-          : action.colFrac === null
-            ? SPLIT_COL_DEFAULT
-            : clampFrac(action.colFrac, SPLIT_COL_MIN, SPLIT_COL_MAX);
-      const rowFrac =
-        action.rowFrac === undefined
-          ? workspace.rowFrac
-          : action.rowFrac === null
-            ? SPLIT_ROW_DEFAULT
-            : clampFrac(action.rowFrac, SPLIT_ROW_MIN, SPLIT_ROW_MAX);
-      if (colFrac === workspace.colFrac && rowFrac === workspace.rowFrac) return state;
-      return { ...state, workspace: { ...workspace, colFrac, rowFrac } };
+      const widths =
+        action.widths === undefined
+          ? workspace.widths
+          : action.widths === null
+            ? WIDTHS_DEFAULT
+            : action.widths;
+      let rows = workspace.rows;
+      if (action.row !== undefined) {
+        const { column, frac } = action.row;
+        const next =
+          frac === null ? ROWS_DEFAULT[column] : clampFrac(frac, SPLIT_ROW_MIN, SPLIT_ROW_MAX);
+        if (next !== rows[column]) rows = { ...rows, [column]: next };
+      }
+      if (widths === workspace.widths && rows === workspace.rows) return state;
+      return { ...state, workspace: { ...workspace, widths, rows } };
     }
     default:
       return state;

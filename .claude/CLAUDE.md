@@ -124,9 +124,10 @@ Wichtig-Kategorien (Geld/Menge · Risiko · Norm · Frist) · VOB-Check als Hinw
 fachliche Filter · **Graph als Hauptscreen** auf einem Filterzustand: Seitenfenster
 (Überblick mit Import-Log · Filter · Prüfung), Positionskarte, Tabelle und Vergleich
 (max. 4 Positionen) als Fenster darüber (`docs/decisions/0034-graph-als-hauptscreen.md`,
-`docs/decisions/0037-vergleichsfenster.md`); Graph, Tabelle und Positionskarte
-wahlweise als Splitscreen mit tausch- und schließbaren Bereichen (`view.workspace`,
-`docs/decisions/0064-splitscreen.md`) · Beziehungen zwischen Positionen nur als
+`docs/decisions/0037-vergleichsfenster.md`); Graph, Tabelle, Positionskarte, Überblick
+und Prüfung wahlweise als nahtloser Splitscreen mit tausch-, stapel- und schließbaren
+Bereichen (`view.workspace`, `docs/decisions/0064-splitscreen.md`,
+`docs/decisions/0070-splitscreen-nahtlos-stapeln.md`) · Beziehungen zwischen Positionen nur als
 ähnliche Positionen im Vergleich, keine wertende Prüfregel (`docs/decisions/0049`) · eigene Marker (Fortschritt Offen/In Bearbeitung/Fertig + Wichtig, `docs/decisions/0062`) + Kommentar-Verlauf je Position zur letzten
 Datei (`docs/decisions/0047-kommentare-und-markierungen.md`, `docs/decisions/0053`) ·
 eigene Textmarkierungen im Langtext (6 feste Farben mit eigenen Namen, `docs/decisions/0063`) ·

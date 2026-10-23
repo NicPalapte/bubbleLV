@@ -3,8 +3,8 @@
 // - Splitscreen: Graph, Tabelle und Positionskarte als Bereiche nebeneinander.
 // - Fenster: der Graph füllt die Fläche, Tabelle und Karte schweben darüber
 //   (docs/decisions/0034-graph-als-hauptscreen.md).
-// Seitenfenster (Überblick · Filter · Prüfung), Vergleich und Tour liegen in
-// beiden Anordnungen darüber. Graph und Tabelle können in ein eigenes
+// Vergleich und Tour liegen in beiden Anordnungen darüber, das Seitenfenster
+// (Überblick · Prüfung) nur in der Fenster-Anordnung. Graph und Tabelle können in ein eigenes
 // Browserfenster wandern (Entscheidung 0039).
 
 import { CompareWindow } from './CompareWindow';
@@ -77,7 +77,8 @@ export function Workspace({ root }: { root: LVNode }) {
     <>
       {split ? <SplitView root={root} /> : <WindowsLayout root={root} />}
       <GraphPopout root={root} />
-      <SidePanel />
+      {/* Im Splitscreen sind Überblick und Prüfung eigene Bereiche (Entscheidung 0070). */}
+      {!split && <SidePanel />}
       <TableWindow />
       <CompareWindow />
       <GraphDock tableButton={!split} />

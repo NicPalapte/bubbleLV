@@ -5,6 +5,7 @@
 
 import { useCallback, useMemo, useRef } from 'react';
 import { sidePanelSpace } from './SidePanel';
+import { useOptionalWorkspace } from './WorkspaceProvider';
 import { usePositionMenu } from '../common/positionMenuContext';
 import { useDragResize } from '../common/useDragResize';
 import { compareRows } from '../../lib/compare/rows';
@@ -60,6 +61,9 @@ export function CompareWindow() {
   const dispatch = useViewerDispatch();
   const openMenu = usePositionMenu();
   const ref = useRef<HTMLDivElement>(null);
+  // Im Splitscreen gibt es kein schwebendes Seitenfenster, dem es ausweichen müsste.
+  const split = useOptionalWorkspace()?.split ?? false;
+  const sideOpen = side !== null && !split;
 
   const setPos = useCallback(
     (pos: CardPos): void => dispatch({ type: 'compareWindowPos', pos }),
@@ -151,10 +155,9 @@ export function CompareWindow() {
         top: compareWindow.pos.top,
         width: compareWindow.size.width,
         height: compareWindow.size.height ?? undefined,
-        maxWidth:
-          side === null
-            ? `calc(100% - ${compareWindow.pos.right + EDGE_GAP}px)`
-            : `max(${TABLE_MIN_WIDTH}px, calc(100% - ${compareWindow.pos.right + sidePanelSpace(sideWidth)}px))`,
+        maxWidth: !sideOpen
+          ? `calc(100% - ${compareWindow.pos.right + EDGE_GAP}px)`
+          : `max(${TABLE_MIN_WIDTH}px, calc(100% - ${compareWindow.pos.right + sidePanelSpace(sideWidth)}px))`,
         maxHeight: `calc(100% - ${compareWindow.pos.top + EDGE_GAP}px)`,
       }}
     >

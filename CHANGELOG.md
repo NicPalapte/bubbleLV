@@ -9,6 +9,19 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.32.0 — 23.10.2026 · Splitscreen nahtlos
+
+- **Nahtlos:** Die Bereiche im Split sind keine Karten mehr. Sie trennt nur noch eine feine
+  Linie, ohne Rand und ohne Abstand.
+- **Überblick und Prüfung** sind im Split eigene Bereiche, links neben Graph und Tabelle.
+  Sie gehen über „+ Überblick“ / „+ Prüfung“ oben auf oder über die Kennzahlen am Graphen.
+- **Tauschen und Stapeln:** Einen Bereich am Griff ⠿ ziehen:
+  - auf eine Kopfzeile: Er kommt dort als Reiter dazu,
+  - auf eine Fläche: Beide tauschen den Platz,
+  - auf die eigene Fläche: Der Reiter löst sich wieder.
+- Eine neue Auswahl holt die Position nicht vor einen anderen Reiter. So bleibt etwa die
+  Prüfungsliste stehen.
+
 ## 0.31.0 — 22.10.2026 · Conocto
 
 - **Neuer Name:** Bubble heißt jetzt **Conocto**. Con = Construction, Octo = die Krake,

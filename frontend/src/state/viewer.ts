@@ -359,7 +359,9 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     case 'panelSize':
     case 'cardPos':
     case 'workspaceMode':
-    case 'movePane':
+    case 'swapPanes':
+    case 'stackPane':
+    case 'paneFront':
     case 'paneClosed':
     case 'splitSize': {
       const view = viewReducer(state.view, action);

@@ -1,6 +1,6 @@
 # 0064 – Splitscreen neben den Fenstern
 
-- **Status:** akzeptiert
+- **Status:** teilweise ersetzt durch 0070 (Plätze, Aussehen, Überblick/Prüfung)
 - **Datum:** 2026-10-22
 - **Betrifft:** Hauptscreen (`frontend/src/components/shell/`), Ansichtszustand
   (`view.workspace` in `frontend/src/state/viewState.ts`), Kopfleiste
