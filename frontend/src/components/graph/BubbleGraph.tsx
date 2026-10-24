@@ -27,7 +27,6 @@ import {
 import { GraphControls } from './GraphControls';
 import { useHostWindow } from '../common/hostWindow';
 import { usePositionMenu } from '../common/positionMenuContext';
-import { sidePanelSpace } from '../shell/SidePanel';
 import {
   GROUP_GAP,
   GROUP_LOD_PX,
@@ -69,7 +68,6 @@ function clampZoom(value: number): number {
 /** Obergrenze beim Einpassen auf eine Auswahl — eine Position bleibt lesbar, nicht riesig. */
 const FIT_SELECTION_MAX_ZOOM = 2.5;
 /** Unter dieser Breite hat die Linie zur Karte keinen Platz. */
-const LEADER_MIN_WIDTH = 760;
 /** So viel größer zeichnet der Graph die ausgewählte Position. */
 const PICKED_SCALE = 1.2;
 /** Fenster und Leisten über dem Graphen — Schilder weichen ihnen aus. */
@@ -199,11 +197,7 @@ const COMMENT_BADGE: MarkerInfo = {
   text: '#fff',
 };
 
-/**
- * `cardOverlay`: die Positionskarte schwebt über dem Graphen (Fenster-Layout) —
- * beim Einpassen bleibt rechts ihr Platz frei. Im Splitscreen steht sie daneben.
- */
-export function BubbleGraph({ root, cardOverlay = true }: { root: LVNode; cardOverlay?: boolean }) {
+export function BubbleGraph({ root }: { root: LVNode }) {
   const {
     lv,
     index,
@@ -217,7 +211,7 @@ export function BubbleGraph({ root, cardOverlay = true }: { root: LVNode; cardOv
       hideMode,
       filters: { facets: selectedFacets },
     },
-    view: { graph, side, sideWidth, panelSize },
+    view: { graph },
     selectedNode,
     selectedPosition,
     selection: { compare },
@@ -449,15 +443,13 @@ export function BubbleGraph({ root, cardOverlay = true }: { root: LVNode; cardOv
   );
 
   // ── Einpassen
-  const cardOpen = cardOverlay && (selectedPosition !== null || selectedNode !== null);
   const viewAround = useCallback(
     (box: { x0: number; y0: number; x1: number; y1: number }, maxZoom: number): View | null => {
       if (w === 0 || h === 0) return null;
-      // Frei bleibt, was die festen Teile und offenen Fenster belegen: oben die
-      // Kennzahlen, unten Legende und Steuerung, links das Seitenfenster, rechts die Karte.
-      const wide = w > 900;
-      const padL = wide && side !== null ? sidePanelSpace(sideWidth) : 32;
-      const padR = wide && cardOpen ? panelSize.width + 32 : 32;
+      // Frei bleibt, was die festen Teile belegen: oben die Kennzahlen, unten Legende
+      // und Steuerung.
+      const padL = 32;
+      const padR = 32;
       const padT = 96;
       const padB = 76;
       const availW = Math.max(80, w - padL - padR);
@@ -471,7 +463,7 @@ export function BubbleGraph({ root, cardOverlay = true }: { root: LVNode; cardOv
         k,
       };
     },
-    [w, h, side, sideWidth, cardOpen, panelSize.width],
+    [w, h],
   );
 
   const fitView = useCallback(() => viewAround(map.bounds, 1.6), [viewAround, map]);
@@ -845,24 +837,33 @@ export function BubbleGraph({ root, cardOverlay = true }: { root: LVNode; cardOv
       pins = placePins(anchors, { width: w, height: h }, blocked);
     }
 
+    // Gestrichelte Linie vom Punkt zum Bereich „Position", wenn er neben dem Graphen
+    // steht: sie endet am Rand der Graph-Fläche auf seiner Seite (Entscheidung 0074).
     let leader: Overlay['leader'] = null;
-    const card = wrap.querySelector('[data-selection-card]');
+    const card = wrap.ownerDocument.querySelector('[data-pane="card"]:not([aria-hidden])');
     if (
       card !== null &&
       !morphing &&
       selectedSlot >= 0 &&
-      w >= LEADER_MIN_WIDTH &&
-      Number.isFinite(map.px[selectedSlot])
+      Number.isFinite(map.px[selectedSlot]) &&
+      (isHit(selectedSlot) || !hide)
     ) {
       const c = card.getBoundingClientRect();
-      const px = map.px[selectedSlot] * view.k + view.tx;
-      const py = map.py[selectedSlot] * view.k + view.ty;
-      const tx = c.left - base.left;
-      const ty = Math.min(Math.max(py, c.top - base.top + 30), c.bottom - base.top - 30);
-      const startX = px + (radii[selectedSlot] * PICKED_SCALE + 4) * view.k;
-      if (startX < tx - 10 && (isHit(selectedSlot) || !hide)) {
-        const mx = (startX + tx) / 2;
-        leader = { d: `M${startX},${py} C${mx},${py} ${mx},${ty} ${tx},${ty}`, x: tx, y: ty };
+      const toRight = c.left >= base.right - 2;
+      const toLeft = c.right <= base.left + 2;
+      const top = Math.max(c.top, base.top) - base.top + 30;
+      const bottom = Math.min(c.bottom, base.bottom) - base.top - 30;
+      if ((toRight || toLeft) && top < bottom) {
+        const px = map.px[selectedSlot] * view.k + view.tx;
+        const py = map.py[selectedSlot] * view.k + view.ty;
+        const reach = (radii[selectedSlot] * PICKED_SCALE + 4) * view.k;
+        const startX = toRight ? px + reach : px - reach;
+        const tx = toRight ? w : 0;
+        const ty = Math.min(Math.max(py, top), bottom);
+        if (toRight ? startX < tx - 10 : startX > tx + 10) {
+          const mx = (startX + tx) / 2;
+          leader = { d: `M${startX},${py} C${mx},${py} ${mx},${ty} ${tx},${ty}`, x: tx, y: ty };
+        }
       }
     }
 

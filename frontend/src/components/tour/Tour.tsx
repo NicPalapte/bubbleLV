@@ -107,8 +107,7 @@ function cardPlace(spot: Box, width: number, height: number): CardPlace {
 
 function runPrepare(prepare: TourPrepare, dispatch: ReturnType<typeof useViewerDispatch>): void {
   switch (prepare) {
-    case 'closeSide':
-      dispatch({ type: 'sidePanel', panel: null });
+    case 'closeFilter':
       dispatch({ type: 'filterBar', open: false });
       return;
     case 'openSettings':
@@ -138,30 +137,27 @@ export function Tour() {
   /** Richtung der letzten Bewegung — ein fehlendes Ziel wird in dieselbe Richtung übersprungen. */
   const direction = useRef<1 | -1>(1);
 
-  // Die Tour schließt Karte und Seitenfenster und wählt zur Vorführung selbst
+  // Die Tour schließt Karte und Filterleiste und wählt zur Vorführung selbst
   // einen Punkt. Danach gilt wieder der eigene Stand: beim Start merken, beim
   // Ende zurückgeben — außer ein neues LV ist inzwischen geladen.
   const { nodeId, positionId } = state.selection;
-  const { side } = state.view;
   const before = useRef<{
     lv: typeof lv;
     nodeId: string | null;
     positionId: string | null;
-    side: typeof side;
   }>(null);
   useEffect(() => {
     if (index !== null) {
-      before.current ??= { lv, nodeId, positionId, side };
+      before.current ??= { lv, nodeId, positionId };
       return;
     }
     const saved = before.current;
     if (saved === null) return;
     before.current = null;
     if (saved.lv !== lv) return;
-    if (saved.side !== side) dispatch({ type: 'sidePanel', panel: saved.side });
     if (saved.nodeId === nodeId && saved.positionId === positionId) return;
     dispatch({ type: 'selectPosition', nodeId: saved.nodeId, positionId: saved.positionId });
-  }, [index, lv, nodeId, positionId, side, dispatch]);
+  }, [index, lv, nodeId, positionId, dispatch]);
 
   const go = useCallback(
     (next: number | null): void => {
@@ -178,7 +174,7 @@ export function Tour() {
     for (const prepare of TOUR_STEPS[index]?.prepare ?? []) runPrepare(prepare, dispatch);
   }, [index, dispatch]);
 
-  // Ziel verfolgen: Fenster, Zoom und Seitenfenster verschieben es laufend.
+  // Ziel verfolgen: Bereiche, Zoom und Fenster verschieben es laufend.
   // Ein Frame-Takt ist billig (eine Abfrage) und braucht keine Beobachter je Ziel.
   useEffect(() => {
     if (index === null) return;

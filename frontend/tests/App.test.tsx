@@ -32,17 +32,24 @@ function clickPoint(slot: number): void {
   fireEvent.click(point);
 }
 
-/** Tabellenfenster über den Knopf unten mittig öffnen. */
+/** Die Tabelle steht im Splitscreen; ist sie zu, öffnet „Ansicht" sie wieder. */
 async function openTable(): Promise<HTMLElement> {
-  fireEvent.click(screen.getByRole('button', { name: /^▴ Tabelle/ }));
+  if (screen.queryByRole('grid', { name: 'Positionen' }) === null) {
+    fireEvent.click(screen.getByRole('button', { name: /^Ansicht/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Tabelle$/, pressed: false }));
+  }
   return screen.findByRole('grid', { name: 'Positionen' });
 }
 
 function tableWindow(): HTMLElement | null {
-  return screen.queryByRole('region', { name: 'Tabelle — Fenster über dem Graphen' });
+  return screen.queryByRole('region', { name: 'Tabelle — Bereich' });
 }
 
-/** Kennzahl über dem Graphen anklicken — sie öffnet ihren Reiter im Seitenfenster. */
+function cardPane(): HTMLElement {
+  return screen.getByRole('region', { name: 'Position — Bereich' });
+}
+
+/** Kennzahl über dem Graphen anklicken — sie öffnet ihren Bereich im Splitscreen. */
 function kpi(name: RegExp): void {
   fireEvent.click(
     within(screen.getByRole('group', { name: 'Kennzahlen' })).getByRole('button', { name }),
@@ -51,7 +58,7 @@ function kpi(name: RegExp): void {
 
 /**
  * Die erste Position im Graphen anklicken. Der Graph bleibt, die Karte zeigt die
- * Position; das Tabellenfenster steht danach im Abschnitt „Baustelleneinrichtung".
+ * Position; die Tabelle steht danach im Abschnitt „Baustelleneinrichtung".
  */
 async function jumpToFirstPosition(): Promise<HTMLElement> {
   clickPoint(0);
@@ -101,22 +108,19 @@ describe('Viewer', () => {
     expect(within(bar).getByRole('button', { name: 'Positionsart' })).toBeInTheDocument();
   });
 
-  it('startet nach dem Import im Graphen, ohne offene Fenster', async () => {
+  it('startet im Splitscreen mit Graph, Tabelle und Position', async () => {
     await loadAndWait();
 
-    // Der Graph ist der Hauptscreen (docs/decisions/0034); Seitenfenster und
-    // Tabelle gehen erst auf Wunsch auf.
+    // Nur noch Splitscreen (Entscheidung 0074); Überblick und Prüfung gehen erst
+    // auf Wunsch auf.
     expect(screen.getByRole('main', { name: 'Bubble-Graph' })).toBeInTheDocument();
-    expect(screen.queryByRole('complementary', { name: 'Seitenfenster' })).not.toBeInTheDocument();
-    expect(tableWindow()).not.toBeInTheDocument();
+    expect(tableWindow()).toBeInTheDocument();
+    expect(cardPane()).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Überblick — Bereich' })).toBeNull();
 
-    // Die Kennzahl „Positionen" öffnet den Überblick als Reiter.
+    // Die Kennzahl „Positionen" öffnet den Überblick als Bereich.
     kpi(/Positionen/);
-    const panel = screen.getByRole('complementary', { name: 'Seitenfenster' });
-    expect(within(panel).getByRole('tab', { name: 'Überblick' })).toHaveAttribute(
-      'aria-selected',
-      'true',
-    );
+    const panel = screen.getByRole('region', { name: 'Überblick — Bereich' });
     expect(within(panel).getByText('28 Positionen')).toBeInTheDocument();
   });
 
@@ -134,7 +138,9 @@ describe('Viewer', () => {
     // Im Überblick ein Stück scrollen …
     kpi(/Treffer/);
     const ueberblick = (): HTMLElement =>
-      screen.getByRole('tabpanel').firstElementChild as HTMLElement;
+      screen
+        .getByRole('region', { name: 'Überblick — Bereich' })
+        .querySelector<HTMLElement>('.overflow-auto')!;
     fireEvent.scroll(ueberblick(), { target: { scrollTop: 240 } });
 
     // … in der Tabelle nach Menge sortieren …
@@ -147,10 +153,10 @@ describe('Viewer', () => {
       ),
     );
 
-    // … Reiter und Fenster wechseln und zurück: Suche, Sortierung und
+    // … Bereiche schließen und wieder öffnen: Suche, Sortierung und
     // Scrollposition stehen unverändert da.
-    fireEvent.click(screen.getByRole('tab', { name: /Prüfung/ }));
-    fireEvent.click(screen.getByRole('tab', { name: 'Überblick' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Überblick schließen' }));
+    kpi(/Treffer/);
     expect(ueberblick().scrollTop).toBe(240);
     expect(screen.getByLabelText('Suche')).toHaveValue('Beton');
 
@@ -162,7 +168,7 @@ describe('Viewer', () => {
     );
   });
 
-  it('zeigt die Positionen im Tabellenfenster über dem Graphen', async () => {
+  it('zeigt die Positionen in der Tabelle neben dem Graphen', async () => {
     await loadAndWait();
     const table = await openTable();
 
@@ -174,7 +180,7 @@ describe('Viewer', () => {
     expect(headers).not.toContain('Bauteiltyp');
     // Erste Position der Beispieldatei ist in der Tabelle sichtbar.
     expect(within(table).getAllByText('001.001.0010').length).toBeGreaterThan(0);
-    // Der Graph bleibt darunter stehen.
+    // Der Graph steht daneben.
     expect(screen.getByRole('group', { name: /Bubble-Graph/ })).toBeInTheDocument();
   });
 
@@ -227,49 +233,37 @@ describe('Viewer', () => {
     expect(within(table).getAllByText(/Bauhauptgewerke/).length).toBeGreaterThan(0);
   });
 
-  it('schließt das Tabellenfenster mit einem Klick, der Graph bleibt stehen', async () => {
+  it('schließt die Tabelle mit einem Klick, der Graph bleibt stehen', async () => {
     await loadAndWait();
     await selectBauhauptgewerke();
     await screen.findByRole('grid', { name: 'Positionen' });
 
-    // Mehrere Ebenen tief — der Knopf am Fenster schließt es in einem Schritt.
+    // Mehrere Ebenen tief — der Knopf am Bereich schließt ihn in einem Schritt.
     fireEvent.click(screen.getByRole('button', { name: 'Tabelle schließen' }));
     await waitFor(() =>
       expect(screen.queryByRole('grid', { name: 'Positionen' })).not.toBeInTheDocument(),
     );
     expect(screen.getByRole('group', { name: /Bubble-Graph/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^▴ Tabelle/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^Ansicht/ }));
+    expect(screen.getByRole('button', { name: /Tabelle$/, pressed: false })).toBeInTheDocument();
   });
 
-  it('zeigt eine gewählte Position im Graphen als schwebende Karte (Issue #30)', async () => {
+  it('zeigt eine gewählte Position im Bereich „Position" (Issue #30)', async () => {
     await loadAndWait();
+    expect(within(cardPane()).getByText('Keine Auswahl')).toBeInTheDocument();
 
     // Position in der Tabelle wählen — dieselbe Auswahl treibt die Zeile in
-    // der Tabelle und die schwebende Karte über dem Graphen.
+    // der Tabelle und die Karte neben dem Graphen.
     const table = await openTable();
     fireEvent.click(within(table).getAllByText('001.001.0010')[0]);
-    fireEvent.click(screen.getByRole('button', { name: 'Tabelle schließen' }));
-
-    // Die Karte zeigt die Positionsdetails.
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Karte schließen' })).toBeInTheDocument(),
+      expect(
+        within(cardPane()).getByText('Baustelleneinrichtung für sämtliche', { exact: false }),
+      ).toBeInTheDocument(),
     );
-    expect(
-      screen.getByText('Baustelleneinrichtung für sämtliche', { exact: false }),
-    ).toBeInTheDocument();
-
-    // Escape schließt die Karte komplett — sie springt nicht auf den
-    // übergeordneten Abschnitt zurück, sondern verschwindet in einem Schritt.
-    fireEvent.keyDown(document.body, { key: 'Escape' });
-    await waitFor(() =>
-      expect(screen.queryByRole('button', { name: 'Karte schließen' })).not.toBeInTheDocument(),
-    );
-    expect(
-      screen.queryByText('Baustelleneinrichtung für sämtliche', { exact: false }),
-    ).not.toBeInTheDocument();
   });
 
-  it('zeigt einen gewählten Abschnitt im Graphen ebenfalls als schwebende Karte', async () => {
+  it('zeigt einen gewählten Abschnitt ebenfalls im Bereich „Position"', async () => {
     await loadAndWait();
 
     // Abschnitt (kein Positionsblatt) wählen — die Karte zeigt dann
@@ -277,129 +271,16 @@ describe('Viewer', () => {
     await selectBauhauptgewerke();
 
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Karte schließen' })).toBeInTheDocument(),
+      expect(within(cardPane()).getByText('Direkte Positionen')).toBeInTheDocument(),
     );
-    expect(screen.getByText('Kennzahlen')).toBeInTheDocument();
-    expect(screen.getByText('Direkte Positionen')).toBeInTheDocument();
+    expect(within(cardPane()).getByText('Kennzahlen')).toBeInTheDocument();
   });
 
-  it('scrollt in der Auswahlkarte, statt den Graphen zu zoomen oder zu ziehen (Issue #47)', async () => {
-    await loadAndWait();
-    await selectBauhauptgewerke();
-    fireEvent.click(screen.getByRole('button', { name: 'Tabelle schließen' }));
-
-    const closeButton = await screen.findByRole('button', { name: 'Karte schließen' });
-    const card = closeButton.closest('[data-graph-overlay]');
-    expect(card).not.toBeNull();
-
-    // Der Canvas hängt seinen Rad-Listener auf den gesamten Wrapper. Über der
-    // Karte darf er nicht greifen — sonst scrollt ihr Inhalt nie.
-    const wheel = (target: Element): boolean =>
-      target.dispatchEvent(
-        new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: 90 }),
-      );
-    expect(wheel(closeButton)).toBe(true);
-
-    const canvas = screen.getByRole('group', { name: /Bubble-Graph/ });
-    expect(wheel(canvas)).toBe(false);
-
-    // Ein Zug in der Karte (Scrollbalken, Textauswahl) verschiebt den Graphen nicht.
-    fireEvent.mouseDown(closeButton, { button: 0, clientX: 10, clientY: 10 });
-    fireEvent.mouseMove(document, { clientX: 140, clientY: 90 });
-    expect(canvas).toHaveStyle({ cursor: 'grab' });
-    fireEvent.mouseUp(document);
-
-    // Auf dem Canvas selbst bleibt das Ziehen erhalten.
-    fireEvent.mouseDown(canvas, { button: 0, clientX: 10, clientY: 10 });
-    fireEvent.mouseMove(document, { clientX: 140, clientY: 90 });
-    expect(canvas).toHaveStyle({ cursor: 'grabbing' });
-    fireEvent.mouseUp(document);
-  });
-
-  it('zieht die Tabelle am Knopf unten rechts auf — die linke Kante bleibt', async () => {
-    await loadAndWait();
-    await openTable();
-    const fenster = tableWindow() as HTMLElement;
-    const right0 = parseFloat(fenster.style.right);
-    const width0 = parseFloat(fenster.style.width);
-
-    const handle = screen.getByRole('button', { name: 'Tabelle in der Größe ändern' });
-    fireEvent.mouseDown(handle, { clientX: 400, clientY: 300 });
-    fireEvent.mouseMove(document, { clientX: 440, clientY: 300 });
-    fireEvent.mouseUp(document);
-    expect(parseFloat(fenster.style.width)).toBe(width0 + 40);
-    expect(parseFloat(fenster.style.right)).toBe(right0 - 40);
-
-    // Pfeil nach rechts vergrößert, nach links verkleinert.
-    fireEvent.keyDown(handle, { key: 'ArrowLeft' });
-    expect(parseFloat(fenster.style.width)).toBe(width0 + 24);
-    expect(parseFloat(fenster.style.right)).toBe(right0 - 24);
-  });
-
-  it('zieht die Auswahlkarte am Knopf unten links auf', async () => {
-    await loadAndWait();
-    await selectBauhauptgewerke();
-    fireEvent.click(screen.getByRole('button', { name: 'Tabelle schließen' }));
-
-    const closeButton = await screen.findByRole('button', { name: 'Karte schließen' });
-    const card = closeButton.closest('[data-graph-overlay]') as HTMLElement;
-    expect(card.style.width).toBe('380px');
-    expect(card.style.height).toBe('');
-
-    // Die Karte hängt rechts oben: nach links zieht sie breiter, nach unten höher.
-    const handle = screen.getByRole('button', { name: 'Info-Panel in der Größe ändern' });
-    fireEvent.mouseDown(handle, { clientX: 400, clientY: 300 });
-    fireEvent.mouseMove(document, { clientX: 260, clientY: 480 });
-    expect(card.style.width).toBe('520px');
-    expect(card.style.height).toBe('180px');
-    fireEvent.mouseUp(document);
-
-    // Unter die Mindestgröße geht es nicht — sonst bliebe nichts Lesbares übrig.
-    fireEvent.mouseDown(handle, { clientX: 260, clientY: 480 });
-    fireEvent.mouseMove(document, { clientX: 900, clientY: 0 });
-    expect(card.style.width).toBe('280px');
-    expect(card.style.height).toBe('160px');
-    fireEvent.mouseUp(document);
-
-    // Der Knopf zieht nur die Karte auf, nicht den Graphen darunter.
-    expect(screen.getByRole('group', { name: /Bubble-Graph/ })).toHaveStyle({ cursor: 'grab' });
-
-    // Pfeiltasten am Knopf ändern die Größe ebenfalls — links vergrößert.
-    fireEvent.keyDown(handle, { key: 'ArrowLeft' });
-    expect(card.style.width).toBe('296px');
-  });
-
-  it('merkt sich den Ort der Auswahlkarte über den Ansichtswechsel', async () => {
-    await loadAndWait();
-    await selectBauhauptgewerke();
-    fireEvent.click(screen.getByRole('button', { name: 'Tabelle schließen' }));
-
-    const closeButton = await screen.findByRole('button', { name: 'Karte schließen' });
-    const card = closeButton.closest('[data-graph-overlay]') as HTMLElement;
-    expect(card.style.right).toBe('16px');
-
-    // Karte am Ziehgriff beiseiteschieben.
-    fireEvent.mouseDown(screen.getByLabelText('Karte verschieben'), { clientX: 500, clientY: 300 });
-    fireEvent.mouseMove(document, { clientX: 400, clientY: 350 });
-    fireEvent.mouseUp(document);
-    expect(card.style.right).toBe('116px');
-    expect(card.style.top).toBe('66px');
-
-    // Nach einem Ausflug ins Seitenfenster steht sie wieder dort, nicht in der Ecke.
-    kpi(/Positionen/);
-    fireEvent.click(await screen.findByRole('button', { name: 'Seitenfenster schließen' }));
-    const wieder = (await screen.findByRole('button', { name: 'Karte schließen' })).closest(
-      '[data-graph-overlay]',
-    ) as HTMLElement;
-    expect(wieder.style.right).toBe('116px');
-    expect(wieder.style.top).toBe('66px');
-  });
-
-  it('schließt mit Escape zuerst das Popover, nicht das Tabellenfenster (Issue #30)', async () => {
+  it('schließt mit Escape zuerst das Popover, nicht die Tabelle (Issue #30)', async () => {
     await loadAndWait();
     await openTable();
 
-    // Spaltenauswahl als Popover im Tabellenfenster.
+    // Spaltenauswahl als Popover in der Tabelle.
     fireEvent.click(screen.getByRole('button', { name: /Spalten ▾/ }));
     expect(screen.getByRole('list', { name: 'Spalten' })).toBeInTheDocument();
 
@@ -410,7 +291,7 @@ describe('Viewer', () => {
     // Die Tabelle steht noch — Escape hat nur das Popover geschlossen.
     expect(screen.getByRole('grid', { name: 'Positionen' })).toBeInTheDocument();
 
-    // Das Fenster ist eine bewusste Wahl — ein zweites Escape schließt es nicht.
+    // Der Bereich ist eine bewusste Wahl — ein zweites Escape schließt ihn nicht.
     fireEvent.keyDown(document.body, { key: 'Escape' });
     expect(screen.getByRole('grid', { name: 'Positionen' })).toBeInTheDocument();
     expect(tableWindow()).toBeInTheDocument();

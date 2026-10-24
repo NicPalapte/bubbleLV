@@ -51,7 +51,7 @@ function Harness({
   const {
     view: {
       mode,
-      side,
+      workspace,
       overview: { openRules, revealRule },
     },
     selection: { positionId: gewaehlt },
@@ -73,7 +73,7 @@ function Harness({
         Position wählen
       </button>
       <span data-testid="ansicht">{mode}</span>
-      <span data-testid="seitenfenster">{side ?? ''}</span>
+      <span data-testid="seitenfenster">{workspace.closed.check ? '' : 'check'}</span>
       <span data-testid="offene-regeln">{[...openRules].join(',')}</span>
       <span data-testid="holt-regel">{revealRule ?? ''}</span>
       <span data-testid="auswahl">{gewaehlt ?? ''}</span>

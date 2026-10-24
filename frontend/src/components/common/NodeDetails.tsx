@@ -4,19 +4,9 @@
 import { CardHead, GroupPill, PropTable, Section, StatRow } from './CardParts';
 import { formatCount, formatEuro } from '../../lib/format';
 import { useViewer } from '../../state/viewer';
-import type { ReactNode } from 'react';
 import type { LVNode } from '../../types/lvNode';
 
-export function NodeDetails({
-  node,
-  onClose,
-  grip,
-}: {
-  node: LVNode;
-  /** Nur die schwebende Karte im Graphen braucht eine Schließen-Schaltfläche. */
-  onClose?: () => void;
-  grip?: ReactNode;
-}) {
+export function NodeDetails({ node }: { node: LVNode }) {
   const { lv } = useViewer();
   const kind = node.kind === 'lot' ? 'Los' : node.kind === 'project' ? 'Projekt' : 'Abschnitt';
   const children = node.children.filter((child) => child.kind !== 'position');
@@ -34,7 +24,6 @@ export function NodeDetails({
   return (
     <>
       <CardHead
-        grip={grip}
         meta={
           <>
             {node.code !== '' && (
@@ -44,7 +33,6 @@ export function NodeDetails({
           </>
         }
         title={node.label ?? 'Ohne Bezeichnung'}
-        onClose={onClose}
       />
       <StatRow
         stats={[

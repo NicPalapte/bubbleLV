@@ -1,7 +1,6 @@
-// Splitscreen (Entscheidungen 0064, 0070, 0073): Graph, Tabelle, Positionskarte, Überblick und Prüfung als
-// Bereiche nebeneinander, Umschalter zur Fenster-Anordnung in der Kopfleiste.
-// jsdom kennt kein matchMedia — der Test spielt einen breiten Bildschirm vor. Ebenso
-// keine Maße: die Arbeitsfläche ist hier 1000 × 600 px groß.
+// Splitscreen (Entscheidungen 0064, 0070, 0073, 0074): Graph, Tabelle, Positionskarte,
+// Überblick und Prüfung als Bereiche nebeneinander; „Ansicht" in der Kopfleiste blendet
+// sie ein und aus. jsdom kennt keine Maße: die Arbeitsfläche ist hier 1000 × 600 px groß.
 
 import { act, createEvent, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -79,30 +78,11 @@ function setup(): void {
 const region = (name: string): HTMLElement =>
   screen.getByRole('region', { name: `${name} — Bereich` });
 
-let original: typeof window.matchMedia | undefined;
-
-beforeEach(() => {
-  original = window.matchMedia;
-  window.matchMedia = vi.fn((query: string) => ({
-    matches: query.includes('min-width'),
-    media: query,
-    onchange: null,
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })) as unknown as typeof window.matchMedia;
-});
-
-afterEach(() => {
-  if (original === undefined) {
-    // @ts-expect-error -- jsdom hatte keins; zurück in den Ausgangszustand.
-    delete window.matchMedia;
-  } else {
-    window.matchMedia = original;
-  }
-});
+/** Einen Bereich über den Knopf „Ansicht" ein- oder ausblenden. */
+function ansicht(pane: string): void {
+  fireEvent.click(screen.getByRole('button', { name: /^Ansicht/ }));
+  fireEvent.click(screen.getByRole('button', { name: new RegExp(`${pane}$`) }));
+}
 
 describe('Splitscreen', () => {
   it('zeigt Graph, Tabelle und Position als Bereiche nebeneinander', () => {
@@ -120,7 +100,7 @@ describe('Splitscreen', () => {
     expect(screen.queryByRole('region', { name: 'Tabelle — Bereich' })).toBeNull();
     // Ohne zweiten linken Bereich gibt es keine waagerechte Trennlinie mehr.
     expect(screen.queryByRole('separator', { name: 'Höhe der Bereiche' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: '+ Tabelle' }));
+    ansicht('Tabelle');
     expect(region('Tabelle')).toBeInTheDocument();
   });
 
@@ -162,7 +142,7 @@ describe('Splitscreen', () => {
   it('stapelt per Ziehen auf die Kopfzeile und löst den Reiter an einem Rand wieder', async () => {
     setup();
     fläche();
-    fireEvent.click(screen.getByRole('button', { name: '+ Prüfung' }));
+    ansicht('Prüfung');
     expect(region('Prüfung')).toBeInTheDocument();
     let { dataTransfer } = await ziehe('check');
     // Kopfzeile der Position (rechte Spalte ab 720 px)
@@ -187,7 +167,6 @@ describe('Splitscreen', () => {
   it('am rechten Außenrand läuft die Tabelle über die volle Höhe; ↺ setzt zurück', async () => {
     setup();
     fläche();
-    expect(screen.queryByRole('button', { name: 'Anordnung zurücksetzen' })).toBeNull();
     const { dataTransfer } = await ziehe('table');
     lasse(dataTransfer, 995, 300);
     expect(region('Tabelle').style.top).toBe('calc(0% + 32px)');
@@ -195,7 +174,8 @@ describe('Splitscreen', () => {
     expect(breite).toBeGreaterThan(25);
     expect(breite).toBeLessThan(35);
     expect(region('Tabelle').style.left).not.toBe('0%');
-    fireEvent.click(screen.getByRole('button', { name: 'Anordnung zurücksetzen' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Ansicht/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Anordnung zurücksetzen/ }));
     expect(region('Tabelle').style.top).not.toBe('calc(0% + 32px)');
   });
 
@@ -218,13 +198,65 @@ describe('Splitscreen', () => {
     expect(linie).toHaveAttribute('aria-valuenow', '88');
   });
 
-  it('wechselt auf Fenster: der Graph füllt die Fläche, die Bereiche verschwinden', () => {
+  it('„Ansicht" zeigt jeden Bereich mit Haken und holt ausgelagerte zurück', () => {
     setup();
-    fireEvent.click(screen.getByRole('radio', { name: /Fenster/ }));
-    expect(screen.queryByRole('region', { name: /— Bereich$/ })).toBeNull();
-    expect(screen.getByRole('button', { name: /Tabelle/ })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('radio', { name: /Split/ }));
-    expect(region('Graph')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^Ansicht/ }));
+    expect(screen.getByRole('button', { name: /Graph$/ })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /Überblick$/ })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Graph$/ }));
+    expect(screen.queryByRole('region', { name: 'Graph — Bereich' })).toBeNull();
+  });
+
+  describe('schmale Fläche (Entscheidung 0074)', () => {
+    let breite = 800;
+    const Original = globalThis.ResizeObserver;
+    beforeEach(() => {
+      globalThis.ResizeObserver = class {
+        private readonly melde: ResizeObserverCallback;
+        constructor(melde: ResizeObserverCallback) {
+          this.melde = melde;
+        }
+        observe(): void {
+          this.melde(
+            [{ contentRect: { width: breite, height: 600 } } as ResizeObserverEntry],
+            this as unknown as ResizeObserver,
+          );
+        }
+        unobserve(): void {}
+        disconnect(): void {}
+      } as unknown as typeof ResizeObserver;
+    });
+    afterEach(() => {
+      globalThis.ResizeObserver = Original;
+    });
+
+    it('zeigt den Graphen und alle anderen Bereiche als Reiter auf einem Platz', () => {
+      breite = 800;
+      setup();
+      const reiter = screen.getByRole('tablist', { name: 'Gestapelte Bereiche' });
+      expect(within(reiter).getByRole('tab', { name: /Position/ })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      );
+      expect(screen.queryByRole('separator')).toBeNull();
+      expect(region('Graph').style.left).toBe('0%');
+      expect(region('Graph').style.top).toBe('calc(0% + 32px)');
+      fireEvent.click(within(reiter).getByRole('tab', { name: /Tabelle/ }));
+      expect(region('Tabelle')).not.toHaveAttribute('aria-hidden');
+      // Ein neu geöffneter Bereich kommt nach vorn.
+      ansicht('Prüfung');
+      expect(region('Prüfung')).not.toHaveAttribute('aria-hidden');
+    });
+
+    it('legt auf dem Handy beide übereinander', () => {
+      breite = 500;
+      setup();
+      expect(region('Graph').style.width).toBe('calc(100% - 0px)');
+      expect(region('Position').style.top).toBe('calc(50% + 32px)');
+    });
   });
 
   describe('Tabelle im eigenen Fenster', () => {
@@ -248,13 +280,14 @@ describe('Splitscreen', () => {
     const fern = (): HTMLElement =>
       within(popup.document.body).getByRole('region', { name: 'Tabelle — eigenes Fenster' });
 
-    it('bleibt ausgelagert, wenn man auf Fenster wechselt', () => {
+    it('holt die Tabelle über „Ansicht" zurück', () => {
       setup();
       fireEvent.click(screen.getByRole('button', { name: 'Tabelle in eigenem Fenster öffnen' }));
       expect(screen.queryByRole('region', { name: 'Tabelle — Bereich' })).toBeNull();
       expect(fern()).toBeInTheDocument();
-      fireEvent.click(screen.getByRole('radio', { name: /Fenster/ }));
-      expect(fern()).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: /^Ansicht/ }));
+      fireEvent.click(screen.getByRole('button', { name: /Tabelle.*zurückholen/ }));
+      expect(region('Tabelle')).toBeInTheDocument();
     });
 
     it('kehrt in ihren Bereich zurück, wenn das zweite Fenster von Hand zugeht', async () => {

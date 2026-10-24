@@ -88,7 +88,7 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
   **keine** Fixture-Daten, **kein** `localStorage` für Fachdaten
 - `matchPos` ist die einzige Quelle für Filter-/Suchlogik
 - Tree und Bubble-Graph konsumieren **denselben** rekursiven `LVNode`-Baum
-- Graph, Seitenfenster und Fenster arbeiten auf derselben gefilterten Menge und derselben Auswahl;
+- Alle Bereiche des Splitscreens und alle Fenster arbeiten auf derselben gefilterten Menge und derselben Auswahl;
   Zustand getrennt in `filterState` / `selectionState` / `viewState`
 
 ## Code-Style
@@ -124,12 +124,13 @@ Scopes: `gaeb · classify · tree · viewer · graph · relate · check · front
 **In Scope:** GAEB-Import im Browser (x83 **und** preisführende x84/x86) ·
 Klassifizierung Kurz-/Langtext inkl. Textstellen · Hervorhebung der vier
 Wichtig-Kategorien (Geld/Menge · Risiko · Norm · Frist) · VOB-Check als Hinweis ·
-fachliche Filter · **Graph als Hauptscreen** auf einem Filterzustand: Seitenfenster
-(Überblick mit Import-Log · Filter · Prüfung), Positionskarte, Tabelle und Vergleich
-(max. 4 Positionen) als Fenster darüber (`docs/decisions/0034-graph-als-hauptscreen.md`,
-`docs/decisions/0037-vergleichsfenster.md`); Graph, Tabelle, Positionskarte, Überblick
-und Prüfung wahlweise als nahtloser Splitscreen mit tausch-, stapel- und schließbaren
-Bereichen (`view.workspace`, `docs/decisions/0064-splitscreen.md`,
+fachliche Filter · **Graph als Hauptscreen** auf einem Filterzustand
+(`docs/decisions/0034-graph-als-hauptscreen.md`): Graph, Tabelle, Positionskarte, Überblick
+(mit Import-Log), Prüfung und Dokument **nur** als nahtloser Splitscreen mit tausch-,
+stapel- und schließbaren Bereichen, ein- und ausblendbar über „Ansicht“, schmal Graph + ein
+Platz mit Reitern (`docs/decisions/0074-nur-noch-splitscreen.md`); Filterleiste und
+Vergleich (max. 4 Positionen, `docs/decisions/0037-vergleichsfenster.md`) darüber
+(`view.workspace`, `docs/decisions/0064-splitscreen.md`,
 `docs/decisions/0070-splitscreen-nahtlos-stapeln.md`; frei teilbar, letzte Anordnung
 gemerkt: `docs/decisions/0073-splitscreen-frei-teilen-und-merken.md`) · Beziehungen zwischen Positionen nur als
 ähnliche Positionen im Vergleich, keine wertende Prüfregel (`docs/decisions/0049`) · eigene Marker (Fortschritt Offen/In Bearbeitung/Fertig + Wichtig, `docs/decisions/0062`) + Kommentar-Verlauf je Position zur letzten
@@ -156,9 +157,9 @@ LLM-Klassifizierung. Details → @docs/scope.md #out-of-scope
   Zielwerte: erste Ansicht < 5 s, Filterwechsel < 100 ms, Fenster öffnen < 200 ms
   (siehe @docs/scope.md). Mittel: flacher Positions-Index statt Baum-Traversierung
   je Render, Aggregation im Web Worker, Virtualisierung, LOD + Culling im Graphen.
-- **Ein Filterzustand für Graph und Fenster.** Ein Fenster oder Reiter öffnen/
-  schließen ändert nie Filter, Suche oder Auswahl. Der Graph ist der Hauptscreen; Fenster
-  und Seitenfenster liegen darüber (`view.side`, `view.tableWindow`).
+- **Ein Filterzustand für alle Bereiche.** Einen Bereich, Reiter oder ein Fenster öffnen/
+  schließen ändert nie Filter, Suche oder Auswahl. Bereiche nur über `view.workspace`;
+  kein zweiter Fenster-Modus (Entscheidung 0074).
 - **Beziehungen werden einmal beim Laden im Worker berechnet**, nie im Render. Kein
   All-Paare-Vergleich — erst nach Einheit vorgruppieren.
 - **Prüfregeln sind Hinweise, keine Urteile.** Jede Regel nennt ihren Norm-Verweis,

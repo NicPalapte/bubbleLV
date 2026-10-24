@@ -37,11 +37,9 @@ async function warteAufLv(): Promise<void> {
 
 /** Der Link wird erst nach dem ersten Zeichnen des LV angewendet — darauf warten. */
 async function warteAufTabelle(): Promise<void> {
-  // Die Tabelle ist ein Fenster über dem Graphen — es steht, sobald der Link greift.
+  // Die Tabelle steht im Splitscreen, sobald das LV gezeichnet ist.
   await waitFor(() =>
-    expect(
-      screen.getByRole('region', { name: 'Tabelle — Fenster über dem Graphen' }),
-    ).toBeInTheDocument(),
+    expect(screen.getByRole('region', { name: 'Tabelle — Bereich' })).toBeInTheDocument(),
   );
 }
 

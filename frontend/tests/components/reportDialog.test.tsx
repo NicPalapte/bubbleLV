@@ -186,8 +186,7 @@ describe('Fehler melden · schließen', () => {
       expect(screen.getByRole('button', { name: '+ Filter' })).toBeInTheDocument(),
     );
 
-    // Eine Position wählen — im Tabellenfenster über dem Graphen.
-    fireEvent.click(screen.getByRole('button', { name: /^▴ Tabelle/ }));
+    // Eine Position wählen — in der Tabelle neben dem Graphen.
     const grid = screen.getByRole('grid', { name: 'Positionen' });
     fireEvent.keyDown(grid, { key: 'ArrowDown' });
     fireEvent.keyDown(grid, { key: 'Enter' });

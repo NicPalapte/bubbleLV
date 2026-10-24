@@ -12,13 +12,9 @@
 import { describe, expect, it } from 'vitest';
 import { SECTION_AXIS } from '../../src/lib/graph/layoutMap';
 import { classifyAndBuild } from '../../src/lib/pipeline/runPipeline';
-import { SIDE_WIDTH_MAX, SIDE_WIDTH_MIN } from '../../src/state/viewState';
 import {
   INITIAL_VIEWER_STATE,
   MAX_COMPARE,
-  PANEL_MAX_WIDTH,
-  PANEL_MIN_HEIGHT,
-  PANEL_MIN_WIDTH,
   viewerReducer,
   type ViewerState,
 } from '../../src/state/viewer';
@@ -61,53 +57,31 @@ function loadedState(state: ViewerState = base): ViewerState {
 }
 
 describe('viewerReducer · Ansichtsmodus', () => {
-  it('hält die Breite des Seitenfensters in ihren Grenzen und über ein neues LV', () => {
-    const wide = viewerReducer(base, { type: 'sideWidth', width: 5000 });
-    expect(wide.view.sideWidth).toBe(SIDE_WIDTH_MAX);
-    const narrow = viewerReducer(base, { type: 'sideWidth', width: 10 });
-    expect(narrow.view.sideWidth).toBe(SIDE_WIDTH_MIN);
-    const set = viewerReducer(base, { type: 'sideWidth', width: 420 });
-    expect(viewerReducer(set, { type: 'sideWidth', width: 420 })).toBe(set);
-    expect(loadedState(set).view.sideWidth).toBe(420);
-  });
-
-  it('beginnt im Graphen, ohne offenes Seitenfenster oder Fenster', () => {
+  it('beginnt im Graphen mit Tabelle und Position, Überblick und Prüfung zu', () => {
     const state = loadedState();
     expect(state.view.mode).toBe('graph');
-    expect(state.view.side).toBeNull();
-    expect(state.view.tableWindow.open).toBe(false);
+    expect(state.view.workspace.closed).toMatchObject({
+      graph: false,
+      table: false,
+      card: false,
+      overview: true,
+      check: true,
+    });
   });
 
-  it('öffnet Überblick und Prüfung als Reiter im Seitenfenster über dem Graphen', () => {
+  it('öffnet Überblick und Prüfung als Bereiche im Splitscreen', () => {
     const overview = viewerReducer(base, { type: 'setViewMode', mode: 'overview' });
     expect(overview.view.mode).toBe('graph');
-    expect(overview.view.side).toBe('overview');
-    const check = viewerReducer(overview, { type: 'sidePanel', panel: 'check' });
-    expect(check.view.side).toBe('check');
-    expect(viewerReducer(check, { type: 'sidePanel', panel: null }).view.side).toBeNull();
+    expect(overview.view.workspace.closed.overview).toBe(false);
+    const check = viewerReducer(overview, { type: 'showPane', pane: 'check' });
+    expect(check.view.workspace.closed.check).toBe(false);
   });
 
-  it('öffnet die Tabelle als Fenster über dem Graphen', () => {
-    const table = viewerReducer(base, { type: 'setViewMode', mode: 'table' });
+  it('öffnet die Tabelle als Bereich und holt sie nach vorn', () => {
+    const closed = viewerReducer(base, { type: 'paneClosed', pane: 'table', closed: true });
+    const table = viewerReducer(closed, { type: 'setViewMode', mode: 'table' });
     expect(table.view.mode).toBe('graph');
-    expect(table.view.tableWindow.open).toBe(true);
-  });
-
-  it('lässt den Zustand stehen, wenn das Tabellenfenster nicht wirklich wandert', () => {
-    const moved = viewerReducer(base, { type: 'tableWindowPos', pos: { right: 40, top: 200 } });
-    expect(moved.view.tableWindow.pos).toEqual({ right: 40, top: 200 });
-    expect(viewerReducer(moved, { type: 'tableWindowPos', pos: { right: 40, top: 200 } })).toBe(
-      moved,
-    );
-  });
-
-  it('begrenzt die Größe des Tabellenfensters nach unten', () => {
-    const next = viewerReducer(base, {
-      type: 'tableWindowSize',
-      size: { width: 10, height: 10 },
-    });
-    expect(next.view.tableWindow.size.width).toBeGreaterThanOrEqual(420);
-    expect(next.view.tableWindow.size.height).toBeGreaterThanOrEqual(200);
+    expect(table.view.workspace.closed.table).toBe(false);
   });
 
   it('wählt einen Knoten an, ohne den Ansichtsmodus zu wechseln', () => {
@@ -116,9 +90,10 @@ describe('viewerReducer · Ansichtsmodus', () => {
     expect(next.view.mode).toBe(base.view.mode);
   });
 
-  it('öffnet mit `openInTable` das Tabellenfenster und wählt den Knoten an', () => {
-    const next = viewerReducer(base, { type: 'openInTable', id: 'section:001' });
-    expect(next.view.tableWindow.open).toBe(true);
+  it('öffnet mit `openInTable` die Tabelle und wählt den Knoten an', () => {
+    const closed = viewerReducer(base, { type: 'paneClosed', pane: 'table', closed: true });
+    const next = viewerReducer(closed, { type: 'openInTable', id: 'section:001' });
+    expect(next.view.workspace.closed.table).toBe(false);
     expect(next.selection.nodeId).toBe('section:001');
   });
 
@@ -210,7 +185,7 @@ describe('viewerReducer · Ansichtswechsel lässt Filter und Auswahl in Ruhe', (
     expect(state.view.scroll.table).toBe(640);
     expect(state.view.table.sort).toEqual({ key: 'quantity', dir: 1 });
     expect(state.view.mode).toBe('graph');
-    expect(state.view.tableWindow.open).toBe(true);
+    expect(state.view.workspace.closed.table).toBe(false);
   });
 
   it('merkt sich den Graph-Ausschnitt und gibt ihn beim Rückwechsel wieder her', () => {
@@ -300,36 +275,6 @@ describe('viewerReducer · Gliederung des Graphen', () => {
     const reloaded = loadedState(state);
     expect(reloaded.view.graph.layout).toBe('matrix');
     expect(reloaded.view.graph.showHints).toBe(false);
-  });
-});
-
-// Die Größe der Info-Panels ist eine Layout-Vorliebe, kein Fachdatum: sie gilt
-// für alle Panels, überlebt Ansichtswechsel und einen neuen Import — und mit
-// dem Reload verschwindet sie, wie jeder Sitzungszustand.
-describe('viewerReducer · Größe und Ort der Info-Panels', () => {
-  it('hält die Breite in den gemeinsamen Grenzen', () => {
-    const zuBreit = viewerReducer(base, {
-      type: 'panelSize',
-      size: { width: 2000, height: null },
-    });
-    expect(zuBreit.view.panelSize.width).toBe(PANEL_MAX_WIDTH);
-
-    const zuSchmal = viewerReducer(base, { type: 'panelSize', size: { width: 10, height: 10 } });
-    expect(zuSchmal.view.panelSize.width).toBe(PANEL_MIN_WIDTH);
-    expect(zuSchmal.view.panelSize.height).toBe(PANEL_MIN_HEIGHT);
-  });
-
-  it('überlebt einen neuen Import und das Leeren', () => {
-    const groesse = viewerReducer(base, { type: 'panelSize', size: { width: 500, height: 400 } });
-    const breit = viewerReducer(groesse, { type: 'cardPos', pos: { right: 200, top: 120 } });
-
-    const geladen = loadedState(breit);
-    expect(geladen.view.panelSize).toEqual({ width: 500, height: 400 });
-    expect(geladen.view.cardPos).toEqual({ right: 200, top: 120 });
-
-    const geleert = viewerReducer(geladen, { type: 'clear' });
-    expect(geleert.view.panelSize).toEqual({ width: 500, height: 400 });
-    expect(geleert.view.cardPos).toEqual({ right: 200, top: 120 });
   });
 });
 

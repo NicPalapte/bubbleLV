@@ -2,7 +2,7 @@
 // Kopf mit OZ und Hauptabschnitt, Kennzahlen (Menge · EP · Positionsart), Hinweise,
 // Langtext mit Fundstellen und eine Eigenschaftstabelle.
 
-import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { CardHead, GroupPill, PropTable, Section, StatRow } from './CardParts';
 import { Highlighted } from './Highlighted';
 import { LearnPopover } from './LearnPopover';
@@ -125,18 +125,7 @@ function SpanLegend({
   );
 }
 
-export function PositionDetails({
-  node,
-  position,
-  onClose,
-  grip,
-}: {
-  node: LVNode;
-  position: PositionSummary;
-  /** Nur die schwebende Karte im Graphen braucht eine Schließen-Schaltfläche. */
-  onClose?: () => void;
-  grip?: ReactNode;
-}) {
+export function PositionDetails({ node, position }: { node: LVNode; position: PositionSummary }) {
   const {
     filter: { search },
     parents,
@@ -259,7 +248,6 @@ export function PositionDetails({
   return (
     <>
       <CardHead
-        grip={grip}
         meta={
           <>
             <span className="shrink-0 font-mono text-[12px] text-dim">{position.oz}</span>
@@ -271,7 +259,6 @@ export function PositionDetails({
         }
         title={<Highlighted text={position.shortText} query={search} />}
         actions={<MarkerHead positionId={node.id} />}
-        onClose={onClose}
       />
       <StatRow
         stats={[
