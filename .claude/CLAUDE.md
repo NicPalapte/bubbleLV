@@ -45,7 +45,7 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
   kein Fremdaufruf an Google Fonts.
 - **Kein `localStorage`/`sessionStorage`/Cookies für Fachdaten.** Reiner UI-Zustand
   (Auswahl, Zoom, aktive Filter) darf in React-State/Context leben, muss aber einen
-  Reload nicht überleben.
+  Reload nicht überleben. Ausnahme: die Anordnung im Splitscreen (Entscheidung 0073).
 - **IndexedDB nur über `frontend/src/lib/persist/lastLv.ts`:** genau ein Projekt
   (Original-Bytes + Angaben der zuletzt geöffneten eigenen Datei + Marker, Kommentar-Verlauf
   und Textmarkierungen je Positions-Hash `hashes.id`, `lib/annotations.ts`, Entscheidung 0057,
@@ -53,7 +53,8 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
   löschbar auf der Startseite. Dazu, unabhängig von der Datei, die im Admin-Werkzeug gelernten
   Begriffe (`lib/highlight/terms.ts`), die eigenen Namen der Markierfarben
   (`lib/paintNames.ts`, `state/paintNames.tsx`) und der Merker der Kurzumfrage
-  (`state/survey.tsx`, Schlüssel `umfrage`, Entscheidung 0071).
+  (`state/survey.tsx`, Schlüssel `umfrage`, Entscheidung 0071) und die letzte Anordnung
+  im Splitscreen (`state/ViewerProvider.tsx`, Schlüssel `anordnung`, Entscheidung 0073).
   Kein geparstes LV speichern, keine Demo-LVs, keine zweite Datei, keine PDF-Bytes. Notizen
   nur schreiben, wenn die Projekt-Kennung (`persistIdOf`) noch passt. Fehlt IndexedDB ⇒ still ohne
   Speicher weiter, kein Fehler (Entscheidungen 0046, 0047, 0053).
@@ -129,7 +130,8 @@ fachliche Filter · **Graph als Hauptscreen** auf einem Filterzustand: Seitenfen
 `docs/decisions/0037-vergleichsfenster.md`); Graph, Tabelle, Positionskarte, Überblick
 und Prüfung wahlweise als nahtloser Splitscreen mit tausch-, stapel- und schließbaren
 Bereichen (`view.workspace`, `docs/decisions/0064-splitscreen.md`,
-`docs/decisions/0070-splitscreen-nahtlos-stapeln.md`) · Beziehungen zwischen Positionen nur als
+`docs/decisions/0070-splitscreen-nahtlos-stapeln.md`; frei teilbar, letzte Anordnung
+gemerkt: `docs/decisions/0073-splitscreen-frei-teilen-und-merken.md`) · Beziehungen zwischen Positionen nur als
 ähnliche Positionen im Vergleich, keine wertende Prüfregel (`docs/decisions/0049`) · eigene Marker (Fortschritt Offen/In Bearbeitung/Fertig + Wichtig, `docs/decisions/0062`) + Kommentar-Verlauf je Position zur letzten
 Datei (`docs/decisions/0047-kommentare-und-markierungen.md`, `docs/decisions/0053`) ·
 eigene Textmarkierungen im Langtext (6 feste Farben mit eigenen Namen, `docs/decisions/0063`) ·
@@ -142,7 +144,7 @@ Interpretation/Vorschläge (`components/docs/`, `docs/decisions/0072-begleitdoku
 Befehlspalette (`docs/decisions/0038-keine-befehlspalette.md`).
 
 **Out of Scope** (ablehnen / vertrösten): Server jeglicher Art, Persistenz über die
-Session hinaus (außer 0046/0047/0053), Auth/SSO (das Admin-Passwort aus 0053 ist nur
+Session hinaus (außer 0046/0047/0053/0073), Auth/SSO (das Admin-Passwort aus 0053 ist nur
 Sichtschutz), **mehrere Dateien gleichzeitig** (Versionsvergleich,
 x83+x84-Merge — perspektivisch gewollt, jetzt draußen; Begleit-PDF erlaubt, 0072), Aufgaben, Notizen außer
 Markierung/Kommentar je Position, Vergabepakete, NU-Anfragen, Bieterfragen **verwalten**, Zuständigkeit/Zuweisung,

@@ -1,17 +1,15 @@
-// Aufteilung der Arbeitsfläche im Splitscreen (Entscheidungen 0064 und 0070):
-// fünf Plätze in drei Spalten — links Überblick und Prüfung (`sideTop`,
-// `sideBottom`), in der Mitte Graph und Tabelle (`a`, `b`), rechts die
-// Positionskarte (`c`). Das Begleitdokument (Entscheidung 0072) liegt anfangs als
-// Reiter neben der Tabelle. Jeder Platz trägt einen Stapel von Bereichen; liegen
-// mehrere darauf, zeigt er sie als Reiter. Ein Platz ohne sichtbaren Bereich
-// gibt seine Fläche frei, eine leere Spalte ebenso. Reine Funktionen — die
-// Komponente rechnet nur noch Anteile in CSS um.
+// Aufteilung der Arbeitsfläche im Splitscreen (Entscheidungen 0064, 0070, 0072, 0073):
+// ein Baum aus Teilungen. Eine Teilung legt ihre Kinder nebeneinander (`row`) oder
+// übereinander (`col`); ein Blatt ist ein Platz mit einem Stapel von Bereichen.
+// Liegen mehrere Bereiche auf einem Platz, zeigt er sie als Reiter. Ein Platz ohne
+// sichtbaren Bereich gibt seine Fläche frei, eine Teilung ohne sichtbares Kind
+// ebenso. Das Begleitdokument (0072) liegt anfangs als Reiter neben der Tabelle.
+// Reine Funktionen — die Komponente rechnet nur noch Anteile in CSS um.
 
 export type PaneId = 'graph' | 'table' | 'card' | 'overview' | 'check' | 'doc';
-export type SlotId = 'sideTop' | 'sideBottom' | 'a' | 'b' | 'c';
-export type ColumnId = 'side' | 'main' | 'right';
-/** Spalten mit zwei Plätzen übereinander. */
-export type RowColumn = 'side' | 'main';
+/** `row` = Kinder nebeneinander, `col` = übereinander. */
+export type Axis = 'row' | 'col';
+export type Side = 'left' | 'right' | 'top' | 'bottom';
 
 export const PANE_LABEL: Readonly<Record<PaneId, string>> = {
   graph: 'Graph',
@@ -23,147 +21,300 @@ export const PANE_LABEL: Readonly<Record<PaneId, string>> = {
 };
 
 export const PANES: readonly PaneId[] = ['graph', 'table', 'card', 'overview', 'check', 'doc'];
-export const SLOTS: readonly SlotId[] = ['sideTop', 'sideBottom', 'a', 'b', 'c'];
-export const COLUMNS: readonly ColumnId[] = ['side', 'main', 'right'];
-export const COLUMN_SLOTS: Readonly<Record<ColumnId, readonly SlotId[]>> = {
-  side: ['sideTop', 'sideBottom'],
-  main: ['a', 'b'],
-  right: ['c'],
-};
 
-/** Platz, auf den ein gelöster Bereich bevorzugt zurückkehrt. */
-export const HOME: Readonly<Record<PaneId, SlotId>> = {
-  overview: 'sideTop',
-  check: 'sideBottom',
-  graph: 'a',
-  table: 'b',
-  card: 'c',
-  doc: 'b',
-};
+export interface Leaf {
+  kind: 'leaf';
+  id: string;
+  stack: readonly PaneId[];
+  front: PaneId | null;
+}
 
-export type Stacks = Readonly<Record<SlotId, readonly PaneId[]>>;
-export type Fronts = Readonly<Record<SlotId, PaneId | null>>;
+export interface Split {
+  kind: 'split';
+  id: string;
+  axis: Axis;
+  children: readonly LayoutNode[];
+  /** Gewichte der Kinder; fehlt ein Kind, teilen sich die übrigen die Fläche. */
+  sizes: readonly number[];
+}
 
-/** Was wo liegt: Stapel je Platz und der vorn liegende Reiter. */
+export type LayoutNode = Leaf | Split;
+
+/** Was wo liegt. */
 export interface Arrangement {
-  stacks: Stacks;
-  front: Fronts;
+  root: LayoutNode;
 }
 
+const leaf = (id: string, pane: PaneId): Leaf => ({ kind: 'leaf', id, stack: [pane], front: pane });
+
+// Wie bisher: links Überblick über Prüfung, Mitte Graph über Tabelle, rechts Position.
 export const INITIAL_ARRANGEMENT: Arrangement = {
-  stacks: {
-    sideTop: ['overview'],
-    sideBottom: ['check'],
-    a: ['graph'],
-    b: ['table', 'doc'],
-    c: ['card'],
+  root: {
+    kind: 'split',
+    id: 'root',
+    axis: 'row',
+    sizes: [0.22, 0.5, 0.28],
+    children: [
+      {
+        kind: 'split',
+        id: 'side',
+        axis: 'col',
+        sizes: [0.5, 0.5],
+        children: [leaf('sideTop', 'overview'), leaf('sideBottom', 'check')],
+      },
+      {
+        kind: 'split',
+        id: 'main',
+        axis: 'col',
+        sizes: [0.56, 0.44],
+        children: [
+          leaf('a', 'graph'),
+          { kind: 'leaf', id: 'b', stack: ['table', 'doc'], front: 'table' },
+        ],
+      },
+      leaf('c', 'card'),
+    ],
   },
-  front: { sideTop: 'overview', sideBottom: 'check', a: 'graph', b: 'table', c: 'card' },
 };
 
-/** Gewichte der Spalten; fehlt eine Spalte, teilen sich die übrigen die Breite. */
-export type ColumnWidths = Readonly<Record<ColumnId, number>>;
-export const WIDTHS_DEFAULT: ColumnWidths = { side: 0.22, main: 0.5, right: 0.28 };
-/** Keine Spalte wird schmaler als dieser Anteil der sichtbaren Breite. */
-export const COL_MIN = 0.12;
+/** Keine Fläche wird schmaler als dieser Anteil ihrer Teilung. */
+export const SPLIT_MIN = 0.12;
+/** Anteil, den ein Bereich am äußeren Rand der ganzen Fläche bekommt. */
+export const EDGE_SHARE = 0.3;
 
-/** Anteil des oberen Platzes an der Höhe seiner Spalte. */
-export const ROWS_DEFAULT: Readonly<Record<RowColumn, number>> = { side: 0.5, main: 0.56 };
-export const SPLIT_ROW_MIN = 0.2;
-export const SPLIT_ROW_MAX = 0.8;
-
-export function clampFrac(value: number, min: number, max: number): number {
-  return Math.round(Math.min(max, Math.max(min, value)) * 1000) / 1000;
+export function leavesOf(node: LayoutNode): Leaf[] {
+  return node.kind === 'leaf' ? [node] : node.children.flatMap(leavesOf);
 }
 
-export function slotOf(stacks: Stacks, pane: PaneId): SlotId {
-  return SLOTS.find((slot) => stacks[slot].includes(pane)) ?? HOME[pane];
+export function leafOf(root: LayoutNode, pane: PaneId): Leaf {
+  const all = leavesOf(root);
+  return all.find((entry) => entry.stack.includes(pane)) ?? all[0];
 }
 
 /** Sichtbare Bereiche eines Platzes in Reiter-Reihenfolge. */
-export function shownIn(
-  stacks: Stacks,
-  slot: SlotId,
-  visible: (pane: PaneId) => boolean,
-): PaneId[] {
-  return stacks[slot].filter(visible);
+export function shownIn(place: Leaf, visible: (pane: PaneId) => boolean): PaneId[] {
+  return place.stack.filter(visible);
 }
 
 /** Der Bereich, den ein Platz zeigt: der vordere Reiter, sonst der erste sichtbare. */
-export function frontOf(
-  arrangement: Arrangement,
-  slot: SlotId,
-  visible: (pane: PaneId) => boolean,
-): PaneId | null {
-  const shown = shownIn(arrangement.stacks, slot, visible);
-  const front = arrangement.front[slot];
-  return front !== null && shown.includes(front) ? front : (shown[0] ?? null);
+export function frontOf(place: Leaf, visible: (pane: PaneId) => boolean): PaneId | null {
+  const shown = shownIn(place, visible);
+  return place.front !== null && shown.includes(place.front) ? place.front : (shown[0] ?? null);
+}
+
+/** Baut den Baum neu, wo `fn` ein Blatt ändert; Unverändertes behält seine Identität. */
+function mapLeaves(node: LayoutNode, fn: (place: Leaf) => Leaf): LayoutNode {
+  if (node.kind === 'leaf') return fn(node);
+  let changed = false;
+  const children = node.children.map((child) => {
+    const next = mapLeaves(child, fn);
+    if (next !== child) changed = true;
+    return next;
+  });
+  return changed ? { ...node, children } : node;
+}
+
+function withRoot<T extends Arrangement>(arrangement: T, root: LayoutNode): T {
+  return root === arrangement.root ? arrangement : { ...arrangement, root };
 }
 
 export function bringToFront<T extends Arrangement>(arrangement: T, pane: PaneId): T {
-  const slot = slotOf(arrangement.stacks, pane);
-  if (arrangement.front[slot] === pane) return arrangement;
-  return { ...arrangement, front: { ...arrangement.front, [slot]: pane } };
+  return withRoot(
+    arrangement,
+    mapLeaves(arrangement.root, (place) =>
+      place.stack.includes(pane) && place.front !== pane ? { ...place, front: pane } : place,
+    ),
+  );
 }
 
 /** Tauscht zwei Bereiche — jeder nimmt Platz und Reiter-Stelle des anderen ein. */
 export function swapPanes<T extends Arrangement>(arrangement: T, a: PaneId, b: PaneId): T {
   if (a === b) return arrangement;
-  const { stacks, front } = arrangement;
-  const slotA = slotOf(stacks, a);
-  const slotB = slotOf(stacks, b);
   const swap = (pane: PaneId): PaneId => (pane === a ? b : pane === b ? a : pane);
-  const nextStacks = {
-    ...stacks,
-    [slotA]: stacks[slotA].map(swap),
-    [slotB]: stacks[slotB].map(swap),
-  };
-  if (slotA === slotB) return { ...arrangement, stacks: nextStacks };
-  return {
-    ...arrangement,
-    stacks: nextStacks,
-    front: {
-      ...front,
-      [slotA]: front[slotA] === a ? b : front[slotA],
-      [slotB]: front[slotB] === b ? a : front[slotB],
-    },
-  };
+  const root = mapLeaves(arrangement.root, (place) => {
+    const hasA = place.stack.includes(a);
+    const hasB = place.stack.includes(b);
+    if (!hasA && !hasB) return place;
+    // Im selben Stapel tauschen nur die Reiter-Stellen; der vordere bleibt vorn.
+    const front = hasA && hasB ? place.front : place.front === null ? null : swap(place.front);
+    return { ...place, stack: place.stack.map(swap), front };
+  });
+  return withRoot(arrangement, root);
 }
 
-/** Legt `pane` als vorderen Reiter auf `to`; der alte Platz behält den Rest. */
-export function stackPane<T extends Arrangement>(arrangement: T, pane: PaneId, to: SlotId): T {
-  const { stacks, front } = arrangement;
-  const from = slotOf(stacks, pane);
-  if (from === to) return arrangement;
-  const rest = stacks[from].filter((entry) => entry !== pane);
-  return {
-    ...arrangement,
-    stacks: { ...stacks, [from]: rest, [to]: [...stacks[to], pane] },
-    front: {
-      ...front,
-      [from]: front[from] === pane ? (rest[0] ?? null) : front[from],
-      [to]: pane,
-    },
-  };
+function removePane(node: LayoutNode, pane: PaneId): LayoutNode {
+  return mapLeaves(node, (place) => {
+    if (!place.stack.includes(pane)) return place;
+    const stack = place.stack.filter((entry) => entry !== pane);
+    return { ...place, stack, front: place.front === pane ? (stack[0] ?? null) : place.front };
+  });
 }
 
 /**
- * Freier Platz für einen Reiter, der aus seinem Stapel gelöst wird: zuerst sein
- * Heimatplatz, sonst der erste Platz ohne sichtbaren Bereich. `null`, wenn der
- * Bereich allein liegt oder kein Platz frei ist.
+ * Räumt auf: leere Plätze fallen weg, eine Teilung mit einem Kind macht ihm
+ * Platz, und eine Teilung in gleicher Richtung wie ihre Eltern geht in ihnen auf.
  */
-export function freeSlotFor(
-  arrangement: Arrangement,
+function prune(node: LayoutNode): LayoutNode | null {
+  if (node.kind === 'leaf') return node.stack.length === 0 ? null : node;
+  const children: LayoutNode[] = [];
+  const sizes: number[] = [];
+  node.children.forEach((child, i) => {
+    const next = prune(child);
+    if (next === null) return;
+    if (next.kind === 'split' && next.axis === node.axis) {
+      const total = sum(next.sizes);
+      next.children.forEach((grand, j) => {
+        children.push(grand);
+        sizes.push((node.sizes[i] * next.sizes[j]) / total);
+      });
+    } else {
+      children.push(next);
+      sizes.push(node.sizes[i]);
+    }
+  });
+  if (children.length === 0) return null;
+  if (children.length === 1) return children[0];
+  const same =
+    children.length === node.children.length &&
+    children.every((child, i) => child === node.children[i]);
+  return same ? node : { ...node, children, sizes };
+}
+
+function sum(values: readonly number[]): number {
+  return values.reduce((total, value) => total + value, 0);
+}
+
+/** `count` neue, im Baum noch unbenutzte Kennungen. */
+function freshIds(root: LayoutNode, count: number): string[] {
+  const used = new Set<string>();
+  const walk = (node: LayoutNode): void => {
+    used.add(node.id);
+    if (node.kind === 'split') node.children.forEach(walk);
+  };
+  walk(root);
+  const out: string[] = [];
+  for (let n = used.size; out.length < count; n += 1) {
+    if (!used.has(`n${n}`)) out.push(`n${n}`);
+  }
+  return out;
+}
+
+/** Legt `pane` als vorderen Reiter auf den Platz `to`; der alte Platz behält den Rest. */
+export function stackPane<T extends Arrangement>(arrangement: T, pane: PaneId, to: string): T {
+  const from = leafOf(arrangement.root, pane);
+  if (from.id === to || !leavesOf(arrangement.root).some((place) => place.id === to)) {
+    return arrangement;
+  }
+  const removed = removePane(arrangement.root, pane);
+  const added = mapLeaves(removed, (place) =>
+    place.id === to ? { ...place, stack: [...place.stack, pane], front: pane } : place,
+  );
+  return withRoot(arrangement, prune(added) ?? arrangement.root);
+}
+
+const axisOf = (side: Side): Axis => (side === 'left' || side === 'right' ? 'row' : 'col');
+const before = (side: Side): boolean => side === 'left' || side === 'top';
+
+/**
+ * Teilt den Platz `target` und legt `pane` auf die Seite `side` — nur dieser Platz
+ * wird geteilt. Liegt `pane` dort selbst im Stapel, löst er sich als eigener Platz.
+ */
+export function splitPane<T extends Arrangement>(
+  arrangement: T,
   pane: PaneId,
-  visible: (pane: PaneId) => boolean,
-): SlotId | null {
-  const { stacks } = arrangement;
-  const from = slotOf(stacks, pane);
-  if (shownIn(stacks, from, visible).length < 2) return null;
-  const free = (slot: SlotId): boolean =>
-    slot !== from && shownIn(stacks, slot, visible).length === 0;
-  if (free(HOME[pane])) return HOME[pane];
-  return SLOTS.find(free) ?? null;
+  target: string,
+  side: Side,
+): T {
+  const from = leafOf(arrangement.root, pane);
+  if (from.id === target && from.stack.length < 2) return arrangement;
+  if (!leavesOf(arrangement.root).some((place) => place.id === target)) return arrangement;
+  const removed = prune(removePane(arrangement.root, pane));
+  if (removed === null) return arrangement;
+  const [id, splitId] = freshIds(removed, 2);
+  const fresh = leaf(id, pane);
+  const axis = axisOf(side);
+  const insert = (node: LayoutNode): LayoutNode => {
+    if (node.kind === 'leaf') {
+      if (node.id !== target) return node;
+      const children = before(side) ? [fresh, node] : [node, fresh];
+      return { kind: 'split', id: splitId, axis, children, sizes: [0.5, 0.5] };
+    }
+    const at = node.children.findIndex((child) => child.kind === 'leaf' && child.id === target);
+    if (at >= 0 && node.axis === axis) {
+      // Gleiche Richtung: der neue Platz kommt neben das Ziel und teilt sich dessen Breite.
+      const half = node.sizes[at] / 2;
+      const children = [...node.children];
+      const sizes = [...node.sizes];
+      children.splice(before(side) ? at : at + 1, 0, fresh);
+      sizes.splice(at, 1, half, half);
+      return { ...node, children, sizes };
+    }
+    const children = node.children.map(insert);
+    return children.every((child, i) => child === node.children[i]) ? node : { ...node, children };
+  };
+  return withRoot(arrangement, insert(removed));
+}
+
+/** Legt `pane` an den äußeren Rand der Fläche — er läuft über die volle Höhe bzw. Breite. */
+export function edgePane<T extends Arrangement>(arrangement: T, pane: PaneId, side: Side): T {
+  const removed = prune(removePane(arrangement.root, pane));
+  if (removed === null) return arrangement;
+  const [id, rootId] = freshIds(removed, 2);
+  const fresh = leaf(id, pane);
+  const axis = axisOf(side);
+  let root: LayoutNode;
+  if (removed.kind === 'split' && removed.axis === axis) {
+    const total = sum(removed.sizes);
+    const share = total / Math.max(2, removed.children.length);
+    const children = before(side) ? [fresh, ...removed.children] : [...removed.children, fresh];
+    const sizes = before(side) ? [share, ...removed.sizes] : [...removed.sizes, share];
+    root = { ...removed, children, sizes };
+  } else {
+    const children = before(side) ? [fresh, removed] : [removed, fresh];
+    const sizes = before(side) ? [EDGE_SHARE, 1 - EDGE_SHARE] : [1 - EDGE_SHARE, EDGE_SHARE];
+    root = { kind: 'split', id: rootId, axis, children, sizes };
+  }
+  return withRoot(arrangement, root);
+}
+
+/** Gewichte einer Teilung nach Doppelklick: wie am Anfang, sonst gleich breit. */
+export function defaultSizes(split: Split): number[] {
+  const initial = findSplit(INITIAL_ARRANGEMENT.root, split.id);
+  if (initial !== null && initial.children.length === split.children.length) {
+    return [...initial.sizes];
+  }
+  return split.children.map(() => 1 / split.children.length);
+}
+
+export function findSplit(node: LayoutNode, id: string): Split | null {
+  if (node.kind === 'leaf') return null;
+  if (node.id === id) return node;
+  for (const child of node.children) {
+    const found = findSplit(child, id);
+    if (found !== null) return found;
+  }
+  return null;
+}
+
+/** Setzt die Gewichte einer Teilung; `null` setzt sie zurück. */
+export function resizeSplit<T extends Arrangement>(
+  arrangement: T,
+  id: string,
+  sizes: readonly number[] | null,
+): T {
+  const walk = (node: LayoutNode): LayoutNode => {
+    if (node.kind === 'leaf') return node;
+    if (node.id === id) {
+      const next = sizes ?? defaultSizes(node);
+      if (next.length !== node.children.length || next.every((v, i) => v === node.sizes[i])) {
+        return node;
+      }
+      return { ...node, sizes: next };
+    }
+    const children = node.children.map(walk);
+    return children.every((child, i) => child === node.children[i]) ? node : { ...node, children };
+  };
+  return withRoot(arrangement, walk(arrangement.root));
 }
 
 /** Rechteck als Anteil der Fläche (0…1). */
@@ -174,69 +325,177 @@ export interface Rect {
   h: number;
 }
 
-export interface ColumnPlace {
-  id: ColumnId;
-  x: number;
-  w: number;
+/** Trennlinie zwischen zwei sichtbaren Kindern einer Teilung. */
+export interface SplitLine {
+  split: string;
+  axis: Axis;
+  /** Indizes der beiden Nachbarn in `children`. */
+  before: number;
+  after: number;
+  /** Fläche der ganzen Teilung. */
+  area: Rect;
+  /** Lage der Linie als Anteil der Teilung (0…1). */
+  at: number;
 }
 
 export interface SplitLayout {
   /** Nur Plätze mit sichtbarem Bereich haben ein Rechteck. */
-  frames: Partial<Record<SlotId, Rect>>;
-  /** Sichtbare Spalten von links nach rechts — zwischen je zwei liegt eine Trennlinie. */
-  columns: ColumnPlace[];
-  /** Spalten mit zwei belegten Plätzen; `y` ist die Lage der waagerechten Trennlinie. */
-  rows: Array<ColumnPlace & { id: RowColumn; y: number }>;
+  frames: Record<string, Rect>;
+  lines: SplitLine[];
 }
 
-export function splitLayout(
-  stacks: Stacks,
-  visible: (pane: PaneId) => boolean,
-  widths: ColumnWidths,
-  rowFracs: Readonly<Record<RowColumn, number>>,
-): SplitLayout {
-  const occupied = (slot: SlotId): boolean => shownIn(stacks, slot, visible).length > 0;
-  const present = COLUMNS.filter((column) => COLUMN_SLOTS[column].some(occupied));
-  const total = present.reduce((sum, column) => sum + widths[column], 0);
-
-  const frames: Partial<Record<SlotId, Rect>> = {};
-  const columns: ColumnPlace[] = [];
-  const rows: SplitLayout['rows'] = [];
-  let x = 0;
-  for (const id of present) {
-    const w = widths[id] / total;
-    columns.push({ id, x, w });
-    const slots = COLUMN_SLOTS[id].filter(occupied);
-    if (slots.length === 2 && id !== 'right') {
-      const y = rowFracs[id];
-      frames[slots[0]] = { x, y: 0, w, h: y };
-      frames[slots[1]] = { x, y, w, h: 1 - y };
-      rows.push({ id, x, w, y });
-    } else if (slots.length === 1) {
-      frames[slots[0]] = { x, y: 0, w, h: 1 };
+export function splitLayout(root: LayoutNode, visible: (pane: PaneId) => boolean): SplitLayout {
+  const frames: Record<string, Rect> = {};
+  const lines: SplitLine[] = [];
+  const shows = (node: LayoutNode): boolean =>
+    node.kind === 'leaf' ? shownIn(node, visible).length > 0 : node.children.some(shows);
+  const place = (node: LayoutNode, area: Rect): void => {
+    if (node.kind === 'leaf') {
+      frames[node.id] = area;
+      return;
     }
-    x += w;
-  }
-  return { frames, columns, rows };
+    const shown = node.children.map((_, i) => i).filter((i) => shows(node.children[i]));
+    const total = shown.reduce((acc, i) => acc + node.sizes[i], 0);
+    let offset = 0;
+    shown.forEach((i, k) => {
+      const frac = node.sizes[i] / total;
+      const rect =
+        node.axis === 'row'
+          ? { x: area.x + offset * area.w, y: area.y, w: frac * area.w, h: area.h }
+          : { x: area.x, y: area.y + offset * area.h, w: area.w, h: frac * area.h };
+      if (k > 0) {
+        lines.push({
+          split: node.id,
+          axis: node.axis,
+          before: shown[k - 1],
+          after: i,
+          area,
+          at: offset,
+        });
+      }
+      place(node.children[i], rect);
+      offset += frac;
+    });
+  };
+  if (shows(root)) place(root, { x: 0, y: 0, w: 1, h: 1 });
+  return { frames, lines };
 }
 
 /**
- * Verschiebt die Grenze zwischen zwei benachbarten Spalten auf `at` (Anteil der
- * Fläche). Nur die beiden Spalten tauschen Breite; alle anderen bleiben.
+ * Verschiebt die Linie zwischen zwei Nachbarn auf `at` (Anteil der Teilung). Nur die
+ * beiden tauschen Fläche; alle anderen bleiben. Geschlossene Kinder zählen nicht mit.
  */
 export function moveBoundary(
-  widths: ColumnWidths,
-  columns: readonly ColumnPlace[],
-  left: ColumnId,
-  right: ColumnId,
+  split: Split,
+  line: Pick<SplitLine, 'before' | 'after'>,
+  shown: readonly number[],
   at: number,
-): ColumnWidths {
-  const total = columns.reduce((sum, column) => sum + widths[column.id], 0);
-  const start = columns.find((column) => column.id === left)?.x ?? 0;
-  const pair = widths[left] + widths[right];
-  const min = COL_MIN * total;
-  if (pair <= 2 * min) return widths;
-  const next = Math.min(pair - min, Math.max(min, (at - start) * total));
+): number[] {
+  const { sizes } = split;
+  const total = shown.reduce((acc, i) => acc + sizes[i], 0);
+  const start = shown.filter((i) => i < line.before).reduce((acc, i) => acc + sizes[i], 0);
+  const pair = sizes[line.before] + sizes[line.after];
+  const min = SPLIT_MIN * total;
+  if (pair <= 2 * min) return [...sizes];
+  const next = Math.min(pair - min, Math.max(min, at * total - start));
   const round = (value: number): number => Math.round(value * 10000) / 10000;
-  return { ...widths, [left]: round(next), [right]: round(pair - next) };
+  const out = [...sizes];
+  out[line.before] = round(next);
+  out[line.after] = round(pair - next);
+  return out;
+}
+
+/** Sichtbare Kinder einer Teilung — dieselbe Regel wie in `splitLayout`. */
+export function shownChildren(split: Split, visible: (pane: PaneId) => boolean): number[] {
+  const shows = (node: LayoutNode): boolean =>
+    node.kind === 'leaf' ? shownIn(node, visible).length > 0 : node.children.some(shows);
+  return split.children.map((_, i) => i).filter((i) => shows(split.children[i]));
+}
+
+// ── Gemerkte Anordnung (Entscheidung 0073) ─────────────────────────────────
+
+/** Was in IndexedDB bleibt: nur Lage und Größe der Bereiche, keine LV-Daten. */
+export interface StoredWorkspace extends Arrangement {
+  mode: 'split' | 'windows';
+  closed: Readonly<Record<PaneId, boolean>>;
+}
+
+/** Gemerkte Anordnung prüfen; Unbrauchbares ⇒ `null`, dann gilt der Anfang. */
+export function toStoredWorkspace(
+  value: unknown,
+  fallbackClosed: Readonly<Record<PaneId, boolean>>,
+): StoredWorkspace | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const raw = value as Record<string, unknown>;
+  if (raw.mode !== 'split' && raw.mode !== 'windows') return null;
+  const arrangement = toArrangement(raw.root);
+  if (arrangement === null) return null;
+  const closedRaw =
+    typeof raw.closed === 'object' && raw.closed !== null
+      ? (raw.closed as Record<string, unknown>)
+      : {};
+  const closed = Object.fromEntries(
+    PANES.map((pane) => {
+      const flag = closedRaw[pane];
+      return [pane, typeof flag === 'boolean' ? flag : fallbackClosed[pane]];
+    }),
+  ) as Record<PaneId, boolean>;
+  return { mode: raw.mode, closed, root: arrangement.root };
+}
+
+const MAX_DEPTH = 8;
+const ID = /^[A-Za-z0-9_-]{1,24}$/;
+
+/**
+ * Baum aus dem Speicher prüfen; Unbrauchbares ⇒ `null`. Fehlende Bereiche (neue
+ * App-Version) kommen auf den ersten Platz, doppelte und unbekannte fallen weg.
+ */
+export function toArrangement(value: unknown): Arrangement | null {
+  const seen = new Set<PaneId>();
+  const ids = new Set<string>();
+  const read = (raw: unknown, depth: number): LayoutNode | null => {
+    if (depth > MAX_DEPTH || typeof raw !== 'object' || raw === null) return null;
+    const node = raw as Record<string, unknown>;
+    if (typeof node.id !== 'string' || !ID.test(node.id) || ids.has(node.id)) return null;
+    ids.add(node.id);
+    if (node.kind === 'leaf') {
+      if (!Array.isArray(node.stack)) return null;
+      const stack: PaneId[] = [];
+      for (const pane of node.stack as unknown[]) {
+        if (!PANES.includes(pane as PaneId) || seen.has(pane as PaneId)) continue;
+        seen.add(pane as PaneId);
+        stack.push(pane as PaneId);
+      }
+      const front = stack.find((pane) => pane === node.front) ?? stack[0] ?? null;
+      return { kind: 'leaf', id: node.id, stack, front };
+    }
+    if (node.kind !== 'split' || (node.axis !== 'row' && node.axis !== 'col')) return null;
+    if (!Array.isArray(node.children) || !Array.isArray(node.sizes)) return null;
+    if (node.children.length !== node.sizes.length || node.children.length < 2) return null;
+    const sizes = node.sizes as unknown[];
+    if (!sizes.every((size) => typeof size === 'number' && Number.isFinite(size) && size > 0)) {
+      return null;
+    }
+    const children: LayoutNode[] = [];
+    for (const child of node.children) {
+      const next = read(child, depth + 1);
+      if (next === null) return null;
+      children.push(next);
+    }
+    return { kind: 'split', id: node.id, axis: node.axis, children, sizes: sizes as number[] };
+  };
+  const root = read(value, 0);
+  if (root === null) return null;
+  const missing = PANES.filter((pane) => !seen.has(pane));
+  const first = leavesOf(root)[0];
+  const filled =
+    missing.length === 0
+      ? root
+      : mapLeaves(root, (place) =>
+          place.id === first.id
+            ? { ...place, stack: [...place.stack, ...missing], front: place.front ?? missing[0] }
+            : place,
+        );
+  const clean = prune(filled);
+  return clean === null ? null : { root: clean };
 }

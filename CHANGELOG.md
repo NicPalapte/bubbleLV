@@ -9,6 +9,18 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.37.0 — 23.10.2026 · Split frei anordnen
+
+- **Frei teilen:** Einen Bereich am Griff ⠿ an einen Rand eines anderen Bereichs ziehen
+  (links, rechts, oben, unten): Nur dieser Platz wird geteilt. So stehen z. B. Graph,
+  Tabelle und Position nebeneinander.
+- **Durchlaufend:** Am äußeren Rand der Fläche (links, rechts, unten) loslassen: Der
+  Bereich läuft über die volle Höhe bzw. Breite.
+- **Vorschau:** Beim Ziehen zeigt eine farbige Fläche, wo der Bereich landet.
+  Kopfzeile = Reiter, Mitte = tauschen bleiben wie bisher.
+- **Merken:** Nach dem Neuladen sieht der Split aus wie zuletzt. ↺ oben setzt die
+  Anordnung zurück.
+
 ## 0.36.0 — 23.10.2026 · Dokument (PDF)
 
 - **Neues Fenster „Dokument“:** ein PDF (z. B. Baubeschreibung) neben dem LV lesen und

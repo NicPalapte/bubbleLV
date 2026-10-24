@@ -1,10 +1,11 @@
-// Kopfleiste, rechts: Umschalter Splitscreen | Fenster (Entscheidung 0064) und
-// je ein Knopf für jeden Bereich, der gerade zu ist oder in einem eigenen
-// Browserfenster steht. Nur auf breiten Bildschirmen — darunter gelten Fenster.
+// Kopfleiste, rechts: Umschalter Splitscreen | Fenster (Entscheidung 0064), je ein
+// Knopf für jeden Bereich, der gerade zu ist oder in einem eigenen Browserfenster
+// steht, und „Anordnung zurücksetzen" (Entscheidung 0073). Nur auf breiten
+// Bildschirmen — darunter gelten Fenster.
 
 import type { ReactNode } from 'react';
 import { useOptionalWorkspace, type PopPane } from './WorkspaceProvider';
-import { PANES, PANE_LABEL as LABEL } from '../../lib/workspace/split';
+import { INITIAL_ARRANGEMENT, PANES, PANE_LABEL as LABEL } from '../../lib/workspace/split';
 import { useViewer, useViewerDispatch, type WorkspaceMode } from '../../state/viewer';
 
 const MODES: readonly { value: WorkspaceMode; label: string; icon: ReactNode }[] = [
@@ -37,7 +38,7 @@ export function WorkspaceBar() {
   const workspace = useOptionalWorkspace();
   const {
     view: {
-      workspace: { mode, closed },
+      workspace: { mode, closed, root },
       docWindow,
     },
   } = useViewer();
@@ -52,6 +53,8 @@ export function WorkspaceBar() {
     : docWindow.open
       ? []
       : ['doc' as const];
+  // Gemerkte Anordnungen kommen als neues Objekt zurück — darum Inhalt vergleichen.
+  const moved = split && JSON.stringify(root) !== JSON.stringify(INITIAL_ARRANGEMENT.root);
 
   return (
     <div className="flex shrink-0 items-center gap-[6px]">
@@ -83,6 +86,17 @@ export function WorkspaceBar() {
           + {LABEL[pane]}
         </button>
       ))}
+      {moved && (
+        <button
+          type="button"
+          onClick={() => dispatch({ type: 'workspaceReset' })}
+          title="Bereiche wieder wie am Anfang anordnen"
+          aria-label="Anordnung zurücksetzen"
+          className={CHIP}
+        >
+          ↺
+        </button>
+      )}
       <div
         role="radiogroup"
         aria-label="Anordnung"

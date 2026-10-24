@@ -15,19 +15,15 @@ import { SECTION_AXIS, type GraphLayoutId } from '../lib/graph/layoutMap';
 import type { SizeModeId } from '../lib/graph/sizes';
 import {
   INITIAL_ARRANGEMENT,
-  ROWS_DEFAULT,
-  SPLIT_ROW_MAX,
-  SPLIT_ROW_MIN,
-  WIDTHS_DEFAULT,
   bringToFront,
-  clampFrac,
+  edgePane,
+  resizeSplit,
+  splitPane,
   stackPane,
   swapPanes,
   type Arrangement,
-  type ColumnWidths,
   type PaneId,
-  type RowColumn,
-  type SlotId,
+  type Side,
 } from '../lib/workspace/split';
 
 export type ViewMode = 'overview' | 'graph' | 'table';
@@ -175,8 +171,6 @@ export interface WorkspaceState extends Arrangement {
   mode: WorkspaceMode;
   /** Im Splitscreen geschlossene Bereiche; das Fenster-Layout hat eigene Schalter. */
   closed: Readonly<Record<PaneId, boolean>>;
-  widths: ColumnWidths;
-  rows: Readonly<Record<RowColumn, number>>;
 }
 
 export const INITIAL_WORKSPACE: WorkspaceState = {
@@ -185,8 +179,6 @@ export const INITIAL_WORKSPACE: WorkspaceState = {
   // Überblick und Prüfung öffnet erst, wer sie braucht (Entscheidung 0070).
   // Das Dokument ebenso: erst „+ Dokument" öffnet es (Entscheidung 0072).
   closed: { graph: false, table: false, card: false, overview: true, check: true, doc: true },
-  widths: WIDTHS_DEFAULT,
-  rows: ROWS_DEFAULT,
 };
 
 /** Öffnet einen Bereich im Splitscreen und legt ihn in seinem Stapel nach vorn. */
@@ -279,18 +271,22 @@ export type ViewAction =
   | { type: 'workspaceMode'; mode: WorkspaceMode }
   /** Zwei Bereiche tauschen Platz und Reiter-Stelle (Entscheidung 0070). */
   | { type: 'swapPanes'; a: PaneId; b: PaneId }
-  /** Bereich als Reiter auf einen Platz legen — auch auf einen freien, um ihn zu lösen. */
-  | { type: 'stackPane'; pane: PaneId; to: SlotId }
+  /** Bereich als Reiter auf einen Platz legen. */
+  | { type: 'stackPane'; pane: PaneId; to: string }
+  /** Platz `target` teilen, Bereich auf die Seite `side` (Entscheidung 0073). */
+  | { type: 'splitPane'; pane: PaneId; target: string; side: Side }
+  /** Bereich an den äußeren Rand — über die volle Höhe bzw. Breite. */
+  | { type: 'edgePane'; pane: PaneId; side: Side }
   /** Reiter nach vorn holen. */
   | { type: 'paneFront'; pane: PaneId }
   /** Öffnen legt den Bereich auch nach vorn; ein offener bleibt, wo er ist. */
   | { type: 'paneClosed'; pane: PaneId; closed: boolean }
-  /** Trennlinien im Splitscreen; fehlender Wert bleibt, `null` setzt zurück. */
-  | {
-      type: 'splitSize';
-      widths?: ColumnWidths | null;
-      row?: { column: RowColumn; frac: number | null };
-    };
+  /** Gewichte einer Teilung; `null` setzt sie zurück. */
+  | { type: 'splitSize'; split: string; sizes: readonly number[] | null }
+  /** Anordnung wie am Anfang; die Wahl Split/Fenster bleibt. */
+  | { type: 'workspaceReset' }
+  /** Gemerkte Anordnung beim Start übernehmen — nur, solange noch nichts verändert ist. */
+  | { type: 'workspaceRestore'; workspace: WorkspaceState };
 
 const NO_SCROLL: Readonly<Record<ViewMode, number>> = {
   overview: 0,
@@ -538,8 +534,18 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
       const workspace = swapPanes(state.workspace, action.a, action.b);
       return workspace === state.workspace ? state : { ...state, workspace };
     }
-    case 'stackPane': {
-      const workspace = stackPane(state.workspace, action.pane, action.to);
+    case 'stackPane':
+    case 'splitPane':
+    case 'edgePane':
+    case 'splitSize': {
+      const workspace =
+        action.type === 'stackPane'
+          ? stackPane(state.workspace, action.pane, action.to)
+          : action.type === 'splitPane'
+            ? splitPane(state.workspace, action.pane, action.target, action.side)
+            : action.type === 'edgePane'
+              ? edgePane(state.workspace, action.pane, action.side)
+              : resizeSplit(state.workspace, action.split, action.sizes);
       return workspace === state.workspace ? state : { ...state, workspace };
     }
     case 'paneFront': {
@@ -560,24 +566,16 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
             }
           : showPane(state.workspace, action.pane),
       };
-    case 'splitSize': {
-      const { workspace } = state;
-      const widths =
-        action.widths === undefined
-          ? workspace.widths
-          : action.widths === null
-            ? WIDTHS_DEFAULT
-            : action.widths;
-      let rows = workspace.rows;
-      if (action.row !== undefined) {
-        const { column, frac } = action.row;
-        const next =
-          frac === null ? ROWS_DEFAULT[column] : clampFrac(frac, SPLIT_ROW_MIN, SPLIT_ROW_MAX);
-        if (next !== rows[column]) rows = { ...rows, [column]: next };
-      }
-      if (widths === workspace.widths && rows === workspace.rows) return state;
-      return { ...state, workspace: { ...workspace, widths, rows } };
-    }
+    case 'workspaceReset':
+      return {
+        ...state,
+        workspace: { ...INITIAL_WORKSPACE, mode: state.workspace.mode },
+        graph: { ...state.graph, viewport: null },
+      };
+    case 'workspaceRestore':
+      return state.workspace === INITIAL_WORKSPACE
+        ? { ...state, workspace: action.workspace }
+        : state;
     default:
       return state;
   }
