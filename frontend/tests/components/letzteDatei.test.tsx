@@ -36,7 +36,11 @@ describe('Letzte Datei öffnen', () => {
     fireEvent.change(screen.getByLabelText('GAEB-Datei auswählen'), {
       target: { files: [new File([FIXTURE], NAME)] },
     });
-    await waitFor(async () => expect((await readLastLvMeta())?.fileName).toBe(NAME));
+    // Gespeichert wird erst nach dem Laden; der Splitscreen rendert dabei Tabelle und Karte
+    // mit — auf CI dauert das länger als die Standard-Sekunde.
+    await waitFor(async () => expect((await readLastLvMeta())?.fileName).toBe(NAME), {
+      timeout: 5000,
+    });
   });
 
   it('öffnet die gespeicherte Datei', async () => {
