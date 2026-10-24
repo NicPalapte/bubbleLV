@@ -84,9 +84,10 @@ describe('Geteilter Link · lesen', () => {
     await ladeApp();
 
     // Ein alter Link auf die Tabelle öffnet den Graphen mit der Tabelle.
-    await waitFor(() => expect(tabellenfenster()).toBeInTheDocument());
+    // Die Tabelle steht immer; der Link greift, sobald die Suche gesetzt ist.
+    await waitFor(() => expect(screen.getByLabelText('Suche')).toHaveValue('Beton'));
+    expect(tabellenfenster()).toBeInTheDocument();
     expect(screen.getByRole('main', { name: 'Bubble-Graph' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Suche')).toHaveValue('Beton');
     // Die Facette steht als gesetzter Filter in der Filterleiste.
     fireEvent.click(screen.getByRole('button', { name: '+ Filter' }));
     fireEvent.click(screen.getByRole('button', { name: 'Einheit, 1 gewählt' }));
@@ -189,7 +190,7 @@ describe('Geteilter Link · zweite Datei', () => {
     // Filter gehören zu einer Datei, die gar nicht mehr offen ist.
     setzeFragment('#v=table~q=Beton');
     await ladeApp();
-    await waitFor(() => expect(tabellenfenster()).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByLabelText('Suche')).toHaveValue('Beton'));
 
     fireEvent.click(screen.getByRole('button', { name: /LV schließen/ }));
     await waitFor(() => expect(screen.getByLabelText('GAEB-Datei auswählen')).toBeVisible());
@@ -222,7 +223,7 @@ describe('Geteilter Link · Wettlauf mit dem Dateidialog', () => {
     expect(fragment()).toBe('#v=table~q=Beton');
 
     await ladeDatei('gaeb-xml-beispiel.x83');
-    await waitFor(() => expect(tabellenfenster()).toBeInTheDocument());
-    expect(screen.getByLabelText('Suche')).toHaveValue('Beton');
+    await waitFor(() => expect(screen.getByLabelText('Suche')).toHaveValue('Beton'));
+    expect(tabellenfenster()).toBeInTheDocument();
   });
 });
