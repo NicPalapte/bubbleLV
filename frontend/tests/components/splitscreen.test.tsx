@@ -54,6 +54,9 @@ function Bühne() {
       <button type="button" onClick={() => dispatch({ type: 'loaded', lv: LV })}>
         laden
       </button>
+      <button type="button" onClick={() => dispatch({ type: 'showPane', pane: 'check' })}>
+        Sprung auslösen
+      </button>
       <WorkspaceBar />
       {tree !== null && (
         <main className="relative">
@@ -248,6 +251,11 @@ describe('Splitscreen', () => {
       expect(region('Tabelle')).not.toHaveAttribute('aria-hidden');
       // Ein neu geöffneter Bereich kommt nach vorn.
       ansicht('Prüfung');
+      expect(region('Prüfung')).not.toHaveAttribute('aria-hidden');
+      // Ein Sprung in einen schon offenen Bereich holt ihn ebenfalls nach vorn.
+      fireEvent.click(within(reiter).getByRole('tab', { name: /Tabelle/ }));
+      expect(document.querySelector('[data-pane="check"]')).toHaveAttribute('aria-hidden', 'true');
+      fireEvent.click(screen.getByRole('button', { name: 'Sprung auslösen' }));
       expect(region('Prüfung')).not.toHaveAttribute('aria-hidden');
     });
 

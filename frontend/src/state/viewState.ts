@@ -168,6 +168,12 @@ export interface ViewState {
   /** Scrollposition je Ansicht — sie überlebt den Wechsel (WP-L, Abnahme). */
   scroll: Readonly<Record<ViewMode, number>>;
   workspace: WorkspaceState;
+  /**
+   * Letzte gezielte Anforderung eines Bereichs (Sprung, Kennzahl, Link). Auf schmaler
+   * Fläche holt `SplitView` damit den Reiter nach vorn, auch wenn der Bereich schon
+   * offen war (Entscheidung 0074). Jede Anforderung ist ein neues Objekt.
+   */
+  paneRequest: { pane: PaneId } | null;
 }
 
 export type ViewAction =
@@ -251,6 +257,7 @@ export const INITIAL_VIEW_STATE: ViewState = {
   overview: { openRules: new Set(), revealRule: null },
   scroll: NO_SCROLL,
   workspace: INITIAL_WORKSPACE,
+  paneRequest: null,
 };
 
 /**
@@ -281,10 +288,15 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
       //
       // Überblick und Tabelle sind Bereiche neben dem Graphen. Wer sie anfordert
       // (Befehle, Sprünge, Links), bekommt den Bereich geöffnet und vorn im Stapel.
-      const workspace =
-        action.mode === 'graph' ? state.workspace : showPane(state.workspace, action.mode);
-      if (state.mode === 'graph' && workspace === state.workspace) return state;
-      return { ...state, mode: 'graph', workspace };
+      if (action.mode === 'graph') {
+        return state.mode === 'graph' ? state : { ...state, mode: 'graph' };
+      }
+      return {
+        ...state,
+        mode: 'graph',
+        workspace: showPane(state.workspace, action.mode),
+        paneRequest: { pane: action.mode },
+      };
     }
     case 'filterBar':
       return state.filterBar === action.open ? state : { ...state, filterBar: action.open };
@@ -398,10 +410,12 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
             }
           : showPane(state.workspace, action.pane),
       };
-    case 'showPane': {
-      const workspace = showPane(state.workspace, action.pane);
-      return workspace === state.workspace ? state : { ...state, workspace };
-    }
+    case 'showPane':
+      return {
+        ...state,
+        workspace: showPane(state.workspace, action.pane),
+        paneRequest: { pane: action.pane },
+      };
     case 'workspaceReset':
       return {
         ...state,

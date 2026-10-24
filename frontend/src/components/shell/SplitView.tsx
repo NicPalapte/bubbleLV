@@ -148,7 +148,7 @@ export function SplitView({ root }: { root: LVNode }) {
     tree,
     selectedNode,
     selectedPosition,
-    view: { workspace },
+    view: { workspace, paneRequest },
   } = useViewer();
   const dispatch = useViewerDispatch();
   const { hosts, blocked, popOut } = useWorkspace();
@@ -174,6 +174,12 @@ export function SplitView({ root }: { root: LVNode }) {
     before.current = workspace.closed;
     if (opened !== undefined && opened !== 'graph') setCompactFront(opened);
   }, [workspace.closed]);
+  // Ebenso ein gezielt angeforderter, der schon offen war (Sprung aus der Prüfung).
+  const [seenRequest, setSeenRequest] = useState(paneRequest);
+  if (paneRequest !== seenRequest) {
+    setSeenRequest(paneRequest);
+    if (paneRequest !== null && paneRequest.pane !== 'graph') setCompactFront(paneRequest.pane);
+  }
   const layoutRoot = compact
     ? compactRoot(visible, width < STACKED_WIDTH ? 'col' : 'row', compactFront)
     : workspace.root;

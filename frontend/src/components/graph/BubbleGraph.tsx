@@ -67,7 +67,6 @@ function clampZoom(value: number): number {
 
 /** Obergrenze beim Einpassen auf eine Auswahl — eine Position bleibt lesbar, nicht riesig. */
 const FIT_SELECTION_MAX_ZOOM = 2.5;
-/** Unter dieser Breite hat die Linie zur Karte keinen Platz. */
 /** So viel größer zeichnet der Graph die ausgewählte Position. */
 const PICKED_SCALE = 1.2;
 /** Fenster und Leisten über dem Graphen — Schilder weichen ihnen aus. */
