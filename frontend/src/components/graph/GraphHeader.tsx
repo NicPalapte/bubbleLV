@@ -4,7 +4,7 @@
 // Punkte (nach LV zeigen die Gruppen den Abschnitt selbst). Die Legende steht
 // fest; Fenster weichen ihr aus, nicht umgekehrt.
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 import { formatCount } from '../../lib/format';
 import { countInFilter } from '../../lib/tree/countInFilter';
 import { useViewer } from '../../state/viewer';
@@ -60,26 +60,6 @@ export function GraphHeader({ root }: { root: LVNode }) {
     () => countInFilter(hints.keys(), hints.size, matches),
     [hints, matches],
   );
-  // Das Seitenfenster weicht der Legende aus: ihre Höhe (samt Abstand unten)
-  // steht als --legend-space an der Bühne. Ausgeblendet (schmal) ist sie 0.
-  const legendRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const legend = legendRef.current;
-    const stage = legend?.closest('main');
-    if (legend === null || stage === null || stage === undefined) return;
-    const publish = (): void => {
-      const height = legend.offsetHeight;
-      stage.style.setProperty('--legend-space', `${height === 0 ? 0 : height + 16}px`);
-    };
-    publish();
-    const observer = new ResizeObserver(publish);
-    observer.observe(legend);
-    return () => {
-      observer.disconnect();
-      stage.style.removeProperty('--legend-space');
-    };
-  }, []);
-
   const sections = layout === 'matrix' ? sectionColors.entries.slice(0, MAX_SECTIONS) : [];
   const more = sections.length === 0 ? 0 : sectionColors.entries.length - sections.length;
 
@@ -95,7 +75,6 @@ export function GraphHeader({ root }: { root: LVNode }) {
 
       {/* Endet links vom Tabellen-Knopf unten mittig (halbe Breite minus dessen Hälfte). */}
       <div
-        ref={legendRef}
         aria-label="Legende"
         className="ov-glass absolute bottom-[16px] left-[16px] z-[7] hidden max-w-[calc(50%-100px)] flex-col gap-[6px] !rounded-[var(--r-md)] px-[12px] py-[8px] font-mono text-[11px] text-dim lg:flex"
       >

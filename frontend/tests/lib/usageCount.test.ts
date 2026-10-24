@@ -4,13 +4,16 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { countEvent, countUrl, USAGE_EVENTS, usageEventOf } from '../../src/lib/usage/count';
 
 describe('usageEventOf', () => {
-  it('zählt geöffnete Seitenfenster, aber nicht das Schließen', () => {
+  it('zählt geöffnete Bereiche und Fenster, aber nicht das Schließen', () => {
     expect(usageEventOf({ type: 'filterBar', open: true })).toBe('filterleiste');
     expect(usageEventOf({ type: 'filterBar', open: false })).toBeNull();
-    expect(usageEventOf({ type: 'sidePanel', panel: 'check' })).toBe('seitenfenster-pruefung');
-    expect(usageEventOf({ type: 'sidePanel', panel: null })).toBeNull();
-    expect(usageEventOf({ type: 'tableWindow', open: true })).toBe('tabelle');
-    expect(usageEventOf({ type: 'tableWindow', open: false })).toBeNull();
+    expect(usageEventOf({ type: 'showPane', pane: 'check' })).toBe('seitenfenster-pruefung');
+    expect(usageEventOf({ type: 'paneClosed', pane: 'overview', closed: false })).toBe(
+      'seitenfenster-ueberblick',
+    );
+    expect(usageEventOf({ type: 'paneClosed', pane: 'check', closed: true })).toBeNull();
+    expect(usageEventOf({ type: 'paneClosed', pane: 'table', closed: false })).toBe('tabelle');
+    expect(usageEventOf({ type: 'paneClosed', pane: 'card', closed: false })).toBeNull();
     expect(usageEventOf({ type: 'compareWindow', open: true })).toBe('vergleich');
   });
 

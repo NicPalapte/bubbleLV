@@ -1,6 +1,7 @@
 # 0073 – Splitscreen frei teilen, letzte Anordnung merken
 
-- **Status:** akzeptiert
+- **Status:** teilweise ersetzt durch 0074 (Knopf ↺ jetzt im Menü „Ansicht“, kein
+  Split/Fenster mehr)
 - **Datum:** 2026-10-23
 - **Betrifft:** Splitscreen (`frontend/src/components/shell/SplitView.tsx`,
   `frontend/src/lib/workspace/split.ts`), Ansichtszustand (`view.workspace` in

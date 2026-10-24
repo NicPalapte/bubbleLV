@@ -22,7 +22,7 @@ export interface TourStep {
 }
 
 /** Was ein Schritt vor dem Anzeigen am Zustand ändert. */
-export type TourPrepare = 'closeSide' | 'openSettings' | 'closeSelection' | 'ensureSelection';
+export type TourPrepare = 'closeFilter' | 'openSettings' | 'closeSelection' | 'ensureSelection';
 
 /** Punkt im Graphen; als Fläche gezeichnete Kreise haben keinen. */
 export const POINT_TARGET = '[data-slot]';
@@ -35,7 +35,7 @@ export const TOUR_STEPS: readonly TourStep[] = [
     text: 'Jeder Kreis ist ein Abschnitt, jeder Punkt eine Position.',
     todo: 'Klick auf den markierten Punkt',
     done: (state) => state.selection.positionId !== null,
-    prepare: ['closeSide', 'closeSelection'],
+    prepare: ['closeFilter', 'closeSelection'],
     round: true,
   },
   {
@@ -56,7 +56,7 @@ export const TOUR_STEPS: readonly TourStep[] = [
     text: 'Nach Abschnitt, Einheit, Menge und mehr.',
     todo: 'Klick auf „+ Filter"',
     done: (state) => state.view.filterBar,
-    prepare: ['closeSide'],
+    prepare: ['closeFilter'],
   },
   {
     target: '[data-tour="layout"]',
@@ -68,7 +68,7 @@ export const TOUR_STEPS: readonly TourStep[] = [
     target: '[data-tour="kpis"]',
     title: 'Kennzahlen',
     text: 'Öffnen Überblick und Prüfung.',
-    prepare: ['closeSide'],
+    prepare: ['closeFilter'],
   },
   {
     target: '[data-tour="hints"]',
@@ -77,8 +77,8 @@ export const TOUR_STEPS: readonly TourStep[] = [
   },
   {
     target: '[data-tour="workspace"]',
-    title: 'Anordnung',
-    text: 'Split oder Fenster. Im Split einen Bereich am Kopf auf einen anderen ziehen.',
+    title: 'Ansicht',
+    text: 'Bereiche ein- und ausblenden. Einen Bereich am Kopf ziehen: stapeln, tauschen oder teilen.',
   },
   {
     target: '[data-tour="table"]',

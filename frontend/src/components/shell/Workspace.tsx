@@ -1,26 +1,18 @@
-// Arbeitsfläche unter der Kopfleiste (Entscheidung 0064). Zwei Anordnungen auf
-// demselben Filter- und Auswahlzustand:
-// - Splitscreen: Graph, Tabelle und Positionskarte als Bereiche nebeneinander.
-// - Fenster: der Graph füllt die Fläche, Tabelle und Karte schweben darüber
-//   (docs/decisions/0034-graph-als-hauptscreen.md).
-// Das Begleitdokument (Entscheidung 0072) ist im Splitscreen ein Bereich, sonst ein
-// Fenster. Vergleich, Tour und Kurzumfrage liegen in beiden Anordnungen darüber, das
-// Seitenfenster (Überblick · Prüfung) nur in der Fenster-Anordnung. Graph, Tabelle und
-// Dokument können in ein eigenes Browserfenster wandern (Entscheidung 0039).
+// Arbeitsfläche unter der Kopfleiste: immer der Splitscreen (Entscheidung 0074) —
+// Graph, Tabelle, Position, Überblick, Prüfung und Dokument als Bereiche auf demselben
+// Filter- und Auswahlzustand. Vergleich, Tour und Kurzumfrage liegen darüber. Graph,
+// Tabelle und Dokument können in ein eigenes Browserfenster wandern (Entscheidung 0039).
 
 import { SurveyCard } from '../survey/SurveyCard';
 import { CompareWindow } from './CompareWindow';
 import { DocWindow } from './DocWindow';
 import { GraphDock } from './GraphDock';
 import { GraphStage } from './GraphStage';
-import { SidePanel } from './SidePanel';
 import { SplitView } from './SplitView';
 import { TableWindow } from './TableWindow';
 import { useWorkspace } from './WorkspaceProvider';
 import { ExternalWindow } from '../common/ExternalWindow';
-import { SelectionCard } from '../graph/SelectionCard';
 import { Tour } from '../tour/Tour';
-import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { LVNode } from '../../types/lvNode';
 
 /** Der Graph im eigenen Browserfenster; ↙ oder Schließen holt ihn zurück. */
@@ -45,47 +37,22 @@ function GraphPopout({ root }: { root: LVNode }) {
           </button>
         </div>
         <div className="relative min-h-0 flex-1 overflow-hidden bg-paper">
-          <GraphStage root={root} cardOverlay={false} />
+          <GraphStage root={root} />
         </div>
       </section>
     </ExternalWindow>
   );
 }
 
-/** Fenster-Anordnung: Graph als Fläche, die Karte schwebt darüber. */
-function WindowsLayout({ root }: { root: LVNode }) {
-  const { selectedNode, selectedPosition } = useViewer();
-  const dispatch = useViewerDispatch();
-  const { hosts } = useWorkspace();
-  const cardNode = selectedPosition ?? selectedNode;
-  return (
-    <>
-      {hosts.graph === null ? (
-        <GraphStage root={root} cardOverlay />
-      ) : (
-        <div className="absolute inset-0 flex items-center justify-center font-mono text-[12px] text-mute">
-          Graph im eigenen Fenster
-        </div>
-      )}
-      {cardNode !== null && (
-        <SelectionCard node={cardNode} onClose={() => dispatch({ type: 'closeSelection' })} />
-      )}
-    </>
-  );
-}
-
 export function Workspace({ root }: { root: LVNode }) {
-  const { split } = useWorkspace();
   return (
     <>
-      {split ? <SplitView root={root} /> : <WindowsLayout root={root} />}
+      <SplitView root={root} />
       <GraphPopout root={root} />
-      {/* Im Splitscreen sind Überblick und Prüfung eigene Bereiche (Entscheidung 0070). */}
-      {!split && <SidePanel />}
       <TableWindow />
       <DocWindow />
       <CompareWindow />
-      <GraphDock tableButton={!split} docButton={!split} />
+      <GraphDock />
       <Tour />
       <SurveyCard />
     </>

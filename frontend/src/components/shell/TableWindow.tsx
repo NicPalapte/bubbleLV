@@ -1,31 +1,13 @@
-// Tabelle als Fenster über dem Graphen: verschieben am Kopf, Größe am Griff
-// unten rechts. Ersetzt die frühere Tabellenansicht mit Baum und
-// Eigenschaften-Spalte — die Eigenschaften zeigt die Positionskarte.
-//
-// ↗ löst die Tabelle in ein eigenes Browserfenster, etwa für den zweiten
-// Bildschirm (Entscheidung 0039); ↙ dort holt sie zurück. Das zweite Fenster
-// rendert diese Komponente auch im Splitscreen — dort steht die Tabelle sonst
-// als Bereich in `SplitView` (Entscheidung 0064).
+// Tabelle im eigenen Browserfenster, etwa für den zweiten Bildschirm
+// (Entscheidung 0039): ↗ im Bereichskopf löst sie aus dem Splitscreen, ↙ hier holt
+// sie zurück. Sonst steht die Tabelle als Bereich in `SplitView`.
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect } from 'react';
 import { ExternalWindow } from '../common/ExternalWindow';
-import { sidePanelSpace } from './SidePanel';
 import { useWorkspace } from './WorkspaceProvider';
-import { useDragResize } from '../common/useDragResize';
 import { PositionsTable } from '../table/PositionsTable';
-import { graphOverlayProps } from '../../lib/graph/overlay';
-import {
-  TABLE_MAX_WIDTH,
-  TABLE_MIN_HEIGHT,
-  TABLE_MIN_WIDTH,
-  useViewer,
-  useViewerDispatch,
-  type CardPos,
-  type PanelSize,
-} from '../../state/viewer';
+import { useViewer } from '../../state/viewer';
 
-/** Abstand zum Rand des Canvas, den das Fenster auch aufgezogen frei lässt. */
-const EDGE_GAP = 16;
 const ICON_BUTTON =
   'inline-flex h-[28px] w-[28px] cursor-pointer items-center justify-center rounded-[var(--r-sm)] border-none bg-transparent text-mute hover:bg-sunken hover:text-ink';
 
@@ -33,151 +15,41 @@ export function TableWindow() {
   const {
     tree,
     selectedNode,
-    view: { tableWindow, side, sideWidth, workspace },
+    view: { workspace },
   } = useViewer();
-  const { split, hosts, blocked, popOut, dock } = useWorkspace();
+  const { hosts, dock } = useWorkspace();
   const popup = hosts.table;
-  const dispatch = useViewerDispatch();
-  const ref = useRef<HTMLDivElement>(null);
 
-  const setPos = useCallback(
-    (pos: CardPos): void => dispatch({ type: 'tableWindowPos', pos }),
-    [dispatch],
-  );
-  const setSize = useCallback(
-    (size: PanelSize): void => dispatch({ type: 'tableWindowSize', size }),
-    [dispatch],
-  );
-  const handles = useDragResize({
-    ref,
-    pos: tableWindow.pos,
-    size: tableWindow.size,
-    minWidth: TABLE_MIN_WIDTH,
-    maxWidth: TABLE_MAX_WIDTH,
-    minHeight: TABLE_MIN_HEIGHT,
-    setPos,
-    setSize,
-    corner: 'right',
-  });
-
-  const shown = (split ? !workspace.closed.table : tableWindow.open) && tree !== null;
+  const shown = !workspace.closed.table && tree !== null;
   // Tabelle von woanders zu (Escape, neues LV): das zweite Fenster geht mit.
   useEffect(() => {
     if (!shown && popup !== null) dock('table');
   }, [shown, popup, dock]);
 
-  const detach = (): void => popOut('table', tableWindow.size.width);
-  // Zweites Fenster von Hand zu: im Splitscreen kehrt die Tabelle in ihren Bereich
-  // zurück (wie der Graph), im Fenster-Layout geht sie zu wie bisher.
-  const closedByHand = useCallback((): void => {
-    dock('table');
-    if (!split) dispatch({ type: 'tableWindow', open: false });
-  }, [dock, dispatch, split]);
+  // Zweites Fenster von Hand zu: die Tabelle kehrt in ihren Bereich zurück.
+  const closedByHand = useCallback((): void => dock('table'), [dock]);
 
-  if (!shown) return null;
-
-  if (popup !== null) {
-    return (
-      <ExternalWindow host={popup} onClosed={closedByHand}>
-        <section aria-label="Tabelle — eigenes Fenster" className="flex min-h-0 flex-1 flex-col">
-          <div className="flex h-[38px] shrink-0 items-center gap-[10px] border-b border-line bg-surface pl-[12px] pr-[6px]">
-            <b className="font-display text-[14px] font-semibold text-ink">Tabelle</b>
-            <span className="flex-1" />
-            <button
-              type="button"
-              onClick={() => dock('table')}
-              title="Zurück ins Hauptfenster"
-              aria-label="Tabelle zurück ins Hauptfenster"
-              className={ICON_BUTTON}
-            >
-              ↙
-            </button>
-          </div>
-          <div className="relative min-h-0 flex-1">
-            <PositionsTable root={selectedNode ?? tree} />
-          </div>
-        </section>
-      </ExternalWindow>
-    );
-  }
-  // Im Splitscreen steht die Tabelle als Bereich, nicht als Fenster.
-  if (split) return null;
-
+  if (!shown || popup === null) return null;
   return (
-    <section
-      ref={ref}
-      {...graphOverlayProps}
-      aria-label="Tabelle — Fenster über dem Graphen"
-      className="ov-window absolute z-[10] flex flex-col overflow-hidden"
-      style={{
-        right: tableWindow.pos.right,
-        top: tableWindow.pos.top,
-        width: tableWindow.size.width,
-        height: tableWindow.size.height ?? undefined,
-        // Bei offenem Seitenfenster bleibt links dessen Platz frei — das
-        // Fenster wird schmaler statt es zu überdecken, aber nie unter die
-        // Mindestbreite.
-        maxWidth:
-          side === null
-            ? `calc(100% - ${tableWindow.pos.right + EDGE_GAP}px)`
-            : `max(${TABLE_MIN_WIDTH}px, calc(100% - ${tableWindow.pos.right + sidePanelSpace(sideWidth)}px))`,
-        maxHeight: `calc(100% - ${tableWindow.pos.top + EDGE_GAP}px)`,
-      }}
-    >
-      <div
-        {...handles.grip}
-        title="Verschieben — ziehen"
-        className="flex h-[38px] shrink-0 cursor-grab items-center gap-[10px] border-b border-line pl-[12px] pr-[6px] active:cursor-grabbing"
-      >
-        <span aria-hidden="true" className="text-[11px] tracking-[-2px] text-mute">
-          ⋮⋮
-        </span>
-        <b className="font-display text-[14px] font-semibold text-ink">Tabelle</b>
-        <span className="flex-1" />
-        {blocked === 'table' && (
-          <span role="status" className="font-mono text-[11.5px] text-mute">
-            Pop-up blockiert
-          </span>
-        )}
-        <button
-          type="button"
-          onMouseDown={(event) => event.stopPropagation()}
-          onClick={detach}
-          title="In eigenem Fenster — z. B. auf dem zweiten Bildschirm"
-          aria-label="Tabelle in eigenem Fenster öffnen"
-          className={ICON_BUTTON}
-        >
-          ↗
-        </button>
-        <button
-          type="button"
-          onMouseDown={(event) => event.stopPropagation()}
-          onClick={() => dispatch({ type: 'tableWindow', open: false })}
-          aria-label="Tabelle schließen"
-          className={ICON_BUTTON}
-        >
-          ✕
-        </button>
-      </div>
-      <div className="relative min-h-0 flex-1">
-        <PositionsTable root={selectedNode ?? tree} />
-      </div>
-      <button
-        type="button"
-        {...handles.resize}
-        title="Größe ändern — ziehen oder Pfeiltasten"
-        aria-label="Tabelle in der Größe ändern"
-        className="absolute bottom-0 right-0 z-[1] inline-flex h-[18px] w-[18px] cursor-se-resize items-end justify-end border-none bg-transparent p-[3px] text-line2 hover:text-blue focus-visible:text-blue"
-      >
-        <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
-          <path
-            d="M12 3.5 L3.5 12 M12 8 L8 12"
-            stroke="currentColor"
-            strokeWidth="1.2"
-            fill="none"
-          />
-        </svg>
-      </button>
-    </section>
+    <ExternalWindow host={popup} onClosed={closedByHand}>
+      <section aria-label="Tabelle — eigenes Fenster" className="flex min-h-0 flex-1 flex-col">
+        <div className="flex h-[38px] shrink-0 items-center gap-[10px] border-b border-line bg-surface pl-[12px] pr-[6px]">
+          <b className="font-display text-[14px] font-semibold text-ink">Tabelle</b>
+          <span className="flex-1" />
+          <button
+            type="button"
+            onClick={() => dock('table')}
+            title="Zurück ins Hauptfenster"
+            aria-label="Tabelle zurück ins Hauptfenster"
+            className={ICON_BUTTON}
+          >
+            ↙
+          </button>
+        </div>
+        <div className="relative min-h-0 flex-1">
+          <PositionsTable root={selectedNode ?? tree} />
+        </div>
+      </section>
+    </ExternalWindow>
   );
 }

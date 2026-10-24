@@ -72,14 +72,19 @@ const SIDE_PANEL_EVENT = {
  */
 export function usageEventOf(action: ViewerAction): UsageEvent | null {
   switch (action.type) {
-    case 'sidePanel':
-      return action.panel === null ? null : SIDE_PANEL_EVENT[action.panel];
+    // Bereich öffnen (Splitscreen, Entscheidung 0074): Überblick, Prüfung und Tabelle
+    // zählen wie früher ihr Fenster.
+    case 'paneClosed':
+    case 'showPane':
+      if (action.type === 'paneClosed' && action.closed) return null;
+      if (action.pane === 'overview' || action.pane === 'check') {
+        return SIDE_PANEL_EVENT[action.pane];
+      }
+      return action.pane === 'table' ? 'tabelle' : null;
     case 'filterBar':
       return action.open ? 'filterleiste' : null;
-    case 'tableWindow':
     case 'compareWindow':
-      if (!action.open) return null;
-      return action.type === 'tableWindow' ? 'tabelle' : 'vergleich';
+      return action.open ? 'vergleich' : null;
     case 'openInTable':
       return 'tabelle';
     case 'search':

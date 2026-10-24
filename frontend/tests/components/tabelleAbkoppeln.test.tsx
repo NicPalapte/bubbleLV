@@ -3,12 +3,12 @@
 
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { GraphDock } from '../../src/components/shell/GraphDock';
-import { TableWindow } from '../../src/components/shell/TableWindow';
+import { Workspace } from '../../src/components/shell/Workspace';
+import { WorkspaceBar } from '../../src/components/shell/WorkspaceBar';
 import { WorkspaceProvider } from '../../src/components/shell/WorkspaceProvider';
 import { classifyAndBuild } from '../../src/lib/pipeline/runPipeline';
 import { ViewerProvider } from '../../src/state/ViewerProvider';
-import { useViewerDispatch } from '../../src/state/viewer';
+import { useViewer, useViewerDispatch } from '../../src/state/viewer';
 import { setTheme } from '../../src/lib/theme';
 import type { LVDraft, PositionDraft } from '@core';
 
@@ -47,21 +47,21 @@ const DRAFT: LVDraft = {
 const LV = classifyAndBuild(DRAFT, 'abkoppeln.x83');
 
 function Steuerung() {
+  const { tree } = useViewer();
   const dispatch = useViewerDispatch();
   return (
     <>
-      <button
-        type="button"
-        onClick={() => {
-          dispatch({ type: 'loaded', lv: LV });
-          dispatch({ type: 'tableWindow', open: true });
-        }}
-      >
+      <button type="button" onClick={() => dispatch({ type: 'loaded', lv: LV })}>
         vorbereiten
       </button>
-      <button type="button" onClick={() => dispatch({ type: 'tableWindow', open: false })}>
+      <button
+        type="button"
+        onClick={() => dispatch({ type: 'paneClosed', pane: 'table', closed: true })}
+      >
         von außen schließen
       </button>
+      <WorkspaceBar />
+      {tree !== null && <Workspace root={tree} />}
     </>
   );
 }
@@ -95,8 +95,6 @@ function renderTable(open: Window | null) {
     <ViewerProvider>
       <WorkspaceProvider>
         <Steuerung />
-        <TableWindow />
-        <GraphDock />
       </WorkspaceProvider>
     </ViewerProvider>,
   );
@@ -109,12 +107,12 @@ function abkoppeln(): void {
 }
 
 describe('Tabelle abkoppeln', () => {
-  it('zeigt die Tabelle im zweiten Fenster statt über dem Graphen', () => {
+  it('zeigt die Tabelle im zweiten Fenster statt im Splitscreen', () => {
     const spy = renderTable(popup);
     abkoppeln();
 
     expect(spy).toHaveBeenCalledWith('', 'bubble-tabelle', expect.stringContaining('popup'));
-    expect(screen.queryByRole('region', { name: /Tabelle — Fenster/ })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Tabelle — Bereich' })).toBeNull();
     const fern = within(popup.document.body).getByRole('region', {
       name: 'Tabelle — eigenes Fenster',
     });
@@ -154,11 +152,11 @@ describe('Tabelle abkoppeln', () => {
         name: 'Tabelle zurück ins Hauptfenster',
       }),
     );
-    expect(screen.getByRole('region', { name: /Tabelle — Fenster/ })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Tabelle — Bereich' })).toBeInTheDocument();
     await vi.waitFor(() => expect(close).toHaveBeenCalled());
   });
 
-  it('schließt die Tabelle, wenn das zweite Fenster von Hand zugeht', async () => {
+  it('holt die Tabelle in ihren Bereich, wenn das zweite Fenster von Hand zugeht', async () => {
     renderTable(popup);
     abkoppeln();
     // `pagehide` ohne geschlossenes Fenster (Browser tauscht `about:blank`) zählt nicht.
@@ -170,10 +168,8 @@ describe('Tabelle abkoppeln', () => {
 
     Object.defineProperty(popup, 'closed', { configurable: true, get: () => true });
     popup.dispatchEvent(new Event('pagehide'));
-    await vi.waitFor(() =>
-      expect(screen.getByRole('button', { name: /▴ Tabelle/ })).toBeInTheDocument(),
-    );
-    expect(screen.queryByRole('region', { name: /Tabelle/ })).toBeNull();
+    await vi.waitFor(() => expect(screen.getByRole('region', { name: 'Tabelle — Bereich' })));
+    expect(screen.queryByRole('region', { name: 'Tabelle — eigenes Fenster' })).toBeNull();
   });
 
   it('schließt das zweite Fenster mit, wenn die Hauptseite geht', () => {
@@ -194,6 +190,6 @@ describe('Tabelle abkoppeln', () => {
     renderTable(null);
     abkoppeln();
     expect(screen.getByRole('status')).toHaveTextContent('Pop-up blockiert');
-    expect(screen.getByRole('region', { name: /Tabelle — Fenster/ })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Tabelle — Bereich' })).toBeInTheDocument();
   });
 });

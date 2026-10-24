@@ -9,6 +9,19 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.38.0 — 24.10.2026 · Nur noch Split, Knopf „Ansicht“
+
+- **Kein Fenster-Modus mehr:** Graph, Tabelle, Position, Überblick, Prüfung und Dokument
+  stehen immer nebeneinander im Split. Nichts liegt mehr über dem Graphen außer dem
+  Vergleich.
+- **Knopf „Ansicht ▾“** oben rechts statt der einzelnen Knöpfe: Haken setzen = Bereich
+  zeigen, Haken weg = ausblenden. Dort auch „Anordnung zurücksetzen“ und „zurückholen“
+  für einen Bereich im eigenen Browserfenster.
+- **Kleiner Bildschirm:** links der Graph, rechts ein Platz mit allen anderen Bereichen
+  als Reiter. Auf dem Handy untereinander. Breiter gezogen ist die eigene Anordnung wieder
+  da.
+- **Gestrichelte Linie** von der gewählten Position reicht bis an den Rand zur Karte.
+
 ## 0.37.0 — 23.10.2026 · Split frei anordnen
 
 - **Frei teilen:** Einen Bereich am Griff ⠿ an einen Rand eines anderen Bereichs ziehen

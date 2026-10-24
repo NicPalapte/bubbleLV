@@ -10,6 +10,10 @@
 // - an den äußeren Rand der Fläche ⇒ der Bereich läuft über die volle Höhe bzw. Breite.
 // Die Trennlinien sind ziehbar, Doppelklick setzt ihre Teilung zurück.
 //
+// Schmale Fläche (unter `COMPACT_WIDTH`, Entscheidung 0074): nur der Graph und ein Platz
+// mit allen anderen Bereichen als Reiter, auf dem Handy übereinander. Diese Anordnung
+// ist abgeleitet, nicht gespeichert — wer das Fenster wieder breit zieht, findet seine.
+//
 // Jeder Bereich ist ein eigenes, absolut gesetztes Element mit festem Schlüssel:
 // Tauschen, Stapeln und Teilen verschieben nur Koordinaten, der Graph bleibt montiert
 // und behält seinen Ausschnitt. Ein Reiter hinter einem anderen wird nur unsichtbar.
@@ -35,8 +39,11 @@ import { OverviewView } from '../overview/OverviewView';
 import { PositionsTable } from '../table/PositionsTable';
 import { DocumentView } from '../docs/DocumentView';
 import {
+  COMPACT_WIDTH,
   PANES,
   PANE_LABEL,
+  STACKED_WIDTH,
+  compactRoot,
   edgePane,
   findSplit,
   frontOf,
@@ -121,12 +128,27 @@ function applyDrop<T extends Arrangement>(arrangement: T, pane: PaneId, drop: Dr
   }
 }
 
+/** Breite eines Elements in px; 0, solange sie unbekannt ist (z. B. ohne ResizeObserver). */
+function useWidth(ref: { readonly current: HTMLElement | null }): number {
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    const element = ref.current;
+    if (element === null || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry !== undefined) setWidth(entry.contentRect.width);
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [ref]);
+  return width;
+}
+
 export function SplitView({ root }: { root: LVNode }) {
   const {
     tree,
     selectedNode,
     selectedPosition,
-    view: { workspace },
+    view: { workspace, paneRequest },
   } = useViewer();
   const dispatch = useViewerDispatch();
   const { hosts, blocked, popOut } = useWorkspace();
@@ -141,9 +163,34 @@ export function SplitView({ root }: { root: LVNode }) {
   const visible = (pane: PaneId): boolean =>
     !workspace.closed[pane] &&
     (pane === 'card' || pane === 'overview' || pane === 'check' || hosts[pane] === null);
-  const layout = splitLayout(workspace.root, visible);
-  const places = leavesOf(workspace.root).filter((place) => layout.frames[place.id] !== undefined);
+  const width = useWidth(gridRef);
+  const compact = width > 0 && width < COMPACT_WIDTH;
+  // Welcher Reiter auf dem gemeinsamen Platz vorn liegt: nur Bildschirmzustand.
+  const [compactFront, setCompactFront] = useState<PaneId | null>(null);
+  // Ein gerade geöffneter Bereich (Sprung in die Prüfung, „Ansicht") kommt nach vorn.
+  const before = useRef(workspace.closed);
+  useEffect(() => {
+    const opened = PANES.find((pane) => before.current[pane] && !workspace.closed[pane]);
+    before.current = workspace.closed;
+    if (opened !== undefined && opened !== 'graph') setCompactFront(opened);
+  }, [workspace.closed]);
+  // Ebenso ein gezielt angeforderter, der schon offen war (Sprung aus der Prüfung).
+  const [seenRequest, setSeenRequest] = useState(paneRequest);
+  if (paneRequest !== seenRequest) {
+    setSeenRequest(paneRequest);
+    if (paneRequest !== null && paneRequest.pane !== 'graph') setCompactFront(paneRequest.pane);
+  }
+  const layoutRoot = compact
+    ? compactRoot(visible, width < STACKED_WIDTH ? 'col' : 'row', compactFront)
+    : workspace.root;
+  const layout = splitLayout(layoutRoot, visible);
+  const places = leavesOf(layoutRoot).filter((place) => layout.frames[place.id] !== undefined);
   const cardNode = selectedPosition ?? selectedNode;
+  // Schmal: der Reiter wechselt nur auf dem Bildschirm, die gemerkte Anordnung bleibt.
+  const bringFront = (pane: PaneId): void => {
+    if (compact) setCompactFront(pane);
+    else dispatch({ type: 'paneFront', pane });
+  };
 
   const endDrag = (): void => {
     window.clearTimeout(dragTimer.current);
@@ -395,7 +442,7 @@ export function SplitView({ root }: { root: LVNode }) {
   const content: Record<PaneId, ReactNode> = {
     graph: (
       <div className="relative min-h-0 flex-1 overflow-hidden">
-        <GraphStage root={root} cardOverlay={false} />
+        <GraphStage root={root} />
       </div>
     ),
     table: (
@@ -405,11 +452,7 @@ export function SplitView({ root }: { root: LVNode }) {
     ),
     card:
       cardNode !== null ? (
-        <SelectionCard
-          node={cardNode}
-          docked
-          onClose={() => dispatch({ type: 'closeSelection' })}
-        />
+        <SelectionCard node={cardNode} />
       ) : (
         <div className="flex flex-1 items-center justify-center font-mono text-[12px] text-mute">
           Keine Auswahl
@@ -452,7 +495,7 @@ export function SplitView({ root }: { root: LVNode }) {
       if (step === 0) return;
       event.preventDefault();
       const next = shown[(shown.indexOf(front) + step + shown.length) % shown.length];
-      dispatch({ type: 'paneFront', pane: next });
+      bringFront(next);
       gridRef.current?.querySelector<HTMLElement>(`[data-tab="${next}"]`)?.focus();
     };
     return (
@@ -473,17 +516,20 @@ export function SplitView({ root }: { root: LVNode }) {
           {shown.map((pane) => {
             const on = pane === front;
             const label = PANE_LABEL[pane];
-            const grip = (
+            // Schmal wird nicht gezogen — dann auch kein Griff.
+            const grip = compact ? null : (
               <span aria-hidden="true" className="text-[13px] leading-none text-mute">
                 ⠿
               </span>
             );
+            const hand = compact ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing';
             const common = {
-              draggable: true,
+              draggable: !compact,
               'data-tab': pane,
               'data-tour': pane === 'table' ? 'table' : undefined,
-              title:
-                'Ziehen: auf eine Kopfzeile stapeln, in die Mitte tauschen, an einen Rand teilen',
+              title: compact
+                ? undefined
+                : 'Ziehen: auf eine Kopfzeile stapeln, in die Mitte tauschen, an einen Rand teilen',
               onDragStart: (event: DragEvent) => startDrag(event, pane),
               onDragEnd: endDrag,
             };
@@ -494,9 +540,9 @@ export function SplitView({ root }: { root: LVNode }) {
                 role="tab"
                 aria-selected={on}
                 tabIndex={on ? 0 : -1}
-                onClick={() => dispatch({ type: 'paneFront', pane })}
+                onClick={() => bringFront(pane)}
                 {...common}
-                className={`flex min-w-0 cursor-grab items-center gap-[7px] border-none px-[10px] font-display text-[13px] active:cursor-grabbing ${
+                className={`flex min-w-0 ${hand} items-center gap-[7px] border-none px-[10px] font-display text-[13px] ${
                   on
                     ? 'bg-surface font-semibold text-ink shadow-[inset_0_-2px_0_var(--blue)]'
                     : 'bg-transparent text-dim hover:text-ink'
@@ -509,7 +555,7 @@ export function SplitView({ root }: { root: LVNode }) {
               <div
                 key={pane}
                 {...common}
-                className={`flex min-w-0 flex-1 cursor-grab items-center gap-[7px] pl-[10px] active:cursor-grabbing ${
+                className={`flex min-w-0 flex-1 ${hand} items-center gap-[7px] pl-[10px] ${
                   dragged === pane ? 'opacity-50' : ''
                 }`}
               >
@@ -559,7 +605,7 @@ export function SplitView({ root }: { root: LVNode }) {
       {places.map((place) => head(place, layout.frames[place.id]))}
       {/* Fester Schlüssel je Bereich: Tauschen, Stapeln, Teilen verschieben nur Koordinaten. */}
       {PANES.map((pane) => {
-        const place = leafOf(workspace.root, pane);
+        const place = leafOf(layoutRoot, pane);
         const rect = layout.frames[place.id];
         if (!visible(pane) || rect === undefined) return null;
         const front = frontOf(place, visible) === pane;
@@ -577,7 +623,7 @@ export function SplitView({ root }: { root: LVNode }) {
         );
       })}
       {dragged !== null && dropLayer}
-      {layout.lines.map(divider)}
+      {!compact && layout.lines.map(divider)}
       {places.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center bg-paper font-mono text-[12px] text-mute">
           Alle Bereiche geschlossen

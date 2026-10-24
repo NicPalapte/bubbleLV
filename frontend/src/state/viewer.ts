@@ -67,20 +67,7 @@ import type { LVNode } from '../types/lvNode';
 export type { FilterState, HideMode } from './filterState';
 export type { SelectionState } from './selectionState';
 export { MAX_COMPARE } from './selectionState';
-export {
-  DEFAULT_CARD_POS,
-  DEFAULT_PANEL_SIZE,
-  PANEL_MAX_WIDTH,
-  PANEL_MIN_HEIGHT,
-  PANEL_MIN_WIDTH,
-  clampPanelWidth,
-} from './viewState';
-export {
-  DEFAULT_TABLE_SIZE,
-  TABLE_MAX_WIDTH,
-  TABLE_MIN_HEIGHT,
-  TABLE_MIN_WIDTH,
-} from './viewState';
+export { TABLE_MAX_WIDTH, TABLE_MIN_HEIGHT, TABLE_MIN_WIDTH } from './viewState';
 export type {
   CardPos,
   GraphLayoutId,
@@ -89,7 +76,6 @@ export type {
   SizeModeId,
   ViewMode,
   ViewState,
-  WorkspaceMode,
 } from './viewState';
 
 export interface ViewerState {
@@ -355,20 +341,12 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     }
 
     case 'setViewMode':
-    case 'sidePanel':
     case 'filterBar':
     case 'graphSettings':
-    case 'sideWidth':
     case 'tour':
-    case 'tableWindow':
-    case 'tableWindowPos':
-    case 'tableWindowSize':
     case 'compareWindow':
     case 'compareWindowPos':
     case 'compareWindowSize':
-    case 'docWindow':
-    case 'docWindowPos':
-    case 'docWindowSize':
     case 'sizeMode':
     case 'graphLayout':
     case 'graphRows':
@@ -385,15 +363,13 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     case 'openRule':
     case 'ruleRevealed':
     case 'viewScroll':
-    case 'panelSize':
-    case 'cardPos':
-    case 'workspaceMode':
     case 'swapPanes':
     case 'stackPane':
     case 'splitPane':
     case 'edgePane':
     case 'paneFront':
     case 'paneClosed':
+    case 'showPane':
     case 'splitSize':
     case 'workspaceReset':
     case 'workspaceRestore': {

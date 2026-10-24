@@ -28,44 +28,26 @@ import {
 
 export type ViewMode = 'overview' | 'graph' | 'table';
 /**
- * Seit dem neuen Hauptscreen (docs/decisions/0034-graph-als-hauptscreen.md)
- * steht nur noch der Graph als Fläche da: Überblick und Prüfung sind Reiter im
- * Seitenfenster, die Tabelle schwebt als Fenster darüber. `mode` bleibt
- * deshalb immer `graph` — siehe `setViewMode`.
+ * Seit dem neuen Hauptscreen (docs/decisions/0034-graph-als-hauptscreen.md) und dem
+ * Splitscreen (Entscheidung 0074) sind Überblick und Tabelle Bereiche neben dem
+ * Graphen. `mode` bleibt deshalb immer `graph` — siehe `setViewMode`.
  */
 export type SidePanel = 'overview' | 'check';
 export type { GraphLayoutId, SizeModeId };
 export type TableScope = 'node' | 'lv';
 
-/**
- * Breite der Info-Panels — gilt für das Eigenschaften-Panel der Tabellenansicht
- * und die schwebende Auswahlkarte im Graphen. Eine Größe für alle Panels: wer
- * einmal breiter zieht, bekommt das auch nach einem Ansichtswechsel wieder.
- */
-export const PANEL_MIN_WIDTH = 280;
-export const PANEL_MAX_WIDTH = 640;
-/** Untergrenze der Höhe; sie betrifft nur die schwebende Karte. */
-export const PANEL_MIN_HEIGHT = 160;
-
+/** Größe eines Fensters über der Arbeitsfläche (Vergleich). */
 export interface PanelSize {
   width: number;
-  /** `null` = so hoch wie der Inhalt. Nur die schwebende Karte liest das. */
+  /** `null` = so hoch wie der Inhalt. */
   height: number | null;
 }
 
-export const DEFAULT_PANEL_SIZE: PanelSize = { width: 380, height: null };
-
-/**
- * Ort der schwebenden Auswahlkarte im Graphen, gemessen von der oberen rechten
- * Ecke des Canvas. Gleiche Lebensdauer wie `panelSize`: einmal beiseite
- * geschoben, steht die Karte auch nach dem nächsten Klick wieder dort.
- */
+/** Ort eines Fensters, gemessen von der oberen rechten Ecke der Arbeitsfläche. */
 export interface CardPos {
   right: number;
   top: number;
 }
-
-export const DEFAULT_CARD_POS: CardPos = { right: 16, top: 16 };
 
 /** Ausschnitt des Graphen (Verschiebung und Zoom). */
 export interface Viewport {
@@ -105,26 +87,16 @@ export interface TableViewState {
   collapsed: ReadonlySet<string>;
 }
 
-/** Ort und Größe des Tabellenfensters über dem Graphen. */
+/** Grenzen des Vergleichsfensters über der Arbeitsfläche. */
 export const TABLE_MIN_WIDTH = 420;
 export const TABLE_MIN_HEIGHT = 200;
 export const TABLE_MAX_WIDTH = 1600;
-export const DEFAULT_TABLE_SIZE: PanelSize = { width: 900, height: 360 };
-/**
- * Rechts unten: so bleibt links das Seitenfenster frei (`sideWidth`), und das
- * Dock darunter bleibt sichtbar. Die Positionskarte hängt oben rechts darüber.
- */
-export const DEFAULT_TABLE_POS: CardPos = { right: 16, top: 320 };
 
 /** Vergleichsfenster: oben, links neben der Positionskarte. */
 export const DEFAULT_COMPARE_POS: CardPos = { right: 412, top: 90 };
 export const DEFAULT_COMPARE_SIZE: PanelSize = { width: 640, height: 460 };
 
-/** Dokumentfenster (Entscheidung 0072): neben der Positionskarte, hoch genug für eine Seite. */
-export const DEFAULT_DOC_POS: CardPos = { right: 412, top: 16 };
-export const DEFAULT_DOC_SIZE: PanelSize = { width: 680, height: 640 };
-
-/** Größe eines Fensters über dem Graphen (Tabelle, Vergleich) in seinen Grenzen. */
+/** Größe des Vergleichsfensters in seinen Grenzen. */
 export function clampWindowSize(size: PanelSize): PanelSize {
   return {
     width: Math.min(Math.max(size.width, TABLE_MIN_WIDTH), TABLE_MAX_WIDTH),
@@ -132,7 +104,7 @@ export function clampWindowSize(size: PanelSize): PanelSize {
   };
 }
 
-export interface TableWindowState {
+export interface CompareWindowState {
   open: boolean;
   pos: CardPos;
   size: PanelSize;
@@ -151,30 +123,16 @@ export interface OverviewViewState {
   revealRule: string | null;
 }
 
-/** Breite des Seitenfensters: Standard wie im Mockup, ziehbar in diesen Grenzen. */
-export const SIDE_WIDTH_DEFAULT = 340;
-export const SIDE_WIDTH_MIN = 300;
-export const SIDE_WIDTH_MAX = 640;
-
-export function clampSideWidth(width: number): number {
-  return Math.round(Math.min(SIDE_WIDTH_MAX, Math.max(SIDE_WIDTH_MIN, width)));
-}
-
 /**
- * Anordnung der Arbeitsfläche (Entscheidung 0064): `split` teilt sie in feste
- * Bereiche für Graph, Tabelle und Positionskarte, `windows` lässt den Graphen
- * die Fläche füllen und legt Tabelle und Karte als Fenster darüber.
+ * Anordnung der Arbeitsfläche: immer der Splitscreen (Entscheidungen 0064, 0074) —
+ * Bereiche für Graph, Tabelle, Position, Überblick, Prüfung und Dokument.
  */
-export type WorkspaceMode = 'split' | 'windows';
-
 export interface WorkspaceState extends Arrangement {
-  mode: WorkspaceMode;
-  /** Im Splitscreen geschlossene Bereiche; das Fenster-Layout hat eigene Schalter. */
+  /** Geschlossene Bereiche. */
   closed: Readonly<Record<PaneId, boolean>>;
 }
 
 export const INITIAL_WORKSPACE: WorkspaceState = {
-  mode: 'split',
   ...INITIAL_ARRANGEMENT,
   // Überblick und Prüfung öffnet erst, wer sie braucht (Entscheidung 0070).
   // Das Dokument ebenso: erst „+ Dokument" öffnet es (Entscheidung 0072).
@@ -194,52 +152,39 @@ export interface TourState {
 }
 
 export interface ViewState {
-  /** Immer `graph` — Überblick und Tabelle liegen darüber, siehe `setViewMode`. */
+  /** Immer `graph` — Überblick und Tabelle sind Bereiche, siehe `setViewMode`. */
   mode: ViewMode;
-  /** Offener Reiter im Seitenfenster; `null` = zu. */
-  side: SidePanel | null;
   /** Filterleiste unter der Kopfleiste aufgeklappt (Issue #154). */
   filterBar: boolean;
   /** Darstellung (Größe, Gliederung) an der Graph-Steuerung aufgeklappt. */
   graphSettings: boolean;
-  /** Breite des Seitenfensters; am rechten Rand ziehbar. */
-  sideWidth: number;
   /** Geführte Tour: aktueller Schritt (`null` = aus) und ob sie schon angeboten war. */
   tour: TourState;
-  tableWindow: TableWindowState;
-  /** Vergleichsfenster: dieselbe Mechanik wie die Tabelle. */
-  compareWindow: TableWindowState;
-  /** Begleitdokument als Fenster (Entscheidung 0072); im Splitscreen ein Bereich. */
-  docWindow: TableWindowState;
+  /** Vergleichsfenster über der Arbeitsfläche (Entscheidung 0037). */
+  compareWindow: CompareWindowState;
   graph: GraphViewState;
   table: TableViewState;
   overview: OverviewViewState;
   /** Scrollposition je Ansicht — sie überlebt den Wechsel (WP-L, Abnahme). */
   scroll: Readonly<Record<ViewMode, number>>;
-  panelSize: PanelSize;
-  cardPos: CardPos;
   workspace: WorkspaceState;
+  /**
+   * Letzte gezielte Anforderung eines Bereichs (Sprung, Kennzahl, Link). Auf schmaler
+   * Fläche holt `SplitView` damit den Reiter nach vorn, auch wenn der Bereich schon
+   * offen war (Entscheidung 0074). Jede Anforderung ist ein neues Objekt.
+   */
+  paneRequest: { pane: PaneId } | null;
 }
 
 export type ViewAction =
   | { type: 'setViewMode'; mode: ViewMode }
-  /** Seitenfenster auf einen Reiter öffnen; `null` schließt es. */
-  | { type: 'sidePanel'; panel: SidePanel | null }
   | { type: 'filterBar'; open: boolean }
   | { type: 'graphSettings'; open: boolean }
-  | { type: 'sideWidth'; width: number }
   /** Tour auf einen Schritt setzen; `null` beendet sie. Start oder Ende zählen als gesehen. */
   | { type: 'tour'; step: number | null }
-  | { type: 'tableWindow'; open: boolean }
-  | { type: 'tableWindowPos'; pos: CardPos }
-  | { type: 'tableWindowSize'; size: PanelSize }
   | { type: 'compareWindow'; open: boolean }
   | { type: 'compareWindowPos'; pos: CardPos }
   | { type: 'compareWindowSize'; size: PanelSize }
-  /** Öffnen gilt in beiden Anordnungen: Fenster auf und Bereich im Splitscreen vorn. */
-  | { type: 'docWindow'; open: boolean }
-  | { type: 'docWindowPos'; pos: CardPos }
-  | { type: 'docWindowSize'; size: PanelSize }
   | { type: 'sizeMode'; value: SizeModeId }
   /** Gliederung umschalten — fasst Filter, Suche und Auswahl nie an. */
   | { type: 'graphLayout'; value: GraphLayoutId }
@@ -263,12 +208,6 @@ export type ViewAction =
   /** Die Ansicht hat die Regel ins Fenster geholt; das Merkzeichen ist verbraucht. */
   | { type: 'ruleRevealed' }
   | { type: 'viewScroll'; view: ViewMode; top: number }
-  /** Info-Panels vergrößern/verkleinern; `height` nur von der Karte genutzt. */
-  | { type: 'panelSize'; size: PanelSize }
-  /** Schwebende Auswahlkarte verschieben. */
-  | { type: 'cardPos'; pos: CardPos }
-  /** Splitscreen oder Fenster — fasst Filter, Suche und Auswahl nie an. */
-  | { type: 'workspaceMode'; mode: WorkspaceMode }
   /** Zwei Bereiche tauschen Platz und Reiter-Stelle (Entscheidung 0070). */
   | { type: 'swapPanes'; a: PaneId; b: PaneId }
   /** Bereich als Reiter auf einen Platz legen. */
@@ -281,9 +220,11 @@ export type ViewAction =
   | { type: 'paneFront'; pane: PaneId }
   /** Öffnen legt den Bereich auch nach vorn; ein offener bleibt, wo er ist. */
   | { type: 'paneClosed'; pane: PaneId; closed: boolean }
+  /** Bereich öffnen und im Stapel nach vorn holen — für Sprünge und „öffne X". */
+  | { type: 'showPane'; pane: PaneId }
   /** Gewichte einer Teilung; `null` setzt sie zurück. */
   | { type: 'splitSize'; split: string; sizes: readonly number[] | null }
-  /** Anordnung wie am Anfang; die Wahl Split/Fenster bleibt. */
+  /** Anordnung wie am Anfang. */
   | { type: 'workspaceReset' }
   /** Gemerkte Anordnung beim Start übernehmen — nur, solange noch nichts verändert ist. */
   | { type: 'workspaceRestore'; workspace: WorkspaceState };
@@ -298,14 +239,10 @@ export const INITIAL_VIEW_STATE: ViewState = {
   // Der Graph ist der Hauptscreen; alles andere schwebt darüber
   // (docs/decisions/0034-graph-als-hauptscreen.md).
   mode: 'graph',
-  side: null,
   filterBar: false,
   graphSettings: false,
-  sideWidth: SIDE_WIDTH_DEFAULT,
   tour: { step: null, seen: false },
-  tableWindow: { open: false, pos: DEFAULT_TABLE_POS, size: DEFAULT_TABLE_SIZE },
   compareWindow: { open: false, pos: DEFAULT_COMPARE_POS, size: DEFAULT_COMPARE_SIZE },
-  docWindow: { open: false, pos: DEFAULT_DOC_POS, size: DEFAULT_DOC_SIZE },
   // Einstieg ist das LV in seiner Gliederung; „Matrix" ist der zweite Blick.
   graph: {
     sizeMode: 'quantity',
@@ -319,14 +256,13 @@ export const INITIAL_VIEW_STATE: ViewState = {
   table: { sort: { key: 'oz', dir: 1 }, scope: 'node', columns: null, collapsed: new Set() },
   overview: { openRules: new Set(), revealRule: null },
   scroll: NO_SCROLL,
-  panelSize: DEFAULT_PANEL_SIZE,
-  cardPos: DEFAULT_CARD_POS,
   workspace: INITIAL_WORKSPACE,
+  paneRequest: null,
 };
 
 /**
  * Zustand für ein neu geladenes LV. Erhalten bleibt, was eine Vorliebe ist und
- * kein Fachdatum: Größenmodus, Panel-Maße und Ort der Karte. Alles, was sich
+ * kein Fachdatum: Größenmodus, Maße des Vergleichsfensters, Anordnung. Alles, was sich
  * auf die alte Datei bezog (Ausschnitt, Sortierung, Spalten, Scrollposition),
  * fällt weg.
  */
@@ -334,32 +270,14 @@ export function viewStateForNewLv(state: ViewState): ViewState {
   return {
     ...INITIAL_VIEW_STATE,
     graph: { ...state.graph, viewport: null },
-    tableWindow: {
-      ...INITIAL_VIEW_STATE.tableWindow,
-      pos: state.tableWindow.pos,
-      size: state.tableWindow.size,
-    },
     compareWindow: {
       ...INITIAL_VIEW_STATE.compareWindow,
       pos: state.compareWindow.pos,
       size: state.compareWindow.size,
     },
-    docWindow: {
-      ...INITIAL_VIEW_STATE.docWindow,
-      pos: state.docWindow.pos,
-      size: state.docWindow.size,
-    },
-    sideWidth: state.sideWidth,
     tour: { step: null, seen: state.tour.seen },
-    panelSize: state.panelSize,
-    cardPos: state.cardPos,
     workspace: state.workspace,
   };
-}
-
-/** Begrenzt eine Panel-Breite auf das gemeinsame Maß beider Info-Panels. */
-export function clampPanelWidth(width: number): number {
-  return Math.min(Math.max(width, PANEL_MIN_WIDTH), PANEL_MAX_WIDTH);
 }
 
 export function viewReducer(state: ViewState, action: ViewAction): ViewState {
@@ -368,23 +286,17 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
       // Bewusst nur Ansichtszustand: Filter, Auswahl und der gemerkte Zustand
       // der anderen Ansichten bleiben unangetastet.
       //
-      // Überblick und Tabelle leben über dem Graphen. Wer sie anfordert
-      // (Befehle, Sprünge, Links), bekommt den Graphen mit dem passenden Fenster.
-      const next =
-        action.mode === 'overview'
-          ? viewReducer(state, { type: 'sidePanel', panel: 'overview' })
-          : action.mode === 'table'
-            ? viewReducer(state, { type: 'tableWindow', open: true })
-            : state;
-      return next.mode === 'graph' ? next : { ...next, mode: 'graph' };
-    }
-    case 'sidePanel': {
-      // Im Splitscreen ist derselbe Reiter ein eigener Bereich (Entscheidung 0070).
-      const workspace =
-        action.panel === null ? state.workspace : showPane(state.workspace, action.panel);
-      return state.side === action.panel && workspace === state.workspace
-        ? state
-        : { ...state, side: action.panel, workspace };
+      // Überblick und Tabelle sind Bereiche neben dem Graphen. Wer sie anfordert
+      // (Befehle, Sprünge, Links), bekommt den Bereich geöffnet und vorn im Stapel.
+      if (action.mode === 'graph') {
+        return state.mode === 'graph' ? state : { ...state, mode: 'graph' };
+      }
+      return {
+        ...state,
+        mode: 'graph',
+        workspace: showPane(state.workspace, action.mode),
+        paneRequest: { pane: action.mode },
+      };
     }
     case 'filterBar':
       return state.filterBar === action.open ? state : { ...state, filterBar: action.open };
@@ -397,17 +309,6 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
             ...state,
             tour: { step: action.step === null ? null : Math.max(0, action.step), seen: true },
           };
-    case 'sideWidth': {
-      const width = clampSideWidth(action.width);
-      return width === state.sideWidth ? state : { ...state, sideWidth: width };
-    }
-    case 'tableWindow': {
-      // Wer die Tabelle anfordert (Sprung aus der Karte, Link), bekommt sie auch
-      // im Splitscreen zu sehen — geöffnet und vorn im Stapel.
-      const workspace = action.open ? showPane(state.workspace, 'table') : state.workspace;
-      if (state.tableWindow.open === action.open && workspace === state.workspace) return state;
-      return { ...state, tableWindow: { ...state.tableWindow, open: action.open }, workspace };
-    }
     case 'compareWindow':
       return state.compareWindow.open === action.open
         ? state
@@ -421,40 +322,6 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
       return {
         ...state,
         compareWindow: { ...state.compareWindow, size: clampWindowSize(action.size) },
-      };
-    case 'docWindow': {
-      const workspace = action.open
-        ? showPane(state.workspace, 'doc')
-        : {
-            ...state.workspace,
-            closed: { ...state.workspace.closed, doc: true },
-          };
-      return { ...state, docWindow: { ...state.docWindow, open: action.open }, workspace };
-    }
-    case 'docWindowPos': {
-      const { pos } = state.docWindow;
-      if (pos.right === action.pos.right && pos.top === action.pos.top) return state;
-      return { ...state, docWindow: { ...state.docWindow, pos: action.pos } };
-    }
-    case 'docWindowSize':
-      return { ...state, docWindow: { ...state.docWindow, size: clampWindowSize(action.size) } };
-    case 'tableWindowPos': {
-      // Beim Ziehen kommt jede Mausbewegung hier an; gleiche Lage = kein Render.
-      const { pos } = state.tableWindow;
-      if (pos.right === action.pos.right && pos.top === action.pos.top) return state;
-      return { ...state, tableWindow: { ...state.tableWindow, pos: action.pos } };
-    }
-    case 'tableWindowSize':
-      return {
-        ...state,
-        tableWindow: {
-          ...state.tableWindow,
-          size: {
-            width: Math.min(Math.max(action.size.width, TABLE_MIN_WIDTH), TABLE_MAX_WIDTH),
-            height:
-              action.size.height === null ? null : Math.max(action.size.height, TABLE_MIN_HEIGHT),
-          },
-        },
       };
     case 'sizeMode':
       return { ...state, graph: { ...state.graph, sizeMode: action.value } };
@@ -510,26 +377,6 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
     case 'viewScroll':
       if (state.scroll[action.view] === action.top) return state;
       return { ...state, scroll: { ...state.scroll, [action.view]: action.top } };
-    case 'panelSize':
-      return {
-        ...state,
-        panelSize: {
-          width: clampPanelWidth(action.size.width),
-          height:
-            action.size.height === null ? null : Math.max(PANEL_MIN_HEIGHT, action.size.height),
-        },
-      };
-    case 'cardPos':
-      return { ...state, cardPos: action.pos };
-    case 'workspaceMode':
-      // Der gemerkte Ausschnitt passt nur zur alten Fläche — der Graph passt neu ein.
-      return state.workspace.mode === action.mode
-        ? state
-        : {
-            ...state,
-            workspace: { ...state.workspace, mode: action.mode },
-            graph: { ...state.graph, viewport: null },
-          };
     case 'swapPanes': {
       const workspace = swapPanes(state.workspace, action.a, action.b);
       return workspace === state.workspace ? state : { ...state, workspace };
@@ -556,9 +403,6 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
       if (state.workspace.closed[action.pane] === action.closed) return state;
       return {
         ...state,
-        // Bereich und Fenster des Dokuments sind ein Schalter (Entscheidung 0072).
-        docWindow:
-          action.pane === 'doc' ? { ...state.docWindow, open: !action.closed } : state.docWindow,
         workspace: action.closed
           ? {
               ...state.workspace,
@@ -566,10 +410,16 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
             }
           : showPane(state.workspace, action.pane),
       };
+    case 'showPane':
+      return {
+        ...state,
+        workspace: showPane(state.workspace, action.pane),
+        paneRequest: { pane: action.pane },
+      };
     case 'workspaceReset':
       return {
         ...state,
-        workspace: { ...INITIAL_WORKSPACE, mode: state.workspace.mode },
+        workspace: INITIAL_WORKSPACE,
         graph: { ...state.graph, viewport: null },
       };
     case 'workspaceRestore':

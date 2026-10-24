@@ -1,7 +1,7 @@
-// Reiter „Überblick" im Seitenfenster (WP-L, Schritt 3): Kennzahlen, Treemap
+// Bereich „Überblick" im Splitscreen (WP-L, Schritt 3): Kennzahlen, Treemap
 // nach Hauptabschnitt und Einheit, Pareto (mit Preisen) bzw. größte Mengen
 // (ohne Preise), Mengen je Einheit (nur mit Preisen — ohne Preise stehen die
-// Einheiten schon in „Größte Mengen") und Import-Log. Die Prüfung hat einen eigenen Reiter (shell/SidePanel.tsx).
+// Einheiten schon in „Größte Mengen") und Import-Log. Die Prüfung ist ein eigener Bereich.
 //
 // **Ein Filterzustand, alle Ansichten** (.claude/CLAUDE.md): gerechnet wird
 // über der gefilterten Menge, dieselbe, die Tabelle und Graph zeigen. Ohne

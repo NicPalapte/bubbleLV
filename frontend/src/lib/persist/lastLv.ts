@@ -434,8 +434,8 @@ export async function saveWorkspace(workspace: StoredWorkspace): Promise<boolean
   if (db === null) return false;
   try {
     const tx = db.transaction(STORE, 'readwrite');
-    const { mode, closed, root } = workspace;
-    tx.objectStore(STORE).put({ mode, closed, root }, KEY_WORKSPACE);
+    const { closed, root } = workspace;
+    tx.objectStore(STORE).put({ closed, root }, KEY_WORKSPACE);
     await transactionDone(tx);
     return true;
   } catch {

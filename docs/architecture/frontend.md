@@ -203,8 +203,9 @@ der Gesamtzustand identisch und kein Render läuft umsonst.
 
 `setViewMode` fasst nur `view` an. Seit dem neuen Hauptscreen
 ([0034](../decisions/0034-graph-als-hauptscreen.md)) bildet es `overview` auf
-den Graphen mit offenem Seitenfenster (`view.side`) ab und `table` auf das
-Tabellenfenster (`view.tableWindow`); `mode` bleibt immer `graph`. Matrix und Ähnlichkeit
+den Bereich „Überblick“ und `table` auf den Bereich „Tabelle“ im Splitscreen
+(`showPane` auf `view.workspace`, [0074](../decisions/0074-nur-noch-splitscreen.md));
+`mode` bleibt immer `graph`. Matrix und Ähnlichkeit
 sind entfernt ([0031](../decisions/0031-drei-ansichten.md)); der Vergleich ist ein
 Fenster (`view.compareWindow`, Positionen in `selection.compare`,
 [0037](../decisions/0037-vergleichsfenster.md)).

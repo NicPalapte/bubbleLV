@@ -55,7 +55,7 @@ function renderView() {
     <ViewerProvider>
       <WithLv>
         <CheckCard />
-        <CheckFlyout left={366} />
+        <CheckFlyout />
       </WithLv>
     </ViewerProvider>,
   );

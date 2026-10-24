@@ -4,36 +4,20 @@
 
 import type { ReactNode } from 'react';
 
-const CLOSE =
-  'ml-auto inline-flex h-[26px] w-[26px] shrink-0 cursor-pointer items-center justify-center rounded-[var(--r-sm)] border-none bg-transparent text-mute hover:bg-sunken hover:text-ink';
-
 export function CardHead({
-  grip,
   meta,
   title,
   actions,
-  onClose,
 }: {
-  /** Ziehgriff der schwebenden Karte; fehlt, wo nichts zu verschieben ist. */
-  grip?: ReactNode;
   meta: ReactNode;
   /** Text oder Text mit Suchmarkierung (`Highlighted`). */
   title: ReactNode;
   /** Knöpfe rechts neben dem Titel, mittig zur ersten Zeile (Fortschritt, „Wichtig"). */
   actions?: ReactNode;
-  onClose?: () => void;
 }) {
   return (
     <div className="flex shrink-0 flex-col gap-[8px] border-b border-line px-[16px] pb-[12px] pt-[12px]">
-      <div className="flex min-w-0 items-center gap-[8px]">
-        {grip}
-        {meta}
-        {onClose !== undefined && (
-          <button type="button" onClick={onClose} aria-label="Karte schließen" className={CLOSE}>
-            ✕
-          </button>
-        )}
-      </div>
+      <div className="flex min-w-0 items-center gap-[8px]">{meta}</div>
       <div className="flex min-w-0 items-start gap-[10px]">
         <h2 className="m-0 min-w-0 flex-1 font-display text-[18px] font-semibold leading-[28px] tracking-[-0.3px] text-ink">
           {title}
