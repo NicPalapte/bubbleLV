@@ -35,14 +35,12 @@ async function warteAufLv(): Promise<void> {
   await waitFor(() => expect(screen.getByRole('button', { name: '+ Filter' })).toBeInTheDocument());
 }
 
-/** Der Link wird erst nach dem ersten Zeichnen des LV angewendet — darauf warten. */
-async function warteAufTabelle(): Promise<void> {
-  // Die Tabelle ist ein Fenster über dem Graphen — es steht, sobald der Link greift.
-  await waitFor(() =>
-    expect(
-      screen.getByRole('region', { name: 'Tabelle — Fenster über dem Graphen' }),
-    ).toBeInTheDocument(),
-  );
+/**
+ * Der Link wird erst nach dem ersten Zeichnen des LV angewendet — darauf warten. Beide
+ * Links tragen `q=Beton`: steht die Suche, ist der Link angewendet.
+ */
+async function warteAufLink(): Promise<void> {
+  await waitFor(() => expect(screen.getByLabelText('Suche')).toHaveValue('Beton'));
 }
 
 describe('Ladefehler auf der Startseite (Issues #92, #93)', () => {
@@ -136,7 +134,7 @@ describe('Hinweisleiste: Teilen-Link (Issue #95)', () => {
     legeAb(fixtureDatei('gaeb-xml-beispiel.x83'));
     await warteAufLv();
     // Der passende Rest gilt trotzdem.
-    await warteAufTabelle();
+    await warteAufLink();
 
     expect(hinweisleiste()).toHaveTextContent('Der Link passt nur teilweise zu dieser Datei');
     expect(hinweisleiste()).toHaveTextContent('Filter „gibtsnicht"');
@@ -156,7 +154,7 @@ describe('Hinweisleiste: Teilen-Link (Issue #95)', () => {
     legeAb(fixtureDatei('gaeb-xml-beispiel.x83'));
     await warteAufLv();
     // Erst wenn der Link angewendet ist, sagt „kein Hinweis" etwas aus.
-    await warteAufTabelle();
+    await warteAufLink();
     expect(hinweisleiste()).toBeNull();
   });
 

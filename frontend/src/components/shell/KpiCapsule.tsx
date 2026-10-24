@@ -1,11 +1,9 @@
 // Kennzahlen-Kapsel oben links über dem Graphen. Jede Zahl ist ein Knopf: sie
-// öffnet den Reiter im Seitenfenster, der sie erklärt — im Splitscreen den
-// gleichnamigen Bereich (Entscheidung 0070).
+// öffnet oder schließt den Bereich, der sie erklärt (Entscheidung 0070).
 
 import { useMemo } from 'react';
 import { formatCount } from '../../lib/format';
 import { countInFilter } from '../../lib/tree/countInFilter';
-import { useOptionalWorkspace } from './WorkspaceProvider';
 import { useViewer, useViewerDispatch, type SidePanel } from '../../state/viewer';
 
 function Kpi({
@@ -24,20 +22,13 @@ function Kpi({
 }) {
   const { view } = useViewer();
   const dispatch = useViewerDispatch();
-  const split = useOptionalWorkspace()?.split ?? false;
-  const open = split ? !view.workspace.closed[panel] : view.side === panel;
+  const open = !view.workspace.closed[panel];
   const on = open && marks;
   return (
     <button
       type="button"
       aria-pressed={on}
-      onClick={() =>
-        dispatch(
-          split
-            ? { type: 'paneClosed', pane: panel, closed: open }
-            : { type: 'sidePanel', panel: open ? null : panel },
-        )
-      }
+      onClick={() => dispatch({ type: 'paneClosed', pane: panel, closed: open })}
       className={`flex cursor-pointer flex-col items-start gap-[1px] rounded-[var(--r-md)] border-none px-[12px] py-[6px] text-left hover:bg-sunken ${
         on ? 'bg-blueS' : 'bg-transparent'
       }`}

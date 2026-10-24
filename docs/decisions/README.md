@@ -40,7 +40,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0031 | [Drei Ansichten statt acht](0031-drei-ansichten.md)                                                            | teilweise ersetzt durch 0034, 0037 | 2026-10-04 |
 | 0032 | [STLB-Katalog ohne Spalte `positionsart_default`](0032-stlb-katalog-ohne-positionsart.md)                      | ersetzt durch 0044                 | 2026-10-04 |
 | 0033 | [Neuer Look und Dunkelmodus](0033-neuer-look-und-dunkelmodus.md)                                               | teilweise ersetzt durch 0069       | 2026-10-05 |
-| 0034 | [Der Graph ist der Hauptscreen](0034-graph-als-hauptscreen.md)                                                 | teilweise ersetzt durch 0038       | 2026-10-05 |
+| 0034 | [Der Graph ist der Hauptscreen](0034-graph-als-hauptscreen.md)                                                 | teilweise ersetzt durch 0038, 0074 | 2026-10-05 |
 | 0035 | [Graph: Gliederung „nach LV" oder „frei"](0035-graph-gliederung.md)                                            | ergänzt durch 0040, 0059           | 2026-10-05 |
 | 0036 | [Alle Rechte vorbehalten statt AGPL](0036-alle-rechte-vorbehalten.md)                                          | akzeptiert                         | 2026-10-05 |
 | 0037 | [Vergleich als Fenster über dem Graphen](0037-vergleichsfenster.md)                                            | akzeptiert                         | 2026-10-05 |
@@ -70,7 +70,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0061 | [Notizen als Datei sichern und laden](0061-notizen-sichern-und-laden.md)                                       | akzeptiert                         | 2026-10-21 |
 | 0062 | [Fortschritt und „Wichtig" statt drei Marker](0062-fortschritt-und-wichtig.md)                                 | akzeptiert                         | 2026-10-21 |
 | 0063 | [Eigene Textmarkierungen im Langtext](0063-anstreichen-im-langtext.md)                                         | akzeptiert                         | 2026-10-21 |
-| 0064 | [Splitscreen neben den Fenstern](0064-splitscreen.md)                                                          | teilweise ersetzt durch 0070       | 2026-10-22 |
+| 0064 | [Splitscreen neben den Fenstern](0064-splitscreen.md)                                                          | teilweise ersetzt durch 0070, 0074 | 2026-10-22 |
 | 0065 | [Filterleiste, Kopfzeile der Positionskarte und Rechtsklick-Menü](0065-filterleiste-kopfzeile-rechtsklick.md)  | akzeptiert                         | 2026-10-22 |
 | 0066 | [Als Material gelernte Begriffe stehen im Filter „Material"](0066-gelernte-materialien-im-filter.md)           | akzeptiert                         | 2026-10-22 |
 | 0067 | [Tabelle als Arbeitsliste](0067-tabelle-als-arbeitsliste.md)                                                   | akzeptiert                         | 2026-10-22 |
@@ -79,7 +79,8 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0070 | [Splitscreen nahtlos, Bereiche stapelbar](0070-splitscreen-nahtlos-stapeln.md)                                 | teilweise ersetzt durch 0073       | 2026-10-23 |
 | 0071 | [Kurzumfrage nach einigen Minuten Nutzung](0071-kurzumfrage.md)                                                | akzeptiert                         | 2026-10-23 |
 | 0072 | [Begleitdokument als PDF anstreichen und verknüpfen](0072-begleitdokument-pdf.md)                              | akzeptiert                         | 2026-10-23 |
-| 0073 | [Splitscreen frei teilen, letzte Anordnung merken](0073-splitscreen-frei-teilen-und-merken.md)                 | akzeptiert                         | 2026-10-23 |
+| 0073 | [Splitscreen frei teilen, letzte Anordnung merken](0073-splitscreen-frei-teilen-und-merken.md)                 | teilweise ersetzt durch 0074       | 2026-10-23 |
+| 0074 | [Nur noch Splitscreen, ein Knopf „Ansicht“](0074-nur-noch-splitscreen.md)                                      | akzeptiert                         | 2026-10-24 |
 
 ## Wann schreibe ich eine neue Datei?
 

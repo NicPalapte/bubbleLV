@@ -20,32 +20,22 @@ async function ladeApp(): Promise<void> {
 }
 
 /**
- * Ansicht öffnen, wie ein Nutzer es täte: die Tabelle über den Knopf unten,
- * Überblick und Prüfung über die Kennzahlen oder — ist das Seitenfenster schon
- * offen — über dessen Reiter.
+ * Bereich öffnen, wie ein Nutzer es täte: die Tabelle steht schon im Splitscreen,
+ * Überblick und Prüfung öffnen die Kennzahlen.
  */
 async function ansicht(name: 'Tabelle' | 'Prüfung' | 'Überblick'): Promise<void> {
-  if (name === 'Tabelle') {
-    const knopf = screen.queryByRole('button', { name: /^▴ Tabelle/ });
-    if (knopf !== null) fireEvent.click(knopf);
-    return;
-  }
-  const panel = screen.queryByRole('complementary', { name: 'Seitenfenster' });
-  if (panel !== null) {
-    fireEvent.click(within(panel).getByRole('tab', { name: new RegExp(`^${name}`) }));
-    return;
-  }
+  if (name === 'Tabelle' || screen.queryByRole('region', { name: `${name} — Bereich` })) return;
   const kennzahlen = screen.getByRole('group', { name: 'Kennzahlen' });
   const zahl = name === 'Prüfung' ? /Hinweise/ : /Positionen/;
   fireEvent.click(within(kennzahlen).getByRole('button', { name: zahl }));
 }
 
-function seitenfenster(): HTMLElement {
-  return screen.getByRole('complementary', { name: 'Seitenfenster' });
+function bereich(name: string): HTMLElement {
+  return screen.getByRole('region', { name: `${name} — Bereich` });
 }
 
 function tabellenfenster(): HTMLElement {
-  return screen.getByRole('region', { name: 'Tabelle — Fenster über dem Graphen' });
+  return bereich('Tabelle');
 }
 
 function tabelle(): HTMLElement {
@@ -167,7 +157,7 @@ describe('Ohne Maus bedienbar', () => {
     // Klick — genau das prüft dieser Weg.
     await ladeApp();
     await ansicht('Prüfung');
-    const zeilen = within(seitenfenster())
+    const zeilen = within(bereich('Prüfung'))
       .getAllByRole('button')
       .filter((knopf) => /\d{3}\.\d{3}\.\d{4}/.test(knopf.textContent ?? ''));
     if (zeilen.length === 0) return; // Fixture ohne Hinweise — nichts zu prüfen.
@@ -182,14 +172,10 @@ describe('Ohne Maus bedienbar', () => {
   it('macht jede Ansicht mit der Tastatur erreichbar', async () => {
     // Jede Ansicht bietet mindestens einen Bedienpunkt, der den Fokus nimmt.
     await ladeApp();
-    const flaechen: ReadonlyArray<['Prüfung' | 'Überblick' | 'Tabelle', () => HTMLElement]> = [
-      ['Prüfung', seitenfenster],
-      ['Überblick', seitenfenster],
-      ['Tabelle', tabellenfenster],
-    ];
-    for (const [name, flaeche] of flaechen) {
+    const namen = ['Prüfung', 'Überblick', 'Tabelle'] as const;
+    for (const name of namen) {
       await ansicht(name);
-      const fokussierbar = flaeche().querySelectorAll(
+      const fokussierbar = bereich(name).querySelectorAll(
         'button:not([disabled]), [tabindex="0"], input, select',
       );
       expect(fokussierbar.length, `${name}: nichts fokussierbar`).toBeGreaterThan(0);
@@ -197,24 +183,23 @@ describe('Ohne Maus bedienbar', () => {
   });
 
   // Issue #105: Reiter nach WAI-ARIA — Pfeiltasten wechseln, nur der aktive
-  // Reiter liegt in der Tab-Reihenfolge.
-  it('wechselt die Reiter des Seitenfensters mit den Pfeiltasten', async () => {
+  // Reiter liegt in der Tab-Reihenfolge. Dokument und Tabelle teilen sich anfangs
+  // einen Platz.
+  it('wechselt gestapelte Reiter mit den Pfeiltasten', async () => {
     await ladeApp();
-    await ansicht('Überblick');
-    const reiter = (name: string) =>
-      within(seitenfenster()).getByRole('tab', { name: new RegExp(`^${name}`) });
-    expect(reiter('Überblick')).toHaveAttribute('aria-selected', 'true');
-    expect(reiter('Prüfung')).toHaveAttribute('tabindex', '-1');
+    fireEvent.click(screen.getByRole('button', { name: /^Ansicht/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Dokument$/, pressed: false }));
+    const reiter = (name: string) => screen.getByRole('tab', { name: new RegExp(name) });
+    expect(reiter('Dokument')).toHaveAttribute('aria-selected', 'true');
+    expect(reiter('Tabelle')).toHaveAttribute('tabindex', '-1');
 
-    fireEvent.keyDown(reiter('Überblick'), { key: 'ArrowRight' });
-    expect(reiter('Prüfung')).toHaveAttribute('aria-selected', 'true');
-    expect(reiter('Prüfung')).toHaveFocus();
+    fireEvent.keyDown(reiter('Dokument'), { key: 'ArrowRight' });
+    expect(reiter('Tabelle')).toHaveAttribute('aria-selected', 'true');
+    expect(reiter('Tabelle')).toHaveFocus();
 
     // Am Rand geht es reihum weiter.
-    fireEvent.keyDown(reiter('Prüfung'), { key: 'ArrowRight' });
-    expect(reiter('Überblick')).toHaveAttribute('aria-selected', 'true');
-    fireEvent.keyDown(reiter('Überblick'), { key: 'ArrowLeft' });
-    expect(reiter('Prüfung')).toHaveAttribute('aria-selected', 'true');
+    fireEvent.keyDown(reiter('Tabelle'), { key: 'ArrowLeft' });
+    expect(reiter('Dokument')).toHaveAttribute('aria-selected', 'true');
   });
 
   it('gliedert die Seite mit Überschriften', async () => {

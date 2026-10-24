@@ -7,7 +7,11 @@ if (!('ResizeObserver' in globalThis)) {
     unobserve(): void {}
     disconnect(): void {}
   }
-  Object.defineProperty(globalThis, 'ResizeObserver', { value: ResizeObserverStub });
+  Object.defineProperty(globalThis, 'ResizeObserver', {
+    value: ResizeObserverStub,
+    writable: true,
+    configurable: true,
+  });
 }
 
 // Jeder Test beginnt mit leerer Adresszeile. Seit die App Ansicht und Filter

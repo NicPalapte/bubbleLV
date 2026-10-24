@@ -1,139 +1,91 @@
-// Kopfleiste, rechts: Umschalter Splitscreen | Fenster (Entscheidung 0064), je ein
-// Knopf für jeden Bereich, der gerade zu ist oder in einem eigenen Browserfenster
-// steht, und „Anordnung zurücksetzen" (Entscheidung 0073). Nur auf breiten
-// Bildschirmen — darunter gelten Fenster.
+// Kopfleiste, rechts: ein Knopf „Ansicht" (Entscheidung 0074). Das Menü blendet jeden
+// Bereich des Splitscreens ein und aus, holt Bereiche aus einem eigenen Browserfenster
+// zurück (Entscheidung 0039) und setzt die Anordnung zurück (Entscheidung 0073).
 
-import type { ReactNode } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useOptionalWorkspace, type PopPane } from './WorkspaceProvider';
+import { useDismiss } from '../common/useDismiss';
+import { Popover, PopoverRow } from '../ui/Popover';
 import { INITIAL_ARRANGEMENT, PANES, PANE_LABEL as LABEL } from '../../lib/workspace/split';
-import { useViewer, useViewerDispatch, type WorkspaceMode } from '../../state/viewer';
+import { useViewer, useViewerDispatch } from '../../state/viewer';
 
-const MODES: readonly { value: WorkspaceMode; label: string; icon: ReactNode }[] = [
-  {
-    value: 'split',
-    label: 'Split',
-    icon: (
-      <>
-        <rect x="0.7" y="0.7" width="12.6" height="10.6" rx="2" />
-        <path d="M9 1v10M1 6.5h8" />
-      </>
-    ),
-  },
-  {
-    value: 'windows',
-    label: 'Fenster',
-    icon: (
-      <>
-        <rect x="0.7" y="0.7" width="12.6" height="10.6" rx="2" />
-        <rect x="7" y="3" width="4.5" height="5.5" rx="1" fill="currentColor" />
-      </>
-    ),
-  },
-];
+const BUTTON =
+  'inline-flex h-[32px] shrink-0 cursor-pointer items-center gap-[6px] rounded-[var(--r-sm)] border-none bg-transparent px-[10px] font-mono text-[12px] text-dim hover:bg-sunken hover:text-ink aria-expanded:bg-sunken aria-expanded:text-ink';
 
-const CHIP =
-  'inline-flex h-[28px] shrink-0 cursor-pointer items-center gap-[5px] whitespace-nowrap rounded-[var(--r-pill)] border border-line bg-surface px-[10px] font-mono text-[11.5px] text-ink hover:border-blue hover:text-blueD';
+const isPopPane = (pane: string): pane is PopPane =>
+  pane === 'graph' || pane === 'table' || pane === 'doc';
 
 export function WorkspaceBar() {
   const workspace = useOptionalWorkspace();
   const {
     view: {
-      workspace: { mode, closed, root },
-      docWindow,
+      workspace: { closed, root },
     },
   } = useViewer();
   const dispatch = useViewerDispatch();
-  if (workspace === null || !workspace.wide) return null;
-  const { split, hosts, dock } = workspace;
+  const [open, setOpen] = useState(false);
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  useDismiss(
+    [anchorRef, popoverRef],
+    open,
+    useCallback(() => setOpen(false), []),
+  );
+  if (workspace === null) return null;
+  const { hosts, dock } = workspace;
 
-  const away = (['graph', 'table', 'doc'] as const).filter((pane: PopPane) => hosts[pane] !== null);
-  // Im Fenster-Layout öffnet „+ Dokument" das Fenster (Entscheidung 0072).
-  const shut = split
-    ? PANES.filter((pane) => closed[pane])
-    : docWindow.open
-      ? []
-      : ['doc' as const];
   // Gemerkte Anordnungen kommen als neues Objekt zurück — darum Inhalt vergleichen.
-  const moved = split && JSON.stringify(root) !== JSON.stringify(INITIAL_ARRANGEMENT.root);
+  const moved = JSON.stringify(root) !== JSON.stringify(INITIAL_ARRANGEMENT.root);
 
   return (
-    <div className="flex shrink-0 items-center gap-[6px]">
-      {away.map((pane) => (
-        <button
-          key={pane}
-          type="button"
-          onClick={() => dock(pane)}
-          title={`${LABEL[pane]} zurück ins Hauptfenster`}
-          className={CHIP}
-        >
-          ↙ {LABEL[pane]}
-        </button>
-      ))}
-      {shut.map((pane) => (
-        <button
-          key={pane}
-          type="button"
-          onClick={() =>
-            dispatch(
-              pane === 'doc'
-                ? { type: 'docWindow', open: true }
-                : { type: 'paneClosed', pane, closed: false },
-            )
-          }
-          title={`${LABEL[pane]} wieder einblenden`}
-          className={CHIP}
-        >
-          + {LABEL[pane]}
-        </button>
-      ))}
-      {moved && (
-        <button
-          type="button"
-          onClick={() => dispatch({ type: 'workspaceReset' })}
-          title="Bereiche wieder wie am Anfang anordnen"
-          aria-label="Anordnung zurücksetzen"
-          className={CHIP}
-        >
-          ↺
-        </button>
-      )}
-      <div
-        role="radiogroup"
-        aria-label="Anordnung"
+    <div ref={anchorRef} className="flex items-center">
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+        aria-haspopup="menu"
         data-tour="workspace"
-        className="inline-flex shrink-0 gap-[2px] rounded-[var(--r-pill)] border border-line bg-sunken p-[2px]"
+        title="Bereiche ein- und ausblenden"
+        className={BUTTON}
       >
-        {MODES.map((option) => {
-          const on = option.value === mode;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={on}
-              onClick={() => dispatch({ type: 'workspaceMode', mode: option.value })}
-              className={`inline-flex h-[24px] cursor-pointer items-center gap-[5px] rounded-[var(--r-pill)] border-none px-[9px] font-mono text-[11.5px] ${
-                on
-                  ? 'bg-surface text-ink shadow-[var(--shadow-sm)]'
-                  : 'bg-transparent text-dim hover:text-blueD'
-              }`}
+        Ansicht <span className="text-[11px] text-mute">▾</span>
+      </button>
+      <Popover ref={popoverRef} open={open} width={232} align="right" anchorRef={anchorRef}>
+        {PANES.map((pane) => {
+          const away = isPopPane(pane) && hosts[pane] !== null;
+          return away ? (
+            <PopoverRow
+              key={pane}
+              checkbox
+              on
+              onClick={() => dock(pane)}
+              title={`${LABEL[pane]} zurück ins Hauptfenster`}
+              trailing={<span className="text-mute">↙ zurückholen</span>}
             >
-              <svg
-                width="14"
-                height="12"
-                viewBox="0 0 14 12"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.3"
-                aria-hidden="true"
-              >
-                {option.icon}
-              </svg>
-              {option.label}
-            </button>
+              {LABEL[pane]}
+            </PopoverRow>
+          ) : (
+            <PopoverRow
+              key={pane}
+              checkbox
+              on={!closed[pane]}
+              onClick={() => dispatch({ type: 'paneClosed', pane, closed: !closed[pane] })}
+            >
+              {LABEL[pane]}
+            </PopoverRow>
           );
         })}
-      </div>
+        <hr className="mx-[4px] my-[4px] border-0 border-t border-line" />
+        <PopoverRow
+          onClick={() => {
+            setOpen(false);
+            dispatch({ type: 'workspaceReset' });
+          }}
+          title={moved ? 'Bereiche wieder wie am Anfang anordnen' : 'Schon wie am Anfang'}
+        >
+          ↺ Anordnung zurücksetzen
+        </PopoverRow>
+      </Popover>
     </div>
   );
 }

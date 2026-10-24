@@ -412,11 +412,50 @@ export function shownChildren(split: Split, visible: (pane: PaneId) => boolean):
   return split.children.map((_, i) => i).filter((i) => shows(split.children[i]));
 }
 
+// ── Schmale Fläche (Entscheidung 0074) ───────────────────────────────────
+
+/** Unter dieser Breite (px) zeigt die Fläche nur Graph + einen Platz mit Reitern. */
+export const COMPACT_WIDTH = 1024;
+/** Darunter liegen beide übereinander statt nebeneinander (Handy). */
+export const STACKED_WIDTH = 700;
+/** Reihenfolge der Reiter auf dem gemeinsamen Platz. */
+const COMPACT_ORDER: readonly PaneId[] = ['card', 'table', 'overview', 'check', 'doc'];
+
+/**
+ * Anordnung für eine schmale Fläche, aus der gemerkten abgeleitet und nie gespeichert:
+ * der Graph allein, alle anderen sichtbaren Bereiche als Reiter auf einem Platz.
+ */
+export function compactRoot(
+  visible: (pane: PaneId) => boolean,
+  axis: Axis,
+  front: PaneId | null,
+): LayoutNode {
+  const rest = COMPACT_ORDER.filter(visible);
+  const restLeaf: Leaf = {
+    kind: 'leaf',
+    id: 'compactRest',
+    stack: rest,
+    front: front !== null && rest.includes(front) ? front : (rest[0] ?? null),
+  };
+  const graphLeaf = leaf('compactGraph', 'graph');
+  if (!visible('graph')) return restLeaf;
+  if (rest.length === 0) return graphLeaf;
+  return {
+    kind: 'split',
+    id: 'compact',
+    axis,
+    children: [graphLeaf, restLeaf],
+    sizes: axis === 'row' ? [0.55, 0.45] : [0.5, 0.5],
+  };
+}
+
 // ── Gemerkte Anordnung (Entscheidung 0073) ─────────────────────────────────
 
-/** Was in IndexedDB bleibt: nur Lage und Größe der Bereiche, keine LV-Daten. */
+/**
+ * Was in IndexedDB bleibt: nur Lage und Größe der Bereiche, keine LV-Daten. Ältere
+ * Einträge tragen noch `mode` (Split/Fenster) — seit Entscheidung 0074 ungelesen.
+ */
 export interface StoredWorkspace extends Arrangement {
-  mode: 'split' | 'windows';
   closed: Readonly<Record<PaneId, boolean>>;
 }
 
@@ -427,7 +466,6 @@ export function toStoredWorkspace(
 ): StoredWorkspace | null {
   if (typeof value !== 'object' || value === null) return null;
   const raw = value as Record<string, unknown>;
-  if (raw.mode !== 'split' && raw.mode !== 'windows') return null;
   const arrangement = toArrangement(raw.root);
   if (arrangement === null) return null;
   const closedRaw =
@@ -440,7 +478,7 @@ export function toStoredWorkspace(
       return [pane, typeof flag === 'boolean' ? flag : fallbackClosed[pane]];
     }),
   ) as Record<PaneId, boolean>;
-  return { mode: raw.mode, closed, root: arrangement.root };
+  return { closed, root: arrangement.root };
 }
 
 const MAX_DEPTH = 8;

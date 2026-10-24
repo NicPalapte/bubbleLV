@@ -34,7 +34,7 @@ export function checkActions(
   return [
     { type: 'selectPosition', nodeId: parentId, positionId },
     { type: 'openRule', id: ruleId },
-    { type: 'sidePanel', panel: 'check' },
+    { type: 'showPane', pane: 'check' },
   ];
 }
 

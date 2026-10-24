@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import {
   INITIAL_ARRANGEMENT,
   SPLIT_MIN,
+  compactRoot,
   edgePane,
   findSplit,
   frontOf,
@@ -204,7 +205,7 @@ describe('moveBoundary', () => {
 });
 
 describe('Gemerkte Anordnung', () => {
-  it('liest einen gespeicherten Baum zurück', () => {
+  it('liest einen gespeicherten Baum zurück, auch einen alten mit `mode`', () => {
     const moved = edgePane(start, 'table', 'bottom');
     const stored = JSON.parse(
       JSON.stringify({ mode: 'split', closed: INITIAL_WORKSPACE.closed, root: moved.root }),
@@ -214,7 +215,9 @@ describe('Gemerkte Anordnung', () => {
 
   it('verwirft Unbrauchbares', () => {
     expect(toStoredWorkspace(null, INITIAL_WORKSPACE.closed)).toBeNull();
-    expect(toStoredWorkspace({ mode: 'x', root: start.root }, INITIAL_WORKSPACE.closed)).toBeNull();
+    expect(toStoredWorkspace({ closed: INITIAL_WORKSPACE.closed }, INITIAL_WORKSPACE.closed)).toBe(
+      null,
+    );
     expect(
       toArrangement({ kind: 'split', id: 'r', axis: 'row', children: [], sizes: [] }),
     ).toBeNull();
@@ -254,17 +257,9 @@ describe('Ansichtszustand der Arbeitsfläche', () => {
   const base: ViewerState = { ...INITIAL_VIEWER_STATE };
 
   it('startet im Splitscreen, Überblick und Prüfung sind zu', () => {
-    expect(base.view.workspace.mode).toBe('split');
     expect(base.view.workspace.root).toBe(start.root);
     expect(base.view.workspace.closed.overview).toBe(true);
     expect(base.view.workspace.closed.check).toBe(true);
-  });
-
-  it('wechselt die Anordnung, ohne Filter oder Auswahl anzufassen', () => {
-    const next = viewerReducer(base, { type: 'workspaceMode', mode: 'windows' });
-    expect(next.view.workspace.mode).toBe('windows');
-    expect(next.filter).toBe(base.filter);
-    expect(next.selection).toBe(base.selection);
   });
 
   it('tauscht, stapelt und teilt, ohne Filter oder Auswahl anzufassen', () => {
@@ -305,10 +300,12 @@ describe('Ansichtszustand der Arbeitsfläche', () => {
     expect(leafOf(picked.view.workspace.root, 'card').front).toBe('check');
   });
 
-  it('der Reiter „Prüfung" der Kennzahlen öffnet auch den Bereich', () => {
-    const next = viewerReducer(base, { type: 'sidePanel', panel: 'check' });
-    expect(next.view.side).toBe('check');
+  it('„showPane" öffnet einen Bereich und holt ihn vor einen Reiter', () => {
+    const stacked = viewerReducer(base, { type: 'stackPane', pane: 'check', to: 'c' });
+    const front = viewerReducer(stacked, { type: 'paneFront', pane: 'card' });
+    const next = viewerReducer(front, { type: 'showPane', pane: 'check' });
     expect(next.view.workspace.closed.check).toBe(false);
+    expect(leafOf(next.view.workspace.root, 'card').front).toBe('check');
   });
 
   it('setzt die Größe einer Teilung und mit null zurück', () => {
@@ -319,12 +316,12 @@ describe('Ansichtszustand der Arbeitsfläche', () => {
     expect(viewerReducer(base, { type: 'splitSize', split: 'fehlt', sizes: [1, 1] })).toBe(base);
   });
 
-  it('„Zurücksetzen" stellt den Anfang her, die Wahl Split/Fenster bleibt', () => {
+  it('„Zurücksetzen" stellt Anordnung und offene Bereiche des Anfangs her', () => {
     const moved = viewerReducer(base, { type: 'edgePane', pane: 'table', side: 'bottom' });
-    const windows = viewerReducer(moved, { type: 'workspaceMode', mode: 'windows' });
-    const reset = viewerReducer(windows, { type: 'workspaceReset' });
+    const open = viewerReducer(moved, { type: 'showPane', pane: 'check' });
+    const reset = viewerReducer(open, { type: 'workspaceReset' });
     expect(reset.view.workspace.root).toBe(start.root);
-    expect(reset.view.workspace.mode).toBe('windows');
+    expect(reset.view.workspace.closed).toEqual(INITIAL_WORKSPACE.closed);
   });
 
   it('übernimmt die gemerkte Anordnung nur, solange nichts verändert ist', () => {
@@ -339,7 +336,6 @@ describe('Ansichtszustand der Arbeitsfläche', () => {
     const shut = viewerReducer(base, { type: 'paneClosed', pane: 'table', closed: true });
     const next = viewerReducer(shut, { type: 'openInTable', id: null });
     expect(next.view.workspace.closed.table).toBe(false);
-    expect(next.view.tableWindow.open).toBe(true);
   });
 
   it('behält die Anordnung beim nächsten LV', () => {
@@ -350,18 +346,49 @@ describe('Ansichtszustand der Arbeitsfläche', () => {
 
   it('Dokument: zu bis „+ Dokument", dann als Reiter neben der Tabelle (Entscheidung 0072)', () => {
     expect(base.view.workspace.closed.doc).toBe(true);
-    const open = viewerReducer(base, { type: 'docWindow', open: true });
-    expect(open.view.docWindow.open).toBe(true);
+    const open = viewerReducer(base, { type: 'showPane', pane: 'doc' });
     expect(open.view.workspace.closed.doc).toBe(false);
     expect(leafOf(open.view.workspace.root, 'doc').id).toBe('b');
     expect(leafOf(open.view.workspace.root, 'doc').front).toBe('doc');
-    // Bereich zu = Fenster zu, und umgekehrt — ein Schalter in beiden Anordnungen.
     const shut = viewerReducer(open, { type: 'paneClosed', pane: 'doc', closed: true });
-    expect(shut.view.docWindow.open).toBe(false);
-    const again = viewerReducer(shut, { type: 'paneClosed', pane: 'doc', closed: false });
-    expect(again.view.docWindow.open).toBe(true);
-    expect(viewerReducer(again, { type: 'docWindow', open: false }).view.workspace.closed.doc).toBe(
-      true,
-    );
+    expect(shut.view.workspace.closed.doc).toBe(true);
+  });
+});
+
+describe('Schmale Fläche (Entscheidung 0074)', () => {
+  const only =
+    (...panes: string[]) =>
+    (pane: string): boolean =>
+      panes.includes(pane);
+
+  it('legt den Graphen neben einen Platz mit allen anderen Bereichen als Reiter', () => {
+    const root = compactRoot(all, 'row', null);
+    expect(root).toMatchObject({ kind: 'split', axis: 'row', sizes: [0.55, 0.45] });
+    expect(leafOf(root, 'graph').id).toBe('compactGraph');
+    const rest = leafOf(root, 'card');
+    expect(rest.stack).toEqual(['card', 'table', 'overview', 'check', 'doc']);
+    expect(rest.front).toBe('card');
+    expect(compactRoot(all, 'col', null)).toMatchObject({ axis: 'col', sizes: [0.5, 0.5] });
+  });
+
+  it('nimmt den gewünschten Reiter nur, wenn er sichtbar ist', () => {
+    expect(leafOf(compactRoot(all, 'row', 'check'), 'check').front).toBe('check');
+    const hidden = compactRoot(only('graph', 'table', 'card'), 'row', 'check');
+    expect(leafOf(hidden, 'card').front).toBe('card');
+  });
+
+  it('kommt mit nur einem Teil aus', () => {
+    expect(compactRoot(only('graph'), 'row', null)).toMatchObject({
+      kind: 'leaf',
+      stack: ['graph'],
+    });
+    expect(compactRoot(only('table'), 'row', null)).toMatchObject({
+      kind: 'leaf',
+      stack: ['table'],
+      front: 'table',
+    });
+    // Nichts sichtbar: ein leerer Platz — SplitView zeigt dann „Alle Bereiche geschlossen".
+    const none = compactRoot(only(), 'row', null);
+    expect(splitLayout(none, only()).frames).toEqual({});
   });
 });

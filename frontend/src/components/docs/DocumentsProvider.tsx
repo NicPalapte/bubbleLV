@@ -101,7 +101,7 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
           setDocs((current) => [...current, opened]);
         }
         setActiveId(opened.id);
-        dispatch({ type: 'docWindow', open: true });
+        dispatch({ type: 'showPane', pane: 'doc' });
       } catch (caught) {
         setError(
           caught instanceof PdfOpenError ? caught.message : 'Das PDF lässt sich nicht öffnen.',
@@ -131,7 +131,7 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
       if (!docsRef.current.some((doc) => doc.id === spot.doc)) return;
       setActiveId(spot.doc);
       setJump((current) => ({ spot, nonce: (current?.nonce ?? 0) + 1 }));
-      dispatch({ type: 'docWindow', open: true });
+      dispatch({ type: 'showPane', pane: 'doc' });
     },
     [dispatch],
   );

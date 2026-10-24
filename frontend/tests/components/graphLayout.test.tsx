@@ -83,7 +83,11 @@ describe('Gliederung im Graphen', () => {
     expect(graphText()).not.toContain('→');
 
     oeffneFilter();
-    fireEvent.click(screen.getByRole('button', { name: 'Positionsart' }));
+    fireEvent.click(
+      within(screen.getByRole('region', { name: 'Filterleiste' })).getByRole('button', {
+        name: 'Positionsart',
+      }),
+    );
     const art = within(screen.getByRole('group', { name: 'Positionsart' }));
     fireEvent.click(art.getAllByRole('checkbox')[0]);
 
@@ -167,11 +171,9 @@ describe('Sprung in die Tabelle', () => {
     fireEvent.click(graph().querySelector('[data-group] circle') as SVGCircleElement);
     const knopf = await screen.findByRole('button', { name: 'In der Tabelle zeigen' });
 
-    // … und von dort führt der Knopf in die Tabelle — als Fenster über dem Graphen.
+    // … und von dort führt der Knopf in die Tabelle — den Bereich neben dem Graphen.
     fireEvent.click(knopf);
-    const fenster = within(
-      screen.getByRole('region', { name: 'Tabelle — Fenster über dem Graphen' }),
-    );
+    const fenster = within(screen.getByRole('region', { name: 'Tabelle — Bereich' }));
     expect(fenster.getByRole('grid', { name: 'Positionen' })).toBeInTheDocument();
     expect(screen.getByRole('main', { name: 'Bubble-Graph' })).toBeInTheDocument();
   });
@@ -307,9 +309,7 @@ describe('Rechtsklick im Graphen (Issue #155)', () => {
       'In der Tabelle zeigen',
     ]);
     fireEvent.click(menue.getByRole('menuitem', { name: 'In der Tabelle zeigen' }));
-    expect(
-      screen.getByRole('region', { name: 'Tabelle — Fenster über dem Graphen' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Tabelle — Bereich' })).toBeInTheDocument();
   });
 
   it('kopiert den Link zur Position und meldet, wenn das nicht geht', async () => {
@@ -337,9 +337,7 @@ describe('Rechtsklick im Graphen (Issue #155)', () => {
     await loadAndShowGraph();
     fireEvent.contextMenu(graph().querySelector('[data-group] circle') as SVGCircleElement);
     fireEvent.click(screen.getByRole('menuitem', { name: 'In der Tabelle zeigen' }));
-    const tabelle = within(
-      screen.getByRole('region', { name: 'Tabelle — Fenster über dem Graphen' }),
-    );
+    const tabelle = within(screen.getByRole('region', { name: 'Tabelle — Bereich' }));
     const [zeile] = tabelle.getAllByRole('row').filter((row) => row.id !== '');
     expect(fireEvent.contextMenu(zeile)).toBe(false);
     const menue = within(screen.getByRole('menu', { name: /^Position / }));
