@@ -43,6 +43,18 @@ describe('usageEventOf', () => {
     expect(usageEventOf({ type: 'dismissNotices' })).toBeNull();
   });
 
+  it('zählt Begleitdokumente ohne Namen, Text oder Position (Entscheidung 0072)', () => {
+    const spot = { doc: 'd', page: 1, start: 0, text: 'geheim' };
+    expect(usageEventOf({ type: 'docRegister', doc: 'd', name: 'x.pdf', pages: 2 })).toBe(
+      'dokument-geoeffnet',
+    );
+    expect(usageEventOf({ type: 'docPaint', spot, paint: 'gelb', at: 1 })).toBe(
+      'dokument-anstreichung',
+    );
+    expect(usageEventOf({ type: 'docPaint', spot, paint: null, at: 1 })).toBeNull();
+    expect(usageEventOf({ type: 'docLink', spot, ids: ['p1'], at: 1 })).toBe('dokument-verknuepft');
+  });
+
   it('liefert nur Namen aus der festen Liste', () => {
     const names = new Set<string>(USAGE_EVENTS);
     const event = usageEventOf({ type: 'openInTable', id: null });

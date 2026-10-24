@@ -3,7 +3,8 @@
 // Eine JSON-Datei je LV: Fortschritt, „Wichtig" und Verlauf je Position (Entscheidung
 // 0062), dazu OZ, Kurztext und Menge, damit ein Mensch sie lesen kann und das Laden
 // Positionen auch in einer geänderten Fassung wiederfindet. Seit Version 3 auch die
-// Anstreichungen im Langtext (Entscheidung 0063). Zuordnung in drei Stufen
+// Anstreichungen im Langtext (Entscheidung 0063), seit Version 4 die Stellen in
+// Begleitdokumenten samt Verknüpfung (Entscheidung 0072). Zuordnung in drei Stufen
 // (Entscheidung 0055): gleicher Positions-Hash, sonst gleicher Text-Fingerabdruck
 // (umnummeriert), sonst gleiche OZ (Text oder Menge geändert). Mehrdeutiges wird
 // nicht zugeordnet. Die Datei entsteht und wird gelesen im Browser — kein Request.
@@ -24,6 +25,16 @@ import {
   type LogEntry,
   type Progress,
 } from './annotations';
+import {
+  EMPTY_DOC_NOTES,
+  linkedIds,
+  marksOfPosition,
+  mergeDocNotes,
+  toDocMark,
+  type DocInfo,
+  type DocMark,
+  type DocNotes,
+} from './docs/docNotes';
 import { NO_PAINT_NAMES, toPaintNames, type PaintNames } from './paintNames';
 import type { LVNode } from '../types/lvNode';
 
@@ -31,15 +42,26 @@ import type { LVNode } from '../types/lvNode';
 // gesicherte Notiz-Dateien nicht mehr laden (Entscheidung 0069).
 export const NOTES_FILE_KIND = 'bubble-notizen';
 /**
- * Version 3: dazu Anstreichungen (0063). Version 2: Fortschritt + Wichtig (0062).
+ * Version 4: dazu Stellen in Begleitdokumenten (0072). Version 3: dazu Anstreichungen (0063).
+ * Version 2: Fortschritt + Wichtig (0062).
  * Ältere Versionen werden gelesen, Version 1 (drei Marker) umgedeutet.
  */
-const NOTES_FILE_VERSION = 3;
+const NOTES_FILE_VERSION = 4;
 
 interface FilePaint {
   readonly farbe: Paint;
   readonly start: number;
   readonly text: string;
+  readonly zeit: string | null;
+}
+
+/** Stelle in einem Begleitdokument; `farbe` fehlt, wenn sie nur verknüpft ist. */
+interface FileDocSpot {
+  readonly dokument: string;
+  readonly seite: number;
+  readonly start: number;
+  readonly text: string;
+  readonly farbe: Paint | null;
   readonly zeit: string | null;
 }
 
@@ -59,6 +81,8 @@ export interface NotesFilePosition {
   readonly fortschritt: Progress | null;
   readonly wichtig: boolean;
   readonly anstreichungen: readonly Highlight[];
+  /** Mit dieser Position verknüpfte Stellen in Begleitdokumenten (`links` leer). */
+  readonly dokumentstellen: readonly DocMark[];
   readonly verlauf: readonly LogEntry[];
 }
 
@@ -68,6 +92,8 @@ export interface NotesFile {
   readonly farben: PaintNames;
   readonly gesichert: number;
   readonly positionen: readonly NotesFilePosition[];
+  /** Bekannte Begleitdokumente und angestrichene Stellen ohne Verknüpfung. */
+  readonly dokumente: DocNotes;
 }
 
 /** Datei ist keine Notiz-Datei oder kaputt. Die Meldung ist für Menschen. */
@@ -85,6 +111,17 @@ interface Source {
 
 function iso(at: number): string | null {
   return at > 0 ? new Date(at).toISOString() : null;
+}
+
+function fileDocSpot(mark: DocMark): FileDocSpot {
+  return {
+    dokument: mark.doc,
+    seite: mark.page,
+    start: mark.start,
+    text: mark.text,
+    farbe: mark.paint,
+    zeit: iso(mark.at),
+  };
 }
 
 function fileEntry(entry: LogEntry): FileEntry {
@@ -108,10 +145,12 @@ export function notesFileText(
 ): string {
   const byId = new Map<string, LVNode>();
   for (const node of nodes) if (node.position !== null) byId.set(node.id, node);
+  const { documents } = annotations;
   const ids = new Set([
     ...markedIds(annotations),
     ...annotations.highlights.keys(),
     ...annotations.log.keys(),
+    ...linkedIds(documents),
   ]);
   const positionen = [...ids].map((id) => {
     const position = byId.get(id)?.position ?? null;
@@ -130,6 +169,7 @@ export function notesFileText(
         text: mark.text,
         zeit: iso(mark.at),
       })),
+      dokumentstellen: marksOfPosition(documents, id).map(fileDocSpot),
       verlauf: (annotations.log.get(id) ?? []).map(fileEntry),
     };
   });
@@ -141,6 +181,12 @@ export function notesFileText(
     gesichert: new Date(now).toISOString(),
     farben: names,
     positionen,
+    dokumente: [...documents.docs].map(([id, info]) => ({
+      id,
+      name: info.name,
+      seiten: info.pages,
+    })),
+    dokumentstellen: documents.marks.filter((mark) => mark.links.length === 0).map(fileDocSpot),
   };
   return `${JSON.stringify(file, null, 2)}\n`;
 }
@@ -180,6 +226,28 @@ function readVerlaufV1(value: unknown): LogEntry[] {
   );
 }
 
+/** Stelle aus der Datei; `links` setzt der Aufrufer. Unbrauchbares wird `null`. */
+function readDocSpot(value: unknown, links: readonly string[]): DocMark | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const raw = value as Record<string, unknown>;
+  return toDocMark({
+    doc: raw.dokument,
+    page: raw.seite,
+    start: raw.start,
+    text: raw.text,
+    paint: raw.farbe,
+    links,
+    at: at(raw.zeit),
+  });
+}
+
+function readDocSpots(value: unknown, links: readonly string[]): DocMark[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item: unknown) => readDocSpot(item, links))
+    .filter((mark): mark is DocMark => mark !== null);
+}
+
 function readPosition(value: unknown, version: number): NotesFilePosition | null {
   if (typeof value !== 'object' || value === null) return null;
   const raw = value as Record<string, unknown>;
@@ -214,8 +282,13 @@ function readPosition(value: unknown, version: number): NotesFilePosition | null
         })
         .filter((mark): mark is Highlight => mark !== null)
     : [];
+  // Die Verknüpfung zeigt vorläufig auf den Hash; `mergeNotes` setzt die Position ein.
+  const dokumentstellen = readDocSpots(raw.dokumentstellen, [hash]).map((mark) => ({
+    ...mark,
+    links: [],
+  }));
   const leer = fortschritt === null && !wichtig && anstreichungen.length === 0;
-  if (leer && verlauf.length === 0) return null;
+  if (leer && verlauf.length === 0 && dokumentstellen.length === 0) return null;
   return {
     hash,
     text: text(raw.text),
@@ -226,8 +299,25 @@ function readPosition(value: unknown, version: number): NotesFilePosition | null
     fortschritt,
     wichtig,
     anstreichungen,
+    dokumentstellen,
     verlauf,
   };
+}
+
+function readDokumente(file: Record<string, unknown>): DocNotes {
+  const docs = new Map<string, DocInfo>();
+  if (Array.isArray(file.dokumente)) {
+    for (const item of file.dokumente) {
+      if (typeof item !== 'object' || item === null) continue;
+      const raw = item as Record<string, unknown>;
+      if (typeof raw.id !== 'string' || raw.id === '' || typeof raw.name !== 'string') continue;
+      const pages = typeof raw.seiten === 'number' && Number.isInteger(raw.seiten) ? raw.seiten : 0;
+      docs.set(raw.id, { name: raw.name, pages: Math.max(0, pages) });
+    }
+  }
+  const marks = readDocSpots(file.dokumentstellen, []).filter((mark) => mark.paint !== null);
+  if (docs.size === 0 && marks.length === 0) return EMPTY_DOC_NOTES;
+  return mergeDocNotes({ docs, marks: [] }, { docs: new Map(), marks });
 }
 
 /**
@@ -260,7 +350,7 @@ export function parseNotesFile(content: string): NotesFile {
     throw new NotesFileError('Die Datei ist keine Notiz-Datei von Conocto.');
   }
   const version = file.version;
-  if (version !== 1 && version !== 2 && version !== NOTES_FILE_VERSION) {
+  if (version !== 1 && version !== 2 && version !== 3 && version !== NOTES_FILE_VERSION) {
     throw new NotesFileError('Die Notiz-Datei stammt aus einer neueren Conocto-Version.');
   }
   return {
@@ -270,6 +360,7 @@ export function parseNotesFile(content: string): NotesFile {
     positionen: file.positionen
       .map((position) => readPosition(position, version))
       .filter((position): position is NotesFilePosition => position !== null),
+    dokumente: readDokumente(file),
   };
 }
 
@@ -399,8 +490,14 @@ function pick<T>(
  * einmal), der Verlauf nach Zeit sortiert. Bei Fortschritt und „Wichtig" gilt je der
  * zuletzt gesetzte Stand.
  */
-export function mergeNotes(current: Annotations, matches: readonly NotesMatch[]): Annotations {
-  if (matches.length === 0) return current;
+export function mergeNotes(
+  current: Annotations,
+  matches: readonly NotesMatch[],
+  dokumente: DocNotes = EMPTY_DOC_NOTES,
+): Annotations {
+  if (matches.length === 0 && dokumente.docs.size === 0 && dokumente.marks.length === 0) {
+    return current;
+  }
   const progress = new Map(current.progress);
   const important = new Set(current.important);
   const log = new Map(current.log);
@@ -433,17 +530,30 @@ export function mergeNotes(current: Annotations, matches: readonly NotesMatch[])
     else important.delete(nodeId);
   }
   let out: Annotations = { ...current, progress, important, log };
+  const linked: DocMark[] = [];
   for (const { entry, nodeId } of matches) {
     out = mergeHighlights(out, nodeId, entry.anstreichungen);
+    for (const mark of entry.dokumentstellen) linked.push({ ...mark, links: [nodeId] });
   }
-  return out;
+  const documents = mergeDocNotes(mergeDocNotes(current.documents, dokumente), {
+    docs: new Map(),
+    marks: linked,
+  });
+  return { ...out, documents };
 }
 
-/** Anzahl der Positionen mit Marker oder Kommentar. */
+/**
+ * Anzahl der Positionen mit eigener Notiz, dazu angestrichene Dokumentstellen ohne
+ * Verknüpfung — auch die gingen beim Ersetzen verloren.
+ */
 export function notesCount(annotations: Annotations): number {
-  return new Set([
-    ...markedIds(annotations),
-    ...annotations.highlights.keys(),
-    ...annotations.log.keys(),
-  ]).size;
+  const { documents } = annotations;
+  return (
+    new Set([
+      ...markedIds(annotations),
+      ...annotations.highlights.keys(),
+      ...annotations.log.keys(),
+      ...linkedIds(documents),
+    ]).size + documents.marks.filter((mark) => mark.links.length === 0).length
+  );
 }

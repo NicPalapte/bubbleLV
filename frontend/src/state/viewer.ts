@@ -44,6 +44,15 @@ import {
   type Paint,
   type Progress,
 } from '../lib/annotations';
+import {
+  linkDocMark,
+  paintDocMark,
+  registerDoc,
+  unlinkDocMark,
+  unpaintDocMark,
+  type DocNotes,
+  type DocSpot,
+} from '../lib/docs/docNotes';
 import type { HintIndex } from '../lib/check';
 import { AXIS_FACETS } from '../lib/graph/layoutMap';
 import type { PositionIndex } from '../lib/index/positionIndex';
@@ -136,6 +145,13 @@ type LvAction =
   | { type: 'removeHighlight'; id: string; position: number }
   | { type: 'addComment'; id: string; text: string; at: number }
   | { type: 'removeComment'; id: string; position: number }
+  /** Begleitdokument geöffnet: Name und Seitenzahl merken (Entscheidung 0072). */
+  | { type: 'docRegister'; doc: string; name: string; pages: number }
+  /** Stelle im Dokument anstreichen; `null` nimmt die Farbe weg. */
+  | { type: 'docPaint'; spot: DocSpot; paint: Paint | null; at: number }
+  /** Stelle von Hand mit Positionen verknüpfen (Knoten-IDs). */
+  | { type: 'docLink'; spot: DocSpot; ids: readonly string[]; at: number }
+  | { type: 'docUnlink'; spot: DocSpot; id: string }
   /** Notizen aus einer Notiz-Datei übernommen (lib/notesFile.ts, `mergeNotes`). */
   | { type: 'setAnnotations'; annotations: Annotations }
   /** Hinweis anhängen; derselbe Text erscheint nicht doppelt. */
@@ -233,6 +249,16 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
                     ? addComment(state.annotations, action.id, action.text, action.at)
                     : removeComment(state.annotations, action.id, action.position);
       return annotations === state.annotations ? state : { ...state, annotations };
+    }
+    case 'docRegister':
+    case 'docPaint':
+    case 'docLink':
+    case 'docUnlink': {
+      const before = state.annotations.documents;
+      const documents = docNotesReducer(before, action);
+      return documents === before
+        ? state
+        : { ...state, annotations: { ...state.annotations, documents } };
     }
     case 'setAnnotations':
       return { ...state, annotations: action.annotations };
@@ -340,6 +366,9 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     case 'compareWindow':
     case 'compareWindowPos':
     case 'compareWindowSize':
+    case 'docWindow':
+    case 'docWindowPos':
+    case 'docWindowSize':
     case 'sizeMode':
     case 'graphLayout':
     case 'graphRows':
@@ -424,4 +453,21 @@ export function useViewerDispatch(): Dispatch<ViewerAction> {
     throw new Error('useViewerDispatch muss innerhalb von <ViewerProvider> stehen');
   }
   return dispatch;
+}
+
+type DocAction = Extract<LvAction, { type: 'docRegister' | 'docPaint' | 'docLink' | 'docUnlink' }>;
+
+function docNotesReducer(notes: DocNotes, action: DocAction): DocNotes {
+  switch (action.type) {
+    case 'docRegister':
+      return registerDoc(notes, action.doc, { name: action.name, pages: action.pages });
+    case 'docPaint':
+      return action.paint === null
+        ? unpaintDocMark(notes, action.spot)
+        : paintDocMark(notes, action.spot, action.paint, action.at);
+    case 'docLink':
+      return linkDocMark(notes, action.spot, action.ids, action.at);
+    case 'docUnlink':
+      return unlinkDocMark(notes, action.spot, action.id);
+  }
 }

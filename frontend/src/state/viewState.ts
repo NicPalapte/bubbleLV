@@ -124,6 +124,10 @@ export const DEFAULT_TABLE_POS: CardPos = { right: 16, top: 320 };
 export const DEFAULT_COMPARE_POS: CardPos = { right: 412, top: 90 };
 export const DEFAULT_COMPARE_SIZE: PanelSize = { width: 640, height: 460 };
 
+/** Dokumentfenster (Entscheidung 0072): neben der Positionskarte, hoch genug für eine Seite. */
+export const DEFAULT_DOC_POS: CardPos = { right: 412, top: 16 };
+export const DEFAULT_DOC_SIZE: PanelSize = { width: 680, height: 640 };
+
 /** Größe eines Fensters über dem Graphen (Tabelle, Vergleich) in seinen Grenzen. */
 export function clampWindowSize(size: PanelSize): PanelSize {
   return {
@@ -179,7 +183,8 @@ export const INITIAL_WORKSPACE: WorkspaceState = {
   mode: 'split',
   ...INITIAL_ARRANGEMENT,
   // Überblick und Prüfung öffnet erst, wer sie braucht (Entscheidung 0070).
-  closed: { graph: false, table: false, card: false, overview: true, check: true },
+  // Das Dokument ebenso: erst „+ Dokument" öffnet es (Entscheidung 0072).
+  closed: { graph: false, table: false, card: false, overview: true, check: true, doc: true },
   widths: WIDTHS_DEFAULT,
   rows: ROWS_DEFAULT,
 };
@@ -212,6 +217,8 @@ export interface ViewState {
   tableWindow: TableWindowState;
   /** Vergleichsfenster: dieselbe Mechanik wie die Tabelle. */
   compareWindow: TableWindowState;
+  /** Begleitdokument als Fenster (Entscheidung 0072); im Splitscreen ein Bereich. */
+  docWindow: TableWindowState;
   graph: GraphViewState;
   table: TableViewState;
   overview: OverviewViewState;
@@ -237,6 +244,10 @@ export type ViewAction =
   | { type: 'compareWindow'; open: boolean }
   | { type: 'compareWindowPos'; pos: CardPos }
   | { type: 'compareWindowSize'; size: PanelSize }
+  /** Öffnen gilt in beiden Anordnungen: Fenster auf und Bereich im Splitscreen vorn. */
+  | { type: 'docWindow'; open: boolean }
+  | { type: 'docWindowPos'; pos: CardPos }
+  | { type: 'docWindowSize'; size: PanelSize }
   | { type: 'sizeMode'; value: SizeModeId }
   /** Gliederung umschalten — fasst Filter, Suche und Auswahl nie an. */
   | { type: 'graphLayout'; value: GraphLayoutId }
@@ -298,6 +309,7 @@ export const INITIAL_VIEW_STATE: ViewState = {
   tour: { step: null, seen: false },
   tableWindow: { open: false, pos: DEFAULT_TABLE_POS, size: DEFAULT_TABLE_SIZE },
   compareWindow: { open: false, pos: DEFAULT_COMPARE_POS, size: DEFAULT_COMPARE_SIZE },
+  docWindow: { open: false, pos: DEFAULT_DOC_POS, size: DEFAULT_DOC_SIZE },
   // Einstieg ist das LV in seiner Gliederung; „Matrix" ist der zweite Blick.
   graph: {
     sizeMode: 'quantity',
@@ -335,6 +347,11 @@ export function viewStateForNewLv(state: ViewState): ViewState {
       ...INITIAL_VIEW_STATE.compareWindow,
       pos: state.compareWindow.pos,
       size: state.compareWindow.size,
+    },
+    docWindow: {
+      ...INITIAL_VIEW_STATE.docWindow,
+      pos: state.docWindow.pos,
+      size: state.docWindow.size,
     },
     sideWidth: state.sideWidth,
     tour: { step: null, seen: state.tour.seen },
@@ -409,6 +426,22 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
         ...state,
         compareWindow: { ...state.compareWindow, size: clampWindowSize(action.size) },
       };
+    case 'docWindow': {
+      const workspace = action.open
+        ? showPane(state.workspace, 'doc')
+        : {
+            ...state.workspace,
+            closed: { ...state.workspace.closed, doc: true },
+          };
+      return { ...state, docWindow: { ...state.docWindow, open: action.open }, workspace };
+    }
+    case 'docWindowPos': {
+      const { pos } = state.docWindow;
+      if (pos.right === action.pos.right && pos.top === action.pos.top) return state;
+      return { ...state, docWindow: { ...state.docWindow, pos: action.pos } };
+    }
+    case 'docWindowSize':
+      return { ...state, docWindow: { ...state.docWindow, size: clampWindowSize(action.size) } };
     case 'tableWindowPos': {
       // Beim Ziehen kommt jede Mausbewegung hier an; gleiche Lage = kein Render.
       const { pos } = state.tableWindow;
@@ -517,6 +550,9 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
       if (state.workspace.closed[action.pane] === action.closed) return state;
       return {
         ...state,
+        // Bereich und Fenster des Dokuments sind ein Schalter (Entscheidung 0072).
+        docWindow:
+          action.pane === 'doc' ? { ...state.docWindow, open: !action.closed } : state.docWindow,
         workspace: action.closed
           ? {
               ...state.workspace,

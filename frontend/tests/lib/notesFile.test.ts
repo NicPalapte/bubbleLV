@@ -134,7 +134,7 @@ describe('notesFileText und parseNotesFile', () => {
   it('meldet fremde, kaputte und zu neue Dateien verständlich', () => {
     expect(() => parseNotesFile('kein json')).toThrow(NotesFileError);
     expect(() => parseNotesFile('{"art":"etwas"}')).toThrow('keine Notiz-Datei');
-    expect(() => parseNotesFile('{"art":"bubble-notizen","version":4,"positionen":[]}')).toThrow(
+    expect(() => parseNotesFile('{"art":"bubble-notizen","version":5,"positionen":[]}')).toThrow(
       'neueren Conocto-Version',
     );
   });

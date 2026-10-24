@@ -48,13 +48,14 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
   Reload nicht überleben.
 - **IndexedDB nur über `frontend/src/lib/persist/lastLv.ts`:** genau ein Projekt
   (Original-Bytes + Angaben der zuletzt geöffneten eigenen Datei + Marker, Kommentar-Verlauf
-  und Textmarkierungen je Positions-Hash `hashes.id`, `lib/annotations.ts`, Entscheidung 0057),
+  und Textmarkierungen je Positions-Hash `hashes.id`, `lib/annotations.ts`, Entscheidung 0057,
+  dazu Stellen in Begleit-PDFs `lib/docs/docNotes.ts`, 0072),
   löschbar auf der Startseite. Dazu, unabhängig von der Datei, die im Admin-Werkzeug gelernten
   Begriffe (`lib/highlight/terms.ts`), die eigenen Namen der Markierfarben
   (`lib/paintNames.ts`, `state/paintNames.tsx`) und der Merker der Kurzumfrage
   (`state/survey.tsx`, Schlüssel `umfrage`, Entscheidung 0071).
-  Kein geparstes LV speichern, keine Demo-LVs, keine zweite Datei. Notizen nur schreiben,
-  wenn die Projekt-Kennung (`persistIdOf`) noch passt. Fehlt IndexedDB ⇒ still ohne
+  Kein geparstes LV speichern, keine Demo-LVs, keine zweite Datei, keine PDF-Bytes. Notizen
+  nur schreiben, wenn die Projekt-Kennung (`persistIdOf`) noch passt. Fehlt IndexedDB ⇒ still ohne
   Speicher weiter, kein Fehler (Entscheidungen 0046, 0047, 0053).
 
 ### Client-seitige Pipeline (Kern)
@@ -134,14 +135,16 @@ Datei (`docs/decisions/0047-kommentare-und-markierungen.md`, `docs/decisions/005
 eigene Textmarkierungen im Langtext (6 feste Farben mit eigenen Namen, `docs/decisions/0063`) ·
 gelernte Hervorhebungen im Langtext nur über Admin-Werkzeug (0053) · lokaler Export/Druck über das
 Logo-Menü · Notizen als Datei sichern/laden (`lib/notesFile.ts`, 0061) · freiwillige Kurzumfrage
-zum Produkt (Owner-Wunsch, `docs/decisions/0071-kurzumfrage.md`). Matrix und
+zum Produkt (Owner-Wunsch, `docs/decisions/0071-kurzumfrage.md`). · Begleit-PDF im
+Fenster „Dokument“ lesen, anstreichen, Stellen von Hand mit Positionen verknüpfen, keine
+Interpretation/Vorschläge (`components/docs/`, `docs/decisions/0072-begleitdokument-pdf.md`). Matrix und
 Ähnlichkeit sind entfernt (`docs/decisions/0031-drei-ansichten.md`); keine
 Befehlspalette (`docs/decisions/0038-keine-befehlspalette.md`).
 
 **Out of Scope** (ablehnen / vertrösten): Server jeglicher Art, Persistenz über die
 Session hinaus (außer 0046/0047/0053), Auth/SSO (das Admin-Passwort aus 0053 ist nur
 Sichtschutz), **mehrere Dateien gleichzeitig** (Versionsvergleich,
-x83+x84-Merge — perspektivisch gewollt, jetzt draußen), Aufgaben, Notizen außer
+x83+x84-Merge — perspektivisch gewollt, jetzt draußen; Begleit-PDF erlaubt, 0072), Aufgaben, Notizen außer
 Markierung/Kommentar je Position, Vergabepakete, NU-Anfragen, Bieterfragen **verwalten**, Zuständigkeit/Zuweisung,
 Status-**Änderung**, EP-Kalkulation, Excel-/Manuell-Import, Multi-Tenant, GAEB-Export,
 LLM-Klassifizierung. Details → @docs/scope.md #out-of-scope

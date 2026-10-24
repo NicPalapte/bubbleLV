@@ -44,6 +44,10 @@ export const USAGE_EVENTS = [
   'umfrage-zahlen-bis-30',
   'umfrage-zahlen-mehr',
   'umfrage-freitext-mail',
+  // Begleitdokument (Entscheidung 0072): nur das Ereignis, nie Dateiname oder Text.
+  'dokument-geoeffnet',
+  'dokument-anstreichung',
+  'dokument-verknuepft',
 ] as const;
 
 export type UsageEvent = (typeof USAGE_EVENTS)[number];
@@ -91,6 +95,13 @@ export function usageEventOf(action: ViewerAction): UsageEvent | null {
       return action.text.trim() === '' || action.start < 0 ? null : 'anstreichung';
     case 'tour':
       return action.step === 0 ? 'tour' : null;
+    // Begleitdokument (Entscheidung 0072): nie Name, Text oder Position.
+    case 'docRegister':
+      return 'dokument-geoeffnet';
+    case 'docPaint':
+      return action.paint === null ? null : 'dokument-anstreichung';
+    case 'docLink':
+      return action.ids.length === 0 ? null : 'dokument-verknuepft';
     default:
       return null;
   }

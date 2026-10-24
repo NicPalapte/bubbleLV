@@ -1,5 +1,5 @@
-// Splitscreen (Entscheidungen 0064 und 0070): Überblick, Prüfung, Graph,
-// Tabelle und Positionskarte stehen nebeneinander statt als Fenster
+// Splitscreen (Entscheidungen 0064, 0070, 0072): Überblick, Prüfung, Graph,
+// Tabelle, Dokument und Positionskarte stehen nebeneinander statt als Fenster
 // übereinander — näher an der gewohnten Arbeitsweise in iTWO. Nahtlos: keine
 // Karten, nur 1-px-Linien zwischen den Bereichen.
 //
@@ -32,6 +32,7 @@ import { SelectionCard } from '../graph/SelectionCard';
 import { CheckCard, CheckFlyout } from '../overview/CheckCard';
 import { OverviewView } from '../overview/OverviewView';
 import { PositionsTable } from '../table/PositionsTable';
+import { DocumentView } from '../docs/DocumentView';
 import {
   PANES,
   PANE_LABEL,
@@ -263,7 +264,7 @@ export function SplitView({ root }: { root: LVNode }) {
   );
   const actions = (pane: PaneId) => (
     <>
-      {(pane === 'graph' || pane === 'table') && popButton(pane)}
+      {(pane === 'graph' || pane === 'table' || pane === 'doc') && popButton(pane)}
       <button
         type="button"
         onClick={() => dispatch({ type: 'paneClosed', pane, closed: true })}
@@ -304,6 +305,11 @@ export function SplitView({ root }: { root: LVNode }) {
           <OverviewView />
         </ErrorBoundary>
       </div>
+    ),
+    doc: (
+      <ErrorBoundary bereich="doc" dateiGeladen>
+        <DocumentView />
+      </ErrorBoundary>
     ),
     check: (
       <ErrorBoundary bereich="check" dateiGeladen>

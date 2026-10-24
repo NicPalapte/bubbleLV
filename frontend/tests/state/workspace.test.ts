@@ -44,7 +44,7 @@ describe('splitLayout', () => {
   });
 
   it('ein einzelner Bereich einer Spalte reicht über die volle Höhe', () => {
-    const layout = splitLayout(stacks, without('table'), WIDTHS_DEFAULT, ROWS_DEFAULT);
+    const layout = splitLayout(stacks, without('table', 'doc'), WIDTHS_DEFAULT, ROWS_DEFAULT);
     expect(layout.frames.a?.h).toBe(1);
     expect(layout.rows.map((row) => row.id)).toEqual(['side']);
   });
@@ -189,5 +189,21 @@ describe('Ansichtszustand der Arbeitsfläche', () => {
     const moved = viewerReducer(base, { type: 'swapPanes', a: 'card', b: 'graph' });
     const next = viewerReducer(moved, { type: 'clear' });
     expect(next.view.workspace.stacks).toEqual(moved.view.workspace.stacks);
+  });
+
+  it('Dokument: zu bis „+ Dokument", dann als Reiter neben der Tabelle (Entscheidung 0072)', () => {
+    expect(base.view.workspace.closed.doc).toBe(true);
+    const open = viewerReducer(base, { type: 'docWindow', open: true });
+    expect(open.view.docWindow.open).toBe(true);
+    expect(open.view.workspace.closed.doc).toBe(false);
+    expect(open.view.workspace.front.b).toBe('doc');
+    // Bereich zu = Fenster zu, und umgekehrt — ein Schalter in beiden Anordnungen.
+    const shut = viewerReducer(open, { type: 'paneClosed', pane: 'doc', closed: true });
+    expect(shut.view.docWindow.open).toBe(false);
+    const again = viewerReducer(shut, { type: 'paneClosed', pane: 'doc', closed: false });
+    expect(again.view.docWindow.open).toBe(true);
+    expect(viewerReducer(again, { type: 'docWindow', open: false }).view.workspace.closed.doc).toBe(
+      true,
+    );
   });
 });

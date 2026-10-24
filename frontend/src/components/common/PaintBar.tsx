@@ -10,10 +10,13 @@ import { PAINT_INFO, PAINTS, type Highlight, type Paint } from '../../lib/annota
 import { MAX_PAINT_NAME_LENGTH, paintName } from '../../lib/paintNames';
 import { usePaintNames } from '../../state/paintNames';
 import { Section } from './CardParts';
+import { useHostWindow } from './hostWindow';
 import { locate, PAINT_SECTION, type PaintTarget } from './paint';
 
 /** Schließt bei Klick daneben und mit Escape. */
 function useCloseOutside(ref: RefObject<HTMLElement | null>, onClose: () => void): void {
+  // Im zweiten Fenster (Dokument, Entscheidung 0072) lauscht es dort.
+  const { document } = useHostWindow();
   useEffect(() => {
     const onDown = (event: MouseEvent): void => {
       if (!(ref.current?.contains(event.target as Node) ?? false)) onClose();
@@ -27,7 +30,7 @@ function useCloseOutside(ref: RefObject<HTMLElement | null>, onClose: () => void
       document.removeEventListener('mousedown', onDown);
       document.removeEventListener('keydown', onKey);
     };
-  }, [ref, onClose]);
+  }, [ref, onClose, document]);
 }
 
 const MENU_WIDTH = 230;
@@ -54,6 +57,7 @@ export function PaintBar({
   onUnpaint,
   onRename,
   onLearn,
+  onLink,
   onClose,
 }: {
   target: PaintTarget;
@@ -65,12 +69,15 @@ export function PaintBar({
   onRename: () => void;
   /** Nur mit Admin-Zugang und kurzer Auswahl. */
   onLearn: (() => void) | null;
+  /** Nur im Begleitdokument (Entscheidung 0072): Stelle mit Positionen verknüpfen. */
+  onLink?: () => void;
   onClose: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const host = useHostWindow();
   const { names } = usePaintNames();
   useCloseOutside(ref, onClose);
-  const left = Math.max(8, Math.min(target.left, window.innerWidth - MENU_WIDTH - 8));
+  const left = Math.max(8, Math.min(target.left, host.innerWidth - MENU_WIDTH - 8));
 
   return createPortal(
     <div
@@ -82,11 +89,24 @@ export function PaintBar({
       className="ov-window fixed z-[70] flex flex-col gap-[1px] p-[6px]"
       style={{
         left,
-        top: Math.min(target.top, window.innerHeight - MENU_HEIGHT),
+        top: Math.min(target.top, host.innerHeight - MENU_HEIGHT),
         width: MENU_WIDTH,
       }}
       onContextMenu={(event) => event.preventDefault()}
     >
+      {onLink !== undefined && (
+        <>
+          <button
+            type="button"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={onLink}
+            className={`${ROW} font-semibold text-blueD`}
+          >
+            Mit Position verknüpfen…
+          </button>
+          <span aria-hidden="true" className="mx-[8px] my-[4px] h-px bg-line" />
+        </>
+      )}
       <button
         type="button"
         onMouseDown={(event) => event.preventDefault()}
@@ -150,7 +170,7 @@ export function PaintBar({
         </button>
       )}
     </div>,
-    document.body,
+    host.document.body,
   );
 }
 
@@ -179,7 +199,8 @@ export function PaintNamesDialog({
     onClose();
   }, [drafts, rename, onClose]);
   useCloseOutside(ref, close);
-  const left = Math.max(8, Math.min(wantedLeft, window.innerWidth - MENU_WIDTH - 8));
+  const host = useHostWindow();
+  const left = Math.max(8, Math.min(wantedLeft, host.innerWidth - MENU_WIDTH - 8));
 
   return createPortal(
     <div
@@ -215,7 +236,7 @@ export function PaintNamesDialog({
         Übernehmen
       </button>
     </div>,
-    document.body,
+    host.document.body,
   );
 }
 
