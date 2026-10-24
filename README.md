@@ -25,6 +25,9 @@ ist genau dafür gebaut. Angebote mit Preisen (X84, X86) gehen auch.
 - **Filtern und suchen** — nach Abschnitt, Einheit, Menge, Prüfhinweis, Freitext.
 - **Positionen vergleichen** — bis zu vier nebeneinander, ähnliche Positionen werden
   vorgeschlagen.
+- **Begleit-PDF daneben** — Baubeschreibung, Vorbemerkungen oder Gutachten als PDF neben dem
+  LV lesen, Stellen anstreichen und von Hand mit Positionen verknüpfen. Auch auf einem
+  zweiten Bildschirm.
 - **Eigene Notizen** — Positionen markieren und kommentieren, als Datei sichern und in eine
   neue Fassung des LV übernehmen.
 - **Teilen und weitergeben** — Link auf eine einzelne Position, Export als CSV oder
@@ -39,6 +42,7 @@ Preisen).
 - Kein Konto, kein Login.
 - Nur die zuletzt geöffnete Datei und deine Notizen bleiben in diesem Browser gespeichert —
   mit einem Klick auf der Startseite gelöscht.
+- Ein Begleit-PDF wird nicht gespeichert, nur deine Anstreichungen und Verknüpfungen.
 
 ## Vision: Alle Projektinformationen verknüpft im Browser
 
