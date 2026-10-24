@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import {
   INITIAL_ARRANGEMENT,
   SPLIT_MIN,
+  compactRoot,
   edgePane,
   findSplit,
   frontOf,
@@ -351,5 +352,43 @@ describe('Ansichtszustand der Arbeitsfläche', () => {
     expect(leafOf(open.view.workspace.root, 'doc').front).toBe('doc');
     const shut = viewerReducer(open, { type: 'paneClosed', pane: 'doc', closed: true });
     expect(shut.view.workspace.closed.doc).toBe(true);
+  });
+});
+
+describe('Schmale Fläche (Entscheidung 0074)', () => {
+  const only =
+    (...panes: string[]) =>
+    (pane: string): boolean =>
+      panes.includes(pane);
+
+  it('legt den Graphen neben einen Platz mit allen anderen Bereichen als Reiter', () => {
+    const root = compactRoot(all, 'row', null);
+    expect(root).toMatchObject({ kind: 'split', axis: 'row', sizes: [0.55, 0.45] });
+    expect(leafOf(root, 'graph').id).toBe('compactGraph');
+    const rest = leafOf(root, 'card');
+    expect(rest.stack).toEqual(['card', 'table', 'overview', 'check', 'doc']);
+    expect(rest.front).toBe('card');
+    expect(compactRoot(all, 'col', null)).toMatchObject({ axis: 'col', sizes: [0.5, 0.5] });
+  });
+
+  it('nimmt den gewünschten Reiter nur, wenn er sichtbar ist', () => {
+    expect(leafOf(compactRoot(all, 'row', 'check'), 'check').front).toBe('check');
+    const hidden = compactRoot(only('graph', 'table', 'card'), 'row', 'check');
+    expect(leafOf(hidden, 'card').front).toBe('card');
+  });
+
+  it('kommt mit nur einem Teil aus', () => {
+    expect(compactRoot(only('graph'), 'row', null)).toMatchObject({
+      kind: 'leaf',
+      stack: ['graph'],
+    });
+    expect(compactRoot(only('table'), 'row', null)).toMatchObject({
+      kind: 'leaf',
+      stack: ['table'],
+      front: 'table',
+    });
+    // Nichts sichtbar: ein leerer Platz — SplitView zeigt dann „Alle Bereiche geschlossen".
+    const none = compactRoot(only(), 'row', null);
+    expect(splitLayout(none, only()).frames).toEqual({});
   });
 });

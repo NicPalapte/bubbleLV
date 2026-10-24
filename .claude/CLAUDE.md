@@ -88,7 +88,8 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
   **keine** Fixture-Daten, **kein** `localStorage` für Fachdaten
 - `matchPos` ist die einzige Quelle für Filter-/Suchlogik
 - Tree und Bubble-Graph konsumieren **denselben** rekursiven `LVNode`-Baum
-- Alle Bereiche des Splitscreens und alle Fenster arbeiten auf derselben gefilterten Menge und derselben Auswahl;
+- Alle Bereiche des Splitscreens und alle Fenster arbeiten auf derselben gefilterten Menge
+  und derselben Auswahl;
   Zustand getrennt in `filterState` / `selectionState` / `viewState`
 
 ## Code-Style
