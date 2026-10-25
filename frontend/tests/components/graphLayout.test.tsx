@@ -387,6 +387,15 @@ describe('Abschnitt hervorheben (Entscheidung 0075)', () => {
     const kreis = graph().querySelector('[data-group] circle') as SVGCircleElement;
     fireEvent.click(kreis);
     expect(screen.getByRole('group', { name: 'Hervorhebung' })).toBeInTheDocument();
+    // Eine Position außerhalb wählen (hier: ein blasser Punkt) beendet die Hervorhebung.
+    const draussen = [...graph().querySelectorAll('[data-slot]')].find(
+      (el) => Number(el.getAttribute('opacity')) < 0.5,
+    );
+    expect(draussen).toBeDefined();
+    fireEvent.click(draussen as Element);
+    expect(screen.queryByRole('group', { name: 'Hervorhebung' })).toBeNull();
+    fireEvent.click(kreis);
+    expect(screen.getByRole('group', { name: 'Hervorhebung' })).toBeInTheDocument();
     // Klick ins Leere hebt die Hervorhebung auf.
     fireEvent.click(graph().querySelector('svg > rect') as SVGRectElement);
     expect(screen.queryByRole('group', { name: 'Hervorhebung' })).toBeNull();
