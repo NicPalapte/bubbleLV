@@ -3,7 +3,8 @@
 // Zwei Gliederungen, eine Bildsprache: Gruppen sind Kreise, deren Fläche der
 // Anzahl ihrer Positionen folgt; die Positionen liegen als Punkte darin.
 //  - „nach LV": eine Gruppe je Abschnitt der untersten Ebene (der Elternknoten
-//    der Position), die Lose als gestrichelte Hülle darum.
+//    der Position). Die Gruppen eines Hauptabschnitts liegen als Insel mit Titel
+//    beisammen, die Inseln in Lesereihenfolge (OZ), die Lose als Hülle darum.
 //  - „Matrix": Zeilen sind die Werte eines Merkmals, Spalten optional die eines
 //    zweiten. Mit Spalten ist jede Zelle eine Kachel, die Punkte liegen darin in
 //    Reihen (Entscheidung 0059). Ohne Spalten liegen die Gruppen als Kreise gepackt.
@@ -18,6 +19,7 @@ import { isPauschal } from './sizes';
 import { FACETS, facetOptionLabel, type Facet } from '../facets';
 import { formatNumber } from '../format';
 import { canonicalUnit, unitLabel } from '../units';
+import { mainSectionOf } from '../tree/mainSection';
 import type { PositionIndex } from '../index/positionIndex';
 import type { LVNode } from '../../types/lvNode';
 
@@ -112,11 +114,13 @@ export interface MapCell {
 
 export interface MapHull {
   id: string;
+  /** Los (gepunktete Hülle) oder Hauptabschnitt (Insel mit Titel). */
+  kind: 'lot' | 'section';
   title: string;
   x: number;
   y: number;
   r: number;
-  /** Indexeinträge aller Positionen im Los. */
+  /** Indexeinträge aller Positionen im Los bzw. Hauptabschnitt. */
   slots: number[];
 }
 
@@ -259,38 +263,105 @@ function nodeTitle(node: LVNode, short = false): string {
   return code === '' ? label : `${code}  ${label}`;
 }
 
+/** Ein Kreis mit Inhalt, der in Reihen gelegt wird: Insel eines Hauptabschnitts oder Los. */
+interface Block extends Circle {
+  groups: MapGroup[];
+  hulls: MapHull[];
+}
+
+/** Inhalt eines Blocks um (dx, dy) verschieben. */
+function shiftBlock(block: Block, dx: number, dy: number): void {
+  for (const group of block.groups) {
+    group.x += dx;
+    group.y += dy;
+  }
+  for (const hull of block.hulls) {
+    hull.x += dx;
+    hull.y += dy;
+  }
+}
+
+/**
+ * Blöcke in Lesereihenfolge legen: links nach rechts, dann die nächste Reihe, jede
+ * Reihe mittig. Die Breite folgt der Gesamtfläche (etwa 3 : 2 wie der Graph), damit
+ * die Reihenfolge lesbar bleibt, ohne dass das Bild in die Länge wächst. Liefert den
+ * Radius eines Kreises um den Ursprung, der alle Blöcke umschließt.
+ */
+function placeInRows(blocks: readonly Block[]): number {
+  if (blocks.length === 0) return 0;
+  const area = blocks.reduce((sum, block) => sum + (2 * block.r + HULL_GAP) ** 2, 0);
+  const widest = Math.max(...blocks.map((block) => 2 * block.r));
+  const width = Math.max(widest, Math.sqrt(area * 1.5));
+  const rows: Block[][] = [[]];
+  let used = 0;
+  for (const block of blocks) {
+    const d = 2 * block.r;
+    if (used > 0 && used + d > width) {
+      rows.push([]);
+      used = 0;
+    }
+    rows[rows.length - 1].push(block);
+    used += d + HULL_GAP;
+  }
+  const heights = rows.map((row) => Math.max(...row.map((block) => 2 * block.r)));
+  const total = heights.reduce((sum, h) => sum + h, 0) + HULL_GAP * (rows.length - 1);
+  let top = -total / 2;
+  let radius = 0;
+  rows.forEach((row, i) => {
+    const rowWidth = row.reduce((sum, block) => sum + 2 * block.r, 0) + HULL_GAP * (row.length - 1);
+    let left = -rowWidth / 2;
+    const cy = top + heights[i] / 2;
+    for (const block of row) {
+      const cx = left + block.r;
+      shiftBlock(block, cx - block.x, cy - block.y);
+      block.x = cx;
+      block.y = cy;
+      radius = Math.max(radius, Math.hypot(cx, cy) + block.r);
+      left += 2 * block.r + HULL_GAP;
+    }
+    top += heights[i] + HULL_GAP;
+  });
+  return radius;
+}
+
+/** Nächstes Los über einem Knoten (der Knoten selbst zählt mit). */
+function lotOf(node: LVNode | null, parents: ReadonlyMap<string, LVNode | null>): LVNode | null {
+  for (let up = node; up !== null; up = parents.get(up.id) ?? null) {
+    if (up.kind === 'lot') return up;
+  }
+  return null;
+}
+
 function layoutByLv(
   index: PositionIndex,
   parents: ReadonlyMap<string, LVNode | null>,
   options: MapOptions,
 ): { groups: MapGroup[]; hulls: MapHull[] } {
-  // Gruppe = Elternknoten der Position, Hülle = nächstes Los darüber.
+  // Gruppe = Elternknoten der Position; Insel = Hauptabschnitt darüber, Hülle darum
+  // = nächstes Los. Indexreihenfolge = LV-Reihenfolge, also entstehen Gruppen,
+  // Inseln und Lose schon in OZ-Reihenfolge.
+  const mains = new Map<string, LVNode | null>();
   const groupByParent = new Map<string, MapGroup>();
-  const lotOfGroup = new Map<MapGroup, LVNode | null>();
+  const islandOf = new Map<MapGroup, LVNode | null>();
   for (let slot = 0; slot < index.size; slot++) {
     if (options.hide && !isHit(options.mask, slot)) continue;
-    const parent = parents.get(index.nodes[slot].id) ?? null;
+    const node = index.nodes[slot];
+    const parent = parents.get(node.id) ?? null;
     const key = parent?.id ?? '';
     let group = groupByParent.get(key);
     if (group === undefined) {
       group = newGroup(key, parent === null ? 'Ohne Abschnitt' : nodeTitle(parent), []);
       group.nodeId = parent?.id ?? null;
-      let lot: LVNode | null = null;
-      let up = parent;
-      while (up !== null && up !== undefined) {
-        if (up.kind === 'lot') {
-          lot = up;
-          break;
-        }
-        up = parents.get(up.id) ?? null;
-      }
+      const main = mainSectionOf(node, parents, mains);
+      // Die Ebene über der Gruppe steht nur dann als Kontext darüber, wenn sie nicht
+      // schon als Titel der Insel dasteht.
       const above = parent === null ? null : (parents.get(parent.id) ?? null);
       if (parent !== null && above !== null && above.kind === 'section') {
-        group.context = nodeTitle(above);
         group.title = nodeTitle(parent, true);
+        if (above !== main) group.context = nodeTitle(above);
       }
       groupByParent.set(key, group);
-      lotOfGroup.set(group, lot);
+      islandOf.set(group, main);
     }
     group.slots.push(slot);
   }
@@ -301,41 +372,75 @@ function layoutByLv(
     group.sum = sumLabel(index, group.slots);
   }
 
-  // Lose in Dokumentreihenfolge; Gruppen ohne Los bilden einen eigenen Block ohne Hülle.
-  const buckets = new Map<string, { lot: LVNode | null; groups: MapGroup[] }>();
+  // Inseln: Gruppen eines Hauptabschnitts dicht gepackt, die größten innen.
+  // Gruppen ohne Hauptabschnitt bilden eine Insel ohne Hülle.
+  const islands = new Map<
+    string,
+    { main: LVNode | null; lot: LVNode | null; groups: MapGroup[] }
+  >();
   for (const group of groups) {
-    const lot = lotOfGroup.get(group) ?? null;
-    const key = lot?.id ?? '';
-    const bucket = buckets.get(key) ?? { lot, groups: [] };
-    bucket.groups.push(group);
-    buckets.set(key, bucket);
+    const main = islandOf.get(group) ?? null;
+    const lot = lotOf(
+      main ?? (group.nodeId === null ? null : (parents.get(group.nodeId) ?? null)),
+      parents,
+    );
+    const key = `${lot?.id ?? ''}|${main?.id ?? ''}`;
+    const island = islands.get(key) ?? { main, lot, groups: [] };
+    island.groups.push(group);
+    islands.set(key, island);
   }
 
-  const blocks: Array<Circle & { lot: LVNode | null; groups: MapGroup[] }> = [];
-  for (const bucket of buckets.values()) {
-    const inner = packGroups(bucket.groups);
-    const r = bucket.lot === null ? inner : inner + HULL_PAD;
-    blocks.push({ r: r + HULL_GAP / 2, x: 0, y: 0, lot: bucket.lot, groups: bucket.groups });
-  }
-  if (blocks.length > 1) packCircles(blocks);
-
-  const hulls: MapHull[] = [];
-  for (const block of blocks) {
-    for (const group of block.groups) {
-      group.x += block.x;
-      group.y += block.y;
+  const lots = new Map<string, { lot: LVNode | null; blocks: Block[] }>();
+  for (const island of islands.values()) {
+    const inner = packGroups(island.groups);
+    const block: Block = { x: 0, y: 0, r: inner, groups: island.groups, hulls: [] };
+    if (island.main !== null) {
+      block.r = inner + HULL_PAD;
+      block.hulls.push({
+        id: island.main.id,
+        kind: 'section',
+        title: nodeTitle(island.main),
+        x: 0,
+        y: 0,
+        r: block.r,
+        slots: island.groups.flatMap((group) => group.slots),
+      });
     }
-    if (block.lot === null) continue;
-    hulls.push({
-      id: block.lot.id,
-      title: block.lot.label ?? block.lot.code,
-      x: block.x,
-      y: block.y,
-      r: block.r - HULL_GAP / 2,
-      slots: block.groups.flatMap((group) => group.slots),
+    const key = island.lot?.id ?? '';
+    const bucket = lots.get(key) ?? { lot: island.lot, blocks: [] };
+    bucket.blocks.push(block);
+    lots.set(key, bucket);
+  }
+
+  // Ohne Lose liegen die Inseln selbst in Reihen; mit Losen erst die Inseln je Los,
+  // dann die Lose.
+  let top: Block[] = [];
+  for (const { lot, blocks } of lots.values()) {
+    if (lot === null) {
+      top = top.concat(blocks);
+      continue;
+    }
+    const inner = placeInRows(blocks);
+    const r = inner + HULL_PAD;
+    const hull: MapHull = {
+      id: lot.id,
+      kind: 'lot',
+      title: lot.label ?? lot.code,
+      x: 0,
+      y: 0,
+      r,
+      slots: blocks.flatMap((block) => block.groups.flatMap((group) => group.slots)),
+    };
+    top.push({
+      x: 0,
+      y: 0,
+      r,
+      groups: blocks.flatMap((block) => block.groups),
+      hulls: [hull, ...blocks.flatMap((block) => block.hulls)],
     });
   }
-  return { groups, hulls };
+  placeInRows(top);
+  return { groups, hulls: top.flatMap((block) => block.hulls) };
 }
 
 /** Eine Achse der Matrix: Merkmal oder Abschnitt, mit Werten je Position. */

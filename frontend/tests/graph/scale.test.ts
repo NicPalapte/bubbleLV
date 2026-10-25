@@ -72,15 +72,18 @@ describe('Graph-Engine bei ~10k Positionen', () => {
     const map = layoutMap(index, parents, options());
     expect(map.groups).toHaveLength(100);
     expect(map.groups.every((group) => group.slots.length === 100)).toBe(true);
-    // Das eine Los wird zur Hülle um alle Gruppen.
-    expect(map.hulls).toHaveLength(1);
-    expect(map.hulls[0].slots).toHaveLength(10_000);
+    // Das eine Los wird zur Hülle um alle Gruppen, jeder Hauptabschnitt zur Insel darin.
+    const lots = map.hulls.filter((hull) => hull.kind === 'lot');
+    expect(lots).toHaveLength(1);
+    expect(lots[0].slots).toHaveLength(10_000);
+    expect(map.hulls.filter((hull) => hull.kind === 'section')).toHaveLength(10);
   });
 
-  it('nennt die Ebene darüber als Beschriftung am Kreis', () => {
+  it('nennt den Hauptabschnitt als Titel seiner Insel', () => {
     const map = layoutMap(index, parents, options());
-    const group = map.groups.find((candidate) => candidate.nodeId !== null);
-    expect(group?.context).toMatch(/Abschnitt \d+/);
+    const islands = map.hulls.filter((hull) => hull.kind === 'section');
+    expect(islands[0].title).toMatch(/Abschnitt 1$/);
+    expect(islands[0].slots).toHaveLength(1000);
   });
 
   it('platziert alle Positionen in vertretbarer Zeit', () => {

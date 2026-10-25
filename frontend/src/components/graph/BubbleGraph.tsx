@@ -951,10 +951,10 @@ export function BubbleGraph({ root }: { root: LVNode }) {
                     cx={hull.x}
                     cy={hull.y}
                     r={hull.r}
-                    fill="var(--los-fill)"
+                    fill={hull.kind === 'lot' ? 'var(--los-fill)' : 'none'}
                     stroke="var(--line2)"
                     strokeWidth={1.5 / Math.max(k, 0.3)}
-                    strokeDasharray="2 6"
+                    strokeDasharray={hull.kind === 'lot' ? '2 6' : '6 6'}
                     strokeLinecap="round"
                   />
                   <rect

@@ -125,8 +125,9 @@ describe('Gliederung „nach LV"', () => {
 
   it('zieht um jedes Los eine Hülle mit seinen Positionen', () => {
     const map = layoutMap(index, parents, options());
-    expect(map.hulls.map((hull) => hull.title)).toEqual(['Rohbau', 'Ausbau']);
-    expect(map.hulls[0].slots).toHaveLength(4);
+    const lots = map.hulls.filter((hull) => hull.kind === 'lot');
+    expect(lots.map((hull) => hull.title)).toEqual(['Rohbau', 'Ausbau']);
+    expect(lots[0].slots).toHaveLength(4);
     for (const hull of map.hulls) {
       for (const slot of hull.slots) {
         expect(Math.hypot(map.px[slot] - hull.x, map.py[slot] - hull.y)).toBeLessThan(hull.r);
@@ -134,10 +135,72 @@ describe('Gliederung „nach LV"', () => {
     }
   });
 
-  it('nennt bei verschachtelten Abschnitten die Ebene darüber', () => {
+  it('legt die Gruppen eines Hauptabschnitts als Insel mit Titel zusammen', () => {
+    const map = layoutMap(index, parents, options());
+    const sections = map.hulls.filter((hull) => hull.kind === 'section');
+    expect(sections.map((hull) => hull.title)).toEqual([
+      '01.01  Erdarbeiten',
+      '01.02  Beton',
+      '02.01  Maler',
+    ]);
+    // Jede Insel liegt ganz in ihrem Los.
+    const rohbau = map.hulls.find((hull) => hull.title === 'Rohbau')!;
+    for (const island of sections.slice(0, 2)) {
+      expect(Math.hypot(island.x - rohbau.x, island.y - rohbau.y) + island.r).toBeLessThanOrEqual(
+        rohbau.r + 1e-6,
+      );
+    }
+  });
+
+  it('ordnet die Inseln in Lesereihenfolge nach OZ', () => {
+    const sections = Array.from({ length: 8 }, (_, s) => ({
+      number: String(s + 1).padStart(2, '0'),
+      label: `Abschnitt ${s + 1}`,
+      positions: Array.from({ length: 5 + ((s * 7) % 11) }, (_, p) =>
+        position(
+          `${String(s + 1).padStart(2, '0')}.${String(p + 1).padStart(4, '0')}`,
+          'm',
+          1,
+          null,
+        ),
+      ),
+      sections: [],
+    }));
+    const flat: LVDraft = {
+      projectName: 'Ohne Lose',
+      client: null,
+      lots: [{ number: '', label: null, sections }],
+    };
+    const t = buildTree(flat);
+    const idx = buildPositionIndex(t);
+    const map = layoutMap(idx, indexParents(t), {
+      ...options(),
+      radii: positionRadii(idx, 'uniform'),
+    });
+    const islands = map.hulls.filter((hull) => hull.kind === 'section');
+    expect(islands).toHaveLength(8);
+    for (let i = 1; i < islands.length; i++) {
+      const prev = islands[i - 1];
+      const next = islands[i];
+      // Gleiche Reihe ⇒ weiter rechts, sonst eine Reihe tiefer.
+      if (Math.abs(prev.y - next.y) < 1e-6) expect(next.x).toBeGreaterThan(prev.x);
+      else expect(next.y - next.r).toBeGreaterThan(prev.y);
+    }
+    // Inseln überlappen sich nicht.
+    for (let i = 0; i < islands.length; i++) {
+      for (let j = i + 1; j < islands.length; j++) {
+        const a = islands[i];
+        const b = islands[j];
+        expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeGreaterThanOrEqual(a.r + b.r);
+      }
+    }
+  });
+
+  it('nennt die Ebene darüber nur, wenn sie nicht schon die Insel benennt', () => {
     const map = layoutMap(index, parents, options());
     const walls = map.groups.find((group) => group.title.includes('Wände'));
-    expect(walls?.context).toBe('01.02  Beton');
+    // „01.02 Beton" steht als Titel der Insel darüber.
+    expect(walls?.context).toBe('');
     // Nur die eigene Nummer im Titel — die Ebene darüber steht schon daneben.
     expect(walls?.title).toBe('01  Wände');
   });
@@ -154,7 +217,7 @@ describe('Gliederung „nach LV"', () => {
     const mask = maskOf((slot) => index.positions[slot].oz.startsWith('02'));
     const map = layoutMap(index, parents, options({ mask, hide: true }));
     expect(map.groups).toHaveLength(1);
-    expect(map.hulls.map((hull) => hull.title)).toEqual(['Ausbau']);
+    expect(map.hulls.map((hull) => hull.title)).toEqual(['Ausbau', '02.01  Maler']);
     expect(Number.isNaN(map.px[slotOf('01.01.0010')])).toBe(true);
   });
 });
