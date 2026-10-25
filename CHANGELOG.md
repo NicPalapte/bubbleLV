@@ -14,7 +14,7 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 - **Geordnet statt zufällig:** Im Graphen „nach LV“ liegt jeder Hauptabschnitt als
   eigene Insel mit Titel. Die Inseln stehen in OZ-Reihenfolge, von links nach rechts.
 - **Abschnitt anklicken:** Klick auf eine Insel wählt den Hauptabschnitt, Klick auf einen
-  Kreis den Unterabschnitt. Der Graph rückt ihn in die Mitte.
+  Kreis den Unterabschnitt. Einpassen geht über den Knopf unten.
 - **Hervorheben:** Der gewählte Abschnitt bekommt einen roten Rand, alles andere wird
   blass oder ausgeblendet (oben rechts umschalten). ✕ oder Klick ins Leere hebt das auf.
   Filter und Suche bleiben dabei unverändert.

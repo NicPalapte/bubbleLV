@@ -554,14 +554,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
       const group = map.groups.find((candidate) => candidate.nodeId === selectedNode.id);
       if (group !== undefined) return groupBox(group);
       const hull = map.hulls.find((candidate) => candidate.id === selectedNode.id);
-      if (hull !== undefined) {
-        return {
-          x0: hull.x - hull.r,
-          y0: hull.y - hull.r,
-          x1: hull.x + hull.r,
-          y1: hull.y + hull.r,
-        };
-      }
+      if (hull !== undefined) return hullBox(hull);
     }
     return null;
   }, [selectedSlot, selectedNode, map]);
@@ -668,20 +661,21 @@ export function BubbleGraph({ root }: { root: LVNode }) {
     [index, parents, dispatch],
   );
 
-  /** Abschnitt wählen, hervorheben und mittig einpassen (Entscheidung 0075). */
+  /**
+   * Abschnitt wählen und hervorheben (Entscheidung 0075). Der Ausschnitt bleibt —
+   * Einpassen geht über den Knopf an der Steuerung.
+   */
   const spotlightOn = useCallback(
-    (id: string, box: { x0: number; y0: number; x1: number; y1: number }): void => {
+    (id: string): void => {
       dispatch({ type: 'selectNode', id });
       dispatch({ type: 'graphSpotlight', id });
-      const next = viewAround(box, FIT_SELECTION_MAX_ZOOM);
-      if (next !== null) setView(next);
     },
-    [dispatch, viewAround],
+    [dispatch],
   );
 
   const activateGroup = useCallback(
     (group: MapGroup): void => {
-      if (group.nodeId !== null && layout === 'lv') spotlightOn(group.nodeId, groupBox(group));
+      if (group.nodeId !== null && layout === 'lv') spotlightOn(group.nodeId);
       else if (group.nodeId !== null) dispatch({ type: 'selectNode', id: group.nodeId });
       else {
         const next = viewAround(groupBox(group), FIT_SELECTION_MAX_ZOOM);
@@ -700,7 +694,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
     const hullId = target.getAttribute('data-hull');
     if (hullId !== null) {
       const hull = map.hulls.find((candidate) => candidate.id === hullId);
-      if (hull !== undefined) spotlightOn(hull.id, hullBox(hull));
+      if (hull !== undefined) spotlightOn(hull.id);
       return;
     }
     const slot = target.getAttribute('data-slot');
