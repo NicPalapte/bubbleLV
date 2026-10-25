@@ -1,6 +1,7 @@
 # 0035 – Graph: Gliederung „nach LV" oder „frei", Hinweise im Graphen
 
-- **Status:** akzeptiert, ergänzt durch 0040 („frei“ heißt „Matrix“, Achse „Abschnitt“)
+- **Status:** akzeptiert, ergänzt durch 0040 („frei“ heißt „Matrix“, Achse „Abschnitt“) und
+  0075 (Inseln je Hauptabschnitt, Abschnitt hervorheben)
 - **Datum:** 2026-10-05
 - **Betrifft:** Bubble-Graph (`frontend/src/lib/graph/`, `frontend/src/components/graph/`)
 - **Ersetzt:** 0008 (Positionen als Wolke um einen Baum-Knoten) und 0018 (Treffer isolieren)

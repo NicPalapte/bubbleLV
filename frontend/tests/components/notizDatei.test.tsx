@@ -18,6 +18,9 @@ import { buildPositionIndex } from '../../src/lib/index/positionIndex';
 import { notesFileText } from '../../src/lib/notesFile';
 import { runPipeline } from '../../src/lib/pipeline/runPipeline';
 import { readLastLvMeta, saveAnnotations, saveLastLv } from '../../src/lib/persist/lastLv';
+import { giveGraphASize } from '../support/graphSize';
+
+giveGraphASize();
 
 const NAME = 'gaeb-xml-beispiel.x83';
 const FIXTURE = readFileSync(resolve(process.cwd(), '../packages/core/tests/fixtures', NAME));

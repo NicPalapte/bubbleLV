@@ -352,3 +352,59 @@ describe('Rechtsklick im Graphen (Issue #155)', () => {
     expect(screen.getByRole('button', { name: 'Fortschritt' })).toBeInTheDocument();
   });
 });
+
+describe('Abschnitt hervorheben (Entscheidung 0075)', () => {
+  it('hebt per Klick auf eine Insel den Hauptabschnitt hervor, ✕ hebt es auf', async () => {
+    await loadAndShowGraph();
+    const insel = [...graph().querySelectorAll('[data-hull]')].at(-1) as SVGGElement;
+    const titel = insel.querySelector('title')?.textContent ?? '';
+    fireEvent.click(insel.querySelector('rect') as SVGRectElement);
+
+    const bar = screen.getByRole('group', { name: 'Hervorhebung' });
+    const leiste = within(bar);
+    expect(titel).not.toBe('');
+    expect(bar.textContent).toContain(titel);
+    // Blass: die anderen Gruppen bleiben, mit wenig Deckkraft.
+    const blass = (): number =>
+      [...graph().querySelectorAll('[data-group]')].filter(
+        (g) => Number(g.getAttribute('opacity')) < 0.5,
+      ).length;
+    const alle = graph().querySelectorAll('[data-group]').length;
+    expect(blass()).toBeGreaterThan(0);
+    // Die Suche bleibt leer — die Hervorhebung ist kein Filter.
+    expect(screen.getByLabelText('Suche')).toHaveValue('');
+
+    fireEvent.click(leiste.getByRole('radio', { name: 'ausblenden' }));
+    expect(graph().querySelectorAll('[data-group]').length).toBeLessThan(alle);
+
+    fireEvent.click(leiste.getByRole('button', { name: 'Hervorhebung aufheben' }));
+    expect(screen.queryByRole('group', { name: 'Hervorhebung' })).toBeNull();
+    expect(blass()).toBe(0);
+  });
+
+  it('hebt per Klick auf einen Kreis den Unterabschnitt hervor und wählt ihn', async () => {
+    await loadAndShowGraph();
+    const kreis = graph().querySelector('[data-group] circle') as SVGCircleElement;
+    fireEvent.click(kreis);
+    expect(screen.getByRole('group', { name: 'Hervorhebung' })).toBeInTheDocument();
+    // Eine Position außerhalb wählen (hier: ein blasser Punkt) beendet die Hervorhebung.
+    const draussen = [...graph().querySelectorAll('[data-slot]')].find(
+      (el) => Number(el.getAttribute('opacity')) < 0.5,
+    );
+    expect(draussen).toBeDefined();
+    fireEvent.click(draussen as Element);
+    expect(screen.queryByRole('group', { name: 'Hervorhebung' })).toBeNull();
+    fireEvent.click(kreis);
+    expect(screen.getByRole('group', { name: 'Hervorhebung' })).toBeInTheDocument();
+    // Verschieben endet mit einem Klick — der hebt die Hervorhebung nicht auf.
+    const leer = graph().querySelector('svg > rect') as SVGRectElement;
+    fireEvent.mouseDown(leer, { button: 0, clientX: 100, clientY: 100 });
+    fireEvent.mouseMove(window, { clientX: 160, clientY: 130 });
+    fireEvent.mouseUp(window);
+    fireEvent.click(leer);
+    expect(screen.getByRole('group', { name: 'Hervorhebung' })).toBeInTheDocument();
+    // Klick ins Leere hebt die Hervorhebung auf.
+    fireEvent.click(graph().querySelector('svg > rect') as SVGRectElement);
+    expect(screen.queryByRole('group', { name: 'Hervorhebung' })).toBeNull();
+  });
+});

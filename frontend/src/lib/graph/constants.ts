@@ -24,6 +24,11 @@ export function groupRadius(count: number): number {
 export const GROUP_GAP = 72;
 /** Rand zwischen der äußersten Gruppe und der gestrichelten Los-Hülle. */
 export const HULL_PAD = 46;
+/**
+ * Rand zwischen der äußersten Gruppe und der Hülle ihres Hauptabschnitts: die
+ * Beschriftung der Gruppe und der Titel der Insel brauchen beide Platz.
+ */
+export const ISLAND_PAD = 64;
 /** Abstand zwischen zwei Los-Hüllen. */
 export const HULL_GAP = 70;
 

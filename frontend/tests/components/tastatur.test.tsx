@@ -141,8 +141,11 @@ describe('Tabelle · Tastatur', () => {
     const letzte = aktiveZeile(grid);
 
     // Auswahl im Graphen — also von außerhalb der Tabelle.
-    const punkt = document.querySelector('[data-slot="5"]');
-    if (punkt === null) throw new Error('Punkt 5 fehlt im Graphen');
+    // Irgendein gezeichneter Punkt: welche im Bild liegen, hängt an der Anordnung.
+    const punkt = [...document.querySelectorAll('[data-slot]')].find((el) =>
+      /^\d+$/.test(el.getAttribute('data-slot') ?? ''),
+    );
+    if (punkt === undefined) throw new Error('Kein Punkt im Graphen');
     fireEvent.click(punkt);
 
     await waitFor(() => expect(aktiveZeile(tabelle())).not.toBe(letzte));
