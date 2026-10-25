@@ -25,6 +25,9 @@ import {
   saveAnnotations,
   saveLastLv,
 } from '../../src/lib/persist/lastLv';
+import { giveGraphASize } from '../support/graphSize';
+
+giveGraphASize();
 
 const NAME = 'gaeb-xml-beispiel.x83';
 const FIXTURE = readFileSync(resolve(process.cwd(), '../packages/core/tests/fixtures', NAME));

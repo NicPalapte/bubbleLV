@@ -3,6 +3,9 @@ import { resolve } from 'node:path';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import App from '../src/App';
+import { giveGraphASize } from './support/graphSize';
+
+giveGraphASize();
 
 const FIXTURE_DIR = resolve(process.cwd(), '../packages/core/tests/fixtures');
 

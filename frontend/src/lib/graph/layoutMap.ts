@@ -13,7 +13,7 @@
 // hängt nur an Datei, Gliederung, Größe und — beim Ausblenden oder in „Matrix" —
 // an der Treffermenge, nie am Ausschnitt.
 
-import { GROUP_GAP, HULL_GAP, HULL_PAD, groupRadius } from './constants';
+import { GROUP_GAP, HULL_GAP, HULL_PAD, ISLAND_PAD, groupRadius } from './constants';
 import { packCircles, type Circle } from './pack';
 import { isPauschal } from './sizes';
 import { FACETS, facetOptionLabel, type Facet } from '../facets';
@@ -395,7 +395,7 @@ function layoutByLv(
     const inner = packGroups(island.groups);
     const block: Block = { x: 0, y: 0, r: inner, groups: island.groups, hulls: [] };
     if (island.main !== null) {
-      block.r = inner + HULL_PAD;
+      block.r = inner + ISLAND_PAD;
       block.hulls.push({
         id: island.main.id,
         kind: 'section',

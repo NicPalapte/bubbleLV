@@ -76,6 +76,13 @@ export interface GraphViewState {
   viewport: Viewport | null;
   /** Steigt bei „Im Graph zeigen"; der Graph passt dann auf die Auswahl ein. */
   focus: number;
+  /**
+   * Hervorgehobener Abschnitt bzw. Los (Entscheidung 0075); `null` = keiner. Nur
+   * Darstellung im Graphen — Filter, Suche und Auswahl bleiben unberührt.
+   */
+  spotlight: string | null;
+  /** Alles außerhalb der Hervorhebung ausblenden statt blass zeigen. */
+  spotlightHide: boolean;
 }
 
 export interface TableViewState {
@@ -195,6 +202,9 @@ export type ViewAction =
   | { type: 'graphViewport'; viewport: Viewport | null }
   /** Auf die Auswahl einpassen; holt im Splitscreen den Graphen zurück, falls er zu war. */
   | { type: 'graphFocus' }
+  /** Abschnitt im Graphen hervorheben; `null` hebt die Hervorhebung auf. */
+  | { type: 'graphSpotlight'; id: string | null }
+  | { type: 'graphSpotlightHide'; value: boolean }
   | { type: 'tableSort'; key: string }
   | { type: 'tableScope'; scope: TableScope }
   | { type: 'tableColumns'; columns: ColumnConfig | null }
@@ -252,6 +262,8 @@ export const INITIAL_VIEW_STATE: ViewState = {
     showHints: true,
     viewport: null,
     focus: 0,
+    spotlight: null,
+    spotlightHide: false,
   },
   table: { sort: { key: 'oz', dir: 1 }, scope: 'node', columns: null, collapsed: new Set() },
   overview: { openRules: new Set(), revealRule: null },
@@ -269,7 +281,7 @@ export const INITIAL_VIEW_STATE: ViewState = {
 export function viewStateForNewLv(state: ViewState): ViewState {
   return {
     ...INITIAL_VIEW_STATE,
-    graph: { ...state.graph, viewport: null },
+    graph: { ...state.graph, viewport: null, spotlight: null },
     compareWindow: {
       ...INITIAL_VIEW_STATE.compareWindow,
       pos: state.compareWindow.pos,
@@ -346,6 +358,11 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
         graph: { ...state.graph, focus: state.graph.focus + 1 },
         workspace: showPane(state.workspace, 'graph'),
       };
+    case 'graphSpotlight':
+      if (state.graph.spotlight === action.id) return state;
+      return { ...state, graph: { ...state.graph, spotlight: action.id } };
+    case 'graphSpotlightHide':
+      return { ...state, graph: { ...state.graph, spotlightHide: action.value } };
     case 'tableSort': {
       const { sort } = state.table;
       const dir: 1 | -1 = sort.key === action.key ? ((sort.dir * -1) as 1 | -1) : 1;

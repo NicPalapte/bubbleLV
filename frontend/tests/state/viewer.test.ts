@@ -276,6 +276,20 @@ describe('viewerReducer · Gliederung des Graphen', () => {
     expect(reloaded.view.graph.layout).toBe('matrix');
     expect(reloaded.view.graph.showHints).toBe(false);
   });
+
+  it('hebt einen Abschnitt hervor, ohne Filter, Suche oder Auswahl anzufassen', () => {
+    const state = loadedState();
+    const next = viewerReducer(state, { type: 'graphSpotlight', id: 'sec:001.001' });
+    expect(next.view.graph.spotlight).toBe('sec:001.001');
+    expect(next.filter).toBe(state.filter);
+    expect(next.selection).toBe(state.selection);
+    const hidden = viewerReducer(next, { type: 'graphSpotlightHide', value: true });
+    expect(hidden.view.graph.spotlightHide).toBe(true);
+    // Ein neuer Import vergisst den Abschnitt, behält aber blass/ausblenden.
+    const reloaded = loadedState(hidden);
+    expect(reloaded.view.graph.spotlight).toBeNull();
+    expect(reloaded.view.graph.spotlightHide).toBe(true);
+  });
 });
 
 describe('viewerReducer · Prüfregeln', () => {

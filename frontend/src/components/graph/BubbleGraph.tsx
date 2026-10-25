@@ -45,7 +45,7 @@ import {
   type Progress,
 } from '../../lib/annotations';
 import { cullBounds, isInView } from '../../lib/graph/culling';
-import { layoutMap, type MapGroup } from '../../lib/graph/layoutMap';
+import { layoutMap, type MapGroup, type MapHull } from '../../lib/graph/layoutMap';
 import { graphOverlayProps, isOverlayEvent } from '../../lib/graph/overlay';
 import { placePins, type PinAnchor, type PlacedPin, type Rect } from '../../lib/graph/pins';
 import { positionRadii } from '../../lib/graph/sizes';
@@ -104,6 +104,23 @@ function fitText(text: string, width: number, charWidth: number): string {
 }
 
 /** Rahmen um eine Gruppe samt Beschriftung darüber; bei einer Kachel die Kachel. */
+/** Rahmen einer Hülle samt Titel darüber. */
+function hullBox(hull: MapHull): { x0: number; y0: number; x1: number; y1: number } {
+  return {
+    x0: hull.x - hull.r,
+    y0: hull.y - hull.r - 20,
+    x1: hull.x + hull.r,
+    y1: hull.y + hull.r,
+  };
+}
+
+/** Deckkraft außerhalb einer Hervorhebung (Entscheidung 0075). */
+const SPOT_FADE = 0.18;
+const SPOT_MODES = [
+  { hide: false, label: 'blass' },
+  { hide: true, label: 'ausblenden' },
+] as const;
+
 function groupBox(group: MapGroup): { x0: number; y0: number; x1: number; y1: number } {
   const { cell } = group;
   if (cell !== null) return { x0: cell.x, y0: cell.y, x1: cell.x + cell.w, y1: cell.y + cell.h };
@@ -219,7 +236,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
   const openMenu = usePositionMenu();
   // Im eigenen Browserfenster (Entscheidung 0039) kommen Mausereignisse dort an.
   const hostWindow = useHostWindow();
-  const { layout, rows, cols, sizeMode, showHints } = graph;
+  const { layout, rows, cols, sizeMode, showHints, spotlight, spotlightHide } = graph;
 
   const wrapRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -270,6 +287,56 @@ export function BubbleGraph({ root }: { root: LVNode }) {
       ),
     [index, parents, layout, rows, cols, radii, layoutMask, hide, selected],
   );
+
+  // ── Hervorhebung eines Abschnitts (Entscheidung 0075): nur „nach LV", nur Darstellung.
+  const spotNode = layout === 'lv' && spotlight !== null ? spotlight : null;
+  /** Liegt der Knoten in der Hervorhebung (er selbst oder darunter)? `null` = keine aktiv. */
+  const inSpot = useMemo(() => {
+    if (spotNode === null || !parents.has(spotNode)) return null;
+    const known = new Map<string, boolean>();
+    const test = (id: string | null): boolean => {
+      if (id === null) return false;
+      if (id === spotNode) return true;
+      const cached = known.get(id);
+      if (cached !== undefined) return cached;
+      const result = test(parents.get(id)?.id ?? null);
+      known.set(id, result);
+      return result;
+    };
+    return test;
+  }, [spotNode, parents]);
+  /** Knoten über der Hervorhebung — ihre Hülle bleibt kräftig, sie umfasst sie ja. */
+  const spotAbove = useMemo(() => {
+    const above = new Set<string>();
+    if (inSpot === null || spotNode === null) return above;
+    for (let up = parents.get(spotNode) ?? null; up !== null; up = parents.get(up.id) ?? null) {
+      above.add(up.id);
+    }
+    return above;
+  }, [inSpot, spotNode, parents]);
+  /** Deckkraft-Faktor; 0 = gar nicht zeichnen. */
+  const spotFade = useCallback(
+    (on: boolean): number => (inSpot === null || on ? 1 : spotlightHide ? 0 : SPOT_FADE),
+    [inSpot, spotlightHide],
+  );
+  const slotFade = useCallback(
+    (slot: number): number => (inSpot === null ? 1 : spotFade(inSpot(index.nodes[slot].id))),
+    [inSpot, spotFade, index],
+  );
+  const spotTitle = useMemo(() => {
+    if (inSpot === null) return null;
+    const hull = map.hulls.find((candidate) => candidate.id === spotNode);
+    if (hull !== undefined) return hull.title;
+    const group = map.groups.find((candidate) => candidate.nodeId === spotNode);
+    if (group === undefined) return null;
+    return group.context === '' ? group.title : `${group.context} · ${group.title}`;
+  }, [inSpot, spotNode, map]);
+  // Auswahl außerhalb der Hervorhebung (etwa aus der Tabelle) hebt sie auf.
+  useEffect(() => {
+    if (inSpot === null) return;
+    const chosen = selectedPosition ?? selectedNode;
+    if (chosen !== null && !inSpot(chosen.id)) dispatch({ type: 'graphSpotlight', id: null });
+  }, [inSpot, selectedPosition, selectedNode, dispatch]);
 
   // Farbe nach Hauptabschnitt, wie in der Verteilung im Überblick (Entscheidung 0043).
   const colors = useMemo(
@@ -601,20 +668,41 @@ export function BubbleGraph({ root }: { root: LVNode }) {
     [index, parents, dispatch],
   );
 
+  /** Abschnitt wählen, hervorheben und mittig einpassen (Entscheidung 0075). */
+  const spotlightOn = useCallback(
+    (id: string, box: { x0: number; y0: number; x1: number; y1: number }): void => {
+      dispatch({ type: 'selectNode', id });
+      dispatch({ type: 'graphSpotlight', id });
+      const next = viewAround(box, FIT_SELECTION_MAX_ZOOM);
+      if (next !== null) setView(next);
+    },
+    [dispatch, viewAround],
+  );
+
   const activateGroup = useCallback(
     (group: MapGroup): void => {
-      if (group.nodeId !== null) dispatch({ type: 'selectNode', id: group.nodeId });
+      if (group.nodeId !== null && layout === 'lv') spotlightOn(group.nodeId, groupBox(group));
+      else if (group.nodeId !== null) dispatch({ type: 'selectNode', id: group.nodeId });
       else {
         const next = viewAround(groupBox(group), FIT_SELECTION_MAX_ZOOM);
         if (next !== null) setView(next);
       }
     },
-    [dispatch, viewAround],
+    [dispatch, viewAround, layout, spotlightOn],
   );
 
   const onWorldClick = (event: ReactMouseEvent<SVGGElement>): void => {
-    const target = (event.target as Element).closest('[data-slot],[data-group]');
-    if (target === null) return;
+    const target = (event.target as Element).closest('[data-slot],[data-group],[data-hull]');
+    if (target === null) {
+      clearSpotlight();
+      return;
+    }
+    const hullId = target.getAttribute('data-hull');
+    if (hullId !== null) {
+      const hull = map.hulls.find((candidate) => candidate.id === hullId);
+      if (hull !== undefined) spotlightOn(hull.id, hullBox(hull));
+      return;
+    }
     const slot = target.getAttribute('data-slot');
     if (slot !== null) {
       // Shift + Klick legt die Position in den Vergleich, statt sie zu wählen.
@@ -627,6 +715,10 @@ export function BubbleGraph({ root }: { root: LVNode }) {
     }
     const group = map.groups[Number(target.getAttribute('data-group'))];
     if (group !== undefined) activateGroup(group);
+  };
+
+  const clearSpotlight = (): void => {
+    if (spotlight !== null) dispatch({ type: 'graphSpotlight', id: null });
   };
 
   // Rechtsklick (Issue #155): Menü für Punkt oder Abschnitt, ohne die Auswahl zu ändern.
@@ -824,7 +916,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
     if (marks) {
       const anchors: PinAnchor[] = [];
       for (const { slot, id, label, strong } of hintSlots) {
-        if (!isHit(slot) || !Number.isFinite(map.px[slot])) continue;
+        if (!isHit(slot) || !Number.isFinite(map.px[slot]) || slotFade(slot) < 1) continue;
         // Außerhalb des Bildes gibt es kein Schild — vor dem Objektbau aussortieren.
         const sx = map.px[slot] * view.k + view.tx;
         const sy = map.py[slot] * view.k + view.ty;
@@ -929,7 +1021,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
             <circle cx="1" cy="1" r="0.7" fill="var(--grid2)" />
           </pattern>
         </defs>
-        <rect width={w} height={h} fill="url(#bubble-grid)" />
+        <rect width={w} height={h} fill="url(#bubble-grid)" onClick={clearSpotlight} />
 
         <g
           className="graph-world"
@@ -945,16 +1037,26 @@ export function BubbleGraph({ root }: { root: LVNode }) {
             {map.hulls.map((hull, h) => {
               const hits = hitCounts?.hulls[h] ?? hull.slots.length;
               const width = hull.title.length * 9.4 + 28;
+              const fade = spotFade(spotAbove.has(hull.id) || (inSpot?.(hull.id) ?? true));
+              if (fade === 0) return null;
+              const chosen = selectedPosition === null && selectedNode?.id === hull.id;
               return (
-                <g key={hull.id} data-hull={hull.id} opacity={dimLv && hits === 0 ? 0.4 : 1}>
+                <g
+                  key={hull.id}
+                  data-hull={hull.id}
+                  opacity={(dimLv && hits === 0 ? 0.4 : 1) * fade}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <title>{hull.title}</title>
                   <circle
                     cx={hull.x}
                     cy={hull.y}
                     r={hull.r}
-                    fill={hull.kind === 'lot' ? 'var(--los-fill)' : 'none'}
-                    stroke="var(--line2)"
-                    strokeWidth={1.5 / Math.max(k, 0.3)}
-                    strokeDasharray={hull.kind === 'lot' ? '2 6' : '6 6'}
+                    // Durchsichtig statt leer: auch ein Klick in die Insel trifft sie.
+                    fill={hull.kind === 'lot' ? 'var(--los-fill)' : 'transparent'}
+                    stroke={chosen ? 'var(--blue)' : 'var(--line2)'}
+                    strokeWidth={(chosen ? 2.5 : 1.5) / Math.max(k, 0.3)}
+                    strokeDasharray={chosen ? undefined : hull.kind === 'lot' ? '2 6' : '6 6'}
                     strokeLinecap="round"
                   />
                   <rect
@@ -964,7 +1066,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
                     height={30}
                     rx={15}
                     fill="var(--surface)"
-                    stroke="var(--line2)"
+                    stroke={chosen ? 'var(--blue)' : 'var(--line2)'}
                   />
                   <text
                     x={hull.x}
@@ -1100,6 +1202,8 @@ export function BubbleGraph({ root }: { root: LVNode }) {
                 (group.sum === '' ? '' : ` · ${group.sum}`) +
                 (nh > 0 && showHints ? ` · ${formatCount(nh)} ⚠` : '');
               const coarse = isCoarse(group);
+              const fade = spotFade(inSpot?.(group.nodeId ?? '') ?? true);
+              if (fade === 0) return null;
               const chosen =
                 selectedPosition === null &&
                 selectedNode !== null &&
@@ -1108,7 +1212,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
                 <g
                   key={group.key}
                   data-group={i}
-                  opacity={group.rest ? 0.55 : dimLv && hits === 0 ? 0.35 : 1}
+                  opacity={(group.rest ? 0.55 : dimLv && hits === 0 ? 0.35 : 1) * fade}
                   style={{ cursor: 'pointer' }}
                 >
                   <circle
@@ -1174,6 +1278,8 @@ export function BubbleGraph({ root }: { root: LVNode }) {
                   if (!morphing && !isInView(cull, wx, wy, r + 12)) return null;
                   const hit = isHit(slot);
                   if (!hit && hide) return null;
+                  const fade = slotFade(slot);
+                  if (fade === 0) return null;
                   const position = index.positions[slot];
                   // Auswahl ohne Ring: Akzentfarbe und etwas größer, feiner Rand in
                   // Flächenfarbe trennt sie von Nachbarn.
@@ -1192,7 +1298,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
                       data-slot={slot}
                       data-tier="position"
                       className="graph-dot"
-                      opacity={hit ? 1 : 0.22}
+                      opacity={(hit ? 1 : 0.22) * fade}
                       style={{
                         cursor: 'pointer',
                         transform: `translate(${wx}px, ${wy}px)`,
@@ -1273,9 +1379,11 @@ export function BubbleGraph({ root }: { root: LVNode }) {
               if (group === undefined || isCoarse(group)) return null;
               const hit = isHit(slot);
               if (!hit && hide) return null;
+              const fade = slotFade(slot);
+              if (fade === 0) return null;
               const id = index.nodes[slot].id;
               return (
-                <g key={id} opacity={hit ? 1 : 0.22}>
+                <g key={id} opacity={(hit ? 1 : 0.22) * fade}>
                   <NoteBadges
                     x={x}
                     y={y}
@@ -1407,6 +1515,52 @@ export function BubbleGraph({ root }: { root: LVNode }) {
               {index.positions[tooltipSlot].unit ?? ''}
             </span>
           )}
+        </div>
+      )}
+
+      {spotTitle !== null && (
+        <div
+          {...graphOverlayProps}
+          role="group"
+          aria-label="Hervorhebung"
+          className="ov-pill absolute right-[12px] top-[12px] z-10 flex items-center gap-[8px] p-[4px] pr-[6px] text-[12px] text-dim"
+        >
+          <span className="inline-flex items-center gap-[6px] rounded-[var(--r-pill)] border border-blue bg-blueS py-[3px] pl-[12px] pr-[4px] font-semibold text-blueD">
+            {spotTitle}
+            <button
+              type="button"
+              aria-label="Hervorhebung aufheben"
+              title="Hervorhebung aufheben"
+              onClick={clearSpotlight}
+              className="inline-flex h-[20px] w-[20px] cursor-pointer items-center justify-center rounded-full border-none bg-transparent p-0 text-blueD hover:bg-surface"
+            >
+              ✕
+            </button>
+          </span>
+          <span>Andere</span>
+          <span
+            role="radiogroup"
+            aria-label="Andere Abschnitte"
+            className="inline-flex gap-[2px] rounded-[var(--r-pill)] border border-line bg-sunken p-[2px]"
+          >
+            {SPOT_MODES.map((mode) => {
+              const on = mode.hide === spotlightHide;
+              return (
+                <button
+                  key={mode.label}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  onClick={() => dispatch({ type: 'graphSpotlightHide', value: mode.hide })}
+                  className={`cursor-pointer rounded-[var(--r-pill)] border-none px-[10px] py-[2px] text-[12px] ${
+                    on ? 'bg-blueF text-white' : 'bg-transparent text-dim hover:text-blueD'
+                  }`}
+                >
+                  {mode.label}
+                </button>
+              );
+            })}
+          </span>
         </div>
       )}
 
