@@ -343,6 +343,7 @@ function layoutByLv(
   const mains = new Map<string, LVNode | null>();
   const groupByParent = new Map<string, MapGroup>();
   const islandOf = new Map<MapGroup, LVNode | null>();
+  const parentOf = new Map<MapGroup, LVNode | null>();
   for (let slot = 0; slot < index.size; slot++) {
     if (options.hide && !isHit(options.mask, slot)) continue;
     const node = index.nodes[slot];
@@ -362,6 +363,7 @@ function layoutByLv(
       }
       groupByParent.set(key, group);
       islandOf.set(group, main);
+      parentOf.set(group, parent);
     }
     group.slots.push(slot);
   }
@@ -380,10 +382,8 @@ function layoutByLv(
   >();
   for (const group of groups) {
     const main = islandOf.get(group) ?? null;
-    const lot = lotOf(
-      main ?? (group.nodeId === null ? null : (parents.get(group.nodeId) ?? null)),
-      parents,
-    );
+    // Ohne Hauptabschnitt kann der Elternknoten selbst das Los sein.
+    const lot = lotOf(main ?? parentOf.get(group) ?? null, parents);
     const key = `${lot?.id ?? ''}|${main?.id ?? ''}`;
     const island = islands.get(key) ?? { main, lot, groups: [] };
     island.groups.push(group);

@@ -396,6 +396,13 @@ describe('Abschnitt hervorheben (Entscheidung 0075)', () => {
     expect(screen.queryByRole('group', { name: 'Hervorhebung' })).toBeNull();
     fireEvent.click(kreis);
     expect(screen.getByRole('group', { name: 'Hervorhebung' })).toBeInTheDocument();
+    // Verschieben endet mit einem Klick — der hebt die Hervorhebung nicht auf.
+    const leer = graph().querySelector('svg > rect') as SVGRectElement;
+    fireEvent.mouseDown(leer, { button: 0, clientX: 100, clientY: 100 });
+    fireEvent.mouseMove(window, { clientX: 160, clientY: 130 });
+    fireEvent.mouseUp(window);
+    fireEvent.click(leer);
+    expect(screen.getByRole('group', { name: 'Hervorhebung' })).toBeInTheDocument();
     // Klick ins Leere hebt die Hervorhebung auf.
     fireEvent.click(graph().querySelector('svg > rect') as SVGRectElement);
     expect(screen.queryByRole('group', { name: 'Hervorhebung' })).toBeNull();
