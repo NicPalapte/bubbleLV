@@ -103,8 +103,7 @@ function fitText(text: string, width: number, charWidth: number): string {
   return text.length <= max ? text : `${text.slice(0, Math.max(1, max - 1)).trimEnd()}…`;
 }
 
-/** Rahmen um eine Gruppe samt Beschriftung darüber; bei einer Kachel die Kachel. */
-/** Rahmen einer Hülle samt Titel darüber. */
+/** Rahmen einer Hülle samt Titel darüber (die Pille ragt 15 über den Rand). */
 function hullBox(hull: MapHull): { x0: number; y0: number; x1: number; y1: number } {
   return {
     x0: hull.x - hull.r,
@@ -121,6 +120,7 @@ const SPOT_MODES = [
   { hide: true, label: 'ausblenden' },
 ] as const;
 
+/** Rahmen um eine Gruppe samt Beschriftung darüber; bei einer Kachel die Kachel. */
 function groupBox(group: MapGroup): { x0: number; y0: number; x1: number; y1: number } {
   const { cell } = group;
   if (cell !== null) return { x0: cell.x, y0: cell.y, x1: cell.x + cell.w, y1: cell.y + cell.h };
