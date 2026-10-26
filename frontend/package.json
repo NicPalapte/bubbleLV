@@ -19,7 +19,7 @@
     "format:check": "prettier --check \"{src,tests}/**/*.{ts,tsx,css}\" \"../packages/core/{src,tests}/**/*.ts\""
   },
   "dependencies": {
-    "@conocto/design": "github:NicPalapte/conocto-design#4d9e57e03ab5f283fcc1294e245002a332dc7003",
+    "@conocto/design": "github:NicPalapte/conocto-design#v0.2.1",
     "pdfjs-dist": "^6.4.299",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
