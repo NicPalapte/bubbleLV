@@ -45,7 +45,7 @@ const ITEM =
 
 function Mark({ on }: { on: boolean }) {
   return (
-    <span aria-hidden="true" className="ml-auto w-[10px] text-center text-blue">
+    <span aria-hidden="true" className="ml-auto w-[10px] text-center text-accent">
       {on ? '●' : ''}
     </span>
   );

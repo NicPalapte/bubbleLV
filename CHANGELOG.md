@@ -24,6 +24,13 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 - Das Suchfeld im Bereich „Dokument“ ist jetzt dasselbe wie oben. PDF-Treffer filtern
   das LV nicht.
 
+## 0.39.1 — 26.10.2026 · Gemeinsames Designsystem
+
+- **Gleiches Aussehen, neue Quelle:** Farben, Schriften und Logo kommen jetzt aus dem
+  Conocto-Designsystem, das auch weitere Conocto-Produkte nutzen. Sichtbar ändert sich nichts.
+- **Korrektur:** Eigene Marker (violett) sind im dunklen Thema auch dann gut lesbar, wenn
+  „Dunkel“ im Logo-Menü fest gewählt ist.
+
 ## 0.39.0 — 25.10.2026 · Blasen nach Abschnitten, Abschnitt hervorheben
 
 - **Geordnet statt zufällig:** Im Graphen „nach LV“ liegt jeder Hauptabschnitt als

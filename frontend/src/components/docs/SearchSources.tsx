@@ -14,14 +14,14 @@ const MAX_PAGES_SHOWN = 6;
 
 const ROW = 'flex items-center gap-[10px] px-[12px] py-[8px] [@media(pointer:coarse)]:py-[11px]';
 const GO =
-  'shrink-0 cursor-pointer whitespace-nowrap rounded-[var(--r-sm)] border border-line bg-surface px-[8px] py-[3px] font-mono text-[11.5px] text-blueD hover:border-blue hover:bg-blueS [@media(pointer:coarse)]:py-[7px]';
+  'shrink-0 cursor-pointer whitespace-nowrap rounded-[var(--r-sm)] border border-line bg-surface px-[8px] py-[3px] font-mono text-[11.5px] text-accent-ink hover:border-accent hover:bg-accent-soft [@media(pointer:coarse)]:py-[7px]';
 
 function Icon({ lv }: { lv: boolean }) {
   return (
     <span
       aria-hidden="true"
       className={`grid h-[26px] w-[26px] shrink-0 place-items-center rounded-[7px] font-mono text-[10px] font-semibold ${
-        lv ? 'bg-blueS text-blueD' : 'bg-sunken text-dim'
+        lv ? 'bg-accent-soft text-accent-ink' : 'bg-sunken text-dim'
       }`}
     >
       {lv ? 'LV' : 'PDF'}

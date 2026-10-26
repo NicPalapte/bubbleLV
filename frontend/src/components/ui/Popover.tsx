@@ -165,7 +165,7 @@ export function PopoverHead({ children, onReset }: { children: ReactNode; onRese
             background: 'transparent',
             padding: 0,
             cursor: 'pointer',
-            color: 'var(--blue)',
+            color: 'var(--accent)',
             font: 'inherit',
             letterSpacing: 'inherit',
             textTransform: 'inherit',
@@ -219,8 +219,8 @@ export function PopoverRow({
         textAlign: 'left',
         font: 'inherit',
         cursor: 'pointer',
-        background: on ? 'var(--blueS)' : 'transparent',
-        color: on ? 'var(--blueD)' : 'var(--ink)',
+        background: on ? 'var(--accent-soft)' : 'transparent',
+        color: on ? 'var(--accent-ink)' : 'var(--ink)',
       }}
     >
       {checkbox && (
@@ -229,8 +229,8 @@ export function PopoverRow({
             width: 12,
             height: 12,
             flexShrink: 0,
-            border: `1px solid ${on ? 'var(--blueF)' : 'var(--line2)'}`,
-            background: on ? 'var(--blueF)' : 'var(--white)',
+            border: `1px solid ${on ? 'var(--accent-fill)' : 'var(--line2)'}`,
+            background: on ? 'var(--accent-fill)' : 'var(--white)',
             color: '#fff',
             fontSize: 11,
             lineHeight: 1,

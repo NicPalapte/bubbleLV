@@ -39,13 +39,13 @@ export function RangeSlider({ label, bounds, active, onChange, renderHead }: Ran
       {renderHead(isActive)}
       <div className="px-[2px] font-mono text-[11.5px]">
         <div className="mb-[2px] flex justify-between text-ink">
-          <span className={isActive ? 'text-blueD' : undefined}>{formatCount(low)}</span>
-          <span className={isActive ? 'text-blueD' : undefined}>{formatCount(high)}</span>
+          <span className={isActive ? 'text-accent-ink' : undefined}>{formatCount(low)}</span>
+          <span className={isActive ? 'text-accent-ink' : undefined}>{formatCount(high)}</span>
         </div>
         <div className="relative h-[24px]">
           <div className="absolute left-0 right-0 top-[11px] h-[2px] bg-grid" />
           <div
-            className="absolute top-[11px] h-[2px] bg-blue"
+            className="absolute top-[11px] h-[2px] bg-accent"
             style={{
               left: `${((low - min) / span) * 100}%`,
               right: `${((max - high) / span) * 100}%`,

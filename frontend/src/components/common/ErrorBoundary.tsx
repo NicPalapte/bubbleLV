@@ -16,7 +16,7 @@
 // Kopfleiste, Filter und die übrigen Ansichten bedienbar.
 
 import { Component, useState, type ErrorInfo, type ReactNode } from 'react';
-import { Chip } from '../ui/Chip';
+import { Chip } from '@conocto/design';
 import { ReportDialog } from '../report/ReportDialog';
 
 export interface ErrorBoundaryProps {

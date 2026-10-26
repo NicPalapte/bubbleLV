@@ -84,7 +84,7 @@ function HideModeToggle() {
             title={`Nicht-Treffer ${mode.label}`}
             onClick={() => dispatch({ type: 'hideMode', value: mode.value })}
             className={`inline-flex h-[20px] w-[24px] cursor-pointer items-center justify-center rounded-[var(--r-pill)] border-none p-0 ${
-              on ? 'bg-blueF text-white' : 'bg-transparent text-dim hover:text-blueD'
+              on ? 'bg-accent-fill text-white' : 'bg-transparent text-dim hover:text-accent-ink'
             }`}
           >
             <svg
@@ -311,7 +311,7 @@ export function TopBar() {
             <div
               ref={searchPillRef}
               data-tour="search"
-              className="mx-auto flex h-[36px] min-w-0 max-w-[620px] flex-1 items-center gap-[6px] overflow-hidden rounded-[var(--r-pill)] border border-line bg-surface pl-[12px] pr-[6px] shadow-[var(--shadow-sm)] focus-within:border-blue focus-within:shadow-[0_0_0_3px_var(--blueS)]"
+              className="mx-auto flex h-[36px] min-w-0 max-w-[620px] flex-1 items-center gap-[6px] overflow-hidden rounded-[var(--r-pill)] border border-line bg-surface pl-[12px] pr-[6px] shadow-[var(--shadow-sm)] focus-within:border-accent focus-within:shadow-[0_0_0_3px_var(--accent-soft)]"
             >
               <span className="text-[14px] text-mute" aria-hidden="true">
                 ⌕
@@ -319,12 +319,12 @@ export function TopBar() {
               {chips.slice(0, MAX_CHIPS).map((chip) => (
                 <span
                   key={chip.key}
-                  className="inline-flex h-[24px] max-w-[160px] shrink-0 items-center gap-[6px] rounded-[var(--r-pill)] bg-blueS pl-[9px] pr-[6px] font-mono text-[11.5px] text-blueD"
+                  className="inline-flex h-[24px] max-w-[160px] shrink-0 items-center gap-[6px] rounded-[var(--r-pill)] bg-accent-soft pl-[9px] pr-[6px] font-mono text-[11.5px] text-accent-ink"
                 >
                   <span className="truncate">{chip.label}</span>
                   <button
                     type="button"
-                    className="cursor-pointer border-none bg-transparent px-[3px] py-0 text-[11px] leading-none text-blueD opacity-70 hover:opacity-100"
+                    className="cursor-pointer border-none bg-transparent px-[3px] py-0 text-[11px] leading-none text-accent-ink opacity-70 hover:opacity-100"
                     onClick={chip.remove}
                     aria-label={`${chip.label} entfernen`}
                   >
@@ -336,7 +336,7 @@ export function TopBar() {
                 <button
                   type="button"
                   onClick={() => dispatch({ type: 'filterBar', open: true })}
-                  className="shrink-0 cursor-pointer whitespace-nowrap border-none bg-transparent p-0 font-mono text-[10px] text-blue"
+                  className="shrink-0 cursor-pointer whitespace-nowrap border-none bg-transparent p-0 font-mono text-[10px] text-accent"
                 >
                   +{formatCount(chips.length - MAX_CHIPS)} weitere
                 </button>
@@ -371,8 +371,8 @@ export function TopBar() {
                 onClick={() => dispatch({ type: 'filterBar', open: !filterOpen })}
                 className={`inline-flex h-[26px] shrink-0 cursor-pointer items-center whitespace-nowrap rounded-[var(--r-pill)] border px-[10px] font-mono text-[10.5px] ${
                   filterOpen
-                    ? 'border-solid border-blue bg-blueS text-blueD'
-                    : 'border-dashed border-line2 bg-transparent text-dim hover:border-solid hover:border-blue hover:bg-blueS hover:text-blueD'
+                    ? 'border-solid border-accent bg-accent-soft text-accent-ink'
+                    : 'border-dashed border-line2 bg-transparent text-dim hover:border-solid hover:border-accent hover:bg-accent-soft hover:text-accent-ink'
                 }`}
               >
                 + Filter

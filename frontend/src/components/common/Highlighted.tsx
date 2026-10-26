@@ -28,7 +28,7 @@ interface HighlightedProps {
 
 function Mark({ children }: { children: ReactNode }) {
   return (
-    <mark className="rounded-none border-b border-blue bg-blueS px-[3px] font-medium text-blueD">
+    <mark className="rounded-none border-b border-accent bg-accent-soft px-[3px] font-medium text-accent-ink">
       {children}
     </mark>
   );

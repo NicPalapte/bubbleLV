@@ -36,10 +36,10 @@ import {
 } from '../common/markers';
 import { usePositionMenu } from '../common/positionMenuContext';
 import { useDismiss } from '../common/useDismiss';
-import { Chip } from '../ui/Chip';
+import { Chip } from '@conocto/design';
 import { DataTable, type Column, type GroupHead } from '../ui/DataTable';
 import { Popover, PopoverHead } from '../ui/Popover';
-import { SegmentedControl } from '../ui/SegmentedControl';
+import { SegmentedControl } from '@conocto/design';
 import { attrString, attrStrings } from '../../lib/attributes';
 import { facetOptionLabel, FACETS_BY_ID } from '../../lib/facets';
 import { formatCount, formatEuro, formatNumber } from '../../lib/format';
@@ -252,12 +252,12 @@ function FillMark() {
 
 /** Fortschritt in der Zeile: helle Fläche statt der vollen Farbe der Karte. */
 const PROGRESS_CELL: Readonly<Record<Progress, { label: string; bg: string; fg: string }>> = {
-  bearbeitung: { label: 'In Bearbeitung', bg: 'var(--blueS)', fg: 'var(--blueD)' },
+  bearbeitung: { label: 'In Bearbeitung', bg: 'var(--accent-soft)', fg: 'var(--accent-ink)' },
   fertig: { label: 'Erledigt', bg: 'var(--greenS)', fg: 'var(--greenD)' },
 };
 
 const CELL_BUTTON =
-  '-my-[3px] inline-flex h-[20px] max-w-full cursor-pointer align-middle items-center justify-center rounded-[var(--r-pill)] border border-transparent bg-transparent px-[9px] text-center font-mono text-[11.5px] leading-none hover:border-line2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue';
+  '-my-[3px] inline-flex h-[20px] max-w-full cursor-pointer align-middle items-center justify-center rounded-[var(--r-pill)] border border-transparent bg-transparent px-[9px] text-center font-mono text-[11.5px] leading-none hover:border-line2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent';
 
 /** Spalten aus den eigenen Markern und Kommentaren. */
 function annotationRender(key: string, cells: NoteCells): Column<Row>['render'] {
@@ -306,7 +306,7 @@ function annotationRender(key: string, cells: NoteCells): Column<Row>['render'] 
               stop(event);
               cells.toggleImportant(id);
             }}
-            className="-my-[3px] inline-flex h-[20px] w-[20px] cursor-pointer align-middle items-center justify-center rounded-[var(--r-sm)] border font-display text-[13px] font-bold leading-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue"
+            className="-my-[3px] inline-flex h-[20px] w-[20px] cursor-pointer align-middle items-center justify-center rounded-[var(--r-sm)] border font-display text-[13px] font-bold leading-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
             style={
               on
                 ? {
@@ -344,7 +344,7 @@ function annotationRender(key: string, cells: NoteCells): Column<Row>['render'] 
             <span className="note-add text-mute">+ Kommentar</span>
           ) : (
             <>
-              <span className="min-w-0 truncate text-blue">{newest.text}</span>
+              <span className="min-w-0 truncate text-accent">{newest.text}</span>
               {comments.length > 1 && (
                 <span className="shrink-0 rounded-[var(--r-pill)] border border-line2 px-[5px] text-[11px] text-dim">
                   +{comments.length - 1}
@@ -404,7 +404,7 @@ function CommentEditor({
         placeholder="Neuer Kommentar (Enter speichert)"
         aria-label="Neuer Kommentar"
         rows={2}
-        className="min-w-0 resize-y rounded-[var(--r-md)] border border-line bg-panel px-[8px] py-[6px] font-mono text-[13px] leading-[1.5] text-ink outline-none placeholder:text-mute focus:border-blue"
+        className="min-w-0 resize-y rounded-[var(--r-md)] border border-line bg-panel px-[8px] py-[6px] font-mono text-[13px] leading-[1.5] text-ink outline-none placeholder:text-mute focus:border-accent"
       />
       <div className="flex justify-end gap-[6px]">
         <button
@@ -418,7 +418,7 @@ function CommentEditor({
           type="button"
           onClick={save}
           disabled={draft.trim() === ''}
-          className="inline-flex h-[26px] cursor-pointer items-center justify-center rounded-[var(--r-pill)] border-none bg-blueF px-[12px] text-center font-mono text-[12px] text-white disabled:cursor-default disabled:opacity-40"
+          className="inline-flex h-[26px] cursor-pointer items-center justify-center rounded-[var(--r-pill)] border-none bg-accent-fill px-[12px] text-center font-mono text-[12px] text-white disabled:cursor-default disabled:opacity-40"
         >
           Speichern
         </button>
@@ -463,7 +463,7 @@ function ProgressChoices({
         >
           {label}
           {value === current && (
-            <span aria-hidden="true" className="h-[6px] w-[6px] rounded-full bg-blue" />
+            <span aria-hidden="true" className="h-[6px] w-[6px] rounded-full bg-accent" />
           )}
         </button>
       ))}
@@ -561,8 +561,8 @@ function ColumnPicker({
                       width: 12,
                       height: 12,
                       flexShrink: 0,
-                      border: `1px solid ${shown ? 'var(--blueF)' : 'var(--line2)'}`,
-                      background: shown ? 'var(--blueF)' : 'var(--white)',
+                      border: `1px solid ${shown ? 'var(--accent-fill)' : 'var(--line2)'}`,
+                      background: shown ? 'var(--accent-fill)' : 'var(--white)',
                       color: '#fff',
                       fontSize: 11,
                       lineHeight: 1,
@@ -937,7 +937,7 @@ export function PositionsTable({ root }: { root: LVNode }) {
             onClick={() => dispatch({ type: 'selectNode', id: parent.id })}
             title="Eine Ebene höher"
             aria-label="Eine Ebene höher"
-            className="shrink-0 cursor-pointer border-none bg-transparent px-[4px] font-mono text-[14px] leading-none text-blue"
+            className="shrink-0 cursor-pointer border-none bg-transparent px-[4px] font-mono text-[14px] leading-none text-accent"
           >
             ←
           </button>
@@ -959,7 +959,7 @@ export function PositionsTable({ root }: { root: LVNode }) {
         <span className="shrink-0">∑ GP {formatEuro(sumPrice, 0)}</span>
         {fellBack && (
           <span
-            className="shrink-0 text-blue"
+            className="shrink-0 text-accent"
             title="Im gewählten Abschnitt passt keine Position — gezeigt werden die Treffer des ganzen LV."
           >
             · LV-weite Treffer

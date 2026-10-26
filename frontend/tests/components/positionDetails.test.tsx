@@ -4,7 +4,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { PositionDetails } from '../../src/components/common/PositionDetails';
-import { Chip } from '../../src/components/ui/Chip';
+import { Chip } from '@conocto/design';
 import { ViewerProvider } from '../../src/state/ViewerProvider';
 import type { LVNode, PositionSummary } from '../../src/types/lvNode';
 import { TEST_HASHES } from '../support/hashes';

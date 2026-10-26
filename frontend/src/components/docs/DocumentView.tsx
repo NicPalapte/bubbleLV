@@ -99,7 +99,7 @@ function EmptyDocument() {
         onDragLeave={() => setOver(false)}
         onDrop={drop}
         className={`flex min-h-[180px] flex-1 flex-col items-center justify-center gap-[10px] rounded-[var(--r-md)] border-2 border-dashed text-center ${
-          over ? 'border-blue bg-blueS' : 'border-line2'
+          over ? 'border-accent bg-accent-soft' : 'border-line2'
         }`}
       >
         <span className="font-sans text-[14px] text-ink">PDF hierher ziehen</span>
@@ -362,7 +362,7 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
           type="button"
           onClick={() => jumpToPosition(first, { stayInView: true })}
           title="Verknüpfte Position wählen"
-          className="cursor-pointer rounded-[6px] border border-blue bg-white px-[5px] py-[1px] font-mono text-[10.5px] text-[#a52a21] shadow-[var(--shadow-sm)] hover:bg-[#fbebe9]"
+          className="cursor-pointer rounded-[6px] border border-accent bg-white px-[5px] py-[1px] font-mono text-[10.5px] text-[#a52a21] shadow-[var(--shadow-sm)] hover:bg-[#fbebe9]"
         >
           {oz}
           {mark.links.length > 1 ? ` +${mark.links.length - 1}` : ''}

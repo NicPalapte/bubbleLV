@@ -86,7 +86,7 @@ export function LinkDialog({
         checked={done || picked.has(node.id)}
         disabled={done}
         onChange={() => toggle(node.id)}
-        className="mt-[3px] accent-[var(--blue)]"
+        className="mt-[3px] accent-[var(--accent)]"
       />
       <span className="min-w-0 flex-1">
         <span className="block font-mono text-[11.5px] text-dim">{node.position?.oz}</span>
@@ -167,7 +167,7 @@ export function LinkDialog({
           type="button"
           disabled={picked.size === 0}
           onClick={() => onLink([...picked])}
-          className="h-[30px] cursor-pointer rounded-[var(--r-sm)] border-none bg-blueF px-[12px] font-mono text-[12px] font-semibold text-white hover:bg-blueFH disabled:cursor-default disabled:opacity-40"
+          className="h-[30px] cursor-pointer rounded-[var(--r-sm)] border-none bg-accent-fill px-[12px] font-mono text-[12px] font-semibold text-white hover:bg-accent-fill-hover disabled:cursor-default disabled:opacity-40"
         >
           {picked.size <= 1 ? 'Verknüpfen' : `${picked.size} verknüpfen`}
         </button>

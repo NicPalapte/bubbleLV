@@ -79,14 +79,14 @@ export function NoteBlock({ positionId }: { positionId: string }) {
           placeholder="Kommentar schreiben"
           aria-label="Kommentar zur Position"
           rows={2}
-          className="min-w-0 flex-1 resize-y rounded-[var(--r-md)] border border-line bg-panel px-[10px] py-[8px] font-mono text-[13px] leading-[1.5] text-ink outline-none placeholder:text-mute focus:border-blue"
+          className="min-w-0 flex-1 resize-y rounded-[var(--r-md)] border border-line bg-panel px-[10px] py-[8px] font-mono text-[13px] leading-[1.5] text-ink outline-none placeholder:text-mute focus:border-accent"
         />
         <button
           type="button"
           onClick={send}
           disabled={draft.trim() === ''}
           title="Senden (Strg+Enter)"
-          className="inline-flex h-[32px] cursor-pointer items-center rounded-[var(--r-pill)] border-none bg-blueF px-[14px] font-mono text-[12px] text-white disabled:cursor-default disabled:opacity-40"
+          className="inline-flex h-[32px] cursor-pointer items-center rounded-[var(--r-pill)] border-none bg-accent-fill px-[14px] font-mono text-[12px] text-white disabled:cursor-default disabled:opacity-40"
         >
           Senden
         </button>
@@ -101,7 +101,7 @@ export function NoteBlock({ positionId }: { positionId: string }) {
 }
 
 const HEAD_BUTTON =
-  'inline-flex h-[28px] shrink-0 cursor-pointer items-center rounded-[var(--r-sm)] border font-mono text-[11.5px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue';
+  'inline-flex h-[28px] shrink-0 cursor-pointer items-center rounded-[var(--r-sm)] border font-mono text-[11.5px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent';
 
 /** Fortschritt als Knopf mit Auswahlliste (Issue #153): ein Klick auf, ein Klick setzt. */
 function ProgressMenu({ positionId }: { positionId: string }) {
@@ -153,7 +153,7 @@ function ProgressMenu({ positionId }: { positionId: string }) {
             >
               {label}
               {value === current && (
-                <span aria-hidden="true" className="h-[6px] w-[6px] rounded-full bg-blue" />
+                <span aria-hidden="true" className="h-[6px] w-[6px] rounded-full bg-accent" />
               )}
             </button>
           ))}

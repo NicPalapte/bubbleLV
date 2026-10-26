@@ -64,7 +64,7 @@ export function PdfDrop() {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none fixed inset-0 z-[60] grid place-items-center border-2 border-dashed border-blue bg-[color-mix(in_srgb,var(--blue)_8%,transparent)]"
+      className="pointer-events-none fixed inset-0 z-[60] grid place-items-center border-2 border-dashed border-accent bg-[color-mix(in_srgb,var(--accent)_8%,transparent)]"
     >
       <div className="flex flex-col items-center gap-[4px] rounded-[var(--r-md)] bg-surface px-[22px] py-[16px] text-center shadow-[var(--shadow-sm)]">
         <b className="font-display text-[16px] font-semibold text-ink">

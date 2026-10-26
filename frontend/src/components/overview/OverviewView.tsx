@@ -17,7 +17,7 @@ import { MetricTiles } from './MetricTiles';
 import { ParetoCard } from './ParetoCard';
 import { Treemap } from './Treemap';
 import { UnitTotals } from './UnitTotals';
-import { BlockLabel } from '../ui/PanelHeader';
+import { BlockLabel } from '@conocto/design';
 import { formatCount, formatPositions } from '../../lib/format';
 import { filterMask } from '../../lib/index/positionIndex';
 import { buildOverview } from '../../lib/overview/model';

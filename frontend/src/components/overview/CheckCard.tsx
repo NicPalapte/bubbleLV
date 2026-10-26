@@ -76,7 +76,7 @@ function Switch({ rule, on, onToggle }: { rule: RuleStatus; on: boolean; onToggl
         onToggle();
       }}
       className={`relative h-[13px] w-[22px] shrink-0 cursor-pointer rounded-[var(--r-pill)] border-none p-0 after:absolute after:top-[2px] after:h-[9px] after:w-[9px] after:rounded-full after:bg-surface after:transition-[left] after:duration-100 after:content-[''] ${
-        on ? 'bg-blue after:left-[11px]' : 'bg-line2 after:left-[2px]'
+        on ? 'bg-accent after:left-[11px]' : 'bg-line2 after:left-[2px]'
       }`}
     />
   );
@@ -154,7 +154,7 @@ export function CheckCard() {
                   ref={(node) => attachRow(rule.id, node)}
                   aria-label={`${rule.id} ${rule.label}`}
                   className={`-mx-[6px] grid grid-cols-[auto_1fr_auto_auto] items-center gap-[8px] border-t border-grid px-[6px] py-[6px] ${
-                    open ? 'bg-blueS shadow-[inset_2px_0_0_var(--blue)]' : 'hover:bg-sunken'
+                    open ? 'bg-accent-soft shadow-[inset_2px_0_0_var(--accent)]' : 'hover:bg-sunken'
                   }`}
                 >
                   <Switch
@@ -169,7 +169,7 @@ export function CheckCard() {
                     aria-expanded={open}
                     title={rule.label}
                     className={`min-w-0 cursor-pointer truncate border-none bg-transparent p-0 text-left font-display text-[13.5px] font-semibold disabled:cursor-default ${
-                      open ? 'text-blueD' : 'text-ink'
+                      open ? 'text-accent-ink' : 'text-ink'
                     } ${muted ? 'opacity-45' : ''}`}
                   >
                     <span className="mr-[6px] font-mono text-[11px] font-normal text-mute">
@@ -285,7 +285,7 @@ export function CheckFlyout() {
               aria-current={isSelected ? 'true' : undefined}
               className={`-mx-[6px] block w-[calc(100%+12px)] cursor-pointer border-none border-t border-solid border-grid px-[6px] py-[6px] text-left disabled:cursor-default ${
                 isSelected
-                  ? 'bg-blueS shadow-[inset_2px_0_0_var(--blue)]'
+                  ? 'bg-accent-soft shadow-[inset_2px_0_0_var(--accent)]'
                   : 'bg-transparent hover:bg-sunken'
               }`}
             >
