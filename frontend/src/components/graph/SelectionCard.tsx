@@ -34,10 +34,10 @@ function CompareButton({
       }
       className={
         inCompare
-          ? 'inline-flex h-[30px] cursor-pointer items-center justify-center rounded-[var(--r-sm)] border border-blue bg-blueS px-[12px] font-mono text-[11.5px] text-blue'
+          ? 'inline-flex h-[30px] cursor-pointer items-center justify-center rounded-[var(--r-sm)] border border-accent bg-accent-soft px-[12px] font-mono text-[11.5px] text-accent'
           : blocked
             ? `${CARD_BUTTON} disabled:cursor-default disabled:opacity-50`
-            : 'inline-flex h-[30px] cursor-pointer items-center justify-center rounded-[var(--r-sm)] border border-blueF bg-blueF px-[12px] font-mono text-[11.5px] text-white hover:bg-blueFH'
+            : 'inline-flex h-[30px] cursor-pointer items-center justify-center rounded-[var(--r-sm)] border border-accent-fill bg-accent-fill px-[12px] font-mono text-[11.5px] text-white hover:bg-accent-fill-hover'
       }
     >
       {inCompare ? 'Im Vergleich' : 'Vergleichen'}

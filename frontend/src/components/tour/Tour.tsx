@@ -263,7 +263,7 @@ export function Tour() {
         <button
           type="button"
           onClick={() => go(0)}
-          className={`${BUTTON} border-blueF bg-blueF text-white hover:bg-blueFH`}
+          className={`${BUTTON} border-accent-fill bg-accent-fill text-white hover:bg-accent-fill-hover`}
         >
           Kurze Tour
         </button>
@@ -292,7 +292,7 @@ export function Tour() {
           die Fläche selbst keine Klicks annimmt. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none fixed z-[50] border-2 border-blue transition-all duration-200"
+        className="pointer-events-none fixed z-[50] border-2 border-accent transition-all duration-200"
         style={{
           top: spot.top,
           left: spot.left,
@@ -321,7 +321,7 @@ export function Tour() {
         </div>
         <p className="m-0 font-sans text-[13.5px] leading-[1.45] text-dim">{step.text}</p>
         {waiting && step.todo !== undefined && (
-          <p className="m-0 font-mono text-[11.5px] text-blueD">→ {step.todo}</p>
+          <p className="m-0 font-mono text-[11.5px] text-accent-ink">→ {step.todo}</p>
         )}
         <div className="mt-[2px] flex items-center gap-[6px]">
           <button
@@ -347,7 +347,7 @@ export function Tour() {
             className={
               waiting
                 ? `${BUTTON} border-line bg-surface text-dim hover:bg-sunken`
-                : `${BUTTON} border-blueF bg-blueF text-white hover:bg-blueFH`
+                : `${BUTTON} border-accent-fill bg-accent-fill text-white hover:bg-accent-fill-hover`
             }
           >
             {last ? 'Fertig' : waiting ? 'Überspringen' : 'Weiter'}

@@ -59,7 +59,7 @@ export function ParetoCard({ pareto }: { pareto: ParetoModel | null }) {
           y1="0"
           x2={pareto.share * W}
           y2={H}
-          stroke="var(--blue)"
+          stroke="var(--accent)"
           strokeWidth="0.4"
         />
         <path d={pathOf(pareto.curve)} fill="none" stroke="var(--ink)" strokeWidth="0.8" />

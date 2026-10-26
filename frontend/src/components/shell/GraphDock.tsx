@@ -18,7 +18,7 @@ export function GraphDock() {
         type="button"
         onClick={() => dispatch({ type: 'compareWindow', open: true })}
         data-tour="compare"
-        className={`${PILL} !border-blue text-blueD`}
+        className={`${PILL} !border-accent text-accent-ink`}
       >
         ⇄ Vergleich <span>{formatCount(selection.compare.length)}</span>
       </button>

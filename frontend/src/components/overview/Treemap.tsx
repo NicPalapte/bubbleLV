@@ -120,7 +120,7 @@ export function Treemap({
               width: rect.width,
               height: rect.height,
               background: color,
-              outline: active ? '2px solid var(--blue)' : '1px solid var(--white)',
+              outline: active ? '2px solid var(--accent)' : '1px solid var(--white)',
               outlineOffset: -1,
             }}
           >
@@ -147,7 +147,7 @@ export function Treemap({
                   top: cell.y,
                   width: cell.width,
                   height: cell.height,
-                  outline: activeUnits.has(item.key) ? '2px solid var(--blue)' : undefined,
+                  outline: activeUnits.has(item.key) ? '2px solid var(--accent)' : undefined,
                   outlineOffset: -2,
                 }}
               >

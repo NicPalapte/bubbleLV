@@ -97,8 +97,9 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
   `bubble` nicht umbenennen – bricht gespeicherte Daten und Links: `DB_NAME`,
   `NOTES_FILE_KIND`, `bubble-pos-v1`, `bubble-graph-v1`, GoatCounter-Code, Repo `bubbleLV`,
   `@bubble/core`. „Bubble" als Blase im Graphen (`BubbleGraph`) bleibt.
-- Farben nur über CSS-Variablen aus `frontend/src/index.css`; `--blue*` ist der
-  Ziegelrot-Akzent (Auswahl, Interaktion). Hinweise amber, nie rot. Titel `font-display`
+- Farben nur über CSS-Variablen aus dem Paket `@conocto/design` (`tokens.css`, Entscheidung
+  0076); `--accent*` ist der Ziegelrot-Akzent (Auswahl, Interaktion). Neue/geänderte Tokens
+  im Repo `conocto-design`, nicht in `frontend/src/index.css`. Hinweise amber, nie rot. Titel `font-display`
   (Hanken Grotesk), sonst Schibsted Grotesk; kein `tabular-nums` (verbreitert `.` und `,`).
 - Strikte TS-Types überall – kein `any` ohne Kommentar
 - Kurze, gezielte Kommentare nur bei nicht-offensichtlichem WARUM (z. B. GAEB-Format-

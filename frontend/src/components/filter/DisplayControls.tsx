@@ -4,8 +4,8 @@
 // Der Umgang mit Nicht-Treffern steht in der Suche (TopBar, Entscheidung 0058).
 
 import type { ReactNode } from 'react';
-import { SegmentedControl } from '../ui/SegmentedControl';
-import { ChipGroup, ValueChip } from '../ui/ValueChip';
+import { SegmentedControl } from '@conocto/design';
+import { ChipGroup, ValueChip } from '@conocto/design';
 import { FACETS_BY_ID } from '../../lib/facets';
 import {
   AXIS_IDS,

@@ -16,9 +16,9 @@
 
 import { useCallback, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { ConoctoLogo } from '../ui/ConoctoLogo';
+import { ConoctoLogo } from '@conocto/design';
 import { Popover, PopoverRow } from '../ui/Popover';
-import { SegmentedControl } from '../ui/SegmentedControl';
+import { SegmentedControl } from '@conocto/design';
 import { useDismiss } from '../common/useDismiss';
 import { useTheme } from '../common/useTheme';
 import type { Mitnehmen } from '../common/useMitnehmen';

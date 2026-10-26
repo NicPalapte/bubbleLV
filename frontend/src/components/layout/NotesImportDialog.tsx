@@ -21,11 +21,11 @@ interface Row {
   oz: string;
   text: string;
   label: string;
-  tone: 'blue' | 'amber' | 'red';
+  tone: 'accent' | 'amber' | 'red';
 }
 
 const TONE = {
-  blue: 'bg-blueS text-blueD',
+  accent: 'bg-accent-soft text-accent-ink',
   amber: 'bg-[var(--amberS)] text-[var(--amber)]',
   red: 'bg-[var(--redS)] text-[var(--redD)]',
 } as const;
@@ -83,7 +83,7 @@ export function NotesImportDialog({ file, fileName, onClose }: Props) {
       oz: m.entry.oz,
       text: m.entry.kurztext,
       label: `jetzt ${m.node.position?.oz ?? m.node.code}`,
-      tone: 'blue' as const,
+      tone: 'accent' as const,
     })),
     ...matching.changed.map((m, i) => ({
       key: `g${i}`,
@@ -153,7 +153,7 @@ export function NotesImportDialog({ file, fileName, onClose }: Props) {
           </div>
           <div className="grid grid-cols-2 gap-[8px] sm:grid-cols-4">
             <Kachel zahl={matching.same.length} label="gleich" farbe="var(--greenD)" />
-            <Kachel zahl={matching.moved.length} label="umnummeriert" farbe="var(--blueD)" />
+            <Kachel zahl={matching.moved.length} label="umnummeriert" farbe="var(--accent-ink)" />
             <Kachel zahl={matching.changed.length} label="geändert" farbe="var(--amber)" />
             <Kachel zahl={matching.missing.length} label="nicht gefunden" farbe="var(--redD)" />
           </div>
