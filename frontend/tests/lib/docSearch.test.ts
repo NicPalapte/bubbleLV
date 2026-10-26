@@ -15,4 +15,14 @@ describe('docSearch', () => {
     ]);
     expect(hitsInPage('Beton', '', 1)).toEqual([]);
   });
+
+  it('findet einen Begriff über Zeilen, auch wenn im Seitentext Leerraum fehlt oder doppelt ist', () => {
+    const needle = docNeedleOf('Bitumen\ndickbeschichtung  WU-Beton');
+    expect(hitsInPage('…Bitumendickbeschichtung WU-Beton', needle, 1)).toEqual([
+      { page: 1, start: 1, text: 'Bitumendickbeschichtung WU-Beton' },
+    ]);
+    expect(hitsInPage('Bitumen dickbeschichtungWU-Beton.', needle, 2)).toEqual([
+      { page: 2, start: 0, text: 'Bitumen dickbeschichtungWU-Beton' },
+    ]);
+  });
 });

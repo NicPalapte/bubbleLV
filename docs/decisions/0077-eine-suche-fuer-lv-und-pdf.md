@@ -31,8 +31,8 @@
   nicht gespeichert, 0072).
 - **Gelb markiert** sind Treffer nur im PDF, das gerade im Bereich „Dokument“ zu sehen
   ist.
-- **Suchen im PDF:** Der Text wird zusammenhängend gesucht, Groß- und Kleinschreibung
-  zählen nicht. Mindestens 2 Zeichen.
+- **Suchen im PDF:** Groß- und Kleinschreibung und Leerraum zählen nicht, denn PDFs
+  liefern Leerzeichen und Zeilenumbrüche unzuverlässig. Mindestens 2 Zeichen.
 - **Begriff übernehmen:** Text im Langtext oder im PDF markieren. Im Menü (Rechtsklick)
   steht oben „In Suche übernehmen“. Der Begriff ersetzt den Suchtext, Filter bleiben.
 - **Tablet:** Ohne Rechtsklick erscheint dasselbe Menü, sobald die Auswahl nach dem
