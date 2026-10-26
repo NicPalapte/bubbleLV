@@ -43,3 +43,6 @@
 ## Folgen
 
 - Nichts einmalig zu tun.
+- Steht der Schalter schon auf „ausblenden“ (etwa von einem Filter), verschwindet beim
+  Hervorheben der Rest sofort. Gewollt: eine Einstellung für beides. Der Schalter steht
+  dann sichtbar in der Suchleiste und lässt sich dort zurückstellen.
