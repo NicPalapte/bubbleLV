@@ -23,6 +23,8 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
   „Zeigen ›“ springt hin. Gelb markiert ist er im PDF, das gerade offen ist.
 - Das Suchfeld im Bereich „Dokument“ ist jetzt dasselbe wie oben. PDF-Treffer filtern
   das LV nicht.
+- **Korrektur:** Eine PDF-Stelle mit mehreren verknüpften Positionen („OZ +2“) klappt
+  auf Klick alle Positionen auf; jede springt zu ihrer Position.
 
 ## 0.39.1 — 26.10.2026 · Gemeinsames Designsystem
 

@@ -16,6 +16,7 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from 'react';
 import { useDocuments } from './DocumentsProvider';
+import { LinkBadge } from './LinkBadge';
 import { LinkDialog } from './LinkDialog';
 import { PdfPage, type PageSize } from './PdfPage';
 import type { DocHighlightItem } from './docHighlights';
@@ -353,22 +354,16 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
 
   // Stabil, damit `PdfPage` (memo) beim Scrollen nicht alle Seiten neu rendert.
   const badge = useCallback(
-    (mark: DocMark) => {
-      const first = mark.links[0];
-      const slot = index.slotOf.get(first);
-      const oz = slot === undefined ? '?' : (index.nodes[slot].position?.oz ?? '?');
-      return (
-        <button
-          type="button"
-          onClick={() => jumpToPosition(first, { stayInView: true })}
-          title="Verknüpfte Position wählen"
-          className="cursor-pointer rounded-[6px] border border-accent bg-white px-[5px] py-[1px] font-mono text-[10.5px] text-[#a52a21] shadow-[var(--shadow-sm)] hover:bg-[#fbebe9]"
-        >
-          {oz}
-          {mark.links.length > 1 ? ` +${mark.links.length - 1}` : ''}
-        </button>
-      );
-    },
+    (mark: DocMark) => (
+      <LinkBadge
+        links={mark.links}
+        ozOf={(id) => {
+          const slot = index.slotOf.get(id);
+          return slot === undefined ? '?' : (index.nodes[slot].position?.oz ?? '?');
+        }}
+        onPick={(id) => jumpToPosition(id, { stayInView: true })}
+      />
+    ),
     [index, jumpToPosition],
   );
 
