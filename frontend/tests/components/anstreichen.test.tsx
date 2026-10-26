@@ -107,6 +107,19 @@ describe('Anstreichen im Langtext', () => {
     await waitFor(() => expect(screen.getByRole('textbox', { name: 'Suche' })).toHaveValue(wort));
   });
 
+  it('übernimmt einen Begriff aus dem Kurztext in die Suche', async () => {
+    await ladeDatei();
+    langtext();
+    const kurztext = document.querySelector<HTMLElement>('h2 .select-text');
+    if (kurztext === null) throw new Error('Kein Kurztext im Kopf der Positionskarte');
+    const wort = waehleWort(kurztext);
+    const menue = await screen.findByRole('toolbar', { name: 'Auswahl' });
+    // Kein Anstreichen im Kurztext, nur suchen und kopieren.
+    expect(within(menue).queryByRole('button', { name: 'Gelb markieren' })).toBeNull();
+    fireEvent.click(within(menue).getByRole('button', { name: 'In Suche übernehmen' }));
+    await waitFor(() => expect(screen.getByRole('textbox', { name: 'Suche' })).toHaveValue(wort));
+  });
+
   it('zeigt die Leiste am Tablet nach Berühren, sobald die Auswahl ruht', async () => {
     await ladeDatei();
     const text = langtext();

@@ -35,6 +35,8 @@
   liefern Leerzeichen und Zeilenumbrüche unzuverlässig. Mindestens 2 Zeichen.
 - **Begriff übernehmen:** Text im Langtext oder im PDF markieren. Im Menü (Rechtsklick)
   steht oben „In Suche übernehmen“. Der Begriff ersetzt den Suchtext, Filter bleiben.
+  Im Kurztext (Kopf der Positionskarte) gibt es dafür ein kleines Menü nur mit „In Suche
+  übernehmen“ und „Kopieren“; anstreichen lässt sich dort nichts.
 - **Tablet:** Ohne Rechtsklick erscheint dasselbe Menü, sobald die Auswahl nach dem
   Berühren kurz ruht. Am Touch-Gerät sind die Zeilen größer.
 

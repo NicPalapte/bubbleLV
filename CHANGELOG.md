@@ -15,7 +15,7 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
   selbst und zeigt es. Mehrere PDFs auf einmal gehen auch.
 - **PDF auf die App ziehen:** irgendwo auf die Arbeitsfläche fallen lassen, auch wenn
   „Dokument“ zu ist. Andere Dateien nimmt die Fläche nicht an.
-- **Begriff in die Suche:** Text im Langtext oder im PDF markieren, Rechtsklick,
+- **Begriff in die Suche:** Text im Kurztext, Langtext oder PDF markieren, Rechtsklick,
   „In Suche übernehmen“. Am Tablet erscheint das Menü von selbst, sobald die Auswahl
   ruht.
 - **Eine Suche:** Der Begriff aus der Suchleiste sucht auch in allen offenen PDFs. Unter

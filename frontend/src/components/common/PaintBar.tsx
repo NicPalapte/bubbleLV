@@ -190,6 +190,61 @@ export function PaintBar({
 }
 
 /**
+ * Kleines Menü für Text ohne Anstreichen, z. B. den Kurztext im Kopf der Positionskarte:
+ * nur „In Suche übernehmen“ und „Kopieren“ (Entscheidung 0077).
+ */
+export function SelectionMenu({
+  target,
+  onSearch,
+  onCopy,
+  onClose,
+}: {
+  target: Pick<PaintTarget, 'left' | 'top'>;
+  onSearch: () => void;
+  onCopy: () => void;
+  onClose: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const host = useHostWindow();
+  useCloseOutside(ref, onClose);
+  const left = Math.max(8, Math.min(target.left, host.innerWidth - MENU_WIDTH - 8));
+
+  return createPortal(
+    <div
+      ref={ref}
+      role="toolbar"
+      aria-label="Auswahl"
+      aria-orientation="vertical"
+      data-keeps-popover=""
+      className="ov-window fixed z-[70] flex flex-col gap-[1px] p-[6px]"
+      style={{ left, top: Math.min(target.top, host.innerHeight - 120), width: MENU_WIDTH }}
+      onContextMenu={(event) => event.preventDefault()}
+    >
+      <button
+        type="button"
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={onSearch}
+        className={`${ROW} font-semibold`}
+      >
+        <span aria-hidden="true" className="w-[12px] shrink-0 text-center text-mute">
+          ⌕
+        </span>
+        In Suche übernehmen
+      </button>
+      <button
+        type="button"
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={onCopy}
+        className={ROW}
+      >
+        Kopieren
+      </button>
+    </div>,
+    host.document.body,
+  );
+}
+
+/**
  * „Farben benennen": je Farbe ein Name (z. B. Gelb = wichtig). Übernommen wird beim
  * Schließen, damit Leerzeichen beim Tippen nicht sofort weggekürzt werden.
  */

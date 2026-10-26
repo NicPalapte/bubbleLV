@@ -8,7 +8,7 @@ import { Highlighted } from './Highlighted';
 import { LearnPopover } from './LearnPopover';
 import { MAX_TERM_LENGTH, type LearnTarget } from './learnSelection';
 import { MarkerHead, NoteBlock } from './NoteBlock';
-import { PaintBar, PaintList, PaintNamesDialog } from './PaintBar';
+import { PaintBar, PaintList, PaintNamesDialog, SelectionMenu } from './PaintBar';
 import {
   locate,
   PAINT_SECTION,
@@ -193,6 +193,20 @@ export function PositionDetails({ node, position }: { node: LVNode; position: Po
     setPaintTarget({ ...placed, touched: touched(target) });
     return true;
   };
+  // Kurztext im Kopf: nur suchen und kopieren, nicht anstreichen (Entscheidung 0077).
+  const [shortTextEl, setShortTextEl] = useState<HTMLSpanElement | null>(null);
+  const [shortPick, setShortPick] = useState<PaintTarget | null>(null);
+  const closeShortPick = useCallback(() => setShortPick(null), []);
+  const openShortMenu = (at: { x: number; y: number } | null): boolean => {
+    if (shortTextEl === null) return false;
+    const target = paintSelection(shortTextEl);
+    if (target === null) return false;
+    setShortPick(at === null ? target : { ...target, left: at.x, top: at.y });
+    return true;
+  };
+  useTouchSelectionMenu(shortTextEl, () => {
+    openShortMenu(null);
+  });
   // Ohne Rechtsklick am Tablet: Leiste unter der Auswahl, sobald sie ruht.
   useTouchSelectionMenu(longTextEl, () => {
     openPaintMenu(null);
@@ -269,9 +283,37 @@ export function PositionDetails({ node, position }: { node: LVNode; position: Po
             <HintCount positionId={node.id} target={hintsRef} />
           </>
         }
-        title={<Highlighted text={position.shortText} query={search} />}
+        title={
+          <span
+            ref={setShortTextEl}
+            onContextMenu={(event) => {
+              if (openShortMenu({ x: event.clientX, y: event.clientY })) event.preventDefault();
+            }}
+            // Wie der Langtext: im Graphen gilt `select-none`, hier soll man markieren können.
+            className="cursor-text select-text"
+          >
+            <Highlighted text={position.shortText} query={search} />
+          </span>
+        }
         actions={<MarkerHead positionId={node.id} />}
       />
+      {shortPick !== null && (
+        <SelectionMenu
+          target={shortPick}
+          onSearch={() => {
+            dispatch({ type: 'search', value: searchTermOf(shortPick.text) });
+            window.getSelection()?.removeAllRanges();
+            setShortPick(null);
+          }}
+          onCopy={() => {
+            setShortPick(null);
+            copySelection(shortPick.text, () =>
+              dispatch({ type: 'notice', message: 'Text konnte nicht kopiert werden.' }),
+            );
+          }}
+          onClose={closeShortPick}
+        />
+      )}
       <StatRow
         stats={[
           {
