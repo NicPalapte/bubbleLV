@@ -142,7 +142,7 @@ export interface WorkspaceState extends Arrangement {
 export const INITIAL_WORKSPACE: WorkspaceState = {
   ...INITIAL_ARRANGEMENT,
   // Überblick und Prüfung öffnet erst, wer sie braucht (Entscheidung 0070).
-  // Das Dokument ebenso: erst „+ Dokument" öffnet es (Entscheidung 0072).
+  // Das Dokument ebenso: erst ein PDF öffnet es (Logo-Menü, Ziehen; Entscheidung 0072).
   closed: { graph: false, table: false, card: false, overview: true, check: true, doc: true },
 };
 

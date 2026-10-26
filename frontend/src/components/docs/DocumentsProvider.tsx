@@ -17,7 +17,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { DocSpot } from '../../lib/docs/docNotes';
-import { openPdf, PdfOpenError, type OpenedPdf } from '../../lib/docs/pdf';
+import { isPdfFile, openPdf, PdfOpenError, type OpenedPdf } from '../../lib/docs/pdf';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 
 /** Sprungziel: Stelle im Dokument; `nonce` macht denselben Sprung wiederholbar. */
@@ -33,6 +33,8 @@ export interface DocumentsApi {
   readonly error: string | null;
   readonly jump: DocJump | null;
   open: (file: File) => Promise<void>;
+  /** Öffnet alle PDFs der Liste nacheinander; andere Dateien bleiben liegen. */
+  openFiles: (files: readonly File[]) => Promise<void>;
   close: (id: string) => void;
   activate: (id: string) => void;
   /** Zeigt die Stelle; ist ihr Dokument nicht offen, passiert nichts. */
@@ -80,6 +82,9 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
     async (file: File): Promise<void> => {
       setBusy(true);
       setError(null);
+      // Bereich gleich zeigen: Wer ein PDF wählt, sieht dort, dass es lädt — oder
+      // warum es nicht geht.
+      dispatch({ type: 'showPane', pane: 'doc' });
       const startLv = lvRef.current;
       try {
         const opened = await openPdf(file);
@@ -101,7 +106,6 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
           setDocs((current) => [...current, opened]);
         }
         setActiveId(opened.id);
-        dispatch({ type: 'showPane', pane: 'doc' });
       } catch (caught) {
         setError(
           caught instanceof PdfOpenError ? caught.message : 'Das PDF lässt sich nicht öffnen.',
@@ -111,6 +115,13 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
       }
     },
     [dispatch],
+  );
+
+  const openFiles = useCallback(
+    async (files: readonly File[]): Promise<void> => {
+      for (const file of files) if (isPdfFile(file)) await open(file);
+    },
+    [open],
   );
 
   const close = useCallback((id: string): void => {
@@ -156,8 +167,20 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
 
   const active = docs.find((doc) => doc.id === activeId) ?? docs.at(-1) ?? null;
   const api = useMemo<DocumentsApi>(
-    () => ({ docs, active, busy, error, jump, open, close, activate, jumpTo, pageText }),
-    [docs, active, busy, error, jump, open, close, activate, jumpTo, pageText],
+    () => ({
+      docs,
+      active,
+      busy,
+      error,
+      jump,
+      open,
+      openFiles,
+      close,
+      activate,
+      jumpTo,
+      pageText,
+    }),
+    [docs, active, busy, error, jump, open, openFiles, close, activate, jumpTo, pageText],
   );
   return <DocumentsContext.Provider value={api}>{children}</DocumentsContext.Provider>;
 }

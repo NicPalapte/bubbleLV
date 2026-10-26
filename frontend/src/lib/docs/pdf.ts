@@ -27,6 +27,11 @@ export interface OpenedPdf {
   readonly pdf: PDFDocumentProxy;
 }
 
+/** PDF nach Typ oder Endung — manche Systeme liefern beim Ziehen keinen Typ mit. */
+export function isPdfFile(file: File): boolean {
+  return file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+}
+
 type PdfJs = typeof import('pdfjs-dist');
 
 let pdfjs: Promise<PdfJs> | null = null;

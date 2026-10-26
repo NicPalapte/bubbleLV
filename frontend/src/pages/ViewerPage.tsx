@@ -16,6 +16,7 @@ import { PrintView } from '../components/print/PrintView';
 import { Workspace } from '../components/shell/Workspace';
 import { WorkspaceProvider } from '../components/shell/WorkspaceProvider';
 import { DocumentsProvider } from '../components/docs/DocumentsProvider';
+import { PdfDrop } from '../components/docs/PdfDrop';
 import { FileDropzone } from '../components/upload/FileDropzone';
 import { ErrorBoundary } from '../components/common/ErrorBoundary';
 import { PositionMenuProvider } from '../components/common/PositionMenu';
@@ -105,6 +106,7 @@ export function ViewerPage() {
                     className="relative flex-1 overflow-hidden bg-paper"
                   >
                     <Workspace root={tree} />
+                    <PdfDrop />
                   </main>
                 )}
               </ErrorBoundary>

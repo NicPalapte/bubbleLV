@@ -9,6 +9,14 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.40.0 — 26.10.2026 · PDF direkt hinzufügen
+
+- **Logo-Menü → „PDF hinzufügen…“:** PDF wählen, der Bereich „Dokument“ öffnet sich von
+  selbst und zeigt es. Mehrere PDFs auf einmal gehen auch.
+- **PDF auf die App ziehen:** irgendwo auf die Arbeitsfläche fallen lassen, auch wenn
+  „Dokument“ zu ist. Andere Dateien nimmt die Fläche nicht an.
+- Lässt sich ein PDF nicht lesen, steht die Meldung gleich im Bereich „Dokument“.
+
 ## 0.39.0 — 25.10.2026 · Blasen nach Abschnitten, Abschnitt hervorheben
 
 - **Geordnet statt zufällig:** Im Graphen „nach LV“ liegt jeder Hauptabschnitt als

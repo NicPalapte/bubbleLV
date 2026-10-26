@@ -16,6 +16,7 @@ import { NotesImportDialog } from './NotesImportDialog';
 import { AboutMenu } from './AboutMenu';
 import { useMitnehmen } from '../common/useMitnehmen';
 import { WorkspaceBar } from '../shell/WorkspaceBar';
+import { useOptionalDocuments } from '../docs/DocumentsProvider';
 import { PROGRESS_INFO } from '../../lib/annotations';
 import { FACETS, facetOptionLabel } from '../../lib/facets';
 import { formatCount } from '../../lib/format';
@@ -131,6 +132,8 @@ export function TopBar() {
   const adminFrei = useAdmin().unlocked;
   /** „Notizen laden…": versteckter Dateidialog, danach das Ergebnisfenster (0061). */
   const notizDateiRef = useRef<HTMLInputElement>(null);
+  const pdfDateiRef = useRef<HTMLInputElement>(null);
+  const documents = useOptionalDocuments();
   const [notizDatei, setNotizDatei] = useState<{ file: NotesFile; name: string } | null>(null);
   const notizenLesen = async (datei: File | undefined): Promise<void> => {
     if (datei === undefined) return;
@@ -258,6 +261,9 @@ export function TopBar() {
           onFeedback={loaded ? survey.show : undefined}
           onAnderesLv={loaded ? () => dispatch({ type: 'clear' }) : undefined}
           mitnehmen={loaded ? mitnehmen : undefined}
+          onPdfHinzufuegen={
+            loaded && documents !== null ? () => pdfDateiRef.current?.click() : undefined
+          }
           onNotizenLaden={loaded ? () => notizDateiRef.current?.click() : undefined}
           notizen={notizAnzahl}
           onAdmin={() => setAdminOffen(true)}
@@ -272,6 +278,19 @@ export function TopBar() {
             void notizenLesen(event.target.files?.[0]);
             // Zurücksetzen, damit dieselbe Datei erneut gewählt werden kann.
             event.target.value = '';
+          }}
+        />
+        <input
+          ref={pdfDateiRef}
+          type="file"
+          accept="application/pdf,.pdf"
+          multiple
+          className="hidden"
+          aria-label="PDF auswählen"
+          onChange={(event) => {
+            const files = [...(event.target.files ?? [])];
+            event.target.value = '';
+            void documents?.openFiles(files);
           }}
         />
         {adminFrei && (
