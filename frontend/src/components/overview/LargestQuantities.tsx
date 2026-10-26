@@ -7,7 +7,7 @@
 // kein Filter; ein Klick auf eine Zeile wählt die Position an.
 
 import { useState } from 'react';
-import { ChipGroup, ValueChip } from '../ui/ValueChip';
+import { ChipGroup, ValueChip } from '@conocto/design';
 import { formatNumber } from '../../lib/format';
 import type { LargestByUnit } from '../../lib/overview/model';
 
@@ -60,7 +60,7 @@ export function LargestQuantities({
           >
             <span
               className="w-[92px] shrink-0 truncate font-mono text-[11px]"
-              style={{ color: item.nodeId === selectedId ? 'var(--blueD)' : 'var(--dim)' }}
+              style={{ color: item.nodeId === selectedId ? 'var(--accent-ink)' : 'var(--dim)' }}
             >
               {item.oz}
             </span>
@@ -72,7 +72,7 @@ export function LargestQuantities({
                 className="mt-[2px] block h-[4px]"
                 style={{
                   width: `${max > 0 ? Math.max(1, (item.quantity / max) * 100) : 0}%`,
-                  background: item.nodeId === selectedId ? 'var(--blue)' : 'var(--line2)',
+                  background: item.nodeId === selectedId ? 'var(--accent)' : 'var(--line2)',
                 }}
               />
             </span>

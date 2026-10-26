@@ -23,3 +23,8 @@ never red, Hanken Grotesk for titles and wordmark, Schibsted Grotesk for all oth
 shadows over the graph, square table rows, no icon library (Unicode glyphs only), no emoji,
 no imagery. Minimal explanatory text.
 Rules since 2026-10-22: docs/decisions/0069-conocto-look.md (replaces the look of 0033).
+
+Since 2026-10-26 the production tokens, fonts and generic components live in the package
+`@conocto/design` (repo `NicPalapte/conocto-design`, decision 0076): values in
+`frontend/node_modules/@conocto/design/tokens/tokens.json`. The accent is `--accent*`
+(was `--blue*`). Files in this skill are prototype references; the package wins.

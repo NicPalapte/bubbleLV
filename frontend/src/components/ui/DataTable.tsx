@@ -756,7 +756,7 @@ export function DataTable<T>({
                   borderRight: '1px solid var(--line)',
                   textAlign: column.align ?? 'left',
                   userSelect: 'none',
-                  color: active ? 'var(--blue)' : 'var(--mute)',
+                  color: active ? 'var(--accent)' : 'var(--mute)',
                 }}
               >
                 {/*
@@ -950,10 +950,10 @@ export function DataTable<T>({
                     // Die aktive Zeile ist die, auf der die Tastatur steht; die
                     // gewählte ist blau. Beide zugleich sichtbar zu halten
                     // braucht zwei verschiedene Mittel — Fläche und Kante.
-                    outline: key === activeKey ? '1px solid var(--blue)' : 'none',
+                    outline: key === activeKey ? '1px solid var(--accent)' : 'none',
                     outlineOffset: '-1px',
                     background: selected
-                      ? 'var(--blueS)'
+                      ? 'var(--accent-soft)'
                       : index % 2 === 1
                         ? 'var(--panel)'
                         : 'var(--white)',

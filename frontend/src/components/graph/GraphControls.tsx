@@ -5,7 +5,7 @@
 // Liest und schreibt direkt im Viewer-Zustand; Zoom gehört dem Graphen.
 
 import { DisplayControls, Row } from '../filter/DisplayControls';
-import { SegmentedControl } from '../ui/SegmentedControl';
+import { SegmentedControl } from '@conocto/design';
 import { SIZE_MODES, type SizeModeId } from '../../lib/graph/sizes';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 
@@ -109,7 +109,7 @@ export function GraphControls({ onFit, onFitSelection, onZoom }: GraphControlsPr
         onClick={() => dispatch({ type: 'graphSettings', open: !graphSettings })}
         className={`inline-flex h-[28px] cursor-pointer items-center gap-[6px] whitespace-nowrap rounded-[var(--r-sm)] border px-[9px] font-mono text-[11.5px] ${
           graphSettings
-            ? 'border-blue bg-blueS text-blueD'
+            ? 'border-accent bg-accent-soft text-accent-ink'
             : 'border-line bg-surface text-dim hover:border-line2 hover:text-ink'
         }`}
       >

@@ -100,7 +100,7 @@ export function PaintBar({
             type="button"
             onMouseDown={(event) => event.preventDefault()}
             onClick={onLink}
-            className={`${ROW} font-semibold text-blueD`}
+            className={`${ROW} font-semibold text-accent-ink`}
           >
             Mit Position verknüpfen…
           </button>
@@ -224,7 +224,7 @@ export function PaintNamesDialog({
             onKeyDown={(event) => {
               if (event.key === 'Enter') close();
             }}
-            className="h-[28px] min-w-0 flex-1 rounded-[6px] border border-line bg-surface px-[8px] font-mono text-[12px] text-ink focus:border-blue focus:outline-none"
+            className="h-[28px] min-w-0 flex-1 rounded-[6px] border border-line bg-surface px-[8px] font-mono text-[12px] text-ink focus:border-accent focus:outline-none"
           />
         </label>
       ))}

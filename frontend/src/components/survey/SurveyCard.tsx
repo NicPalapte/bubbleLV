@@ -21,7 +21,9 @@ const QUESTION = 'font-sans text-[13px] text-ink';
 
 function choiceClass(on: boolean): string {
   return `${CHOICE} ${
-    on ? 'border-blue bg-blueS text-blueD' : 'border-line bg-surface text-dim hover:border-blue'
+    on
+      ? 'border-accent bg-accent-soft text-accent-ink'
+      : 'border-line bg-surface text-dim hover:border-accent'
   }`;
 }
 
@@ -128,7 +130,7 @@ function SurveyForm() {
           rows={2}
           maxLength={MAX_FEEDBACK_TEXT}
           placeholder="optional, geht per E-Mail"
-          className="resize-none rounded-[var(--r-sm)] border border-line bg-surface p-[6px] font-sans text-[12.5px] text-ink outline-none focus:border-blue"
+          className="resize-none rounded-[var(--r-sm)] border border-line bg-surface p-[6px] font-sans text-[12.5px] text-ink outline-none focus:border-accent"
         />
       </label>
 
@@ -156,7 +158,7 @@ function SurveyForm() {
             // Übergibt nur an das Mailprogramm; abschicken muss man dort selbst.
             window.location.href = feedbackMailto(text);
           }}
-          className={`${BUTTON} border-blueF bg-blueF text-white hover:bg-blueFH disabled:cursor-default disabled:opacity-50`}
+          className={`${BUTTON} border-accent-fill bg-accent-fill text-white hover:bg-accent-fill-hover disabled:cursor-default disabled:opacity-50`}
         >
           Senden
         </button>

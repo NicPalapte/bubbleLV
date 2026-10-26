@@ -6,7 +6,7 @@
 // Datei bleibt in der IndexedDB dieses Browsers (Entscheidung 0046, lib/persist).
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ConoctoLogo } from '../ui/ConoctoLogo';
+import { ConoctoLogo } from '@conocto/design';
 import { DEMO_LVS, loadDemoLv, type DemoLv } from '../../lib/pipeline/loadDemoLv';
 import { GAEB_ENDUNGEN } from '@core';
 import { formatPositions, formatWhen } from '../../lib/format';

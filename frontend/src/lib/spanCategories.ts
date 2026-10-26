@@ -24,7 +24,7 @@ export interface SpanCategory {
  * noch nicht steht.
  */
 export const SPAN_CATEGORIES: readonly SpanCategory[] = [
-  { key: 'normen', label: 'Normen', color: 'var(--blueD)', background: 'var(--blueS)' },
+  { key: 'normen', label: 'Normen', color: 'var(--accent-ink)', background: 'var(--accent-soft)' },
   { key: 'fristen', label: 'Zeitbezug', color: 'var(--amberD)', background: 'var(--amberS)' },
   {
     key: 'platzhalter',

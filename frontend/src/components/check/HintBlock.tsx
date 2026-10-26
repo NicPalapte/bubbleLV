@@ -65,7 +65,7 @@ function RuleHints({
         <button
           type="button"
           onClick={() => onJump(ruleId, positionId)}
-          className="cursor-pointer border-none bg-transparent p-0 font-mono text-[11px] text-mute underline underline-offset-2 hover:text-blue focus-visible:text-blue"
+          className="cursor-pointer border-none bg-transparent p-0 font-mono text-[11px] text-mute underline underline-offset-2 hover:text-accent focus-visible:text-accent"
         >
           In der Prüfung zeigen
         </button>

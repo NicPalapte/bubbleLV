@@ -19,7 +19,7 @@ import { useViewer, useViewerDispatch } from '../../state/viewer';
 const EMPTY_SELECTION: ReadonlySet<string> = new Set();
 
 const CHIP =
-  'inline-flex h-[30px] shrink-0 cursor-pointer items-center gap-[6px] whitespace-nowrap rounded-[var(--r-pill)] border px-[12px] font-mono text-[11.5px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue';
+  'inline-flex h-[30px] shrink-0 cursor-pointer items-center gap-[6px] whitespace-nowrap rounded-[var(--r-pill)] border px-[12px] font-mono text-[11.5px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent';
 
 const OPTION =
   'flex min-h-[30px] cursor-pointer items-center gap-[8px] rounded-[var(--r-sm)] px-[8px] font-mono text-[12px] text-ink hover:bg-sunken';
@@ -47,7 +47,7 @@ const orderOf = (id: string): number => {
 };
 
 const RESET =
-  'cursor-pointer border-none bg-transparent p-0 font-mono text-[11px] font-medium uppercase tracking-[0.7px] text-blueD';
+  'cursor-pointer border-none bg-transparent p-0 font-mono text-[11px] font-medium uppercase tracking-[0.7px] text-accent-ink';
 
 function Chevron() {
   return (
@@ -81,7 +81,7 @@ function GroupChip({
         onClick={onToggle}
         className={`${CHIP} ${
           active > 0
-            ? 'border-blue bg-blueS text-blueD'
+            ? 'border-accent bg-accent-soft text-accent-ink'
             : open
               ? 'border-ink bg-surface text-ink'
               : 'border-line bg-surface text-ink hover:border-line2'
@@ -122,7 +122,7 @@ function Option({
         type="checkbox"
         checked={checked}
         onChange={onChange}
-        className="h-[14px] w-[14px] shrink-0 cursor-pointer accent-[var(--blue)]"
+        className="h-[14px] w-[14px] shrink-0 cursor-pointer accent-[var(--accent)]"
       />
       <span className="min-w-0 flex-1 truncate" title={label}>
         {label}

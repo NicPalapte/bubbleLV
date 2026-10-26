@@ -42,7 +42,7 @@ export interface MarkerInfo {
 }
 
 export const PROGRESS_INFO: Readonly<Record<Progress, MarkerInfo>> = {
-  bearbeitung: { label: 'In Bearbeitung', glyph: '◔', fill: 'var(--blue)', text: '#fff' },
+  bearbeitung: { label: 'In Bearbeitung', glyph: '◔', fill: 'var(--accent)', text: '#fff' },
   fertig: { label: 'Erledigt', glyph: '✓', fill: 'var(--greenD)', text: '#fff' },
 };
 

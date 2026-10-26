@@ -19,7 +19,11 @@ export function NoticeBar() {
       role="status"
       aria-label="Hinweise"
       className="flex items-start gap-[10px] border-b px-[16px] py-[7px] font-mono text-[11.5px] leading-[1.6]"
-      style={{ borderColor: 'var(--blue)', background: 'var(--blueS)', color: 'var(--blueD)' }}
+      style={{
+        borderColor: 'var(--accent)',
+        background: 'var(--accent-soft)',
+        color: 'var(--accent-ink)',
+      }}
     >
       <div className="min-w-0 flex-1">
         {notices.map((notice) => (
@@ -31,7 +35,7 @@ export function NoticeBar() {
         aria-label="Hinweis schließen"
         onClick={() => dispatch({ type: 'dismissNotices' })}
         className="shrink-0 cursor-pointer border-0 bg-transparent px-[4px] font-mono text-[13px] leading-none"
-        style={{ color: 'var(--blueD)' }}
+        style={{ color: 'var(--accent-ink)' }}
       >
         ✕
       </button>

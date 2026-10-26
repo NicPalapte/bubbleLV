@@ -14,7 +14,7 @@
 
 import { useCallback, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Chip } from '../ui/Chip';
+import { Chip } from '@conocto/design';
 import { useDismiss } from '../common/useDismiss';
 import {
   issueBody,

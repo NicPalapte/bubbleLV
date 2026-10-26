@@ -398,7 +398,7 @@ export function SplitView({ root }: { root: LVNode }) {
       >
         <span
           aria-hidden="true"
-          className={`${live ? 'bg-blue' : 'bg-transparent'} group-hover:bg-blue group-focus-visible:bg-blue ${
+          className={`${live ? 'bg-accent' : 'bg-transparent'} group-hover:bg-accent group-focus-visible:bg-accent ${
             line.axis === 'row' ? 'h-full w-[2px]' : 'h-[2px] w-full'
           }`}
         />
@@ -503,7 +503,7 @@ export function SplitView({ root }: { root: LVNode }) {
         key={`head-${place.id}`}
         data-slot={place.id}
         className={`absolute z-[3] flex items-stretch border-b border-line pr-[4px] ${
-          hot ? 'bg-blueS shadow-[inset_0_0_0_2px_var(--blue)]' : 'bg-panel'
+          hot ? 'bg-accent-soft shadow-[inset_0_0_0_2px_var(--accent)]' : 'bg-panel'
         }`}
         style={rectStyle(rect, 0, HEAD)}
       >
@@ -544,7 +544,7 @@ export function SplitView({ root }: { root: LVNode }) {
                 {...common}
                 className={`flex min-w-0 ${hand} items-center gap-[7px] border-none px-[10px] font-display text-[13px] ${
                   on
-                    ? 'bg-surface font-semibold text-ink shadow-[inset_0_-2px_0_var(--blue)]'
+                    ? 'bg-surface font-semibold text-ink shadow-[inset_0_-2px_0_var(--accent)]'
                     : 'bg-transparent text-dim hover:text-ink'
                 } ${dragged === pane ? 'opacity-50' : ''}`}
               >
@@ -585,10 +585,10 @@ export function SplitView({ root }: { root: LVNode }) {
     >
       {over !== null && target !== undefined && (
         <div
-          className="pointer-events-none absolute flex items-center justify-center border-2 border-solid border-blue bg-[color-mix(in_srgb,var(--blueS)_55%,transparent)]"
+          className="pointer-events-none absolute flex items-center justify-center border-2 border-solid border-accent bg-[color-mix(in_srgb,var(--accent-soft)_55%,transparent)]"
           style={rectStyle(target)}
         >
-          <span className="rounded-[var(--r-pill)] bg-surface px-[8px] py-[2px] font-mono text-[11px] text-blueD shadow-[var(--shadow-sm)]">
+          <span className="rounded-[var(--r-pill)] bg-surface px-[8px] py-[2px] font-mono text-[11px] text-accent-ink shadow-[var(--shadow-sm)]">
             {dragged === null ? '' : `${PANE_LABEL[dragged]} · ${DROP_LABEL[over.kind]}`}
           </span>
         </div>

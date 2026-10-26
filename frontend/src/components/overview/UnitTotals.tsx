@@ -53,7 +53,7 @@ export function UnitTotals({
         >
           <span
             className="w-[52px] shrink-0 truncate font-mono text-[11px]"
-            style={{ color: active.has(unit.key) ? 'var(--blueD)' : 'var(--dim)' }}
+            style={{ color: active.has(unit.key) ? 'var(--accent-ink)' : 'var(--dim)' }}
           >
             {unit.label}
           </span>
@@ -62,7 +62,7 @@ export function UnitTotals({
               className="block h-[6px]"
               style={{
                 width: `${max > 0 ? Math.max(1, (unit.quantity / max) * 100) : 0}%`,
-                background: active.has(unit.key) ? 'var(--blue)' : 'var(--line2)',
+                background: active.has(unit.key) ? 'var(--accent)' : 'var(--line2)',
               }}
             />
           </span>

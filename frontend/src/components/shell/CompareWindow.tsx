@@ -228,14 +228,14 @@ export function CompareWindow() {
                   className="sticky top-0 z-[2] min-w-[200px] border-b border-line bg-sunken px-[12px] py-[10px] text-left align-top font-normal"
                 >
                   <div className="flex items-center gap-[8px]">
-                    <span className="inline-flex h-[20px] w-[20px] shrink-0 items-center justify-center rounded-full bg-blueF text-[11px] text-white">
+                    <span className="inline-flex h-[20px] w-[20px] shrink-0 items-center justify-center rounded-full bg-accent-fill text-[11px] text-white">
                       {i + 1}
                     </span>
                     <button
                       type="button"
                       onClick={() => select(node)}
                       title="In der Positionskarte zeigen"
-                      className="cursor-pointer border-none bg-transparent p-0 font-mono text-[12px] text-ink hover:text-blue"
+                      className="cursor-pointer border-none bg-transparent p-0 font-mono text-[12px] text-ink hover:text-accent"
                     >
                       {position.oz}
                     </button>
@@ -312,7 +312,7 @@ export function CompareWindow() {
         {...handles.resize}
         title="Größe ändern — ziehen oder Pfeiltasten"
         aria-label="Vergleich in der Größe ändern"
-        className="absolute bottom-0 right-0 z-[4] inline-flex h-[18px] w-[18px] cursor-se-resize items-end justify-end border-none bg-transparent p-[3px] text-line2 hover:text-blue focus-visible:text-blue"
+        className="absolute bottom-0 right-0 z-[4] inline-flex h-[18px] w-[18px] cursor-se-resize items-end justify-end border-none bg-transparent p-[3px] text-line2 hover:text-accent focus-visible:text-accent"
       >
         <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
           <path

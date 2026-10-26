@@ -6,7 +6,7 @@
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useDismiss } from '../common/useDismiss';
-import { SegmentedControl } from '../ui/SegmentedControl';
+import { SegmentedControl } from '@conocto/design';
 import { downloadText } from '../../lib/export/download';
 import {
   sameTerm,
@@ -51,11 +51,11 @@ function Passwort({ onDone }: { onDone: () => void }) {
           placeholder="Passwort"
           autoComplete="off"
           autoFocus
-          className="h-[32px] min-w-0 flex-1 rounded-[var(--r-pill)] border border-line bg-panel px-[12px] font-mono text-[13px] text-ink outline-none focus:border-blue"
+          className="h-[32px] min-w-0 flex-1 rounded-[var(--r-pill)] border border-line bg-panel px-[12px] font-mono text-[13px] text-ink outline-none focus:border-accent"
         />
         <button
           type="submit"
-          className="inline-flex h-[32px] cursor-pointer items-center rounded-[var(--r-pill)] border-none bg-blueF px-[14px] font-mono text-[12px] text-white"
+          className="inline-flex h-[32px] cursor-pointer items-center rounded-[var(--r-pill)] border-none bg-accent-fill px-[14px] font-mono text-[12px] text-white"
         >
           Öffnen
         </button>

@@ -30,7 +30,7 @@ function Kpi({
       aria-pressed={on}
       onClick={() => dispatch({ type: 'paneClosed', pane: panel, closed: open })}
       className={`flex cursor-pointer flex-col items-start gap-[1px] rounded-[var(--r-md)] border-none px-[12px] py-[6px] text-left hover:bg-sunken ${
-        on ? 'bg-blueS' : 'bg-transparent'
+        on ? 'bg-accent-soft' : 'bg-transparent'
       }`}
     >
       <span

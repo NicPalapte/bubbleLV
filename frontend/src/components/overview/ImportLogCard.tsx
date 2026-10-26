@@ -48,7 +48,7 @@ export function ImportLogCard() {
         Gilt für die ganze Datei, nicht für den Filter — {formatPositions(log.total)} gelesen.
       </p>
       {notices.map((notice) => (
-        <p key={notice} className="mt-[6px] font-mono text-[11.5px] leading-[1.6] text-blueD">
+        <p key={notice} className="mt-[6px] font-mono text-[11.5px] leading-[1.6] text-accent-ink">
           {notice}
         </p>
       ))}

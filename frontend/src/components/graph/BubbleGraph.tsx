@@ -209,7 +209,7 @@ function NoteBadges({
 const COMMENT_BADGE: MarkerInfo = {
   label: 'Kommentar',
   glyph: '✎',
-  fill: 'var(--blue)',
+  fill: 'var(--accent)',
   text: '#fff',
 };
 
@@ -1048,7 +1048,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
                     r={hull.r}
                     // Durchsichtig statt leer: auch ein Klick in die Insel trifft sie.
                     fill={hull.kind === 'lot' ? 'var(--los-fill)' : 'transparent'}
-                    stroke={chosen ? 'var(--blue)' : 'var(--line2)'}
+                    stroke={chosen ? 'var(--accent)' : 'var(--line2)'}
                     strokeWidth={(chosen ? 2.5 : 1.5) / Math.max(k, 0.3)}
                     strokeDasharray={chosen ? undefined : hull.kind === 'lot' ? '2 6' : '6 6'}
                     strokeLinecap="round"
@@ -1060,7 +1060,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
                     height={30}
                     rx={15}
                     fill="var(--surface)"
-                    stroke={chosen ? 'var(--blue)' : 'var(--line2)'}
+                    stroke={chosen ? 'var(--accent)' : 'var(--line2)'}
                   />
                   <text
                     x={hull.x}
@@ -1214,7 +1214,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
                     cy={group.y}
                     r={group.r}
                     fill={n === 0 ? 'none' : coarse ? 'var(--grp-fill-strong)' : 'var(--grp-fill)'}
-                    stroke={chosen ? 'var(--blue)' : 'var(--line2)'}
+                    stroke={chosen ? 'var(--accent)' : 'var(--line2)'}
                     strokeWidth={(chosen ? 2.5 : 1.2) / Math.max(k, 0.3)}
                     strokeDasharray={n === 0 || group.rest ? '4 4' : undefined}
                   />
@@ -1277,7 +1277,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
                   const position = index.positions[slot];
                   // Auswahl ohne Ring: Akzentfarbe und etwas größer, feiner Rand in
                   // Flächenfarbe trennt sie von Nachbarn.
-                  const fill = picked ? 'var(--blue)' : colors[slot];
+                  const fill = picked ? 'var(--accent)' : colors[slot];
                   const edge = picked ? 'var(--surface)' : 'var(--dot-line)';
                   const edgeWidth = picked ? 1.5 : 0.6;
                   const hint = rings ? hints.get(index.nodes[slot].id)?.severity : undefined;
@@ -1402,7 +1402,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
               const cy = map.py[slot] - radii[slot] - badge * 0.6;
               return (
                 <g key={id} data-compare={i + 1} pointerEvents="none">
-                  <circle cx={cx} cy={cy} r={badge} fill="var(--blue)" />
+                  <circle cx={cx} cy={cy} r={badge} fill="var(--accent)" />
                   <text
                     x={cx}
                     y={cy + 3.2 / k}
@@ -1429,12 +1429,12 @@ export function BubbleGraph({ root }: { root: LVNode }) {
           <path
             d={overlay.leader.d}
             fill="none"
-            stroke="var(--blue)"
+            stroke="var(--accent)"
             strokeWidth={1.2}
             strokeDasharray="4 4"
             opacity={0.7}
           />
-          <circle cx={overlay.leader.x} cy={overlay.leader.y} r={3.5} fill="var(--blue)" />
+          <circle cx={overlay.leader.x} cy={overlay.leader.y} r={3.5} fill="var(--accent)" />
         </svg>
       )}
 
@@ -1519,14 +1519,14 @@ export function BubbleGraph({ root }: { root: LVNode }) {
           aria-label="Hervorhebung"
           className="ov-pill absolute right-[12px] top-[12px] z-10 flex items-center gap-[8px] p-[4px] pr-[6px] text-[12px] text-dim"
         >
-          <span className="inline-flex items-center gap-[6px] rounded-[var(--r-pill)] border border-blue bg-blueS py-[3px] pl-[12px] pr-[4px] font-semibold text-blueD">
+          <span className="inline-flex items-center gap-[6px] rounded-[var(--r-pill)] border border-accent bg-accent-soft py-[3px] pl-[12px] pr-[4px] font-semibold text-accent-ink">
             {spotTitle}
             <button
               type="button"
               aria-label="Hervorhebung aufheben"
               title="Hervorhebung aufheben"
               onClick={clearSpotlight}
-              className="inline-flex h-[20px] w-[20px] cursor-pointer items-center justify-center rounded-full border-none bg-transparent p-0 text-blueD hover:bg-surface"
+              className="inline-flex h-[20px] w-[20px] cursor-pointer items-center justify-center rounded-full border-none bg-transparent p-0 text-accent-ink hover:bg-surface"
             >
               ✕
             </button>
@@ -1547,7 +1547,9 @@ export function BubbleGraph({ root }: { root: LVNode }) {
                   aria-checked={on}
                   onClick={() => dispatch({ type: 'graphSpotlightHide', value: mode.hide })}
                   className={`cursor-pointer rounded-[var(--r-pill)] border-none px-[10px] py-[2px] text-[12px] ${
-                    on ? 'bg-blueF text-white' : 'bg-transparent text-dim hover:text-blueD'
+                    on
+                      ? 'bg-accent-fill text-white'
+                      : 'bg-transparent text-dim hover:text-accent-ink'
                   }`}
                 >
                   {mode.label}
