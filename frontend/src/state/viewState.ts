@@ -78,11 +78,10 @@ export interface GraphViewState {
   focus: number;
   /**
    * Hervorgehobener Abschnitt bzw. Los (Entscheidung 0075); `null` = keiner. Nur
-   * Darstellung im Graphen — Filter, Suche und Auswahl bleiben unberührt.
+   * Darstellung im Graphen — Filter, Suche und Auswahl bleiben unberührt. Blass
+   * oder ausgeblendet folgt dem Schalter „Nicht-Treffer“ (Entscheidung 0078).
    */
   spotlight: string | null;
-  /** Alles außerhalb der Hervorhebung ausblenden statt blass zeigen. */
-  spotlightHide: boolean;
 }
 
 export interface TableViewState {
@@ -141,9 +140,9 @@ export interface WorkspaceState extends Arrangement {
 
 export const INITIAL_WORKSPACE: WorkspaceState = {
   ...INITIAL_ARRANGEMENT,
-  // Überblick und Prüfung öffnet erst, wer sie braucht (Entscheidung 0070).
-  // Das Dokument ebenso: erst „+ Dokument" öffnet es (Entscheidung 0072).
-  closed: { graph: false, table: false, card: false, overview: true, check: true, doc: true },
+  // Zum Start nur Graph und Position; Tabelle, Überblick, Prüfung und Dokument
+  // öffnet erst, wer sie braucht (Entscheidungen 0070, 0072, 0078).
+  closed: { graph: false, table: true, card: false, overview: true, check: true, doc: true },
 };
 
 /** Öffnet einen Bereich im Splitscreen und legt ihn in seinem Stapel nach vorn. */
@@ -204,7 +203,6 @@ export type ViewAction =
   | { type: 'graphFocus' }
   /** Abschnitt im Graphen hervorheben; `null` hebt die Hervorhebung auf. */
   | { type: 'graphSpotlight'; id: string | null }
-  | { type: 'graphSpotlightHide'; value: boolean }
   | { type: 'tableSort'; key: string }
   | { type: 'tableScope'; scope: TableScope }
   | { type: 'tableColumns'; columns: ColumnConfig | null }
@@ -263,7 +261,6 @@ export const INITIAL_VIEW_STATE: ViewState = {
     viewport: null,
     focus: 0,
     spotlight: null,
-    spotlightHide: false,
   },
   table: { sort: { key: 'oz', dir: 1 }, scope: 'node', columns: null, collapsed: new Set() },
   overview: { openRules: new Set(), revealRule: null },
@@ -361,8 +358,6 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
     case 'graphSpotlight':
       if (state.graph.spotlight === action.id) return state;
       return { ...state, graph: { ...state.graph, spotlight: action.id } };
-    case 'graphSpotlightHide':
-      return { ...state, graph: { ...state.graph, spotlightHide: action.value } };
     case 'tableSort': {
       const { sort } = state.table;
       const dir: 1 | -1 = sort.key === action.key ? ((sort.dir * -1) as 1 | -1) : 1;

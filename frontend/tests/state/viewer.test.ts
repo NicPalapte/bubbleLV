@@ -57,15 +57,16 @@ function loadedState(state: ViewerState = base): ViewerState {
 }
 
 describe('viewerReducer · Ansichtsmodus', () => {
-  it('beginnt im Graphen mit Tabelle und Position, Überblick und Prüfung zu', () => {
+  it('beginnt nur mit Graph und Position, alle anderen Bereiche zu', () => {
     const state = loadedState();
     expect(state.view.mode).toBe('graph');
     expect(state.view.workspace.closed).toMatchObject({
       graph: false,
-      table: false,
+      table: true,
       card: false,
       overview: true,
       check: true,
+      doc: true,
     });
   });
 
@@ -283,12 +284,8 @@ describe('viewerReducer · Gliederung des Graphen', () => {
     expect(next.view.graph.spotlight).toBe('sec:001.001');
     expect(next.filter).toBe(state.filter);
     expect(next.selection).toBe(state.selection);
-    const hidden = viewerReducer(next, { type: 'graphSpotlightHide', value: true });
-    expect(hidden.view.graph.spotlightHide).toBe(true);
-    // Ein neuer Import vergisst den Abschnitt, behält aber blass/ausblenden.
-    const reloaded = loadedState(hidden);
-    expect(reloaded.view.graph.spotlight).toBeNull();
-    expect(reloaded.view.graph.spotlightHide).toBe(true);
+    // Ein neuer Import vergisst den Abschnitt.
+    expect(loadedState(next).view.graph.spotlight).toBeNull();
   });
 });
 

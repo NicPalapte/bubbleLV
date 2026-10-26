@@ -51,7 +51,14 @@ function Steuerung() {
   const dispatch = useViewerDispatch();
   return (
     <>
-      <button type="button" onClick={() => dispatch({ type: 'loaded', lv: LV })}>
+      <button
+        type="button"
+        onClick={() => {
+          dispatch({ type: 'loaded', lv: LV });
+          // Die Tabelle ist beim Start zu (Entscheidung 0078).
+          dispatch({ type: 'showPane', pane: 'table' });
+        }}
+      >
         vorbereiten
       </button>
       <button

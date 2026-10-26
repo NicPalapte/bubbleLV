@@ -1,6 +1,6 @@
 # 0075 – Graph: Inseln je Hauptabschnitt, Abschnitt hervorheben
 
-- **Status:** akzeptiert
+- **Status:** akzeptiert; Umschalter blass/ausblenden ersetzt durch 0078
 - **Datum:** 2026-10-25
 - **Betrifft:** Layout „nach LV“ (`frontend/src/lib/graph/layoutMap.ts`), Bubble-Graph
   (`frontend/src/components/graph/BubbleGraph.tsx`), Ansichtszustand (`graph.spotlight`,

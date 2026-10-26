@@ -81,8 +81,9 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0072 | [Begleitdokument als PDF anstreichen und verknüpfen](0072-begleitdokument-pdf.md)                              | akzeptiert                         | 2026-10-23 |
 | 0073 | [Splitscreen frei teilen, letzte Anordnung merken](0073-splitscreen-frei-teilen-und-merken.md)                 | teilweise ersetzt durch 0074       | 2026-10-23 |
 | 0074 | [Nur noch Splitscreen, ein Knopf „Ansicht“](0074-nur-noch-splitscreen.md)                                      | akzeptiert                         | 2026-10-24 |
-| 0075 | [Graph: Inseln je Hauptabschnitt, Abschnitt hervorheben](0075-inseln-und-hervorhebung.md)                      | akzeptiert                         | 2026-10-25 |
+| 0075 | [Graph: Inseln je Hauptabschnitt, Abschnitt hervorheben](0075-inseln-und-hervorhebung.md)                      | teilweise ersetzt durch 0078       | 2026-10-25 |
 | 0076 | [Designsystem als eigenes Paket](0076-designsystem-als-paket.md)                                               | akzeptiert                         | 2026-10-26 |
+| 0078 | [Schlanke Startansicht, ein Schalter für blass/ausblenden](0078-schlanke-startansicht-ein-schalter.md)         | akzeptiert                         | 2026-10-26 |
 
 ## Wann schreibe ich eine neue Datei?
 

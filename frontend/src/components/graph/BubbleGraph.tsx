@@ -115,10 +115,6 @@ function hullBox(hull: MapHull): { x0: number; y0: number; x1: number; y1: numbe
 
 /** Deckkraft außerhalb einer Hervorhebung (Entscheidung 0075). */
 const SPOT_FADE = 0.18;
-const SPOT_MODES = [
-  { hide: false, label: 'blass' },
-  { hide: true, label: 'ausblenden' },
-] as const;
 
 /** Rahmen um eine Gruppe samt Beschriftung darüber; bei einer Kachel die Kachel. */
 function groupBox(group: MapGroup): { x0: number; y0: number; x1: number; y1: number } {
@@ -236,7 +232,9 @@ export function BubbleGraph({ root }: { root: LVNode }) {
   const openMenu = usePositionMenu();
   // Im eigenen Browserfenster (Entscheidung 0039) kommen Mausereignisse dort an.
   const hostWindow = useHostWindow();
-  const { layout, rows, cols, sizeMode, showHints, spotlight, spotlightHide } = graph;
+  const { layout, rows, cols, sizeMode, showHints, spotlight } = graph;
+  // Blass oder ausgeblendet regelt derselbe Schalter wie bei Filtern (Entscheidung 0078).
+  const spotlightHide = hideMode === 'hide';
 
   const wrapRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -1530,32 +1528,6 @@ export function BubbleGraph({ root }: { root: LVNode }) {
             >
               ✕
             </button>
-          </span>
-          <span>Andere</span>
-          <span
-            role="radiogroup"
-            aria-label="Andere Abschnitte"
-            className="inline-flex gap-[2px] rounded-[var(--r-pill)] border border-line bg-sunken p-[2px]"
-          >
-            {SPOT_MODES.map((mode) => {
-              const on = mode.hide === spotlightHide;
-              return (
-                <button
-                  key={mode.label}
-                  type="button"
-                  role="radio"
-                  aria-checked={on}
-                  onClick={() => dispatch({ type: 'graphSpotlightHide', value: mode.hide })}
-                  className={`cursor-pointer rounded-[var(--r-pill)] border-none px-[10px] py-[2px] text-[12px] ${
-                    on
-                      ? 'bg-accent-fill text-white'
-                      : 'bg-transparent text-dim hover:text-accent-ink'
-                  }`}
-                >
-                  {mode.label}
-                </button>
-              );
-            })}
           </span>
         </div>
       )}

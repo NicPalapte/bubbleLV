@@ -35,11 +35,12 @@ function clickPoint(slot: number): void {
   fireEvent.click(point);
 }
 
-/** Die Tabelle steht im Splitscreen; ist sie zu, öffnet „Ansicht" sie wieder. */
+/** Die Tabelle ist beim Start zu (Entscheidung 0078); „Ansicht" öffnet sie. */
 async function openTable(): Promise<HTMLElement> {
   if (screen.queryByRole('grid', { name: 'Positionen' }) === null) {
     fireEvent.click(screen.getByRole('button', { name: /^Ansicht/ }));
     fireEvent.click(screen.getByRole('button', { name: /Tabelle$/, pressed: false }));
+    fireEvent.click(screen.getByRole('button', { name: /^Ansicht/ }));
   }
   return screen.findByRole('grid', { name: 'Positionen' });
 }
@@ -111,13 +112,13 @@ describe('Viewer', () => {
     expect(within(bar).getByRole('button', { name: 'Positionsart' })).toBeInTheDocument();
   });
 
-  it('startet im Splitscreen mit Graph, Tabelle und Position', async () => {
+  it('startet im Splitscreen nur mit Graph und Position', async () => {
     await loadAndWait();
 
-    // Nur noch Splitscreen (Entscheidung 0074); Überblick und Prüfung gehen erst
-    // auf Wunsch auf.
+    // Nur noch Splitscreen (Entscheidung 0074); Tabelle, Überblick und Prüfung
+    // gehen erst auf Wunsch auf (Entscheidung 0078).
     expect(screen.getByRole('main', { name: 'Bubble-Graph' })).toBeInTheDocument();
-    expect(tableWindow()).toBeInTheDocument();
+    expect(tableWindow()).toBeNull();
     expect(cardPane()).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Überblick — Bereich' })).toBeNull();
 

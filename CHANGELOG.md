@@ -9,6 +9,14 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.41.0 — 26.10.2026 · Schlanke Startansicht
+
+- **Weniger zum Start:** Nach dem Laden stehen nur Graph und Positionskarte da. Tabelle,
+  Überblick, Prüfung und Dokument öffnet „Ansicht“. Wer schon eine eigene Anordnung hat,
+  sieht das nach „Ansicht → Anordnung zurücksetzen“.
+- **Ein Schalter:** Ist ein Abschnitt hervorgehoben, stellt der Schalter in der Suchleiste
+  ein, ob die übrigen Abschnitte blass oder ausgeblendet sind — derselbe wie bei Filtern.
+
 ## 0.39.1 — 26.10.2026 · Gemeinsames Designsystem
 
 - **Gleiches Aussehen, neue Quelle:** Farben, Schriften und Logo kommen jetzt aus dem
