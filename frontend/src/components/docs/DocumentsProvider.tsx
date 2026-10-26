@@ -66,6 +66,10 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [jump, setJump] = useState<DocJump | null>(null);
   const texts = useRef(new Map<string, Promise<string>>());
+  // Kennungen der angemeldeten Dokumente, sofort gesetzt: `docsRef` folgt erst nach dem
+  // Rendern, zwei kurz nacheinander abgeworfene gleiche PDFs kämen sonst beide durch.
+  const openIds = useRef(new Set<string>());
+  const loading = useRef(0);
   const docsRef = useRef(docs);
   useEffect(() => {
     docsRef.current = docs;
@@ -78,6 +82,7 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
     lvRef.current = lv;
     for (const doc of docsRef.current) void doc.pdf.loadingTask.destroy();
     texts.current.clear();
+    openIds.current.clear();
     setDocs([]);
     setActiveId(null);
     setJump(null);
@@ -90,10 +95,11 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const open = useCallback(
-    async (file: File): Promise<void> => {
+  /** Liest ein PDF und meldet es an; gibt die Fehlermeldung zurück oder `null`. */
+  const load = useCallback(
+    async (file: File): Promise<string | null> => {
+      loading.current += 1;
       setBusy(true);
-      setError(null);
       // Bereich gleich zeigen: Wer ein PDF wählt, sieht dort, dass es lädt — oder
       // warum es nicht geht.
       dispatch({ type: 'showPane', pane: 'doc' });
@@ -103,12 +109,13 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
         // Während des Lesens ein anderes LV geladen: Das PDF gehört nicht mehr dazu.
         if (lvRef.current !== startLv) {
           void opened.pdf.loadingTask.destroy();
-          return;
+          return null;
         }
-        if (docsRef.current.some((doc) => doc.id === opened.id)) {
+        if (openIds.current.has(opened.id)) {
           // Schon offen: nur nach vorn holen, nicht doppelt anmelden oder zählen.
           void opened.pdf.loadingTask.destroy();
         } else {
+          openIds.current.add(opened.id);
           dispatch({
             type: 'docRegister',
             doc: opened.id,
@@ -118,22 +125,47 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
           setDocs((current) => [...current, opened]);
         }
         setActiveId(opened.id);
+        return null;
       } catch (caught) {
-        setError(
-          caught instanceof PdfOpenError ? caught.message : 'Das PDF lässt sich nicht öffnen.',
-        );
+        return caught instanceof PdfOpenError ? caught.message : 'Das PDF lässt sich nicht öffnen.';
       } finally {
-        setBusy(false);
+        loading.current -= 1;
+        if (loading.current === 0) setBusy(false);
       }
     },
     [dispatch],
   );
 
+  const open = useCallback(
+    async (file: File): Promise<void> => {
+      setError(null);
+      setError(await load(file));
+    },
+    [load],
+  );
+
+  // Mehrere PDFs: Fehler sammeln und am Ende zusammen zeigen — sonst löschte das nächste,
+  // lesbare PDF die Meldung zum vorigen.
   const openFiles = useCallback(
     async (files: readonly File[]): Promise<void> => {
-      for (const file of files) if (isPdfFile(file)) await open(file);
+      const pdfs = files.filter(isPdfFile);
+      if (pdfs.length === 0) return;
+      setError(null);
+      const failed: { name: string; message: string }[] = [];
+      for (const file of pdfs) {
+        const message = await load(file);
+        if (message !== null) failed.push({ name: file.name, message });
+      }
+      if (failed.length === 0) return;
+      setError(
+        pdfs.length === 1
+          ? failed[0].message
+          : `${failed.length} von ${pdfs.length} PDFs nicht lesbar: ${failed
+              .map((entry) => entry.name)
+              .join(', ')}`,
+      );
     },
-    [open],
+    [load],
   );
 
   const close = useCallback((id: string): void => {
@@ -143,6 +175,7 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
     for (const key of [...texts.current.keys()]) {
       if (key.startsWith(`${id}:`)) texts.current.delete(key);
     }
+    openIds.current.delete(id);
     setDocs((current) => current.filter((entry) => entry.id !== id));
     setActiveId((current) => (current === id ? null : current));
   }, []);

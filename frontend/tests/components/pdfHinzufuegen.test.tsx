@@ -83,4 +83,25 @@ describe('PDF hinzufügen', () => {
     await waitFor(() => expect(openPdf).toHaveBeenCalledTimes(1));
     expect(dokumentBereich()).not.toBeNull();
   });
+
+  it('zeigt die Meldung zu einem kaputten PDF, auch wenn danach ein lesbares kommt', async () => {
+    const { PdfOpenError } = await import('../../src/lib/docs/pdf');
+    openPdf.mockReset();
+    openPdf.mockRejectedValueOnce(new PdfOpenError('kaputt')).mockResolvedValueOnce({
+      id: 'abc123def456',
+      name: 'gut.pdf',
+      pdf: {
+        numPages: 1,
+        loadingTask: { destroy: () => Promise.resolve() },
+        getPage: () => new Promise(() => undefined),
+      },
+    });
+    await ladeApp();
+    fireEvent.change(screen.getByLabelText('PDF auswählen'), {
+      target: { files: [pdf('kaputt.pdf'), pdf('gut.pdf')] },
+    });
+    await waitFor(() => expect(openPdf).toHaveBeenCalledTimes(2));
+    // Mit offenem Dokument steht die Meldung über den Seiten.
+    expect(await screen.findByText('1 von 2 PDFs nicht lesbar: kaputt.pdf')).toBeInTheDocument();
+  });
 });
