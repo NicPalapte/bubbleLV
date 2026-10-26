@@ -45,7 +45,7 @@ function ViewTiming({ view, children }: { view: string; children: ReactNode }) {
 }
 
 export function ViewerPage() {
-  const { tree, view } = useViewer();
+  const { lv, tree, view } = useViewer();
   const { mode: viewMode } = view;
   const dispatch = useViewerDispatch();
 
@@ -72,6 +72,8 @@ export function ViewerPage() {
       <WorkspaceProvider>
         <DocumentsProvider>
           <PositionMenuProvider>
+            {/* Am LV, nicht am Baum: Der Baum kann einen Moment später stehen. */}
+            {lv !== null && <PdfDrop />}
             <div className="nur-bildschirm flex h-full flex-col bg-paper">
               {/* Über der Arbeitsfläche: die Listen der Filterleiste liegen über Fenstern. */}
               <header className="relative z-[20]">
@@ -106,7 +108,6 @@ export function ViewerPage() {
                     className="relative flex-1 overflow-hidden bg-paper"
                   >
                     <Workspace root={tree} />
-                    <PdfDrop />
                   </main>
                 )}
               </ErrorBoundary>
