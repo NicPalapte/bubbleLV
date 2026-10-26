@@ -13,7 +13,9 @@ import {
   locate,
   PAINT_SECTION,
   paintSelection,
+  searchTermOf,
   usePaintHighlights,
+  useTouchSelectionMenu,
   type PaintTarget,
 } from './paint';
 import { shownText } from './shownText';
@@ -154,6 +156,12 @@ export function PositionDetails({ node, position }: { node: LVNode; position: Po
     [position.longText, position.attributes, admin.terms],
   );
   const longTextRef = useRef<HTMLDivElement>(null);
+  // Zusätzlich als Zustand: Die Tablet-Leiste muss mitbekommen, wann der Langtext da ist.
+  const [longTextEl, setLongTextEl] = useState<HTMLDivElement | null>(null);
+  const attachLongText = useCallback((el: HTMLDivElement | null): void => {
+    longTextRef.current = el;
+    setLongTextEl(el);
+  }, []);
   const hintsRef = useRef<HTMLElement>(null);
   const [learnTarget, setLearnTarget] = useState<LearnTarget | null>(null);
   const closeLearn = useCallback(() => setLearnTarget(null), []);
@@ -185,6 +193,10 @@ export function PositionDetails({ node, position }: { node: LVNode; position: Po
     setPaintTarget({ ...placed, touched: touched(target) });
     return true;
   };
+  // Ohne Rechtsklick am Tablet: Leiste unter der Auswahl, sobald sie ruht.
+  useTouchSelectionMenu(longTextEl, () => {
+    openPaintMenu(null);
+  });
   const categories = useMemo(() => presentCategories(spans), [spans]);
   const counts = useMemo(() => {
     const out = new Map<string, number>();
@@ -288,7 +300,7 @@ export function PositionDetails({ node, position }: { node: LVNode; position: Po
               />
             )}
             <div
-              ref={longTextRef}
+              ref={attachLongText}
               onContextMenu={(event) => {
                 if (openPaintMenu({ x: event.clientX, y: event.clientY })) event.preventDefault();
               }}
@@ -324,6 +336,11 @@ export function PositionDetails({ node, position }: { node: LVNode; position: Po
                     next.delete(PAINT_SECTION);
                     return next;
                   });
+                  window.getSelection()?.removeAllRanges();
+                  setPaintTarget(null);
+                }}
+                onSearch={() => {
+                  dispatch({ type: 'search', value: searchTermOf(paintTarget.text) });
                   window.getSelection()?.removeAllRanges();
                   setPaintTarget(null);
                 }}

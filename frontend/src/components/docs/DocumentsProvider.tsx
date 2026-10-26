@@ -17,6 +17,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { DocSpot } from '../../lib/docs/docNotes';
+import { docNeedleOf, hitsInPage, type DocHit } from '../../lib/docs/docSearch';
 import { isPdfFile, openPdf, PdfOpenError, type OpenedPdf } from '../../lib/docs/pdf';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 
@@ -39,14 +40,25 @@ export interface DocumentsApi {
   activate: (id: string) => void;
   /** Zeigt die Stelle; ist ihr Dokument nicht offen, passiert nichts. */
   jumpTo: (spot: DocSpot) => void;
+  /**
+   * Fundstellen der Suche aus der Suchleiste je offenem Dokument (Entscheidung 0077).
+   * Fehlt ein Dokument, läuft die Suche darin noch.
+   */
+  readonly searchHits: ReadonlyMap<string, readonly DocHit[]>;
   /** Textinhalt einer Seite (ab 1), wie die Textebene ihn zeigt; zwischengespeichert. */
   pageText: (doc: OpenedPdf, page: number) => Promise<string>;
 }
 
 const DocumentsContext = createContext<DocumentsApi | null>(null);
 
+const NO_SEARCH_HITS: ReadonlyMap<string, readonly DocHit[]> = new Map();
+const NO_FOUND = { needle: '', hits: NO_SEARCH_HITS };
+
 export function DocumentsProvider({ children }: { children: ReactNode }) {
-  const { lv } = useViewer();
+  const {
+    lv,
+    filter: { search },
+  } = useViewer();
   const dispatch = useViewerDispatch();
   const [docs, setDocs] = useState<OpenedPdf[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -165,6 +177,43 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
     return text;
   }, []);
 
+  // Die eine Suche läuft auch durch alle offenen PDFs — Seite für Seite, abbrechbar,
+  // kurz gesammelt, damit nicht jeder neue Begriff sofort alle Seiten liest.
+  const needle = docNeedleOf(search);
+  const [found, setFound] = useState<{
+    needle: string;
+    hits: ReadonlyMap<string, readonly DocHit[]>;
+  }>(NO_FOUND);
+  useEffect(() => {
+    if (needle === '' || docs.length === 0) return;
+    let alive = true;
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        const hits = new Map<string, readonly DocHit[]>();
+        for (const doc of docs) {
+          const list: DocHit[] = [];
+          for (let page = 1; page <= doc.pdf.numPages; page++) {
+            const text = await pageText(doc, page);
+            if (!alive) return;
+            list.push(...hitsInPage(text, needle, page));
+          }
+          hits.set(doc.id, list);
+          // Je fertigem Dokument zeigen: ein dickes Gutachten hält die anderen nicht auf.
+          // Kommt nur ein Dokument dazu, bleiben die Zahlen der übrigen stehen.
+          setFound((prev) => ({
+            needle,
+            hits: new Map([...(prev.needle === needle ? prev.hits : []), ...hits]),
+          }));
+        }
+      })();
+    }, 120);
+    return () => {
+      alive = false;
+      window.clearTimeout(timer);
+    };
+  }, [needle, docs, pageText]);
+  const searchHits = needle !== '' && found.needle === needle ? found.hits : NO_SEARCH_HITS;
+
   const active = docs.find((doc) => doc.id === activeId) ?? docs.at(-1) ?? null;
   const api = useMemo<DocumentsApi>(
     () => ({
@@ -178,9 +227,23 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
       close,
       activate,
       jumpTo,
+      searchHits,
       pageText,
     }),
-    [docs, active, busy, error, jump, open, openFiles, close, activate, jumpTo, pageText],
+    [
+      docs,
+      active,
+      busy,
+      error,
+      jump,
+      open,
+      openFiles,
+      close,
+      activate,
+      jumpTo,
+      searchHits,
+      pageText,
+    ],
   );
   return <DocumentsContext.Provider value={api}>{children}</DocumentsContext.Provider>;
 }

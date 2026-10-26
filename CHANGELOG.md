@@ -9,13 +9,20 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
-## 0.40.0 — 26.10.2026 · PDF direkt hinzufügen
+## 0.40.0 — 26.10.2026 · Eine Suche für LV und PDFs, PDF direkt hinzufügen
 
 - **Logo-Menü → „PDF hinzufügen…“:** PDF wählen, der Bereich „Dokument“ öffnet sich von
   selbst und zeigt es. Mehrere PDFs auf einmal gehen auch.
 - **PDF auf die App ziehen:** irgendwo auf die Arbeitsfläche fallen lassen, auch wenn
   „Dokument“ zu ist. Andere Dateien nimmt die Fläche nicht an.
-- Lässt sich ein PDF nicht lesen, steht die Meldung gleich im Bereich „Dokument“.
+- **Begriff in die Suche:** Text im Langtext oder im PDF markieren, Rechtsklick,
+  „In Suche übernehmen“. Am Tablet erscheint das Menü von selbst, sobald die Auswahl
+  ruht.
+- **Eine Suche:** Der Begriff aus der Suchleiste sucht auch in allen offenen PDFs. Unter
+  der Suchleiste steht, wo er vorkommt: Positionen im LV, Seiten und Zahl je PDF.
+  „Zeigen ›“ springt hin. Gelb markiert ist er im PDF, das gerade offen ist.
+- Das Suchfeld im Bereich „Dokument“ ist jetzt dasselbe wie oben. PDF-Treffer filtern
+  das LV nicht.
 
 ## 0.39.0 — 25.10.2026 · Blasen nach Abschnitten, Abschnitt hervorheben
 

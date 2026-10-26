@@ -97,6 +97,42 @@ describe('Anstreichen im Langtext', () => {
     expect(screen.getByRole('toolbar', { name: 'Textmarkierung' })).toBeInTheDocument();
   });
 
+  it('übernimmt die Auswahl in die Suche', async () => {
+    await ladeDatei();
+    const wort = waehleWort(langtext());
+    const leiste = await screen.findByRole('toolbar', { name: 'Textmarkierung' });
+    fireEvent.click(within(leiste).getByRole('button', { name: 'In Suche übernehmen' }));
+
+    expect(screen.queryByRole('toolbar', { name: 'Textmarkierung' })).toBeNull();
+    await waitFor(() => expect(screen.getByRole('textbox', { name: 'Suche' })).toHaveValue(wort));
+  });
+
+  it('zeigt die Leiste am Tablet nach Berühren, sobald die Auswahl ruht', async () => {
+    await ladeDatei();
+    const text = langtext();
+    // jsdom kennt kein PointerEvent mit `pointerType`; darum von Hand.
+    const beruehren = new Event('pointerdown', { bubbles: true });
+    Object.defineProperty(beruehren, 'pointerType', { value: 'touch' });
+    fireEvent(text, beruehren);
+    waehleWort(text, false);
+    fireEvent(document, new Event('selectionchange'));
+
+    expect(screen.queryByRole('toolbar', { name: 'Textmarkierung' })).toBeNull();
+    expect(await screen.findByRole('toolbar', { name: 'Textmarkierung' })).toBeInTheDocument();
+  });
+
+  it('öffnet mit der Maus bei bloßer Auswahl auch nach einer Weile nichts', async () => {
+    await ladeDatei();
+    const text = langtext();
+    const klicken = new Event('pointerdown', { bubbles: true });
+    Object.defineProperty(klicken, 'pointerType', { value: 'mouse' });
+    fireEvent(text, klicken);
+    waehleWort(text, false);
+    fireEvent(document, new Event('selectionchange'));
+    await new Promise((done) => setTimeout(done, 600));
+    expect(screen.queryByRole('toolbar', { name: 'Textmarkierung' })).toBeNull();
+  });
+
   it('lässt ohne Auswahl das Menü des Browsers stehen', async () => {
     await ladeDatei();
     const text = langtext();
