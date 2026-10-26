@@ -41,7 +41,7 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
   Server voraussetzen. Fachdaten verlassen den Browser nie.
 - Statische Fremd-Assets (Webfonts, npm-Pakete, CDN-Ressourcen) sind **erlaubt**;
   sie transportieren keine Nutzdaten. Hanken Grotesk (Titel) und Schibsted Grotesk (Text)
-  werden über `@fontsource/*` selbst gehostet und im Bundle ausgeliefert (`frontend/src/main.tsx`) –
+  kommen über `@conocto/design/fonts` (selbst gehostet, im Bundle, `frontend/src/main.tsx`) –
   kein Fremdaufruf an Google Fonts.
 - **Kein `localStorage`/`sessionStorage`/Cookies für Fachdaten.** Reiner UI-Zustand
   (Auswahl, Zoom, aktive Filter) darf in React-State/Context leben, muss aber einen
