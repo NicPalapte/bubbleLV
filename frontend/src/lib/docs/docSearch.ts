@@ -26,8 +26,10 @@ function squeeze(text: string): { flat: string; at: number[] } {
     const char = text[i];
     if (/\s/.test(char)) continue;
     // `toLowerCase` kann ein Zeichen verlängern (z. B. „İ“); jede Hälfte zeigt aufs Original.
-    for (const part of char.toLowerCase()) {
-      flat += part;
+    // Je UTF-16-Einheit, wie `indexOf` zählt — auch bei Emoji (Surrogatpaaren).
+    const lower = char.toLowerCase();
+    for (let k = 0; k < lower.length; k++) {
+      flat += lower[k];
       at.push(i);
     }
   }

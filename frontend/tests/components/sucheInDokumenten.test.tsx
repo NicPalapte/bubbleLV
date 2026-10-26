@@ -47,6 +47,8 @@ async function ladeApp(): Promise<void> {
     target: { files: [new File([readFileSync(resolve(FIXTURE_DIR, name))], name)] },
   });
   await waitFor(() => expect(screen.getByRole('button', { name: '+ Filter' })).toBeInTheDocument());
+  // Die Arbeitsfläche steht erst mit dem Baum, in langsamen Umgebungen etwas später.
+  await screen.findByRole('main', { name: 'Bubble-Graph' }, { timeout: 5000 });
 }
 
 async function oeffnePdf(name: string): Promise<void> {
@@ -54,7 +56,7 @@ async function oeffnePdf(name: string): Promise<void> {
   fireEvent.change(screen.getByLabelText('PDF auswählen'), {
     target: { files: [new File(['%PDF'], name, { type: 'application/pdf' })] },
   });
-  await screen.findByRole('textbox', { name: 'Suchen in LV und Dokumenten' });
+  await screen.findByRole('textbox', { name: 'Suchen in LV und Dokumenten' }, { timeout: 3000 });
 }
 
 describe('Eine Suche für LV und PDFs', () => {

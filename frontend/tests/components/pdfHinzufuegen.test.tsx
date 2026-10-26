@@ -26,6 +26,8 @@ async function ladeApp(): Promise<void> {
     target: { files: [new File([readFileSync(resolve(FIXTURE_DIR, name))], name)] },
   });
   await waitFor(() => expect(screen.getByRole('button', { name: '+ Filter' })).toBeInTheDocument());
+  // Die Arbeitsfläche steht erst mit dem Baum, in langsamen Umgebungen etwas später.
+  await screen.findByRole('main', { name: 'Bubble-Graph' }, { timeout: 5000 });
 }
 
 const pdf = (name: string): File => new File(['%PDF-1.4'], name, { type: 'application/pdf' });

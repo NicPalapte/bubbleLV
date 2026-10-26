@@ -25,4 +25,9 @@ describe('docSearch', () => {
       { page: 2, start: 0, text: 'Bitumen dickbeschichtungWU-Beton' },
     ]);
   });
+
+  it('bleibt bei Emoji und Sonderzeichen an der richtigen Stelle', () => {
+    expect(hitsInPage('a😀 beton', 'beton', 1)).toEqual([{ page: 1, start: 4, text: 'beton' }]);
+    expect(hitsInPage('İ Beton', 'beton', 1)).toEqual([{ page: 1, start: 2, text: 'Beton' }]);
+  });
 });
