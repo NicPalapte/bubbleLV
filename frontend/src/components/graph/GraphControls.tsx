@@ -1,7 +1,8 @@
 // Steuerung unten rechts am Graphen, in einer Zeile mit der Legende (GraphHeader):
-// Zoom und Einpassen, Hinweise ein/aus und die Darstellung — Größe der Positionen und Gliederung (docs/decisions/0035-graph-
-// gliederung.md). Die Darstellung ist eingeklappt; der Knopf nennt den Stand und
-// klappt sie darüber auf (Issue #154: „Visualisierung" kam aus dem Filterfenster).
+// Zoom und Einpassen, Hinweise ein/aus und die Darstellung — Größe der Positionen
+// und Gliederung (docs/decisions/0035-graph-gliederung.md). Die Darstellung ist
+// eingeklappt; der Knopf nennt den Stand und klappt sie darüber auf (Issue #154:
+// „Visualisierung" kam aus dem Filterfenster).
 // Liest und schreibt direkt im Viewer-Zustand; Zoom gehört dem Graphen.
 
 import { DisplayControls, Row } from '../filter/DisplayControls';
