@@ -21,6 +21,8 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
   der Vorschlag kommt nicht wieder. Oben im Bereich „Dokument“ lassen sich OZ- und
   Mengen-Vorschläge einzeln ausschalten.
 - **In der Positionskarte** steht bei solchen Verknüpfungen „über OZ“ oder „über Menge“.
+- **Besser lesbar im dunklen Modus:** Die OZ-Marken am Rand verknüpfter PDF-Stellen haben
+  jetzt hellere Schrift auf dunklem Grund.
 
 ## 0.42.0 — 27.10.2026 · Aufgeräumtes Logo-Menü
 
