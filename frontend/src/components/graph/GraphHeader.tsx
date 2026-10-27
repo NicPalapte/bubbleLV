@@ -135,7 +135,9 @@ function Legend({ compact }: { compact: boolean }) {
     );
   }
   return (
-    <div ref={ref} className="pointer-events-auto relative shrink-0">
+    // Ohne `relative`: die offene Legende hängt an der ganzen Zeile und steht über der
+    // Steuerung, auch wenn die schmal über den Knopf umgebrochen ist.
+    <div ref={ref} className="pointer-events-auto shrink-0">
       {open && (
         <div
           aria-label="Legende"
