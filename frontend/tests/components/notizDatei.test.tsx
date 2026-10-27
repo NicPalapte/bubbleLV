@@ -151,6 +151,7 @@ describe('Logo-Menü', () => {
     await speichere(true);
     await oeffneGespeicherte();
     fireEvent.click(screen.getByRole('button', { name: 'Über diese App' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Meine Notizen' }));
     fireEvent.click(screen.getByRole('button', { name: /Notizen sichern/ }));
     const datei = downloads.find((d) => d.name.endsWith('.json'));
     expect(datei?.text).toContain('"art": "bubble-notizen"');

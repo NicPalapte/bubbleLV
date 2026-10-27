@@ -34,7 +34,8 @@ describe('Startseite', () => {
     render(<App />);
     expect(screen.queryByLabelText('Suche')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /Über diese App/ }));
-    expect(screen.queryByRole('button', { name: 'Positionen als CSV' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Exportieren' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Positionen als Tabelle (CSV)' })).toBeNull();
   });
 
   it('tritt zurück, sobald eine Datei geladen ist, und kommt beim Schließen wieder', async () => {
@@ -66,12 +67,15 @@ describe('Über diese App', () => {
     const panel = within(oeffnePanel());
     expect(panel.getByText(`v${APP_VERSION}`)).toBeInTheDocument();
     expect(panel.getByText(new RegExp(BUILD_ID))).toBeInTheDocument();
-    expect(panel.getByRole('button', { name: /Was ist neu/ })).toBeInTheDocument();
+    // „Was ist neu“ führte auf GitHub und ist raus (Entscheidung 0079).
+    expect(panel.queryByRole('button', { name: /Was ist neu/ })).toBeNull();
+    fireEvent.click(panel.getByRole('button', { name: 'Hilfe & Feedback' }));
     expect(panel.getByRole('button', { name: 'Fehler melden' })).toBeInTheDocument();
+    expect(panel.getByRole('button', { name: /Lizenzen/ })).toBeInTheDocument();
     expect(panel.getByRole('radiogroup', { name: 'Design' })).toBeInTheDocument();
     // Ehrlicher Hinweis statt Link ins Leere, solange die Texte fehlen.
-    expect(panel.getByText('Impressum')).toBeInTheDocument();
-    expect(panel.getAllByText('folgt')).toHaveLength(2);
+    expect(panel.getByText('Impressum folgt')).toBeInTheDocument();
+    expect(panel.getByText('Datenschutz folgt')).toBeInTheDocument();
   });
 
   it('öffnet auch ohne geladene Datei — dann meldet vielleicht gerade jemand das Laden', () => {

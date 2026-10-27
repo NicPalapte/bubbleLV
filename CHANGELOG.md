@@ -9,6 +9,15 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.42.0 — 27.10.2026 · Aufgeräumtes Logo-Menü
+
+- **Gruppen statt langer Liste:** Oben „Anderes LV öffnen“ und „PDF hinzufügen…“, darunter
+  „Exportieren“, „Meine Notizen“ und „Hilfe & Feedback“ zum Aufklappen.
+- **Exporte heißen klarer:** „Positionen als Tabelle (CSV)“, „Prüfhinweise als Text“,
+  „Drucken / als PDF“.
+- **Fußzeile:** Impressum, Datenschutz, Lizenzen und Admin klein unten im Menü.
+- **Treffer-Protokoll** jetzt in den Admin-Werkzeugen. **„Was ist neu“** ist raus.
+
 ## 0.41.0 — 26.10.2026 · Schlanke Startansicht
 
 - **Weniger zum Start:** Nach dem Laden stehen nur Graph und Positionskarte da. Tabelle,

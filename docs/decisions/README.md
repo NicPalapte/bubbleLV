@@ -33,7 +33,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0024 | [Fehler melden ohne GitHub-Konto](0024-fehler-melden-ohne-konto.md)                                            | akzeptiert                         | 2026-09-23 |
 | 0025 | [Typecheck läuft auch über die Tests](0025-typecheck-ueber-die-tests.md)                                       | akzeptiert                         | 2026-09-23 |
 | 0026 | [Ein Absturz zeigt eine Seite, keine weiße Fläche](0026-absturz-auffangnetz.md)                                | akzeptiert                         | 2026-09-23 |
-| 0027 | [Versionsnummer, Changelog und „Über diese App"](0027-versionsnummer-und-ueber-diese-app.md)                   | akzeptiert                         | 2026-09-24 |
+| 0027 | [Versionsnummer, Changelog und „Über diese App"](0027-versionsnummer-und-ueber-diese-app.md)                   | teilweise ersetzt durch 0079       | 2026-09-24 |
 | 0028 | [Zwei Leisten, „Mitnehmen" in die Befehle](0028-zwei-leisten-und-befehle.md)                                   | ersetzt durch 0034                 | 2026-09-24 |
 | 0029 | [Markierungen im Graphen: Ringe und Muster](0029-markierungen-im-graphen.md)                                   | akzeptiert                         | 2026-09-25 |
 | 0030 | [Material-Filter ausblenden, bis die Liste geprüft ist](0030-material-filter-ausblenden.md)                    | ersetzt durch 0044                 | 2026-10-04 |
@@ -83,8 +83,9 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0074 | [Nur noch Splitscreen, ein Knopf „Ansicht“](0074-nur-noch-splitscreen.md)                                      | akzeptiert                         | 2026-10-24 |
 | 0075 | [Graph: Inseln je Hauptabschnitt, Abschnitt hervorheben](0075-inseln-und-hervorhebung.md)                      | teilweise ersetzt durch 0078       | 2026-10-25 |
 | 0076 | [Designsystem als eigenes Paket](0076-designsystem-als-paket.md)                                               | akzeptiert                         | 2026-10-26 |
-| 0077 | [Eine Suche für LV und PDFs, Begriff aus dem Text übernehmen](0077-eine-suche-fuer-lv-und-pdf.md)             | akzeptiert                         | 2026-10-26 |
+| 0077 | [Eine Suche für LV und PDFs, Begriff aus dem Text übernehmen](0077-eine-suche-fuer-lv-und-pdf.md)              | akzeptiert                         | 2026-10-26 |
 | 0078 | [Schlanke Startansicht, ein Schalter für blass/ausblenden](0078-schlanke-startansicht-ein-schalter.md)         | akzeptiert                         | 2026-10-26 |
+| 0079 | [Logo-Menü gruppiert, Exporte gebündelt](0079-logo-menue-gruppiert.md)                                         | akzeptiert                         | 2026-10-27 |
 
 ## Wann schreibe ich eine neue Datei?
 

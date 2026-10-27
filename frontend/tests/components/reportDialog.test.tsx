@@ -58,6 +58,9 @@ async function oeffneMeldung(): Promise<HTMLElement> {
     (element) => (element as HTMLElement).style.position === 'fixed',
   );
   fireEvent.click(
+    within(menu[menu.length - 1] as HTMLElement).getByRole('button', { name: 'Hilfe & Feedback' }),
+  );
+  fireEvent.click(
     within(menu[menu.length - 1] as HTMLElement).getByRole('button', { name: 'Fehler melden' }),
   );
   return screen.getByRole('dialog', { name: 'Fehler melden' });
@@ -203,9 +206,12 @@ describe('Fehler melden · schließen', () => {
     const menu = [...document.body.children].filter(
       (element) => (element as HTMLElement).style.position === 'fixed',
     );
-    fireEvent.click(
-      within(menu[menu.length - 1] as HTMLElement).getByRole('button', { name: 'Fehler melden' }),
-    );
+    const panel = within(menu[menu.length - 1] as HTMLElement);
+    // Die Gruppe bleibt offen, wenn sie schon einmal aufgeklappt war.
+    if (panel.queryByRole('button', { name: 'Fehler melden' }) === null) {
+      fireEvent.click(panel.getByRole('button', { name: 'Hilfe & Feedback' }));
+    }
+    fireEvent.click(panel.getByRole('button', { name: 'Fehler melden' }));
     expect(screen.getByRole('dialog', { name: 'Fehler melden' })).toBeInTheDocument();
 
     fireEvent.keyDown(window, { key: 'Escape' });

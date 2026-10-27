@@ -238,8 +238,8 @@ export function TopBar() {
   return (
     <>
       <div className="relative z-[5] flex h-[54px] shrink-0 items-center gap-[10px] border-b border-line bg-surface pr-[12px]">
-        {/* Das Logo öffnet „Über diese App": Version, Änderungen, Export, Druck,
-            Fehler melden, Design (Issue #71). */}
+        {/* Das Logo öffnet „Über diese App": Öffnen, Export, Notizen, Hilfe, Design
+            (Issue #71, Entscheidung 0079). */}
         <AboutMenu
           onFehlerMelden={() => setMelden(true)}
           onTastenkuerzel={() => setKuerzel(true)}
@@ -412,7 +412,12 @@ export function TopBar() {
       </div>
 
       {kuerzel && <ShortcutsDialog onClose={() => setKuerzel(false)} />}
-      {adminOffen && <AdminDialog onClose={() => setAdminOffen(false)} />}
+      {adminOffen && (
+        <AdminDialog
+          onClose={() => setAdminOffen(false)}
+          onTrefferProtokoll={loaded ? mitnehmen.trefferAlsCsv : undefined}
+        />
+      )}
       {notizDatei !== null && (
         <NotesImportDialog
           file={notizDatei.file}

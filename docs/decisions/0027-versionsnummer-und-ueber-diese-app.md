@@ -1,6 +1,6 @@
 # 0027 – Versionsnummer, Changelog und „Über diese App" hinter dem Logo
 
-- **Status:** akzeptiert
+- **Status:** teilweise ersetzt durch 0079 („Was ist neu“ ist aus dem Menü)
 - **Datum:** 2026-09-24
 - **Betrifft:** Frontend, `CHANGELOG.md`, Issues #71 und #80
 
