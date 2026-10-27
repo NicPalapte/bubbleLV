@@ -128,6 +128,19 @@ describe('Worker je Seite', () => {
     suggester.dispose();
   });
 
+  it('beim Beenden bleibt keine Anfrage hängen', async () => {
+    const stumm: SuggestWorker = {
+      onmessage: null,
+      onerror: null,
+      postMessage: () => undefined,
+      terminate: () => undefined,
+    };
+    const suggester = createSuggester(INDEX, () => stumm);
+    const warten = suggester.page('01.02.0030', 1);
+    suggester.dispose();
+    expect(await warten).toEqual([]);
+  });
+
   it('rechnet ohne Worker oder nach einem Ausfall selbst weiter', async () => {
     const ohne = createSuggester(INDEX, () => null);
     expect(await ohne.page('01.02.0030', 1)).toHaveLength(1);

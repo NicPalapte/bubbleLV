@@ -79,6 +79,8 @@ export function createSuggester(
     dispose: () => {
       worker?.terminate();
       worker = null;
+      // Wartende nicht hängen lassen: leer erfüllen.
+      for (const { done } of waiting.values()) done([]);
       waiting.clear();
     },
   };

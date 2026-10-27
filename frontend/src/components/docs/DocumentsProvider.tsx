@@ -28,7 +28,7 @@ import {
   type SuggestIndex,
   type SuggestPosition,
 } from '../../lib/docs/docSuggest';
-import { createSuggester } from '../../lib/docs/suggester';
+import { createSuggester, type Suggester } from '../../lib/docs/suggester';
 import type { PositionIndex } from '../../lib/index/positionIndex';
 import { isPdfFile, openPdf, PdfOpenError, type OpenedPdf } from '../../lib/docs/pdf';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
@@ -286,41 +286,55 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
     index: SuggestIndex | null;
     byDoc: ReadonlyMap<string, readonly DocSuggestion[]>;
   }>({ index: null, byDoc: NO_SUGGESTIONS });
-  // Schon fertig gerechnete Dokumente zu diesem Verzeichnis: ein zweites PDF rechnet das
-  // erste nicht noch einmal.
-  const doneFor = useRef<{ index: SuggestIndex | null; ids: Set<string> }>({
-    index: null,
-    ids: new Set(),
-  });
+  // Fertige Seiten je Verzeichnis: Wird die Rechnung unterbrochen (zweites PDF geöffnet
+  // oder geschlossen), geht sie dort weiter, wo sie war.
+  const pagesFor = useRef<{
+    index: SuggestIndex | null;
+    pages: Map<string, readonly DocSuggestion[]>;
+  }>({ index: null, pages: new Map() });
   useEffect(() => {
     if (!wanted || index.size === 0) return;
-    if (doneFor.current.index !== suggestIndex)
-      doneFor.current = { index: suggestIndex, ids: new Set() };
-    const done = doneFor.current.ids;
-    const todo = docs.filter((doc) => !done.has(doc.id));
-    if (todo.length === 0) return;
-    const suggester = createSuggester(suggestIndex);
+    if (pagesFor.current.index !== suggestIndex) {
+      pagesFor.current = { index: suggestIndex, pages: new Map() };
+    }
+    const cache = pagesFor.current.pages;
+    // Geschlossene Dokumente: ihre Vorschläge und Seiten fallen weg.
+    const open = new Set(docs.map((doc) => doc.id));
+    for (const key of [...cache.keys()]) {
+      if (!open.has(key.slice(0, key.indexOf(':')))) cache.delete(key);
+    }
+    // Worker erst, wenn eine Seite fehlt — sind alle zwischengespeichert, braucht es keinen.
+    let suggester: Suggester | null = null;
     let alive = true;
     // `pageText` und `suggester.page` werfen nicht: defekte Seiten liefern leeren Text.
     void (async () => {
-      for (const doc of todo) {
+      for (const doc of docs) {
         const list: DocSuggestion[] = [];
         for (let page = 1; page <= doc.pdf.numPages; page++) {
-          const text = await pageText(doc, page);
-          if (!alive) return;
-          list.push(...(await suggester.page(text, page)));
-          if (!alive) return;
+          const key = `${doc.id}:${page}`;
+          let found = cache.get(key);
+          if (found === undefined) {
+            const text = await pageText(doc, page);
+            if (!alive) return;
+            suggester ??= createSuggester(suggestIndex);
+            found = await suggester.page(text, page);
+            if (!alive) return;
+            cache.set(key, found);
+          }
+          list.push(...found);
         }
         setSuggested((prev) => ({
           index: suggestIndex,
-          byDoc: new Map([...(prev.index === suggestIndex ? prev.byDoc : []), [doc.id, list]]),
+          byDoc: new Map([
+            ...[...(prev.index === suggestIndex ? prev.byDoc : [])].filter(([id]) => open.has(id)),
+            [doc.id, list],
+          ]),
         }));
-        done.add(doc.id);
       }
     })();
     return () => {
       alive = false;
-      suggester.dispose();
+      suggester?.dispose();
     };
   }, [wanted, docs, index, suggestIndex, pageText]);
   const suggestions = wanted && suggested.index === suggestIndex ? suggested.byDoc : NO_SUGGESTIONS;
