@@ -17,6 +17,23 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 - **Ein Schalter:** Ist ein Abschnitt hervorgehoben, stellt der Schalter in der Suchleiste
   ein, ob die übrigen Abschnitte blass oder ausgeblendet sind — derselbe wie bei Filtern.
 
+## 0.40.0 — 26.10.2026 · Eine Suche für LV und PDFs, PDF direkt hinzufügen
+
+- **Logo-Menü → „PDF hinzufügen…“:** PDF wählen, der Bereich „Dokument“ öffnet sich von
+  selbst und zeigt es. Mehrere PDFs auf einmal gehen auch.
+- **PDF auf die App ziehen:** irgendwo auf die Arbeitsfläche fallen lassen, auch wenn
+  „Dokument“ zu ist. Andere Dateien nimmt die Fläche nicht an.
+- **Begriff in die Suche:** Text im Kurztext, Langtext oder PDF markieren, Rechtsklick,
+  „In Suche übernehmen“. Am Tablet erscheint das Menü von selbst, sobald die Auswahl
+  ruht.
+- **Eine Suche:** Der Begriff aus der Suchleiste sucht auch in allen offenen PDFs. Unter
+  der Suchleiste steht, wo er vorkommt: Positionen im LV, Seiten und Zahl je PDF.
+  „Zeigen ›“ springt hin. Gelb markiert ist er im PDF, das gerade offen ist.
+- Das Suchfeld im Bereich „Dokument“ ist jetzt dasselbe wie oben. PDF-Treffer filtern
+  das LV nicht.
+- **Korrektur:** Eine PDF-Stelle mit mehreren verknüpften Positionen („OZ +2“) klappt
+  auf Klick alle Positionen auf; jede springt zu ihrer Position.
+
 ## 0.39.1 — 26.10.2026 · Gemeinsames Designsystem
 
 - **Gleiches Aussehen, neue Quelle:** Farben, Schriften und Logo kommen jetzt aus dem

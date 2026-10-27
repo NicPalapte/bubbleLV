@@ -1,5 +1,5 @@
 // Menü beim Rechtsklick auf eine Auswahl im Langtext (Entscheidung 0063, Issue #155):
-// Kopieren, sechs Farben zum Markieren, je mit eigenem Namen, Anstreichung entfernen,
+// In Suche übernehmen, Kopieren, sechs Farben zum Markieren, je mit eigenem Namen, Anstreichung entfernen,
 // dazu „Farben benennen" und mit Admin-Zugang „Begriff lernen" (Entscheidung 0053).
 // Eine Auswahl allein öffnet es nicht mehr. Unter den Eigenschaften der Abschnitt
 // „Meine Textmarkierungen".
@@ -35,10 +35,11 @@ function useCloseOutside(ref: RefObject<HTMLElement | null>, onClose: () => void
 
 const MENU_WIDTH = 230;
 /** Grobe Höhe des Menüs, damit es unten am Fenster nicht abgeschnitten wird. */
-const MENU_HEIGHT = 340;
+const MENU_HEIGHT = 380;
 
+// Am Tablet größere Zeilen: ein Finger trifft 12 px hohe Einträge schlecht.
 const ROW =
-  'flex w-full cursor-pointer items-center gap-[8px] rounded-[6px] border-none bg-transparent px-[8px] py-[6px] text-left font-mono text-[12px] text-ink hover:bg-sunken';
+  'flex w-full cursor-pointer items-center gap-[8px] rounded-[6px] border-none bg-transparent px-[8px] py-[6px] text-left font-mono text-[12px] text-ink hover:bg-sunken [@media(pointer:coarse)]:py-[10px] [@media(pointer:coarse)]:text-[14px]';
 
 function Swatch({ paint }: { paint: Paint }) {
   return (
@@ -52,6 +53,7 @@ function Swatch({ paint }: { paint: Paint }) {
 
 export function PaintBar({
   target,
+  onSearch,
   onCopy,
   onPaint,
   onUnpaint,
@@ -61,6 +63,8 @@ export function PaintBar({
   onClose,
 }: {
   target: PaintTarget;
+  /** Auswahl als Suchbegriff in die Suchleiste oben. */
+  onSearch: () => void;
   onCopy: () => void;
   onPaint: (paint: Paint) => void;
   /** Nur, wenn die Auswahl eine eigene Anstreichung berührt. */
@@ -107,6 +111,17 @@ export function PaintBar({
           <span aria-hidden="true" className="mx-[8px] my-[4px] h-px bg-line" />
         </>
       )}
+      <button
+        type="button"
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={onSearch}
+        className={`${ROW} font-semibold`}
+      >
+        <span aria-hidden="true" className="w-[12px] shrink-0 text-center text-mute">
+          ⌕
+        </span>
+        In Suche übernehmen
+      </button>
       <button
         type="button"
         onMouseDown={(event) => event.preventDefault()}
@@ -169,6 +184,61 @@ export function PaintBar({
           Begriff lernen…
         </button>
       )}
+    </div>,
+    host.document.body,
+  );
+}
+
+/**
+ * Kleines Menü für Text ohne Anstreichen, z. B. den Kurztext im Kopf der Positionskarte:
+ * nur „In Suche übernehmen“ und „Kopieren“ (Entscheidung 0077).
+ */
+export function SelectionMenu({
+  target,
+  onSearch,
+  onCopy,
+  onClose,
+}: {
+  target: Pick<PaintTarget, 'left' | 'top'>;
+  onSearch: () => void;
+  onCopy: () => void;
+  onClose: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const host = useHostWindow();
+  useCloseOutside(ref, onClose);
+  const left = Math.max(8, Math.min(target.left, host.innerWidth - MENU_WIDTH - 8));
+
+  return createPortal(
+    <div
+      ref={ref}
+      role="toolbar"
+      aria-label="Auswahl"
+      aria-orientation="vertical"
+      data-keeps-popover=""
+      className="ov-window fixed z-[70] flex flex-col gap-[1px] p-[6px]"
+      style={{ left, top: Math.min(target.top, host.innerHeight - 120), width: MENU_WIDTH }}
+      onContextMenu={(event) => event.preventDefault()}
+    >
+      <button
+        type="button"
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={onSearch}
+        className={`${ROW} font-semibold`}
+      >
+        <span aria-hidden="true" className="w-[12px] shrink-0 text-center text-mute">
+          ⌕
+        </span>
+        In Suche übernehmen
+      </button>
+      <button
+        type="button"
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={onCopy}
+        className={ROW}
+      >
+        Kopieren
+      </button>
     </div>,
     host.document.body,
   );

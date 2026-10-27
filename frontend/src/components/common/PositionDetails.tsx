@@ -8,12 +8,14 @@ import { Highlighted } from './Highlighted';
 import { LearnPopover } from './LearnPopover';
 import { MAX_TERM_LENGTH, type LearnTarget } from './learnSelection';
 import { MarkerHead, NoteBlock } from './NoteBlock';
-import { PaintBar, PaintList, PaintNamesDialog } from './PaintBar';
+import { PaintBar, PaintList, PaintNamesDialog, SelectionMenu } from './PaintBar';
 import {
   locate,
   PAINT_SECTION,
   paintSelection,
+  searchTermOf,
   usePaintHighlights,
+  useTouchSelectionMenu,
   type PaintTarget,
 } from './paint';
 import { shownText } from './shownText';
@@ -154,6 +156,12 @@ export function PositionDetails({ node, position }: { node: LVNode; position: Po
     [position.longText, position.attributes, admin.terms],
   );
   const longTextRef = useRef<HTMLDivElement>(null);
+  // Zusätzlich als Zustand: Die Tablet-Leiste muss mitbekommen, wann der Langtext da ist.
+  const [longTextEl, setLongTextEl] = useState<HTMLDivElement | null>(null);
+  const attachLongText = useCallback((el: HTMLDivElement | null): void => {
+    longTextRef.current = el;
+    setLongTextEl(el);
+  }, []);
   const hintsRef = useRef<HTMLElement>(null);
   const [learnTarget, setLearnTarget] = useState<LearnTarget | null>(null);
   const closeLearn = useCallback(() => setLearnTarget(null), []);
@@ -185,6 +193,24 @@ export function PositionDetails({ node, position }: { node: LVNode; position: Po
     setPaintTarget({ ...placed, touched: touched(target) });
     return true;
   };
+  // Kurztext im Kopf: nur suchen und kopieren, nicht anstreichen (Entscheidung 0077).
+  const [shortTextEl, setShortTextEl] = useState<HTMLSpanElement | null>(null);
+  const [shortPick, setShortPick] = useState<PaintTarget | null>(null);
+  const closeShortPick = useCallback(() => setShortPick(null), []);
+  const openShortMenu = (at: { x: number; y: number } | null): boolean => {
+    if (shortTextEl === null) return false;
+    const target = paintSelection(shortTextEl);
+    if (target === null) return false;
+    setShortPick(at === null ? target : { ...target, left: at.x, top: at.y });
+    return true;
+  };
+  useTouchSelectionMenu(shortTextEl, () => {
+    openShortMenu(null);
+  });
+  // Ohne Rechtsklick am Tablet: Leiste unter der Auswahl, sobald sie ruht.
+  useTouchSelectionMenu(longTextEl, () => {
+    openPaintMenu(null);
+  });
   const categories = useMemo(() => presentCategories(spans), [spans]);
   const counts = useMemo(() => {
     const out = new Map<string, number>();
@@ -257,9 +283,37 @@ export function PositionDetails({ node, position }: { node: LVNode; position: Po
             <HintCount positionId={node.id} target={hintsRef} />
           </>
         }
-        title={<Highlighted text={position.shortText} query={search} />}
+        title={
+          <span
+            ref={setShortTextEl}
+            onContextMenu={(event) => {
+              if (openShortMenu({ x: event.clientX, y: event.clientY })) event.preventDefault();
+            }}
+            // Wie der Langtext: im Graphen gilt `select-none`, hier soll man markieren können.
+            className="cursor-text select-text"
+          >
+            <Highlighted text={position.shortText} query={search} />
+          </span>
+        }
         actions={<MarkerHead positionId={node.id} />}
       />
+      {shortPick !== null && (
+        <SelectionMenu
+          target={shortPick}
+          onSearch={() => {
+            dispatch({ type: 'search', value: searchTermOf(shortPick.text) });
+            window.getSelection()?.removeAllRanges();
+            setShortPick(null);
+          }}
+          onCopy={() => {
+            setShortPick(null);
+            copySelection(shortPick.text, () =>
+              dispatch({ type: 'notice', message: 'Text konnte nicht kopiert werden.' }),
+            );
+          }}
+          onClose={closeShortPick}
+        />
+      )}
       <StatRow
         stats={[
           {
@@ -288,7 +342,7 @@ export function PositionDetails({ node, position }: { node: LVNode; position: Po
               />
             )}
             <div
-              ref={longTextRef}
+              ref={attachLongText}
               onContextMenu={(event) => {
                 if (openPaintMenu({ x: event.clientX, y: event.clientY })) event.preventDefault();
               }}
@@ -324,6 +378,11 @@ export function PositionDetails({ node, position }: { node: LVNode; position: Po
                     next.delete(PAINT_SECTION);
                     return next;
                   });
+                  window.getSelection()?.removeAllRanges();
+                  setPaintTarget(null);
+                }}
+                onSearch={() => {
+                  dispatch({ type: 'search', value: searchTermOf(paintTarget.text) });
                   window.getSelection()?.removeAllRanges();
                   setPaintTarget(null);
                 }}

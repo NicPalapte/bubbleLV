@@ -64,12 +64,12 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0055 | [Positions-Hash und Datei-ID im Link](0055-positions-hash.md)                                                  | akzeptiert                         | 2026-10-17 |
 | 0056 | [Anonyme Nutzungszählung mit GoatCounter](0056-anonyme-nutzungszaehlung.md)                                    | akzeptiert                         | 2026-10-17 |
 | 0057 | [Notizen hängen am Positions-Hash](0057-notizen-am-positions-hash.md)                                          | akzeptiert                         | 2026-10-17 |
-| 0058 | [Schalter „Nicht-Treffer" sitzt in der Suche](0058-nicht-treffer-in-der-suche.md)                              | akzeptiert                         | 2026-10-19 |
+| 0058 | [Schalter „Nicht-Treffer" sitzt in der Suche](0058-nicht-treffer-in-der-suche.md)                              | ergänzt durch 0077                 | 2026-10-19 |
 | 0059 | [Matrix als Kacheln, Gliederungswechsel gleitet](0059-matrix-kacheln.md)                                       | akzeptiert                         | 2026-10-19 |
 | 0060 | [Wissensgraph als Datenmodell, keine Graph-Datenbank](0060-wissensgraph-als-datenmodell.md)                    | vorgeschlagen                      | 2026-10-21 |
 | 0061 | [Notizen als Datei sichern und laden](0061-notizen-sichern-und-laden.md)                                       | akzeptiert                         | 2026-10-21 |
 | 0062 | [Fortschritt und „Wichtig" statt drei Marker](0062-fortschritt-und-wichtig.md)                                 | akzeptiert                         | 2026-10-21 |
-| 0063 | [Eigene Textmarkierungen im Langtext](0063-anstreichen-im-langtext.md)                                         | akzeptiert                         | 2026-10-21 |
+| 0063 | [Eigene Textmarkierungen im Langtext](0063-anstreichen-im-langtext.md)                                         | ergänzt durch 0077                 | 2026-10-21 |
 | 0064 | [Splitscreen neben den Fenstern](0064-splitscreen.md)                                                          | teilweise ersetzt durch 0070, 0074 | 2026-10-22 |
 | 0065 | [Filterleiste, Kopfzeile der Positionskarte und Rechtsklick-Menü](0065-filterleiste-kopfzeile-rechtsklick.md)  | akzeptiert                         | 2026-10-22 |
 | 0066 | [Als Material gelernte Begriffe stehen im Filter „Material"](0066-gelernte-materialien-im-filter.md)           | akzeptiert                         | 2026-10-22 |
@@ -78,11 +78,12 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0069 | [Neuer Name Conocto und Apple-Look](0069-conocto-look.md)                                                      | akzeptiert                         | 2026-10-22 |
 | 0070 | [Splitscreen nahtlos, Bereiche stapelbar](0070-splitscreen-nahtlos-stapeln.md)                                 | teilweise ersetzt durch 0073       | 2026-10-23 |
 | 0071 | [Kurzumfrage nach einigen Minuten Nutzung](0071-kurzumfrage.md)                                                | akzeptiert                         | 2026-10-23 |
-| 0072 | [Begleitdokument als PDF anstreichen und verknüpfen](0072-begleitdokument-pdf.md)                              | akzeptiert                         | 2026-10-23 |
+| 0072 | [Begleitdokument als PDF anstreichen und verknüpfen](0072-begleitdokument-pdf.md)                              | ergänzt durch 0077                 | 2026-10-23 |
 | 0073 | [Splitscreen frei teilen, letzte Anordnung merken](0073-splitscreen-frei-teilen-und-merken.md)                 | teilweise ersetzt durch 0074       | 2026-10-23 |
 | 0074 | [Nur noch Splitscreen, ein Knopf „Ansicht“](0074-nur-noch-splitscreen.md)                                      | akzeptiert                         | 2026-10-24 |
 | 0075 | [Graph: Inseln je Hauptabschnitt, Abschnitt hervorheben](0075-inseln-und-hervorhebung.md)                      | teilweise ersetzt durch 0078       | 2026-10-25 |
 | 0076 | [Designsystem als eigenes Paket](0076-designsystem-als-paket.md)                                               | akzeptiert                         | 2026-10-26 |
+| 0077 | [Eine Suche für LV und PDFs, Begriff aus dem Text übernehmen](0077-eine-suche-fuer-lv-und-pdf.md)             | akzeptiert                         | 2026-10-26 |
 | 0078 | [Schlanke Startansicht, ein Schalter für blass/ausblenden](0078-schlanke-startansicht-ein-schalter.md)         | akzeptiert                         | 2026-10-26 |
 
 ## Wann schreibe ich eine neue Datei?

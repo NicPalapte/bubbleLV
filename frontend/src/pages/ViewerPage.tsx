@@ -16,6 +16,7 @@ import { PrintView } from '../components/print/PrintView';
 import { Workspace } from '../components/shell/Workspace';
 import { WorkspaceProvider } from '../components/shell/WorkspaceProvider';
 import { DocumentsProvider } from '../components/docs/DocumentsProvider';
+import { PdfDrop } from '../components/docs/PdfDrop';
 import { FileDropzone } from '../components/upload/FileDropzone';
 import { ErrorBoundary } from '../components/common/ErrorBoundary';
 import { PositionMenuProvider } from '../components/common/PositionMenu';
@@ -44,7 +45,7 @@ function ViewTiming({ view, children }: { view: string; children: ReactNode }) {
 }
 
 export function ViewerPage() {
-  const { tree, view } = useViewer();
+  const { lv, tree, view } = useViewer();
   const { mode: viewMode } = view;
   const dispatch = useViewerDispatch();
 
@@ -71,6 +72,8 @@ export function ViewerPage() {
       <WorkspaceProvider>
         <DocumentsProvider>
           <PositionMenuProvider>
+            {/* Am LV, nicht am Baum: Der Baum kann einen Moment später stehen. */}
+            {lv !== null && <PdfDrop />}
             <div className="nur-bildschirm flex h-full flex-col bg-paper">
               {/* Über der Arbeitsfläche: die Listen der Filterleiste liegen über Fenstern. */}
               <header className="relative z-[20]">

@@ -3,7 +3,7 @@
 // Textbereiche, ohne das DOM umzubauen — Suchtreffer und Fundstellen in
 // `Highlighted` bleiben unberührt. Browser ohne die API zeigen nur die Liste.
 
-import { useLayoutEffect, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, useRef, type RefObject } from 'react';
 import { MAX_PAINT_LENGTH, PAINTS, type Highlight, type Paint } from '../../lib/annotations';
 
 /** Titel des Abschnitts und Name des Labels zum Ausblenden. */
@@ -43,6 +43,57 @@ export function paintSelection(container: HTMLElement): PaintTarget | null {
       ? range.getBoundingClientRect()
       : container.getBoundingClientRect();
   return { start, text, left: rect.left, top: rect.bottom + 6 };
+}
+
+/** Auswahl als Suchbegriff: Zeilenumbrüche und Mehrfach-Leerraum werden zu einem Leerzeichen. */
+export function searchTermOf(text: string): string {
+  return text.replace(/\s+/g, ' ').trim();
+}
+
+/** Wartezeit nach der letzten Änderung der Auswahl, bevor die Leiste am Tablet erscheint. */
+const TOUCH_SETTLE_MS = 450;
+
+/**
+ * Am Tablet gibt es keinen Rechtsklick (iPad/iOS kennt kein `contextmenu`): Steht nach
+ * Berühren eine Auswahl in `container`, ruft `open` die Leiste auf — erst, wenn die
+ * Auswahl kurz ruht, damit das Ziehen der Griffe nicht flackert.
+ */
+export function useTouchSelectionMenu(
+  container: HTMLElement | null,
+  open: (selection: Selection) => void,
+): void {
+  // Immer die neueste Fassung, ohne bei jedem Rendern neu zu lauschen.
+  const latest = useRef(open);
+  useLayoutEffect(() => {
+    latest.current = open;
+  });
+  useEffect(() => {
+    if (container === null) return;
+    const doc = container.ownerDocument;
+    const host = doc.defaultView ?? window;
+    let touch = false;
+    let timer = 0;
+    const onPointer = (event: PointerEvent): void => {
+      touch = event.pointerType === 'touch' || event.pointerType === 'pen';
+    };
+    const onChange = (): void => {
+      host.clearTimeout(timer);
+      if (!touch) return;
+      timer = host.setTimeout(() => {
+        const selection = doc.getSelection();
+        if (selection === null || selection.isCollapsed || selection.rangeCount === 0) return;
+        if (!container.contains(selection.getRangeAt(0).commonAncestorContainer)) return;
+        latest.current(selection);
+      }, TOUCH_SETTLE_MS);
+    };
+    container.addEventListener('pointerdown', onPointer);
+    doc.addEventListener('selectionchange', onChange);
+    return () => {
+      host.clearTimeout(timer);
+      container.removeEventListener('pointerdown', onPointer);
+      doc.removeEventListener('selectionchange', onChange);
+    };
+  }, [container]);
 }
 
 /** Ein `Highlight` je Farbe, geteilt von allen offenen Langtexten. */
