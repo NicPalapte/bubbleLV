@@ -18,6 +18,9 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 - **Mengen im PDF erkannt:** Eine Menge wie „783,03 m³“ ist amber gestrichelt, wenn genau
   eine Position im LV diese Menge hat. Steht die Menge direkt hinter einer OZ, zeigt die
   Leiste beide Mengen zum Vergleich: „PDF 110 m³ · LV 120 m³“.
+- **Wörter aus dem Kurztext:** Steht im Satz um die Menge ein Wort aus dem Kurztext der
+  Position, z. B. „Betonstahl“, wird der ganze Satz vorgeschlagen. Haben mehrere Positionen
+  dieselbe Menge, entscheiden diese Wörter. Die Leiste zeigt sie an.
 - **Du entscheidest:** Verknüpft wird erst nach deinem Klick. „Nein“ merkt sich Conocto,
   der Vorschlag kommt nicht wieder. Oben im Bereich „Dokument“ lassen sich OZ- und
   Mengen-Vorschläge einzeln ausschalten. Sind alle Vorschläge einer Art erledigt, verschwindet

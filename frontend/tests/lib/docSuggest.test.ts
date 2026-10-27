@@ -3,6 +3,7 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+  SENTENCE_REACH,
   suggestIndexOf,
   suggestionsInPage,
   type SuggestPosition,
@@ -12,13 +13,13 @@ import { createSuggester, type SuggestWorker } from '../../src/lib/docs/suggeste
 import type { SuggestRequest, SuggestResponse } from '../../src/lib/docs/suggestMessages';
 
 const POSITIONEN: SuggestPosition[] = [
-  { id: 'p1', oz: '01.02.0030', quantity: 120, unit: 'm3' },
-  { id: 'p2', oz: '01.02.0040', quantity: 1234.5, unit: 'm2' },
-  { id: 'p3', oz: '01.03.0030', quantity: 3, unit: 'St' },
-  { id: 'p4', oz: '01.03.0050', quantity: 88, unit: 'm' },
-  { id: 'p5', oz: '02.01.0010', quantity: 88, unit: 'm' },
-  { id: 'p6', oz: '02.01.0020', quantity: 1, unit: 'psch' },
-  { id: 'p7', oz: '02.01.0070', quantity: 42.75, unit: 't' },
+  { id: 'p1', oz: '01.02.0030', quantity: 120, unit: 'm3', shortText: 'Boden lösen und laden' },
+  { id: 'p2', oz: '01.02.0040', quantity: 1234.5, unit: 'm2', shortText: 'Estrich CT-C30' },
+  { id: 'p3', oz: '01.03.0030', quantity: 3, unit: 'St', shortText: 'Schachtabdeckung' },
+  { id: 'p4', oz: '01.03.0050', quantity: 88, unit: 'm', shortText: 'Rinne aus Ortbeton' },
+  { id: 'p5', oz: '02.01.0010', quantity: 88, unit: 'm', shortText: 'Kabelschutzrohr DN 110' },
+  { id: 'p6', oz: '02.01.0020', quantity: 1, unit: 'psch', shortText: 'Baustelle einrichten' },
+  { id: 'p7', oz: '02.01.0070', quantity: 42.75, unit: 't', shortText: 'Betonstahl liefern' },
 ];
 const INDEX = suggestIndexOf(POSITIONEN);
 
@@ -84,7 +85,56 @@ describe('Mengen im Seitentext', () => {
   });
 
   it('keine Menge bei mehrdeutigem Wert, kleiner ganzer Zahl, Pauschale oder fremder Einheit', () => {
-    expect(finde('88 m Rinne, 3 St Schächte, 1 psch Baustelle, 120 kg Stahl')).toEqual([]);
+    expect(finde('88 m Rigole, 3 St Schächte, 1 psch Baustelle, 120 kg Stahl')).toEqual([]);
+  });
+
+  it('eindeutige Menge mit Wort aus dem Kurztext markiert den ganzen Satz', () => {
+    const liste = suggestionsInPage(
+      'Erdarbeiten. Danach werden ca. 42,75 t Betonstahl verlegt. Ende.',
+      INDEX,
+      1,
+    );
+    expect(liste).toEqual([
+      {
+        page: 1,
+        start: 13,
+        text: 'Danach werden ca. 42,75 t Betonstahl verlegt.',
+        id: 'p7',
+        source: 'menge',
+        words: ['Betonstahl'],
+      },
+    ]);
+  });
+
+  it('bei mehreren Positionen mit gleicher Menge entscheiden die Wörter im Satz', () => {
+    expect(
+      suggestionsInPage('Im Hof sind 88 m Kabelschutzrohre zu verlegen.', INDEX, 1),
+    ).toMatchObject([{ id: 'p5', text: 'Im Hof sind 88 m Kabelschutzrohre zu verlegen.' }]);
+    // Zusammengesetztes Wort: „Ortbeton“ steckt in „Ortbetonrinne“.
+    expect(finde('Es folgen 88 m Ortbetonrinne.')).toMatchObject([{ id: 'p4' }]);
+  });
+
+  it('kein Vorschlag bei Gleichstand der Wörter', () => {
+    expect(finde('Es folgen 88 m Rinne neben dem Kabelschutzrohr.')).toEqual([]);
+  });
+
+  it('nur die Menge, wenn der Satz eine OZ oder eine zweite Menge enthält', () => {
+    const [mitOz] = suggestionsInPage('42,75 t Betonstahl wie in 01.02.0030.', INDEX, 1).filter(
+      (item) => item.source === 'menge',
+    );
+    expect(mitOz).toMatchObject({ text: '42,75 t', id: 'p7', words: ['Betonstahl'] });
+    expect(finde('Es sind 1.234,50 m² Estrich und 120 cbm Boden.').map((item) => item.t)).toEqual([
+      '1.234,50 m²',
+      '120 cbm',
+    ]);
+  });
+
+  it('der Satz reicht nicht weiter als SENTENCE_REACH Zeichen', () => {
+    const fuell = 'wort '.repeat(80);
+    const [treffer] = suggestionsInPage(`${fuell}42,75 t Betonstahl ${fuell}`, INDEX, 1);
+    expect(treffer.text.length).toBeLessThanOrEqual(2 * SENTENCE_REACH + 8);
+    expect(treffer.text.startsWith('wort')).toBe(true);
+    expect(treffer.text.endsWith('wort')).toBe(true);
   });
 
   it('eine Menge kurz hinter einer OZ gehört zur OZ und zeigt die Abweichung', () => {

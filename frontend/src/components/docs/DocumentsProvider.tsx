@@ -70,7 +70,13 @@ function* suggestPositions(index: PositionIndex): Generator<SuggestPosition> {
   for (const node of index.nodes) {
     const position = node.position;
     if (position === null) continue;
-    yield { id: node.id, oz: position.oz, quantity: position.quantity, unit: position.unit };
+    yield {
+      id: node.id,
+      oz: position.oz,
+      quantity: position.quantity,
+      unit: position.unit,
+      shortText: position.shortText,
+    };
   }
 }
 

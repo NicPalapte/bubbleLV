@@ -25,6 +25,8 @@ export interface SuggestPosition {
   readonly oz: string;
   readonly quantity: number | null;
   readonly unit: string | null;
+  /** Für den Wortabgleich bei Mengen, die mehrere Positionen treffen. */
+  readonly shortText: string;
 }
 
 /** `null` als Wert: mehrere Positionen passen, also kein Vorschlag. */
@@ -37,6 +39,10 @@ export interface SuggestIndex {
   readonly tail: Unique;
   /** Menge und Einheit: `${wert}|${einheit}`. */
   readonly amount: Unique;
+  /** Alle Positionen je Menge und Einheit, für den Wortabgleich. */
+  readonly amountIds: ReadonlyMap<string, readonly string[]>;
+  /** Wortstämme des Kurztexts je Position. */
+  readonly words: ReadonlyMap<string, readonly string[]>;
   /** Menge einer Position für die Anzeige neben einer OZ. */
   readonly amountOf: ReadonlyMap<string, { readonly text: string; readonly key: string }>;
   /** Einheiten, die im LV vorkommen (Vergleichsschlüssel). */
@@ -56,6 +62,8 @@ export interface DocSuggestion {
     readonly lv: string | null;
     readonly same: boolean;
   };
+  /** Nur bei Menge: Wörter im Satz, die auch im Kurztext der Position stehen. */
+  readonly words?: readonly string[];
 }
 
 /** Kleinere ganze Zahlen sind als Menge zu allgemein („2 St“, „1 m“). */
@@ -68,6 +76,26 @@ const MAX_PART = 6;
 /** Schreibweisen aus Fließtext, die GAEB-LVs so nicht schreiben. */
 const PDF_UNIT_SPELLINGS: Readonly<Record<string, string>> = { cbm: 'm3', qm: 'm2' };
 
+/** So weit reicht der Satz um eine Menge höchstens in jede Richtung. */
+export const SENTENCE_REACH = 200;
+/** Kürzeste Länge eines Worts für den Abgleich mit dem Kurztext. */
+const MIN_WORD = 4;
+/** Ab dieser Länge zählt ein Wort auch als Anfang eines zusammengesetzten Worts. */
+const MIN_COMPOUND = 5;
+
+/** Wörter, die in fast jedem Kurztext stehen und nichts über die Leistung sagen. */
+const GENERIC_WORDS = new Set(
+  `
+  liefern einbauen herstellen montieren anbringen ausführen ausfuehren ausführung
+  leistung position menge stück stueck bauseits gemäß gemaess sowie oder eines einer
+  einem einen dieser diese dieses sind wird werden nach über ueber unter aller alle allem
+  inkl einschl einschließlich zulage zuschlag für fuer auch ohne beim bzw ggf mind gesamt
+  insgesamt ca etwa zwischen
+`
+    .trim()
+    .split(/\s+/),
+);
+
 /** Pauschal ist keine vergleichbare Menge. */
 const NO_AMOUNT_UNITS = new Set(['pauschal', 'psch', 'pau', 'pa']);
 
@@ -77,6 +105,31 @@ export function unitKeyOf(raw: string | null): string | null {
   const plain = raw.trim().replace(/\.+$/, '').toLowerCase();
   const key = canonicalUnit(PDF_UNIT_SPELLINGS[plain] ?? raw);
   return key === null ? null : key.toLowerCase();
+}
+
+/** Grober Wortstamm: häufige Endungen ab, damit „Bodens“ und „Boden“ gleich sind. */
+function stemOf(word: string): string {
+  const stem = word.replace(/(?:en|er|es|em|e|n|s)$/, '');
+  return stem.length >= MIN_WORD ? stem : word;
+}
+
+/** Wörter eines Texts mit Lage, ohne allgemeine Wörter; Stamm klein geschrieben. */
+function wordsIn(text: string): { readonly stem: string; readonly word: string }[] {
+  const out: { stem: string; word: string }[] = [];
+  for (const match of text.matchAll(/\p{L}+/gu)) {
+    const word = match[0];
+    const lower = word.toLowerCase();
+    if (lower.length < MIN_WORD || GENERIC_WORDS.has(lower)) continue;
+    out.push({ stem: stemOf(lower), word });
+  }
+  return out;
+}
+
+/** Gleicher Stamm oder ein langer Stamm als Anfang des anderen („Ortbeton“, „Ortbetonwand“). */
+function sameWord(a: string, b: string): boolean {
+  if (a === b) return true;
+  const [short, long] = a.length <= b.length ? [a, b] : [b, a];
+  return short.length >= MIN_COMPOUND && long.startsWith(short);
 }
 
 function amountKey(value: number, unit: string): string {
@@ -106,6 +159,8 @@ export function suggestIndexOf(positions: Iterable<SuggestPosition>): SuggestInd
   const full = new Map<string, string | null>();
   const tail = new Map<string, string | null>();
   const amount = new Map<string, string | null>();
+  const amountIds = new Map<string, string[]>();
+  const words = new Map<string, readonly string[]>();
   const amountOf = new Map<string, { text: string; key: string }>();
   const units = new Set<string>();
   for (const position of positions) {
@@ -126,9 +181,13 @@ export function suggestIndexOf(positions: Iterable<SuggestPosition>): SuggestInd
         key,
       });
       addUnique(amount, key, position.id);
+      const ids = amountIds.get(key);
+      if (ids === undefined) amountIds.set(key, [position.id]);
+      else ids.push(position.id);
+      words.set(position.id, [...new Set(wordsIn(position.shortText).map((w) => w.stem))]);
     }
   }
-  return { full, tail, amount, amountOf, units };
+  return { full, tail, amount, amountIds, words, amountOf, units };
 }
 
 interface Run {
@@ -270,13 +329,67 @@ function findAmounts(text: string, index: SuggestIndex): Amount[] {
   return out;
 }
 
+/**
+ * Satz um eine Menge: bis zu Satzzeichen mit Leerraum und folgendem Großbuchstaben
+ * (Punkte in Zahlen und „ca. 200“ trennen nicht), höchstens `SENTENCE_REACH` Zeichen.
+ */
+function sentenceAround(text: string, from: number, to: number): { start: number; end: number } {
+  let start = Math.max(0, from - SENTENCE_REACH);
+  const before = text.slice(start, from);
+  const breaks = [...before.matchAll(/[.!?;:]\s+(?=\p{Lu})/gu)];
+  const last = breaks.at(-1);
+  if (last !== undefined) start += last.index + last[0].length;
+  else if (start > 0) start += before.search(/\s\S/) + 1;
+  const limit = Math.min(text.length, to + SENTENCE_REACH);
+  const after = text.slice(to, limit);
+  const stop = /[.!?;](?=\s|$)/.exec(after);
+  let end = stop === null ? limit : to + stop.index + 1;
+  if (stop === null && limit < text.length) {
+    const space = after.lastIndexOf(' ');
+    if (space > 0) end = to + space;
+  }
+  while (start < from && /\s/.test(text[start])) start++;
+  while (end > to && /\s/.test(text[end - 1])) end--;
+  return { start, end };
+}
+
+/** Wörter des Satzes, die im Kurztext stehen, in der Schreibweise des PDF. */
+function sharedWords(sentence: string, stems: readonly string[]): string[] {
+  const out: string[] = [];
+  for (const { stem, word } of wordsIn(sentence)) {
+    if (stems.some((own) => sameWord(own, stem)) && !out.includes(word)) out.push(word);
+  }
+  return out;
+}
+
+/**
+ * Position zu einer Menge: eindeutig über Wert und Einheit, sonst die eine mit den
+ * meisten gemeinsamen Wörtern im Satz (mindestens eins, ohne Gleichstand).
+ */
+function pickByWords(
+  candidates: readonly string[],
+  sentence: string,
+  index: SuggestIndex,
+): { id: string; words: string[] } | null {
+  const scored = candidates.map((id) => ({
+    id,
+    words: sharedWords(sentence, index.words.get(id) ?? []),
+  }));
+  if (scored.length === 1) return scored[0];
+  scored.sort((a, b) => b.words.length - a.words.length);
+  const [best, next] = scored;
+  if (best === undefined || best.words.length === 0) return null;
+  return next !== undefined && next.words.length === best.words.length ? null : best;
+}
+
 const overlaps = (a: { start: number; end: number }, b: { start: number; end: number }) =>
   a.start < b.end && b.start < a.end;
 
 /**
  * Vorschläge einer Seite (ab 1). OZ zuerst; eine Menge kurz hinter einer OZ gehört zu
  * ihr und erscheint dort zum Vergleich. Andere Mengen werden nur vorgeschlagen, wenn
- * Wert und Einheit genau eine Position im LV treffen.
+ * Wert und Einheit genau eine Position im LV treffen oder unter mehreren genau eine die
+ * meisten Wörter mit dem Satz teilt. Mit gemeinsamen Wörtern wird der ganze Satz markiert.
  */
 export function suggestionsInPage(
   text: string,
@@ -309,17 +422,30 @@ export function suggestionsInPage(
       ...(extra === undefined ? {} : { amount: extra }),
     });
   });
+  // Belegte Stellen: ein Satz wird nur einmal und nie über eine OZ hinweg markiert.
+  const taken: { start: number; end: number }[] = [...ozs];
   for (const amount of amounts) {
     if (near.has(amount)) continue;
     if (Number.isInteger(amount.value) && amount.value < AMOUNT_MIN_INTEGER) continue;
-    const id = index.amount.get(amountKey(amount.value, amount.unit));
-    if (typeof id !== 'string') continue;
+    const candidates = index.amountIds.get(amountKey(amount.value, amount.unit));
+    if (candidates === undefined) continue;
+    const sentence = sentenceAround(text, amount.start, amount.end);
+    const picked = pickByWords(candidates, text.slice(sentence.start, sentence.end), index);
+    if (picked === null) continue;
+    // Stehen mehrere Mengen im Satz, gehört er keiner allein: dann nur die Menge.
+    const whole =
+      picked.words.length > 0 &&
+      !amounts.some((other) => other !== amount && overlaps(other, sentence)) &&
+      !taken.some((spot) => overlaps(spot, sentence));
+    const spot = whole ? sentence : amount;
+    taken.push(spot);
     out.push({
       page,
-      start: amount.start,
-      text: text.slice(amount.start, amount.end),
-      id,
+      start: spot.start,
+      text: text.slice(spot.start, spot.end),
+      id: picked.id,
       source: 'menge',
+      ...(picked.words.length === 0 ? {} : { words: picked.words }),
     });
   }
   return out.sort((a, b) => a.start - b.start);

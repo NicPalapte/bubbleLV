@@ -31,8 +31,19 @@
   Einheiten-Gruppen aus `docs/domain/reference/einheiten-gruppen.csv`.
 - **Menge neben OZ:** Steht bis 80 Zeichen hinter einer OZ eine Menge, gehört sie zur OZ.
   Die Leiste zeigt dann „PDF 110 m³ · LV 120 m³“, in Amber, wenn die Mengen abweichen.
-- **Nur was es im LV gibt:** Passt eine OZ oder Menge auf mehrere Positionen, gibt es
-  keinen Vorschlag.
+- **Wörter aus dem Kurztext** (Nico: Variante A, „öffentlich, nur Wortabgleich“): Um eine
+  Menge herum wird der Satz gelesen (höchstens 200 Zeichen je Richtung). Wörter ab 4
+  Buchstaben werden mit dem Kurztext verglichen, ohne allgemeine Wörter wie „liefern“ oder
+  „einbauen“ und ohne Endungen („Bodens“ = „Boden“). Ein Wort ab 5 Buchstaben zählt auch
+  als Anfang eines längeren Worts („Ortbeton“ in „Ortbetonrinne“).
+  - Haben mehrere Positionen dieselbe Menge, gewinnt die eine mit den meisten gemeinsamen
+    Wörtern. Kein gemeinsames Wort oder Gleichstand ⇒ kein Vorschlag.
+  - Gibt es gemeinsame Wörter, wird der ganze Satz vorgeschlagen und beim Verknüpfen
+    markiert. Nur die Menge, wenn im Satz auch eine OZ oder eine zweite Menge steht.
+  - Die Leiste zeigt die Wörter: „Auch im Kurztext: Betonstahl“.
+  - Das ist Wort-für-Wort-Vergleich mit dem geladenen LV, keine Deutung des Inhalts.
+- **Nur was es im LV gibt:** Passt eine OZ oder Menge auf mehrere Positionen und helfen
+  die Wörter nicht, gibt es keinen Vorschlag.
 - **Anzeige:** gestrichelt unterstrichen, OZ in Ziegelrot, Mengen in Amber. Antippen öffnet
   „Verknüpfen“ / „Nein“ / „Position zeigen“. Wer die Position zeigt, kann danach noch
   entscheiden.
@@ -50,8 +61,13 @@
 
 ## Verworfene Alternativen
 
-- **Mengen nur neben einer OZ** (Variante A): Das hätte weniger falsche Treffer
-  gebracht. Nico wollte Mengen auch allein (Variante B).
+- **Mengen nur neben einer OZ**: Das hätte weniger falsche Treffer gebracht. Nico wollte
+  Mengen auch allein (Variante B).
+- **Wortabgleich privat im Kern:** Er bleibt öffentlich, weil er nur Wörter gleich
+  vergleicht. Ähnliche Bedeutung, Synonyme oder Fachwissen gehören weiter in den privaten
+  Kern.
+- **Satz auch ohne gemeinsames Wort markieren:** Dann wäre unklar, warum der Satz zur
+  Position gehört.
 - **Vorschlagsdatei (`bubble-links-v1`) einlesen:** Sie stand in #160 für PR 3. Sie kommt
   erst, wenn das private Matching wirklich eine schreibt.
 - **„Nein“ nur für die Sitzung merken:** Nico will, dass sich das dauerhaft merkt.

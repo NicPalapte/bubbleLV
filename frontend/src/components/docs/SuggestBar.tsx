@@ -1,6 +1,7 @@
 // Leiste zu einem Vorschlag im Begleitdokument (Entscheidung 0080): welche Position
-// passt und warum (OZ oder Menge), dazu „Verknüpfen“, „Nein“ und „Position zeigen“. Erst der Klick legt
-// die Verknüpfung an; „Nein“ merkt sich die Ablehnung in den Notizen.
+// passt und warum (OZ, Menge, gemeinsame Wörter mit dem Kurztext), dazu „Verknüpfen“,
+// „Nein“ und „Position zeigen“. Erst der Klick legt die Verknüpfung an; „Nein“ merkt
+// sich die Ablehnung in den Notizen.
 
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
@@ -9,7 +10,7 @@ import type { DocSuggestion } from '../../lib/docs/docSuggest';
 
 const WIDTH = 290;
 /** Grobe Höhe, damit die Leiste unten am Fenster nicht abgeschnitten wird. */
-const HEIGHT = 130;
+const HEIGHT = 150;
 
 const BUTTON =
   'h-[30px] cursor-pointer rounded-[var(--r-sm)] px-[12px] font-mono text-[12px] [@media(pointer:coarse)]:h-[40px] [@media(pointer:coarse)]:text-[14px]';
@@ -73,6 +74,11 @@ export function SuggestBar({
         <span className="font-mono font-semibold">{oz}</span>
         {shortText !== '' && <span className="block truncate">{shortText}</span>}
       </span>
+      {suggestion.words !== undefined && (
+        <span className="truncate font-mono text-[11.5px] text-mute">
+          Auch im Kurztext: {suggestion.words.join(', ')}
+        </span>
+      )}
       {amount !== undefined && (
         <span className={`font-mono text-[11.5px] ${amount.same ? 'text-mute' : 'text-amber'}`}>
           PDF {amount.pdf} · LV {amount.lv ?? '-'}
