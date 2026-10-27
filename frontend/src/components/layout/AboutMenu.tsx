@@ -160,9 +160,9 @@ export function AboutMenu({
 }: AboutMenuProps) {
   const [open, setOpen] = useState(false);
   const [theme, chooseTheme] = useTheme();
-  // Bleibt zwischen zwei Öffnungen erhalten: wer gerade exportiert, findet die Gruppe
-  // offen wieder. Beim Start ist „Exportieren“ offen — das brauchen Kalkulatoren am meisten.
-  const [offen, setOffen] = useState<ReadonlySet<GruppenName>>(() => new Set(['Exportieren']));
+  // Beim Start alle zu. Bleibt zwischen zwei Öffnungen erhalten: wer gerade exportiert,
+  // findet die Gruppe offen wieder.
+  const [offen, setOffen] = useState<ReadonlySet<GruppenName>>(() => new Set());
   const umschalten = useCallback((name: GruppenName) => {
     setOffen((alt) => {
       const neu = new Set(alt);

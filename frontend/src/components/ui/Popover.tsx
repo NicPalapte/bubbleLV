@@ -208,6 +208,8 @@ export function PopoverRow({
       onClick={onClick}
       title={title}
       aria-pressed={checkbox ? on : undefined}
+      // Hover über die Klasse, nicht im Inline-Stil: der gewänne sonst immer.
+      className={on ? undefined : 'bg-transparent hover:bg-sunken focus-visible:bg-sunken'}
       style={{
         display: 'flex',
         width: '100%',
@@ -219,7 +221,7 @@ export function PopoverRow({
         textAlign: 'left',
         font: 'inherit',
         cursor: 'pointer',
-        background: on ? 'var(--accent-soft)' : 'transparent',
+        background: on ? 'var(--accent-soft)' : undefined,
         color: on ? 'var(--accent-ink)' : 'var(--ink)',
       }}
     >

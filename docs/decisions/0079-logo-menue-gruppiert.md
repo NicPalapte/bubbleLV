@@ -19,8 +19,8 @@
   - Exportieren: „Positionen als Tabelle (CSV)“, „Prüfhinweise als Text“, „Drucken / als PDF“
   - Meine Notizen: sichern, laden
   - Hilfe & Feedback: Tour, Tastenkürzel, Fehler melden, Feedback geben
-- „Exportieren“ ist beim ersten Öffnen aufgeklappt. Eine aufgeklappte Gruppe bleibt es,
-  bis man sie zuklappt oder neu lädt.
+- Beim ersten Öffnen sind alle Gruppen zu. Eine aufgeklappte Gruppe bleibt es, bis man
+  sie zuklappt oder neu lädt.
 - **Unten:** Design hell/dunkel, dann Fußzeile mit Impressum, Datenschutz, Lizenzen, Admin.
 - **Treffer-Protokoll (CSV)** sitzt im Fenster Admin-Werkzeuge (nach dem Passwort).
 - **„Was ist neu“** ist raus. Der Changelog bleibt im Repo.

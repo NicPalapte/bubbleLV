@@ -81,11 +81,13 @@ async function warteAufFilter(): Promise<void> {
   });
 }
 
-/** Eintrag im Logo-Menü auslösen — so, wie ein Nutzer es täte; `gruppe` erst aufklappen. */
-function befehl(name: string, gruppe?: string): void {
+/** Eintrag im Logo-Menü auslösen — so, wie ein Nutzer es täte; `gruppe` ggf. aufklappen. */
+function befehl(name: string, gruppe = 'Exportieren'): void {
   oeffneMenue();
-  if (gruppe !== undefined) fireEvent.click(screen.getByRole('button', { name: gruppe }));
-  fireEvent.click(screen.getByRole('button', { name: new RegExp(`^${name}`) }));
+  const eintrag = (): HTMLElement | null =>
+    screen.queryByRole('button', { name: new RegExp(`^${name}`) });
+  if (eintrag() === null) fireEvent.click(screen.getByRole('button', { name: gruppe }));
+  fireEvent.click(eintrag() as HTMLElement);
 }
 
 describe('Mitnehmen', () => {
@@ -150,6 +152,7 @@ describe('Mitnehmen', () => {
     expect(screen.getByLabelText('Suche')).toHaveFocus();
 
     oeffneMenue();
+    fireEvent.click(screen.getByRole('button', { name: 'Exportieren' }));
     for (const name of [
       'Positionen als Tabelle (CSV)',
       'Prüfhinweise als Text',
