@@ -49,6 +49,19 @@ async function oeffneAdmin(passwort: string): Promise<void> {
   fireEvent.click(screen.getByRole('button', { name: 'Öffnen' }));
 }
 
+/** Merkt sich die Dateinamen, die `downloadText` dem Browser übergeben hätte. */
+function fangeDownloads(): string[] {
+  const namen: string[] = [];
+  URL.createObjectURL = vi.fn(() => 'blob:test');
+  URL.revokeObjectURL = vi.fn();
+  vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
+    this: HTMLAnchorElement,
+  ) {
+    namen.push(this.download);
+  });
+  return namen;
+}
+
 /** Wählt den ersten Punkt mit Langtext und gibt den Langtext-Block zurück. */
 async function langtextBlock(): Promise<HTMLElement> {
   for (const punkt of document.querySelectorAll('[data-slot]')) {
@@ -80,6 +93,15 @@ function markiereWort(block: HTMLElement): string {
 }
 
 describe('Admin-Werkzeuge', () => {
+  it('bietet das Treffer-Protokoll erst mit geladenem LV', async () => {
+    render(<App />);
+    await oeffneAdmin(PASSWORT);
+    fireEvent.click(await screen.findByRole('button', { name: 'Admin' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Admin-Werkzeuge' });
+    expect(within(dialog).getByRole('button', { name: 'Admin beenden' })).toBeInTheDocument();
+    expect(within(dialog).queryByRole('button', { name: 'Treffer-Protokoll (CSV)' })).toBeNull();
+  });
+
   it('bleibt ohne richtiges Passwort zu', async () => {
     await ladeDatei();
     await oeffneAdmin('falsch');
@@ -119,9 +141,9 @@ describe('Admin-Werkzeuge', () => {
     const dialog = await screen.findByRole('dialog', { name: 'Admin-Werkzeuge' });
     expect(within(dialog).getByText(wort)).toBeInTheDocument();
     // Das Treffer-Protokoll sitzt hier, nicht mehr im Logo-Menü (Entscheidung 0079).
-    expect(
-      within(dialog).getByRole('button', { name: 'Treffer-Protokoll (CSV)' }),
-    ).toBeInTheDocument();
+    const geladen = fangeDownloads();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Treffer-Protokoll (CSV)' }));
+    expect(geladen).toEqual([expect.stringMatching(/treffer.*\.csv$/)]);
     fireEvent.click(within(dialog).getByRole('button', { name: `${wort} vergessen` }));
     await waitFor(async () => expect(await readLearnedTerms()).toEqual([]));
 
