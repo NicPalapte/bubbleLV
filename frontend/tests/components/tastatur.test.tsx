@@ -20,11 +20,17 @@ async function ladeApp(): Promise<void> {
 }
 
 /**
- * Bereich öffnen, wie ein Nutzer es täte: die Tabelle steht schon im Splitscreen,
- * Überblick und Prüfung öffnen die Kennzahlen.
+ * Bereich öffnen, wie ein Nutzer es täte: die Tabelle über „Ansicht" (beim Start
+ * zu, Entscheidung 0078), Überblick und Prüfung über die Kennzahlen.
  */
 async function ansicht(name: 'Tabelle' | 'Prüfung' | 'Überblick'): Promise<void> {
-  if (name === 'Tabelle' || screen.queryByRole('region', { name: `${name} — Bereich` })) return;
+  if (screen.queryByRole('region', { name: `${name} — Bereich` })) return;
+  if (name === 'Tabelle') {
+    fireEvent.click(screen.getByRole('button', { name: /^Ansicht/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Tabelle$/, pressed: false }));
+    fireEvent.click(screen.getByRole('button', { name: /^Ansicht/ }));
+    return;
+  }
   const kennzahlen = screen.getByRole('group', { name: 'Kennzahlen' });
   const zahl = name === 'Prüfung' ? /Hinweise/ : /Positionen/;
   fireEvent.click(within(kennzahlen).getByRole('button', { name: zahl }));
@@ -191,6 +197,7 @@ describe('Ohne Maus bedienbar', () => {
   it('wechselt gestapelte Reiter mit den Pfeiltasten', async () => {
     await ladeApp();
     fireEvent.click(screen.getByRole('button', { name: /^Ansicht/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Tabelle$/, pressed: false }));
     fireEvent.click(screen.getByRole('button', { name: /Dokument$/, pressed: false }));
     const reiter = (name: string) => screen.getByRole('tab', { name: new RegExp(name) });
     expect(reiter('Dokument')).toHaveAttribute('aria-selected', 'true');

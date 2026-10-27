@@ -116,6 +116,10 @@ function runPrepare(prepare: TourPrepare, dispatch: ReturnType<typeof useViewerD
     case 'closeSelection':
       dispatch({ type: 'closeSelection' });
       return;
+    case 'showTable':
+      // Die Tabelle ist beim Start zu (Entscheidung 0078); der Schritt zeigt sie.
+      dispatch({ type: 'showPane', pane: 'table' });
+      return;
     case 'ensureSelection': {
       // Wer den Punkt-Schritt übersprungen hat, bekommt trotzdem eine Karte:
       // der Klick läuft über denselben Weg wie ein echter Klick im Graphen.

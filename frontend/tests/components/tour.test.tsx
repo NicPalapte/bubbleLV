@@ -78,7 +78,7 @@ function Harness({ without = [] }: { without?: readonly string[] }) {
       <div data-tour="kpis">kennzahlen</div>
       {has('hints') && <div data-tour="hints">hinweise</div>}
       <div data-tour="workspace">anordnung</div>
-      <div data-tour="table">tabelle</div>
+      {!view.workspace.closed.table && <div data-tour="table">tabelle</div>}
       <div data-tour="menu">menü</div>
       <Tour />
     </>
@@ -144,6 +144,20 @@ describe('Tour', () => {
     }
     await frames();
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('öffnet für ihren Schritt die Tabelle, die beim Start zu ist', async () => {
+    setup();
+    expect(screen.queryByText('tabelle')).toBeNull();
+    const table = TOUR_STEPS.findIndex((step) => step.target === '[data-tour="table"]');
+    fireEvent.click(screen.getByRole('button', { name: 'Kurze Tour' }));
+    for (let index = 0; index < table; index++) {
+      await frames();
+      fireEvent.click(screen.getByRole('button', { name: /Weiter|Überspringen/ }));
+    }
+    await frames();
+    expect(screen.getByRole('dialog', { name: tourTitle(table) })).toBeTruthy();
+    expect(screen.getByText('tabelle')).toBeTruthy();
   });
 
   it('überspringt einen Schritt, dessen Ziel fehlt', async () => {

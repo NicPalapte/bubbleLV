@@ -7,6 +7,8 @@
 // entfernbare Chips — auch die eigenen Marker.
 // Der Schalter „Nicht-Treffer" sitzt in der Suche, weil er für Suche und alle
 // Filter gilt — in Graph und Tabelle (docs/decisions/0058-nicht-treffer-in-der-suche.md).
+// Er regelt auch, ob ein hervorgehobener Abschnitt die übrigen blass zeigt oder
+// ausblendet, und erscheint deshalb auch dann (Entscheidung 0078).
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ReportDialog } from '../report/ReportDialog';
@@ -114,6 +116,7 @@ export function TopBar() {
     active,
   } = useViewer();
   const dispatch = useViewerDispatch();
+  const spotlighted = view.graph.layout === 'lv' && view.graph.spotlight !== null;
   const survey = useSurvey();
   const notizAnzahl = useMemo(() => notesCount(annotations), [annotations]);
   const mitnehmen = useMitnehmen();
@@ -363,7 +366,7 @@ export function TopBar() {
               <span className="rounded-[5px] border border-line bg-sunken px-[5px] py-[1px] font-mono text-[11px] text-mute">
                 /
               </span>
-              {active.filtering && <HideModeToggle />}
+              {(active.filtering || spotlighted) && <HideModeToggle />}
               <button
                 type="button"
                 aria-expanded={filterOpen}

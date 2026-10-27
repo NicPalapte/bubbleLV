@@ -355,7 +355,6 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     case 'graphViewport':
     case 'graphFocus':
     case 'graphSpotlight':
-    case 'graphSpotlightHide':
     case 'tableSort':
     case 'tableScope':
     case 'tableColumns':

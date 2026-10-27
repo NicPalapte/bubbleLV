@@ -186,7 +186,10 @@ describe('Fehler melden · schließen', () => {
       expect(screen.getByRole('button', { name: '+ Filter' })).toBeInTheDocument(),
     );
 
-    // Eine Position wählen — in der Tabelle neben dem Graphen.
+    // Eine Position wählen — in der Tabelle, die „Ansicht" neben dem Graphen öffnet.
+    fireEvent.click(screen.getByRole('button', { name: /^Ansicht/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Tabelle$/, pressed: false }));
+    fireEvent.click(screen.getByRole('button', { name: /^Ansicht/ }));
     const grid = screen.getByRole('grid', { name: 'Positionen' });
     fireEvent.keyDown(grid, { key: 'ArrowDown' });
     fireEvent.keyDown(grid, { key: 'Enter' });

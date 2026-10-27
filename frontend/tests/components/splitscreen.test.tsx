@@ -57,6 +57,9 @@ function Bühne() {
       <button type="button" onClick={() => dispatch({ type: 'showPane', pane: 'check' })}>
         Sprung auslösen
       </button>
+      <button type="button" onClick={() => dispatch({ type: 'showPane', pane: 'table' })}>
+        Tabelle öffnen
+      </button>
       <WorkspaceBar />
       {tree !== null && (
         <main className="relative">
@@ -67,7 +70,8 @@ function Bühne() {
   );
 }
 
-function setup(): void {
+/** Lädt das LV; die Tabelle ist beim Start zu (Entscheidung 0078) und wird hier geöffnet. */
+function setup({ table = true }: { table?: boolean } = {}): void {
   render(
     <ViewerProvider>
       <WorkspaceProvider>
@@ -76,6 +80,7 @@ function setup(): void {
     </ViewerProvider>,
   );
   fireEvent.click(screen.getByRole('button', { name: 'laden' }));
+  if (table) fireEvent.click(screen.getByRole('button', { name: 'Tabelle öffnen' }));
 }
 
 const region = (name: string): HTMLElement =>
@@ -88,6 +93,16 @@ function ansicht(pane: string): void {
 }
 
 describe('Splitscreen', () => {
+  it('startet nur mit Graph und Position (Entscheidung 0078)', () => {
+    setup({ table: false });
+    expect(region('Graph')).toBeInTheDocument();
+    expect(region('Position')).toBeInTheDocument();
+    for (const name of ['Tabelle', 'Überblick', 'Prüfung', 'Dokument']) {
+      expect(screen.queryByRole('region', { name: `${name} — Bereich` })).toBeNull();
+    }
+    expect(screen.queryByRole('separator', { name: 'Höhe der Bereiche' })).toBeNull();
+  });
+
   it('zeigt Graph, Tabelle und Position als Bereiche nebeneinander', () => {
     setup();
     expect(region('Graph')).toBeInTheDocument();
@@ -179,7 +194,8 @@ describe('Splitscreen', () => {
     expect(region('Tabelle').style.left).not.toBe('0%');
     fireEvent.click(screen.getByRole('button', { name: /^Ansicht/ }));
     fireEvent.click(screen.getByRole('button', { name: /Anordnung zurücksetzen/ }));
-    expect(region('Tabelle').style.top).not.toBe('calc(0% + 32px)');
+    // Zurück zur Startansicht: nur Graph und Position (Entscheidung 0078).
+    expect(screen.queryByRole('region', { name: 'Tabelle — Bereich' })).toBeNull();
   });
 
   it('am Außenrand nichts, wenn die neue Spalte zu schmal würde', async () => {
@@ -238,16 +254,19 @@ describe('Splitscreen', () => {
 
     it('zeigt den Graphen und alle anderen Bereiche als Reiter auf einem Platz', () => {
       breite = 800;
-      setup();
-      const reiter = screen.getByRole('tablist', { name: 'Gestapelte Bereiche' });
-      expect(within(reiter).getByRole('tab', { name: /Position/ })).toHaveAttribute(
-        'aria-selected',
-        'true',
-      );
+      setup({ table: false });
+      // Zum Start nur die Position neben dem Graphen, noch keine Reiter.
+      expect(screen.queryByRole('tablist', { name: 'Gestapelte Bereiche' })).toBeNull();
       expect(screen.queryByRole('separator')).toBeNull();
       expect(region('Graph').style.left).toBe('0%');
       expect(region('Graph').style.top).toBe('calc(0% + 32px)');
-      fireEvent.click(within(reiter).getByRole('tab', { name: /Tabelle/ }));
+      expect(region('Position')).not.toHaveAttribute('aria-hidden');
+      fireEvent.click(screen.getByRole('button', { name: 'Tabelle öffnen' }));
+      const reiter = screen.getByRole('tablist', { name: 'Gestapelte Bereiche' });
+      expect(within(reiter).getByRole('tab', { name: /Tabelle/ })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      );
       expect(region('Tabelle')).not.toHaveAttribute('aria-hidden');
       // Ein neu geöffneter Bereich kommt nach vorn.
       ansicht('Prüfung');
@@ -261,7 +280,7 @@ describe('Splitscreen', () => {
 
     it('legt auf dem Handy beide übereinander', () => {
       breite = 500;
-      setup();
+      setup({ table: false });
       expect(region('Graph').style.width).toBe('calc(100% - 0px)');
       expect(region('Position').style.top).toBe('calc(50% + 32px)');
     });

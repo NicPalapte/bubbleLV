@@ -134,7 +134,6 @@ describe('Geteilter Link · lesen', () => {
 describe('Was im Link steht', () => {
   it('trägt weder Dateinamen noch Projektnamen — und keine Position ohne Auswahl', async () => {
     await ladeApp();
-    expect(tabellenfenster()).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'Beton' } });
     await waitFor(() => expect(fragment()).toContain('q=Beton'));
 

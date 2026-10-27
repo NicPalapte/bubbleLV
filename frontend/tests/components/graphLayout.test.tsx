@@ -373,13 +373,18 @@ describe('Abschnitt hervorheben (Entscheidung 0075)', () => {
     expect(blass()).toBeGreaterThan(0);
     // Die Suche bleibt leer — die Hervorhebung ist kein Filter.
     expect(screen.getByLabelText('Suche')).toHaveValue('');
-
-    fireEvent.click(leiste.getByRole('radio', { name: 'ausblenden' }));
+    // Blass/ausblenden hängt am Schalter „Nicht-Treffer" in der Suche (Entscheidung 0078).
+    expect(leiste.queryByRole('radio')).toBeNull();
+    const schalter = screen.getByRole('radiogroup', { name: 'Nicht-Treffer' });
+    fireEvent.click(within(schalter).getByRole('radio', { name: 'ausblenden' }));
     expect(graph().querySelectorAll('[data-group]').length).toBeLessThan(alle);
 
     fireEvent.click(leiste.getByRole('button', { name: 'Hervorhebung aufheben' }));
     expect(screen.queryByRole('group', { name: 'Hervorhebung' })).toBeNull();
+    expect(graph().querySelectorAll('[data-group]').length).toBe(alle);
     expect(blass()).toBe(0);
+    // Ohne Filter und ohne Hervorhebung braucht es den Schalter nicht.
+    expect(screen.queryByRole('radiogroup', { name: 'Nicht-Treffer' })).toBeNull();
   });
 
   it('hebt per Klick auf einen Kreis den Unterabschnitt hervor und wählt ihn', async () => {

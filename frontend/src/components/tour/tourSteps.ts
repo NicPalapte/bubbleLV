@@ -22,7 +22,8 @@ export interface TourStep {
 }
 
 /** Was ein Schritt vor dem Anzeigen am Zustand ändert. */
-export type TourPrepare = 'closeFilter' | 'openSettings' | 'closeSelection' | 'ensureSelection';
+export type TourPrepare =
+  'closeFilter' | 'openSettings' | 'closeSelection' | 'ensureSelection' | 'showTable';
 
 /** Punkt im Graphen; als Fläche gezeichnete Kreise haben keinen. */
 export const POINT_TARGET = '[data-slot]';
@@ -82,6 +83,7 @@ export const TOUR_STEPS: readonly TourStep[] = [
   },
   {
     target: '[data-tour="table"]',
+    prepare: ['showTable'],
     title: 'Tabelle',
     text: 'Alle Positionen als Liste. ↗ holt sie auf einen zweiten Bildschirm.',
   },
