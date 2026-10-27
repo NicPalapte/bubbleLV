@@ -170,7 +170,9 @@ describe('Viewer', () => {
       'aria-sort',
       'ascending',
     );
-  });
+    // Lädt ein echtes LV und öffnet Überblick und Tabelle zweimal: ~4–5 s, in der CI
+    // knapp über dem Standard-Zeitlimit von 5 s.
+  }, 15_000);
 
   it('zeigt die Positionen in der Tabelle neben dem Graphen', async () => {
     await loadAndWait();
