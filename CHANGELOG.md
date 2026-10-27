@@ -9,6 +9,19 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.43.0 — 27.10.2026 · Vorschläge im PDF
+
+- **OZ im PDF erkannt:** Steht im PDF eine OZ aus dem LV, ist sie rot gestrichelt
+  unterstrichen, z. B. „01.02.0030“, „1.2.30“ oder „Pos. 30“, wenn das eindeutig ist.
+  Antippen zeigt die Position, „Verknüpfen“ verbindet die Stelle mit ihr.
+- **Mengen im PDF erkannt:** Eine Menge wie „783,03 m³“ ist amber gestrichelt, wenn genau
+  eine Position im LV diese Menge hat. Steht die Menge direkt hinter einer OZ, zeigt die
+  Leiste beide Mengen zum Vergleich: „PDF 110 m³ · LV 120 m³“.
+- **Du entscheidest:** Verknüpft wird erst nach deinem Klick. „Nein“ merkt sich Conocto,
+  der Vorschlag kommt nicht wieder. Oben im Bereich „Dokument“ lassen sich OZ- und
+  Mengen-Vorschläge einzeln ausschalten.
+- **In der Positionskarte** steht bei solchen Verknüpfungen „über OZ“ oder „über Menge“.
+
 ## 0.42.0 — 27.10.2026 · Aufgeräumtes Logo-Menü
 
 - **Gruppen statt langer Liste:** Oben „Anderes LV öffnen“ und „PDF hinzufügen…“, darunter

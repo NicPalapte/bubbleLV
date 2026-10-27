@@ -48,11 +48,13 @@ import {
   linkDocMark,
   paintDocMark,
   registerDoc,
+  rejectSuggestion,
   unlinkDocMark,
   unpaintDocMark,
   type DocNotes,
   type DocSpot,
 } from '../lib/docs/docNotes';
+import type { LinkSource } from '../lib/docs/docSuggest';
 import type { HintIndex } from '../lib/check';
 import { AXIS_FACETS } from '../lib/graph/layoutMap';
 import type { PositionIndex } from '../lib/index/positionIndex';
@@ -135,9 +137,11 @@ type LvAction =
   | { type: 'docRegister'; doc: string; name: string; pages: number }
   /** Stelle im Dokument anstreichen; `null` nimmt die Farbe weg. */
   | { type: 'docPaint'; spot: DocSpot; paint: Paint | null; at: number }
-  /** Stelle von Hand mit Positionen verknüpfen (Knoten-IDs). */
-  | { type: 'docLink'; spot: DocSpot; ids: readonly string[]; at: number }
+  /** Stelle mit Positionen verknüpfen (Knoten-IDs); `source` bei übernommenem Vorschlag. */
+  | { type: 'docLink'; spot: DocSpot; ids: readonly string[]; at: number; source?: LinkSource }
   | { type: 'docUnlink'; spot: DocSpot; id: string }
+  /** Vorschlag abgelehnt: Stelle gehört nicht zu dieser Position (Entscheidung 0080). */
+  | { type: 'docReject'; spot: DocSpot; id: string; at: number }
   /** Notizen aus einer Notiz-Datei übernommen (lib/notesFile.ts, `mergeNotes`). */
   | { type: 'setAnnotations'; annotations: Annotations }
   /** Hinweis anhängen; derselbe Text erscheint nicht doppelt. */
@@ -239,7 +243,8 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     case 'docRegister':
     case 'docPaint':
     case 'docLink':
-    case 'docUnlink': {
+    case 'docUnlink':
+    case 'docReject': {
       const before = state.annotations.documents;
       const documents = docNotesReducer(before, action);
       return documents === before
@@ -436,7 +441,10 @@ export function useViewerDispatch(): Dispatch<ViewerAction> {
   return dispatch;
 }
 
-type DocAction = Extract<LvAction, { type: 'docRegister' | 'docPaint' | 'docLink' | 'docUnlink' }>;
+type DocAction = Extract<
+  LvAction,
+  { type: 'docRegister' | 'docPaint' | 'docLink' | 'docUnlink' | 'docReject' }
+>;
 
 function docNotesReducer(notes: DocNotes, action: DocAction): DocNotes {
   switch (action.type) {
@@ -447,8 +455,10 @@ function docNotesReducer(notes: DocNotes, action: DocAction): DocNotes {
         ? unpaintDocMark(notes, action.spot)
         : paintDocMark(notes, action.spot, action.paint, action.at);
     case 'docLink':
-      return linkDocMark(notes, action.spot, action.ids, action.at);
+      return linkDocMark(notes, action.spot, action.ids, action.at, action.source);
     case 'docUnlink':
       return unlinkDocMark(notes, action.spot, action.id);
+    case 'docReject':
+      return rejectSuggestion(notes, action.spot, action.id, action.at);
   }
 }

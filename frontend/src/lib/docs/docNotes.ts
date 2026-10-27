@@ -3,8 +3,9 @@
 //
 // Eine Stelle ist Dokument + Seite + Lage im Seitentext + angestrichener Text — wie
 // die Anstreichung im Langtext (Entscheidung 0063). Sie trägt eine Farbe, eine
-// Verknüpfung mit Positionen oder beides. Verknüpft wird nur von Hand; Conocto
-// schlägt nichts vor und deutet nichts (Owner, 2026-10-23).
+// Verknüpfung mit Positionen oder beides. Verknüpft wird von Hand oder per Klick auf
+// einen Vorschlag (OZ oder Menge, Entscheidung 0080); woher eine Verknüpfung kam, steht
+// in `sources`. Abgelehnte Vorschläge stehen in `rejected`, damit sie nicht wiederkommen.
 //
 // Das Dokument selbst wird nicht gespeichert, nur seine Kennung (SHA-256 der Bytes)
 // und sein Name. Positionen stehen in der Sitzung unter der Knoten-ID, im Speicher
@@ -13,6 +14,7 @@
 // Reine Funktionen über einem unveränderlichen Wert; Zeitpunkte kommen von außen.
 
 import { isPaint, MAX_PAINT_LENGTH, type Paint } from '../paints';
+import { isLinkSource, type DocSuggestion, type LinkSource } from './docSuggest';
 
 /** Ein Begleitdokument, das in diesem LV schon einmal offen war. */
 export interface DocInfo {
@@ -33,6 +35,14 @@ export interface DocMark extends DocSpot {
   readonly paint: Paint | null;
   /** Verknüpfte Positionen, ohne Doppelte. */
   readonly links: readonly string[];
+  /** Herkunft je Verknüpfung aus einem Vorschlag; von Hand verknüpfte fehlen hier. */
+  readonly sources?: Readonly<Record<string, LinkSource>>;
+  readonly at: number;
+}
+
+/** Abgelehnter Vorschlag: diese Stelle nicht mit dieser Position (`id`). */
+export interface DocRejection extends DocSpot {
+  readonly id: string;
   readonly at: number;
 }
 
@@ -40,6 +50,8 @@ export interface DocNotes {
   readonly docs: ReadonlyMap<string, DocInfo>;
   /** Nach Dokument, Seite und Lage sortiert. */
   readonly marks: readonly DocMark[];
+  /** Abgelehnte Vorschläge (Entscheidung 0080); fehlt, solange es keine gibt. */
+  readonly rejected?: readonly DocRejection[];
 }
 
 export const EMPTY_DOC_NOTES: DocNotes = { docs: new Map(), marks: [] };
@@ -94,7 +106,11 @@ export function paintDocMark(notes: DocNotes, spot: DocSpot, paint: Paint, at: n
   if (!validSpot(spot)) return notes;
   const known = markAt(notes, spot);
   if (known?.paint === paint) return notes;
-  return put(notes, spot, { ...spotOf(spot), paint, links: known?.links ?? [], at });
+  return put(
+    notes,
+    spot,
+    withSources({ ...spotOf(spot), paint, links: known?.links ?? [], at }, known?.sources),
+  );
 }
 
 /** Nimmt die Farbe weg; eine verknüpfte Stelle bleibt als Verknüpfung stehen. */
@@ -104,23 +120,54 @@ export function unpaintDocMark(notes: DocNotes, spot: DocSpot): DocNotes {
   return put(notes, spot, known.links.length === 0 ? null : { ...known, paint: null });
 }
 
-/** Verknüpft eine Stelle mit Positionen; legt sie an, wenn es sie noch nicht gibt. */
+/** Herkunft nur für verknüpfte Positionen; leer fällt das Feld weg. */
+function withSources(
+  mark: DocMark,
+  sources: Readonly<Record<string, LinkSource>> | undefined,
+): DocMark {
+  const own: Record<string, LinkSource> = {};
+  for (const id of mark.links) {
+    const source = sources?.[id];
+    if (source !== undefined) own[id] = source;
+  }
+  const base: DocMark = {
+    doc: mark.doc,
+    page: mark.page,
+    start: mark.start,
+    text: mark.text,
+    paint: mark.paint,
+    links: mark.links,
+    at: mark.at,
+  };
+  return Object.keys(own).length === 0 ? base : { ...base, sources: own };
+}
+
+/**
+ * Verknüpft eine Stelle mit Positionen; legt sie an, wenn es sie noch nicht gibt.
+ * `source`: aus einem Vorschlag übernommen (Entscheidung 0080), sonst von Hand.
+ */
 export function linkDocMark(
   notes: DocNotes,
   spot: DocSpot,
   ids: readonly string[],
   at: number,
+  source?: LinkSource,
 ): DocNotes {
   if (!validSpot(spot) || ids.length === 0) return notes;
   const known = markAt(notes, spot);
   const links = [...new Set([...(known?.links ?? []), ...ids])];
   if (known !== null && links.length === known.links.length) return notes;
-  return put(notes, spot, {
-    ...spotOf(spot),
-    paint: known?.paint ?? null,
-    links,
-    at: known?.at ?? at,
-  });
+  const sources: Record<string, LinkSource> = { ...known?.sources };
+  if (source !== undefined)
+    for (const id of ids) if (!known?.links.includes(id)) sources[id] = source;
+  return put(
+    notes,
+    spot,
+    withSources(
+      { ...spotOf(spot), paint: known?.paint ?? null, links, at: known?.at ?? at },
+      sources,
+    ),
+  );
 }
 
 /** Löst die Verknüpfung mit einer Position; ohne Farbe und Verknüpfung fällt die Stelle weg. */
@@ -128,7 +175,34 @@ export function unlinkDocMark(notes: DocNotes, spot: DocSpot, id: string): DocNo
   const known = markAt(notes, spot);
   if (known === null || !known.links.includes(id)) return notes;
   const links = known.links.filter((link) => link !== id);
-  return put(notes, spot, links.length === 0 && known.paint === null ? null : { ...known, links });
+  return put(
+    notes,
+    spot,
+    links.length === 0 && known.paint === null
+      ? null
+      : withSources({ ...known, links }, known.sources),
+  );
+}
+
+const sameRejection = (a: DocRejection, b: DocSpot & { id: string }): boolean =>
+  sameSpot(a, b) && a.id === b.id;
+
+/** Merkt sich einen abgelehnten Vorschlag: Stelle `spot` gehört nicht zu `id`. */
+export function rejectSuggestion(notes: DocNotes, spot: DocSpot, id: string, at: number): DocNotes {
+  if (!validSpot(spot) || id === '') return notes;
+  const rejected = notes.rejected ?? [];
+  if (rejected.some((entry) => sameRejection(entry, { ...spot, id }))) return notes;
+  return { ...notes, rejected: [...rejected, { ...spotOf(spot), id, at }] };
+}
+
+/** Wurde dieser Vorschlag schon abgelehnt? */
+export function isRejected(notes: DocNotes, spot: DocSpot, id: string): boolean {
+  return (notes.rejected ?? []).some((entry) => sameRejection(entry, { ...spot, id }));
+}
+
+/** Abgelehnte Vorschläge zu einer Position, für die Notiz-Datei. */
+export function rejectionsOfPosition(notes: DocNotes, id: string): DocRejection[] {
+  return (notes.rejected ?? []).filter((entry) => entry.id === id);
 }
 
 /** Stellen einer Seite. */
@@ -159,21 +233,30 @@ function spotOf(spot: DocSpot): DocSpot {
 
 /** Schlüssel der Verknüpfungen austauschen; Unbekannte bleiben (wie `rekey`). */
 export function rekeyDocNotes(notes: DocNotes, keys: ReadonlyMap<string, string>): DocNotes {
-  if (notes.marks.length === 0) return notes;
-  return {
+  const rejected = notes.rejected ?? [];
+  if (notes.marks.length === 0 && rejected.length === 0) return notes;
+  const key = (id: string): string => keys.get(id) ?? id;
+  const out: DocNotes = {
     ...notes,
-    marks: notes.marks.map((mark) =>
-      mark.links.length === 0
-        ? mark
-        : { ...mark, links: [...new Set(mark.links.map((id) => keys.get(id) ?? id))] },
-    ),
+    marks: notes.marks.map((mark) => {
+      if (mark.links.length === 0) return mark;
+      const links = [...new Set(mark.links.map(key))];
+      if (mark.sources === undefined) return { ...mark, links };
+      const sources: Record<string, LinkSource> = {};
+      for (const [id, source] of Object.entries(mark.sources)) sources[key(id)] = source;
+      return withSources({ ...mark, links }, sources);
+    }),
   };
+  return rejected.length === 0
+    ? out
+    : { ...out, rejected: rejected.map((entry) => ({ ...entry, id: key(entry.id) })) };
 }
 
 /** Stellen aus einer Notiz-Datei dazunehmen: Farbe aus `more`, Verknüpfungen vereinigt. */
 export function mergeDocNotes(notes: DocNotes, more: DocNotes): DocNotes {
   let out = notes;
   for (const [id, info] of more.docs) if (!out.docs.has(id)) out = registerDoc(out, id, info);
+  for (const entry of more.rejected ?? []) out = rejectSuggestion(out, entry, entry.id, entry.at);
   if (more.marks.length === 0) return out;
   // Einmal über eine Tabelle statt Stelle für Stelle über `put`: Notiz-Dateien und der
   // Speicher können viele Stellen bringen, und `put` sortiert jedes Mal alles neu.
@@ -186,19 +269,24 @@ export function mergeDocNotes(notes: DocNotes, more: DocNotes): DocNotes {
     const key = keyOf(mark);
     let known = byKey.get(key) ?? null;
     if (mark.paint !== null && known?.paint !== mark.paint) {
-      known = { ...spotOf(mark), paint: mark.paint, links: known?.links ?? [], at: mark.at };
+      known = withSources(
+        { ...spotOf(mark), paint: mark.paint, links: known?.links ?? [], at: mark.at },
+        known?.sources,
+      );
       byKey.set(key, known);
       changed = true;
     }
     if (mark.links.length === 0) continue;
     const links = [...new Set([...(known?.links ?? []), ...mark.links])];
     if (known !== null && links.length === known.links.length) continue;
-    byKey.set(key, {
-      ...spotOf(mark),
-      paint: known?.paint ?? null,
-      links,
-      at: known?.at ?? mark.at,
-    });
+    // Bekannte Herkunft bleibt; neue Verknüpfungen bringen ihre mit.
+    byKey.set(
+      key,
+      withSources(
+        { ...spotOf(mark), paint: known?.paint ?? null, links, at: known?.at ?? mark.at },
+        { ...mark.sources, ...known?.sources },
+      ),
+    );
     changed = true;
   }
   return changed ? { ...out, marks: [...byKey.values()].sort(order) } : out;
@@ -208,10 +296,15 @@ export function mergeDocNotes(notes: DocNotes, more: DocNotes): DocNotes {
 export interface StoredDocNotes {
   readonly docs: ReadonlyArray<readonly [string, DocInfo]>;
   readonly marks: readonly DocMark[];
+  /** Seit 0080; ältere Fassungen lesen das Feld nicht und behalten den Rest. */
+  readonly rejected?: readonly DocRejection[];
 }
 
 export function toStoredDocNotes(notes: DocNotes): StoredDocNotes {
-  return { docs: [...notes.docs], marks: notes.marks };
+  const rejected = notes.rejected ?? [];
+  return rejected.length === 0
+    ? { docs: [...notes.docs], marks: notes.marks }
+    : { docs: [...notes.docs], marks: notes.marks, rejected };
 }
 
 /** Eine Stelle aus Speicher oder Notiz-Datei; Unbrauchbares wird `null`. */
@@ -229,7 +322,26 @@ export function toDocMark(value: unknown): DocMark | null {
   const ownPaint = isPaint(paint) ? paint : null;
   if (ownPaint === null && links.length === 0) return null;
   const at = typeof raw.at === 'number' && Number.isFinite(raw.at) ? raw.at : 0;
-  return { ...spot, paint: ownPaint, links, at };
+  const sources: Record<string, LinkSource> = {};
+  if (typeof raw.sources === 'object' && raw.sources !== null) {
+    for (const [id, source] of Object.entries(raw.sources)) {
+      if (isLinkSource(source)) sources[id] = source;
+    }
+  }
+  return withSources({ ...spot, paint: ownPaint, links, at }, sources);
+}
+
+/** Ein abgelehnter Vorschlag aus Speicher oder Notiz-Datei; Unbrauchbares wird `null`. */
+export function toDocRejection(value: unknown): DocRejection | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const raw = value as Record<string, unknown>;
+  const { doc, page, start, text, id } = raw;
+  if (typeof doc !== 'string' || typeof text !== 'string' || typeof id !== 'string') return null;
+  if (typeof page !== 'number' || typeof start !== 'number' || id === '') return null;
+  const spot = { doc, page, start, text };
+  if (!validSpot(spot)) return null;
+  const at = typeof raw.at === 'number' && Number.isFinite(raw.at) ? raw.at : 0;
+  return { ...spot, id, at };
 }
 
 function toDocInfo(value: unknown): DocInfo | null {
@@ -258,11 +370,45 @@ export function fromStoredDocNotes(value: unknown): DocNotes {
     // Über `mergeDocNotes`, damit doppelte Stellen zu einer werden.
     notes = mergeDocNotes(notes, { docs: new Map(), marks });
   }
-  return notes.docs.size === 0 && notes.marks.length === 0 ? EMPTY_DOC_NOTES : notes;
+  if (Array.isArray(raw.rejected)) {
+    const rejected = raw.rejected
+      .map(toDocRejection)
+      .filter((entry): entry is DocRejection => entry !== null);
+    notes = mergeDocNotes(notes, { docs: new Map(), marks: [], rejected });
+  }
+  const empty = notes.docs.size === 0 && notes.marks.length === 0;
+  return empty && (notes.rejected ?? []).length === 0 ? EMPTY_DOC_NOTES : notes;
 }
 
 /** Stelle im Seitentext wiederfinden: erst an ihrer Lage, sonst irgendwo auf der Seite. */
 export function locateOnPage(text: string, spot: Pick<DocSpot, 'start' | 'text'>): number {
   if (text.slice(spot.start, spot.start + spot.text.length) === spot.text) return spot.start;
   return text.indexOf(spot.text);
+}
+
+/**
+ * Vorschläge, die noch offen sind: Art eingeschaltet, nicht abgelehnt und die Position
+ * nicht schon an einer Stelle verknüpft, die den Vorschlag berührt (Entscheidung 0080).
+ */
+export function pendingSuggestions(
+  notes: DocNotes,
+  doc: string,
+  list: readonly DocSuggestion[],
+  enabled: Readonly<Record<LinkSource, boolean>>,
+): DocSuggestion[] {
+  if (list.length === 0) return [];
+  const marks = marksOfDoc(notes, doc);
+  return list.filter((item) => {
+    if (!enabled[item.source]) return false;
+    const spot = { doc, page: item.page, start: item.start, text: item.text };
+    if (isRejected(notes, spot, item.id)) return false;
+    const end = item.start + item.text.length;
+    return !marks.some(
+      (mark) =>
+        mark.page === item.page &&
+        mark.links.includes(item.id) &&
+        mark.start < end &&
+        mark.start + mark.text.length > item.start,
+    );
+  });
 }
