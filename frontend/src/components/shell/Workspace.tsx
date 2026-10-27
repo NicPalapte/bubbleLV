@@ -12,6 +12,7 @@ import { SplitView } from './SplitView';
 import { TableWindow } from './TableWindow';
 import { useWorkspace } from './WorkspaceProvider';
 import { ExternalWindow } from '../common/ExternalWindow';
+import { PopoutSearch } from './PopoutSearch';
 import { Tour } from '../tour/Tour';
 import type { LVNode } from '../../types/lvNode';
 
@@ -36,6 +37,7 @@ function GraphPopout({ root }: { root: LVNode }) {
             ↙
           </button>
         </div>
+        <PopoutSearch />
         <div className="relative min-h-0 flex-1 overflow-hidden bg-paper">
           <GraphStage root={root} />
         </div>

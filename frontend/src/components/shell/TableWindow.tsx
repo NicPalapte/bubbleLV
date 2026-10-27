@@ -4,6 +4,7 @@
 
 import { useCallback, useEffect } from 'react';
 import { ExternalWindow } from '../common/ExternalWindow';
+import { PopoutSearch } from './PopoutSearch';
 import { useWorkspace } from './WorkspaceProvider';
 import { PositionsTable } from '../table/PositionsTable';
 import { useViewer } from '../../state/viewer';
@@ -46,6 +47,7 @@ export function TableWindow() {
             ↙
           </button>
         </div>
+        <PopoutSearch />
         <div className="relative min-h-0 flex-1">
           <PositionsTable root={selectedNode ?? tree} />
         </div>

@@ -7,9 +7,10 @@
 // Escape schließt zuerst eine offene Liste, dann — wenn der Fokus in der Leiste
 // steht — die Leiste. Sonst gehört Escape weiter dem Hauptscreen (Auswahl aufheben).
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { RangeSlider } from './RangeSlider';
 import { useDismiss } from '../common/useDismiss';
+import { useHostWindow } from '../common/hostWindow';
 import { commentedIds, markerCounts, PROGRESS, PROGRESS_INFO } from '../../lib/annotations';
 import { FACETS, facetOptionLabel, type Facet } from '../../lib/facets';
 import { formatCount } from '../../lib/format';
@@ -305,7 +306,16 @@ function MaterialOptions({
   );
 }
 
-export function FilterBar() {
+export interface FilterBarProps {
+  /**
+   * Offen-Zustand von außen — für Graph und Tabelle im eigenen Browserfenster, die ihre
+   * eigene Leiste unter ihrer Suche haben. Ohne: die Leiste der Kopfleiste (`view.filterBar`).
+   */
+  open?: boolean;
+  onClose?: () => void;
+}
+
+export function FilterBar({ open, onClose }: FilterBarProps = {}) {
   const {
     lv,
     view,
@@ -313,9 +323,14 @@ export function FilterBar() {
     filter: { filters, notes },
   } = useViewer();
   const dispatch = useViewerDispatch();
+  const host = useHostWindow();
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
-  const shown = lv !== null && view.filterBar;
+  const shown = lv !== null && (open ?? view.filterBar);
+  const close = useCallback((): void => {
+    if (onClose !== undefined) onClose();
+    else dispatch({ type: 'filterBar', open: false });
+  }, [onClose, dispatch]);
   useDismiss(ref, shown && openGroup !== null, () => setOpenGroup(null));
 
   // Vor dem Escape des Hauptscreens: Kinder-Effekte laufen vor denen der Eltern,
@@ -324,15 +339,15 @@ export function FilterBar() {
     if (!shown) return;
     const onKey = (event: KeyboardEvent): void => {
       if (event.key !== 'Escape') return;
-      const inside = ref.current?.contains(document.activeElement) === true;
+      const inside = ref.current?.contains(host.document.activeElement) === true;
       if (openGroup === null && !inside) return;
       event.stopImmediatePropagation();
       if (openGroup !== null) setOpenGroup(null);
-      else dispatch({ type: 'filterBar', open: false });
+      else close();
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [shown, openGroup, dispatch]);
+    host.addEventListener('keydown', onKey);
+    return () => host.removeEventListener('keydown', onKey);
+  }, [shown, openGroup, close, host]);
 
   if (!shown) return null;
 
@@ -444,7 +459,7 @@ export function FilterBar() {
         )}
         <button
           type="button"
-          onClick={() => dispatch({ type: 'filterBar', open: false })}
+          onClick={close}
           aria-label="Filterleiste schließen"
           title="Schließen (Esc)"
           className="inline-flex h-[28px] w-[28px] cursor-pointer items-center justify-center rounded-[var(--r-sm)] border-none bg-transparent text-mute hover:bg-sunken hover:text-ink"
