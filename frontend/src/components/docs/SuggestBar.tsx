@@ -1,5 +1,5 @@
 // Leiste zu einem Vorschlag im Begleitdokument (Entscheidung 0080): welche Position
-// passt und warum (OZ oder Menge), dazu „Verknüpfen“ und „Nein“. Erst der Klick legt
+// passt und warum (OZ oder Menge), dazu „Verknüpfen“, „Nein“ und „Position zeigen“. Erst der Klick legt
 // die Verknüpfung an; „Nein“ merkt sich die Ablehnung in den Notizen.
 
 import { useEffect, useRef } from 'react';
@@ -22,6 +22,7 @@ export function SuggestBar({
   top,
   onLink,
   onReject,
+  onShow,
   onClose,
 }: {
   suggestion: DocSuggestion;
@@ -31,6 +32,8 @@ export function SuggestBar({
   top: number;
   onLink: () => void;
   onReject: () => void;
+  /** Wählt die Position und zeigt sie; die Leiste bleibt offen zum Entscheiden. */
+  onShow: () => void;
   onClose: () => void;
 }) {
   const host = useHostWindow();
@@ -90,6 +93,15 @@ export function SuggestBar({
           className={`${BUTTON} border border-line bg-surface text-ink hover:border-line2`}
         >
           Nein
+        </button>
+        <span className="flex-1" />
+        <button
+          type="button"
+          onClick={onShow}
+          title="Position in Graph und Positionskarte zeigen"
+          className={`${BUTTON} border-none bg-transparent px-[6px] text-accent-ink hover:underline`}
+        >
+          Position zeigen ›
         </button>
       </span>
     </div>,

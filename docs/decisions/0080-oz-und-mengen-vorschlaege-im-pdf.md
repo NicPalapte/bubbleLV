@@ -34,7 +34,8 @@
 - **Nur was es im LV gibt:** Passt eine OZ oder Menge auf mehrere Positionen, gibt es
   keinen Vorschlag.
 - **Anzeige:** gestrichelt unterstrichen, OZ in Ziegelrot, Mengen in Amber. Antippen öffnet
-  „Verknüpfen“ / „Nein“.
+  „Verknüpfen“ / „Nein“ / „Position zeigen“. Wer die Position zeigt, kann danach noch
+  entscheiden.
 - **Mensch entscheidet:** Verknüpft wird erst nach „Verknüpfen“. Die Verknüpfung merkt
   sich ihre Herkunft (`sources`: `oz` oder `menge`), die Positionskarte zeigt „über OZ“
   oder „über Menge“. „Nein“ wird dauerhaft in den Notizen gespeichert (`rejected`), damit

@@ -13,7 +13,8 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 - **OZ im PDF erkannt:** Steht im PDF eine OZ aus dem LV, ist sie rot gestrichelt
   unterstrichen, z. B. „01.02.0030“, „1.2.30“ oder „Pos. 30“, wenn das eindeutig ist.
-  Antippen zeigt die Position, „Verknüpfen“ verbindet die Stelle mit ihr.
+  Antippen zeigt die Position, „Verknüpfen“ verbindet die Stelle mit ihr. „Position zeigen“
+  springt vorher zur Position in Graph und Positionskarte.
 - **Mengen im PDF erkannt:** Eine Menge wie „783,03 m³“ ist amber gestrichelt, wenn genau
   eine Position im LV diese Menge hat. Steht die Menge direkt hinter einer OZ, zeigt die
   Leiste beide Mengen zum Vergleich: „PDF 110 m³ · LV 120 m³“.

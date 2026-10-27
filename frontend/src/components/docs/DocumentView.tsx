@@ -652,6 +652,7 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
             });
             setOffer(null);
           }}
+          onShow={() => jumpToPosition(offer.suggestion.id, { stayInView: true })}
           onClose={() => setOffer(null)}
         />
       )}

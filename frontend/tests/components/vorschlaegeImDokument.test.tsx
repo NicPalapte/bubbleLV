@@ -84,6 +84,12 @@ describe('Vorschläge im Dokument', () => {
     expect(within(leiste).getByText('001.002.0020')).toBeInTheDocument();
     expect(within(leiste).getByText('PDF 7.200 m³ · LV 7.200 m3')).toBeInTheDocument();
 
+    // „Position zeigen“ wählt die Position, die Leiste bleibt zum Entscheiden offen.
+    expect(screen.getByText('Keine Auswahl')).toBeInTheDocument();
+    fireEvent.click(within(leiste).getByRole('button', { name: 'Position zeigen ›' }));
+    await waitFor(() => expect(screen.queryByText('Keine Auswahl')).toBeNull());
+    expect(screen.getByRole('dialog', { name: 'Vorschlag verknüpfen' })).toBeInTheDocument();
+
     fireEvent.click(within(leiste).getByRole('button', { name: 'Verknüpfen' }));
     expect(screen.queryByRole('dialog', { name: 'Vorschlag verknüpfen' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Vorschlag 1.2.20' })).toBeNull();
