@@ -143,8 +143,8 @@ Logo-Menü · Notizen als Datei sichern/laden (`lib/notesFile.ts`, 0061) · frei
 zum Produkt (Owner-Wunsch, `docs/decisions/0071-kurzumfrage.md`). · Begleit-PDF im
 Fenster „Dokument“ lesen, anstreichen, Stellen von Hand mit Positionen verknüpfen, keine
 Interpretation (`components/docs/`, `docs/decisions/0072-begleitdokument-pdf.md`); Vorschläge nur
-bei exakt passender OZ oder eindeutiger Menge+Einheit (Gleichstand: gleiche Kurztext-Wörter im
-Satz, dann ganzer Satz), Übernahme erst per Klick, „Nein“ gemerkt,
+bei exakt passender OZ oder eindeutiger Menge+Einheit (gleiche Menge: eigene Kurztext-Wörter im
+Satzteil, bei Aufzählung/„je“ mehrere Positionen), Übernahme erst per Klick, „Nein“ gemerkt,
 kein inhaltliches Matching (`lib/docs/docSuggest.ts`, `docs/decisions/0080`);
 eine Suche für LV und offene PDFs, PDF-Treffer filtern das LV nicht (`docs/decisions/0077`). Matrix und
 Ähnlichkeit sind entfernt (`docs/decisions/0031-drei-ansichten.md`); keine

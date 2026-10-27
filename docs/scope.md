@@ -200,7 +200,7 @@ Bisher galt „kein Export". Das wird gelockert, weil es die Architektur nicht b
   verknüpfen (Entscheidung 0072).
 - Keine Interpretation: keine automatische Hervorhebung. Vorschläge nur, wo eine OZ oder eine
   Menge genau eine Position des LV trifft; bei gleicher Menge entscheiden gleiche Wörter aus
-  dem Kurztext. Verknüpft wird erst per Klick (Entscheidung 0080).
+  dem Kurztext, bei „je“ auch für mehrere Positionen. Verknüpft wird erst per Klick (Entscheidung 0080).
 - Gespeichert werden nur die Stellen, nie das PDF.
 
 ---

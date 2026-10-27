@@ -113,14 +113,22 @@ function stemOf(word: string): string {
   return stem.length >= MIN_WORD ? stem : word;
 }
 
+interface Word {
+  readonly stem: string;
+  readonly word: string;
+  readonly start: number;
+  readonly end: number;
+}
+
 /** Wörter eines Texts mit Lage, ohne allgemeine Wörter; Stamm klein geschrieben. */
-function wordsIn(text: string): { readonly stem: string; readonly word: string }[] {
-  const out: { stem: string; word: string }[] = [];
+function wordsIn(text: string, offset = 0): Word[] {
+  const out: Word[] = [];
   for (const match of text.matchAll(/\p{L}+/gu)) {
     const word = match[0];
     const lower = word.toLowerCase();
     if (lower.length < MIN_WORD || GENERIC_WORDS.has(lower)) continue;
-    out.push({ stem: stemOf(lower), word });
+    const start = offset + match.index;
+    out.push({ stem: stemOf(lower), word, start, end: start + word.length });
   }
   return out;
 }
@@ -340,46 +348,109 @@ function sentenceAround(text: string, from: number, to: number): { start: number
   const last = breaks.at(-1);
   if (last !== undefined) start += last.index + last[0].length;
   else if (start > 0) start += before.search(/\s\S/) + 1;
+  // Der Punkt nach der Einheit („m³.“) gehört schon zur Menge und kann den Satz beenden.
+  const scan = text[to - 1] === '.' ? to - 1 : to;
   const limit = Math.min(text.length, to + SENTENCE_REACH);
-  const after = text.slice(to, limit);
-  const stop = /[.!?;](?=\s|$)/.exec(after);
-  let end = stop === null ? limit : to + stop.index + 1;
+  const after = text.slice(scan, limit);
+  // „rd. 1.050“ oder „ca. 20“: ein Punkt beendet den Satz nur vor einem Großbuchstaben.
+  const stop = /[.!?;](?=\s+\p{Lu}|\s*$)/u.exec(after);
+  let end = stop === null ? limit : scan + stop.index + 1;
   if (stop === null && limit < text.length) {
     const space = after.lastIndexOf(' ');
-    if (space > 0) end = to + space;
+    if (space > 0) end = scan + space;
   }
   while (start < from && /\s/.test(text[start])) start++;
   while (end > to && /\s/.test(text[end - 1])) end--;
-  return { start, end };
+  return { start: Math.min(start, from), end: Math.max(end, to) };
 }
 
-/** Wörter des Satzes, die im Kurztext stehen, in der Schreibweise des PDF. */
-function sharedWords(sentence: string, stems: readonly string[]): string[] {
-  const out: string[] = [];
-  for (const { stem, word } of wordsIn(sentence)) {
-    if (stems.some((own) => sameWord(own, stem)) && !out.includes(word)) out.push(word);
+interface Span {
+  readonly start: number;
+  readonly end: number;
+}
+
+interface AmountPick {
+  readonly id: string;
+  readonly span: Span;
+  readonly words: readonly string[];
+}
+
+const stemsMatch = (stems: readonly string[], word: Word) =>
+  stems.some((own) => sameWord(own, word.stem));
+
+/** Ende vor der nächsten Position: ohne Leerraum, Satzzeichen und „und“, „sowie“, „oder“. */
+function trimEnd(text: string, start: number, end: number): number {
+  let cut = end;
+  for (;;) {
+    const rest = text.slice(start, cut);
+    const tail = /(?:[\s,;:]+|(?:^|\s)(?:und|sowie|oder|bzw\.?))$/iu.exec(rest);
+    if (tail === null || tail[0] === '') return cut;
+    cut -= tail[0].length;
   }
-  return out;
 }
 
 /**
- * Position zu einer Menge: eindeutig über Wert und Einheit, sonst die eine mit den
- * meisten gemeinsamen Wörtern im Satz (mindestens eins, ohne Gleichstand).
+ * Positionen zu einer Menge. Wert und Einheit eindeutig: diese Position. Sonst jede, von
+ * deren Kurztext ein eigenes Wort (nicht auch bei den anderen) im Satzteil steht — auch
+ * mehrere („Tragschicht und Deckschicht je 1.050 m²“). Markiert wird je Position ihr
+ * Name bis zur Menge; der ganze Satz, wenn nur eine Menge und eine Position darin stehen.
  */
-function pickByWords(
+function pickAmount(
+  text: string,
+  amount: Amount,
   candidates: readonly string[],
-  sentence: string,
+  part: Span,
+  sentence: Span | null,
   index: SuggestIndex,
-): { id: string; words: string[] } | null {
-  const scored = candidates.map((id) => ({
-    id,
-    words: sharedWords(sentence, index.words.get(id) ?? []),
-  }));
-  if (scored.length === 1) return scored[0];
-  scored.sort((a, b) => b.words.length - a.words.length);
-  const [best, next] = scored;
-  if (best === undefined || best.words.length === 0) return null;
-  return next !== undefined && next.words.length === best.words.length ? null : best;
+): AmountPick[] {
+  const found = wordsIn(text.slice(part.start, part.end), part.start);
+  const stemsOf = (id: string) => index.words.get(id) ?? [];
+  const scored = candidates.map((id) => {
+    const others = candidates.filter((other) => other !== id).map(stemsOf);
+    const own = found.filter(
+      (word) => stemsMatch(stemsOf(id), word) && !others.some((stems) => stemsMatch(stems, word)),
+    );
+    return { id, own };
+  });
+  if (scored.length === 1 && scored[0].own.length === 0) {
+    return [{ id: scored[0].id, span: amount, words: [] }];
+  }
+  const distance = (word: Word) =>
+    word.end <= amount.start ? amount.start - word.end : word.start - amount.end;
+  const all = scored
+    .filter((item) => item.own.length > 0)
+    .map((item) => ({
+      ...item,
+      near: item.own.reduce((a, b) => (distance(b) < distance(a) ? b : a)),
+    }))
+    .sort((a, b) => distance(a.near) - distance(b.near));
+  // Mehrere Positionen nur bei Aufzählung vor der Menge oder mit „je“/„jeweils“;
+  // sonst ist die nächste gemeint („88 m Rinne neben dem Kabelschutzrohr“).
+  const listed =
+    all.every((item) => item.near.end <= amount.start) ||
+    /(?:^|[^\p{L}])je(?:weils)?(?:[^\p{L}]|$)/iu.test(text.slice(part.start, part.end));
+  const nearest = listed ? all : all.slice(0, 1);
+  const wordsOf = (own: readonly Word[]) => [...new Set(own.map((word) => word.word))];
+  if (nearest.length === 1 && sentence !== null) {
+    return [{ id: nearest[0].id, span: sentence, words: wordsOf(nearest[0].own) }];
+  }
+  const before = nearest
+    .filter((item) => item.near.end <= amount.start)
+    .sort((a, b) => a.near.start - b.near.start);
+  const after = nearest
+    .filter((item) => item.near.start >= amount.end)
+    .sort((a, b) => a.near.start - b.near.start);
+  const out: AmountPick[] = [];
+  before.forEach((item, i) => {
+    const next = before[i + 1];
+    const end = next === undefined ? amount.end : trimEnd(text, item.near.start, next.near.start);
+    out.push({ id: item.id, span: { start: item.near.start, end }, words: wordsOf(item.own) });
+  });
+  after.forEach((item, i) => {
+    const start = i === 0 && before.length === 0 ? amount.start : item.near.start;
+    out.push({ id: item.id, span: { start, end: item.near.end }, words: wordsOf(item.own) });
+  });
+  return out;
 }
 
 const overlaps = (a: { start: number; end: number }, b: { start: number; end: number }) =>
@@ -388,8 +459,8 @@ const overlaps = (a: { start: number; end: number }, b: { start: number; end: nu
 /**
  * Vorschläge einer Seite (ab 1). OZ zuerst; eine Menge kurz hinter einer OZ gehört zu
  * ihr und erscheint dort zum Vergleich. Andere Mengen werden nur vorgeschlagen, wenn
- * Wert und Einheit genau eine Position im LV treffen oder unter mehreren genau eine die
- * meisten Wörter mit dem Satz teilt. Mit gemeinsamen Wörtern wird der ganze Satz markiert.
+ * Wert und Einheit genau eine Position im LV treffen oder Wörter aus dem Kurztext
+ * zeigen, welche der Positionen mit dieser Menge gemeint sind (`pickAmount`).
  */
 export function suggestionsInPage(
   text: string,
@@ -422,31 +493,39 @@ export function suggestionsInPage(
       ...(extra === undefined ? {} : { amount: extra }),
     });
   });
-  // Belegte Stellen: ein Satz wird nur einmal und nie über eine OZ hinweg markiert.
-  const taken: { start: number; end: number }[] = [...ozs];
+  // Belegte Stellen: keine Markierung über eine OZ oder einen anderen Vorschlag hinweg.
+  const taken: Span[] = [...ozs];
   for (const amount of amounts) {
     if (near.has(amount)) continue;
     if (Number.isInteger(amount.value) && amount.value < AMOUNT_MIN_INTEGER) continue;
     const candidates = index.amountIds.get(amountKey(amount.value, amount.unit));
     if (candidates === undefined) continue;
     const sentence = sentenceAround(text, amount.start, amount.end);
-    const picked = pickByWords(candidates, text.slice(sentence.start, sentence.end), index);
-    if (picked === null) continue;
-    // Stehen mehrere Mengen im Satz, gehört er keiner allein: dann nur die Menge.
-    const whole =
-      picked.words.length > 0 &&
-      !amounts.some((other) => other !== amount && overlaps(other, sentence)) &&
-      !taken.some((spot) => overlaps(spot, sentence));
-    const spot = whole ? sentence : amount;
-    taken.push(spot);
-    out.push({
-      page,
-      start: spot.start,
-      text: text.slice(spot.start, spot.end),
-      id: picked.id,
-      source: 'menge',
-      ...(picked.words.length === 0 ? {} : { words: picked.words }),
-    });
+    // Mehrere Mengen im Satz: jede bekommt nur den Satzteil bis zur Nachbarmenge.
+    const inSentence = amounts.filter((other) => overlaps(other, sentence));
+    const prev = inSentence.filter((other) => other.end <= amount.start).at(-1);
+    const next = inSentence.find((other) => other.start >= amount.end);
+    const part = {
+      start: Math.max(sentence.start, prev?.end ?? sentence.start),
+      end: Math.min(sentence.end, next?.start ?? sentence.end),
+    };
+    const alone = inSentence.length === 1 ? sentence : null;
+    for (const pick of pickAmount(text, amount, candidates, part, alone, index)) {
+      let spot: Span = pick.span;
+      if (taken.some((other) => overlaps(other, spot))) {
+        if (taken.some((other) => overlaps(other, amount))) continue;
+        spot = amount;
+      }
+      taken.push(spot);
+      out.push({
+        page,
+        start: spot.start,
+        text: text.slice(spot.start, spot.end),
+        id: pick.id,
+        source: 'menge',
+        ...(pick.words.length === 0 ? {} : { words: pick.words }),
+      });
+    }
   }
   return out.sort((a, b) => a.start - b.start);
 }

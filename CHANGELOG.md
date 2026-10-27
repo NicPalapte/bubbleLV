@@ -20,7 +20,9 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
   Leiste beide Mengen zum Vergleich: „PDF 110 m³ · LV 120 m³“.
 - **Wörter aus dem Kurztext:** Steht im Satz um die Menge ein Wort aus dem Kurztext der
   Position, z. B. „Betonstahl“, wird der ganze Satz vorgeschlagen. Haben mehrere Positionen
-  dieselbe Menge, entscheiden diese Wörter. Die Leiste zeigt sie an.
+  dieselbe Menge, entscheiden diese Wörter. „Tragschicht und Deckschicht auf je 1.050 m²“
+  bringt zwei Vorschläge. Stehen mehrere Mengen im Satz, bekommt jede ihren Satzteil. Die
+  Leiste zeigt die Wörter an.
 - **Du entscheidest:** Verknüpft wird erst nach deinem Klick. „Nein“ merkt sich Conocto,
   der Vorschlag kommt nicht wieder. Oben im Bereich „Dokument“ lassen sich OZ- und
   Mengen-Vorschläge einzeln ausschalten. Sind alle Vorschläge einer Art erledigt, verschwindet

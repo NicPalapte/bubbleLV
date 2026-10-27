@@ -78,7 +78,7 @@ describe('OZ im Seitentext', () => {
 
 describe('Mengen im Seitentext', () => {
   it('schlägt eine Menge vor, wenn Wert und Einheit genau eine Position treffen', () => {
-    expect(finde('Es sind 1.234,50 m² Estrich und 120 cbm Boden.')).toEqual([
+    expect(finde('Es sind 1.234,50 m² Gussasphalt und 120 cbm Kies.')).toEqual([
       { t: '1.234,50 m²', id: 'p2', source: 'menge' },
       { t: '120 cbm', id: 'p1', source: 'menge' },
     ]);
@@ -114,18 +114,55 @@ describe('Mengen im Seitentext', () => {
     expect(finde('Es folgen 88 m Ortbetonrinne.')).toMatchObject([{ id: 'p4' }]);
   });
 
-  it('kein Vorschlag bei Gleichstand der Wörter', () => {
-    expect(finde('Es folgen 88 m Rinne neben dem Kabelschutzrohr.')).toEqual([]);
+  it('ohne Aufzählung oder „je“ gilt das nächste Wort', () => {
+    expect(finde('Es folgen 88 m Rinne neben dem Kabelschutzrohr.')).toEqual([
+      { t: 'Es folgen 88 m Rinne neben dem Kabelschutzrohr.', id: 'p4', source: 'menge' },
+    ]);
   });
 
-  it('nur die Menge, wenn der Satz eine OZ oder eine zweite Menge enthält', () => {
+  it('kein Vorschlag, wenn kein Wort eine der Positionen mit gleicher Menge trifft', () => {
+    expect(finde('Es folgen 88 m Leitung.')).toEqual([]);
+  });
+
+  it('mehrere Mengen im Satz: jede Menge mit ihrem Satzteil, auch mehrere Positionen', () => {
+    const index = suggestIndexOf([
+      { id: 'sts', oz: '3.1.10', quantity: 350, unit: 'm3', shortText: 'Schottertragschicht 0/45' },
+      { id: 'abs', oz: '3.1.20', quantity: 2300, unit: 'm2', shortText: 'Asphaltbinderschicht' },
+      { id: 'ads', oz: '3.1.30', quantity: 2300, unit: 'm2', shortText: 'Asphaltdeckschicht AC 8' },
+    ]);
+    const text =
+      'Die Fahrbahn wird neu aufgebaut:\nSchottertragschicht rd. 350 m³, ' +
+      'Asphaltbinderschicht AC 16 BN und Asphaltdeckschicht AC 8 DN auf\nje rd. 2.300 m².';
+    expect(
+      suggestionsInPage(text, index, 1).map(({ text: t, id, words }) => ({ t, id, words })),
+    ).toEqual([
+      { t: 'Schottertragschicht rd. 350 m³', id: 'sts', words: ['Schottertragschicht'] },
+      { t: 'Asphaltbinderschicht AC 16 BN', id: 'abs', words: ['Asphaltbinderschicht'] },
+      {
+        t: 'Asphaltdeckschicht AC 8 DN auf\nje rd. 2.300 m².',
+        id: 'ads',
+        words: ['Asphaltdeckschicht'],
+      },
+    ]);
+  });
+
+  it('„rd.“ und „ca.“ beenden den Satz nicht, der Punkt nach der Einheit schon', () => {
+    expect(finde('Es werden rd. 42,75 t Betonstahl verlegt. Danach folgt Beton.')).toEqual([
+      { t: 'Es werden rd. 42,75 t Betonstahl verlegt.', id: 'p7', source: 'menge' },
+    ]);
+    expect(finde('Betonstahl rd. 42,75 t. Danach folgt Beton.')).toEqual([
+      { t: 'Betonstahl rd. 42,75 t.', id: 'p7', source: 'menge' },
+    ]);
+  });
+
+  it('nicht der ganze Satz, wenn er eine OZ oder eine zweite Menge enthält', () => {
     const [mitOz] = suggestionsInPage('42,75 t Betonstahl wie in 01.02.0030.', INDEX, 1).filter(
       (item) => item.source === 'menge',
     );
     expect(mitOz).toMatchObject({ text: '42,75 t', id: 'p7', words: ['Betonstahl'] });
     expect(finde('Es sind 1.234,50 m² Estrich und 120 cbm Boden.').map((item) => item.t)).toEqual([
-      '1.234,50 m²',
-      '120 cbm',
+      '1.234,50 m² Estrich',
+      '120 cbm Boden',
     ]);
   });
 

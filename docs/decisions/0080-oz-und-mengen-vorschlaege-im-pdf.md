@@ -32,14 +32,20 @@
 - **Menge neben OZ:** Steht bis 80 Zeichen hinter einer OZ eine Menge, gehört sie zur OZ.
   Die Leiste zeigt dann „PDF 110 m³ · LV 120 m³“, in Amber, wenn die Mengen abweichen.
 - **Wörter aus dem Kurztext** (Nico: Variante A, „öffentlich, nur Wortabgleich“): Um eine
-  Menge herum wird der Satz gelesen (höchstens 200 Zeichen je Richtung). Wörter ab 4
+  Menge herum wird der Satz gelesen (höchstens 200 Zeichen je Richtung). Ein Punkt beendet
+  den Satz nur vor einem Großbuchstaben, „rd. 1.050 m²“ bleibt also ein Satz. Stehen
+  mehrere Mengen im Satz, gehört zu jeder nur der Satzteil bis zur Nachbarmenge. Wörter ab 4
   Buchstaben werden mit dem Kurztext verglichen, ohne allgemeine Wörter wie „liefern“ oder
   „einbauen“ und ohne Endungen („Bodens“ = „Boden“). Ein Wort ab 5 Buchstaben zählt auch
   als Anfang eines längeren Worts („Ortbeton“ in „Ortbetonrinne“).
-  - Haben mehrere Positionen dieselbe Menge, gewinnt die eine mit den meisten gemeinsamen
-    Wörtern. Kein gemeinsames Wort oder Gleichstand ⇒ kein Vorschlag.
-  - Gibt es gemeinsame Wörter, wird der ganze Satz vorgeschlagen und beim Verknüpfen
-    markiert. Nur die Menge, wenn im Satz auch eine OZ oder eine zweite Menge steht.
+  - Haben mehrere Positionen dieselbe Menge, zählt je Position nur ein Wort, das die
+    anderen nicht haben. Jede Position mit so einem Wort im Satzteil bekommt einen
+    Vorschlag, wenn die Namen vor der Menge aufgezählt sind oder „je“/„jeweils“ dasteht
+    („Tragschicht und Deckschicht auf je 1.050 m²“ ⇒ zwei Vorschläge). Sonst gilt nur
+    das Wort, das der Menge am nächsten steht. Kein solches Wort ⇒ kein Vorschlag.
+  - Steht nur eine Menge und eine Position im Satz, wird der ganze Satz vorgeschlagen und
+    beim Verknüpfen markiert. Sonst je Position ihr Name bis zur Menge („Frostschutzschicht
+    rd. 400 m³“). Über eine OZ hinweg wird nie markiert, dann nur die Menge.
   - Die Leiste zeigt die Wörter: „Auch im Kurztext: Betonstahl“.
   - Das ist Wort-für-Wort-Vergleich mit dem geladenen LV, keine Deutung des Inhalts.
 - **Nur was es im LV gibt:** Passt eine OZ oder Menge auf mehrere Positionen und helfen
