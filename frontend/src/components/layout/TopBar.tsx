@@ -8,7 +8,7 @@
 // Der Schalter „Nicht-Treffer" sitzt in der Suche, weil er für Suche und alle
 // Filter gilt — in Graph und Tabelle (docs/decisions/0058-nicht-treffer-in-der-suche.md).
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ReportDialog } from '../report/ReportDialog';
 import { AdminDialog } from './AdminDialog';
 import { ShortcutsDialog } from './ShortcutsDialog';
@@ -16,6 +16,11 @@ import { NotesImportDialog } from './NotesImportDialog';
 import { AboutMenu } from './AboutMenu';
 import { useMitnehmen } from '../common/useMitnehmen';
 import { WorkspaceBar } from '../shell/WorkspaceBar';
+import { useOptionalDocuments } from '../docs/DocumentsProvider';
+import { SearchSources } from '../docs/SearchSources';
+import { useDismiss } from '../common/useDismiss';
+import { useSearchDraft } from '../common/useSearchDraft';
+import { docNeedleOf } from '../../lib/docs/docSearch';
 import { PROGRESS_INFO } from '../../lib/annotations';
 import { FACETS, facetOptionLabel } from '../../lib/facets';
 import { formatCount } from '../../lib/format';
@@ -23,15 +28,6 @@ import { NotesFileError, notesCount, readNotesFile, type NotesFile } from '../..
 import { useAdmin } from '../../state/admin';
 import { useSurvey } from '../../state/survey';
 import { useViewer, useViewerDispatch, type HideMode } from '../../state/viewer';
-
-/**
- * Wartezeit, bevor eine Eingabe zum Filter wird. Ein Suchlauf zieht Baum, Graph
- * und Tabelle neu auf — bei großen LVs (Richtung ~10k Positionen) dauert das
- * mehrere hundert Millisekunden bis Sekunden. Ohne Verzögerung passiert das je
- * Tastendruck, und die Eingabe hakt. Der Wert ist kurz genug, dass die Suche
- * beim Innehalten sofort greift.
- */
-const SEARCH_DEBOUNCE_MS = 250;
 
 /** So viele Filter-Chips passen in die Suche; der Rest steht als „+N". */
 const MAX_CHIPS = 2;
@@ -131,6 +127,8 @@ export function TopBar() {
   const adminFrei = useAdmin().unlocked;
   /** „Notizen laden…": versteckter Dateidialog, danach das Ergebnisfenster (0061). */
   const notizDateiRef = useRef<HTMLInputElement>(null);
+  const pdfDateiRef = useRef<HTMLInputElement>(null);
+  const documents = useOptionalDocuments();
   const [notizDatei, setNotizDatei] = useState<{ file: NotesFile; name: string } | null>(null);
   const notizenLesen = async (datei: File | undefined): Promise<void> => {
     if (datei === undefined) return;
@@ -147,30 +145,18 @@ export function TopBar() {
     }
   };
 
-  // Das Eingabefeld hängt am lokalen Wert, damit Tippen nie auf den Suchlauf
-  // wartet; der Viewer-State folgt verzögert nach.
-  const [draft, setDraft] = useState(search);
-  const [mirrored, setMirrored] = useState(search);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [draft, changeSearch] = useSearchDraft();
 
-  // Änderungen von außen (Import, „LV schließen" setzen die Suche zurück)
-  // übernehmen — im Render statt im Effekt, sonst zeigt das Feld für einen
-  // Frame den alten Begriff (react.dev/learn/you-might-not-need-an-effect).
-  if (search !== mirrored) {
-    setMirrored(search);
-    setDraft(search);
-  }
-
-  useEffect(() => () => clearTimeout(timer.current ?? undefined), []);
-
-  const changeSearch = (value: string): void => {
-    setDraft(value);
-    clearTimeout(timer.current ?? undefined);
-    timer.current = setTimeout(
-      () => dispatch({ type: 'search', value }),
-      value === '' ? 0 : SEARCH_DEBOUNCE_MS,
-    );
-  };
+  // Unter der Suchleiste: Treffer je Quelle (LV und PDFs, Entscheidung 0077). Nur, wenn
+  // es überhaupt ein PDF gibt — sonst sagen Graph und Tabelle schon alles.
+  const searchPillRef = useRef<HTMLDivElement>(null);
+  const sourcesRef = useRef<HTMLDivElement>(null);
+  const [sourcesOpen, setSourcesOpen] = useState(false);
+  const closeSources = useCallback(() => setSourcesOpen(false), []);
+  useDismiss([searchPillRef, sourcesRef], sourcesOpen, closeSources);
+  const hasSources =
+    docNeedleOf(search) !== '' &&
+    ((documents?.docs.length ?? 0) > 0 || annotations.documents.docs.size > 0);
 
   // "/" und Strg/Cmd + K holen die Suche. Strg K greift auch in Eingabefeldern:
   // wer es drückt, will suchen; "/" dagegen ist dort ein Zeichen.
@@ -258,6 +244,9 @@ export function TopBar() {
           onFeedback={loaded ? survey.show : undefined}
           onAnderesLv={loaded ? () => dispatch({ type: 'clear' }) : undefined}
           mitnehmen={loaded ? mitnehmen : undefined}
+          onPdfHinzufuegen={
+            loaded && documents !== null ? () => pdfDateiRef.current?.click() : undefined
+          }
           onNotizenLaden={loaded ? () => notizDateiRef.current?.click() : undefined}
           notizen={notizAnzahl}
           onAdmin={() => setAdminOffen(true)}
@@ -272,6 +261,19 @@ export function TopBar() {
             void notizenLesen(event.target.files?.[0]);
             // Zurücksetzen, damit dieselbe Datei erneut gewählt werden kann.
             event.target.value = '';
+          }}
+        />
+        <input
+          ref={pdfDateiRef}
+          type="file"
+          accept="application/pdf,.pdf"
+          multiple
+          className="hidden"
+          aria-label="PDF auswählen"
+          onChange={(event) => {
+            const files = [...(event.target.files ?? [])];
+            event.target.value = '';
+            void documents?.openFiles(files);
           }}
         />
         {adminFrei && (
@@ -307,6 +309,7 @@ export function TopBar() {
             </div>
 
             <div
+              ref={searchPillRef}
               data-tour="search"
               className="mx-auto flex h-[36px] min-w-0 max-w-[620px] flex-1 items-center gap-[6px] overflow-hidden rounded-[var(--r-pill)] border border-line bg-surface pl-[12px] pr-[6px] shadow-[var(--shadow-sm)] focus-within:border-accent focus-within:shadow-[0_0_0_3px_var(--accent-soft)]"
             >
@@ -341,8 +344,19 @@ export function TopBar() {
               <input
                 ref={inputRef}
                 value={draft}
-                onChange={(event) => changeSearch(event.target.value)}
-                placeholder="Positionen, OZ, Langtext durchsuchen"
+                onChange={(event) => {
+                  changeSearch(event.target.value);
+                  setSourcesOpen(true);
+                }}
+                onFocus={() => setSourcesOpen(true)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Escape') setSourcesOpen(false);
+                }}
+                placeholder={
+                  (documents?.docs.length ?? 0) > 0
+                    ? 'Positionen, OZ, Langtext, PDFs durchsuchen'
+                    : 'Positionen, OZ, Langtext durchsuchen'
+                }
                 aria-label="Suche"
                 className="min-w-[60px] flex-1 border-none bg-transparent font-mono text-[13px] text-ink outline-none placeholder:text-mute"
               />
@@ -364,6 +378,13 @@ export function TopBar() {
                 + Filter
               </button>
             </div>
+            <SearchSources
+              ref={sourcesRef}
+              open={sourcesOpen && hasSources}
+              anchorRef={searchPillRef}
+              onPick={() => pdfDateiRef.current?.click()}
+              onDone={closeSources}
+            />
 
             {view.mode !== 'graph' && (
               <button

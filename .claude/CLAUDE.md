@@ -142,7 +142,8 @@ gelernte Hervorhebungen im Langtext nur über Admin-Werkzeug (0053) · lokaler E
 Logo-Menü · Notizen als Datei sichern/laden (`lib/notesFile.ts`, 0061) · freiwillige Kurzumfrage
 zum Produkt (Owner-Wunsch, `docs/decisions/0071-kurzumfrage.md`). · Begleit-PDF im
 Fenster „Dokument“ lesen, anstreichen, Stellen von Hand mit Positionen verknüpfen, keine
-Interpretation/Vorschläge (`components/docs/`, `docs/decisions/0072-begleitdokument-pdf.md`). Matrix und
+Interpretation/Vorschläge (`components/docs/`, `docs/decisions/0072-begleitdokument-pdf.md`);
+eine Suche für LV und offene PDFs, PDF-Treffer filtern das LV nicht (`docs/decisions/0077`). Matrix und
 Ähnlichkeit sind entfernt (`docs/decisions/0031-drei-ansichten.md`); keine
 Befehlspalette (`docs/decisions/0038-keine-befehlspalette.md`).
 

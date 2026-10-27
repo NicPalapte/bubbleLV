@@ -16,15 +16,23 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from 'react';
 import { useDocuments } from './DocumentsProvider';
+import { LinkBadge } from './LinkBadge';
 import { LinkDialog } from './LinkDialog';
 import { PdfPage, type PageSize } from './PdfPage';
 import type { DocHighlightItem } from './docHighlights';
 import { PaintBar, PaintNamesDialog } from '../common/PaintBar';
-import { paintSelection, type PaintTarget } from '../common/paint';
+import {
+  paintSelection,
+  searchTermOf,
+  useTouchSelectionMenu,
+  type PaintTarget,
+} from '../common/paint';
 import { useHostWindow } from '../common/hostWindow';
 import { useJumpToPosition } from '../common/useJumpToPosition';
 import { marksOfDoc, type DocMark, type DocSpot } from '../../lib/docs/docNotes';
 import type { OpenedPdf } from '../../lib/docs/pdf';
+import { docNeedleOf, type DocHit } from '../../lib/docs/docSearch';
+import { useSearchDraft } from '../common/useSearchDraft';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 
 const ZOOM_MIN = 0.5;
@@ -34,17 +42,9 @@ const ZOOM_STEP = 1.2;
 const GUTTER = 16;
 /** So lange leuchtet die Stelle nach einem Sprung. */
 const FLASH_MS = 1800;
-/** Mindestlänge der Suche — ein Zeichen fände jede Seite. */
-const SEARCH_MIN = 2;
 
 const TOOL =
   'inline-flex h-[26px] shrink-0 cursor-pointer items-center justify-center rounded-[var(--r-sm)] border border-line bg-surface px-[8px] font-mono text-[11.5px] text-ink hover:border-line2 disabled:cursor-default disabled:opacity-40';
-
-interface Hit {
-  readonly page: number;
-  readonly start: number;
-  readonly text: string;
-}
 
 /** Auswahl im Dokument samt Seite; Grundlage für Menü und Verknüpfen. */
 interface Picked {
@@ -140,8 +140,14 @@ function EmptyDocument() {
 }
 
 function OpenDocument({ doc }: { doc: OpenedPdf }) {
-  const { docs, activate, close, open, busy, error, jump, pageText } = useDocuments();
-  const { annotations, index } = useViewer();
+  const { docs, activate, close, open, busy, error, jump, searchHits } = useDocuments();
+  const {
+    annotations,
+    index,
+    filter: { search },
+  } = useViewer();
+  // Ein Suchfeld mit der Suchleiste oben (Entscheidung 0077): wer hier tippt, sucht überall.
+  const [draft, changeSearch] = useSearchDraft();
   const dispatch = useViewerDispatch();
   const jumpToPosition = useJumpToPosition();
   const host = useHostWindow();
@@ -150,8 +156,6 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
   const [zoom, setZoom] = useState(1);
   const [sizes, setSizes] = useState<ReadonlyMap<number, PageSize>>(new Map());
   const [current, setCurrent] = useState(1);
-  const [query, setQuery] = useState('');
-  const [found, setFound] = useState<{ needle: string; hits: readonly Hit[] }>(NO_HITS);
   const [hitIndex, setHitIndex] = useState(0);
   const [picked, setPicked] = useState<Picked | null>(null);
   const [linking, setLinking] = useState<{ spot: DocSpot; left: number; top: number } | null>(null);
@@ -255,37 +259,22 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     };
   }, [scroller, host]);
 
-  // Suche über alle Seiten; kurz gesammelt, damit nicht jeder Tastendruck sucht.
+  // Fundstellen rechnet der DocumentsProvider für alle offenen PDFs; hier nur zeigen.
+  const needle = docNeedleOf(search);
+  const hits = searchHits.get(doc.id) ?? NO_HIT_LIST;
+  const [seenHits, setSeenHits] = useState(hits);
+  if (seenHits !== hits) {
+    setSeenHits(hits);
+    setHitIndex(0);
+  }
+  // Neuer Begriff mit Treffern: zur ersten Fundstelle, einmal je Begriff und Dokument.
+  const scrolledFor = useRef('');
   useEffect(() => {
-    const needle = query.trim().toLowerCase();
-    if (needle.length < SEARCH_MIN) return;
-    let alive = true;
-    const timer = window.setTimeout(() => {
-      void (async () => {
-        const list: Hit[] = [];
-        for (let page = 1; page <= pages && alive; page++) {
-          const text = await pageText(doc, page);
-          const lower = text.toLowerCase();
-          for (let at = lower.indexOf(needle); at >= 0; at = lower.indexOf(needle, at + 1)) {
-            list.push({ page, start: at, text: text.slice(at, at + needle.length) });
-          }
-        }
-        if (!alive) return;
-        setFound({ needle, hits: list });
-        setHitIndex(0);
-        if (list.length > 0) scrollToPage(list[0].page);
-      })();
-    }, 250);
-    return () => {
-      alive = false;
-      window.clearTimeout(timer);
-    };
-  }, [query, doc, pages, pageText, scrollToPage]);
-
-  // Treffer gelten nur für die Suche, die gerade im Feld steht.
-  const needleNow = query.trim().toLowerCase();
-  const hits =
-    needleNow.length >= SEARCH_MIN && found.needle === needleNow ? found.hits : NO_HIT_LIST;
+    const key = `${doc.id}:${needle}`;
+    if (hits.length === 0 || scrolledFor.current === key) return;
+    scrolledFor.current = key;
+    scrollToPage(hits[0].page);
+  }, [hits, needle, doc.id, scrollToPage]);
   const stepHit = (step: number): void => {
     if (hits.length === 0) return;
     const next = (hitIndex + step + hits.length) % hits.length;
@@ -320,18 +309,30 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     return out;
   }, [hits, flash, extraFor]);
 
-  const onContextMenu = (event: ReactMouseEvent): void => {
-    const layer = (event.target as HTMLElement).closest<HTMLElement>('.doc-text');
+  /** Auswahl in der Textebene einer Seite; `at` legt die Leiste dorthin statt unter die Auswahl. */
+  const pickFrom = (from: Element | null, at: { left: number; top: number } | null): boolean => {
+    const layer = from?.closest<HTMLElement>('.doc-text');
     const pageEl = layer?.closest<HTMLElement>('[data-page]');
-    if (layer == null || pageEl == null) return;
+    if (layer == null || pageEl == null) return false;
     const target = paintSelection(layer);
-    if (target === null) return;
-    event.preventDefault();
+    if (target === null) return false;
     setPicked({
-      target: { ...target, left: event.clientX, top: event.clientY + 4 },
+      target: at === null ? target : { ...target, ...at },
       page: Number(pageEl.dataset.page),
     });
+    return true;
   };
+  const onContextMenu = (event: ReactMouseEvent): void => {
+    const at = { left: event.clientX, top: event.clientY + 4 };
+    if (pickFrom(event.target as Element, at)) event.preventDefault();
+  };
+  // Ohne Rechtsklick am Tablet: Leiste unter der Auswahl, sobald sie ruht.
+  useTouchSelectionMenu(scroller, (selection) => {
+    const node = selection.anchorNode;
+    // Kein `instanceof`: im zweiten Browserfenster gehören die Knoten zu dessen `Element`.
+    const from = node?.nodeType === Node.ELEMENT_NODE ? (node as Element) : node?.parentElement;
+    pickFrom(from ?? null, null);
+  });
 
   const spotOf = (choice: Picked): DocSpot => ({
     doc: doc.id,
@@ -353,22 +354,16 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
 
   // Stabil, damit `PdfPage` (memo) beim Scrollen nicht alle Seiten neu rendert.
   const badge = useCallback(
-    (mark: DocMark) => {
-      const first = mark.links[0];
-      const slot = index.slotOf.get(first);
-      const oz = slot === undefined ? '?' : (index.nodes[slot].position?.oz ?? '?');
-      return (
-        <button
-          type="button"
-          onClick={() => jumpToPosition(first, { stayInView: true })}
-          title="Verknüpfte Position wählen"
-          className="cursor-pointer rounded-[6px] border border-accent bg-white px-[5px] py-[1px] font-mono text-[10.5px] text-[#a52a21] shadow-[var(--shadow-sm)] hover:bg-[#fbebe9]"
-        >
-          {oz}
-          {mark.links.length > 1 ? ` +${mark.links.length - 1}` : ''}
-        </button>
-      );
-    },
+    (mark: DocMark) => (
+      <LinkBadge
+        links={mark.links}
+        ozOf={(id) => {
+          const slot = index.slotOf.get(id);
+          return slot === undefined ? '?' : (index.nodes[slot].position?.oz ?? '?');
+        }}
+        onPick={(id) => jumpToPosition(id, { stayInView: true })}
+      />
+    ),
     [index, jumpToPosition],
   );
 
@@ -401,17 +396,17 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
         </span>
         <span className="flex-1" />
         <label className="flex h-[26px] items-center gap-[4px] rounded-[var(--r-sm)] border border-line bg-surface px-[6px]">
-          <span className="sr-only">Im Dokument suchen</span>
           <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            aria-label="Suchen in LV und Dokumenten"
+            value={draft}
+            onChange={(event) => changeSearch(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Enter') stepHit(event.shiftKey ? -1 : 1);
             }}
-            placeholder="Im Dokument"
+            placeholder="Suchen"
             className="w-[120px] border-none bg-transparent font-mono text-[11.5px] text-ink outline-none"
           />
-          {query.trim().length >= SEARCH_MIN && (
+          {needle !== '' && (
             <span className="font-mono text-[11px] text-mute">
               {hits.length === 0 ? '0' : `${hitIndex + 1}/${hits.length}`}
             </span>
@@ -505,6 +500,11 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
       {picked !== null && (
         <PaintBar
           target={picked.target}
+          onSearch={() => {
+            dispatch({ type: 'search', value: searchTermOf(picked.target.text) });
+            host.getSelection()?.removeAllRanges();
+            setPicked(null);
+          }}
           onCopy={() => {
             void host.navigator.clipboard?.writeText(picked.target.text);
             setPicked(null);
@@ -566,8 +566,7 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
 }
 
 const NO_MARKS: readonly DocMark[] = [];
-const NO_HIT_LIST: readonly Hit[] = [];
-const NO_HITS = { needle: '', hits: NO_HIT_LIST };
+const NO_HIT_LIST: readonly DocHit[] = [];
 const NO_EXTRA: readonly DocHighlightItem[] = [];
 const NO_IDS: readonly string[] = [];
 
