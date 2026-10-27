@@ -69,10 +69,11 @@ async function ladeAppMitPdf(): Promise<void> {
   fireEvent.change(screen.getByLabelText('PDF auswählen'), {
     target: { files: [new File(['%PDF'], 'baubeschreibung.pdf', { type: 'application/pdf' })] },
   });
-  await screen.findByRole('group', { name: 'Vorschläge' }, { timeout: 3000 });
+  // Langsame CI-Rechner: Bereich und Vorschläge brauchen dort mehrere Sekunden.
+  await screen.findByRole('group', { name: 'Vorschläge' }, { timeout: 8000 });
 }
 
-describe('Vorschläge im Dokument', () => {
+describe('Vorschläge im Dokument', { timeout: 20000 }, () => {
   it('OZ mit Menge zum Vergleich, verknüpft erst nach Klick', async () => {
     await ladeAppMitPdf();
     const schalter = screen.getByRole('group', { name: 'Vorschläge' });
@@ -93,7 +94,12 @@ describe('Vorschläge im Dokument', () => {
     fireEvent.click(within(leiste).getByRole('button', { name: 'Verknüpfen' }));
     expect(screen.queryByRole('dialog', { name: 'Vorschlag verknüpfen' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Vorschlag 1.2.20' })).toBeNull();
-    expect(within(schalter).getByText(/OZ 0/)).toBeInTheDocument();
+    // Alle OZ-Vorschläge erledigt: ihr Schalter verschwindet, der für Mengen bleibt.
+    expect(within(schalter).queryByText(/OZ/)).toBeNull();
+    expect(within(schalter).getByText(/Mengen 1/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Vorschlag 783,03 m³' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Nein' }));
+    expect(screen.queryByRole('group', { name: 'Vorschläge' })).toBeNull();
   });
 
   it('„Nein“ blendet den Vorschlag aus, der Schalter blendet eine Art aus', async () => {

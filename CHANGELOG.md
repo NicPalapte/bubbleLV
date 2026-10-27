@@ -20,7 +20,8 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
   Leiste beide Mengen zum Vergleich: „PDF 110 m³ · LV 120 m³“.
 - **Du entscheidest:** Verknüpft wird erst nach deinem Klick. „Nein“ merkt sich Conocto,
   der Vorschlag kommt nicht wieder. Oben im Bereich „Dokument“ lassen sich OZ- und
-  Mengen-Vorschläge einzeln ausschalten.
+  Mengen-Vorschläge einzeln ausschalten. Sind alle Vorschläge einer Art erledigt, verschwindet
+  ihr Schalter.
 - **In der Positionskarte** steht bei solchen Verknüpfungen „über OZ“ oder „über Menge“.
 - **Besser lesbar im dunklen Modus:** Die OZ-Marken am Rand verknüpfter PDF-Stellen haben
   jetzt hellere Schrift auf dunklem Grund.
