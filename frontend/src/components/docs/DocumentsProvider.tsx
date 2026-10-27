@@ -25,6 +25,7 @@ import {
   suggestIndexOf,
   type DocSuggestion,
   type LinkSource,
+  type SuggestIndex,
   type SuggestPosition,
 } from '../../lib/docs/docSuggest';
 import { createSuggester } from '../../lib/docs/suggester';
@@ -282,15 +283,27 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
   const suggestIndex = useMemo(() => suggestIndexOf(suggestPositions(index)), [index]);
   const wanted = suggest.oz || suggest.menge;
   const [suggested, setSuggested] = useState<{
-    index: typeof suggestIndex | null;
+    index: SuggestIndex | null;
     byDoc: ReadonlyMap<string, readonly DocSuggestion[]>;
   }>({ index: null, byDoc: NO_SUGGESTIONS });
+  // Schon fertig gerechnete Dokumente zu diesem Verzeichnis: ein zweites PDF rechnet das
+  // erste nicht noch einmal.
+  const doneFor = useRef<{ index: SuggestIndex | null; ids: Set<string> }>({
+    index: null,
+    ids: new Set(),
+  });
   useEffect(() => {
-    if (!wanted || docs.length === 0 || index.size === 0) return;
+    if (!wanted || index.size === 0) return;
+    if (doneFor.current.index !== suggestIndex)
+      doneFor.current = { index: suggestIndex, ids: new Set() };
+    const done = doneFor.current.ids;
+    const todo = docs.filter((doc) => !done.has(doc.id));
+    if (todo.length === 0) return;
     const suggester = createSuggester(suggestIndex);
     let alive = true;
+    // `pageText` und `suggester.page` werfen nicht: defekte Seiten liefern leeren Text.
     void (async () => {
-      for (const doc of docs) {
+      for (const doc of todo) {
         const list: DocSuggestion[] = [];
         for (let page = 1; page <= doc.pdf.numPages; page++) {
           const text = await pageText(doc, page);
@@ -302,6 +315,7 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
           index: suggestIndex,
           byDoc: new Map([...(prev.index === suggestIndex ? prev.byDoc : []), [doc.id, list]]),
         }));
+        done.add(doc.id);
       }
     })();
     return () => {
