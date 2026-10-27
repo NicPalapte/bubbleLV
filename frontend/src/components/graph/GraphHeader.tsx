@@ -109,7 +109,8 @@ export function GraphHeader({ root, width, controls }: GraphHeaderProps) {
           compact ? 'flex-wrap-reverse' : ''
         }`}
       >
-        <Legend compact={compact} />
+        {/* Neuer Zustand beim Wechsel: sonst klappte sie beim Schmalwerden von selbst auf. */}
+        <Legend key={compact ? 'knopf' : 'voll'} compact={compact} />
         {controls}
       </div>
     </>
