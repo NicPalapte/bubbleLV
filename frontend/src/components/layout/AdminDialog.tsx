@@ -1,7 +1,9 @@
 // „Admin-Werkzeuge" aus dem Logo-Menü (Entscheidung 0053): erst Passwort, dann
 // die gelernten Begriffe. Gelernt wird im Langtext der Positionskarte — Text
 // markieren, Kategorie wählen. Hier stehen Liste, Löschen und der CSV-Download,
-// mit dem die Begriffe in docs/domain/reference/hervorhebungen.csv wandern.
+// mit dem die Begriffe in docs/domain/reference/hervorhebungen.csv wandern. Dazu das
+// Treffer-Protokoll der Materialtabellen — ein Prüfwerkzeug, kein Export für
+// Kalkulatoren, deshalb nicht mehr im Logo-Menü (Entscheidung 0079).
 
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -94,7 +96,13 @@ function Zeile({ term, eigen }: { term: LearnedTerm; eigen: boolean }) {
   );
 }
 
-function Begriffe({ onClose }: { onClose: () => void }) {
+function Begriffe({
+  onClose,
+  onTrefferProtokoll,
+}: {
+  onClose: () => void;
+  onTrefferProtokoll?: () => void;
+}) {
   const { learned, lock } = useAdmin();
   // Tabelle zuerst; ein gleicher Begriff von dir ersetzt den Tabelleneintrag.
   const table = TABLE_TERMS.filter(
@@ -116,6 +124,16 @@ function Begriffe({ onClose }: { onClose: () => void }) {
         >
           Als CSV herunterladen
         </button>
+        {onTrefferProtokoll !== undefined && (
+          <button
+            type="button"
+            onClick={onTrefferProtokoll}
+            title="Welche Stichworte der Materialtabellen was getroffen haben — gefilterte Positionen"
+            className="inline-flex h-[28px] cursor-pointer items-center rounded-[var(--r-pill)] border border-line bg-surface px-[12px] font-mono text-[11.5px] text-ink hover:border-line2"
+          >
+            Treffer-Protokoll (CSV)
+          </button>
+        )}
         <button
           type="button"
           onClick={() => {
@@ -149,7 +167,13 @@ function Begriffe({ onClose }: { onClose: () => void }) {
   );
 }
 
-export function AdminDialog({ onClose }: { onClose: () => void }) {
+export interface AdminDialogProps {
+  onClose: () => void;
+  /** Treffer-Protokoll der Materialtabellen laden. Fehlt, solange kein LV geladen ist. */
+  onTrefferProtokoll?: () => void;
+}
+
+export function AdminDialog({ onClose, onTrefferProtokoll }: AdminDialogProps) {
   const { unlocked } = useAdmin();
   const dialogRef = useRef<HTMLDivElement>(null);
   useDismiss(dialogRef, true, onClose);
@@ -178,7 +202,11 @@ export function AdminDialog({ onClose }: { onClose: () => void }) {
             ✕
           </button>
         </div>
-        {unlocked ? <Begriffe onClose={onClose} /> : <Passwort onDone={onClose} />}
+        {unlocked ? (
+          <Begriffe onClose={onClose} onTrefferProtokoll={onTrefferProtokoll} />
+        ) : (
+          <Passwort onDone={onClose} />
+        )}
       </div>
     </div>,
     document.body,

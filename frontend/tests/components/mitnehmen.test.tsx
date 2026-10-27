@@ -81,9 +81,10 @@ async function warteAufFilter(): Promise<void> {
   });
 }
 
-/** Eintrag im Logo-Menü auslösen — so, wie ein Nutzer es täte. */
-function befehl(name: string): void {
+/** Eintrag im Logo-Menü auslösen — so, wie ein Nutzer es täte; `gruppe` erst aufklappen. */
+function befehl(name: string, gruppe?: string): void {
   oeffneMenue();
+  if (gruppe !== undefined) fireEvent.click(screen.getByRole('button', { name: gruppe }));
   fireEvent.click(screen.getByRole('button', { name: new RegExp(`^${name}`) }));
 }
 
@@ -96,7 +97,7 @@ describe('Mitnehmen', () => {
     // Befehl die ungefilterte Datei — genau das ist hier die Zusage.
     await warteAufFilter();
 
-    befehl('Positionen als CSV');
+    befehl('Positionen als Tabelle');
 
     expect(dateien).toHaveLength(1);
     const [datei] = dateien;
@@ -119,16 +120,16 @@ describe('Mitnehmen', () => {
       throw new Error('blockiert');
     });
     const log = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    befehl('Positionen als CSV');
+    befehl('Positionen als Tabelle');
     log.mockRestore();
 
     const hinweis = screen.getByRole('status', { name: 'Hinweise' });
     expect(hinweis).toHaveTextContent('Die CSV-Datei konnte nicht erstellt werden');
   });
 
-  it('lädt die Hinweise als Markdown', async () => {
+  it('lädt die Prüfhinweise als Text', async () => {
     await ladeApp();
-    befehl('Hinweise als Markdown');
+    befehl('Prüfhinweise als Text');
 
     expect(dateien).toHaveLength(1);
     expect(dateien[0].name).toMatch(/-hinweise-\d{4}-\d{2}-\d{2}\.md$/);
@@ -149,14 +150,18 @@ describe('Mitnehmen', () => {
     expect(screen.getByLabelText('Suche')).toHaveFocus();
 
     oeffneMenue();
-    for (const name of ['Positionen als CSV', 'Hinweise als Markdown', 'Drucken']) {
+    for (const name of [
+      'Positionen als Tabelle (CSV)',
+      'Prüfhinweise als Text',
+      'Drucken / als PDF',
+    ]) {
       expect(screen.getByRole('button', { name })).toBeInTheDocument();
     }
   });
 
   it('öffnet das Melde-Fenster aus dem Logo-Menü heraus', async () => {
     await ladeApp();
-    befehl('Fehler melden');
+    befehl('Fehler melden', 'Hilfe & Feedback');
     const fenster = within(screen.getByRole('dialog', { name: 'Fehler melden' }));
     expect(fenster.getByRole('button', { name: /Text kopieren/ })).toBeInTheDocument();
     expect(fenster.getByRole('button', { name: /E-Mail/ })).toBeInTheDocument();
@@ -287,7 +292,7 @@ describe('Drucken', () => {
     expect(
       within(screen.getByRole('banner')).getByRole('button', { name: /Über diese App/ }),
     ).toHaveAttribute('aria-expanded', 'false');
-    expect(screen.queryByRole('button', { name: 'Drucken' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Drucken / als PDF' })).toBeNull();
     expect(window.print).toHaveBeenCalledTimes(1);
   });
 

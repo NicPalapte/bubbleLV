@@ -44,7 +44,7 @@ Der Dateiname ist der Name des Materials: `beton.csv` heißt in der App „Beton
 
 ## Treffer prüfen
 
-Logo-Menü → **Treffer-Protokoll (CSV)**. Die Datei hat eine Zeile je Treffer, für die
+Logo-Menü → **Admin** (Passwort) → **Treffer-Protokoll (CSV)**. Die Datei hat eine Zeile je Treffer, für die
 gefilterten Positionen.
 
 | Spalte | Bedeutung |

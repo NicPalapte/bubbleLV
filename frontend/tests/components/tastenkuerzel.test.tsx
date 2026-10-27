@@ -13,6 +13,7 @@ describe('Tastenkürzel', () => {
   it('öffnet sich aus dem Logo-Menü und nennt die Suche', () => {
     render(<App />);
     oeffneMenue();
+    fireEvent.click(screen.getByRole('button', { name: 'Hilfe & Feedback' }));
     fireEvent.click(screen.getByRole('button', { name: 'Tastenkürzel' }));
     const fenster = screen.getByRole('dialog', { name: 'Tastenkürzel' });
     expect(within(fenster).getByText('Suche')).toBeInTheDocument();

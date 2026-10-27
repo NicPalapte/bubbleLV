@@ -118,6 +118,10 @@ describe('Admin-Werkzeuge', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Admin' }));
     const dialog = await screen.findByRole('dialog', { name: 'Admin-Werkzeuge' });
     expect(within(dialog).getByText(wort)).toBeInTheDocument();
+    // Das Treffer-Protokoll sitzt hier, nicht mehr im Logo-Menü (Entscheidung 0079).
+    expect(
+      within(dialog).getByRole('button', { name: 'Treffer-Protokoll (CSV)' }),
+    ).toBeInTheDocument();
     fireEvent.click(within(dialog).getByRole('button', { name: `${wort} vergessen` }));
     await waitFor(async () => expect(await readLearnedTerms()).toEqual([]));
 
