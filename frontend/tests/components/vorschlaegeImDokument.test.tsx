@@ -72,8 +72,8 @@ async function ladeAppMitPdf(): Promise<void> {
   fireEvent.change(screen.getByLabelText('PDF auswählen'), {
     target: { files: [new File(['%PDF'], 'baubeschreibung.pdf', { type: 'application/pdf' })] },
   });
-  // Langsame CI-Rechner: Bereich und Vorschläge brauchen dort mehrere Sekunden, im
-  // ersten Test der Datei mit kaltem Modul-Cache auch über 8 s.
+  // Langsame CI-Rechner: Bereich und Vorschläge brauchen dort mehrere Sekunden. Lokal
+  // ~1 s; unter Last (mehrere Läufe parallel) etwa jeder 15. bis 20. Lauf über 8 s.
   await screen.findByRole('group', { name: 'Vorschläge' }, { timeout: PDF_MS });
 }
 
