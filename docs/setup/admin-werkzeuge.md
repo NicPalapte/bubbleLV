@@ -39,6 +39,28 @@ Spalten der Tabelle:
 | `kategorie` | `material` · `masse` · `wichtig` · `aus` (nicht hervorheben) |
 | `bemerkung` | frei, wird nicht ausgewertet                                 |
 
+## Regeln bauen (Reiter „Regeln“, Prototyp)
+
+Ergebnis: Eine aktive Regel färbt den Langtext ein oder schlägt Verbindungen zwischen
+Positionen vor. Hintergrund: Entscheidung 0081.
+
+1. Logo-Menü → Admin-Werkzeuge → Reiter „Regeln“ → „+ Neue Regel“.
+   Oder: im Langtext Text markieren, Rechtsklick → „Als Regel…“.
+2. Bausteine zusammenstellen, Abstand und Text wählen. Unten stehen sofort die Treffer.
+3. Oben auf „Aktiv“ stellen. Erst dann wirkt die Regel im LV.
+4. Bei „Positionen verbinden“: Vorschläge mit „Ja“ oder „Nein“ beantworten, im Editor oder
+   in der Positionskarte unter „Verbunden“.
+
+Regel in den Grundstock übernehmen (gilt dann für alle):
+
+1. „regeln.json herunterladen“.
+2. Die gewünschten Einträge in `docs/domain/reference/regeln.json` kopieren und dort
+   `"geltung": "allgemein"` setzen.
+3. Datei committen.
+
+Lässt du das aus, gilt die Regel nur in deinem Browser. Löschst du die Website-Daten,
+ist sie weg; vorher „regeln.json herunterladen“ sichert sie.
+
 ## Passwort ändern
 
 Das Passwort ist ein Sichtschutz, kein echter Schutz: Die App hat keinen Server, wer

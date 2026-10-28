@@ -54,7 +54,9 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
   Begriffe (`lib/highlight/terms.ts`), die eigenen Namen der Markierfarben
   (`lib/paintNames.ts`, `state/paintNames.tsx`) und der Merker der Kurzumfrage
   (`state/survey.tsx`, Schlüssel `umfrage`, Entscheidung 0071) und die letzte Anordnung
-  im Splitscreen (`state/ViewerProvider.tsx`, Schlüssel `anordnung`, Entscheidung 0073).
+  im Splitscreen (`state/ViewerProvider.tsx`, Schlüssel `anordnung`, Entscheidung 0073)
+  und die eigenen Regeln `bubble-rule-v1` (`state/admin.tsx`, Schlüssel `regeln`, 0081).
+  Urteile über Verbindungen aus Regeln liegen in den Notizen der Datei (`links`, 0081).
   Kein geparstes LV speichern, keine Demo-LVs, keine zweite Datei, keine PDF-Bytes. Notizen
   nur schreiben, wenn die Projekt-Kennung (`persistIdOf`) noch passt. Fehlt IndexedDB ⇒ still ohne
   Speicher weiter, kein Fehler (Entscheidungen 0046, 0047, 0053).
@@ -138,7 +140,9 @@ gemerkt: `docs/decisions/0073-splitscreen-frei-teilen-und-merken.md`) · Beziehu
 ähnliche Positionen im Vergleich, keine wertende Prüfregel (`docs/decisions/0049`) · eigene Marker (Fortschritt Offen/In Bearbeitung/Fertig + Wichtig, `docs/decisions/0062`) + Kommentar-Verlauf je Position zur letzten
 Datei (`docs/decisions/0047-kommentare-und-markierungen.md`, `docs/decisions/0053`) ·
 eigene Textmarkierungen im Langtext (6 feste Farben mit eigenen Namen, `docs/decisions/0063`) ·
-gelernte Hervorhebungen im Langtext nur über Admin-Werkzeug (0053) · lokaler Export/Druck über das
+gelernte Hervorhebungen im Langtext nur über Admin-Werkzeug (0053) · Regeleditor im
+Admin-Werkzeug (`bubble-rule-v1`, Auswerter nur in `packages/core/src/rules/`; Verbindungen
+zwischen Positionen nur als Vorschlag, gilt erst nach Bestätigung, `docs/decisions/0081`) · lokaler Export/Druck über das
 Logo-Menü · Notizen als Datei sichern/laden (`lib/notesFile.ts`, 0061) · freiwillige Kurzumfrage
 zum Produkt (Owner-Wunsch, `docs/decisions/0071-kurzumfrage.md`). · Begleit-PDF im
 Fenster „Dokument“ lesen, anstreichen, Stellen von Hand mit Positionen verknüpfen, keine

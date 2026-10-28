@@ -7,6 +7,7 @@
 // Lage und Text der Vorschläge beziehen sich auf den Seitentext wie bei der Suche
 // (`docSearch.ts`), damit die Textebene sie mit `locateOnPage` wiederfindet.
 
+import { sentenceAround } from '@core';
 import { canonicalUnit } from '../units';
 import { formatNumber } from '../format';
 
@@ -66,6 +67,8 @@ export interface DocSuggestion {
   readonly words?: readonly string[];
 }
 
+export { SENTENCE_REACH } from '@core';
+
 /** Kleinere ganze Zahlen sind als Menge zu allgemein („2 St“, „1 m“). */
 export const AMOUNT_MIN_INTEGER = 10;
 /** So viele Zeichen hinter einer OZ zählt eine Menge noch zu ihr. */
@@ -76,8 +79,6 @@ const MAX_PART = 6;
 /** Schreibweisen aus Fließtext, die GAEB-LVs so nicht schreiben. */
 const PDF_UNIT_SPELLINGS: Readonly<Record<string, string>> = { cbm: 'm3', qm: 'm2' };
 
-/** So weit reicht der Satz um eine Menge höchstens in jede Richtung. */
-export const SENTENCE_REACH = 200;
 /** Kürzeste Länge eines Worts für den Abgleich mit dem Kurztext. */
 const MIN_WORD = 4;
 /** Ab dieser Länge zählt ein Wort auch als Anfang eines zusammengesetzten Worts. */
@@ -335,33 +336,6 @@ function findAmounts(text: string, index: SuggestIndex): Amount[] {
     out.push({ start, end, value, unit });
   }
   return out;
-}
-
-/**
- * Satz um eine Menge: bis zu Satzzeichen mit Leerraum und folgendem Großbuchstaben
- * (Punkte in Zahlen und „ca. 200“ trennen nicht), höchstens `SENTENCE_REACH` Zeichen.
- */
-function sentenceAround(text: string, from: number, to: number): { start: number; end: number } {
-  let start = Math.max(0, from - SENTENCE_REACH);
-  const before = text.slice(start, from);
-  const breaks = [...before.matchAll(/[.!?;:]\s+(?=\p{Lu})/gu)];
-  const last = breaks.at(-1);
-  if (last !== undefined) start += last.index + last[0].length;
-  else if (start > 0) start += before.search(/\s\S/) + 1;
-  // Der Punkt nach der Einheit („m³.“) gehört schon zur Menge und kann den Satz beenden.
-  const scan = text[to - 1] === '.' ? to - 1 : to;
-  const limit = Math.min(text.length, to + SENTENCE_REACH);
-  const after = text.slice(scan, limit);
-  // „rd. 1.050“ oder „ca. 20“: ein Punkt beendet den Satz nur vor einem Großbuchstaben.
-  const stop = /[.!?;](?=\s+\p{Lu}|\s*$)/u.exec(after);
-  let end = stop === null ? limit : scan + stop.index + 1;
-  if (stop === null && limit < text.length) {
-    const space = after.lastIndexOf(' ');
-    if (space > 0) end = scan + space;
-  }
-  while (start < from && /\s/.test(text[start])) start++;
-  while (end > to && /\s/.test(text[end - 1])) end--;
-  return { start: Math.min(start, from), end: Math.max(end, to) };
 }
 
 interface Span {

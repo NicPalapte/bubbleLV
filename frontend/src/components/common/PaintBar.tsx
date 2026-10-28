@@ -59,6 +59,7 @@ export function PaintBar({
   onUnpaint,
   onRename,
   onLearn,
+  onRule = null,
   onLink,
   onClose,
 }: {
@@ -73,6 +74,8 @@ export function PaintBar({
   onRename: () => void;
   /** Nur mit Admin-Zugang und kurzer Auswahl. */
   onLearn: (() => void) | null;
+  /** Nur mit Admin-Zugang: Regeleditor mit Bausteinen aus der Auswahl (Entscheidung 0081). */
+  onRule?: (() => void) | null;
   /** Nur im Begleitdokument (Entscheidung 0072): Stelle mit Positionen verknüpfen. */
   onLink?: () => void;
   onClose: () => void;
@@ -182,6 +185,16 @@ export function PaintBar({
           className={`${ROW} text-dim`}
         >
           Begriff lernen…
+        </button>
+      )}
+      {onRule !== null && (
+        <button
+          type="button"
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={onRule}
+          className={`${ROW} text-dim`}
+        >
+          Als Regel…
         </button>
       )}
     </div>,

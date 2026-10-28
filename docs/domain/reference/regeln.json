@@ -1,0 +1,69 @@
+{
+  "schema": "bubble-rule-v1",
+  "regeln": [
+    {
+      "schema": "bubble-rule-v1",
+      "id": "frist-in-tagen",
+      "version": 1,
+      "name": "Frist in Tagen",
+      "bedingung": {
+        "eines": [
+          { "begriff": "# Tage" },
+          { "begriff": "# Werktage" },
+          { "begriff": "# Kalendertage" }
+        ],
+        "bereich": "satz",
+        "wo": ["langtext"]
+      },
+      "wirkung": { "hervorheben": "wichtig" },
+      "geltung": "allgemein",
+      "status": "freigegeben",
+      "herkunft": "nutzer",
+      "bemerkung": "Beispielregel für den Grundstock. Hebt Fristangaben wie „14 Tage“ hervor."
+    },
+    {
+      "schema": "bubble-rule-v1",
+      "id": "vertragsstrafe",
+      "version": 1,
+      "name": "Vertragsstrafe",
+      "bedingung": {
+        "eines": [
+          { "begriff": "Vertragsstrafe*" },
+          { "begriff": "Konventionalstrafe*" }
+        ],
+        "bereich": "satz",
+        "wo": ["kurztext", "langtext"]
+      },
+      "wirkung": { "hervorheben": "wichtig" },
+      "geltung": "allgemein",
+      "status": "freigegeben",
+      "herkunft": "nutzer",
+      "bemerkung": "Beispielregel für den Grundstock."
+    },
+    {
+      "schema": "bubble-rule-v1",
+      "id": "betonstahl-zu-ortbeton",
+      "version": 1,
+      "name": "Betonstahl zu Ortbeton im selben Abschnitt",
+      "bedingung": {
+        "alle": [{ "begriff": "Betonstahl*" }],
+        "bereich": "feld",
+        "wo": ["kurztext"]
+      },
+      "wirkung": {
+        "verknuepfen": {
+          "ziel": {
+            "alle": [{ "begriff": "Ortbeton*" }],
+            "bereich": "feld",
+            "wo": ["kurztext", "langtext"]
+          },
+          "gleich": ["abschnitt"]
+        }
+      },
+      "geltung": "allgemein",
+      "status": "entwurf",
+      "herkunft": "nutzer",
+      "bemerkung": "Beispiel für eine Verknüpfungsregel. Schlägt vor, Betonstahl mit den Ortbeton-Positionen desselben Abschnitts zu verbinden."
+    }
+  ]
+}

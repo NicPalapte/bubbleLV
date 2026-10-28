@@ -9,6 +9,26 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.44.0 — 28.10.2026 · Regeleditor (Prototyp)
+
+- **Eigene Regeln bauen:** In den Admin-Werkzeugen gibt es den Reiter „Regeln“. Eine Regel
+  setzt sich aus Bausteinen zusammen: Begriff, Menge, Norm und „nicht“. Dazu wählst du
+  „alle“ oder „eines“, den Abstand (gleicher Satz, Zeichen, ganzer Text) und ob Kurztext
+  oder Langtext gelesen wird. Über den Bausteinen steht die Regel als Satz.
+- **Treffer sofort sehen:** Unter der Regel stehen die Treffer im geladenen LV, mit den
+  Fundstellen markiert. Ein Klick springt zur Position.
+- **Grundstock und eigene Regeln:** Der Grundstock gilt für alle Firmen und ist nur lesbar,
+  lässt sich aber als eigene Regel kopieren. Eigene Regeln bleiben in diesem Browser und
+  lassen sich als `regeln.json` laden und herunterladen.
+- **Entwurf, Aktiv, Aus:** Erst eine aktive Regel färbt den Langtext ein, so wie gelernte
+  Begriffe.
+- **Regel aus einer Markierung:** Text im Langtext markieren, „Als Regel…“ wählen. Der
+  Editor öffnet sich schon ausgefüllt, Mengen werden zum Baustein „Menge“.
+- **Positionen verbinden:** Eine Regel kann Positionen verbinden, z. B. Betonstahl mit den
+  Ortbeton-Positionen im selben Abschnitt. Die Regel schlägt nur vor. Du sagst „Ja“ oder
+  „Nein“, im Editor oder in der Positionskarte unter „Verbunden“. Bestätigte Verbindungen
+  stehen dort mit Sprung zur anderen Position.
+
 ## 0.43.2 — 28.10.2026 · Suche im eigenen Fenster, Graph auf kleinen Bildschirmen
 
 - **Suche im eigenen Fenster:** Graph und Tabelle im eigenen Browserfenster haben jetzt die

@@ -55,6 +55,7 @@ import {
   type DocSpot,
 } from '../lib/docs/docNotes';
 import type { LinkSource } from '../lib/docs/docSuggest';
+import { forgetLink, judgeLink, type LinkVerdict } from '../lib/positionLinks';
 import type { HintIndex } from '../lib/check';
 import { AXIS_FACETS } from '../lib/graph/layoutMap';
 import type { PositionIndex } from '../lib/index/positionIndex';
@@ -142,6 +143,10 @@ type LvAction =
   | { type: 'docUnlink'; spot: DocSpot; id: string }
   /** Vorschlag abgelehnt: Stelle gehört nicht zu dieser Position (Entscheidung 0080). */
   | { type: 'docReject'; spot: DocSpot; id: string; at: number }
+  /** Vorschlag einer Regel bestätigt oder verworfen (Entscheidung 0081); Knoten-IDs. */
+  | { type: 'judgeLink'; x: string; y: string; status: LinkVerdict; regel: string; at: number }
+  /** Urteil über ein Paar zurücknehmen: wieder offen. */
+  | { type: 'forgetLink'; x: string; y: string }
   /** Notizen aus einer Notiz-Datei übernommen (lib/notesFile.ts, `mergeNotes`). */
   | { type: 'setAnnotations'; annotations: Annotations }
   /** Hinweis anhängen; derselbe Text erscheint nicht doppelt. */
@@ -250,6 +255,15 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
       return documents === before
         ? state
         : { ...state, annotations: { ...state.annotations, documents } };
+    }
+    case 'judgeLink':
+    case 'forgetLink': {
+      const before = state.annotations.links ?? [];
+      const links =
+        action.type === 'judgeLink'
+          ? judgeLink(before, action.x, action.y, action.status, action.regel, action.at)
+          : forgetLink(before, action.x, action.y);
+      return { ...state, annotations: { ...state.annotations, links } };
     }
     case 'setAnnotations':
       return { ...state, annotations: action.annotations };

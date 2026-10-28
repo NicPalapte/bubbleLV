@@ -14,8 +14,10 @@
 // Seit Entscheidung 0053 außerdem die Begriffe, die der Admin im Langtext gelernt
 // hat. Sie hängen an keiner Datei: weder eine neue Datei noch „Letzte Datei
 // löschen" nimmt sie mit. Ebenso die Farbnamen (0063), der Merker der
-// Kurzumfrage (0071) und die letzte Anordnung im Splitscreen (0073).
+// Kurzumfrage (0071), die letzte Anordnung im Splitscreen (0073) und die eigenen
+// Regeln aus dem Admin-Werkzeug (0081).
 
+import { toRule, type Rule } from '@core';
 import type { LearnedTerm } from '../highlight/terms';
 import { NO_PAINT_NAMES, toPaintNames, type PaintNames } from '../paintNames';
 import { toSurveyDone, type SurveyDone } from '../survey';
@@ -46,6 +48,8 @@ const KEY_PAINT_NAMES = 'farbnamen';
 const KEY_SURVEY = 'umfrage';
 /** Letzte Anordnung im Splitscreen (Entscheidung 0073), unabhängig von der Datei. */
 const KEY_WORKSPACE = 'anordnung';
+/** Eigene Regeln `bubble-rule-v1` (Entscheidung 0081), unabhängig von der Datei. */
+const KEY_RULES = 'regeln';
 /** Kennung für Einträge aus v0.14, die noch keine eigene `id` haben. */
 const LEGACY_ID = 'v0.14';
 
@@ -436,6 +440,45 @@ export async function saveWorkspace(workspace: StoredWorkspace): Promise<boolean
     const tx = db.transaction(STORE, 'readwrite');
     const { closed, root } = workspace;
     tx.objectStore(STORE).put({ closed, root }, KEY_WORKSPACE);
+    await transactionDone(tx);
+    return true;
+  } catch {
+    return false;
+  } finally {
+    db.close();
+  }
+}
+
+/**
+ * Eigene Regeln aus dem Admin-Werkzeug. Leer ohne IndexedDB; `null`, wenn das Lesen
+ * scheitert — dann nicht darüber schreiben (wie bei den gelernten Begriffen).
+ */
+export async function readOwnRules(): Promise<Rule[] | null> {
+  if (typeof indexedDB === 'undefined') return [];
+  const db = await openDb();
+  if (db === null) return null;
+  try {
+    const stored: unknown = await requestResult(
+      db.transaction(STORE, 'readonly').objectStore(STORE).get(KEY_RULES),
+    );
+    return Array.isArray(stored)
+      ? stored.map(toRule).filter((rule): rule is Rule => rule !== null)
+      : [];
+  } catch {
+    return null;
+  } finally {
+    db.close();
+  }
+}
+
+/** Ersetzt die eigenen Regeln. Gibt zurück, ob es geklappt hat. */
+export async function saveOwnRules(rules: readonly Rule[]): Promise<boolean> {
+  const db = await openDb();
+  if (db === null) return false;
+  try {
+    const tx = db.transaction(STORE, 'readwrite');
+    // Über JSON: nur reine Daten in den Speicher, keine geteilten Referenzen aus dem State.
+    tx.objectStore(STORE).put(JSON.parse(JSON.stringify(rules)) as unknown, KEY_RULES);
     await transactionDone(tx);
     return true;
   } catch {
