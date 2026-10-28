@@ -85,4 +85,20 @@ describe('LinkBadge', () => {
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('region', LISTE)).toBeNull();
   });
+
+  it('klappt zu, wenn das PDF scrollt', () => {
+    render(
+      <LinkBadge
+        spots={[{ text: 'Beton', links: ['a', 'b'] }]}
+        ozOf={ozOf}
+        titleOf={titleOf}
+        onPick={() => undefined}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '01.0010 +1' }));
+    fireEvent.scroll(screen.getByRole('region', LISTE));
+    expect(screen.getByRole('region', LISTE)).toBeInTheDocument();
+    fireEvent.scroll(document);
+    expect(screen.queryByRole('region', LISTE)).toBeNull();
+  });
 });

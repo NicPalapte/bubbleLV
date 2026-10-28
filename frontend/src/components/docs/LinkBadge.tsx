@@ -51,11 +51,17 @@ export function LinkBadge({
     const onKey = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') setOpen(false);
     };
+    // Scrollt das PDF, zu: sonst schwebt die Liste über anderen Bereichen.
+    const onScroll = (event: Event): void => {
+      if (!(pop.current?.contains(event.target as Node) ?? false)) setOpen(false);
+    };
     document.addEventListener('pointerdown', onDown);
     document.addEventListener('keydown', onKey);
+    document.addEventListener('scroll', onScroll, true);
     return () => {
       document.removeEventListener('pointerdown', onDown);
       document.removeEventListener('keydown', onKey);
+      document.removeEventListener('scroll', onScroll, true);
     };
   }, [open, document]);
 
