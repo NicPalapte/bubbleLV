@@ -56,6 +56,9 @@ function scheinPdf(): OpenedPdf {
   return { id: 'abc123def456', name: 'baubeschreibung.pdf', pdf } as unknown as OpenedPdf;
 }
 
+/** So lange dürfen PDF und Vorschläge auf langsamen CI-Rechnern brauchen. */
+const PDF_MS = 15_000;
+
 const FIXTURE_DIR = resolve(process.cwd(), '../packages/core/tests/fixtures');
 
 async function ladeAppMitPdf(): Promise<void> {
@@ -69,11 +72,12 @@ async function ladeAppMitPdf(): Promise<void> {
   fireEvent.change(screen.getByLabelText('PDF auswählen'), {
     target: { files: [new File(['%PDF'], 'baubeschreibung.pdf', { type: 'application/pdf' })] },
   });
-  // Langsame CI-Rechner: Bereich und Vorschläge brauchen dort mehrere Sekunden.
-  await screen.findByRole('group', { name: 'Vorschläge' }, { timeout: 8000 });
+  // Langsame CI-Rechner: Bereich und Vorschläge brauchen dort mehrere Sekunden. Lokal
+  // ~1 s; unter Last (mehrere Läufe parallel) etwa jeder 15. bis 20. Lauf über 8 s.
+  await screen.findByRole('group', { name: 'Vorschläge' }, { timeout: PDF_MS });
 }
 
-describe('Vorschläge im Dokument', { timeout: 20000 }, () => {
+describe('Vorschläge im Dokument', { timeout: 30_000 }, () => {
   it('OZ mit Menge zum Vergleich, verknüpft erst nach Klick', async () => {
     await ladeAppMitPdf();
     const schalter = screen.getByRole('group', { name: 'Vorschläge' });
