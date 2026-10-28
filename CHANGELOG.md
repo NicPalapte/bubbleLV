@@ -9,13 +9,35 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
-## 0.42.1 — 28.10.2026 · PDF-Marken überlagern sich nicht mehr
+## 0.43.1 — 28.10.2026 · PDF-Marken überlagern sich nicht mehr
 
 - **Gebündelte Marken im PDF:** Liegen verknüpfte Stellen in Nachbarzeilen, teilen sie sich
   eine Marke am Rand, z. B. „4.1.30 +4“. Gefüllt heißt: mehrere Stellen.
 - **Liste zum Aufklappen:** Antippen zeigt je Stelle die Positionen mit OZ und Kurztext.
   Antippen einer OZ springt zur Position.
 - **Passt sich an:** Beim Zoomen bündeln sich die Marken neu; am Tablet mit mehr Abstand.
+
+## 0.43.0 — 27.10.2026 · Vorschläge im PDF
+
+- **OZ im PDF erkannt:** Steht im PDF eine OZ aus dem LV, ist sie rot gestrichelt
+  unterstrichen, z. B. „01.02.0030“, „1.2.30“ oder „Pos. 30“, wenn das eindeutig ist.
+  Antippen zeigt die Position, „Verknüpfen“ verbindet die Stelle mit ihr. „Position zeigen“
+  springt vorher zur Position in Graph und Positionskarte.
+- **Mengen im PDF erkannt:** Eine Menge wie „783,03 m³“ ist amber gestrichelt, wenn genau
+  eine Position im LV diese Menge hat. Steht die Menge direkt hinter einer OZ, zeigt die
+  Leiste beide Mengen zum Vergleich: „PDF 110 m³ · LV 120 m³“.
+- **Wörter aus dem Kurztext:** Steht im Satz um die Menge ein Wort aus dem Kurztext der
+  Position, z. B. „Betonstahl“, wird der ganze Satz vorgeschlagen. Haben mehrere Positionen
+  dieselbe Menge, entscheiden diese Wörter. „Tragschicht und Deckschicht auf je 1.050 m²“
+  bringt zwei Vorschläge. Stehen mehrere Mengen im Satz, bekommt jede ihren Satzteil. Die
+  Leiste zeigt die Wörter an.
+- **Du entscheidest:** Verknüpft wird erst nach deinem Klick. „Nein“ merkt sich Conocto,
+  der Vorschlag kommt nicht wieder. Oben im Bereich „Dokument“ lassen sich OZ- und
+  Mengen-Vorschläge einzeln ausschalten. Sind alle Vorschläge einer Art erledigt, verschwindet
+  ihr Schalter.
+- **In der Positionskarte** steht bei solchen Verknüpfungen „über OZ“ oder „über Menge“.
+- **Besser lesbar im dunklen Modus:** Die OZ-Marken am Rand verknüpfter PDF-Stellen haben
+  jetzt hellere Schrift auf dunklem Grund.
 
 ## 0.42.0 — 27.10.2026 · Aufgeräumtes Logo-Menü
 

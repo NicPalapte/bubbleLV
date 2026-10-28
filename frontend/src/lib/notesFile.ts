@@ -30,11 +30,15 @@ import {
   linkedIds,
   marksOfPosition,
   mergeDocNotes,
+  rejectionsOfPosition,
   toDocMark,
+  toDocRejection,
   type DocInfo,
   type DocMark,
   type DocNotes,
+  type DocRejection,
 } from './docs/docNotes';
+import { isLinkSource, type LinkSource } from './docs/docSuggest';
 import { NO_PAINT_NAMES, toPaintNames, type PaintNames } from './paintNames';
 import type { LVNode } from '../types/lvNode';
 
@@ -42,6 +46,8 @@ import type { LVNode } from '../types/lvNode';
 // gesicherte Notiz-Dateien nicht mehr laden (Entscheidung 0069).
 export const NOTES_FILE_KIND = 'bubble-notizen';
 /**
+ * Seit 0080 dazu je Position `quelle` an Dokumentstellen und `abgelehnt` — nur ergänzt,
+ * deshalb weiter Version 4: ältere Fassungen lesen die Datei und übergehen die Felder.
  * Version 4: dazu Stellen in Begleitdokumenten (0072). Version 3: dazu Anstreichungen (0063).
  * Version 2: Fortschritt + Wichtig (0062).
  * Ältere Versionen werden gelesen, Version 1 (drei Marker) umgedeutet.
@@ -63,6 +69,17 @@ interface FileDocSpot {
   readonly text: string;
   readonly farbe: Paint | null;
   readonly zeit: string | null;
+  /** Aus einem Vorschlag übernommen (Entscheidung 0080); fehlt bei „von Hand“. */
+  readonly quelle?: LinkSource;
+}
+
+/** Abgelehnter Vorschlag in einem Begleitdokument (Entscheidung 0080). */
+interface FileRejection {
+  readonly dokument: string;
+  readonly seite: number;
+  readonly start: number;
+  readonly text: string;
+  readonly zeit: string | null;
 }
 
 type FileEntry =
@@ -81,8 +98,13 @@ export interface NotesFilePosition {
   readonly fortschritt: Progress | null;
   readonly wichtig: boolean;
   readonly anstreichungen: readonly Highlight[];
-  /** Mit dieser Position verknüpfte Stellen in Begleitdokumenten (`links` leer). */
+  /**
+   * Mit dieser Position verknüpfte Stellen in Begleitdokumenten (`links` leer,
+   * `sources` nach dem Hash dieser Position).
+   */
   readonly dokumentstellen: readonly DocMark[];
+  /** Abgelehnte Vorschläge zu dieser Position; `id` ist der Hash. */
+  readonly abgelehnt?: readonly DocRejection[];
   readonly verlauf: readonly LogEntry[];
 }
 
@@ -113,14 +135,26 @@ function iso(at: number): string | null {
   return at > 0 ? new Date(at).toISOString() : null;
 }
 
-function fileDocSpot(mark: DocMark): FileDocSpot {
-  return {
+function fileDocSpot(mark: DocMark, id?: string): FileDocSpot {
+  const spot: FileDocSpot = {
     dokument: mark.doc,
     seite: mark.page,
     start: mark.start,
     text: mark.text,
     farbe: mark.paint,
     zeit: iso(mark.at),
+  };
+  const quelle = id === undefined ? undefined : mark.sources?.[id];
+  return quelle === undefined ? spot : { ...spot, quelle };
+}
+
+function fileRejection(entry: DocRejection): FileRejection {
+  return {
+    dokument: entry.doc,
+    seite: entry.page,
+    start: entry.start,
+    text: entry.text,
+    zeit: iso(entry.at),
   };
 }
 
@@ -151,9 +185,11 @@ export function notesFileText(
     ...annotations.highlights.keys(),
     ...annotations.log.keys(),
     ...linkedIds(documents),
+    ...(documents.rejected ?? []).map((entry) => entry.id),
   ]);
   const positionen = [...ids].map((id) => {
     const position = byId.get(id)?.position ?? null;
+    const abgelehnt = rejectionsOfPosition(documents, id).map(fileRejection);
     return {
       hash: position?.hashes.id ?? id,
       text: position?.hashes.text ?? '',
@@ -169,7 +205,8 @@ export function notesFileText(
         text: mark.text,
         zeit: iso(mark.at),
       })),
-      dokumentstellen: marksOfPosition(documents, id).map(fileDocSpot),
+      dokumentstellen: marksOfPosition(documents, id).map((mark) => fileDocSpot(mark, id)),
+      ...(abgelehnt.length === 0 ? {} : { abgelehnt }),
       verlauf: (annotations.log.get(id) ?? []).map(fileEntry),
     };
   });
@@ -186,7 +223,9 @@ export function notesFileText(
       name: info.name,
       seiten: info.pages,
     })),
-    dokumentstellen: documents.marks.filter((mark) => mark.links.length === 0).map(fileDocSpot),
+    dokumentstellen: documents.marks
+      .filter((mark) => mark.links.length === 0)
+      .map((mark) => fileDocSpot(mark)),
   };
   return `${JSON.stringify(file, null, 2)}\n`;
 }
@@ -230,6 +269,7 @@ function readVerlaufV1(value: unknown): LogEntry[] {
 function readDocSpot(value: unknown, links: readonly string[]): DocMark | null {
   if (typeof value !== 'object' || value === null) return null;
   const raw = value as Record<string, unknown>;
+  const quelle = isLinkSource(raw.quelle) && links.length === 1 ? raw.quelle : null;
   return toDocMark({
     doc: raw.dokument,
     page: raw.seite,
@@ -237,8 +277,28 @@ function readDocSpot(value: unknown, links: readonly string[]): DocMark | null {
     text: raw.text,
     paint: raw.farbe,
     links,
+    sources: quelle === null ? {} : { [links[0]]: quelle },
     at: at(raw.zeit),
   });
+}
+
+/** Abgelehnte Vorschläge einer Position; `id` ist zunächst ihr Hash. */
+function readRejections(value: unknown, hash: string): DocRejection[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item: unknown) => {
+      if (typeof item !== 'object' || item === null) return null;
+      const raw = item as Record<string, unknown>;
+      return toDocRejection({
+        doc: raw.dokument,
+        page: raw.seite,
+        start: raw.start,
+        text: raw.text,
+        id: hash,
+        at: at(raw.zeit),
+      });
+    })
+    .filter((entry): entry is DocRejection => entry !== null);
 }
 
 function readDocSpots(value: unknown, links: readonly string[]): DocMark[] {
@@ -287,8 +347,10 @@ function readPosition(value: unknown, version: number): NotesFilePosition | null
     ...mark,
     links: [],
   }));
+  const abgelehnt = readRejections(raw.abgelehnt, hash);
   const leer = fortschritt === null && !wichtig && anstreichungen.length === 0;
-  if (leer && verlauf.length === 0 && dokumentstellen.length === 0) return null;
+  const ohneDokument = dokumentstellen.length === 0 && abgelehnt.length === 0;
+  if (leer && verlauf.length === 0 && ohneDokument) return null;
   return {
     hash,
     text: text(raw.text),
@@ -300,6 +362,7 @@ function readPosition(value: unknown, version: number): NotesFilePosition | null
     wichtig,
     anstreichungen,
     dokumentstellen,
+    ...(abgelehnt.length === 0 ? {} : { abgelehnt }),
     verlauf,
   };
 }
@@ -531,13 +594,23 @@ export function mergeNotes(
   }
   let out: Annotations = { ...current, progress, important, log };
   const linked: DocMark[] = [];
+  const rejected: DocRejection[] = [];
   for (const { entry, nodeId } of matches) {
     out = mergeHighlights(out, nodeId, entry.anstreichungen);
-    for (const mark of entry.dokumentstellen) linked.push({ ...mark, links: [nodeId] });
+    for (const mark of entry.dokumentstellen) {
+      const quelle = mark.sources?.[entry.hash];
+      linked.push({
+        ...mark,
+        links: [nodeId],
+        sources: quelle === undefined ? {} : { [nodeId]: quelle },
+      });
+    }
+    for (const item of entry.abgelehnt ?? []) rejected.push({ ...item, id: nodeId });
   }
   const documents = mergeDocNotes(mergeDocNotes(current.documents, dokumente), {
     docs: new Map(),
     marks: linked,
+    rejected,
   });
   return { ...out, documents };
 }

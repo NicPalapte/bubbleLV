@@ -1,6 +1,7 @@
 // Abschnitt „Im Dokument" der Positionskarte (Entscheidung 0072): Stellen in
-// Begleitdokumenten, die von Hand mit dieser Position verknüpft sind. Klick zeigt
-// die Stelle, wenn das Dokument offen ist; ✕ löst die Verknüpfung.
+// Begleitdokumenten, die mit dieser Position verknüpft sind — von Hand oder aus einem
+// Vorschlag („über OZ“, „über Menge“, 0080). Klick zeigt die Stelle, wenn das Dokument
+// offen ist; ✕ löst die Verknüpfung.
 
 import { useOptionalDocuments } from './DocumentsProvider';
 import { Section } from '../common/CardParts';
@@ -44,6 +45,9 @@ export function DocLinks({ positionId }: { positionId: string }) {
               >
                 <span className="block truncate font-mono text-[11px] text-mute">
                   {name} · S. {mark.page}
+                  {mark.sources?.[positionId] !== undefined && (
+                    <span> · über {mark.sources[positionId] === 'oz' ? 'OZ' : 'Menge'}</span>
+                  )}
                   {!open && <span className="text-amber"> · nicht geöffnet</span>}
                 </span>
                 <span className="block truncate font-sans text-[13px] text-ink" title={mark.text}>

@@ -9,7 +9,7 @@ import { Popover } from '../ui/Popover';
 
 // Das Blatt ist immer weiß (wie gedruckt), darum feste Farben passend zum Akzent.
 const CHIP =
-  'cursor-pointer rounded-[6px] border border-accent bg-white px-[5px] py-[1px] font-mono text-[10.5px] text-[#a52a21] shadow-[var(--shadow-sm)] hover:bg-[#fbebe9] [@media(pointer:coarse)]:px-[8px] [@media(pointer:coarse)]:py-[5px]';
+  'cursor-pointer rounded-[6px] border border-accent bg-surface px-[5px] py-[1px] font-mono text-[10.5px] text-accent-ink shadow-[var(--shadow-sm)] hover:bg-accent-soft [@media(pointer:coarse)]:px-[8px] [@media(pointer:coarse)]:py-[5px]';
 // Mehrere Stellen: gefüllt, damit man das Bündel vom Einzelfall unterscheidet.
 const CHIP_MANY =
   'cursor-pointer rounded-[6px] border border-accent bg-accent-fill px-[5px] py-[1px] font-mono text-[10.5px] text-white shadow-[var(--shadow-sm)] hover:bg-accent-fill-hover [@media(pointer:coarse)]:px-[8px] [@media(pointer:coarse)]:py-[5px]';

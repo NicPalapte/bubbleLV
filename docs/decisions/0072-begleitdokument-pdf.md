@@ -1,6 +1,6 @@
 # 0072 – Begleitdokument als PDF: lesen, anstreichen, von Hand verknüpfen
 
-- **Status:** akzeptiert
+- **Status:** teilweise ersetzt durch 0080 (OZ- und Mengen-Vorschläge)
 - **Datum:** 2026-10-23
 - **Betrifft:** neues Fenster „Dokument“ (`frontend/src/components/docs/`), Notizen
   (`frontend/src/lib/docs/docNotes.ts`, `frontend/src/lib/annotations.ts`), Notiz-Datei
