@@ -36,4 +36,6 @@
   unter conocto.app wieder.
 - Einmalig für Nico: DNS-Einträge in Cloudflare (4× A auf GitHub, `www` als CNAME), nach
   dem Merge in GitHub unter Settings → Pages „Enforce HTTPS“ anhaken.
+- Nutzungszählung (0056) läuft weiter. Steht in GoatCounter eine Liste erlaubter Domains,
+  muss `conocto.app` dazu.
 - Anleitung: [docs/setup/ci-und-agenten.md](../setup/ci-und-agenten.md), Schritt 2a.

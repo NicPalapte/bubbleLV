@@ -85,6 +85,9 @@ wird weiter über GitHub Pages ([Entscheidung 0082](../decisions/0082-eigene-dom
    `frontend/public/CNAME` bei jedem Deploy.
 4. Nach dem ersten Deploy mit der Domain (ca. 15 Minuten warten): **Settings → Pages →
    Enforce HTTPS** anhaken.
+5. In GoatCounter (bubble.goatcounter.com → Settings): Steht unter „Allowed domains“
+   eine Adresse, `conocto.app` ergänzen. Ist das Feld leer, nichts tun.
+6. Datenschutzerklärung und Impressum auf die neue Adresse prüfen.
 
 Wenn du das auslässt:
 
@@ -92,6 +95,8 @@ Wenn du das auslässt:
   (sie leitet auf conocto.app weiter).
 - Mit oranger Wolke stellt GitHub kein HTTPS-Zertifikat aus; die Seite gilt als unsicher.
 - Ohne „Enforce HTTPS“ lässt sich die App auch unverschlüsselt über `http://` öffnen.
+- Fehlt `conocto.app` in einer gefüllten GoatCounter-Liste, kommen keine Zählungen und
+  keine Umfrage-Antworten mehr an.
 
 ---
 
