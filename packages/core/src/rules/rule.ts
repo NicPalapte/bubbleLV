@@ -42,7 +42,10 @@ export type RuleLinkSame = 'abschnitt' | 'einheit';
 
 export type RuleEffect =
   | { readonly hervorheben: RuleHighlight }
-  /** Positionen, die `bedingung` treffen, mit Positionen verknüpfen, die `ziel` treffen. */
+  /**
+   * Positionen, die `bedingung` treffen, mit Positionen verknüpfen, die `ziel` treffen.
+   * `gleich` hat mindestens einen Eintrag.
+   */
   | {
       readonly verknuepfen: {
         readonly ziel: RuleCondition;
@@ -161,7 +164,8 @@ function toEffect(value: unknown): RuleEffect | null {
           (verknuepfen.gleich as unknown[]).includes(same),
         )
       : [];
-    return { verknuepfen: { ziel, gleich } };
+    // Mindestens ein „gleich“: Paare nur vorgruppiert, nie alle gegen alle.
+    return gleich.length === 0 ? null : { verknuepfen: { ziel, gleich } };
   }
   return null;
 }

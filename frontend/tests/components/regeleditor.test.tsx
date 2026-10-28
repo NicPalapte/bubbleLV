@@ -132,6 +132,49 @@ describe('Regeleditor', () => {
       expect(own.geltung).toBe('unternehmen');
       expect(own.status).toBe('entwurf');
       expect(JSON.stringify(own.bedingung)).toContain('"norm":{}');
+      // Urteile hängen an id@version: die erste inhaltliche Änderung ist eine neue Version.
+      expect(own.version).toBe(2);
+    });
+    fireEvent.click(within(dialog).getByRole('button', { name: '+ Norm' }));
+    await waitFor(async () => {
+      const [own] = (await readOwnRules()) ?? [];
+      expect(JSON.stringify(own.bedingung).match(/"norm"/g)).toHaveLength(2);
+      expect(own.version).toBe(2);
+    });
+  });
+
+  it('Laden einer regeln.json überschreibt keine eigene Regel', async () => {
+    render(<App />);
+    await oeffneAdmin(PASSWORT);
+    fireEvent.click(await screen.findByRole('button', { name: 'Admin' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Admin-Werkzeuge' });
+    fireEvent.click(within(dialog).getByRole('radio', { name: 'Regeln' }));
+    fireEvent.click(await within(dialog).findByRole('button', { name: 'Als eigene kopieren' }));
+    const [own] = await waitFor(async () => {
+      const rules = (await readOwnRules()) ?? [];
+      expect(rules).toHaveLength(1);
+      return rules;
+    });
+
+    const grundstock = JSON.parse(
+      readFileSync(resolve(process.cwd(), '../docs/domain/reference/regeln.json'), 'utf8'),
+    ) as { regeln: unknown[] };
+    const file = {
+      schema: 'bubble-rule-v1',
+      regeln: [{ ...own, name: 'Von Kollegin' }, grundstock.regeln[0], { kaputt: true }],
+    };
+    fireEvent.change(within(dialog).getByLabelText('regeln.json laden'), {
+      target: { files: [new File([JSON.stringify(file)], 'regeln.json')] },
+    });
+    expect(
+      await within(dialog).findByText(
+        '1 Regel übernommen, 2 übersprungen (Grundstock oder unlesbar).',
+      ),
+    ).toBeInTheDocument();
+    await waitFor(async () => {
+      const rules = (await readOwnRules()) ?? [];
+      expect(rules.map((rule) => rule.name).sort()).toEqual([own.name, 'Von Kollegin'].sort());
+      expect(new Set(rules.map((rule) => rule.id)).size).toBe(2);
     });
   });
 });

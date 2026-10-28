@@ -3,7 +3,7 @@
 // sich bei jeder Änderung im Browser; der Grundstock (docs/domain/reference/regeln.json)
 // ist nur lesbar und lässt sich als eigene Regel kopieren. Austausch über `regeln.json`.
 
-import { useMemo, useRef, useState } from 'react';
+import { useDeferredValue, useMemo, useRef, useState } from 'react';
 import {
   matchCondition,
   parseRuleFile,
@@ -37,11 +37,15 @@ const STATUS_LABEL: Readonly<Record<Rule['status'], string>> = {
   aus: 'aus',
 };
 
-function parseJsonRules(text: string): Rule[] {
+/** Brauchbare Regeln einer `regeln.json` und wie viele Einträge die Datei hatte. */
+function parseJsonRules(text: string): { rules: Rule[]; total: number } {
   try {
-    return parseRuleFile(JSON.parse(text));
+    const value: unknown = JSON.parse(text);
+    const entries =
+      typeof value === 'object' && value !== null && 'regeln' in value ? value.regeln : null;
+    return { rules: parseRuleFile(value), total: Array.isArray(entries) ? entries.length : 0 };
   } catch {
-    return [];
+    return { rules: [], total: 0 };
   }
 }
 
@@ -269,10 +273,32 @@ export function RulesTab() {
     if (ruleRequest !== null) setSelectedId(ruleRequest.id);
   }
 
+  // Urteile über Verbindungen hängen an `id@version`. Ändert sich Bedingung oder Wirkung,
+  // gilt die Regel einmal je Auswahl als neue Version — alte Ja/Nein bleiben bei der alten.
+  const [bumpedFor, setBumpedFor] = useState<string | null>(null);
+  const [shownId, setShownId] = useState(selectedId);
+  if (shownId !== selectedId) {
+    setShownId(selectedId);
+    setBumpedFor(null);
+  }
+
   const own = ownRules.find((rule) => rule.id === selectedId);
   const rule = own ?? GRUNDSTOCK.find((entry) => entry.id === selectedId) ?? null;
   const readOnly = own === undefined;
   const positions = index.nodes;
+  // Vorschau über alle Positionen hinter dem Tippen herlaufen lassen, nicht je Taste blockieren.
+  const preview = useDeferredValue(rule);
+
+  const editRule = (next: Rule): void => {
+    if (own === undefined) return;
+    const changed = next.bedingung !== own.bedingung || next.wirkung !== own.wirkung;
+    if (changed && bumpedFor !== own.id) {
+      setBumpedFor(own.id);
+      saveRule({ ...next, version: own.version + 1 });
+      return;
+    }
+    saveRule(next);
+  };
 
   const copyAsOwn = (source: Rule): void => {
     const name = `${source.name} (eigene)`;
@@ -291,14 +317,24 @@ export function RulesTab() {
   const importFile = (file: File): void => {
     void file.text().then(
       (text) => {
-        const rules = parseJsonRules(text);
-        const used = new Set(GRUNDSTOCK.map((entry) => entry.id));
-        const added = rules.filter((entry) => !used.has(entry.id));
+        const { rules, total } = parseJsonRules(text);
+        const grundstock = new Set(GRUNDSTOCK.map((entry) => entry.id));
+        const used = taken();
+        // Gleiche Kennung wie eine eigene Regel: als neue Regel daneben, nie überschreiben.
+        const added = rules
+          .filter((entry) => !grundstock.has(entry.id))
+          .map((entry) => {
+            const id = used.has(entry.id) ? ruleIdOf(entry.name, used) : entry.id;
+            used.add(id);
+            return id === entry.id ? entry : { ...entry, id, version: 1 };
+          });
         for (const entry of added) saveRule(entry);
+        const skipped = total - added.length;
         setImportNote(
           added.length === 0
             ? 'Keine Regeln gefunden. Erwartet wird eine regeln.json (bubble-rule-v1).'
-            : `${added.length} Regel${added.length === 1 ? '' : 'n'} übernommen.`,
+            : `${added.length} Regel${added.length === 1 ? '' : 'n'} übernommen` +
+                (skipped > 0 ? `, ${skipped} übersprungen (Grundstock oder unlesbar).` : '.'),
         );
         if (added[0] !== undefined) setSelectedId(added[0].id);
       },
@@ -407,21 +443,21 @@ export function RulesTab() {
                   Grundstock-Regel: für alle Firmen gleich, hier nur lesbar.
                 </p>
               )}
-              <RuleEditor rule={rule} readOnly={readOnly} onChange={saveRule} />
+              <RuleEditor rule={rule} readOnly={readOnly} onChange={editRule} />
               <div className="flex flex-col gap-[6px] rounded-[var(--r-md)] border border-line p-[12px]">
                 <span className="font-display text-[13px] font-semibold text-ink">
                   {'verknuepfen' in rule.wirkung
                     ? 'Vorschläge im geladenen LV'
                     : 'Treffer im geladenen LV'}
                 </span>
-                {lv === null ? (
+                {lv === null || preview === null ? (
                   <span className="font-sans text-[12.5px] text-mute">
                     Erst ein LV öffnen, dann stehen hier die Treffer.
                   </span>
-                ) : 'verknuepfen' in rule.wirkung ? (
-                  <LinkPreview rule={rule} positions={positions} />
+                ) : 'verknuepfen' in preview.wirkung ? (
+                  <LinkPreview rule={preview} positions={positions} />
                 ) : (
-                  <HitPreview rule={rule} positions={positions} />
+                  <HitPreview rule={preview} positions={positions} />
                 )}
               </div>
               <div className="flex flex-wrap justify-end gap-[8px]">

@@ -38,18 +38,21 @@
   als eigene Regel kopierbar. Zum Start drei Beispielregeln.
 - **Eigene Regeln:** im Browser (IndexedDB, Schlüssel `regeln`), unabhängig von der Datei,
   wie die gelernten Begriffe. Austausch über eine Datei `regeln.json` (laden, herunterladen).
+  Laden überschreibt nie: gleiche Kennung wie eine eigene Regel ⇒ neue Kennung daneben.
 - **Status:** „Entwurf“ zeigt Treffer nur in der Vorschau des Editors. Erst „Aktiv“ wirkt im
   LV: Hervorhebung im Langtext bzw. Vorschläge in der Positionskarte. „Aus“ ruht.
 - **Regel aus Markierung:** Mit Admin-Zugang bietet die Leiste im Langtext „Als Regel…“.
   Mengen werden Baustein „Menge“, kurze Stellen bleiben ein Begriff (Zahlen als `#`), lange
   Stellen geben bis zu drei tragende Wörter. Gespeichert werden nur diese Bausteine.
 - **Verbinden:** Eine Verbindungsregel hat eine zweite Bedingung für die Zielposition und
-  „nur mit gleichem Abschnitt / gleicher Einheit“. Paare werden erst danach vorgruppiert
-  gebildet, nie alle gegen alle, höchstens 500 je Regel.
+  „nur mit gleichem Abschnitt / gleicher Einheit“. Mindestens eins davon ist Pflicht. Paare
+  werden erst danach vorgruppiert gebildet, nie alle gegen alle, höchstens 500 je Regel.
   - Vorschläge erscheinen gestrichelt im Editor und in der Positionskarte („Verbunden“) mit
     „Ja“/„Nein“. Erst „Ja“ macht eine Verbindung. „Nein“ wird gemerkt.
   - Jedes Urteil steht mit Regel (`id@version`) und Zeitpunkt in den Notizen der Datei,
     unter beiden Positions-Hashes (Feld `links`, Speicherform `v: 6` nur ergänzt).
+  - Ändert jemand Bedingung oder Wirkung, bekommt die Regel eine neue Version (einmal je
+    Auswahl im Editor). Alte Urteile bleiben bei der alten Version.
   - Vorschläge aktiver Regeln werden einmal je LV und Regelstand berechnet und
     zwischengespeichert (`lib/rules/linkSuggestions.ts`), nicht je Render.
 - **Rechnung auf dem UI-Thread, nicht im Worker:** Vorschläge und Treffer-Vorschau laufen

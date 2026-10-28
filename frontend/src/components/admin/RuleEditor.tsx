@@ -394,7 +394,8 @@ export function RuleEditor({
                 >
                   <input
                     type="checkbox"
-                    disabled={readOnly}
+                    // Das letzte Häkchen bleibt: ohne Vorgruppierung wären es alle Paare.
+                    disabled={readOnly || (link.gleich.length === 1 && link.gleich.includes(same))}
                     checked={link.gleich.includes(same)}
                     onChange={(event) => toggleSame(same, event.target.checked)}
                   />

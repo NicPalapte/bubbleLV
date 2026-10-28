@@ -69,7 +69,7 @@ describe('applyRules', () => {
   it('Entwürfe und Verknüpfungsregeln färben nicht', () => {
     expect(applyRules(position('', text), [], [rule({ status: 'entwurf' })])).toEqual([]);
     const link = rule({
-      wirkung: { verknuepfen: { ziel: rule({}).bedingung, gleich: [] } },
+      wirkung: { verknuepfen: { ziel: rule({}).bedingung, gleich: ['einheit'] } },
     });
     expect(applyRules(position('', text), [], [link])).toEqual([]);
   });

@@ -143,13 +143,19 @@ describe('suggestLinks', () => {
     expect(pairs.map((pair) => [pair.from, pair.to])).toEqual([['a', 'b']]);
   });
 
-  it('ohne „gleich“ alle passenden Paare, jedes nur einmal', () => {
-    const { pairs } = suggestLinks(beton, beton, [], lv);
-    expect(pairs.map((pair) => [pair.from, pair.to])).toEqual([['b', 'c']]);
+  it('jedes Paar nur einmal, egal in welcher Richtung', () => {
+    const same = [candidate('d', 'Decke Ortbeton', '03'), ...lv];
+    const { pairs } = suggestLinks(beton, beton, ['abschnitt'], same);
+    expect(pairs.map((pair) => [pair.from, pair.to])).toEqual([['d', 'c']]);
+  });
+
+  it('ohne „gleich“ keine Paare statt alle gegen alle', () => {
+    expect(suggestLinks(beton, beton, [], lv).pairs).toEqual([]);
   });
 
   it('bricht bei zu vielen Paaren ab', () => {
-    const { pairs, truncated } = suggestLinks(stahl, beton, [], lv, 1);
+    const many = [candidate('d', 'Betonstahl B500B', '02'), ...lv];
+    const { pairs, truncated } = suggestLinks(stahl, beton, ['abschnitt'], many, 1);
     expect(pairs).toHaveLength(1);
     expect(truncated).toBe(true);
   });
@@ -187,6 +193,8 @@ describe('toRule / parseRuleFile', () => {
     expect(toRule(link)?.wirkung).toEqual({
       verknuepfen: { ziel: rule.bedingung, gleich: ['abschnitt'] },
     });
+    const ohne = { ...link, wirkung: { verknuepfen: { ziel: rule.bedingung, gleich: [] } } };
+    expect(toRule(ohne)).toBeNull();
   });
 
   it('nimmt aus einer Datei nur brauchbare Regeln, jede Kennung einmal', () => {

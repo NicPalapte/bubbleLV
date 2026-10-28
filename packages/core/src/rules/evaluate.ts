@@ -179,6 +179,8 @@ export function suggestLinks(
   candidates: readonly LinkCandidate[],
   limit = MAX_LINK_SUGGESTIONS,
 ): { readonly pairs: LinkSuggestion[]; readonly truncated: boolean } {
+  // Ohne Vorgruppierung wären es alle gegen alle — dann lieber keine Vorschläge.
+  if (same.length === 0) return { pairs: [], truncated: false };
   const targets = new Map<string, Array<{ id: string; hit: RuleHit }>>();
   for (const candidate of candidates) {
     const key = groupKey(candidate, same);
