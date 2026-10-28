@@ -17,6 +17,3 @@ User-agent: Meta-ExternalAgent
 User-agent: Amazonbot
 User-agent: cohere-ai
 Disallow: /
-
-User-agent: *
-Disallow: /pr-preview/

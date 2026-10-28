@@ -14,7 +14,7 @@
 
 - `index.html` trägt `<meta name="robots" content="noindex, nofollow">`: Suchmaschinen
   nehmen die Seite nicht in ihre Ergebnisse auf und folgen keinen Links.
-- `robots.txt` sperrt bekannte KI-Crawler ganz und alle Crawler für `/pr-preview/`.
+- `robots.txt` sperrt bekannte KI-Crawler ganz. PR-Vorschauen tragen dasselbe `noindex`.
 - Normale Suchmaschinen werden für die App **nicht** per `robots.txt` gesperrt. Sonst lesen
   sie die Seite nicht, sehen das `noindex` nie und listen die nackte Adresse trotzdem,
   wenn sie irgendwo verlinkt ist (z. B. LinkedIn).
