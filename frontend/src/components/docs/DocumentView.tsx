@@ -407,12 +407,16 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
 
   // Stabil, damit `PdfPage` (memo) beim Scrollen nicht alle Seiten neu rendert.
   const badge = useCallback(
-    (mark: DocMark) => (
+    (marks: readonly DocMark[]) => (
       <LinkBadge
-        links={mark.links}
+        spots={marks}
         ozOf={(id) => {
           const slot = index.slotOf.get(id);
           return slot === undefined ? '?' : (index.nodes[slot].position?.oz ?? '?');
+        }}
+        titleOf={(id) => {
+          const slot = index.slotOf.get(id);
+          return slot === undefined ? '' : (index.nodes[slot].position?.shortText ?? '');
         }}
         onPick={(id) => jumpToPosition(id, { stayInView: true })}
       />
