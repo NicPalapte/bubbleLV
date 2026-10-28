@@ -1,5 +1,5 @@
 /**
- * @vitest-environment-options {"url": "https://nicpalapte.github.io/bubbleLV/"}
+ * @vitest-environment-options {"url": "https://conocto.app/"}
  */
 // Nutzungszählung auf der Live-Seite (Entscheidung 0056): wann gesendet wird und wann nicht.
 
@@ -26,7 +26,7 @@ describe('Zählen auf der Live-Seite', () => {
     beacon.mockClear();
     Object.defineProperty(navigator, 'sendBeacon', { value: beacon, configurable: true });
     Object.defineProperty(navigator, 'doNotTrack', { value: null, configurable: true });
-    window.history.replaceState(null, '', '/bubbleLV/');
+    window.history.replaceState(null, '', '/');
   });
 
   afterEach(() => {
@@ -49,7 +49,7 @@ describe('Zählen auf der Live-Seite', () => {
   });
 
   it('zählt nicht in PR-Vorschauen', async () => {
-    window.history.replaceState(null, '', '/bubbleLV/pr-preview/pr-1/');
+    window.history.replaceState(null, '', '/pr-preview/pr-1/');
     const { countEvent, countPageview } = await loadFresh();
     countPageview();
     countEvent('datei-geoeffnet');

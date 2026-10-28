@@ -2,7 +2,7 @@ name: PR-Preview
 
 # Was macht dieser Workflow?
 # Ein Pull Request bekommt auf Zuruf eine eigene, klickbare Version der App unter
-#   https://<owner>.github.io/<repo>/pr-preview/pr-<nummer>/
+#   https://conocto.app/pr-preview/pr-<nummer>/
 # Der Link wird automatisch als Kommentar in den PR geschrieben.
 #
 # Aufgeräumt wird hier NICHT. Die Preview eines geschlossenen PRs entfernt der
@@ -92,8 +92,7 @@ jobs:
       - name: App bauen
         working-directory: frontend
         run: |
-          npm run build -- \
-            --base=/${{ github.event.repository.name }}/pr-preview/pr-${{ env.PR }}/
+          npm run build -- --base=/pr-preview/pr-${{ env.PR }}/
 
       # action: deploy statt des Standards "auto" – der Workflow soll unter keinen
       # Umständen aufräumen. pr-number und Commit-Text explizit, weil das
@@ -117,7 +116,7 @@ jobs:
       - name: Link in den PR schreiben
         env:
           GH_TOKEN: ${{ github.token }}
-          URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/pr-preview/pr-${{ env.PR }}/
+          URL: https://conocto.app/pr-preview/pr-${{ env.PR }}/
         run: |
           set -euo pipefail
           marke='<!-- pr-preview-link -->'

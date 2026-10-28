@@ -2,8 +2,8 @@ name: Deploy to GitHub Pages
 
 # Was macht dieser Workflow?
 # Baut die App und schreibt das fertige Bundle in den Branch `gh-pages`.
-# GitHub Pages liefert diesen Branch aus:
-#   https://<owner>.github.io/<repo>/
+# GitHub Pages liefert diesen Branch unter der eigenen Domain aus:
+#   https://conocto.app/  (Datei frontend/public/CNAME, Entscheidung 0082)
 #
 # Warum über einen Branch und nicht mehr über das Pages-Artefakt?
 # Nur so können die PR-Previews (pr-preview.yml) im selben Pages-Auftritt unter
@@ -50,11 +50,11 @@ jobs:
         working-directory: frontend
         run: npm test
 
-      # Project Pages liegen unter /<repo>/ – die Base kommt aus dem Repo-Namen,
-      # damit ein Rename das Deployment nicht bricht. Lokal bleibt die Base "/".
+      # Mit eigener Domain liegt die App in der Wurzel, die Base ist "/" (Vite-Standard).
+      # frontend/public/CNAME wandert mit nach gh-pages – ohne sie vergisst GitHub die Domain.
       - name: App bauen
         working-directory: frontend
-        run: npm run build -- --base=/${{ github.event.repository.name }}/
+        run: npm run build
 
       # Der Veröffentlichungsschritt spiegelt frontend/dist nach gh-pages und löscht
       # dort alles, was im Ordner fehlt. Damit die Previews noch offener Pull Requests

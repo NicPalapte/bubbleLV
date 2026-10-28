@@ -3,7 +3,7 @@
 **Ein Leistungsverzeichnis auf einen Blick verstehen.** Conocto öffnet deine GAEB-Datei im
 Browser, zeigt jede Position als Punkt in einem Graphen und hebt hervor, worauf es ankommt.
 
-**[→ Conocto im Browser öffnen](https://nicpalapte.github.io/bubbleLV/)** · kostenlose Beta
+**[→ Conocto im Browser öffnen](https://conocto.app/)** · kostenlose Beta
 
 Kein Server · kein Upload · kein Konto
 
