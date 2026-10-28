@@ -9,7 +9,9 @@ import type { PDFPageProxy, RenderTask } from 'pdfjs-dist';
 import { useDocHighlights, rangeIn, type DocHighlightItem } from './docHighlights';
 import type { DocMark } from '../../lib/docs/docNotes';
 import { locateOnPage } from '../../lib/docs/docNotes';
+import type { DocSuggestion } from '../../lib/docs/docSuggest';
 import { pdfLib, type OpenedPdf } from '../../lib/docs/pdf';
+import { bundleSpots, type Bundle } from '../../lib/docs/linkBundles';
 
 /** So weit außerhalb des sichtbaren Bereichs wird schon gezeichnet. */
 const NEAR = '800px 0px';
@@ -19,10 +21,14 @@ export interface PageSize {
   readonly height: number;
 }
 
-/** Lage einer verknüpften Stelle auf der Seite, für die Marke am Rand. */
-interface Badge {
-  readonly mark: DocMark;
-  readonly top: number;
+/** Mindestabstand zweier Marken in px, sonst teilen sie sich eine (Maus / Finger). */
+const BADGE_GAP = 20;
+const BADGE_GAP_TOUCH = 30;
+
+/** Vorschlag mit seinen Zeilenstücken auf der Seite (Entscheidung 0080). */
+interface Offer {
+  readonly suggestion: DocSuggestion;
+  readonly boxes: ReadonlyArray<{ left: number; top: number; width: number; height: number }>;
 }
 
 function PdfPageView({
@@ -37,6 +43,8 @@ function PdfPageView({
   onSize,
   scrollBy,
   badge,
+  suggestions,
+  onSuggestion,
 }: {
   doc: OpenedPdf;
   page: number;
@@ -52,7 +60,11 @@ function PdfPageView({
   /** Verschiebt den Bildlauf um `dy` px — die Seite selbst kennt nur ihren Rahmen. */
   scrollBy: (dy: number) => void;
   onSize: (page: number, size: PageSize) => void;
-  badge: (mark: DocMark) => ReactNode;
+  badge: (marks: readonly DocMark[]) => ReactNode;
+  /** Offene Vorschläge auf dieser Seite, gestrichelt unterstrichen. */
+  suggestions: readonly DocSuggestion[];
+  /** Klick auf einen Vorschlag; `at` ist die Stelle darunter im Fenster. */
+  onSuggestion: (suggestion: DocSuggestion, at: { left: number; top: number }) => void;
 }) {
   const box = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -61,7 +73,8 @@ function PdfPageView({
   const [proxy, setProxy] = useState<PDFPageProxy | null>(null);
   /** Wechselt, wenn die Textebene neu steht. */
   const [version, setVersion] = useState(0);
-  const [badges, setBadges] = useState<Badge[]>([]);
+  const [badges, setBadges] = useState<Bundle<DocMark>[]>([]);
+  const [offers, setOffers] = useState<Offer[]>([]);
 
   useEffect(() => {
     const el = box.current;
@@ -179,16 +192,46 @@ function PdfPageView({
     if (layer === null || frame === null || version === 0) return;
     const text = layer.textContent ?? '';
     const top0 = frame.getBoundingClientRect().top;
-    const next: Badge[] = [];
+    const placed: { spot: DocMark; top: number }[] = [];
     for (const mark of marks) {
       if (mark.links.length === 0) continue;
       const start = locateOnPage(text, mark);
       const range = start < 0 ? null : rangeIn(layer, start, start + mark.text.length);
       if (range === null || typeof range.getBoundingClientRect !== 'function') continue;
-      next.push({ mark, top: range.getBoundingClientRect().top - top0 });
+      placed.push({ spot: mark, top: range.getBoundingClientRect().top - top0 });
     }
-    setBadges(next);
+    const coarse = frame.ownerDocument.defaultView?.matchMedia?.('(pointer: coarse)').matches;
+    setBadges(bundleSpots(placed, coarse === true ? BADGE_GAP_TOUCH : BADGE_GAP));
   }, [marks, version, scale]);
+
+  // Vorschläge: Zeilenstücke der Stelle als Knöpfe über dem Text — antippbar auch am
+  // Tablet, wo es kein Hover und keinen Rechtsklick gibt.
+  useLayoutEffect(() => {
+    const layer = textRef.current;
+    const frame = box.current;
+    if (layer === null || frame === null || version === 0 || suggestions.length === 0) {
+      setOffers((current) => (current.length === 0 ? current : []));
+      return;
+    }
+    const text = layer.textContent ?? '';
+    const origin = frame.getBoundingClientRect();
+    const next: Offer[] = [];
+    for (const suggestion of suggestions) {
+      const start = locateOnPage(text, suggestion);
+      const range = start < 0 ? null : rangeIn(layer, start, start + suggestion.text.length);
+      if (range === null || typeof range.getClientRects !== 'function') continue;
+      const boxes = [...range.getClientRects()]
+        .filter((rect) => rect.width > 0 && rect.height > 0)
+        .map((rect) => ({
+          left: rect.left - origin.left,
+          top: rect.top - origin.top,
+          width: rect.width,
+          height: rect.height,
+        }));
+      if (boxes.length > 0) next.push({ suggestion, boxes });
+    }
+    setOffers(next);
+  }, [suggestions, version, scale]);
 
   // Sprungziel ins Bild holen, sobald die Textebene steht.
   useLayoutEffect(() => {
@@ -226,15 +269,33 @@ function PdfPageView({
         style={{ width, height, visibility: proxy === null ? 'hidden' : 'visible' }}
       />
       <div ref={textRef} className="textLayer doc-text" />
-      {badges.map(({ mark, top }) => (
+      {badges.map(({ spots, top }) => (
         <div
-          key={`${mark.start}-${mark.text}`}
+          key={`${spots[0].start}-${spots[0].text}`}
           className="absolute right-[4px] z-[2]"
           style={{ top: Math.max(0, top - 2) }}
         >
-          {badge(mark)}
+          {badge(spots)}
         </div>
       ))}
+      {offers.map(({ suggestion, boxes }) =>
+        boxes.map((rect, i) => (
+          <button
+            key={`${suggestion.start}-${suggestion.id}-${i}`}
+            type="button"
+            aria-label={`Vorschlag ${suggestion.text}: verknüpfen?`}
+            title="Verknüpfen?"
+            onClick={(event) => {
+              const own = event.currentTarget.getBoundingClientRect();
+              onSuggestion(suggestion, { left: own.left, top: own.bottom + 4 });
+            }}
+            className={`doc-suggest absolute z-[2] cursor-pointer border-0 border-b-2 border-dashed bg-transparent p-0 ${
+              suggestion.source === 'oz' ? 'border-accent' : 'border-amber'
+            }`}
+            style={{ left: rect.left, top: rect.top, width: rect.width, height: rect.height }}
+          />
+        )),
+      )}
       {proxy === null && (
         <span className="absolute inset-0 flex items-center justify-center font-mono text-[11px] text-[#8e8e93]">
           Seite {page}

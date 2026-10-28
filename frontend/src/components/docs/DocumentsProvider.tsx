@@ -5,6 +5,9 @@
 //
 // Mehrere Dokumente können nacheinander offen sein, eines ist vorn. Ein neues LV
 // schließt alle: ihre Notizen gehören zum alten LV.
+//
+// Vorschläge zum Verknüpfen (OZ und Mengen, Entscheidung 0080) rechnet ein Worker Seite
+// für Seite; hier liegen sie roh, ohne Abgleich mit Notizen — den macht die Anzeige.
 
 import {
   createContext,
@@ -18,6 +21,15 @@ import {
 } from 'react';
 import type { DocSpot } from '../../lib/docs/docNotes';
 import { docNeedleOf, hitsInPage, type DocHit } from '../../lib/docs/docSearch';
+import {
+  suggestIndexOf,
+  type DocSuggestion,
+  type LinkSource,
+  type SuggestIndex,
+  type SuggestPosition,
+} from '../../lib/docs/docSuggest';
+import { createSuggester, type Suggester } from '../../lib/docs/suggester';
+import type { PositionIndex } from '../../lib/index/positionIndex';
 import { isPdfFile, openPdf, PdfOpenError, type OpenedPdf } from '../../lib/docs/pdf';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 
@@ -47,16 +59,38 @@ export interface DocumentsApi {
   readonly searchHits: ReadonlyMap<string, readonly DocHit[]>;
   /** Textinhalt einer Seite (ab 1), wie die Textebene ihn zeigt; zwischengespeichert. */
   pageText: (doc: OpenedPdf, page: number) => Promise<string>;
+  /** Vorschläge je offenem Dokument (Entscheidung 0080), noch ohne Notizen abgeglichen. */
+  readonly suggestions: ReadonlyMap<string, readonly DocSuggestion[]>;
+  /** Welche Vorschläge gezeigt werden; Standard: alle. Übersteht keinen Reload. */
+  readonly suggest: Readonly<Record<LinkSource, boolean>>;
+  setSuggest: (source: LinkSource, on: boolean) => void;
+}
+
+function* suggestPositions(index: PositionIndex): Generator<SuggestPosition> {
+  for (const node of index.nodes) {
+    const position = node.position;
+    if (position === null) continue;
+    yield {
+      id: node.id,
+      oz: position.oz,
+      quantity: position.quantity,
+      unit: position.unit,
+      shortText: position.shortText,
+    };
+  }
 }
 
 const DocumentsContext = createContext<DocumentsApi | null>(null);
 
 const NO_SEARCH_HITS: ReadonlyMap<string, readonly DocHit[]> = new Map();
 const NO_FOUND = { needle: '', hits: NO_SEARCH_HITS };
+const NO_SUGGESTIONS: ReadonlyMap<string, readonly DocSuggestion[]> = new Map();
+const ALL_SUGGESTIONS: Readonly<Record<LinkSource, boolean>> = { oz: true, menge: true };
 
 export function DocumentsProvider({ children }: { children: ReactNode }) {
   const {
     lv,
+    index,
     filter: { search },
   } = useViewer();
   const dispatch = useViewerDispatch();
@@ -247,6 +281,70 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
   }, [needle, docs, pageText]);
   const searchHits = needle !== '' && found.needle === needle ? found.hits : NO_SEARCH_HITS;
 
+  // Vorschläge: einmal je LV ein Verzeichnis, dann je Dokument alle Seiten im Worker.
+  const [suggest, setSuggestState] = useState(ALL_SUGGESTIONS);
+  const setSuggest = useCallback((source: LinkSource, on: boolean): void => {
+    setSuggestState((current) => (current[source] === on ? current : { ...current, [source]: on }));
+  }, []);
+  const suggestIndex = useMemo(() => suggestIndexOf(suggestPositions(index)), [index]);
+  const wanted = suggest.oz || suggest.menge;
+  const [suggested, setSuggested] = useState<{
+    index: SuggestIndex | null;
+    byDoc: ReadonlyMap<string, readonly DocSuggestion[]>;
+  }>({ index: null, byDoc: NO_SUGGESTIONS });
+  // Fertige Seiten je Verzeichnis: Wird die Rechnung unterbrochen (zweites PDF geöffnet
+  // oder geschlossen), geht sie dort weiter, wo sie war.
+  const pagesFor = useRef<{
+    index: SuggestIndex | null;
+    pages: Map<string, readonly DocSuggestion[]>;
+  }>({ index: null, pages: new Map() });
+  useEffect(() => {
+    if (!wanted || index.size === 0) return;
+    if (pagesFor.current.index !== suggestIndex) {
+      pagesFor.current = { index: suggestIndex, pages: new Map() };
+    }
+    const cache = pagesFor.current.pages;
+    // Geschlossene Dokumente: ihre Vorschläge und Seiten fallen weg.
+    const open = new Set(docs.map((doc) => doc.id));
+    for (const key of [...cache.keys()]) {
+      if (!open.has(key.slice(0, key.indexOf(':')))) cache.delete(key);
+    }
+    // Worker erst, wenn eine Seite fehlt — sind alle zwischengespeichert, braucht es keinen.
+    let suggester: Suggester | null = null;
+    let alive = true;
+    // `pageText` und `suggester.page` werfen nicht: defekte Seiten liefern leeren Text.
+    void (async () => {
+      for (const doc of docs) {
+        const list: DocSuggestion[] = [];
+        for (let page = 1; page <= doc.pdf.numPages; page++) {
+          const key = `${doc.id}:${page}`;
+          let found = cache.get(key);
+          if (found === undefined) {
+            const text = await pageText(doc, page);
+            if (!alive) return;
+            suggester ??= createSuggester(suggestIndex);
+            found = await suggester.page(text, page);
+            if (!alive) return;
+            cache.set(key, found);
+          }
+          list.push(...found);
+        }
+        setSuggested((prev) => ({
+          index: suggestIndex,
+          byDoc: new Map([
+            ...[...(prev.index === suggestIndex ? prev.byDoc : [])].filter(([id]) => open.has(id)),
+            [doc.id, list],
+          ]),
+        }));
+      }
+    })();
+    return () => {
+      alive = false;
+      suggester?.dispose();
+    };
+  }, [wanted, docs, index, suggestIndex, pageText]);
+  const suggestions = wanted && suggested.index === suggestIndex ? suggested.byDoc : NO_SUGGESTIONS;
+
   const active = docs.find((doc) => doc.id === activeId) ?? docs.at(-1) ?? null;
   const api = useMemo<DocumentsApi>(
     () => ({
@@ -262,6 +360,9 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
       jumpTo,
       searchHits,
       pageText,
+      suggestions,
+      suggest,
+      setSuggest,
     }),
     [
       docs,
@@ -276,6 +377,9 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
       jumpTo,
       searchHits,
       pageText,
+      suggestions,
+      suggest,
+      setSuggest,
     ],
   );
   return <DocumentsContext.Provider value={api}>{children}</DocumentsContext.Provider>;
