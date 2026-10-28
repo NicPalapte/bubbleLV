@@ -36,3 +36,4 @@
   unter conocto.app wieder.
 - Einmalig für Nico: DNS-Einträge in Cloudflare (4× A auf GitHub, `www` als CNAME), nach
   dem Merge in GitHub unter Settings → Pages „Enforce HTTPS“ anhaken.
+- Anleitung: [docs/setup/ci-und-agenten.md](../setup/ci-und-agenten.md), Schritt 2a.

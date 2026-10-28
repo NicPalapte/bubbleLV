@@ -59,12 +59,39 @@ Seite kurzzeitig einen Fehler:
    - Source: **Deploy from a branch**
    - Branch: **`gh-pages`** · Ordner: **`/ (root)`**
    - Speichern.
-3. Nach ein paar Minuten prüfen: <https://conocto.app/>
+3. Nach ein paar Minuten prüfen: <https://conocto.app/> (erst nach Schritt 2a erreichbar)
 
 Was hier passiert: Bisher hat GitHub den fertigen Build direkt aus dem Workflow
 übernommen. Dabei kann immer nur *ein* Stand veröffentlicht sein. Ab jetzt liegen alle
 Stände als Dateien in einem Branch – der Live-Stand im Hauptverzeichnis, jede Preview in
 einem eigenen Unterordner.
+
+---
+
+## Schritt 2a – Eigene Domain conocto.app
+
+Die App läuft unter `https://conocto.app/`. Die Domain liegt bei Cloudflare, ausgeliefert
+wird weiter über GitHub Pages ([Entscheidung 0082](../decisions/0082-eigene-domain.md)).
+
+1. In Cloudflare: **conocto.app → DNS → Records → Add record**
+   - 4× Typ **A**, Name `@`, IPv4 je eine Adresse: `185.199.108.153`, `185.199.109.153`,
+     `185.199.110.153`, `185.199.111.153`
+   - 1× Typ **CNAME**, Name `www`, Ziel `nicpalapte.github.io`
+   - Bei allen fünf Proxy-Status **DNS only** (graue Wolke).
+2. Empfohlen: **github.com/settings/pages → Add a domain → conocto.app**. Den angezeigten
+   TXT-Eintrag ebenfalls in Cloudflare anlegen. Schützt davor, dass ein fremdes Repo die
+   Domain belegt.
+3. Die Domain **nicht** von Hand unter Settings → Pages eintragen. Das erledigt die Datei
+   `frontend/public/CNAME` bei jedem Deploy.
+4. Nach dem ersten Deploy mit der Domain (ca. 15 Minuten warten): **Settings → Pages →
+   Enforce HTTPS** anhaken.
+
+Wenn du das auslässt:
+
+- Ohne DNS-Einträge ist die App nicht erreichbar, auch nicht unter der alten Adresse
+  (sie leitet auf conocto.app weiter).
+- Mit oranger Wolke stellt GitHub kein HTTPS-Zertifikat aus; die Seite gilt als unsicher.
+- Ohne „Enforce HTTPS“ lässt sich die App auch unverschlüsselt über `http://` öffnen.
 
 ---
 
