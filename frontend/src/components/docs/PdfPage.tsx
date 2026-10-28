@@ -229,8 +229,7 @@ function PdfPageView({
       {badges.map(({ spots, top }) => (
         <div
           key={`${spots[0].start}-${spots[0].text}`}
-          // Aufgeklappt über den Marken darunter liegen.
-          className="absolute right-[4px] z-[2] [&:has([aria-expanded=true])]:z-[3]"
+          className="absolute right-[4px] z-[2]"
           style={{ top: Math.max(0, top - 2) }}
         >
           {badge(spots)}

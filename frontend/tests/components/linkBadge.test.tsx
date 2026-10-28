@@ -46,14 +46,14 @@ describe('LinkBadge', () => {
       />,
     );
     const marke = screen.getByRole('button', { name: '01.0010 +2' });
-    expect(screen.queryByRole('dialog', LISTE)).toBeNull();
+    expect(screen.queryByRole('region', LISTE)).toBeNull();
 
     fireEvent.click(marke);
     expect(marke).toHaveAttribute('aria-expanded', 'true');
     expect(onPick).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: /02\.0010/ }));
     expect(onPick).toHaveBeenCalledWith('c');
-    expect(screen.queryByRole('dialog', LISTE)).toBeNull();
+    expect(screen.queryByRole('region', LISTE)).toBeNull();
   });
 
   it('bündelt Stellen: zählt Positionen ohne Doppelte und listet je Stelle', () => {
@@ -64,7 +64,7 @@ describe('LinkBadge', () => {
     ];
     render(<LinkBadge spots={spots} ozOf={ozOf} titleOf={titleOf} onPick={() => undefined} />);
     fireEvent.click(screen.getByRole('button', { name: '01.0010 +2' }));
-    const liste = screen.getByRole('dialog', LISTE);
+    const liste = screen.getByRole('region', LISTE);
     expect(liste).toHaveTextContent('3 Stellen · 3 Positionen');
     expect(liste).toHaveTextContent('Bodenplatte C30/37');
     expect(liste).toHaveTextContent('Kurztext c');
@@ -81,8 +81,8 @@ describe('LinkBadge', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: '01.0010 +1' }));
-    expect(screen.getByRole('dialog', LISTE)).toBeInTheDocument();
+    expect(screen.getByRole('region', LISTE)).toBeInTheDocument();
     fireEvent.keyDown(document, { key: 'Escape' });
-    expect(screen.queryByRole('dialog', LISTE)).toBeNull();
+    expect(screen.queryByRole('region', LISTE)).toBeNull();
   });
 });

@@ -5,6 +5,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useHostWindow } from '../common/hostWindow';
+import { Popover } from '../ui/Popover';
 
 // Das Blatt ist immer weiß (wie gedruckt), darum feste Farben passend zum Akzent.
 const CHIP =
@@ -35,12 +36,17 @@ export function LinkBadge({
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const pop = useRef<HTMLDivElement>(null);
   const { document } = useHostWindow();
 
   useEffect(() => {
     if (!open) return;
     const onDown = (event: PointerEvent): void => {
-      if (!(ref.current?.contains(event.target as Node) ?? false)) setOpen(false);
+      const target = event.target as Node;
+      // Die Liste hängt per Portal am Fenster, nicht in der Marke.
+      const inside =
+        (ref.current?.contains(target) ?? false) || (pop.current?.contains(target) ?? false);
+      if (!inside) setOpen(false);
     };
     const onKey = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') setOpen(false);
@@ -70,7 +76,7 @@ export function LinkBadge({
   }
   const where = spots.length === 1 ? '1 Stelle' : `${spots.length} Stellen`;
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref}>
       <button
         type="button"
         aria-expanded={open}
@@ -80,11 +86,12 @@ export function LinkBadge({
       >
         {ozOf(first)} +{ids.length - 1}
       </button>
-      {open && (
+      {/* Popover öffnet nach oben, wenn unten auf der Seite kein Platz mehr ist. */}
+      <Popover ref={pop} open={open} width={260} align="right" anchorRef={ref}>
         <div
-          role="dialog"
+          role="region"
           aria-label="Verknüpfte Positionen"
-          className="absolute right-0 top-full mt-[4px] flex max-h-[300px] w-[260px] flex-col overflow-auto rounded-[var(--r-md)] border border-line bg-surface font-sans text-[12px] text-ink shadow-[var(--shadow-popover)]"
+          className="flex max-h-[300px] w-[252px] flex-col overflow-auto font-sans text-[12px] text-ink"
         >
           <div className="sticky top-0 border-b border-line bg-surface px-[10px] py-[6px] font-semibold">
             {where} · {ids.length} Positionen
@@ -114,7 +121,7 @@ export function LinkBadge({
             </section>
           ))}
         </div>
-      )}
+      </Popover>
     </div>
   );
 }
