@@ -78,7 +78,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0069 | [Neuer Name Conocto und Apple-Look](0069-conocto-look.md)                                                      | akzeptiert                         | 2026-10-22 |
 | 0070 | [Splitscreen nahtlos, Bereiche stapelbar](0070-splitscreen-nahtlos-stapeln.md)                                 | teilweise ersetzt durch 0073       | 2026-10-23 |
 | 0071 | [Kurzumfrage nach einigen Minuten Nutzung](0071-kurzumfrage.md)                                                | akzeptiert                         | 2026-10-23 |
-| 0072 | [Begleitdokument als PDF anstreichen und verknüpfen](0072-begleitdokument-pdf.md)                              | ergänzt durch 0077                 | 2026-10-23 |
+| 0072 | [Begleitdokument als PDF anstreichen und verknüpfen](0072-begleitdokument-pdf.md)                              | ergänzt 0077, teilw. ersetzt 0080  | 2026-10-23 |
 | 0073 | [Splitscreen frei teilen, letzte Anordnung merken](0073-splitscreen-frei-teilen-und-merken.md)                 | teilweise ersetzt durch 0074       | 2026-10-23 |
 | 0074 | [Nur noch Splitscreen, ein Knopf „Ansicht“](0074-nur-noch-splitscreen.md)                                      | akzeptiert                         | 2026-10-24 |
 | 0075 | [Graph: Inseln je Hauptabschnitt, Abschnitt hervorheben](0075-inseln-und-hervorhebung.md)                      | teilweise ersetzt durch 0078       | 2026-10-25 |
@@ -86,6 +86,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0077 | [Eine Suche für LV und PDFs, Begriff aus dem Text übernehmen](0077-eine-suche-fuer-lv-und-pdf.md)              | akzeptiert                         | 2026-10-26 |
 | 0078 | [Schlanke Startansicht, ein Schalter für blass/ausblenden](0078-schlanke-startansicht-ein-schalter.md)         | akzeptiert                         | 2026-10-26 |
 | 0079 | [Logo-Menü gruppiert, Exporte gebündelt](0079-logo-menue-gruppiert.md)                                         | akzeptiert                         | 2026-10-27 |
+| 0080 | [Vorschläge im PDF: OZ und Mengen aus dem LV](0080-oz-und-mengen-vorschlaege-im-pdf.md)                        | akzeptiert                         | 2026-10-27 |
 
 ## Wann schreibe ich eine neue Datei?
 

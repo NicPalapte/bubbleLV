@@ -4,7 +4,8 @@
 // und im eigenen Browserfenster.
 //
 // Markieren wie im Langtext: Text auswählen, Rechtsklick (Entscheidung 0063,
-// Issue #155). Conocto deutet nichts — keine Vorschläge, keine Fundstellen.
+// Issue #155). Conocto deutet den Text nicht. Vorschläge gibt es nur, wo eine OZ oder
+// eine Menge genau eine Position des LV trifft; verknüpft wird erst per Klick (0080).
 
 import {
   useCallback,
@@ -19,6 +20,7 @@ import { useDocuments } from './DocumentsProvider';
 import { LinkBadge } from './LinkBadge';
 import { LinkDialog } from './LinkDialog';
 import { PdfPage, type PageSize } from './PdfPage';
+import { SuggestBar } from './SuggestBar';
 import type { DocHighlightItem } from './docHighlights';
 import { PaintBar, PaintNamesDialog } from '../common/PaintBar';
 import {
@@ -29,7 +31,13 @@ import {
 } from '../common/paint';
 import { useHostWindow } from '../common/hostWindow';
 import { useJumpToPosition } from '../common/useJumpToPosition';
-import { marksOfDoc, type DocMark, type DocSpot } from '../../lib/docs/docNotes';
+import {
+  marksOfDoc,
+  pendingSuggestions,
+  type DocMark,
+  type DocSpot,
+} from '../../lib/docs/docNotes';
+import type { DocSuggestion, LinkSource } from '../../lib/docs/docSuggest';
 import type { OpenedPdf } from '../../lib/docs/pdf';
 import { docNeedleOf, type DocHit } from '../../lib/docs/docSearch';
 import { useSearchDraft } from '../common/useSearchDraft';
@@ -140,7 +148,19 @@ function EmptyDocument() {
 }
 
 function OpenDocument({ doc }: { doc: OpenedPdf }) {
-  const { docs, activate, close, open, busy, error, jump, searchHits } = useDocuments();
+  const {
+    docs,
+    activate,
+    close,
+    open,
+    busy,
+    error,
+    jump,
+    searchHits,
+    suggestions,
+    suggest,
+    setSuggest,
+  } = useDocuments();
   const {
     annotations,
     index,
@@ -160,6 +180,11 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
   const [picked, setPicked] = useState<Picked | null>(null);
   const [linking, setLinking] = useState<{ spot: DocSpot; left: number; top: number } | null>(null);
   const [naming, setNaming] = useState<{ left: number; top: number } | null>(null);
+  const [offer, setOffer] = useState<{
+    suggestion: DocSuggestion;
+    left: number;
+    top: number;
+  } | null>(null);
   /** Sprung, dessen Leuchten schon vorbei ist. */
   const [faded, setFaded] = useState(0);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
@@ -175,6 +200,30 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     for (const mark of marks) out.set(mark.page, [...(out.get(mark.page) ?? []), mark]);
     return out;
   }, [marks]);
+
+  // Offene Vorschläge (0080): ohne abgelehnte und schon verknüpfte, je Seite.
+  const pending = useMemo(
+    () => pendingSuggestions(annotations.documents, doc.id, suggestions.get(doc.id) ?? [], suggest),
+    [annotations.documents, doc.id, suggestions, suggest],
+  );
+  const pendingByPage = useMemo(() => {
+    const out = new Map<number, DocSuggestion[]>();
+    for (const item of pending) out.set(item.page, [...(out.get(item.page) ?? []), item]);
+    return out;
+  }, [pending]);
+  const counts = useMemo(() => {
+    const all = suggestions.get(doc.id) ?? [];
+    const open = pendingSuggestions(annotations.documents, doc.id, all, { oz: true, menge: true });
+    return {
+      oz: open.filter((item) => item.source === 'oz').length,
+      menge: open.filter((item) => item.source === 'menge').length,
+    };
+  }, [annotations.documents, doc.id, suggestions]);
+  const onSuggestion = useCallback(
+    (suggestion: DocSuggestion, at: { left: number; top: number }): void =>
+      setOffer({ suggestion, ...at }),
+    [],
+  );
 
   // Andere Datei gleichen Namens: Stellen von damals hängen an der alten Kennung.
   const otherVersion = useMemo(() => {
@@ -351,6 +400,10 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     );
   };
   const touchedNow = picked === null ? [] : touched(picked);
+  const positionOf = (id: string) => {
+    const slot = index.slotOf.get(id);
+    return slot === undefined ? null : index.nodes[slot].position;
+  };
 
   // Stabil, damit `PdfPage` (memo) beim Scrollen nicht alle Seiten neu rendert.
   const badge = useCallback(
@@ -395,6 +448,9 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
           {current} / {pages}
         </span>
         <span className="flex-1" />
+        {counts.oz + counts.menge > 0 && (
+          <SuggestToggles counts={counts} suggest={suggest} setSuggest={setSuggest} />
+        )}
         <label className="flex h-[26px] items-center gap-[4px] rounded-[var(--r-sm)] border border-line bg-surface px-[6px]">
           <input
             aria-label="Suchen in LV und Dokumenten"
@@ -493,6 +549,8 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
                 onSize={onSize}
                 scrollBy={scrollBy}
                 badge={badge}
+                suggestions={pendingByPage.get(page) ?? NO_SUGGESTIONS}
+                onSuggestion={onSuggestion}
               />
             ))}
         </div>
@@ -558,6 +616,48 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
           onClose={() => setLinking(null)}
         />
       )}
+      {offer !== null && (
+        <SuggestBar
+          suggestion={offer.suggestion}
+          oz={positionOf(offer.suggestion.id)?.oz ?? '?'}
+          shortText={positionOf(offer.suggestion.id)?.shortText ?? ''}
+          left={offer.left}
+          top={offer.top}
+          onLink={() => {
+            const { suggestion } = offer;
+            dispatch({
+              type: 'docLink',
+              spot: {
+                doc: doc.id,
+                page: suggestion.page,
+                start: suggestion.start,
+                text: suggestion.text,
+              },
+              ids: [suggestion.id],
+              at: Date.now(),
+              source: suggestion.source,
+            });
+            setOffer(null);
+          }}
+          onReject={() => {
+            const { suggestion } = offer;
+            dispatch({
+              type: 'docReject',
+              spot: {
+                doc: doc.id,
+                page: suggestion.page,
+                start: suggestion.start,
+                text: suggestion.text,
+              },
+              id: suggestion.id,
+              at: Date.now(),
+            });
+            setOffer(null);
+          }}
+          onShow={() => jumpToPosition(offer.suggestion.id, { stayInView: true })}
+          onClose={() => setOffer(null)}
+        />
+      )}
       {naming !== null && (
         <PaintNamesDialog left={naming.left} top={naming.top} onClose={() => setNaming(null)} />
       )}
@@ -569,6 +669,55 @@ const NO_MARKS: readonly DocMark[] = [];
 const NO_HIT_LIST: readonly DocHit[] = [];
 const NO_EXTRA: readonly DocHighlightItem[] = [];
 const NO_IDS: readonly string[] = [];
+const NO_SUGGESTIONS: readonly DocSuggestion[] = [];
+
+const SOURCE_LABEL: Readonly<Record<LinkSource, string>> = { oz: 'OZ', menge: 'Mengen' };
+
+/**
+ * Schalter je Art von Vorschlag, mit der Zahl der offenen Vorschläge im Dokument. Eine Art
+ * ohne offene Vorschläge (alle übernommen oder abgelehnt) verschwindet.
+ */
+function SuggestToggles({
+  counts,
+  suggest,
+  setSuggest,
+}: {
+  counts: Readonly<Record<LinkSource, number>>;
+  suggest: Readonly<Record<LinkSource, boolean>>;
+  setSuggest: (source: LinkSource, on: boolean) => void;
+}) {
+  return (
+    <span role="group" aria-label="Vorschläge" className="flex items-center gap-[4px]">
+      <span className="font-mono text-[11px] text-mute">Vorschläge</span>
+      {(['oz', 'menge'] as const)
+        .filter((source) => counts[source] > 0)
+        .map((source) => (
+          <button
+            key={source}
+            type="button"
+            aria-pressed={suggest[source]}
+            title={
+              suggest[source]
+                ? `${SOURCE_LABEL[source]}-Vorschläge ausblenden`
+                : `${SOURCE_LABEL[source]}-Vorschläge zeigen`
+            }
+            onClick={() => setSuggest(source, !suggest[source])}
+            className={`${TOOL} gap-[4px] ${
+              suggest[source] ? '' : 'text-mute line-through decoration-line2'
+            }`}
+          >
+            <span
+              aria-hidden="true"
+              className={`w-[10px] border-b-2 border-dashed ${
+                source === 'oz' ? 'border-accent' : 'border-amber'
+              }`}
+            />
+            {SOURCE_LABEL[source]} {counts[source]}
+          </button>
+        ))}
+    </span>
+  );
+}
 
 export function DocumentView() {
   const { active } = useDocuments();

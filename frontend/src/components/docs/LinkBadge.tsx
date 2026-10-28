@@ -7,7 +7,7 @@ import { useHostWindow } from '../common/hostWindow';
 
 // Das Blatt ist immer weiß (wie gedruckt), darum feste Farben passend zum Akzent.
 const CHIP =
-  'cursor-pointer rounded-[6px] border border-accent bg-white px-[5px] py-[1px] font-mono text-[10.5px] text-[#a52a21] shadow-[var(--shadow-sm)] hover:bg-[#fbebe9] [@media(pointer:coarse)]:px-[8px] [@media(pointer:coarse)]:py-[5px]';
+  'cursor-pointer rounded-[6px] border border-accent bg-surface px-[5px] py-[1px] font-mono text-[10.5px] text-accent-ink shadow-[var(--shadow-sm)] hover:bg-accent-soft [@media(pointer:coarse)]:px-[8px] [@media(pointer:coarse)]:py-[5px]';
 
 export function LinkBadge({
   links,

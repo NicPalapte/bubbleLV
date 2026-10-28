@@ -359,7 +359,13 @@ export function storageKeys(nodes: Iterable<LVNode>): StorageKeys {
 export function rekey(annotations: Annotations, keys: ReadonlyMap<string, string>): Annotations {
   const { progress, important, highlights, log, documents } = annotations;
   const empty =
-    progress.size + important.size + highlights.size + log.size + documents.marks.length === 0;
+    progress.size +
+      important.size +
+      highlights.size +
+      log.size +
+      documents.marks.length +
+      (documents.rejected ?? []).length ===
+    0;
   if (empty) return annotations;
   const key = (id: string): string => keys.get(id) ?? id;
   return {
