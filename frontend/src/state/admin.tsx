@@ -31,6 +31,8 @@ import {
 import { sameTerm, TABLE_TERMS, type LearnedTerm } from '../lib/highlight/terms';
 import { GRUNDSTOCK } from '../lib/rules/rules';
 
+const GRUNDSTOCK_IDS: ReadonlySet<string> = new Set(GRUNDSTOCK.map((rule) => rule.id));
+
 /** SHA-256 des Passworts; ändern: docs/setup/admin-werkzeuge.md. */
 export const ADMIN_PASSWORD_SHA256 =
   'a7778ae6d93219dfcb6ffbafda058fe96a781fe5cf36b4b481809860d070b327';
@@ -140,9 +142,11 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       forget: (begriff) =>
         change((current) => current.filter((own) => !sameTerm(own.begriff, begriff))),
       ownRules,
-      rules: [...GRUNDSTOCK, ...ownRules],
+      // Kennungen sind eindeutig: bei gleicher Kennung gilt der Grundstock.
+      rules: [...GRUNDSTOCK, ...ownRules.filter((rule) => !GRUNDSTOCK_IDS.has(rule.id))],
       saveRule: (rule) =>
         changeRules((current) => {
+          if (GRUNDSTOCK_IDS.has(rule.id)) return [...current];
           const own: Rule = { ...rule, geltung: 'unternehmen' };
           const at = current.findIndex((other) => other.id === rule.id);
           return at < 0 ? [...current, own] : current.map((other, i) => (i === at ? own : other));
