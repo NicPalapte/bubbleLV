@@ -56,6 +56,9 @@ function scheinPdf(): OpenedPdf {
   return { id: 'abc123def456', name: 'baubeschreibung.pdf', pdf } as unknown as OpenedPdf;
 }
 
+/** So lange darf ein Ladeschritt auf langsamen CI-Rechnern dauern. */
+const LADEN_MS = 15_000;
+
 const FIXTURE_DIR = resolve(process.cwd(), '../packages/core/tests/fixtures');
 
 async function ladeAppMitPdf(): Promise<void> {
@@ -64,16 +67,17 @@ async function ladeAppMitPdf(): Promise<void> {
   fireEvent.change(screen.getByLabelText('GAEB-Datei auswählen'), {
     target: { files: [new File([readFileSync(resolve(FIXTURE_DIR, name))], name)] },
   });
-  await screen.findByRole('main', { name: 'Bubble-Graph' }, { timeout: 5000 });
+  await screen.findByRole('main', { name: 'Bubble-Graph' }, { timeout: LADEN_MS });
   openPdf.mockResolvedValue(scheinPdf());
   fireEvent.change(screen.getByLabelText('PDF auswählen'), {
     target: { files: [new File(['%PDF'], 'baubeschreibung.pdf', { type: 'application/pdf' })] },
   });
-  // Langsame CI-Rechner: Bereich und Vorschläge brauchen dort mehrere Sekunden.
-  await screen.findByRole('group', { name: 'Vorschläge' }, { timeout: 8000 });
+  // Langsame CI-Rechner: Bereich und Vorschläge brauchen dort mehrere Sekunden, im
+  // ersten Test der Datei mit kaltem Modul-Cache auch über 8 s.
+  await screen.findByRole('group', { name: 'Vorschläge' }, { timeout: LADEN_MS });
 }
 
-describe('Vorschläge im Dokument', { timeout: 20000 }, () => {
+describe('Vorschläge im Dokument', { timeout: 3 * LADEN_MS }, () => {
   it('OZ mit Menge zum Vergleich, verknüpft erst nach Klick', async () => {
     await ladeAppMitPdf();
     const schalter = screen.getByRole('group', { name: 'Vorschläge' });
