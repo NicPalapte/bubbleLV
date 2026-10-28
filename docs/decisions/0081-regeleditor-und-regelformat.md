@@ -52,6 +52,11 @@
     unter beiden Positions-Hashes (Feld `links`, Speicherform `v: 6` nur ergänzt).
   - Vorschläge aktiver Regeln werden einmal je LV und Regelstand berechnet und
     zwischengespeichert (`lib/rules/linkSuggestions.ts`), nicht je Render.
+- **Rechnung auf dem UI-Thread, nicht im Worker:** Vorschläge und Treffer-Vorschau laufen
+  im Browserfenster selbst. Bei 10.000 Positionen bleiben beide unter 200 ms („Fenster
+  öffnen“, docs/scope.md); das prüft `frontend/tests/perf/regeln.test.ts`. Regeln ändern
+  sich nach dem Laden, ein Worker müsste das LV dafür ein zweites Mal halten. Reißt der Test
+  die Schranke, zieht die Rechnung in den Worker.
 
 ## Warum
 
