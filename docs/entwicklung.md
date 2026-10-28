@@ -151,13 +151,14 @@ Details → [docs/scope.md](scope.md) · Umsetzungsplan →
 
 ## Deployment und Previews (GitHub Pages)
 
-Die App ist ein statisches Bundle und wird als GitHub Project Page ausgeliefert:
-**https://nicpalapte.github.io/bubbleLV/**
+Die App ist ein statisches Bundle und wird über GitHub Pages unter eigener Domain ausgeliefert:
+**https://conocto.app/** (DNS bei Cloudflare, [Entscheidung 0082](decisions/0082-eigene-domain.md)).
+Die alte Adresse `https://nicpalapte.github.io/bubbleLV/` leitet GitHub dorthin weiter.
 
-| Was           | Wann                         | Wo                                       |
-| ------------- | ---------------------------- | ---------------------------------------- |
-| Live-Stand    | Push auf `main` oder manuell | `https://nicpalapte.github.io/bubbleLV/` |
-| Preview je PR | Kommentar `/preview` im PR   | `.../bubbleLV/pr-preview/pr-<nummer>/`   |
+| Was           | Wann                         | Wo                                     |
+| ------------- | ---------------------------- | -------------------------------------- |
+| Live-Stand    | Push auf `main` oder manuell | `https://conocto.app/`                 |
+| Preview je PR | Kommentar `/preview` im PR   | `https://conocto.app/pr-preview/pr-<nummer>/` |
 
 - [`deploy-pages.yml`](../.github/workflows/deploy-pages.yml) baut `frontend/` und schreibt
   das Ergebnis in den Branch `gh-pages` (Wurzelverzeichnis). Manuell auslösbar über

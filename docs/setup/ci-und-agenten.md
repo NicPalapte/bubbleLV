@@ -59,7 +59,7 @@ Seite kurzzeitig einen Fehler:
    - Source: **Deploy from a branch**
    - Branch: **`gh-pages`** · Ordner: **`/ (root)`**
    - Speichern.
-3. Nach ein paar Minuten prüfen: <https://nicpalapte.github.io/bubbleLV/>
+3. Nach ein paar Minuten prüfen: <https://conocto.app/>
 
 Was hier passiert: Bisher hat GitHub den fertigen Build direkt aus dem Workflow
 übernommen. Dabei kann immer nur *ein* Stand veröffentlicht sein. Ab jetzt liegen alle
