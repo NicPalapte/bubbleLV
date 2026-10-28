@@ -3,7 +3,8 @@
 // markieren, Kategorie wählen. Hier stehen Liste, Löschen und der CSV-Download,
 // mit dem die Begriffe in docs/domain/reference/hervorhebungen.csv wandern. Dazu das
 // Treffer-Protokoll der Materialtabellen — ein Prüfwerkzeug, kein Export für
-// Kalkulatoren, deshalb nicht mehr im Logo-Menü (Entscheidung 0079).
+// Kalkulatoren, deshalb nicht mehr im Logo-Menü (Entscheidung 0079). Reiter „Regeln":
+// visueller Regeleditor (Entscheidung 0081, components/admin/RulesTab.tsx).
 
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -19,12 +20,18 @@ import {
 } from '../../lib/highlight/terms';
 import { categoryOf } from '../../lib/spanCategories';
 import { useAdmin } from '../../state/admin';
+import { RulesTab } from '../admin/RulesTab';
+
+type Tab = 'begriffe' | 'regeln';
 
 const TABS = [
   { value: 'begriffe', label: 'Begriffe' },
+  { value: 'regeln', label: 'Regeln' },
   { value: 'material', label: 'Material', disabled: true, title: 'Kommt später' },
-  { value: 'pruefregeln', label: 'Prüfregeln', disabled: true, title: 'Kommt später' },
 ];
+
+const TOOL_BUTTON =
+  'inline-flex h-[28px] cursor-pointer items-center rounded-[var(--r-pill)] border border-line bg-surface px-[12px] font-mono text-[11.5px] text-ink hover:border-line2 disabled:cursor-default disabled:opacity-40';
 
 function Passwort({ onDone }: { onDone: () => void }) {
   const { unlock } = useAdmin();
@@ -96,14 +103,8 @@ function Zeile({ term, eigen }: { term: LearnedTerm; eigen: boolean }) {
   );
 }
 
-function Begriffe({
-  onClose,
-  onTrefferProtokoll,
-}: {
-  onClose: () => void;
-  onTrefferProtokoll?: () => void;
-}) {
-  const { learned, lock } = useAdmin();
+function Begriffe({ onTrefferProtokoll }: { onTrefferProtokoll?: () => void }) {
+  const { learned } = useAdmin();
   // Tabelle zuerst; ein gleicher Begriff von dir ersetzt den Tabelleneintrag.
   const table = TABLE_TERMS.filter(
     (term) => !learned.some((own) => sameTerm(own.begriff, term.begriff)),
@@ -111,8 +112,6 @@ function Begriffe({
   return (
     <>
       <div className="flex flex-wrap items-center gap-[8px] px-[16px] py-[10px]">
-        <SegmentedControl label="Bereich" options={TABS} value="begriffe" onChange={() => {}} />
-        <span className="flex-1" />
         <button
           type="button"
           disabled={table.length + learned.length === 0}
@@ -134,16 +133,6 @@ function Begriffe({
             Treffer-Protokoll (CSV)
           </button>
         )}
-        <button
-          type="button"
-          onClick={() => {
-            lock();
-            onClose();
-          }}
-          className="inline-flex h-[28px] cursor-pointer items-center rounded-[var(--r-pill)] border border-line bg-surface px-[12px] font-mono text-[11.5px] text-ink hover:border-line2"
-        >
-          Admin beenden
-        </button>
       </div>
       {table.length + learned.length === 0 ? (
         <p className="m-0 px-[16px] pb-[16px] font-mono text-[12px] text-mute">
@@ -174,7 +163,10 @@ export interface AdminDialogProps {
 }
 
 export function AdminDialog({ onClose, onTrefferProtokoll }: AdminDialogProps) {
-  const { unlocked } = useAdmin();
+  const { unlocked, lock, ruleRequest } = useAdmin();
+  const [tab, setTab] = useState<Tab>(ruleRequest === null ? 'begriffe' : 'regeln');
+  // „Als Regel…" im Langtext bei offenem Fenster: auf den Reiter „Regeln" wechseln.
+  if (ruleRequest !== null && tab !== 'regeln') setTab('regeln');
   const dialogRef = useRef<HTMLDivElement>(null);
   useDismiss(dialogRef, true, onClose);
 
@@ -189,7 +181,11 @@ export function AdminDialog({ onClose, onTrefferProtokoll }: AdminDialogProps) {
         ref={dialogRef}
         role="dialog"
         aria-label="Admin-Werkzeuge"
-        className="ov-window max-h-[84vh] w-[min(560px,calc(100vw-32px))] overflow-auto"
+        className={`ov-window max-h-[84vh] overflow-auto ${
+          unlocked && tab === 'regeln'
+            ? 'w-[min(1000px,calc(100vw-32px))]'
+            : 'w-[min(560px,calc(100vw-32px))]'
+        }`}
       >
         <div className="flex h-[44px] items-center border-b border-line pl-[16px] pr-[6px]">
           <b className="flex-1 font-display text-[14px] font-semibold text-ink">Admin-Werkzeuge</b>
@@ -203,7 +199,28 @@ export function AdminDialog({ onClose, onTrefferProtokoll }: AdminDialogProps) {
           </button>
         </div>
         {unlocked ? (
-          <Begriffe onClose={onClose} onTrefferProtokoll={onTrefferProtokoll} />
+          <>
+            <div className="flex flex-wrap items-center gap-[8px] border-b border-line px-[16px] py-[10px]">
+              <SegmentedControl
+                label="Bereich"
+                options={TABS}
+                value={tab}
+                onChange={(value) => setTab(value === 'regeln' ? 'regeln' : 'begriffe')}
+              />
+              <span className="flex-1" />
+              <button
+                type="button"
+                onClick={() => {
+                  lock();
+                  onClose();
+                }}
+                className={TOOL_BUTTON}
+              >
+                Admin beenden
+              </button>
+            </div>
+            {tab === 'regeln' ? <RulesTab /> : <Begriffe onTrefferProtokoll={onTrefferProtokoll} />}
+          </>
         ) : (
           <Passwort onDone={onClose} />
         )}

@@ -34,11 +34,16 @@ import { categoryOf, keysOfLabel, presentCategories } from '../../lib/spanCatego
 import { headingOf } from '../../lib/tree/heading';
 import { mainSectionOf } from '../../lib/tree/mainSection';
 import { applyTerms } from '../../lib/highlight/terms';
+import { blocksFromSelection } from '@core';
+import { applyRules, nameOf, newRule } from '../../lib/rules/rules';
+import { PositionLinks } from './PositionLinks';
 import { useAdmin } from '../../state/admin';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { Highlight, Paint } from '../../lib/annotations';
 
 const NO_MARKS: readonly Highlight[] = [];
+/** Längere Auswahl ergibt keine brauchbare Regel mehr. */
+const MAX_RULE_SELECTION = 400;
 
 // Außerhalb der Komponente: `Date.now()` ist im Render-Pfad nicht rein.
 function paintNow(
@@ -148,12 +153,17 @@ export function PositionDetails({ node, position }: { node: LVNode; position: Po
   const keywords = attrStrings(position.attributes, 'keywords');
   const attributes = displayAttributes(position);
 
-  // Gelernte Begriffe (Entscheidung 0053) kommen beim Anzeigen dazu, nicht in der
-  // Klassifizierung: sie färben nur ein und sind kein Filter.
+  // Gelernte Begriffe (Entscheidung 0053) und aktive Regeln (0081) kommen beim Anzeigen
+  // dazu, nicht in der Klassifizierung: sie färben nur ein und sind kein Filter.
   const admin = useAdmin();
   const spans = useMemo(
-    () => applyTerms(position.longText, attrSpans(position.attributes), admin.terms),
-    [position.longText, position.attributes, admin.terms],
+    () =>
+      applyRules(
+        position,
+        applyTerms(position.longText, attrSpans(position.attributes), admin.terms),
+        admin.rules,
+      ),
+    [position, admin.terms, admin.rules],
   );
   const longTextRef = useRef<HTMLDivElement>(null);
   // Zusätzlich als Zustand: Die Tablet-Leiste muss mitbekommen, wann der Langtext da ist.
@@ -418,6 +428,24 @@ export function PositionDetails({ node, position }: { node: LVNode; position: Po
                       }
                     : null
                 }
+                onRule={
+                  admin.unlocked && paintTarget.text.length <= MAX_RULE_SELECTION
+                    ? () => {
+                        const blocks = blocksFromSelection(paintTarget.text);
+                        const taken = new Set(admin.rules.map((rule) => rule.id));
+                        const rule = newRule(
+                          taken,
+                          blocks.length > 0 ? blocks : undefined,
+                          nameOf(blocks),
+                        );
+                        // Gleich als eigener Entwurf speichern, dann im Editor zeigen.
+                        admin.saveRule(rule);
+                        admin.requestRule(rule);
+                        window.getSelection()?.removeAllRanges();
+                        setPaintTarget(null);
+                      }
+                    : null
+                }
                 onClose={closePaint}
               />
             )}
@@ -461,6 +489,8 @@ export function PositionDetails({ node, position }: { node: LVNode; position: Po
         />
 
         <DocLinks positionId={node.id} />
+
+        <PositionLinks positionId={node.id} />
 
         {/* Eigene Notizen zuletzt: erst lesen, was die Datei sagt (Entscheidung 0047). */}
         <NoteBlock positionId={node.id} />

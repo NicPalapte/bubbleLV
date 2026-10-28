@@ -15,6 +15,7 @@ gepflegt werden — nicht vom Modell erfunden oder aus dem Internet geraten (sie
 | [`vob-nebenleistungen.csv`](vob-nebenleistungen.csv)         | Nebenleistungen je ATV — Regeln V8, V9                                                                                                                                                      | VOB/C des Owners                                   |
 | [`einheiten-gruppen.csv`](einheiten-gruppen.csv)             | Einheiten, die dasselbe bedeuten („Stk" = „Stück")                                                                                                                                          | Owner                                              |
 | [`hervorhebungen.csv`](hervorhebungen.csv)                   | Begriffe, die im Langtext hervorgehoben werden (Material, Maße, Wichtig, nicht hervorheben) — Entscheidung 0053. Pflege: [`../../setup/admin-werkzeuge.md`](../../setup/admin-werkzeuge.md) | Owner (Admin-Werkzeuge)                            |
+| [`regeln.json`](regeln.json)                                 | Grundstock-Regeln `bubble-rule-v1` für alle Firmen (hervorheben, Positionen verbinden) — Entscheidung 0081. Pflege: [`../../setup/admin-werkzeuge.md`](../../setup/admin-werkzeuge.md) | Owner (Admin-Werkzeuge)                            |
 
 ## `pruefregeln.csv` — Stammdaten je Regel
 

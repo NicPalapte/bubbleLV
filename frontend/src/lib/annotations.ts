@@ -25,6 +25,7 @@ import {
   type DocNotes,
   type StoredDocNotes,
 } from './docs/docNotes';
+import { rekeyLinks, toLinks, type PositionLink } from './positionLinks';
 import type { LVNode } from '../types/lvNode';
 
 /** Fortschritt; „offen" ist kein Wert, sondern das Fehlen eines Eintrags. */
@@ -83,6 +84,8 @@ export interface Annotations {
   readonly log: ReadonlyMap<string, readonly LogEntry[]>;
   /** Stellen in Begleitdokumenten (Entscheidung 0072). */
   readonly documents: DocNotes;
+  /** Urteile über Verbindungen aus Regeln (Entscheidung 0081); fehlt = keine. */
+  readonly links?: readonly PositionLink[];
 }
 
 export const EMPTY_ANNOTATIONS: Annotations = {
@@ -357,14 +360,15 @@ export function storageKeys(nodes: Iterable<LVNode>): StorageKeys {
  * Notizen aus v0.21 und älter (Knoten-ID) finden ihre Position direkt.
  */
 export function rekey(annotations: Annotations, keys: ReadonlyMap<string, string>): Annotations {
-  const { progress, important, highlights, log, documents } = annotations;
+  const { progress, important, highlights, log, documents, links = [] } = annotations;
   const empty =
     progress.size +
       important.size +
       highlights.size +
       log.size +
       documents.marks.length +
-      (documents.rejected ?? []).length ===
+      (documents.rejected ?? []).length +
+      links.length ===
     0;
   if (empty) return annotations;
   const key = (id: string): string => keys.get(id) ?? id;
@@ -374,12 +378,14 @@ export function rekey(annotations: Annotations, keys: ReadonlyMap<string, string
     highlights: new Map([...highlights].map(([id, list]) => [key(id), list])),
     log: new Map([...log].map(([id, entries]) => [key(id), entries])),
     documents: rekeyDocNotes(documents, keys),
+    ...(links.length > 0 ? { links: rekeyLinks(links, keys) } : {}),
   };
 }
 
 /**
  * Form für die IndexedDB: Arrays statt Set/Map, damit auch ältere Browser klonen.
- * `v: 6`: dazu Stellen in Begleitdokumenten (Entscheidung 0072).
+ * `v: 6`: dazu Stellen in Begleitdokumenten (Entscheidung 0072), seit 0081 optional
+ * `links` (Verbindungen aus Regeln) — ältere Versionen lesen das Feld einfach nicht.
  * `v: 5`: dazu Anstreichungen (Entscheidung 0063). `v: 4`: Fortschritt + Wichtig
  * (Entscheidung 0062). Schlüssel ist der Positions-Hash.
  * Ältere Formen liest `fromStored`: `v: 3` (drei Marker, Hash), `v: 2` (drei Marker,
@@ -392,6 +398,7 @@ export interface StoredAnnotations {
   readonly highlights: ReadonlyArray<readonly [string, readonly Highlight[]]>;
   readonly log: ReadonlyArray<readonly [string, readonly LogEntry[]]>;
   readonly documents: StoredDocNotes;
+  readonly links?: readonly PositionLink[];
 }
 
 /** `annotations` muss schon nach Hash geschlüsselt sein (`rekey(…, keys.toHash)`). */
@@ -403,6 +410,7 @@ export function toStored(annotations: Annotations): StoredAnnotations {
     highlights: [...annotations.highlights],
     log: [...annotations.log],
     documents: toStoredDocNotes(annotations.documents),
+    ...((annotations.links ?? []).length > 0 ? { links: annotations.links } : {}),
   };
 }
 
@@ -534,7 +542,15 @@ export function fromStored(value: unknown): Annotations {
         );
     }
     const documents = raw.v === 6 ? fromStoredDocNotes(raw.documents) : EMPTY_DOC_NOTES;
-    return { progress, important, highlights, log, documents };
+    const links = raw.v === 6 ? toLinks(raw.links) : [];
+    return {
+      progress,
+      important,
+      highlights,
+      log,
+      documents,
+      ...(links.length > 0 ? { links } : {}),
+    };
   }
 
   if (raw.v === 2 || raw.v === 3) {

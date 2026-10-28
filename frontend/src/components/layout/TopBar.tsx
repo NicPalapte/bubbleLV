@@ -38,7 +38,9 @@ export function TopBar() {
   const [kuerzel, setKuerzel] = useState(false);
   /** „Admin-Werkzeuge" aus dem Logo-Menü (Entscheidung 0053). */
   const [adminOffen, setAdminOffen] = useState(false);
-  const adminFrei = useAdmin().unlocked;
+  const { unlocked: adminFrei, ruleRequest, requestRule } = useAdmin();
+  // „Als Regel…" im Langtext öffnet den Regeleditor (Entscheidung 0081).
+  if (ruleRequest !== null && !adminOffen) setAdminOffen(true);
   /** „Notizen laden…": versteckter Dateidialog, danach das Ergebnisfenster (0061). */
   const notizDateiRef = useRef<HTMLInputElement>(null);
   const pdfDateiRef = useRef<HTMLInputElement>(null);
@@ -185,7 +187,10 @@ export function TopBar() {
       {kuerzel && <ShortcutsDialog onClose={() => setKuerzel(false)} />}
       {adminOffen && (
         <AdminDialog
-          onClose={() => setAdminOffen(false)}
+          onClose={() => {
+            setAdminOffen(false);
+            requestRule(null);
+          }}
           onTrefferProtokoll={loaded ? mitnehmen.trefferAlsCsv : undefined}
         />
       )}

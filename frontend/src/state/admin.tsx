@@ -8,10 +8,12 @@
 // „Freigeschaltet" ist reiner UI-Zustand und überlebt keinen Reload. Die gelernten
 // Begriffe dagegen bleiben in diesem Browser (lib/persist/lastLv.ts) und färben
 // den Langtext auch ohne Admin-Zugang — es ist ja der Browser des Admins.
+//
+// Ebenso die eigenen Regeln aus dem Regeleditor (Entscheidung 0081). Der Grundstock
+// kommt aus docs/domain/reference/regeln.json und lässt sich hier nicht ändern.
 
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -19,8 +21,15 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { readLearnedTerms, saveLearnedTerms } from '../lib/persist/lastLv';
+import type { Rule } from '@core';
+import {
+  readLearnedTerms,
+  readOwnRules,
+  saveLearnedTerms,
+  saveOwnRules,
+} from '../lib/persist/lastLv';
 import { sameTerm, TABLE_TERMS, type LearnedTerm } from '../lib/highlight/terms';
+import { GRUNDSTOCK } from '../lib/rules/rules';
 
 /** SHA-256 des Passworts; ändern: docs/setup/admin-werkzeuge.md. */
 export const ADMIN_PASSWORD_SHA256 =
@@ -43,33 +52,46 @@ interface AdminContextValue {
   /** Lernt einen Begriff; ein gleicher Begriff wird ersetzt. */
   learn(term: LearnedTerm): void;
   forget(begriff: string): void;
+  /** Eigene Regeln (Geltung `unternehmen`), im Browser gespeichert. */
+  readonly ownRules: readonly Rule[];
+  /** Grundstock + eigene — das, was Langtext und Positionskarte anwenden. */
+  readonly rules: readonly Rule[];
+  /** Speichert eine eigene Regel; gleiche `id` wird ersetzt. */
+  saveRule(rule: Rule): void;
+  deleteRule(id: string): void;
+  /** Regel im Editor öffnen, z. B. aus einer Markierung im Langtext. */
+  readonly ruleRequest: Rule | null;
+  requestRule(rule: Rule | null): void;
 }
 
-const AdminContext = createContext<AdminContextValue | null>(null);
-
-export function AdminProvider({ children }: { children: ReactNode }) {
-  const [unlocked, setUnlocked] = useState(false);
-  const [learned, setLearned] = useState<readonly LearnedTerm[]>([]);
-  // Erst nach dem Lesen schreiben — sonst überschriebe der leere Anfangswert
-  // den Speicher, bevor er gelesen ist.
+/**
+ * Liste im Browser-Speicher: erst nach dem Lesen schreiben — sonst überschriebe der
+ * leere Anfangswert den Speicher, bevor er gelesen ist. Gescheitertes Lesen (`null`):
+ * nichts speichern, Änderungen gelten nur bis zum Reload.
+ */
+function usePersistedList<T>(
+  read: () => Promise<T[] | null>,
+  save: (items: readonly T[]) => Promise<boolean>,
+  same: (a: T, b: T) => boolean,
+): [readonly T[], (next: (current: readonly T[]) => T[]) => void] {
+  const [items, setItems] = useState<readonly T[]>([]);
   const loaded = useRef(false);
 
   useEffect(() => {
     let active = true;
-    void readLearnedTerms().then((stored) => {
-      // Lesen gescheitert: nichts speichern, das Gelernte gilt nur bis zum Reload.
+    void read().then((stored) => {
       if (!active || stored === null) return;
       loaded.current = true;
-      // Was vor dem Lesen schon gelernt wurde, bleibt vorn.
-      setLearned((current) => [
+      // Was vor dem Lesen schon da war, bleibt vorn.
+      setItems((current) => [
         ...current,
-        ...stored.filter((term) => !current.some((own) => sameTerm(own.begriff, term.begriff))),
+        ...stored.filter((item) => !current.some((own) => same(own, item))),
       ]);
     });
     return () => {
       active = false;
     };
-  }, []);
+  }, [read, same]);
 
   // Speichern nach dem Rendern, nicht im State-Updater: React darf Updater
   // mehrfach ausführen, dann liefen Schreibvorgänge doppelt und in unklarer Folge.
@@ -78,12 +100,22 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const queue = useRef<Promise<unknown>>(Promise.resolve());
   useEffect(() => {
     if (!loaded.current) return;
-    queue.current = queue.current.then(() => saveLearnedTerms(learned));
-  }, [learned]);
+    queue.current = queue.current.then(() => save(items));
+  }, [items, save]);
 
-  const change = useCallback((next: (current: readonly LearnedTerm[]) => LearnedTerm[]) => {
-    setLearned(next);
-  }, []);
+  return [items, setItems];
+}
+
+const sameLearned = (a: LearnedTerm, b: LearnedTerm): boolean => sameTerm(a.begriff, b.begriff);
+const sameRule = (a: Rule, b: Rule): boolean => a.id === b.id;
+
+const AdminContext = createContext<AdminContextValue | null>(null);
+
+export function AdminProvider({ children }: { children: ReactNode }) {
+  const [unlocked, setUnlocked] = useState(false);
+  const [learned, change] = usePersistedList(readLearnedTerms, saveLearnedTerms, sameLearned);
+  const [ownRules, changeRules] = usePersistedList(readOwnRules, saveOwnRules, sameRule);
+  const [ruleRequest, setRuleRequest] = useState<Rule | null>(null);
 
   const value = useMemo<AdminContextValue>(
     () => ({
@@ -107,8 +139,19 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         ]),
       forget: (begriff) =>
         change((current) => current.filter((own) => !sameTerm(own.begriff, begriff))),
+      ownRules,
+      rules: [...GRUNDSTOCK, ...ownRules],
+      saveRule: (rule) =>
+        changeRules((current) => {
+          const own: Rule = { ...rule, geltung: 'unternehmen' };
+          const at = current.findIndex((other) => other.id === rule.id);
+          return at < 0 ? [...current, own] : current.map((other, i) => (i === at ? own : other));
+        }),
+      deleteRule: (id) => changeRules((current) => current.filter((rule) => rule.id !== id)),
+      ruleRequest,
+      requestRule: setRuleRequest,
     }),
-    [unlocked, learned, change],
+    [unlocked, learned, change, ownRules, changeRules, ruleRequest],
   );
 
   return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;
@@ -122,6 +165,12 @@ const OUTSIDE: AdminContextValue = {
   terms: TABLE_TERMS,
   learn: () => undefined,
   forget: () => undefined,
+  ownRules: [],
+  rules: GRUNDSTOCK,
+  saveRule: () => undefined,
+  deleteRule: () => undefined,
+  ruleRequest: null,
+  requestRule: () => undefined,
 };
 
 /** Außerhalb des Providers (Tests einzelner Komponenten): nur die Tabelle, kein Admin. */
