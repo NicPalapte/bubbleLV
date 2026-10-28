@@ -1,0 +1,22 @@
+# Conocto (Beta): Entscheidung 0083.
+# Suchmaschinen dürfen lesen, damit sie das noindex in index.html sehen und die Seite
+# nicht listen. KI-Crawler sind gesperrt.
+
+User-agent: GPTBot
+User-agent: ChatGPT-User
+User-agent: OAI-SearchBot
+User-agent: ClaudeBot
+User-agent: Claude-Web
+User-agent: anthropic-ai
+User-agent: CCBot
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: PerplexityBot
+User-agent: Bytespider
+User-agent: Meta-ExternalAgent
+User-agent: Amazonbot
+User-agent: cohere-ai
+Disallow: /
+
+User-agent: *
+Disallow: /pr-preview/
