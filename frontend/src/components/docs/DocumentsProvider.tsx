@@ -6,6 +6,9 @@
 // Mehrere Dokumente können nacheinander offen sein, eines ist vorn. Ein neues LV
 // schließt alle: ihre Notizen gehören zum alten LV.
 //
+// Die PDFs haben eine eigene Suche (Entscheidung 0083): Der Begriff liegt hier, nicht im
+// Viewer-Zustand, und filtert das LV nie.
+//
 // Vorschläge zum Verknüpfen (OZ und Mengen, Entscheidung 0080) rechnet ein Worker Seite
 // für Seite; hier liegen sie roh, ohne Abgleich mit Notizen — den macht die Anzeige.
 
@@ -52,8 +55,11 @@ export interface DocumentsApi {
   activate: (id: string) => void;
   /** Zeigt die Stelle; ist ihr Dokument nicht offen, passiert nichts. */
   jumpTo: (spot: DocSpot) => void;
+  /** Suchbegriff fürs PDF, für alle offenen PDFs derselbe; leert sich mit neuem LV. */
+  readonly docSearch: string;
+  setDocSearch: (value: string) => void;
   /**
-   * Fundstellen der Suche aus der Suchleiste je offenem Dokument (Entscheidung 0077).
+   * Fundstellen von `docSearch` je offenem Dokument (Entscheidung 0083).
    * Fehlt ein Dokument, läuft die Suche darin noch.
    */
   readonly searchHits: ReadonlyMap<string, readonly DocHit[]>;
@@ -88,17 +94,14 @@ const NO_SUGGESTIONS: ReadonlyMap<string, readonly DocSuggestion[]> = new Map();
 const ALL_SUGGESTIONS: Readonly<Record<LinkSource, boolean>> = { oz: true, menge: true };
 
 export function DocumentsProvider({ children }: { children: ReactNode }) {
-  const {
-    lv,
-    index,
-    filter: { search },
-  } = useViewer();
+  const { lv, index } = useViewer();
   const dispatch = useViewerDispatch();
   const [docs, setDocs] = useState<OpenedPdf[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [jump, setJump] = useState<DocJump | null>(null);
+  const [docSearch, setDocSearch] = useState('');
   const texts = useRef(new Map<string, Promise<string>>());
   // Kennungen der angemeldeten Dokumente, sofort gesetzt: `docsRef` folgt erst nach dem
   // Rendern, zwei kurz nacheinander abgeworfene gleiche PDFs kämen sonst beide durch.
@@ -121,6 +124,7 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
     setActiveId(null);
     setJump(null);
     setError(null);
+    setDocSearch('');
   }, [lv]);
   useEffect(
     () => () => {
@@ -244,9 +248,10 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
     return text;
   }, []);
 
-  // Die eine Suche läuft auch durch alle offenen PDFs — Seite für Seite, abbrechbar,
-  // kurz gesammelt, damit nicht jeder neue Begriff sofort alle Seiten liest.
-  const needle = docNeedleOf(search);
+  // Die PDF-Suche läuft durch alle offenen PDFs — Seite für Seite, abbrechbar, kurz
+  // gesammelt, damit nicht jeder Tastendruck sofort alle Seiten liest. Die anderen PDFs
+  // braucht die Zählung neben dem Suchfeld.
+  const needle = docNeedleOf(docSearch);
   const [found, setFound] = useState<{
     needle: string;
     hits: ReadonlyMap<string, readonly DocHit[]>;
@@ -358,6 +363,8 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
       close,
       activate,
       jumpTo,
+      docSearch,
+      setDocSearch,
       searchHits,
       pageText,
       suggestions,
@@ -375,6 +382,8 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
       close,
       activate,
       jumpTo,
+      docSearch,
+      setDocSearch,
       searchHits,
       pageText,
       suggestions,

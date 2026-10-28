@@ -1,5 +1,5 @@
-// Die eine Suche auch in Begleitdokumenten (Entscheidung 0077): derselbe Begriff wie in
-// der Suchleiste, als zusammenhängender Text ohne Groß/klein gesucht. Keine Deutung,
+// Suche in Begleitdokumenten (Entscheidungen 0077, 0083): der Begriff aus dem Suchfeld im
+// Bereich „Dokument“, als zusammenhängender Text ohne Groß/klein gesucht. Keine Deutung,
 // nur Fundstellen.
 
 /** Mindestlänge — ein Zeichen fände jede Seite. */

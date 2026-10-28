@@ -9,6 +9,18 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.45.0 — 28.10.2026 · Eigene Suche im PDF
+
+- **Suchleiste oben sucht nur im LV.** Die Liste „Treffer je Quelle“ darunter gibt es
+  nicht mehr.
+- **Eigenes Suchfeld im Dokument:** „Im PDF suchen“ sucht nur im PDF und ändert Graph und
+  Tabelle nicht. Enter und ▲ ▼ springen von Treffer zu Treffer.
+- **Treffer in anderen PDFs:** Sind mehrere PDFs offen, zeigt eine kleine Liste die Zahl der
+  Treffer je PDF. Ein Klick wechselt dorthin.
+- **Strg F im Dokument** holt das PDF-Suchfeld, wenn du zuletzt ins Dokument geklickt hast.
+- **Beim Markieren:** Im Langtext gibt es neben „In Suche übernehmen“ auch „Im PDF suchen“.
+  Im PDF heißt es „Im PDF suchen“ und „Im LV suchen“.
+
 ## 0.44.0 — 28.10.2026 · Regeleditor (Prototyp)
 
 - **Eigene Regeln bauen:** In den Admin-Werkzeugen gibt es den Reiter „Regeln“. Eine Regel

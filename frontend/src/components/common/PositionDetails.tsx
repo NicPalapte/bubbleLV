@@ -13,12 +13,12 @@ import {
   locate,
   PAINT_SECTION,
   paintSelection,
-  searchTermOf,
   usePaintHighlights,
   useTouchSelectionMenu,
   type PaintTarget,
 } from './paint';
 import { shownText } from './shownText';
+import { useTextSearches } from './useTextSearches';
 import { HintBlock, HintCount } from '../check/HintBlock';
 import { DocLinks } from '../docs/DocLinks';
 import {
@@ -142,6 +142,7 @@ export function PositionDetails({ node, position }: { node: LVNode; position: Po
     annotations,
   } = useViewer();
   const dispatch = useViewerDispatch();
+  const searchesFor = useTextSearches();
   const parent = parents.get(node.id) ?? null;
 
   const positionsart = FACETS_BY_ID.get('positionsart');
@@ -310,11 +311,10 @@ export function PositionDetails({ node, position }: { node: LVNode; position: Po
       {shortPick !== null && (
         <SelectionMenu
           target={shortPick}
-          onSearch={() => {
-            dispatch({ type: 'search', value: searchTermOf(shortPick.text) });
+          searches={searchesFor(shortPick.text, () => {
             window.getSelection()?.removeAllRanges();
             setShortPick(null);
-          }}
+          })}
           onCopy={() => {
             setShortPick(null);
             copySelection(shortPick.text, () =>
@@ -391,11 +391,10 @@ export function PositionDetails({ node, position }: { node: LVNode; position: Po
                   window.getSelection()?.removeAllRanges();
                   setPaintTarget(null);
                 }}
-                onSearch={() => {
-                  dispatch({ type: 'search', value: searchTermOf(paintTarget.text) });
+                searches={searchesFor(paintTarget.text, () => {
                   window.getSelection()?.removeAllRanges();
                   setPaintTarget(null);
-                }}
+                })}
                 onCopy={() => {
                   setPaintTarget(null);
                   copySelection(paintTarget.text, () =>

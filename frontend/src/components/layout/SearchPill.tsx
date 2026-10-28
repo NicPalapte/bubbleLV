@@ -1,18 +1,15 @@
 // Die eine Suchleiste: Suchfeld, aktive Filter als entfernbare Chips, „Nicht-Treffer"
 // dimmen/ausblenden und „+ Filter". Steht in der Kopfleiste und in Graph und Tabelle im
 // eigenen Browserfenster (Entscheidung 0039) — immer auf demselben Filterzustand.
+// Sie durchsucht nur das LV; PDFs haben ihre eigene Suche (Entscheidung 0083).
 // Der Schalter „Nicht-Treffer" sitzt hier, weil er für Suche und alle Filter gilt
 // (docs/decisions/0058-nicht-treffer-in-der-suche.md). Er regelt auch, ob ein
 // hervorgehobener Abschnitt die übrigen blass zeigt oder ausblendet, und erscheint
 // deshalb auch dann (Entscheidung 0078).
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { useOptionalDocuments } from '../docs/DocumentsProvider';
-import { SearchSources } from '../docs/SearchSources';
-import { useDismiss } from '../common/useDismiss';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { useHostWindow } from '../common/hostWindow';
 import { useSearchDraft } from '../common/useSearchDraft';
-import { docNeedleOf } from '../../lib/docs/docSearch';
 import { PROGRESS_INFO } from '../../lib/annotations';
 import { FACETS, facetOptionLabel } from '../../lib/facets';
 import { formatCount } from '../../lib/format';
@@ -153,8 +150,6 @@ export interface SearchPillProps {
   /** Filterleiste unter dieser Suche offen? Jedes Fenster hat seine eigene. */
   filterOpen: boolean;
   onFilterOpen: (open: boolean) => void;
-  /** „Datei wählen…" für ein PDF, das nach dem Neuladen nicht mehr offen ist. */
-  onPickPdf?: () => void;
   /** Breite und Lage in der umgebenden Zeile. */
   className?: string;
   /** Für die Tour: nur die Suche in der Kopfleiste. */
@@ -164,33 +159,15 @@ export interface SearchPillProps {
 export function SearchPill({
   filterOpen,
   onFilterOpen,
-  onPickPdf,
   className = '',
   tour = false,
 }: SearchPillProps) {
-  const {
-    filter: { search },
-    annotations,
-    view,
-    active,
-  } = useViewer();
+  const { view, active } = useViewer();
   const spotlighted = view.graph.layout === 'lv' && view.graph.spotlight !== null;
-  const documents = useOptionalDocuments();
   const host = useHostWindow();
   const inputRef = useRef<HTMLInputElement>(null);
   const [draft, changeSearch] = useSearchDraft();
   const chips = useActiveChips();
-
-  // Unter der Suchleiste: Treffer je Quelle (LV und PDFs, Entscheidung 0077). Nur, wenn
-  // es überhaupt ein PDF gibt — sonst sagen Graph und Tabelle schon alles.
-  const pillRef = useRef<HTMLDivElement>(null);
-  const sourcesRef = useRef<HTMLDivElement>(null);
-  const [sourcesOpen, setSourcesOpen] = useState(false);
-  const closeSources = useCallback(() => setSourcesOpen(false), []);
-  useDismiss([pillRef, sourcesRef], sourcesOpen, closeSources);
-  const hasSources =
-    docNeedleOf(search) !== '' &&
-    ((documents?.docs.length ?? 0) > 0 || annotations.documents.docs.size > 0);
 
   // "/" und Strg/Cmd + K holen die Suche — im Fenster, in dem sie steht. Strg K greift
   // auch in Eingabefeldern: wer es drückt, will suchen; "/" dagegen ist dort ein Zeichen.
@@ -210,84 +187,63 @@ export function SearchPill({
   }, [host]);
 
   return (
-    <>
-      <div
-        ref={pillRef}
-        data-tour={tour ? 'search' : undefined}
-        className={`flex h-[36px] min-w-0 items-center gap-[6px] overflow-hidden rounded-[var(--r-pill)] border border-line bg-surface pl-[12px] pr-[6px] shadow-[var(--shadow-sm)] focus-within:border-accent focus-within:shadow-[0_0_0_3px_var(--accent-soft)] ${className}`}
-      >
-        <span className="text-[14px] text-mute" aria-hidden="true">
-          ⌕
-        </span>
-        {chips.slice(0, MAX_CHIPS).map((chip) => (
-          <span
-            key={chip.key}
-            className="inline-flex h-[24px] max-w-[160px] shrink-0 items-center gap-[6px] rounded-[var(--r-pill)] bg-accent-soft pl-[9px] pr-[6px] font-mono text-[11.5px] text-accent-ink"
-          >
-            <span className="truncate">{chip.label}</span>
-            <button
-              type="button"
-              className="cursor-pointer border-none bg-transparent px-[3px] py-0 text-[11px] leading-none text-accent-ink opacity-70 hover:opacity-100"
-              onClick={chip.remove}
-              aria-label={`${chip.label} entfernen`}
-            >
-              ✕
-            </button>
-          </span>
-        ))}
-        {chips.length > MAX_CHIPS && (
+    <div
+      data-tour={tour ? 'search' : undefined}
+      className={`flex h-[36px] min-w-0 items-center gap-[6px] overflow-hidden rounded-[var(--r-pill)] border border-line bg-surface pl-[12px] pr-[6px] shadow-[var(--shadow-sm)] focus-within:border-accent focus-within:shadow-[0_0_0_3px_var(--accent-soft)] ${className}`}
+    >
+      <span className="text-[14px] text-mute" aria-hidden="true">
+        ⌕
+      </span>
+      {chips.slice(0, MAX_CHIPS).map((chip) => (
+        <span
+          key={chip.key}
+          className="inline-flex h-[24px] max-w-[160px] shrink-0 items-center gap-[6px] rounded-[var(--r-pill)] bg-accent-soft pl-[9px] pr-[6px] font-mono text-[11.5px] text-accent-ink"
+        >
+          <span className="truncate">{chip.label}</span>
           <button
             type="button"
-            onClick={() => onFilterOpen(true)}
-            className="shrink-0 cursor-pointer whitespace-nowrap border-none bg-transparent p-0 font-mono text-[10px] text-accent"
+            className="cursor-pointer border-none bg-transparent px-[3px] py-0 text-[11px] leading-none text-accent-ink opacity-70 hover:opacity-100"
+            onClick={chip.remove}
+            aria-label={`${chip.label} entfernen`}
           >
-            +{formatCount(chips.length - MAX_CHIPS)} weitere
+            ✕
           </button>
-        )}
-        <input
-          ref={inputRef}
-          value={draft}
-          onChange={(event) => {
-            changeSearch(event.target.value);
-            setSourcesOpen(true);
-          }}
-          onFocus={() => setSourcesOpen(true)}
-          onKeyDown={(event) => {
-            if (event.key === 'Escape') setSourcesOpen(false);
-          }}
-          placeholder={
-            (documents?.docs.length ?? 0) > 0
-              ? 'Positionen, OZ, Langtext, PDFs durchsuchen'
-              : 'Positionen, OZ, Langtext durchsuchen'
-          }
-          aria-label="Suche"
-          className="min-w-[60px] flex-1 border-none bg-transparent font-mono text-[13px] text-ink outline-none placeholder:text-mute"
-        />
-        <span className="hidden rounded-[5px] border border-line bg-sunken px-[5px] py-[1px] font-mono text-[11px] text-mute [@media(pointer:fine)]:inline">
-          /
         </span>
-        {(active.filtering || spotlighted) && <HideModeToggle />}
+      ))}
+      {chips.length > MAX_CHIPS && (
         <button
           type="button"
-          aria-expanded={filterOpen}
-          data-tour={tour ? 'filter' : undefined}
-          onClick={() => onFilterOpen(!filterOpen)}
-          className={`inline-flex h-[26px] shrink-0 cursor-pointer items-center whitespace-nowrap rounded-[var(--r-pill)] border px-[10px] font-mono text-[10.5px] ${
-            filterOpen
-              ? 'border-solid border-accent bg-accent-soft text-accent-ink'
-              : 'border-dashed border-line2 bg-transparent text-dim hover:border-solid hover:border-accent hover:bg-accent-soft hover:text-accent-ink'
-          }`}
+          onClick={() => onFilterOpen(true)}
+          className="shrink-0 cursor-pointer whitespace-nowrap border-none bg-transparent p-0 font-mono text-[10px] text-accent"
         >
-          + Filter
+          +{formatCount(chips.length - MAX_CHIPS)} weitere
         </button>
-      </div>
-      <SearchSources
-        ref={sourcesRef}
-        open={sourcesOpen && hasSources}
-        anchorRef={pillRef}
-        onPick={onPickPdf}
-        onDone={closeSources}
+      )}
+      <input
+        ref={inputRef}
+        value={draft}
+        onChange={(event) => changeSearch(event.target.value)}
+        placeholder="Positionen, OZ, Langtext durchsuchen"
+        aria-label="Suche"
+        className="min-w-[60px] flex-1 border-none bg-transparent font-mono text-[13px] text-ink outline-none placeholder:text-mute"
       />
-    </>
+      <span className="hidden rounded-[5px] border border-line bg-sunken px-[5px] py-[1px] font-mono text-[11px] text-mute [@media(pointer:fine)]:inline">
+        /
+      </span>
+      {(active.filtering || spotlighted) && <HideModeToggle />}
+      <button
+        type="button"
+        aria-expanded={filterOpen}
+        data-tour={tour ? 'filter' : undefined}
+        onClick={() => onFilterOpen(!filterOpen)}
+        className={`inline-flex h-[26px] shrink-0 cursor-pointer items-center whitespace-nowrap rounded-[var(--r-pill)] border px-[10px] font-mono text-[10.5px] ${
+          filterOpen
+            ? 'border-solid border-accent bg-accent-soft text-accent-ink'
+            : 'border-dashed border-line2 bg-transparent text-dim hover:border-solid hover:border-accent hover:bg-accent-soft hover:text-accent-ink'
+        }`}
+      >
+        + Filter
+      </button>
+    </div>
   );
 }

@@ -158,7 +158,6 @@ export function TopBar() {
               tour
               filterOpen={filterOpen}
               onFilterOpen={(open) => dispatch({ type: 'filterBar', open })}
-              onPickPdf={() => pdfDateiRef.current?.click()}
               className="mx-auto max-w-[620px] flex-1"
             />
 

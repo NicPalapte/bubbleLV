@@ -1,6 +1,6 @@
 # 0077 – Eine Suche für LV und PDFs, Begriff aus dem Text übernehmen
 
-- **Status:** akzeptiert
+- **Status:** ersetzt durch 0083
 - **Datum:** 2026-10-26
 - **Betrifft:** Suchleiste (`frontend/src/components/layout/TopBar.tsx`), Liste darunter
   (`frontend/src/components/docs/SearchSources.tsx`), Suche in PDFs
