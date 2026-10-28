@@ -13,5 +13,10 @@ export const graphOverlayProps = { [GRAPH_OVERLAY_ATTR]: '' } as const;
 
 /** True, wenn das Ereignis aus einer markierten Überlagerung stammt. */
 export function isOverlayEvent(target: EventTarget | null): boolean {
-  return target instanceof Element && target.closest(`[${GRAPH_OVERLAY_ATTR}]`) !== null;
+  // Kein `instanceof Element`: im eigenen Browserfenster (Entscheidung 0039) stammt das
+  // Ziel aus einem anderen Fenster und damit einer anderen `Element`-Klasse.
+  const element = target as Element | null;
+  return (
+    typeof element?.closest === 'function' && element.closest(`[${GRAPH_OVERLAY_ATTR}]`) !== null
+  );
 }

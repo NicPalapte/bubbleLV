@@ -1,7 +1,8 @@
-// Steuerung unten rechts am Graphen: Zoom und Einpassen, Hinweise ein/aus und die
-// Darstellung — Größe der Positionen und Gliederung (docs/decisions/0035-graph-
-// gliederung.md). Die Darstellung ist eingeklappt; der Knopf nennt den Stand und
-// klappt sie darüber auf (Issue #154: „Visualisierung" kam aus dem Filterfenster).
+// Steuerung unten rechts am Graphen, in einer Zeile mit der Legende (GraphHeader):
+// Zoom und Einpassen, Hinweise ein/aus und die Darstellung — Größe der Positionen
+// und Gliederung (docs/decisions/0035-graph-gliederung.md). Die Darstellung ist
+// eingeklappt; der Knopf nennt den Stand und klappt sie darüber auf (Issue #154:
+// „Visualisierung" kam aus dem Filterfenster).
 // Liest und schreibt direkt im Viewer-Zustand; Zoom gehört dem Graphen.
 
 import { DisplayControls, Row } from '../filter/DisplayControls';
@@ -44,7 +45,7 @@ export function GraphControls({ onFit, onFitSelection, onZoom }: GraphControlsPr
       onMouseDown={swallow}
       onClick={swallow}
       onDoubleClick={swallow}
-      className="ov-glass absolute bottom-[16px] right-[16px] z-[8] flex items-center gap-[8px] !rounded-[var(--r-md)] p-[6px]"
+      className="ov-glass pointer-events-auto relative ml-auto flex shrink-0 items-center gap-[8px] !rounded-[var(--r-md)] p-[6px]"
     >
       <div className="flex items-center gap-[2px] border-r border-line pr-[6px]">
         <button

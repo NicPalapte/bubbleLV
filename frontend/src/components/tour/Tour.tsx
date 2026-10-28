@@ -261,7 +261,8 @@ export function Tour() {
         // die Positionskarte schließen (useDismiss, `yieldToDialogs`).
         role="group"
         aria-label="Tour anbieten"
-        className="ov-glass absolute bottom-[112px] left-[16px] z-[12] flex items-center gap-[10px] py-[8px] pl-[14px] pr-[8px] lg:bottom-[68px]"
+        // Über Legende und Steuerung unten links — auch wenn beide zwei Zeilen brauchen.
+        className="ov-glass absolute bottom-[112px] left-[16px] z-[12] flex items-center gap-[10px] py-[8px] pl-[14px] pr-[8px]"
       >
         <span className="font-sans text-[14px] text-ink">Neu hier?</span>
         <button

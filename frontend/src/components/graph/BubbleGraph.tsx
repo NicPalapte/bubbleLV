@@ -25,6 +25,7 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from 'react';
 import { GraphControls } from './GraphControls';
+import { BELOW_KPIS, GraphHeader, HEADER_NARROW_WIDTH } from './GraphHeader';
 import { useHostWindow } from '../common/hostWindow';
 import { usePositionMenu } from '../common/positionMenuContext';
 import {
@@ -783,6 +784,8 @@ export function BubbleGraph({ root }: { root: LVNode }) {
     // Tippen im Kommentarfeld der Karte (sie liegt im Graphen) ist keine Navigation.
     const target = event.target;
     if (target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement) return;
+    // Legende und Steuerung haben eigene Knöpfe — Enter dort ist kein Sprung zur Karte.
+    if (isOverlayEvent(target)) return;
     const current = focusSlot >= 0 ? focusSlot : (order[0]?.[0] ?? -1);
     const g = current >= 0 ? map.groupOf[current] : 0;
     const inGroup = order[g] ?? [];
@@ -1515,10 +1518,15 @@ export function BubbleGraph({ root }: { root: LVNode }) {
           {...graphOverlayProps}
           role="group"
           aria-label="Hervorhebung"
-          className="ov-pill absolute right-[12px] top-[12px] z-10 flex items-center gap-[8px] p-[4px] pr-[6px] text-[12px] text-dim"
+          className={`ov-pill absolute right-[12px] z-10 flex max-w-[calc(100%-24px)] items-center gap-[8px] p-[4px] pr-[6px] text-[12px] text-dim ${
+            // Schmal stieße sie an die Kennzahlen oben links — dann darunter.
+            w < HEADER_NARROW_WIDTH ? BELOW_KPIS : 'top-[12px]'
+          }`}
         >
-          <span className="inline-flex items-center gap-[6px] rounded-[var(--r-pill)] border border-accent bg-accent-soft py-[3px] pl-[12px] pr-[4px] font-semibold text-accent-ink">
-            {spotTitle}
+          <span className="inline-flex min-w-0 items-center gap-[6px] rounded-[var(--r-pill)] border border-accent bg-accent-soft py-[3px] pl-[12px] pr-[4px] font-semibold text-accent-ink">
+            <span className="truncate" title={spotTitle}>
+              {spotTitle}
+            </span>
             <button
               type="button"
               aria-label="Hervorhebung aufheben"
@@ -1532,10 +1540,16 @@ export function BubbleGraph({ root }: { root: LVNode }) {
         </div>
       )}
 
-      <GraphControls
-        onFit={fit}
-        onFitSelection={selectedSlot >= 0 || selectedNode !== null ? fitSelection : undefined}
-        onZoom={zoomBy}
+      <GraphHeader
+        root={root}
+        width={w === 0 ? undefined : w}
+        controls={
+          <GraphControls
+            onFit={fit}
+            onFitSelection={selectedSlot >= 0 || selectedNode !== null ? fitSelection : undefined}
+            onZoom={zoomBy}
+          />
+        }
       />
     </div>
   );

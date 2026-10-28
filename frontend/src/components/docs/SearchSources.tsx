@@ -38,8 +38,11 @@ function pagesOf(pages: readonly number[]): string {
 export interface SearchSourcesProps {
   open: boolean;
   anchorRef: RefObject<HTMLElement | null>;
-  /** „Datei wählen…“ für ein PDF, das nach dem Neuladen nicht mehr offen ist. */
-  onPick: () => void;
+  /**
+   * „Datei wählen…“ für ein PDF, das nach dem Neuladen nicht mehr offen ist. Fehlt im
+   * eigenen Browserfenster — der Dateidialog gehört zum Hauptfenster.
+   */
+  onPick?: () => void;
   /** Nach einem Sprung ins PDF schließen. */
   onDone: () => void;
 }
@@ -122,16 +125,18 @@ export const SearchSources = forwardRef<HTMLDivElement, SearchSourcesProps>(func
               </b>
               <span className="text-[11.5px]">nicht geöffnet — erst dann durchsuchbar</span>
             </span>
-            <button
-              type="button"
-              onClick={() => {
-                onPick();
-                onDone();
-              }}
-              className={GO}
-            >
-              Datei wählen…
-            </button>
+            {onPick !== undefined && (
+              <button
+                type="button"
+                onClick={() => {
+                  onPick();
+                  onDone();
+                }}
+                className={GO}
+              >
+                Datei wählen…
+              </button>
+            )}
           </div>
         ))}
       </div>

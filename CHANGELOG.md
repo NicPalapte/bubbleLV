@@ -9,6 +9,18 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.43.2 — 28.10.2026 · Suche im eigenen Fenster, Graph auf kleinen Bildschirmen
+
+- **Suche im eigenen Fenster:** Graph und Tabelle im eigenen Browserfenster haben jetzt die
+  Suchleiste dabei, mit Filter-Chips, „dimmen/ausblenden“ und „+ Filter“. Suche und Filter
+  gelten in beiden Fenstern; die Filterleiste klappt nur dort auf, wo man sie öffnet.
+- **Nichts liegt mehr übereinander:** Legende und Zoom-Leiste teilen sich unten eine Zeile.
+  Ist der Graph schmal (Tablet, schmaler Bereich), wird die Legende ein Knopf „Legende“, der
+  sie aufklappt — vorher fehlte sie unter 1024 px ganz. „Keine Treffer“ und die
+  Hervorhebung rücken dann unter die Kennzahlen.
+- **Mehr Platz für die Suche:** Auf dem Tablet hochkant fällt der Dateiname in der
+  Kopfleiste weg.
+
 ## 0.43.1 — 28.10.2026 · PDF-Marken überlagern sich nicht mehr
 
 - **Gebündelte Marken im PDF:** Liegen verknüpfte Stellen in Nachbarzeilen, teilen sie sich
