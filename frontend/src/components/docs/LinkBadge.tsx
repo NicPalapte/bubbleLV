@@ -52,8 +52,10 @@ export function LinkBadge({
       if (event.key === 'Escape') setOpen(false);
     };
     // Scrollt das PDF, zu: sonst schwebt die Liste über anderen Bereichen.
+    // Scrollen in anderen Bereichen (Tabelle, Graph) lässt sie offen.
     const onScroll = (event: Event): void => {
-      if (!(pop.current?.contains(event.target as Node) ?? false)) setOpen(false);
+      const anchor = ref.current;
+      if (anchor !== null && (event.target as Node).contains(anchor)) setOpen(false);
     };
     document.addEventListener('pointerdown', onDown);
     document.addEventListener('keydown', onKey);

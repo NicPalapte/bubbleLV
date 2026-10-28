@@ -95,8 +95,11 @@ describe('LinkBadge', () => {
         onPick={() => undefined}
       />,
     );
+    const andere = document.createElement('div');
+    document.body.append(andere);
     fireEvent.click(screen.getByRole('button', { name: '01.0010 +1' }));
     fireEvent.scroll(screen.getByRole('region', LISTE));
+    fireEvent.scroll(andere);
     expect(screen.getByRole('region', LISTE)).toBeInTheDocument();
     fireEvent.scroll(document);
     expect(screen.queryByRole('region', LISTE)).toBeNull();
