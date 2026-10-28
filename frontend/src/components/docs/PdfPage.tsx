@@ -10,6 +10,7 @@ import { useDocHighlights, rangeIn, type DocHighlightItem } from './docHighlight
 import type { DocMark } from '../../lib/docs/docNotes';
 import { locateOnPage } from '../../lib/docs/docNotes';
 import { pdfLib, type OpenedPdf } from '../../lib/docs/pdf';
+import { bundleSpots, type Bundle } from '../../lib/docs/linkBundles';
 
 /** So weit außerhalb des sichtbaren Bereichs wird schon gezeichnet. */
 const NEAR = '800px 0px';
@@ -19,11 +20,9 @@ export interface PageSize {
   readonly height: number;
 }
 
-/** Lage einer verknüpften Stelle auf der Seite, für die Marke am Rand. */
-interface Badge {
-  readonly mark: DocMark;
-  readonly top: number;
-}
+/** Mindestabstand zweier Marken in px, sonst teilen sie sich eine (Maus / Finger). */
+const BADGE_GAP = 20;
+const BADGE_GAP_TOUCH = 30;
 
 function PdfPageView({
   doc,
@@ -52,7 +51,7 @@ function PdfPageView({
   /** Verschiebt den Bildlauf um `dy` px — die Seite selbst kennt nur ihren Rahmen. */
   scrollBy: (dy: number) => void;
   onSize: (page: number, size: PageSize) => void;
-  badge: (mark: DocMark) => ReactNode;
+  badge: (marks: readonly DocMark[]) => ReactNode;
 }) {
   const box = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -61,7 +60,7 @@ function PdfPageView({
   const [proxy, setProxy] = useState<PDFPageProxy | null>(null);
   /** Wechselt, wenn die Textebene neu steht. */
   const [version, setVersion] = useState(0);
-  const [badges, setBadges] = useState<Badge[]>([]);
+  const [badges, setBadges] = useState<Bundle<DocMark>[]>([]);
 
   useEffect(() => {
     const el = box.current;
@@ -179,15 +178,16 @@ function PdfPageView({
     if (layer === null || frame === null || version === 0) return;
     const text = layer.textContent ?? '';
     const top0 = frame.getBoundingClientRect().top;
-    const next: Badge[] = [];
+    const placed: { spot: DocMark; top: number }[] = [];
     for (const mark of marks) {
       if (mark.links.length === 0) continue;
       const start = locateOnPage(text, mark);
       const range = start < 0 ? null : rangeIn(layer, start, start + mark.text.length);
       if (range === null || typeof range.getBoundingClientRect !== 'function') continue;
-      next.push({ mark, top: range.getBoundingClientRect().top - top0 });
+      placed.push({ spot: mark, top: range.getBoundingClientRect().top - top0 });
     }
-    setBadges(next);
+    const coarse = frame.ownerDocument.defaultView?.matchMedia?.('(pointer: coarse)').matches;
+    setBadges(bundleSpots(placed, coarse === true ? BADGE_GAP_TOUCH : BADGE_GAP));
   }, [marks, version, scale]);
 
   // Sprungziel ins Bild holen, sobald die Textebene steht.
@@ -226,13 +226,14 @@ function PdfPageView({
         style={{ width, height, visibility: proxy === null ? 'hidden' : 'visible' }}
       />
       <div ref={textRef} className="textLayer doc-text" />
-      {badges.map(({ mark, top }) => (
+      {badges.map(({ spots, top }) => (
         <div
-          key={`${mark.start}-${mark.text}`}
-          className="absolute right-[4px] z-[2]"
+          key={`${spots[0].start}-${spots[0].text}`}
+          // Aufgeklappt über den Marken darunter liegen.
+          className="absolute right-[4px] z-[2] [&:has([aria-expanded=true])]:z-[3]"
           style={{ top: Math.max(0, top - 2) }}
         >
-          {badge(mark)}
+          {badge(spots)}
         </div>
       ))}
       {proxy === null && (

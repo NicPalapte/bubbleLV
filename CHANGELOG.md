@@ -9,6 +9,14 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.42.1 — 28.10.2026 · PDF-Marken überlagern sich nicht mehr
+
+- **Gebündelte Marken im PDF:** Liegen verknüpfte Stellen in Nachbarzeilen, teilen sie sich
+  eine Marke am Rand, z. B. „4.1.30 +4“. Gefüllt heißt: mehrere Stellen.
+- **Liste zum Aufklappen:** Antippen zeigt je Stelle die Positionen mit OZ und Kurztext.
+  Antippen einer OZ springt zur Position.
+- **Passt sich an:** Beim Zoomen bündeln sich die Marken neu; am Tablet mit mehr Abstand.
+
 ## 0.42.0 — 27.10.2026 · Aufgeräumtes Logo-Menü
 
 - **Gruppen statt langer Liste:** Oben „Anderes LV öffnen“ und „PDF hinzufügen…“, darunter
