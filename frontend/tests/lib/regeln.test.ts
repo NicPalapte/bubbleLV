@@ -172,15 +172,23 @@ describe('linkSuggestionsOf', () => {
   });
 
   it('schlägt nur Paare im selben Abschnitt vor, in beiden Richtungen', () => {
-    const result = linkSuggestionsOf(index, parents, [linkRule]);
-    expect(result.get('p1')?.map((entry) => entry.other)).toEqual(['p2']);
-    expect(result.get('p2')?.map((entry) => entry.other)).toEqual(['p1']);
-    expect(result.has('p3')).toBe(false);
+    const { byId, truncated } = linkSuggestionsOf(index, parents, [linkRule]);
+    expect(byId.get('p1')?.map((entry) => entry.other)).toEqual(['p2']);
+    expect(byId.get('p2')?.map((entry) => entry.other)).toEqual(['p1']);
+    expect(byId.has('p3')).toBe(false);
+    expect(truncated).toEqual([]);
+  });
+
+  it('meldet Regeln über der Obergrenze', () => {
+    const { byId, truncated } = linkSuggestionsOf(index, parents, [linkRule], 0);
+    expect(byId.size).toBe(0);
+    expect(truncated).toEqual([linkRule]);
   });
 
   it('rechnet für denselben Stand nicht neu', () => {
     const first = linkSuggestionsOf(index, parents, [linkRule]);
     expect(linkSuggestionsOf(index, parents, [linkRule])).toBe(first);
-    expect(linkSuggestionsOf(index, parents, [{ ...linkRule, status: 'entwurf' }]).size).toBe(0);
+    const draft = { ...linkRule, status: 'entwurf' as const };
+    expect(linkSuggestionsOf(index, parents, [draft]).byId.size).toBe(0);
   });
 });

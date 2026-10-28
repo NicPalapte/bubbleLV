@@ -4,7 +4,7 @@
 // anderen Position, ✕ löst eine bestätigte Verbindung wieder.
 
 import { useMemo } from 'react';
-import { ruleKey } from '@core';
+import { MAX_LINK_SUGGESTIONS, ruleKey } from '@core';
 import { Section } from './CardParts';
 import { useJumpToPosition } from './useJumpToPosition';
 import { confirmedWith, linkOf } from '../../lib/positionLinks';
@@ -28,10 +28,11 @@ export function PositionLinks({ positionId }: { positionId: string }) {
     [index, parents, rules],
   );
   const confirmed = confirmedWith(links, positionId);
-  const open = (suggestions.get(positionId) ?? []).filter(
+  const open = (suggestions.byId.get(positionId) ?? []).filter(
     (entry) => linkOf(links, positionId, entry.other) === undefined,
   );
-  if (confirmed.length === 0 && open.length === 0) return null;
+  const tooMany = suggestions.truncated;
+  if (confirmed.length === 0 && open.length === 0 && tooMany.length === 0) return null;
 
   const ruleName = (key: string): string =>
     rules.find((rule) => ruleKey(rule) === key)?.name ?? key;
@@ -136,6 +137,13 @@ export function PositionLinks({ positionId }: { positionId: string }) {
           );
         })}
       </ul>
+      {tooMany.length > 0 && (
+        <p className="m-0 mt-[6px] font-sans text-[12px] text-amber">
+          Nicht alle Vorschläge: {tooMany.map((rule) => `„${rule.name}“`).join(', ')}{' '}
+          {tooMany.length === 1 ? 'trifft' : 'treffen'} mehr als {MAX_LINK_SUGGESTIONS} Paare. Im
+          Admin-Werkzeug enger fassen.
+        </p>
+      )}
     </Section>
   );
 }

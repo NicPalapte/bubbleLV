@@ -54,7 +54,7 @@ describe(`Regeln bei ${POSITIONS} Positionen`, () => {
           },
         },
       };
-      expect(linkSuggestionsOf(index, parents, [rule]).size).toBeGreaterThan(0);
+      expect(linkSuggestionsOf(index, parents, [rule]).byId.size).toBeGreaterThan(0);
     });
     expect(ms).toBeLessThan(WINDOW_BUDGET_MS);
   });
