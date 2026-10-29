@@ -1,4 +1,4 @@
-// Eigene Suche im PDF (Entscheidung 0083, ersetzt 0077): Das Suchfeld im Bereich
+// Eigene Suche im PDF (Entscheidung 0084, ersetzt 0077): Das Suchfeld im Bereich
 // „Dokument“ sucht nur in PDFs, die Suchleiste oben nur im LV.
 //
 // PDF.js läuft in jsdom nicht: `openPdf` liefert ein Schein-PDF mit festem Seitentext,

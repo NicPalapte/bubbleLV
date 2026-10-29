@@ -1,4 +1,4 @@
-// Eigenes Suchfeld fürs PDF (Entscheidung 0083): sucht nur in den offenen PDFs, nie im
+// Eigenes Suchfeld fürs PDF (Entscheidung 0084): sucht nur in den offenen PDFs, nie im
 // LV. Treffer zählen fürs PDF, das zu sehen ist; die anderen offenen PDFs stehen mit ihrer
 // Zahl in einer kleinen Liste darunter, ein Klick wechselt dorthin.
 // Strg/Cmd + F holt das Feld, wenn man zuletzt ins Dokument geklickt hat — im eigenen

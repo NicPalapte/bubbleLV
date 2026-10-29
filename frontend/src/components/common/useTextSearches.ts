@@ -1,5 +1,5 @@
 // Sucheinträge im Menü beim Markieren im Langtext und Kurztext: „In Suche übernehmen“
-// (LV, Suchleiste oben) und, wenn ein PDF offen ist, „Im PDF suchen“ (Entscheidung 0083).
+// (LV, Suchleiste oben) und, wenn ein PDF offen ist, „Im PDF suchen“ (Entscheidung 0084).
 
 import { useCallback } from 'react';
 import type { SearchAction } from './PaintBar';

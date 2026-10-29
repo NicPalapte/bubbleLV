@@ -6,7 +6,7 @@
 // Mehrere Dokumente können nacheinander offen sein, eines ist vorn. Ein neues LV
 // schließt alle: ihre Notizen gehören zum alten LV.
 //
-// Die PDFs haben eine eigene Suche (Entscheidung 0083): Der Begriff liegt hier, nicht im
+// Die PDFs haben eine eigene Suche (Entscheidung 0084): Der Begriff liegt hier, nicht im
 // Viewer-Zustand, und filtert das LV nie.
 //
 // Vorschläge zum Verknüpfen (OZ und Mengen, Entscheidung 0080) rechnet ein Worker Seite
@@ -59,7 +59,7 @@ export interface DocumentsApi {
   readonly docSearch: string;
   setDocSearch: (value: string) => void;
   /**
-   * Fundstellen von `docSearch` je offenem Dokument (Entscheidung 0083).
+   * Fundstellen von `docSearch` je offenem Dokument (Entscheidung 0084).
    * Fehlt ein Dokument, läuft die Suche darin noch.
    */
   readonly searchHits: ReadonlyMap<string, readonly DocHit[]>;

@@ -1,4 +1,4 @@
-# 0083 – Eigene Suche im PDF
+# 0084 – Eigene Suche im PDF
 
 - **Status:** akzeptiert
 - **Datum:** 2026-10-28

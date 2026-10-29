@@ -1,7 +1,7 @@
 // Die eine Suchleiste: Suchfeld, aktive Filter als entfernbare Chips, „Nicht-Treffer"
 // dimmen/ausblenden und „+ Filter". Steht in der Kopfleiste und in Graph und Tabelle im
 // eigenen Browserfenster (Entscheidung 0039) — immer auf demselben Filterzustand.
-// Sie durchsucht nur das LV; PDFs haben ihre eigene Suche (Entscheidung 0083).
+// Sie durchsucht nur das LV; PDFs haben ihre eigene Suche (Entscheidung 0084).
 // Der Schalter „Nicht-Treffer" sitzt hier, weil er für Suche und alle Filter gilt
 // (docs/decisions/0058-nicht-treffer-in-der-suche.md). Er regelt auch, ob ein
 // hervorgehobener Abschnitt die übrigen blass zeigt oder ausblendet, und erscheint

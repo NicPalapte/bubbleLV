@@ -151,7 +151,7 @@ bei exakt passender OZ oder eindeutiger Menge+Einheit (gleiche Menge: eigene Kur
 Satzteil, bei Aufzählung/„je“ mehrere Positionen), Übernahme erst per Klick, „Nein“ gemerkt,
 kein inhaltliches Matching (`lib/docs/docSuggest.ts`, `docs/decisions/0080`);
 Suchleiste nur fürs LV, eigenes Suchfeld im Dokument nur fürs PDF, filtert das LV nie
-(`docs/decisions/0083`). Matrix und
+(`docs/decisions/0084`). Matrix und
 Ähnlichkeit sind entfernt (`docs/decisions/0031-drei-ansichten.md`); keine
 Befehlspalette (`docs/decisions/0038-keine-befehlspalette.md`).
 
