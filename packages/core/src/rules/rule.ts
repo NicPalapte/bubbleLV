@@ -194,6 +194,11 @@ const MAX_HINT = 1000;
 const MAX_PARAMS = 20;
 const MAX_VALUES = 50;
 
+/** Menge aus einer Regel, z. B. „0“ oder „2,5“; sonst `null` (kein „0x10“, kein „1e3“). */
+export function ruleAmountOf(text: string): number | null {
+  return /^-?\d+(?:[.,]\d+)?$/.test(text.trim()) ? Number(text.trim().replace(',', '.')) : null;
+}
+
 const nameOf = (value: unknown): string | null =>
   typeof value === 'string' && RULE_ID.test(value) ? value : null;
 
@@ -231,9 +236,7 @@ function toFact(value: Record<string, unknown>): RuleBlock | null {
   const ist = toStrings(value.ist);
   if (ist === null) return null;
   // Mengen als Zahlen in Textform, z. B. „0“.
-  if (feld === 'menge' && !ist.every((entry) => Number.isFinite(Number(entry.replace(',', '.'))))) {
-    return null;
-  }
+  if (feld === 'menge' && !ist.every((entry) => ruleAmountOf(entry) !== null)) return null;
   if (feld === 'art' && !ist.every((kind) => RULE_POSITION_KINDS.some((own) => own === kind))) {
     return null;
   }

@@ -13,6 +13,7 @@ import {
   type RuleLinkSame,
   type RuleParam,
   type RulePositionKind,
+  ruleAmountOf,
 } from './rule';
 
 /** Angaben einer Position für die Bausteine `einheit` und `feld`. */
@@ -163,7 +164,7 @@ export function factHolds(
   if (block.feld === 'menge') {
     if (block.ist === 'leer') return facts.menge === null;
     const menge = facts.menge;
-    return menge !== null && block.ist.some((entry) => Number(entry.replace(',', '.')) === menge);
+    return menge !== null && block.ist.some((entry) => ruleAmountOf(entry) === menge);
   }
   if (block.feld === 'einheit') {
     const unit = facts.einheit === null ? '' : unitSpellingOf(facts.einheit);

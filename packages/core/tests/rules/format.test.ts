@@ -75,6 +75,8 @@ describe('neue Bausteine einlesen', () => {
       rule({ bedingung: { alle, bereich: 'satz', wo: ['langtext'] } });
     expect(toRule(condition([{ liste: 'Groß Buchstaben' }]))).toBeNull();
     expect(toRule(condition([{ feld: 'menge', ist: ['zehn'] }]))).toBeNull();
+    expect(toRule(condition([{ feld: 'menge', ist: ['0x10'] }]))).toBeNull();
+    expect(toRule(condition([{ feld: 'menge', ist: ['2,5'] }]))).not.toBeNull();
     expect(toRule(condition([{ feld: 'art', ist: ['sonder'] }]))).toBeNull();
     // Eingebaut steht allein.
     expect(toRule(condition([{ eingebaut: 'g3' }, { begriff: 'x' }]))).toBeNull();
