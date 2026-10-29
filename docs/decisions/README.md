@@ -89,6 +89,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0080 | [Vorschläge im PDF: OZ und Mengen aus dem LV](0080-oz-und-mengen-vorschlaege-im-pdf.md)                        | akzeptiert                         | 2026-10-27 |
 | 0081 | [Regeleditor und Regelformat `bubble-rule-v1`](0081-regeleditor-und-regelformat.md)                             | akzeptiert (Prototyp)              | 2026-10-28 |
 | 0082 | [Eigene Domain conocto.app](0082-eigene-domain.md)                                                              | akzeptiert                         | 2026-10-28 |
+| 0083 | [Nicht in Suchmaschinen, keine KI-Crawler](0083-nicht-in-suchmaschinen.md)                                      | akzeptiert                         | 2026-10-28 |
 
 ## Wann schreibe ich eine neue Datei?
 
