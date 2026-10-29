@@ -108,6 +108,15 @@ function HitPreview({ rule, positions }: { rule: Rule; positions: readonly LVNod
     return out;
   }, [rule.bedingung, positions]);
 
+  // PDF-Regeln (0085) treffen keine Position; ihre Vorschau braucht ein offenes PDF.
+  if (rule.bedingung.wo.every((field) => field === 'pdf')) {
+    return (
+      <span className="font-sans text-[12.5px] text-mute">
+        Diese Regel sucht im PDF. Treffer zeigt der Bereich „Dokument“.
+      </span>
+    );
+  }
+
   return (
     <>
       <span className="font-mono text-[12px] font-semibold text-accent">
@@ -123,14 +132,21 @@ function HitPreview({ rule, positions }: { rule: Rule; positions: readonly LVNod
               className="grid w-full cursor-pointer grid-cols-[92px_minmax(0,1fr)] gap-[10px] rounded-[var(--r-sm)] border-none bg-transparent px-[8px] py-[6px] text-left hover:bg-sunken"
             >
               <span className="font-mono text-[12px] text-dim">{node.position?.oz}</span>
-              <Snippet
-                text={
-                  hit.feld === 'kurztext'
-                    ? (node.position?.shortText ?? '')
-                    : (node.position?.longText ?? '')
-                }
-                hit={hit}
-              />
+              {hit.feld === 'position' ? (
+                // Trifft die Position als Ganzes (Angaben): Kurztext statt Ausschnitt.
+                <span className="truncate font-sans text-[12.5px] leading-[1.45] text-ink">
+                  {node.position?.shortText}
+                </span>
+              ) : (
+                <Snippet
+                  text={
+                    hit.feld === 'kurztext'
+                      ? (node.position?.shortText ?? '')
+                      : (node.position?.longText ?? '')
+                  }
+                  hit={hit}
+                />
+              )}
             </button>
           </li>
         ))}

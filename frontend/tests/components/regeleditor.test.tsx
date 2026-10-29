@@ -177,4 +177,42 @@ describe('Regeleditor', () => {
       expect(new Set(rules.map((rule) => rule.id)).size).toBe(2);
     });
   });
+
+  it('zeigt Regeln mit neuen Bausteinen nur zum Lesen, Treffer mit Kurztext', async () => {
+    await ladeDatei();
+    await oeffneAdmin(PASSWORT);
+    fireEvent.click(await screen.findByRole('button', { name: 'Admin' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Admin-Werkzeuge' });
+    fireEvent.click(within(dialog).getByRole('radio', { name: 'Regeln' }));
+    const file = {
+      schema: 'bubble-rule-v1',
+      regeln: [
+        {
+          schema: 'bubble-rule-v1',
+          id: 'normale-positionen',
+          version: 1,
+          name: 'Normale Positionen',
+          bedingung: {
+            alle: [{ feld: 'art', ist: ['normal'] }],
+            bereich: 'feld',
+            wo: ['langtext'],
+          },
+          wirkung: { hervorheben: 'wichtig' },
+          geltung: 'unternehmen',
+          status: 'entwurf',
+        },
+      ],
+    };
+    fireEvent.change(within(dialog).getByLabelText('regeln.json laden'), {
+      target: { files: [new File([JSON.stringify(file)], 'regeln.json')] },
+    });
+    fireEvent.click(await within(dialog).findByRole('button', { name: /Normale Positionen/ }));
+    expect(
+      await within(dialog).findByText(
+        'Diese Regel nutzt Bausteine, die der Editor noch nicht bearbeiten kann.',
+      ),
+    ).toBeInTheDocument();
+    expect(within(dialog).getByLabelText('Name der Regel')).toBeDisabled();
+    expect(within(dialog).getByText(/von \d+ Positionen/).textContent).not.toMatch(/^0 von/);
+  });
 });
