@@ -36,6 +36,8 @@ function useCloseOutside(ref: RefObject<HTMLElement | null>, onClose: () => void
 const MENU_WIDTH = 230;
 /** Grobe Höhe des Menüs, damit es unten am Fenster nicht abgeschnitten wird. */
 const MENU_HEIGHT = 380;
+/** Höhe jedes weiteren Sucheintrags („Im PDF suchen“, „Im LV suchen“). */
+const SEARCH_ROW_HEIGHT = 32;
 
 // Am Tablet größere Zeilen: ein Finger trifft 12 px hohe Einträge schlecht.
 const ROW =
@@ -124,7 +126,10 @@ export function PaintBar({
       className="ov-window fixed z-[70] flex flex-col gap-[1px] p-[6px]"
       style={{
         left,
-        top: Math.min(target.top, host.innerHeight - MENU_HEIGHT),
+        top: Math.min(
+          target.top,
+          host.innerHeight - MENU_HEIGHT - (searches.length - 1) * SEARCH_ROW_HEIGHT,
+        ),
         width: MENU_WIDTH,
       }}
       onContextMenu={(event) => event.preventDefault()}
