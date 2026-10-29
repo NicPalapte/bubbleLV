@@ -17,6 +17,7 @@ import {
   type Rule,
   type RuleBlock,
   type RuleCondition,
+  type RuleContext,
   type RuleText,
   type TextRange,
 } from '@core';
@@ -35,6 +36,13 @@ function readGrundstock(raw: string): Rule[] {
 
 /** Grundstock für alle Firmen: docs/domain/reference/regeln.json, einmal beim Laden gelesen. */
 export const GRUNDSTOCK: readonly Rule[] = readGrundstock(grundstockJson);
+
+/**
+ * Inhalte für die Bausteine aus 0085 (Wortlisten, Einheiten-Gruppen, eingebaute Logik).
+ * Noch leer: Sie kommen mit den Schritten 2–4. Alle Auswertungen der App nutzen diesen
+ * einen Kontext, damit die Regeln dann überall gleich wirken.
+ */
+export const RULE_CONTEXT: RuleContext = {};
 
 /** Regel wirkt im LV: freigegeben. Entwürfe zeigen nur der Editor und seine Vorschau. */
 export const isActive = (rule: Rule): boolean => rule.status === 'freigegeben';
@@ -116,7 +124,7 @@ export function applyRules(
     if (!isActive(rule) || !('hervorheben' in rule.wirkung)) continue;
     if (!rule.bedingung.wo.includes('langtext')) continue;
     const condition: RuleCondition = { ...rule.bedingung, wo: ['langtext'] };
-    for (const hit of matchCondition(condition, input)) {
+    for (const hit of matchCondition(condition, input, RULE_CONTEXT)) {
       for (const mark of hit.marks) {
         if (out.some((span) => span.start < mark.end && mark.start < span.end)) continue;
         out.push({

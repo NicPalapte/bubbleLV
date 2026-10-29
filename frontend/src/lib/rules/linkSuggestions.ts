@@ -5,7 +5,7 @@
 import { MAX_LINK_SUGGESTIONS, positionLinkOf, ruleKey, suggestLinks, type Rule } from '@core';
 import type { PositionIndex } from '../index/positionIndex';
 import type { LVNode } from '../../types/lvNode';
-import { isActive, linkCandidatesOf } from './rules';
+import { isActive, linkCandidatesOf, RULE_CONTEXT } from './rules';
 
 export interface RuleLinkSuggestion {
   readonly other: string;
@@ -67,7 +67,7 @@ export function linkSuggestionsOf(
     if (link === null) continue;
     const { ziel, gleich } = link;
     const key = ruleKey(rule);
-    const found = suggestLinks(rule.bedingung, ziel, gleich, candidates, limit);
+    const found = suggestLinks(rule.bedingung, ziel, gleich, candidates, limit, RULE_CONTEXT);
     if (found.truncated) truncated.push(rule);
     for (const pair of found.pairs) {
       add(pair.from, { other: pair.to, rule, key });

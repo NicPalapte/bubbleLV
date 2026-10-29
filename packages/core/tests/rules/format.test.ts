@@ -177,6 +177,12 @@ describe('Auswerter: Angaben der Position', () => {
     expect(matchCondition(condition, stunden, CONTEXT)).toHaveLength(1);
     expect(matchCondition(condition, position('Stundenlohnarbeiten.'), CONTEXT)).toHaveLength(1);
     expect(matchCondition(condition, position('Beton.'), CONTEXT)).toEqual([]);
+    // Angabe und Begriff zugleich: die Fundstelle steht vorn.
+    const beides = position('Stundenlohnarbeiten.', { menge: 5, einheit: 'h', art: 'normal' });
+    expect(matchCondition(condition, beides, CONTEXT).map((hit) => hit.feld)).toEqual([
+      'langtext',
+      'position',
+    ]);
   });
 
   it('eine stimmende Angabe unter „nicht“ verwirft alles', () => {

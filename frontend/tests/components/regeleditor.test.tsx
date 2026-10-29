@@ -209,7 +209,7 @@ describe('Regeleditor', () => {
     fireEvent.click(await within(dialog).findByRole('button', { name: /Normale Positionen/ }));
     expect(
       await within(dialog).findByText(
-        'Diese Regel nutzt Bausteine, die der Editor noch nicht bearbeiten kann.',
+        /^Diese Regel nutzt Bausteine, die der Editor noch nicht bearbeiten kann\./,
       ),
     ).toBeInTheDocument();
     expect(within(dialog).getByLabelText('Name der Regel')).toBeDisabled();

@@ -24,6 +24,7 @@ import {
   isEditable,
   linkCandidatesOf,
   newRule,
+  RULE_CONTEXT,
   ruleTextOf,
 } from '../../lib/rules/rules';
 import { useAdmin } from '../../state/admin';
@@ -102,7 +103,7 @@ function HitPreview({ rule, positions }: { rule: Rule; positions: readonly LVNod
     const out: Array<{ node: LVNode; hit: RuleHit }> = [];
     for (const node of positions) {
       if (node.position === null) continue;
-      const hit = matchCondition(rule.bedingung, ruleTextOf(node.position))[0];
+      const hit = matchCondition(rule.bedingung, ruleTextOf(node.position), RULE_CONTEXT)[0];
       if (hit !== undefined) out.push({ node, hit });
     }
     return out;
@@ -164,7 +165,8 @@ function LinkPreview({ rule, positions }: { rule: Rule; positions: readonly LVNo
     const link = positionLinkOf(rule.wirkung);
     if (link === null) return { pairs: [], truncated: false };
     const { ziel, gleich } = link;
-    return suggestLinks(rule.bedingung, ziel, gleich, linkCandidatesOf(positions, parents));
+    const candidates = linkCandidatesOf(positions, parents);
+    return suggestLinks(rule.bedingung, ziel, gleich, candidates, undefined, RULE_CONTEXT);
   }, [rule.bedingung, rule.wirkung, positions, parents]);
   const key = ruleKey(rule);
   const name = (id: string): string => {
@@ -475,7 +477,9 @@ export function RulesTab() {
                 <p className="m-0 rounded-[var(--r-sm)] bg-amberS px-[10px] py-[6px] font-sans text-[12px] text-amber">
                   {grundstock
                     ? 'Grundstock-Regel: für alle Firmen gleich, hier nur lesbar.'
-                    : 'Diese Regel nutzt Bausteine, die der Editor noch nicht bearbeiten kann.'}
+                    : 'Diese Regel nutzt Bausteine, die der Editor noch nicht bearbeiten kann. ' +
+                      'Wortlisten, Einheiten-Gruppen und eingebaute Prüfungen wirken erst ' +
+                      'in einem späteren Schritt.'}
                 </p>
               )}
               <RuleEditor rule={rule} readOnly={readOnly} onChange={editRule} />

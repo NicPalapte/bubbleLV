@@ -262,7 +262,9 @@ export function matchCondition(
     if (texts.length > 0) return textHits();
     return facts.length > 0 ? [POSITION_HIT] : [];
   }
-  return holding.length > 0 ? [POSITION_HIT, ...textHits()] : textHits();
+  // Texttreffer zuerst: Aufrufer nehmen oft den ersten Treffer und wollen die Fundstelle.
+  const hits = textHits();
+  return holding.length > 0 ? [...hits, POSITION_HIT] : hits;
 }
 
 /** Was der Auswerter von einer Position zum Verknüpfen braucht. */
