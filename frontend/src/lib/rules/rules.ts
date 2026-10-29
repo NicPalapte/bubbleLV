@@ -4,11 +4,16 @@
 
 import grundstockJson from '@reference/regeln.json?raw';
 import {
+  blockKindOf,
+  blocksOf,
   matchCondition,
   parseRuleFile,
+  positionLinkOf,
   ruleIdOf,
+  RULE_FIELDS,
   RULE_SCHEMA,
   type LinkCandidate,
+  type RulePositionKind,
   type Rule,
   type RuleBlock,
   type RuleCondition,
@@ -43,7 +48,39 @@ export function ruleTextOf(position: PositionSummary): RuleText {
     kurztext: position.shortText,
     langtext: position.longText,
     normen: { langtext: normen },
+    angaben: {
+      menge: position.quantity,
+      einheit: position.unit,
+      art: KIND_OF[position.positionType],
+    },
   };
+}
+
+const KIND_OF: Readonly<Record<PositionSummary['positionType'], RulePositionKind>> = {
+  NORMAL: 'normal',
+  ALTERNATIV: 'alternativ',
+  BEDARF: 'bedarf',
+  ZULAGENPOSITION: 'zulage',
+};
+
+const EDITABLE_BLOCKS = new Set(['begriff', 'menge', 'norm']);
+
+/**
+ * Kann der Editor die Regel bearbeiten? Nur Bausteine Begriff/Menge/Norm, nur Kurz- und
+ * Langtext, Wirkung hervorheben oder Positionen verbinden. Alles andere (Entscheidung 0085)
+ * zeigt er nur an, bis der Editor es kennt.
+ */
+export function isEditable(rule: Rule): boolean {
+  const conditions = [rule.bedingung];
+  const link = positionLinkOf(rule.wirkung);
+  if (link !== null) conditions.push(link.ziel);
+  else if (!('hervorheben' in rule.wirkung)) return false;
+  return conditions.every(
+    (condition) =>
+      [...blocksOf(condition), ...(condition.nicht ?? [])].every((block) =>
+        EDITABLE_BLOCKS.has(blockKindOf(block)),
+      ) && condition.wo.every((field) => RULE_FIELDS.some((own) => own === field)),
+  );
 }
 
 /** Kandidaten fürs Verknüpfen; Abschnitt = Elternknoten der Position. */
@@ -113,10 +150,20 @@ export function newRule(
   };
 }
 
+const BLOCK_NAMES: Readonly<Record<ReturnType<typeof blockKindOf>, string>> = {
+  begriff: 'Begriff',
+  menge: 'Menge',
+  norm: 'Norm',
+  liste: 'Wortliste',
+  einheit: 'Einheit',
+  feld: 'Angabe',
+  eingebaut: 'Eingebaut',
+};
+
 /** Name aus den Bausteinen, z. B. „Nachtrag + ausgeschlossen“. */
 export function nameOf(blocks: readonly RuleBlock[]): string {
   const parts = blocks.map((block) =>
-    'begriff' in block ? block.begriff : 'menge' in block ? 'Menge' : 'Norm',
+    'begriff' in block ? block.begriff : BLOCK_NAMES[blockKindOf(block)],
   );
   return parts.filter((part) => part.trim() !== '').join(' + ') || 'Neue Regel';
 }

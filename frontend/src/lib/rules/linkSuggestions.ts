@@ -2,7 +2,7 @@
 // Regelstand berechnet und zwischengespeichert, nie je Render: die Positionskarte liest
 // nur nach. Vorgruppiert nach Abschnitt bzw. Einheit (`suggestLinks` im Kern).
 
-import { MAX_LINK_SUGGESTIONS, ruleKey, suggestLinks, type Rule } from '@core';
+import { MAX_LINK_SUGGESTIONS, positionLinkOf, ruleKey, suggestLinks, type Rule } from '@core';
 import type { PositionIndex } from '../index/positionIndex';
 import type { LVNode } from '../../types/lvNode';
 import { isActive, linkCandidatesOf } from './rules';
@@ -43,7 +43,7 @@ export function linkSuggestionsOf(
   rules: readonly Rule[],
   limit = MAX_LINK_SUGGESTIONS,
 ): LinkSuggestions {
-  const linking = rules.filter((rule) => isActive(rule) && 'verknuepfen' in rule.wirkung);
+  const linking = rules.filter((rule) => isActive(rule) && positionLinkOf(rule.wirkung) !== null);
   if (linking.length === 0) return EMPTY;
   const cached = cache.get(index);
   if (
@@ -63,8 +63,9 @@ export function linkSuggestionsOf(
     out.set(id, list);
   };
   for (const rule of linking) {
-    if (!('verknuepfen' in rule.wirkung)) continue;
-    const { ziel, gleich } = rule.wirkung.verknuepfen;
+    const link = positionLinkOf(rule.wirkung);
+    if (link === null) continue;
+    const { ziel, gleich } = link;
     const key = ruleKey(rule);
     const found = suggestLinks(rule.bedingung, ziel, gleich, candidates, limit);
     if (found.truncated) truncated.push(rule);

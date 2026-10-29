@@ -2,13 +2,16 @@
 // als Satz. Ändert nur über `onChange` — speichern tut der Reiter „Regeln".
 
 import { SegmentedControl } from '@conocto/design';
-import type {
-  Rule,
-  RuleBlock,
-  RuleCondition,
-  RuleHighlight,
-  RuleLinkSame,
-  RuleStatus,
+import {
+  blockKindOf,
+  positionLinkOf,
+  type Rule,
+  type RuleBlock,
+  type RuleBlockKind,
+  type RuleCondition,
+  type RuleHighlight,
+  type RuleLinkSame,
+  type RuleStatus,
 } from '@core';
 import { categoryOf } from '../../lib/spanCategories';
 import { FIELD_LABELS, HIGHLIGHT_LABELS, ruleSentence } from '../../lib/rules/sentence';
@@ -19,7 +22,16 @@ const STATUS_OPTIONS = [
   { value: 'aus', label: 'Aus' },
 ];
 
-const BLOCK_LABELS = { begriff: 'Begriff', menge: 'Menge', norm: 'Norm', nicht: 'nicht' };
+const BLOCK_LABELS: Readonly<Record<RuleBlockKind | 'nicht', string>> = {
+  begriff: 'Begriff',
+  menge: 'Menge',
+  norm: 'Norm',
+  liste: 'Liste',
+  einheit: 'Einheit',
+  feld: 'Angabe',
+  eingebaut: 'Eingebaut',
+  nicht: 'nicht',
+};
 type BlockKind = keyof typeof BLOCK_LABELS;
 
 // Farbe je Baustein aus den Fundstellen-Kategorien, damit Vorschau und Langtext gleich lesen.
@@ -27,13 +39,14 @@ const BLOCK_COLORS: Readonly<Record<BlockKind, string>> = {
   begriff: 'var(--cyan)',
   menge: 'var(--violetD)',
   norm: 'var(--accent-ink)',
+  liste: 'var(--cyan)',
+  einheit: 'var(--violetD)',
+  feld: 'var(--dim)',
+  eingebaut: 'var(--dim)',
   nicht: 'var(--mute)',
 };
 
-const kindOf = (block: RuleBlock): Exclude<BlockKind, 'nicht'> =>
-  'begriff' in block ? 'begriff' : 'menge' in block ? 'menge' : 'norm';
-
-const blockOf = (kind: Exclude<BlockKind, 'nicht'>): RuleBlock =>
+const blockOf = (kind: 'begriff' | 'menge' | 'norm'): RuleBlock =>
   kind === 'begriff' ? { begriff: '' } : kind === 'menge' ? { menge: {} } : { norm: {} };
 
 const CHIP =
@@ -89,10 +102,15 @@ function BlockRow({
             className={`${INPUT} w-[110px]`}
           />
         </>
-      ) : (
+      ) : 'norm' in block ? (
         <span className="flex-1 font-sans text-[12.5px] text-mute">
           Normbezeichnung, z. B. DIN EN 1536
         </span>
+      ) : (
+        // Neue Bausteine (Entscheidung 0085) zeigt der Editor vorerst nur an.
+        <code className="flex-1 truncate font-mono text-[12px] text-dim">
+          {JSON.stringify(block)}
+        </code>
       )}
       {!readOnly && (
         <button
@@ -165,7 +183,7 @@ function ConditionEditor({
       {blocks.map((block, i) => (
         <BlockRow
           key={`b-${i}`}
-          kind={kindOf(block)}
+          kind={blockKindOf(block)}
           block={block}
           readOnly={readOnly}
           onChange={(next) => onChange(withBlocks(blocks.map((b, j) => (j === i ? next : b))))}
@@ -281,7 +299,7 @@ export function RuleEditor({
   readOnly: boolean;
   onChange: (rule: Rule) => void;
 }) {
-  const link = 'verknuepfen' in rule.wirkung ? rule.wirkung.verknuepfen : null;
+  const link = positionLinkOf(rule.wirkung);
   const highlight = 'hervorheben' in rule.wirkung ? rule.wirkung.hervorheben : null;
   const toggleSame = (same: RuleLinkSame, on: boolean): void => {
     if (link === null) return;

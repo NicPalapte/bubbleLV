@@ -6,7 +6,14 @@ import { fromStored, rekey, toStored, EMPTY_ANNOTATIONS } from '../../src/lib/an
 import { buildPositionIndex } from '../../src/lib/index/positionIndex';
 import { confirmedWith, forgetLink, judgeLink, linkOf, toLinks } from '../../src/lib/positionLinks';
 import { linkSuggestionsOf } from '../../src/lib/rules/linkSuggestions';
-import { applyRules, GRUNDSTOCK, nameOf, newRule } from '../../src/lib/rules/rules';
+import {
+  applyRules,
+  GRUNDSTOCK,
+  isEditable,
+  nameOf,
+  newRule,
+  ruleTextOf,
+} from '../../src/lib/rules/rules';
 import { ruleSentence } from '../../src/lib/rules/sentence';
 import { INITIAL_VIEWER_STATE, viewerReducer } from '../../src/state/viewer';
 import type { LVNode, PositionSummary } from '../../src/types/lvNode';
@@ -88,6 +95,39 @@ describe('Regel als Satz', () => {
         'dann als „Wichtig“ hervorheben.',
     );
     expect(nameOf([{ begriff: 'Nachtrag' }, { menge: {} }])).toBe('Nachtrag + Menge');
+  });
+});
+
+describe('Neue Bausteine und Wirkungen (Entscheidung 0085)', () => {
+  const hint = rule({
+    bedingung: { alle: [{ feld: 'art', ist: ['bedarf'] }], bereich: 'feld', wo: ['langtext'] },
+    wirkung: { pruefhinweis: { kategorie: 'vob', schwere: 'hinweis', text: 'Bedarfsposition.' } },
+  });
+
+  it('liest sich als Satz', () => {
+    expect(ruleSentence(hint)).toBe(
+      'Wenn im Langtext die Art bedarf steht, dann Prüfhinweis „VOB“: Bedarfsposition.',
+    );
+    expect(nameOf([{ liste: 'hersteller' }, { feld: 'menge', ist: 'leer' }])).toBe(
+      'Wortliste + Angabe',
+    );
+  });
+
+  it('der Editor bearbeitet nur, was er kennt', () => {
+    expect(isEditable(rule({}))).toBe(true);
+    expect(isEditable(hint)).toBe(false);
+    const liste = rule({
+      bedingung: { alle: [{ liste: 'hersteller' }], bereich: 'satz', wo: ['langtext'] },
+    });
+    expect(isEditable(liste)).toBe(false);
+  });
+
+  it('gibt dem Auswerter die Angaben der Position mit', () => {
+    expect(ruleTextOf({ ...position('x'), positionType: 'BEDARF' }).angaben).toEqual({
+      menge: 10,
+      einheit: 'm3',
+      art: 'bedarf',
+    });
   });
 });
 

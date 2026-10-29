@@ -9,6 +9,14 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.45.1 — 29.10.2026 · Ein Regelformat, Schritt 1
+
+- **Unter der Haube:** Das Regelformat kennt jetzt auch Wortlisten, Einheiten-Gruppen,
+  Angaben der Position (z. B. „Menge fehlt“), eingebaute Prüfungen, den Suchort PDF und die
+  Wirkungen „Prüfhinweis“ und „mit PDF verknüpfen“. In der App ändert sich noch nichts.
+  Prüfregeln, Hervorhebungen und PDF-Vorschläge ziehen in den nächsten Schritten um.
+- Eine geladene `regeln.json` mit diesen neuen Teilen zeigt der Regeleditor nur zum Lesen.
+
 ## 0.45.0 — 28.10.2026 · Eigene Suche im PDF
 
 - **Suchleiste oben sucht nur im LV.** Die Liste „Treffer je Quelle“ darunter gibt es
