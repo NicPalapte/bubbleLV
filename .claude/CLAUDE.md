@@ -150,7 +150,8 @@ Interpretation (`components/docs/`, `docs/decisions/0072-begleitdokument-pdf.md`
 bei exakt passender OZ oder eindeutiger Menge+Einheit (gleiche Menge: eigene Kurztext-Wörter im
 Satzteil, bei Aufzählung/„je“ mehrere Positionen), Übernahme erst per Klick, „Nein“ gemerkt,
 kein inhaltliches Matching (`lib/docs/docSuggest.ts`, `docs/decisions/0080`);
-eine Suche für LV und offene PDFs, PDF-Treffer filtern das LV nicht (`docs/decisions/0077`). Matrix und
+Suchleiste nur fürs LV, eigenes Suchfeld im Dokument nur fürs PDF, filtert das LV nie
+(`docs/decisions/0084`). Matrix und
 Ähnlichkeit sind entfernt (`docs/decisions/0031-drei-ansichten.md`); keine
 Befehlspalette (`docs/decisions/0038-keine-befehlspalette.md`).
 

@@ -1,5 +1,5 @@
 // Menü beim Rechtsklick auf eine Auswahl im Langtext (Entscheidung 0063, Issue #155):
-// In Suche übernehmen, Kopieren, sechs Farben zum Markieren, je mit eigenem Namen, Anstreichung entfernen,
+// Suchen (LV oder PDF, Entscheidung 0084), Kopieren, sechs Farben zum Markieren, je mit eigenem Namen, Anstreichung entfernen,
 // dazu „Farben benennen" und mit Admin-Zugang „Begriff lernen" (Entscheidung 0053).
 // Eine Auswahl allein öffnet es nicht mehr. Unter den Eigenschaften der Abschnitt
 // „Meine Textmarkierungen".
@@ -36,10 +36,40 @@ function useCloseOutside(ref: RefObject<HTMLElement | null>, onClose: () => void
 const MENU_WIDTH = 230;
 /** Grobe Höhe des Menüs, damit es unten am Fenster nicht abgeschnitten wird. */
 const MENU_HEIGHT = 380;
+/** Höhe jedes weiteren Sucheintrags („Im PDF suchen“, „Im LV suchen“). */
+const SEARCH_ROW_HEIGHT = 32;
 
 // Am Tablet größere Zeilen: ein Finger trifft 12 px hohe Einträge schlecht.
 const ROW =
   'flex w-full cursor-pointer items-center gap-[8px] rounded-[6px] border-none bg-transparent px-[8px] py-[6px] text-left font-mono text-[12px] text-ink hover:bg-sunken [@media(pointer:coarse)]:py-[10px] [@media(pointer:coarse)]:text-[14px]';
+
+/** Ein Eintrag „suchen“: im LV (Suchleiste oben) oder im PDF (eigene Suche, 0084). */
+export interface SearchAction {
+  readonly label: string;
+  readonly run: () => void;
+}
+
+/** Die Sucheinträge oben im Menü; der erste gilt dem Bereich, in dem markiert wurde. */
+function SearchRows({ searches }: { searches: readonly SearchAction[] }) {
+  return (
+    <>
+      {searches.map((action, at) => (
+        <button
+          key={action.label}
+          type="button"
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={action.run}
+          className={at === 0 ? `${ROW} font-semibold` : ROW}
+        >
+          <span aria-hidden="true" className="w-[12px] shrink-0 text-center text-mute">
+            {at === 0 ? '⌕' : ''}
+          </span>
+          {action.label}
+        </button>
+      ))}
+    </>
+  );
+}
 
 function Swatch({ paint }: { paint: Paint }) {
   return (
@@ -53,7 +83,7 @@ function Swatch({ paint }: { paint: Paint }) {
 
 export function PaintBar({
   target,
-  onSearch,
+  searches,
   onCopy,
   onPaint,
   onUnpaint,
@@ -64,8 +94,8 @@ export function PaintBar({
   onClose,
 }: {
   target: PaintTarget;
-  /** Auswahl als Suchbegriff in die Suchleiste oben. */
-  onSearch: () => void;
+  /** Auswahl als Suchbegriff: Suchleiste oben und/oder Suche im PDF. */
+  searches: readonly SearchAction[];
   onCopy: () => void;
   onPaint: (paint: Paint) => void;
   /** Nur, wenn die Auswahl eine eigene Anstreichung berührt. */
@@ -96,7 +126,10 @@ export function PaintBar({
       className="ov-window fixed z-[70] flex flex-col gap-[1px] p-[6px]"
       style={{
         left,
-        top: Math.min(target.top, host.innerHeight - MENU_HEIGHT),
+        top: Math.min(
+          target.top,
+          host.innerHeight - MENU_HEIGHT - (searches.length - 1) * SEARCH_ROW_HEIGHT,
+        ),
         width: MENU_WIDTH,
       }}
       onContextMenu={(event) => event.preventDefault()}
@@ -114,17 +147,7 @@ export function PaintBar({
           <span aria-hidden="true" className="mx-[8px] my-[4px] h-px bg-line" />
         </>
       )}
-      <button
-        type="button"
-        onMouseDown={(event) => event.preventDefault()}
-        onClick={onSearch}
-        className={`${ROW} font-semibold`}
-      >
-        <span aria-hidden="true" className="w-[12px] shrink-0 text-center text-mute">
-          ⌕
-        </span>
-        In Suche übernehmen
-      </button>
+      <SearchRows searches={searches} />
       <button
         type="button"
         onMouseDown={(event) => event.preventDefault()}
@@ -204,16 +227,16 @@ export function PaintBar({
 
 /**
  * Kleines Menü für Text ohne Anstreichen, z. B. den Kurztext im Kopf der Positionskarte:
- * nur „In Suche übernehmen“ und „Kopieren“ (Entscheidung 0077).
+ * nur suchen und „Kopieren“ (Entscheidungen 0077, 0084).
  */
 export function SelectionMenu({
   target,
-  onSearch,
+  searches,
   onCopy,
   onClose,
 }: {
   target: Pick<PaintTarget, 'left' | 'top'>;
-  onSearch: () => void;
+  searches: readonly SearchAction[];
   onCopy: () => void;
   onClose: () => void;
 }) {
@@ -230,20 +253,10 @@ export function SelectionMenu({
       aria-orientation="vertical"
       data-keeps-popover=""
       className="ov-window fixed z-[70] flex flex-col gap-[1px] p-[6px]"
-      style={{ left, top: Math.min(target.top, host.innerHeight - 120), width: MENU_WIDTH }}
+      style={{ left, top: Math.min(target.top, host.innerHeight - 150), width: MENU_WIDTH }}
       onContextMenu={(event) => event.preventDefault()}
     >
-      <button
-        type="button"
-        onMouseDown={(event) => event.preventDefault()}
-        onClick={onSearch}
-        className={`${ROW} font-semibold`}
-      >
-        <span aria-hidden="true" className="w-[12px] shrink-0 text-center text-mute">
-          ⌕
-        </span>
-        In Suche übernehmen
-      </button>
+      <SearchRows searches={searches} />
       <button
         type="button"
         onMouseDown={(event) => event.preventDefault()}

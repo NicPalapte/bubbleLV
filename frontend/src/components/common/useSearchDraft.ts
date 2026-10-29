@@ -1,6 +1,6 @@
-// Eingabefeld für die eine Suche (Kopfleiste und Bereich „Dokument“). Das Feld hängt am
-// lokalen Wert, damit Tippen nie auf den Suchlauf wartet; der Viewer-State folgt
-// verzögert nach.
+// Eingabefeld für die Suche im LV (Kopfleiste, Graph und Tabelle im eigenen Fenster).
+// Das Feld hängt am lokalen Wert, damit Tippen nie auf den Suchlauf wartet; der
+// Viewer-State folgt verzögert nach.
 
 import { useEffect, useRef, useState } from 'react';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
@@ -23,7 +23,7 @@ export function useSearchDraft(): [string, (value: string) => void] {
   const [mirrored, setMirrored] = useState(search);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Änderungen von außen (Import, „LV schließen“, das andere Suchfeld) übernehmen —
+  // Änderungen von außen (Import, „LV schließen“, ein anderes Suchfeld) übernehmen —
   // im Render statt im Effekt, sonst zeigt das Feld für einen Frame den alten Begriff
   // (react.dev/learn/you-might-not-need-an-effect).
   if (search !== mirrored) {

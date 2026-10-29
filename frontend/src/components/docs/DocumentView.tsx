@@ -16,6 +16,7 @@ import {
   type DragEvent,
   type MouseEvent as ReactMouseEvent,
 } from 'react';
+import { DocSearchField } from './DocSearchField';
 import { useDocuments } from './DocumentsProvider';
 import { LinkBadge } from './LinkBadge';
 import { LinkDialog } from './LinkDialog';
@@ -40,7 +41,6 @@ import {
 import type { DocSuggestion, LinkSource } from '../../lib/docs/docSuggest';
 import type { OpenedPdf } from '../../lib/docs/pdf';
 import { docNeedleOf, type DocHit } from '../../lib/docs/docSearch';
-import { useSearchDraft } from '../common/useSearchDraft';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 
 const ZOOM_MIN = 0.5;
@@ -156,18 +156,14 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     busy,
     error,
     jump,
+    docSearch,
+    setDocSearch,
     searchHits,
     suggestions,
     suggest,
     setSuggest,
   } = useDocuments();
-  const {
-    annotations,
-    index,
-    filter: { search },
-  } = useViewer();
-  // Ein Suchfeld mit der Suchleiste oben (Entscheidung 0077): wer hier tippt, sucht überall.
-  const [draft, changeSearch] = useSearchDraft();
+  const { annotations, index } = useViewer();
   const dispatch = useViewerDispatch();
   const jumpToPosition = useJumpToPosition();
   const host = useHostWindow();
@@ -188,6 +184,7 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
   /** Sprung, dessen Leuchten schon vorbei ist. */
   const [faded, setFaded] = useState(0);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
   const attachScroller = useCallback((el: HTMLDivElement | null): void => {
     scrollerRef.current = el;
     setScroller(el);
@@ -309,7 +306,7 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
   }, [scroller, host]);
 
   // Fundstellen rechnet der DocumentsProvider für alle offenen PDFs; hier nur zeigen.
-  const needle = docNeedleOf(search);
+  const needle = docNeedleOf(docSearch);
   const hits = searchHits.get(doc.id) ?? NO_HIT_LIST;
   const [seenHits, setSeenHits] = useState(hits);
   if (seenHits !== hits) {
@@ -425,7 +422,7 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
   );
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div ref={rootRef} className="flex min-h-0 flex-1 flex-col">
       <div className="flex shrink-0 flex-wrap items-center gap-[6px] border-b border-line px-[10px] py-[6px]">
         {docs.length > 1 ? (
           <select
@@ -455,23 +452,12 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
         {counts.oz + counts.menge > 0 && (
           <SuggestToggles counts={counts} suggest={suggest} setSuggest={setSuggest} />
         )}
-        <label className="flex h-[26px] items-center gap-[4px] rounded-[var(--r-sm)] border border-line bg-surface px-[6px]">
-          <input
-            aria-label="Suchen in LV und Dokumenten"
-            value={draft}
-            onChange={(event) => changeSearch(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') stepHit(event.shiftKey ? -1 : 1);
-            }}
-            placeholder="Suchen"
-            className="w-[120px] border-none bg-transparent font-mono text-[11.5px] text-ink outline-none"
-          />
-          {needle !== '' && (
-            <span className="font-mono text-[11px] text-mute">
-              {hits.length === 0 ? '0' : `${hitIndex + 1}/${hits.length}`}
-            </span>
-          )}
-        </label>
+        <DocSearchField
+          rootRef={rootRef}
+          hitCount={hits.length}
+          hitIndex={hitIndex}
+          onStep={stepHit}
+        />
         <button
           type="button"
           aria-label="Vorheriger Treffer"
@@ -562,11 +548,24 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
       {picked !== null && (
         <PaintBar
           target={picked.target}
-          onSearch={() => {
-            dispatch({ type: 'search', value: searchTermOf(picked.target.text) });
-            host.getSelection()?.removeAllRanges();
-            setPicked(null);
-          }}
+          searches={[
+            {
+              label: 'Im PDF suchen',
+              run: () => {
+                setDocSearch(searchTermOf(picked.target.text));
+                host.getSelection()?.removeAllRanges();
+                setPicked(null);
+              },
+            },
+            {
+              label: 'Im LV suchen',
+              run: () => {
+                dispatch({ type: 'search', value: searchTermOf(picked.target.text) });
+                host.getSelection()?.removeAllRanges();
+                setPicked(null);
+              },
+            },
+          ]}
           onCopy={() => {
             void host.navigator.clipboard?.writeText(picked.target.text);
             setPicked(null);
