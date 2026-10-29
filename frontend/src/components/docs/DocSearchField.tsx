@@ -32,8 +32,9 @@ export function DocSearchField({ rootRef, hitCount, hitIndex, onStep }: DocSearc
   useEffect(() => {
     // Im Hauptfenster gehört Strg F dem Browser, außer man arbeitet gerade im Dokument.
     const own = host !== window;
+    // Zuletzt ins Dokument geklickt oder per Tab hineingewechselt?
     let inside = false;
-    const onDown = (event: PointerEvent): void => {
+    const onMove = (event: Event): void => {
       inside = rootRef.current?.contains(event.target as Node | null) ?? false;
     };
     const onKey = (event: KeyboardEvent): void => {
@@ -44,10 +45,12 @@ export function DocSearchField({ rootRef, hitCount, hitIndex, onStep }: DocSearc
       inputRef.current?.focus();
       inputRef.current?.select();
     };
-    host.addEventListener('pointerdown', onDown, true);
+    host.addEventListener('pointerdown', onMove, true);
+    host.addEventListener('focusin', onMove, true);
     host.addEventListener('keydown', onKey);
     return () => {
-      host.removeEventListener('pointerdown', onDown, true);
+      host.removeEventListener('pointerdown', onMove, true);
+      host.removeEventListener('focusin', onMove, true);
       host.removeEventListener('keydown', onKey);
     };
   }, [host, rootRef]);

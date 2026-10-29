@@ -141,6 +141,12 @@ describe('Eigene Suche im PDF', () => {
     fireEvent.pointerDown(screen.getByTitle('baubeschreibung.pdf'));
     fireEvent.keyDown(document.body, { key: 'f', ctrlKey: true });
     expect(feld).toHaveFocus();
+
+    // Danach per Tab in die Suchleiste oben: Strg F gehört wieder dem Browser.
+    const suche = screen.getByRole('textbox', { name: 'Suche' });
+    suche.focus();
+    fireEvent.keyDown(suche, { key: 'f', ctrlKey: true });
+    expect(suche).toHaveFocus();
   });
 
   it('sucht einen markierten Begriff aus dem Langtext im PDF', async () => {
