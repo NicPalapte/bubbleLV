@@ -74,7 +74,7 @@ describe('neue Bausteine einlesen', () => {
     const condition = (alle: unknown[]): unknown =>
       rule({ bedingung: { alle, bereich: 'satz', wo: ['langtext'] } });
     expect(toRule(condition([{ liste: 'Groß Buchstaben' }]))).toBeNull();
-    expect(toRule(condition([{ feld: 'menge', ist: ['10'] }]))).toBeNull();
+    expect(toRule(condition([{ feld: 'menge', ist: ['zehn'] }]))).toBeNull();
     expect(toRule(condition([{ feld: 'art', ist: ['sonder'] }]))).toBeNull();
     // Eingebaut steht allein.
     expect(toRule(condition([{ eingebaut: 'g3' }, { begriff: 'x' }]))).toBeNull();
@@ -157,9 +157,11 @@ describe('Auswerter: Angaben der Position', () => {
     expect(matchCondition(art, leer)).toHaveLength(1);
     expect(matchCondition(art, stunden)).toEqual([]);
     const nullMenge = position('x', { menge: 0, einheit: 'm', art: 'normal' });
-    expect(
-      matchCondition(base({ alle: [{ feld: 'menge', ist: 'leer' }] }), nullMenge),
-    ).toHaveLength(1);
+    // Menge 0 ist nicht leer, sondern ein eigener Wert.
+    expect(matchCondition(base({ alle: [{ feld: 'menge', ist: 'leer' }] }), nullMenge)).toEqual([]);
+    expect(matchCondition(base({ alle: [{ feld: 'menge', ist: ['0'] }] }), nullMenge)).toHaveLength(
+      1,
+    );
   });
 
   it('bei „alle“ müssen Angaben stimmen, damit der Text zählt', () => {

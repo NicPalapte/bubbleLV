@@ -42,7 +42,10 @@ export type RuleBlock =
   | { readonly liste: string }
   /** Einheit der Position liegt in einer Gruppe (`RuleContext.einheitGruppen`). */
   | { readonly einheit: { readonly gruppe: string } }
-  /** Angabe der Position fehlt (`leer`) oder hat einen der Werte. `menge` kennt nur `leer`. */
+  /**
+   * Angabe der Position fehlt (`leer`) oder hat einen der Werte. Eine Menge 0 ist nicht
+   * leer: dafür `{ feld: "menge", ist: ["0"] }`.
+   */
   | { readonly feld: RuleFact; readonly ist: 'leer' | readonly string[] }
   /**
    * Feste Logik im Code, nur Name und Parameter stehen in der Regel. Steht allein in der
@@ -225,10 +228,12 @@ function toFact(value: Record<string, unknown>): RuleBlock | null {
   const feld = RULE_FACTS.find((fact) => fact === value.feld);
   if (feld === undefined) return null;
   if (value.ist === 'leer') return { feld, ist: 'leer' };
-  // Eine Menge hat keine festen Werte; dafür gibt es den Baustein „Menge“.
-  if (feld === 'menge') return null;
   const ist = toStrings(value.ist);
   if (ist === null) return null;
+  // Mengen als Zahlen in Textform, z. B. „0“.
+  if (feld === 'menge' && !ist.every((entry) => Number.isFinite(Number(entry.replace(',', '.'))))) {
+    return null;
+  }
   if (feld === 'art' && !ist.every((kind) => RULE_POSITION_KINDS.some((own) => own === kind))) {
     return null;
   }

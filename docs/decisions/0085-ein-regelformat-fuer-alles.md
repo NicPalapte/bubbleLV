@@ -24,6 +24,7 @@
   - `liste`: ein Wort aus einer Wortliste (z. B. Hersteller).
   - `einheit`: die Einheit der Position liegt in einer Einheiten-Gruppe (z. B. Stunde).
   - `feld`: eine Angabe der Position fehlt oder hat einen Wert (Menge leer, Art Bedarf).
+    Menge 0 zählt nicht als leer, sondern als eigener Wert (`ist: ["0"]`), wie heute in V5.
   - `eingebaut`: feste Logik im Code mit Parametern, für Schwieriges wie offene
     Textstellen oder die OZ im PDF. Steht allein in der Bedingung.
 - **Angaben gelten für die ganze Position.** Bei „alle“ müssen sie stimmen, damit der Text

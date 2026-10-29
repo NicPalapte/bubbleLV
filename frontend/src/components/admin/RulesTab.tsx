@@ -44,7 +44,6 @@ const STATUS_LABEL: Readonly<Record<Rule['status'], string>> = {
   aus: 'aus',
 };
 
-/** Brauchbare Regeln einer `regeln.json` und wie viele Einträge die Datei hatte. */
 /** Kurz, was die Regel tut — in der Liste neben dem Status. */
 function effectLabel(rule: Rule): string {
   if ('hervorheben' in rule.wirkung) return 'hervorheben';
@@ -52,6 +51,7 @@ function effectLabel(rule: Rule): string {
   return positionLinkOf(rule.wirkung) === null ? 'mit PDF verknüpfen' : 'verbinden';
 }
 
+/** Brauchbare Regeln einer `regeln.json` und wie viele Einträge die Datei hatte. */
 function parseJsonRules(text: string): { rules: Rule[]; total: number } {
   try {
     const value: unknown = JSON.parse(text);

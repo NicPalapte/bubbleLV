@@ -160,7 +160,11 @@ export function factHolds(
     return unit !== '' && group.some((entry) => unitSpellingOf(entry) === unit);
   }
   if (!('feld' in block)) return false;
-  if (block.feld === 'menge') return facts.menge === null || facts.menge === 0;
+  if (block.feld === 'menge') {
+    if (block.ist === 'leer') return facts.menge === null;
+    const menge = facts.menge;
+    return menge !== null && block.ist.some((entry) => Number(entry.replace(',', '.')) === menge);
+  }
   if (block.feld === 'einheit') {
     const unit = facts.einheit === null ? '' : unitSpellingOf(facts.einheit);
     if (block.ist === 'leer') return unit === '';
