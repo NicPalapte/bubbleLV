@@ -330,10 +330,11 @@ function toHint(value: unknown): RuleCheckHint | null {
   const verweis = typeof norm?.verweis === 'string' ? norm.verweis.trim() : '';
   const stand = (['bestaetigt', 'zu_bestaetigen'] as const).find((entry) => entry === norm?.stand);
   if (verweis === '') return hint;
-  // Ein Verweis ohne Stand wäre ungeprüft und sähe doch geprüft aus.
-  return stand === undefined
-    ? null
-    : { ...hint, norm: { verweis: verweis.slice(0, MAX_TEXT), stand } };
+  // Ohne Stand gilt ein Verweis als ungeprüft: er bleibt, die App zeigt „zu bestätigen“.
+  return {
+    ...hint,
+    norm: { verweis: verweis.slice(0, MAX_TEXT), stand: stand ?? 'zu_bestaetigen' },
+  };
 }
 
 function toEffect(value: unknown): RuleEffect | null {

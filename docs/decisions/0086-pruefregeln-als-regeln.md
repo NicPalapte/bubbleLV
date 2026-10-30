@@ -32,8 +32,8 @@
 - **V6 bleibt eine Regel** mit drei Wortlisten (Anlage, Plan, Gutachten), nicht drei Regeln.
   So bleibt V6 ein Eintrag in der Prüfliste.
 - **Norm-Verweis nur, wo es einen gibt.** V7 und G3 hatten nie einen. Grundstock-Hinweise
-  dürfen deshalb ohne Verweis stehen; erfunden wird keiner. Ein Verweis braucht immer seinen
-  Stand (`bestaetigt` oder `zu_bestaetigen`). Das ändert die Regel aus 0085, nach der
+  dürfen deshalb ohne Verweis stehen; erfunden wird keiner. Ein Verweis ohne Stand gilt als
+  `zu_bestaetigen`. Das ändert die Regel aus 0085, nach der
   Grundstock-Hinweise immer eine Norm nennen.
 - **Titel je Fund** setzt die App aus dem Treffer zusammen: gefundene Wörter („gemäß
   Bodengutachten“), dann stimmende Angaben („keine Menge, keine Einheit“).

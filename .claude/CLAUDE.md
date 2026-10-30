@@ -177,8 +177,9 @@ LLM-Klassifizierung. Details → @docs/scope.md #out-of-scope
   kein zweiter Fenster-Modus (Entscheidung 0074).
 - **Beziehungen werden einmal beim Laden im Worker berechnet**, nie im Render. Kein
   All-Paare-Vergleich — erst nach Einheit vorgruppieren.
-- **Prüfregeln sind Hinweise, keine Urteile.** Jede Regel nennt ihren Norm-Verweis,
-  zeigt die Fundstelle und ist einzeln abschaltbar. Fehlende Referenzdaten ⇒ Regel
+- **Prüfregeln sind Hinweise, keine Urteile.** Jede Regel nennt ihren Norm-Verweis, wo es
+  einen geprüften gibt (sonst keinen, nie erfinden; Entscheidung 0086), zeigt die Fundstelle
+  und ist einzeln abschaltbar. Fehlende Referenzdaten ⇒ Regel
   inaktiv, kein Fehler. Formulierungen nie als Rechtsrat.
 - Status ist Default `OPEN` aus dem Import, nur Anzeige, nicht editierbar, kein Filter
   (`docs/decisions/0051-kein-status-filter.md`)

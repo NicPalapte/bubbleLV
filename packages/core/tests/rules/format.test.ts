@@ -97,14 +97,16 @@ describe('neue Wirkungen einlesen', () => {
     expect(read?.wirkung).toEqual({ pruefhinweis: hint });
   });
 
-  it('ohne Norm-Verweis erlaubt, ein Verweis braucht seinen Stand', () => {
+  it('ohne Norm-Verweis erlaubt, ein Verweis ohne Stand gilt als zu bestätigen', () => {
     const wirkung = { pruefhinweis: { ...hint, norm: undefined } };
     const ohneNorm = { kategorie: hint.kategorie, schwere: hint.schwere, text: hint.text };
     expect(toRule(rule({ geltung: 'allgemein', wirkung }))?.wirkung).toEqual({
       pruefhinweis: ohneNorm,
     });
     const ohneStand = { pruefhinweis: { ...hint, norm: { verweis: 'VOB/A § 7' } } };
-    expect(toRule(rule({ geltung: 'allgemein', wirkung: ohneStand }))).toBeNull();
+    expect(toRule(rule({ geltung: 'unternehmen', wirkung: ohneStand }))?.wirkung).toEqual({
+      pruefhinweis: { ...hint, norm: { verweis: 'VOB/A § 7', stand: 'zu_bestaetigen' } },
+    });
   });
 
   it('Verknüpfen mit PDF nur, wenn die Bedingung allein im PDF sucht', () => {
