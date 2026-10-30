@@ -177,11 +177,13 @@ export function runChecks(
   for (const rule of rules) {
     if (rule.status !== 'freigegeben') continue;
     const hint = rule.wirkung.pruefhinweis;
-    let grund = missingOf(rule, context, builtins);
+    let grund: string | null = null;
     let found: Flag[] = [];
 
-    if (grund === null) {
-      try {
+    try {
+      // Auch die Vorprüfung liest Tabellen (z. B. Materialkatalog) und darf nicht werfen.
+      grund = missingOf(rule, context, builtins);
+      if (grund === null) {
         texts ??= index.positions.map(ruleTextOf);
         found = findAll(rule, check, texts, context, builtins).map(({ slot, ...fund }): Flag => ({
           ...fund,
@@ -190,11 +192,11 @@ export function runChecks(
           severity: hint.schwere,
           positionId: index.nodes[slot].id,
         }));
-      } catch (error) {
-        // Eine stolpernde Regel darf den Import nicht anhalten.
-        grund = `Regel abgebrochen: ${error instanceof Error ? error.message : 'unbekannt'}`;
-        found = [];
       }
+    } catch (error) {
+      // Eine stolpernde Regel darf den Import nicht anhalten.
+      grund = `Regel abgebrochen: ${error instanceof Error ? error.message : 'unbekannt'}`;
+      found = [];
     }
 
     const active = grund === null;

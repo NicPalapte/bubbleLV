@@ -403,6 +403,21 @@ describe('Eine stolpernde Regel hält den Import nicht an', () => {
     },
   };
 
+  it('fängt auch eine Vorprüfung ab, die wirft', () => {
+    const vorpruefung: CheckBuiltin = {
+      missing() {
+        throw new TypeError('Tabelle kaputt');
+      },
+      prepare: () => () => [],
+    };
+    const [status] = checkMit(
+      { rules: [regel('G3')], builtins: new Map([['einheit-schreibweise', vorpruefung]]) },
+      position({}),
+    ).rules;
+    expect(status.active).toBe(false);
+    expect(status.inactiveReason).toContain('Tabelle kaputt');
+  });
+
   it('meldet sie als inaktiv mit Grund, statt selbst zu werfen', () => {
     const result = checkMit(
       { rules: [regel('G3')], builtins: new Map([['einheit-schreibweise', kaputt]]) },
