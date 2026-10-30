@@ -40,7 +40,10 @@ export function codeOf(id: string): string {
   return /^([a-z]\d+)(?:-|$)/i.exec(id)?.[1].toUpperCase() ?? '';
 }
 
-/** Warum eine Regel nicht laufen kann — in einem Satz, den der Owner versteht. */
+/**
+ * Warum eine Regel nicht laufen kann — in einem Satz, den der Owner versteht. Ein eingebauter
+ * Baustein steht laut Format immer allein (`toCondition` im Kern), darum endet die Suche bei ihm.
+ */
 function missingOf(
   rule: CheckRule,
   context: RuleContext,
