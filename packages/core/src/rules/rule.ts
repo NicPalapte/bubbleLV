@@ -127,7 +127,10 @@ export type RuleHintSeverity = 'hinweis' | 'beachten';
 /** Ob der Norm-Verweis fachlich geprüft ist (wie Spalte `norm_stand` der Prüfregeln). */
 export type RuleNormState = 'bestaetigt' | 'zu_bestaetigen';
 
-/** Hinweis in „Prüfung“ — nie ein Urteil. Grundstock-Regeln nennen immer ihre Norm. */
+/**
+ * Hinweis in „Prüfung“ — nie ein Urteil. Den Norm-Verweis nennt eine Regel, wo es einen gibt;
+ * ohne Verweis steht sie ohne (z. B. eine Kennzahl aus der Datei). Erfunden wird keiner.
+ */
 export interface RuleCheckHint {
   readonly kategorie: RuleHintCategory;
   readonly schwere: RuleHintSeverity;
@@ -316,7 +319,7 @@ export function toCondition(value: unknown): RuleCondition | null {
   };
 }
 
-function toHint(value: unknown, scope: RuleScope | null): RuleCheckHint | null {
+function toHint(value: unknown): RuleCheckHint | null {
   if (!isObject(value)) return null;
   const kategorie = RULE_HINT_CATEGORIES.find((entry) => entry === value.kategorie);
   const schwere = (['hinweis', 'beachten'] as const).find((entry) => entry === value.schwere);
@@ -326,15 +329,15 @@ function toHint(value: unknown, scope: RuleScope | null): RuleCheckHint | null {
   const norm = isObject(value.norm) ? value.norm : null;
   const verweis = typeof norm?.verweis === 'string' ? norm.verweis.trim() : '';
   const stand = (['bestaetigt', 'zu_bestaetigen'] as const).find((entry) => entry === norm?.stand);
-  if (verweis !== '' && stand !== undefined) {
-    return { ...hint, norm: { verweis: verweis.slice(0, MAX_TEXT), stand } };
-  }
-  // Grundstock-Hinweise nennen immer ihre Norm (.claude/CLAUDE.md, Prüfregeln);
-  // eigene Regeln dürfen ohne.
-  return scope === 'unternehmen' ? hint : null;
+  if (verweis === '') return hint;
+  // Ohne Stand gilt ein Verweis als ungeprüft: er bleibt, die App zeigt „zu bestätigen“.
+  return {
+    ...hint,
+    norm: { verweis: verweis.slice(0, MAX_TEXT), stand: stand ?? 'zu_bestaetigen' },
+  };
 }
 
-function toEffect(value: unknown, scope: RuleScope | null): RuleEffect | null {
+function toEffect(value: unknown): RuleEffect | null {
   if (!isObject(value)) return null;
   const { hervorheben, verknuepfen, pruefhinweis } = value;
   if (typeof hervorheben === 'string') {
@@ -342,7 +345,7 @@ function toEffect(value: unknown, scope: RuleScope | null): RuleEffect | null {
     return category === undefined ? null : { hervorheben: category };
   }
   if (pruefhinweis !== undefined) {
-    const hint = toHint(pruefhinweis, scope);
+    const hint = toHint(pruefhinweis);
     return hint === null ? null : { pruefhinweis: hint };
   }
   if (isObject(verknuepfen)) {
@@ -373,7 +376,7 @@ export function toRule(value: unknown): Rule | null {
   if (typeof name !== 'string' || name.trim() === '') return null;
   const geltung = oneOf(value.geltung, ['allgemein', 'unternehmen'] as const);
   const bedingung = toCondition(value.bedingung);
-  const wirkung = toEffect(value.wirkung, geltung);
+  const wirkung = toEffect(value.wirkung);
   const status = oneOf(value.status, ['entwurf', 'freigegeben', 'aus'] as const);
   const herkunft = oneOf(value.herkunft, ['nutzer', 'mining', 'ki'] as const) ?? 'nutzer';
   if (bedingung === null || wirkung === null || geltung === null || status === null) return null;

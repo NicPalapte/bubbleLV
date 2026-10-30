@@ -4,46 +4,21 @@ Strukturierte Normdaten, die vom Maintainer aus einer lizenzierten/offiziellen Q
 gepflegt werden — nicht vom Modell erfunden oder aus dem Internet geraten (siehe
 [`../README.md`](../README.md)).
 
-| Datei                                                        | Inhalt                                                                                                                                                                                      | Quelle                                             |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| [`material/`](material/)                                     | Eine Tabelle je Material: Erkennung und Merkmale (Art, Bauweise, Bewehrung …). Pflege: [`../../setup/materialwissen.md`](../../setup/materialwissen.md)                                     | Owner; Beton und Betonstahl als Entwurf von Claude |
-| [`pruefregeln.csv`](pruefregeln.csv)                         | Je Prüfregel: Status, Norm-Verweis, Name, Kategorie, Schwere, Hinweistext                                                                                                                   | [`../vob-pruefungen.md`](../vob-pruefungen.md)     |
-| [`pruefregeln-parameter.csv`](pruefregeln-parameter.csv)     | Schwellwerte und Einstellungen je Regel (z. B. Titelgröße bei M1)                                                                                                                           | Owner                                              |
-| [`pruefregeln-stichworte.csv`](pruefregeln-stichworte.csv)   | Suchwörter je Regel (V2, V3, V6, V7), Schreibweise wie bei den Materialtabellen                                                                                                             | Owner                                              |
-| [`risiko-formulierungen.csv`](risiko-formulierungen.csv)     | Formulierungen, die ein Risiko auf den AN schieben — Regel V4                                                                                                                               | Owner                                              |
-| [`hersteller-produktnamen.csv`](hersteller-produktnamen.csv) | Hersteller-/Produktnamen — Regel V3                                                                                                                                                         | Owner                                              |
-| [`vob-nebenleistungen.csv`](vob-nebenleistungen.csv)         | Nebenleistungen je ATV — Regeln V8, V9                                                                                                                                                      | VOB/C des Owners                                   |
-| [`einheiten-gruppen.csv`](einheiten-gruppen.csv)             | Einheiten, die dasselbe bedeuten („Stk" = „Stück")                                                                                                                                          | Owner                                              |
-| [`hervorhebungen.csv`](hervorhebungen.csv)                   | Begriffe, die im Langtext hervorgehoben werden (Material, Maße, Wichtig, nicht hervorheben) — Entscheidung 0053. Pflege: [`../../setup/admin-werkzeuge.md`](../../setup/admin-werkzeuge.md) | Owner (Admin-Werkzeuge)                            |
-| [`regeln.json`](regeln.json)                                 | Grundstock-Regeln `bubble-rule-v1` für alle Firmen (hervorheben, Positionen verbinden) — Entscheidung 0081. Pflege: [`../../setup/admin-werkzeuge.md`](../../setup/admin-werkzeuge.md) | Owner (Admin-Werkzeuge)                            |
+| Datei                                                        | Inhalt                                                                                                                                                                                                                    | Quelle                                             |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| [`material/`](material/)                                     | Eine Tabelle je Material: Erkennung und Merkmale (Art, Bauweise, Bewehrung …). Pflege: [`../../setup/materialwissen.md`](../../setup/materialwissen.md)                                                                   | Owner; Beton und Betonstahl als Entwurf von Claude |
+| [`wortlisten.csv`](wortlisten.csv)                           | Weitere Wortlisten für Regeln: Spalte `liste` = Name in der Regel, `stichworte` pipe-getrennt (V6, V7)                                                                                                                    | Owner                                              |
+| [`risiko-formulierungen.csv`](risiko-formulierungen.csv)     | Wortliste `risiko`: Formulierungen, die ein Risiko auf den AN schieben — Regel V4                                                                                                                                         | Owner                                              |
+| [`hersteller-produktnamen.csv`](hersteller-produktnamen.csv) | Wortliste `hersteller`: Namen und Produktnamen — Regel V3                                                                                                                                                                 | Owner                                              |
+| [`vob-nebenleistungen.csv`](vob-nebenleistungen.csv)         | Nebenleistungen je ATV — Regeln V8, V9                                                                                                                                                                                    | VOB/C des Owners                                   |
+| [`einheiten-gruppen.csv`](einheiten-gruppen.csv)             | Einheiten, die dasselbe bedeuten („Stk" = „Stück")                                                                                                                                                                        | Owner                                              |
+| [`hervorhebungen.csv`](hervorhebungen.csv)                   | Begriffe, die im Langtext hervorgehoben werden (Material, Maße, Wichtig, nicht hervorheben) — Entscheidung 0053. Pflege: [`../../setup/admin-werkzeuge.md`](../../setup/admin-werkzeuge.md)                               | Owner (Admin-Werkzeuge)                            |
+| [`regeln.json`](regeln.json)                                 | Grundstock-Regeln `bubble-rule-v1` für alle Firmen (hervorheben, Positionen verbinden, Prüfregeln V1–V10, G3, M1) — Entscheidungen 0081, 0086. Pflege: [`../../setup/admin-werkzeuge.md`](../../setup/admin-werkzeuge.md) | Owner (Admin-Werkzeuge)                            |
 
-## `pruefregeln.csv` — Stammdaten je Regel
+## Prüfregeln — in `regeln.json`
 
-Pflege: [`../../setup/pruefregeln.md`](../../setup/pruefregeln.md).
-
-| Spalte           | Bedeutung                                                             |
-| ---------------- | --------------------------------------------------------------------- |
-| `regel_id`       | ID aus [`../vob-pruefungen.md`](../vob-pruefungen.md), z. B. `V1`     |
-| `status`         | `bestaetigt` · `zu_bestaetigen` · `aus`                               |
-| `norm_verweis`   | Wortlaut, den die Oberfläche anzeigt; leer, wenn es keinen gibt       |
-| `name`           | Überschrift in der Prüfliste                                          |
-| `kategorie`      | `geld` · `menge` · `risiko` · `norm` · `frist` · `vob`                |
-| `schwere`        | `hinweis` · `beachten`                                                |
-| `hinweis`        | Ein Satz: was die Regel sucht und warum ein Blick lohnt — kein Urteil |
-| `quelle_version` | Fassung, aus der der Verweis stammt                                   |
-
-- **`bestaetigt`** — der Owner hat Inhalt und Absatz-Nummer geprüft. Die Oberfläche
-  zeigt den Verweis ohne Zusatz.
-- **`zu_bestaetigen`** — die Regel läuft, der Verweis wird aber sichtbar als
-  „Verweis zu bestätigen" markiert. Conocto behauptet keine Fundstelle in der Norm,
-  die niemand geprüft hat.
-- **`aus`** — die Regel läuft nicht und steht auch nicht in der Prüfliste. Ein Wort in
-  dieser Spalte schaltet sie ab, ohne Code-Änderung.
-
-Fehlt Name, Kategorie oder Schwere, bleibt die Regel inaktiv und nennt den Grund.
-
-Ein unbekannter oder leerer Status gilt als `zu_bestaetigen` — die vorsichtige
-Annahme.
+Seit Entscheidung 0086 steht jede Prüfregel als Grundstock-Regel in
+[`regeln.json`](regeln.json). Pflege: [`../../setup/pruefregeln.md`](../../setup/pruefregeln.md).
 
 ## `hervorhebungen.csv` — Begriffe im Langtext
 

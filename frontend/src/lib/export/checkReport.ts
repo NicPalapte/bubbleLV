@@ -39,7 +39,8 @@ function kopfZurRegel(rule: RuleStatus): string {
       : rule.refConfirmed
         ? ` · ${rule.ruleRef}`
         : ` · ${rule.ruleRef} (Norm-Verweis noch zu bestätigen)`;
-  return `### ${rule.id} · ${rule.label}${verweis}`;
+  const kopf = rule.code === '' ? rule.label : `${rule.code} · ${rule.label}`;
+  return `### ${kopf}${verweis}`;
 }
 
 export function checkMarkdown({

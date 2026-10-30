@@ -64,6 +64,323 @@
       "status": "entwurf",
       "herkunft": "nutzer",
       "bemerkung": "Beispiel für eine Verknüpfungsregel. Schlägt vor, Betonstahl mit den Ortbeton-Positionen desselben Abschnitts zu verbinden."
+    },
+    {
+      "schema": "bubble-rule-v1",
+      "id": "v1-bedarfsposition",
+      "version": 1,
+      "name": "Bedarfs- oder Alternativposition",
+      "bedingung": {
+        "alle": [{ "feld": "art", "ist": ["bedarf", "alternativ"] }],
+        "bereich": "feld",
+        "wo": ["kurztext", "langtext"]
+      },
+      "wirkung": {
+        "pruefhinweis": {
+          "kategorie": "vob",
+          "schwere": "beachten",
+          "text": "Die Position ist als Bedarfs- oder Alternativposition ausgewiesen. Ob sie beauftragt wird, steht bei Angebotsabgabe nicht fest.",
+          "norm": { "verweis": "VOB/A § 7 Abs. 1 Nr. 4", "stand": "bestaetigt" }
+        }
+      },
+      "geltung": "allgemein",
+      "status": "freigegeben",
+      "herkunft": "nutzer"
+    },
+    {
+      "schema": "bubble-rule-v1",
+      "id": "v2-stundenlohn",
+      "version": 1,
+      "name": "Angehängte Stundenlohnarbeiten",
+      "bedingung": {
+        "eines": [
+          { "einheit": { "gruppe": "Stunde" } },
+          { "begriff": "stundenlohn*" },
+          { "begriff": "regiearbeit*" },
+          { "begriff": "regiestunde*" }
+        ],
+        "bereich": "feld",
+        "wo": ["kurztext", "langtext"]
+      },
+      "wirkung": {
+        "pruefhinweis": {
+          "kategorie": "vob",
+          "schwere": "hinweis",
+          "text": "Die Position wird nach Zeit abgerechnet. Bei größerem Umfang lohnt der Blick auf Anteil und Abgrenzung zur Hauptleistung.",
+          "norm": {
+            "verweis": "VOB/A § 7 Abs. 1 Nr. 4 Satz 2 · Abrechnung: VOB/B § 15",
+            "stand": "bestaetigt"
+          }
+        }
+      },
+      "geltung": "allgemein",
+      "status": "freigegeben",
+      "herkunft": "nutzer",
+      "bemerkung": "Einheit aus der Gruppe „Stunde“ (einheiten-gruppen.csv) oder ein Stundenlohn-Wort im Text."
+    },
+    {
+      "schema": "bubble-rule-v1",
+      "id": "v3-produktname",
+      "version": 1,
+      "name": "Produktname ohne „oder gleichwertig“",
+      "bedingung": {
+        "alle": [{ "liste": "hersteller" }],
+        "bereich": { "zeichen": 80 },
+        "wo": ["kurztext", "langtext"],
+        "nicht": [
+          { "begriff": "gleichwertig*" },
+          { "begriff": "o. glw." },
+          { "begriff": "o.glw." },
+          { "begriff": "o. glw" },
+          { "begriff": "o.glw" },
+          { "begriff": "o. gl." }
+        ]
+      },
+      "wirkung": {
+        "pruefhinweis": {
+          "kategorie": "vob",
+          "schwere": "beachten",
+          "text": "Ein Hersteller- oder Produktname ohne den Zusatz „oder gleichwertig“ schränkt den Wettbewerb ein.",
+          "norm": {
+            "verweis": "VOB/A § 7 Abs. 2 · bei EU-Vergaben zusätzlich VgV § 31 Abs. 6",
+            "stand": "bestaetigt"
+          }
+        }
+      },
+      "geltung": "allgemein",
+      "status": "freigegeben",
+      "herkunft": "nutzer",
+      "bemerkung": "Namen aus hersteller-produktnamen.csv. Der Zusatz gilt nur bis 80 Zeichen vor oder hinter dem Namen."
+    },
+    {
+      "schema": "bubble-rule-v1",
+      "id": "v4-risiko",
+      "version": 1,
+      "name": "Risiko auf den Auftragnehmer übertragen",
+      "bedingung": {
+        "alle": [{ "liste": "risiko" }],
+        "bereich": "satz",
+        "wo": ["langtext"]
+      },
+      "wirkung": {
+        "pruefhinweis": {
+          "kategorie": "risiko",
+          "schwere": "beachten",
+          "text": "Der Text schiebt ein Risiko auf den Auftragnehmer. Ob es sich kalkulieren lässt, gehört geprüft.",
+          "norm": { "verweis": "VOB/A § 7 Abs. 1 Nr. 3", "stand": "bestaetigt" }
+        }
+      },
+      "geltung": "allgemein",
+      "status": "freigegeben",
+      "herkunft": "nutzer",
+      "bemerkung": "Formulierungen aus risiko-formulierungen.csv."
+    },
+    {
+      "schema": "bubble-rule-v1",
+      "id": "v5-menge-einheit",
+      "version": 1,
+      "name": "Menge oder Einheit fehlt",
+      "bedingung": {
+        "eines": [
+          { "feld": "menge", "ist": "leer" },
+          { "feld": "menge", "ist": ["0"] },
+          { "feld": "einheit", "ist": "leer" }
+        ],
+        "bereich": "feld",
+        "wo": ["kurztext", "langtext"]
+      },
+      "wirkung": {
+        "pruefhinweis": {
+          "kategorie": "menge",
+          "schwere": "beachten",
+          "text": "Ohne Menge oder Einheit lässt sich die Position nicht bepreisen — der Ansatz muss von woanders kommen.",
+          "norm": { "verweis": "VOB/A § 7 Abs. 1 Nr. 1", "stand": "bestaetigt" }
+        }
+      },
+      "geltung": "allgemein",
+      "status": "freigegeben",
+      "herkunft": "nutzer"
+    },
+    {
+      "schema": "bubble-rule-v1",
+      "id": "v6-verweis",
+      "version": 1,
+      "name": "Verweis auf ein anderes Dokument",
+      "bedingung": {
+        "eines": [
+          { "liste": "verweis-anlage" },
+          { "liste": "verweis-plan" },
+          { "liste": "verweis-gutachten" }
+        ],
+        "bereich": "feld",
+        "wo": ["langtext"]
+      },
+      "wirkung": {
+        "pruefhinweis": {
+          "kategorie": "risiko",
+          "schwere": "hinweis",
+          "text": "Der Text verweist auf ein Dokument außerhalb des LV. Prüfen, ob es in den Vergabeunterlagen vorliegt.",
+          "norm": { "verweis": "VOB/A § 7 Abs. 1 Nr. 2", "stand": "bestaetigt" }
+        }
+      },
+      "geltung": "allgemein",
+      "status": "freigegeben",
+      "herkunft": "nutzer",
+      "bemerkung": "Wortlisten verweis-anlage, verweis-plan, verweis-gutachten aus wortlisten.csv. Ein Verweis auf eine andere Position zählt nicht."
+    },
+    {
+      "schema": "bubble-rule-v1",
+      "id": "v7-offene-stelle",
+      "version": 1,
+      "name": "Offene Textergänzung",
+      "bedingung": {
+        "alle": [
+          {
+            "eingebaut": "offene-stelle",
+            "parameter": { "punktreihe-mindestlaenge": 5 }
+          }
+        ],
+        "bereich": "feld",
+        "wo": ["langtext"]
+      },
+      "wirkung": {
+        "pruefhinweis": {
+          "kategorie": "risiko",
+          "schwere": "beachten",
+          "text": "Im Langtext steht eine Lücke, die der Bieter ausfüllen soll. Sie ist Teil des Angebots."
+        }
+      },
+      "geltung": "allgemein",
+      "status": "freigegeben",
+      "herkunft": "nutzer",
+      "bemerkung": "Eingebaut: Eingabefelder aus der Datei zählen immer, Punkt- oder Unterstrichreihen ab der Mindestlänge, dazu die Wortlisten bieterangabe und offenes-feld (wortlisten.csv). Kein Norm-Verweis."
+    },
+    {
+      "schema": "bubble-rule-v1",
+      "id": "v8-nebenleistung",
+      "version": 1,
+      "name": "Ausgeschriebene Nebenleistung",
+      "bedingung": {
+        "alle": [{ "eingebaut": "nebenleistung" }],
+        "bereich": "feld",
+        "wo": ["langtext"]
+      },
+      "wirkung": {
+        "pruefhinweis": {
+          "kategorie": "vob",
+          "schwere": "hinweis",
+          "text": "Eine Leistung, die nach VOB/C bereits Nebenleistung ist, hat eine eigene Position — auf Doppelvergütung prüfen.",
+          "norm": {
+            "verweis": "VOB/C, ATV DIN 18299 Abschnitt 4.1",
+            "stand": "zu_bestaetigen"
+          }
+        }
+      },
+      "geltung": "allgemein",
+      "status": "aus",
+      "herkunft": "nutzer",
+      "bemerkung": "Noch ohne Logik. Braucht vob-nebenleistungen.csv."
+    },
+    {
+      "schema": "bubble-rule-v1",
+      "id": "v9-besondere-leistung",
+      "version": 1,
+      "name": "Besondere Leistung ohne eigene Position",
+      "bedingung": {
+        "alle": [{ "eingebaut": "besondere-leistung" }],
+        "bereich": "feld",
+        "wo": ["langtext"]
+      },
+      "wirkung": {
+        "pruefhinweis": {
+          "kategorie": "vob",
+          "schwere": "hinweis",
+          "text": "Der Text erwähnt eine Besondere Leistung, für die keine eigene Position vorgesehen ist.",
+          "norm": {
+            "verweis": "VOB/C, ATV DIN 18299 Abschnitt 4.2",
+            "stand": "zu_bestaetigen"
+          }
+        }
+      },
+      "geltung": "allgemein",
+      "status": "aus",
+      "herkunft": "nutzer",
+      "bemerkung": "Noch ohne Logik. Braucht vob-nebenleistungen.csv."
+    },
+    {
+      "schema": "bubble-rule-v1",
+      "id": "v10-homogenbereiche",
+      "version": 1,
+      "name": "Erdarbeiten ohne Homogenbereiche",
+      "bedingung": {
+        "alle": [{ "eingebaut": "homogenbereiche" }],
+        "bereich": "feld",
+        "wo": ["langtext"]
+      },
+      "wirkung": {
+        "pruefhinweis": {
+          "kategorie": "norm",
+          "schwere": "beachten",
+          "text": "Erdarbeiten ohne Angabe von Homogenbereichen — seit der Fassung 2015 lösen sie die Bodenklassen ab.",
+          "norm": {
+            "verweis": "VOB/C, DIN 18300 Abschnitt 0",
+            "stand": "zu_bestaetigen"
+          }
+        }
+      },
+      "geltung": "allgemein",
+      "status": "aus",
+      "herkunft": "nutzer",
+      "bemerkung": "Noch ohne Logik. Braucht die Zuordnung zu den Erdarbeiten (Entscheidung 0044)."
+    },
+    {
+      "schema": "bubble-rule-v1",
+      "id": "g3-einheit-schreibweise",
+      "version": 1,
+      "name": "Einheit uneinheitlich geschrieben",
+      "bedingung": {
+        "alle": [{ "eingebaut": "einheit-schreibweise" }],
+        "bereich": "feld",
+        "wo": ["kurztext"]
+      },
+      "wirkung": {
+        "pruefhinweis": {
+          "kategorie": "menge",
+          "schwere": "hinweis",
+          "text": "Dieselbe Einheit steht in der Datei in mehreren Schreibweisen — meist ein Zeichen für zusammengeführte Teil-LVs."
+        }
+      },
+      "geltung": "allgemein",
+      "status": "freigegeben",
+      "herkunft": "nutzer",
+      "bemerkung": "Eingebaut: vergleicht die Einheiten im ganzen LV. Kennzahl aus der Datei, kein Norm-Verweis."
+    },
+    {
+      "schema": "bubble-rule-v1",
+      "id": "m1-bewehrung",
+      "version": 1,
+      "name": "Betonposition ohne Angabe zur Bewehrung",
+      "bedingung": {
+        "alle": [
+          {
+            "eingebaut": "bewehrung",
+            "parameter": { "positionen-im-titel": 3 }
+          }
+        ],
+        "bereich": "feld",
+        "wo": ["kurztext", "langtext"]
+      },
+      "wirkung": {
+        "pruefhinweis": {
+          "kategorie": "risiko",
+          "schwere": "hinweis",
+          "text": "Die Betonposition nennt eine Festigkeitsklasse, sagt aber nichts zur Bewehrung. Oft steht sie in einer eigenen Position — ein Blick lohnt, ob sie dort erfasst ist."
+        }
+      },
+      "geltung": "allgemein",
+      "status": "aus",
+      "herkunft": "nutzer",
+      "bemerkung": "Eingebaut: liest die Materialtabellen beton.csv und betonstahl.csv und nennt den Betonstahl im selben Hauptabschnitt."
     }
   ]
 }

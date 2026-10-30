@@ -176,8 +176,8 @@ interface Flag {
 Dazu kommt je Regel ein `RuleStatus` — auch für Regeln, die gerade **nicht**
 laufen. Eine Regel ohne Referenzdaten verschwindet nicht, sondern steht mit ihrem
 Grund in der Liste; sonst hielte man eine fehlende Datei für „nichts gefunden".
-Der Norm-Verweis kommt aus
-[`domain/reference/pruefregeln.csv`](../domain/reference/pruefregeln.csv), nicht
+Der Norm-Verweis kommt aus der Regel in
+[`domain/reference/regeln.json`](../domain/reference/regeln.json), nicht
 aus dem Code, und trägt ein Kennzeichen, ob der Owner ihn bestätigt hat.
 
 Flags entstehen **einmal beim Laden** im Worker: eine Regel wie „Anteil an der

@@ -37,7 +37,9 @@ function RuleHints({
           strong ? 'text-amberD' : 'text-ink'
         }`}
       >
-        <span className="font-semibold">{ruleId}</span>
+        {rule !== undefined && rule.code !== '' && (
+          <span className="font-semibold">{rule.code}</span>
+        )}
         <span>{rule?.label ?? 'Unbekannte Regel'}</span>
       </div>
       <ul className="m-0 list-none p-0">

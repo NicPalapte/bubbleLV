@@ -34,7 +34,7 @@ function bericht(muted: ReadonlySet<string> = EMPTY, visible: ReadonlySet<string
   });
 }
 
-/** Regel-IDs, die im Bericht als Überschrift vorkommen. */
+/** Regel-Kürzel, die im Bericht als Überschrift vorkommen. */
 function regelnIm(text: string): string[] {
   return [...text.matchAll(/^### (\S+) · /gm)].map((treffer) => treffer[1]);
 }
@@ -58,7 +58,8 @@ describe('checkMarkdown', () => {
 
   it('lässt eine abgeschaltete Regel weg', () => {
     const regel = regelnIm(bericht())[0];
-    expect(regelnIm(bericht(new Set([regel])))).not.toContain(regel);
+    const id = lv.check.rules.find((rule) => rule.code === regel)?.id ?? regel;
+    expect(regelnIm(bericht(new Set([id])))).not.toContain(regel);
   });
 
   it('zeigt nur, was der Filter durchlässt', () => {
@@ -74,7 +75,7 @@ describe('checkMarkdown', () => {
     const check = {
       ...lv.check,
       rules: lv.check.rules.map((rule) =>
-        rule.id === 'V1' ? { ...rule, refConfirmed: false } : rule,
+        rule.code === 'V1' ? { ...rule, refConfirmed: false } : rule,
       ),
     };
     const text = checkMarkdown({
@@ -85,7 +86,7 @@ describe('checkMarkdown', () => {
       fileName: lv.fileName,
       projectName: lv.projectName,
     });
-    const v1 = check.rules.find((rule) => rule.id === 'V1');
+    const v1 = check.rules.find((rule) => rule.code === 'V1');
     expect(regelnIm(text)).toContain('V1');
     expect(text).toContain(`${v1?.ruleRef} (Norm-Verweis noch zu bestätigen)`);
   });

@@ -27,17 +27,17 @@
 | G4                     | **entfernt** (15.10.2026): ein „auffälliger" Einheitspreis ist eine Deutung der Software, keine Tatsache aus der Datei                                    |
 | M1                     | **aus** (15.10.2026): unbewehrte Bauteile erkennt der Fachmann selbst, der Hinweis überlud die Oberfläche                                                 |
 
-Status, Norm-Verweis, Name, Kategorie, Schwere und Hinweistext je Regel stehen in
-[`reference/pruefregeln.csv`](reference/pruefregeln.csv), Schwellwerte in
-[`reference/pruefregeln-parameter.csv`](reference/pruefregeln-parameter.csv), Suchwörter
-in [`reference/pruefregeln-stichworte.csv`](reference/pruefregeln-stichworte.csv) — nicht
-im Code. Im Code steht nur, wie eine Regel sucht und rechnet. Eine
-Regel mit Status `zu_bestaetigen` läuft, ihr Verweis erscheint aber sichtbar als
+Jede Prüfregel ist eine Grundstock-Regel im Format `bubble-rule-v1` mit der Wirkung
+„Prüfhinweis“ in [`reference/regeln.json`](reference/regeln.json) (Entscheidung
+[0086](../decisions/0086-pruefregeln-als-regeln.md)): Status, Norm-Verweis mit Stand, Name,
+Kategorie, Schwere, Hinweistext und Schwellwerte. Suchwörter stehen in Wortlisten (CSV,
+Tabelle unten) — nicht im Code. Im Code steht nur die eingebaute Logik von V7, G3 und M1.
+Ein Norm-Verweis mit Stand `zu_bestaetigen` erscheint sichtbar als
 **„Verweis zu bestätigen"**: Conocto zeigt den Fund (eine Tatsache über die Datei),
 behauptet aber keine Fundstelle in der Norm, die niemand geprüft hat. Mit
-`status = aus` verschwindet eine Regel vollständig, ohne Code-Änderung.
+`"status": "aus"` verschwindet eine Regel vollständig, ohne Code-Änderung.
 
-Umgesetzt in `frontend/src/lib/check/`, ein Modul je Regelgruppe; die Ansicht
+Ausgewertet in `frontend/src/lib/check/` mit dem Auswerter des Kerns; die Ansicht
 „Prüfung" ist einer der gleichrangigen Ansichtsmodi.
 
 ## Regeln
@@ -45,9 +45,9 @@ Umgesetzt in `frontend/src/lib/check/`, ein Modul je Regelgruppe; die Ansicht
 Spalte **Konfidenz**: `sicher` = Inhalt und Fundstelle in der Norm geprüft.
 `zu bestätigen` = Inhalt ist geläufig, die genaue Absatz-Nummer der geltenden Fassung
 muss der Owner bestätigen, bevor sie im UI angezeigt wird. `bestätigt` = vom Owner
-bestätigt (Status in `reference/pruefregeln.csv`).
+bestätigt (`norm.stand` in `reference/regeln.json`).
 
-| ID  | Conocto findet                                                                                                                                                                                    | Norm-Verweis                                                                                                                                                                                                                                      | Konfidenz                                        | Umsetzbar                                                                                                                                                           |
+| ID  | Conocto findet                                                                                                                                                                                   | Norm-Verweis                                                                                                                                                                                                                                      | Konfidenz                                        | Umsetzbar                                                                                                                                                           |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | V1  | Bedarfs- oder Alternativposition im LV; der Titel je Fund nennt, welche der beiden (früher V11 für Alternativpositionen)                                                                         | VOB/A § 7 Abs. 1 Nr. 4                                                                                                                                                                                                                            | bestätigt                                        | sofort — `positionType` liefert das direkt                                                                                                                          |
 | V2  | Angehängte Stundenlohnarbeiten, besonders in größerem Umfang                                                                                                                                     | VOB/A § 7 Abs. 1 Nr. 4 Satz 2 · Abrechnung: VOB/B § 15                                                                                                                                                                                            | bestätigt                                        | sofort — Einheit `h`/`Std` plus Stichworte                                                                                                                          |
@@ -76,17 +76,16 @@ V1–V7 sind bestätigt (14.10.2026). Offen:
 CSV unter [`reference/`](reference/), eine Zeile je Eintrag, mit
 Spalte `quelle_version`. Nicht im Code hartkodieren, nicht erfinden.
 
-| Datei                                                                            | Inhalt                                                            | Für            |
-| -------------------------------------------------------------------------------- | ----------------------------------------------------------------- | -------------- |
-| [`reference/pruefregeln.csv`](reference/pruefregeln.csv)                         | Regel-ID, Status, Norm-Verweis, Name, Kategorie, Schwere, Hinweis | alle           |
-| [`reference/pruefregeln-parameter.csv`](reference/pruefregeln-parameter.csv)     | Regel-ID, Parameter, Wert                                         | V2, V3, V7, M1 |
-| [`reference/pruefregeln-stichworte.csv`](reference/pruefregeln-stichworte.csv)   | Regel-ID, Wert, Stichworte, ausser                                | V2, V3, V6, V7 |
-| [`reference/vob-nebenleistungen.csv`](reference/vob-nebenleistungen.csv)         | ATV-Nummer, Abschnitt, Leistungstext, Stichworte                  | V8, V9         |
-| [`reference/hersteller-produktnamen.csv`](reference/hersteller-produktnamen.csv) | Hersteller-/Produktname, Stichworte                               | V3             |
-| [`reference/risiko-formulierungen.csv`](reference/risiko-formulierungen.csv)     | Formulierung, Regel-ID, Schweregrad                               | V4             |
-| [`reference/einheiten-gruppen.csv`](reference/einheiten-gruppen.csv)             | Einheiten, die dasselbe bedeuten                                  | G3, V2         |
+| Datei                                                                            | Inhalt                                                      | Für    |
+| -------------------------------------------------------------------------------- | ----------------------------------------------------------- | ------ |
+| [`reference/regeln.json`](reference/regeln.json)                                 | Die Regeln selbst: Bedingung, Hinweis, Norm-Verweis, Status | alle   |
+| [`reference/wortlisten.csv`](reference/wortlisten.csv)                           | Liste, Stichworte (Verweise, Bieterwörter)                  | V6, V7 |
+| [`reference/vob-nebenleistungen.csv`](reference/vob-nebenleistungen.csv)         | ATV-Nummer, Abschnitt, Leistungstext, Stichworte            | V8, V9 |
+| [`reference/hersteller-produktnamen.csv`](reference/hersteller-produktnamen.csv) | Hersteller-/Produktname, Stichworte                         | V3     |
+| [`reference/risiko-formulierungen.csv`](reference/risiko-formulierungen.csv)     | Formulierung, Quelle                                        | V4     |
+| [`reference/einheiten-gruppen.csv`](reference/einheiten-gruppen.csv)             | Einheiten, die dasselbe bedeuten                            | G3, V2 |
 
-Solange eine Datei nur die Kopfzeile enthält, ist die zugehörige Regel inaktiv — sie
+Solange eine Wortliste leer ist, ist die zugehörige Regel inaktiv — sie
 verschwindet aber nicht aus der Ansicht, sondern steht dort mit ihrem Grund. Sonst
 hielte man eine fehlende Referenzdatei für „nichts gefunden".
 

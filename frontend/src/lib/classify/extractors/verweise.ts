@@ -12,9 +12,8 @@ import { collect, tidy, type Hit } from './spans';
 import type { Extractor, ExtractorContext, ExtractorResult } from './types';
 
 /**
- * Verweise auf Unterlagen außerhalb der Datei. Die Prüfregel V6
- * (check/rules/vob.ts) liest sie von hier, damit ein neuer Wert nicht nur an
- * einer der beiden Stellen landet.
+ * Verweise auf Unterlagen außerhalb der Datei. Die Prüfregel V6 sucht unabhängig davon mit
+ * eigenen Wortlisten (docs/domain/reference/wortlisten.csv, Entscheidung 0086).
  */
 export const VERWEIS_ANLAGE = 'Anlage';
 export const VERWEIS_PLANUNTERLAGE = 'Planunterlage';

@@ -1,134 +1,238 @@
-// Registry und Ausführung der Prüfregeln. Ein Modul je Regel, Registrierung wie
-// bei den Rulesets der Klassifizierung — eine neue Regel kommt als Eintrag in
-// `CHECK_RULES` dazu, ohne dass hier etwas anderes zu ändern wäre.
+// Prüfregeln: Grundstock-Regeln mit der Wirkung „Prüfhinweis“ (Entscheidung 0085,
+// docs/domain/reference/regeln.json). Ausgewertet wird mit dem einen Auswerter des Kerns
+// (`matchCondition`); nur eingebaute Bausteine, die das ganze LV brauchen, rechnet die App
+// selbst (builtins.ts).
 //
 // Läuft **einmal beim Laden** (lib/pipeline/runPipeline.ts), also im Worker,
 // sobald dessen Schwelle greift. Nie im Render: eine Regel sieht das ganze LV
 // und wäre je Ansicht zu teuer (.claude/CLAUDE.md#kritische-constraints).
 
-import { regelEintrag } from './referenz';
-import { m1Bewehrung } from './rules/material';
-import { g3Einheitenschreibweise } from './rules/treiber';
 import {
-  v10Homogenbereiche,
-  v1Bedarfsposition,
-  v2Stundenlohn,
-  v3Produktname,
-  v4Risikoformulierung,
-  v5MengeFehlt,
-  v6VerweisStattAngabe,
-  v7Platzhalter,
-  v8Nebenleistung,
-  v9BesondereLeistung,
-} from './rules/vob';
-import type { CheckContext, CheckResult, CheckRule, Flag, RuleStatus } from './types';
+  blocksOf,
+  factHolds,
+  matchCondition,
+  type Rule,
+  type RuleBlock,
+  type RuleCheckHint,
+  type RuleContext,
+  type RuleHit,
+  type RuleText,
+} from '@core';
+import { CHECK_BUILTINS, type CheckBuiltin } from './builtins';
+import { GRUNDSTOCK, RULE_CONTEXT, ruleTextOf } from '../rules/rules';
+import { listFileOf } from '../rules/wissen';
+import type { CheckContext, CheckResult, Flag, Fund, RuleStatus } from './types';
 import type { PositionIndex } from '../index/positionIndex';
 import type { LVSummary } from '../index/summary';
-import type { LVNode } from '../../types/lvNode';
+import type { Span } from '../classify';
+import type { LVNode, PositionSummary } from '../../types/lvNode';
 
-export const CHECK_RULES: readonly CheckRule[] = [
-  v1Bedarfsposition,
-  v2Stundenlohn,
-  v3Produktname,
-  v4Risikoformulierung,
-  v5MengeFehlt,
-  v6VerweisStattAngabe,
-  v7Platzhalter,
-  v8Nebenleistung,
-  v9BesondereLeistung,
-  v10Homogenbereiche,
-  g3Einheitenschreibweise,
-  m1Bewehrung,
-];
+/** Eine Prüfregel: Regel mit Prüfhinweis. */
+export type CheckRule = Rule & { readonly wirkung: { readonly pruefhinweis: RuleCheckHint } };
 
-/** Warum eine Regel nicht läuft — in einem Satz, den der Owner versteht. */
-function inactiveReason(rule: CheckRule): string | null {
-  const eintrag = regelEintrag(rule.id);
-  if (eintrag === undefined) {
-    return `Kein Eintrag für ${rule.id} in docs/domain/reference/pruefregeln.csv.`;
-  }
-  if (eintrag.name === '' || eintrag.kategorie === null || eintrag.schwere === null) {
-    return `Name, Kategorie oder Schwere für ${rule.id} fehlt in docs/domain/reference/pruefregeln.csv.`;
-  }
-  if (rule.requires !== undefined && !rule.requires.available()) {
-    return `Referenzdatei ${rule.requires.file} enthält noch keine Einträge.`;
-  }
-  if (rule.check === undefined) return 'Noch nicht umgesetzt.';
-  return null;
+const isCheckRule = (rule: Rule): rule is CheckRule => 'pruefhinweis' in rule.wirkung;
+
+/** Die Prüfregeln des Grundstocks, in der Reihenfolge der Datei. */
+export const CHECK_RULES: readonly CheckRule[] = GRUNDSTOCK.filter(isCheckRule);
+
+/** „v1-bedarfsposition“ → „V1“; Regeln ohne solches Kürzel bleiben ohne. */
+export function codeOf(id: string): string {
+  return /^([a-z]\d+)(?:-|$)/i.exec(id)?.[1].toUpperCase() ?? '';
 }
 
 /**
- * Alle Regeln über einem geladenen LV auswerten.
+ * Warum eine Regel nicht laufen kann — in einem Satz, den der Owner versteht. Ein eingebauter
+ * Baustein steht laut Format immer allein (`toCondition` im Kern), darum endet die Suche bei ihm.
+ */
+function missingOf(
+  rule: CheckRule,
+  context: RuleContext,
+  builtins: ReadonlyMap<string, CheckBuiltin>,
+): string | null {
+  for (const block of blocksOf(rule.bedingung)) {
+    if ('eingebaut' in block) {
+      const builtin = builtins.get(block.eingebaut);
+      return builtin === undefined ? 'Noch nicht umgesetzt.' : (builtin.missing?.() ?? null);
+    }
+    if ('liste' in block && (context.listen?.get(block.liste)?.length ?? 0) === 0) {
+      return `Wortliste „${block.liste}“ in ${listFileOf(block.liste)} enthält noch keine Einträge.`;
+    }
+    if (
+      'einheit' in block &&
+      (context.einheitGruppen?.get(block.einheit.gruppe)?.length ?? 0) === 0
+    ) {
+      return (
+        `Einheiten-Gruppe „${block.einheit.gruppe}“ fehlt in ` +
+        'docs/domain/reference/einheiten-gruppen.csv.'
+      );
+    }
+  }
+  return null;
+}
+
+const ART_LABELS: Readonly<Record<PositionSummary['positionType'], string>> = {
+  NORMAL: 'Normalposition',
+  BEDARF: 'Bedarfsposition',
+  ALTERNATIV: 'Alternativposition',
+  ZULAGENPOSITION: 'Zulagenposition',
+};
+
+/** Was an der Position stimmt, z. B. „keine Menge“ oder „Einheit h (Stunde)“. */
+function factLabel(block: RuleBlock, position: PositionSummary): string | null {
+  if ('einheit' in block) return `Einheit ${position.unit ?? '–'} (${block.einheit.gruppe})`;
+  if (!('feld' in block)) return null;
+  if (block.feld === 'art') return ART_LABELS[position.positionType];
+  if (block.feld === 'menge') {
+    return block.ist === 'leer' ? 'keine Menge' : `Menge ${String(position.quantity)}`;
+  }
+  return block.ist === 'leer' ? 'keine Einheit' : `Einheit ${position.unit ?? '–'}`;
+}
+
+/** Titel und Fundstelle eines Treffers: gefundene Wörter, dann stimmende Angaben. */
+function fundOf(
+  rule: CheckRule,
+  hits: readonly RuleHit[],
+  input: RuleText,
+  position: PositionSummary,
+  context: RuleContext,
+): Fund {
+  const parts: string[] = [];
+  const seen = new Set<string>();
+  const add = (part: string): void => {
+    const key = part.toLowerCase();
+    if (part === '' || seen.has(key)) return;
+    seen.add(key);
+    parts.push(part);
+  };
+  let span: Span | undefined;
+  for (const hit of hits) {
+    if (hit.feld === 'position') continue;
+    const text = hit.feld === 'kurztext' ? input.kurztext : input.langtext;
+    for (const mark of hit.marks) {
+      const label = text.slice(mark.start, mark.end).replace(/\s+/g, ' ');
+      add(label);
+      if (span === undefined && hit.feld === 'langtext') {
+        span = { key: rule.id, start: mark.start, end: mark.end, label };
+      }
+    }
+  }
+  if (hits.some((hit) => hit.feld === 'position')) {
+    for (const block of blocksOf(rule.bedingung)) {
+      if (!factHolds(block, input.angaben, context)) continue;
+      add(factLabel(block, position) ?? '');
+    }
+  }
+  // Ohne Wort und Angabe bleibt der Name der Regel, nie ein leerer Fund.
+  return { title: parts.length > 0 ? parts.join(', ') : rule.name, span };
+}
+
+/** Funde einer Regel je Position (Slot), ohne Regel-ID, Kategorie und Schwere. */
+function findAll(
+  rule: CheckRule,
+  check: CheckContext,
+  texts: readonly RuleText[],
+  context: RuleContext,
+  builtins: ReadonlyMap<string, CheckBuiltin>,
+): Array<Fund & { slot: number }> {
+  const { index } = check;
+  const out: Array<Fund & { slot: number }> = [];
+  const [first] = blocksOf(rule.bedingung);
+  if (first !== undefined && 'eingebaut' in first) {
+    const builtin = builtins.get(first.eingebaut);
+    if (builtin === undefined) return out;
+    const fundeOf = builtin.prepare(check, first.parameter ?? {});
+    for (let slot = 0; slot < index.size; slot++) {
+      for (const fund of fundeOf(slot)) out.push({ ...fund, slot });
+    }
+    return out;
+  }
+  for (let slot = 0; slot < index.size; slot++) {
+    const hits = matchCondition(rule.bedingung, texts[slot], context);
+    if (hits.length === 0) continue;
+    out.push({ ...fundOf(rule, hits, texts[slot], index.positions[slot], context), slot });
+  }
+  return out;
+}
+
+/**
+ * Alle Prüfregeln über einem geladenen LV auswerten.
  *
  * Reine Funktion: gleiche Eingabe, gleiches Ergebnis. Wirft nie — eine Regel,
  * die stolpert, darf den Import nicht anhalten; sie erscheint dann als inaktiv
  * mit der Fehlermeldung als Grund (Test: tests/check/rules.test.ts).
  *
- * `ruleSet` weicht nur in Tests vom ausgelieferten Katalog ab. Ohne `parents`
- * gilt das ganze LV als ein Abschnitt.
+ * Nur freigegebene Regeln laufen; `aus` und Entwürfe fehlen auch in der Liste. `rules`,
+ * `context` und `builtins` weichen nur in Tests ab. Ohne `parents` gilt das ganze LV
+ * als ein Abschnitt.
  */
 export function runChecks(
   index: PositionIndex,
   summary: LVSummary,
-  ruleSet: readonly CheckRule[] = CHECK_RULES,
+  rules: readonly CheckRule[] = CHECK_RULES,
   parents: ReadonlyMap<string, LVNode | null> = new Map(),
+  context: RuleContext = RULE_CONTEXT,
+  builtins: ReadonlyMap<string, CheckBuiltin> = CHECK_BUILTINS,
 ): CheckResult {
-  const context: CheckContext = { index, summary, parents };
+  const check: CheckContext = { index, summary, parents };
   const flags: Flag[] = [];
-  const rules: RuleStatus[] = [];
+  const statuses: RuleStatus[] = [];
+  let texts: RuleText[] | null = null;
 
-  for (const rule of ruleSet) {
-    const eintrag = regelEintrag(rule.id);
-    // `aus` nimmt die Regel ganz aus der Prüfung — auch aus der Liste.
-    if (eintrag?.status === 'aus') continue;
-    let grund = inactiveReason(rule);
+  for (const rule of rules) {
+    if (rule.status !== 'freigegeben') continue;
+    const hint = rule.wirkung.pruefhinweis;
+    let grund: string | null;
     let found: Flag[] = [];
 
-    const category = eintrag?.kategorie ?? 'vob';
-    const severity = eintrag?.schwere ?? 'hinweis';
-
-    if (grund === null && rule.check !== undefined) {
-      try {
-        found = rule.check(context).map((fund): Flag => ({
+    try {
+      // Auch die Vorprüfung liest Tabellen (z. B. Materialkatalog) und darf nicht werfen.
+      grund = missingOf(rule, context, builtins);
+      if (grund === null) {
+        texts ??= index.positions.map(ruleTextOf);
+        found = findAll(rule, check, texts, context, builtins).map(({ slot, ...fund }): Flag => ({
           ...fund,
           id: rule.id,
-          category,
-          severity: fund.severity ?? severity,
+          category: hint.kategorie,
+          severity: hint.schwere,
+          positionId: index.nodes[slot].id,
         }));
-      } catch (error) {
-        // Eine stolpernde Regel darf den Import nicht anhalten.
-        grund = `Regel abgebrochen: ${error instanceof Error ? error.message : 'unbekannt'}`;
-        found = [];
       }
+    } catch (error) {
+      // Eine stolpernde Regel darf den Import nicht anhalten.
+      grund = `Regel abgebrochen: ${error instanceof Error ? error.message : 'unbekannt'}`;
+      found = [];
     }
 
     const active = grund === null;
-    if (active) flags.push(...found);
+    // Schleife statt `push(...found)`: sehr viele Funde sprengen sonst die Argumentgrenze.
+    if (active) for (const flag of found) flags.push(flag);
 
-    rules.push({
+    statuses.push({
       id: rule.id,
-      label: eintrag?.name || rule.id,
-      category,
-      severity,
-      hint: eintrag?.hinweis ?? '',
-      ruleRef: eintrag?.normVerweis ?? '',
-      refConfirmed: eintrag?.status === 'bestaetigt',
+      code: codeOf(rule.id),
+      label: rule.name,
+      category: hint.kategorie,
+      severity: hint.schwere,
+      hint: hint.text,
+      ruleRef: hint.norm?.verweis ?? '',
+      refConfirmed: hint.norm?.stand === 'bestaetigt',
       active,
       inactiveReason: grund,
       count: active ? found.length : 0,
     });
   }
 
-  return { flags, rules };
+  return { flags, rules: statuses };
 }
 
+export { CHECK_BUILTINS, checkBewehrung } from './builtins';
+export type { CheckBuiltin } from './builtins';
 export { EMPTY_HINTS, groupByRule, hintsByPosition } from './hints';
 export type { HintIndex, PositionHints } from './hints';
 export { EMPTY_CHECK_RESULT } from './types';
 export type {
   CheckContext,
   CheckResult,
-  CheckRule,
   Flag,
   FlagCategory,
   FlagSeverity,

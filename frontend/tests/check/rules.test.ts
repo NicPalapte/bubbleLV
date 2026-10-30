@@ -3,18 +3,20 @@
 //
 // Zusätzlich die Zusagen aus docs/domain/vob-pruefungen.md: fehlende
 // Referenzdaten machen eine Regel inaktiv statt fehlerhaft, und ein nicht
-// bestätigter Norm-Verweis ist als solcher markiert.
+// bestätigter Norm-Verweis ist als solcher markiert. Seit Entscheidung 0085 sind die
+// Prüfregeln Regeln im Format `bubble-rule-v1` (docs/domain/reference/regeln.json).
 
 import { describe, expect, it } from 'vitest';
-import { CHECK_RULES, runChecks } from '../../src/lib/check';
-import { m1Bewehrung } from '../../src/lib/check/rules/material';
-import type { CheckRule } from '../../src/lib/check';
+import { CHECK_RULES, checkBewehrung, codeOf, runChecks } from '../../src/lib/check';
+import type { CheckBuiltin, CheckRule } from '../../src/lib/check';
+import { materialKatalog } from '../../src/lib/classify/material/katalog';
+import { RULE_CONTEXT } from '../../src/lib/rules/rules';
 import { classifyDraft, getClassifier } from '../../src/lib/classify';
 import { buildPositionIndex } from '../../src/lib/index/positionIndex';
 import { summarize } from '../../src/lib/index/summary';
 import { buildTree, collectPositions, indexParents } from '../../src/lib/tree/buildTree';
 import type { CheckResult, Fund, RuleStatus } from '../../src/lib/check';
-import type { LVDraft, PositionDraft } from '@core';
+import type { LVDraft, PositionDraft, RuleContext } from '@core';
 
 const classifier = getClassifier();
 
@@ -34,10 +36,16 @@ function position(overrides: Partial<PositionDraft>): PositionDraft {
 
 /** Ein LV aus den gegebenen Positionen, komplett durch die Pipeline gedreht. */
 function check(...positions: PositionDraft[]): CheckResult {
-  return checkMit(CHECK_RULES, ...positions);
+  return checkMit({}, ...positions);
 }
 
-function checkMit(ruleSet: readonly CheckRule[], ...positions: PositionDraft[]): CheckResult {
+interface Abweichung {
+  rules?: readonly CheckRule[];
+  context?: RuleContext;
+  builtins?: ReadonlyMap<string, CheckBuiltin>;
+}
+
+function checkMit(abweichung: Abweichung, ...positions: PositionDraft[]): CheckResult {
   const draft: LVDraft = {
     projectName: 'Prüf-Test',
     client: null,
@@ -51,18 +59,32 @@ function checkMit(ruleSet: readonly CheckRule[], ...positions: PositionDraft[]):
   };
   const tree = buildTree(classifyDraft(draft, classifier));
   const index = buildPositionIndex(tree);
-  return runChecks(index, summarize(index), ruleSet);
+  return runChecks(
+    index,
+    summarize(index),
+    abweichung.rules,
+    new Map(),
+    abweichung.context,
+    abweichung.builtins,
+  );
 }
 
+/** Regelzustand über das Kürzel, z. B. „V1“. */
 function rule(result: CheckResult, id: string): RuleStatus {
-  const status = result.rules.find((entry) => entry.id === id);
+  const status = result.rules.find((entry) => entry.code === id);
   expect(status, `Regel ${id} ist nicht angemeldet`).toBeDefined();
   return status as RuleStatus;
 }
 
 function flagsOf(result: CheckResult, id: string) {
-  return result.flags.filter((flag) => flag.id === id);
+  return result.flags.filter((flag) => codeOf(flag.id) === id);
 }
+
+const regel = (code: string): CheckRule => {
+  const found = CHECK_RULES.find((entry) => codeOf(entry.id) === code);
+  expect(found, `Regel ${code} fehlt in regeln.json`).toBeDefined();
+  return found as CheckRule;
+};
 
 describe('V1 · Bedarfs- und Alternativposition', () => {
   it('findet die Bedarfsposition und nur sie', () => {
@@ -95,7 +117,7 @@ describe('V1 · Bedarfs- und Alternativposition', () => {
 describe('V2 · Stundenlohnarbeiten', () => {
   it('erkennt die Zeiteinheit über die gepflegte Gruppe', () => {
     const result = check(position({ oz: '01.001.0010', unit: 'Std' }));
-    expect(flagsOf(result, 'V2')).toHaveLength(1);
+    expect(flagsOf(result, 'V2').map((flag) => flag.title)).toEqual(['Einheit Std (Stunde)']);
   });
 
   it('erkennt Regiearbeit auch ohne Zeiteinheit', () => {
@@ -115,7 +137,7 @@ describe('V3 · Produktname ohne „oder gleichwertig"', () => {
       position({ oz: '01.001.0020', shortText: 'Porenbetonwand Ytong d = 24 cm' }),
     );
     const flags = flagsOf(result, 'V3');
-    expect(flags.map((flag) => flag.title)).toEqual(['Schöck', 'Xella']);
+    expect(flags.map((flag) => flag.title)).toEqual(['Schöck, Isokorb', 'Ytong']);
     expect(flags[0].span?.label).toBe('Schöck');
     expect(flags[1].span).toBeUndefined();
   });
@@ -135,7 +157,7 @@ describe('V3 · Produktname ohne „oder gleichwertig"', () => {
         longText: `Kragplattenanschluss Schöck Isokorb. ${fern} Dichtband oder gleichwertig.`,
       }),
     );
-    expect(flagsOf(result, 'V3').map((flag) => flag.title)).toEqual(['Schöck']);
+    expect(flagsOf(result, 'V3').map((flag) => flag.title)).toEqual(['Schöck, Isokorb']);
   });
 
   it('trifft nur ganze Wörter', () => {
@@ -154,8 +176,17 @@ describe('V4 · Risiko-Formulierung', () => {
     expect(longText.slice(flag.span!.start, flag.span!.end)).toBe('trägt der AN');
   });
 
-  it('schweigt ohne solche Formulierung', () => {
+  it('schweigt ohne solche Formulierung und trifft nur ganze Wörter', () => {
     expect(flagsOf(check(position({ longText: 'Beton C30/37 einbauen.' })), 'V4')).toHaveLength(0);
+    const anbieter = position({ longText: 'Mehrkosten trägt der ANbieter nicht.' });
+    expect(flagsOf(check(anbieter), 'V4')).toHaveLength(0);
+  });
+
+  it('meldet eine Position einmal, mit allen Formulierungen im Titel', () => {
+    const longText = 'Unabhängig von den angetroffenen Verhältnissen. Das trägt der AN.';
+    const flags = flagsOf(check(position({ longText })), 'V4');
+    expect(flags).toHaveLength(1);
+    expect(flags[0].title).toBe('Unabhängig von den angetroffenen Verhältnissen, trägt der AN');
   });
 });
 
@@ -182,7 +213,7 @@ describe('V6 · Verweis statt Angabe', () => {
     const result = check(position({ longText: 'Bodenkennwerte gemäß Bodengutachten.' }));
     const [flag] = flagsOf(result, 'V6');
     expect(flag).toBeDefined();
-    expect(flag.title).toContain('Gutachten');
+    expect(flag.title).toBe('gemäß Bodengutachten');
     expect(flag.span).toBeDefined();
   });
 
@@ -227,12 +258,15 @@ describe('G3 · Einheit uneinheitlich geschrieben', () => {
   });
 });
 
-// M1 steht in pruefregeln.csv auf `aus` (15.10.2026). Die Prüffunktion bleibt,
+// M1 steht in regeln.json auf `aus` (15.10.2026). Die eingebaute Logik bleibt,
 // damit der Owner sie mit einem Wort wieder einschalten kann — getestet wird sie
 // darum direkt, ohne runChecks.
 describe('M1 · Bewehrung', () => {
   /** Zwei Hauptabschnitte, damit die Suche nach Betonstahl an der Grenze endet. */
-  function zweiAbschnitte(rohbau: PositionDraft[], ausbau: PositionDraft[]): Fund[] {
+  function zweiAbschnitte(
+    rohbau: PositionDraft[],
+    ausbau: PositionDraft[],
+  ): Array<Fund & { positionId: string }> {
     const draft: LVDraft = {
       projectName: 'Bewehrung',
       client: null,
@@ -250,7 +284,8 @@ describe('M1 · Bewehrung', () => {
     const tree = buildTree(classifyDraft(draft, classifier));
     const index = buildPositionIndex(tree);
     const context = { index, summary: summarize(index), parents: indexParents(tree) };
-    return m1Bewehrung.check?.(context) ?? [];
+    const funde = checkBewehrung(context, materialKatalog(), 3);
+    return [...funde].map(([slot, fund]) => ({ ...fund, positionId: index.nodes[slot].id }));
   }
 
   const wand = (oz: string, longText: string) =>
@@ -296,33 +331,50 @@ describe('M1 · Bewehrung', () => {
 describe('Regelzustand', () => {
   const result = check(position({}));
 
-  it('meldet jede Regel des Katalogs, auch die inaktiven — außer denen auf „aus"', () => {
+  it('meldet jede freigegebene Prüfregel, auch die inaktiven — außer denen auf „aus"', () => {
     const aus = ['V8', 'V9', 'V10', 'M1'];
-    expect(result.rules.map((entry) => entry.id)).toEqual(
-      CHECK_RULES.map((entry) => entry.id).filter((id) => !aus.includes(id)),
+    expect(CHECK_RULES.filter((entry) => entry.status === 'aus').map((e) => codeOf(e.id))).toEqual(
+      aus,
     );
-    expect(result.flags.some((flag) => aus.includes(flag.id))).toBe(false);
+    expect(result.rules.map((entry) => entry.code)).toEqual([
+      'V1',
+      'V2',
+      'V3',
+      'V4',
+      'V5',
+      'V6',
+      'V7',
+      'G3',
+    ]);
+    expect(result.flags.some((flag) => aus.includes(codeOf(flag.id)))).toBe(false);
   });
 
-  it('macht eine Regel ohne Referenzdaten inaktiv — mit Grund, ohne Fehler', () => {
-    const ohneDaten: CheckRule = {
-      id: 'V2', // vorhandene ID, damit der Eintrag in pruefregeln.csv greift
-      check: () => [],
-      requires: { file: 'docs/domain/reference/leer.csv', available: () => false },
-    };
-    const [status] = checkMit([ohneDaten], position({})).rules;
+  it('macht eine Regel ohne Wortliste inaktiv — mit Grund, ohne Fehler', () => {
+    const ohneListe: RuleContext = { ...RULE_CONTEXT, listen: new Map() };
+    const [status] = checkMit({ rules: [regel('V3')], context: ohneListe }, position({})).rules;
     expect(status.active).toBe(false);
     expect(status.count).toBe(0);
-    expect(status.inactiveReason).toContain('leer.csv');
+    expect(status.inactiveReason).toContain('hersteller-produktnamen.csv');
   });
 
-  it('übernimmt Norm-Verweis und Status aus pruefregeln.csv', () => {
+  it('macht eine Regel ohne Einheiten-Gruppe inaktiv', () => {
+    const ohneGruppe: RuleContext = { ...RULE_CONTEXT, einheitGruppen: new Map() };
+    const [status] = checkMit({ rules: [regel('V2')], context: ohneGruppe }, position({})).rules;
+    expect(status.inactiveReason).toContain('einheiten-gruppen.csv');
+  });
+
+  it('nennt eine eingebaute Logik, die es nicht gibt, „noch nicht umgesetzt“', () => {
+    const v8 = { ...regel('V8'), status: 'freigegeben' as const };
+    const [status] = checkMit({ rules: [v8] }, position({})).rules;
+    expect(status.active).toBe(false);
+    expect(status.inactiveReason).toBe('Noch nicht umgesetzt.');
+  });
+
+  it('übernimmt Norm-Verweis und Stand aus der Regel', () => {
     const v1 = rule(result, 'V1');
     expect(v1.ruleRef).toBe('VOB/A § 7 Abs. 1 Nr. 4');
     expect(v1.refConfirmed).toBe(true);
-
-    const v7 = rule(result, 'V7');
-    expect(v7.refConfirmed).toBe(true);
+    expect(v1.label).toBe('Bedarfs- oder Alternativposition');
   });
 
   it('lässt den Verweis leer, wo es keinen Norm-Bezug gibt', () => {
@@ -335,8 +387,8 @@ describe('Regelzustand', () => {
 
   it('formuliert jeden Hinweis als Hinweis, nicht als Urteil', () => {
     const urteile = ['unzulässig', 'verstoß', 'verboten', 'fehlerhaft', 'falsch'];
-    for (const entry of result.rules) {
-      const text = `${entry.label} ${entry.hint}`.toLowerCase();
+    for (const entry of CHECK_RULES) {
+      const text = `${entry.name} ${entry.wirkung.pruefhinweis.text}`.toLowerCase();
       for (const wort of urteile) {
         expect(text, `Regel ${entry.id} urteilt: "${wort}"`).not.toContain(wort);
       }
@@ -345,35 +397,32 @@ describe('Regelzustand', () => {
 });
 
 describe('Eine stolpernde Regel hält den Import nicht an', () => {
-  const kaputt: CheckRule = {
-    id: 'V1', // vorhandene ID, damit der Eintrag in pruefregeln.csv greift
-    check() {
+  const kaputt: CheckBuiltin = {
+    prepare() {
       throw new TypeError('absichtlich');
     },
   };
 
-  it('meldet sie als inaktiv mit Grund, statt selbst zu werfen', () => {
-    const tree = buildTree(
-      classifyDraft(
-        {
-          projectName: null,
-          client: null,
-          lots: [
-            {
-              number: '01',
-              label: null,
-              sections: [
-                { number: '01.001', label: null, sections: [], positions: [position({})] },
-              ],
-            },
-          ],
-        },
-        classifier,
-      ),
-    );
-    const index = buildPositionIndex(tree);
+  it('fängt auch eine Vorprüfung ab, die wirft', () => {
+    const vorpruefung: CheckBuiltin = {
+      missing() {
+        throw new TypeError('Tabelle kaputt');
+      },
+      prepare: () => () => [],
+    };
+    const [status] = checkMit(
+      { rules: [regel('G3')], builtins: new Map([['einheit-schreibweise', vorpruefung]]) },
+      position({}),
+    ).rules;
+    expect(status.active).toBe(false);
+    expect(status.inactiveReason).toContain('Tabelle kaputt');
+  });
 
-    const result = runChecks(index, summarize(index), [kaputt]);
+  it('meldet sie als inaktiv mit Grund, statt selbst zu werfen', () => {
+    const result = checkMit(
+      { rules: [regel('G3')], builtins: new Map([['einheit-schreibweise', kaputt]]) },
+      position({}),
+    );
     expect(result.flags).toEqual([]);
     const [status] = result.rules;
     expect(status.active).toBe(false);
@@ -399,6 +448,6 @@ describe('Echte Beispieldatei', () => {
       expect(ids.has(flag.positionId), `${flag.id} zeigt auf ${flag.positionId}`).toBe(true);
     }
     // Die Musterdatei führt zwei offene Textergänzungen in einer Position.
-    expect(lv.check.flags.filter((flag) => flag.id === 'V7')).toHaveLength(1);
+    expect(lv.check.flags.filter((flag) => codeOf(flag.id) === 'V7')).toHaveLength(1);
   });
 });

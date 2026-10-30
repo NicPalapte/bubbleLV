@@ -5,6 +5,7 @@
 
 import { useDeferredValue, useMemo, useRef, useState } from 'react';
 import {
+  blocksOf,
   matchCondition,
   parseRuleFile,
   positionLinkOf,
@@ -114,6 +115,14 @@ function HitPreview({ rule, positions }: { rule: Rule; positions: readonly LVNod
     return (
       <span className="font-sans text-[12.5px] text-mute">
         Diese Regel sucht im PDF. Treffer zeigt der Bereich „Dokument“.
+      </span>
+    );
+  }
+  // Eingebaute Logik braucht das ganze LV und läuft nur beim Laden (lib/check/builtins.ts).
+  if (blocksOf(rule.bedingung).some((block) => 'eingebaut' in block)) {
+    return (
+      <span className="font-sans text-[12.5px] text-mute">
+        Eingebaute Prüfung. Ihre Funde stehen in „Prüfung“.
       </span>
     );
   }
@@ -478,8 +487,8 @@ export function RulesTab() {
                   {grundstock
                     ? 'Grundstock-Regel: für alle Firmen gleich, hier nur lesbar.'
                     : 'Diese Regel nutzt Bausteine, die der Editor noch nicht bearbeiten kann. ' +
-                      'Wortlisten, Einheiten-Gruppen und eingebaute Prüfungen wirken erst ' +
-                      'in einem späteren Schritt.'}
+                      'Prüfhinweise eigener Regeln zeigt „Prüfung“ erst in einem ' +
+                      'späteren Schritt.'}
                 </p>
               )}
               <RuleEditor rule={rule} readOnly={readOnly} onChange={editRule} />

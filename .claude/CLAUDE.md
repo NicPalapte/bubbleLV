@@ -80,8 +80,11 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
 - `buildTree(draft): LVNode` erzeugt den rekursiven Baum für Tree, Graph und Tabelle –
   reine Funktion, kein Fetch. Für Filter, Summen und Beziehungen kommt ein **flacher
   Positions-Index** dazu (WP-I) – der Baum bleibt die Struktur, der Index die Rechenbasis.
-- Prüfregeln liegen in `frontend/src/lib/check/` hinter einer Registry, ein Modul je
-  Regel; Katalog und Norm-Verweise: @docs/domain/vob-pruefungen.md
+- Prüfregeln sind Grundstock-Regeln `bubble-rule-v1` mit Wirkung `pruefhinweis` in
+  `docs/domain/reference/regeln.json` (Entscheidung 0086); Auswertung in
+  `frontend/src/lib/check/index.ts`, eingebaute Logik nur in `lib/check/builtins.ts`,
+  Wortlisten als CSV (`lib/rules/wissen.ts`). Katalog und Norm-Verweise:
+  @docs/domain/vob-pruefungen.md
 - Große LVs (Richtung ~10k Positionen): Parsing + Klassifizierung laufen in einem
   Web Worker, damit die UI nicht blockiert.
 
@@ -174,8 +177,9 @@ LLM-Klassifizierung. Details → @docs/scope.md #out-of-scope
   kein zweiter Fenster-Modus (Entscheidung 0074).
 - **Beziehungen werden einmal beim Laden im Worker berechnet**, nie im Render. Kein
   All-Paare-Vergleich — erst nach Einheit vorgruppieren.
-- **Prüfregeln sind Hinweise, keine Urteile.** Jede Regel nennt ihren Norm-Verweis,
-  zeigt die Fundstelle und ist einzeln abschaltbar. Fehlende Referenzdaten ⇒ Regel
+- **Prüfregeln sind Hinweise, keine Urteile.** Jede Regel nennt ihren Norm-Verweis, wo es
+  einen geprüften gibt (sonst keinen, nie erfinden; Entscheidung 0086), zeigt die Fundstelle
+  und ist einzeln abschaltbar. Fehlende Referenzdaten ⇒ Regel
   inaktiv, kein Fehler. Formulierungen nie als Rechtsrat.
 - Status ist Default `OPEN` aus dem Import, nur Anzeige, nicht editierbar, kein Filter
   (`docs/decisions/0051-kein-status-filter.md`)
