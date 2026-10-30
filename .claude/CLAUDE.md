@@ -142,7 +142,8 @@ Datei (`docs/decisions/0047-kommentare-und-markierungen.md`, `docs/decisions/005
 eigene Textmarkierungen im Langtext (6 feste Farben mit eigenen Namen, `docs/decisions/0063`) ·
 gelernte Hervorhebungen im Langtext nur über Admin-Werkzeug (0053) · Regeleditor im
 Admin-Werkzeug (`bubble-rule-v1`, Auswerter nur in `packages/core/src/rules/`; Verbindungen
-zwischen Positionen nur als Vorschlag, gilt erst nach Bestätigung, `docs/decisions/0081`) · lokaler Export/Druck über das
+zwischen Positionen nur als Vorschlag, gilt erst nach Bestätigung, `docs/decisions/0081`;
+ein Format für alle Regelarten, Wortlisten/Einheiten-Gruppen liefert die App, `docs/decisions/0085`) · lokaler Export/Druck über das
 Logo-Menü · Notizen als Datei sichern/laden (`lib/notesFile.ts`, 0061) · freiwillige Kurzumfrage
 zum Produkt (Owner-Wunsch, `docs/decisions/0071-kurzumfrage.md`). · Begleit-PDF im
 Fenster „Dokument“ lesen, anstreichen, Stellen von Hand mit Positionen verknüpfen, keine

@@ -7,6 +7,7 @@ import { useDeferredValue, useMemo, useRef, useState } from 'react';
 import {
   matchCondition,
   parseRuleFile,
+  positionLinkOf,
   ruleIdOf,
   ruleKey,
   suggestLinks,
@@ -18,7 +19,14 @@ import { RuleEditor } from './RuleEditor';
 import { useJumpToPosition } from '../common/useJumpToPosition';
 import { downloadText } from '../../lib/export/download';
 import { linkOf } from '../../lib/positionLinks';
-import { GRUNDSTOCK, linkCandidatesOf, newRule, ruleTextOf } from '../../lib/rules/rules';
+import {
+  GRUNDSTOCK,
+  isEditable,
+  linkCandidatesOf,
+  newRule,
+  RULE_CONTEXT,
+  ruleTextOf,
+} from '../../lib/rules/rules';
 import { useAdmin } from '../../state/admin';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { LVNode } from '../../types/lvNode';
@@ -36,6 +44,13 @@ const STATUS_LABEL: Readonly<Record<Rule['status'], string>> = {
   freigegeben: 'aktiv',
   aus: 'aus',
 };
+
+/** Kurz, was die Regel tut — in der Liste neben dem Status. */
+function effectLabel(rule: Rule): string {
+  if ('hervorheben' in rule.wirkung) return 'hervorheben';
+  if ('pruefhinweis' in rule.wirkung) return 'prüfen';
+  return positionLinkOf(rule.wirkung) === null ? 'mit PDF verknüpfen' : 'verbinden';
+}
 
 /** Brauchbare Regeln einer `regeln.json` und wie viele Einträge die Datei hatte. */
 function parseJsonRules(text: string): { rules: Rule[]; total: number } {
@@ -88,11 +103,20 @@ function HitPreview({ rule, positions }: { rule: Rule; positions: readonly LVNod
     const out: Array<{ node: LVNode; hit: RuleHit }> = [];
     for (const node of positions) {
       if (node.position === null) continue;
-      const hit = matchCondition(rule.bedingung, ruleTextOf(node.position))[0];
+      const hit = matchCondition(rule.bedingung, ruleTextOf(node.position), RULE_CONTEXT)[0];
       if (hit !== undefined) out.push({ node, hit });
     }
     return out;
   }, [rule.bedingung, positions]);
+
+  // PDF-Regeln (0085) treffen keine Position; ihre Vorschau braucht ein offenes PDF.
+  if (rule.bedingung.wo.every((field) => field === 'pdf')) {
+    return (
+      <span className="font-sans text-[12.5px] text-mute">
+        Diese Regel sucht im PDF. Treffer zeigt der Bereich „Dokument“.
+      </span>
+    );
+  }
 
   return (
     <>
@@ -109,14 +133,21 @@ function HitPreview({ rule, positions }: { rule: Rule; positions: readonly LVNod
               className="grid w-full cursor-pointer grid-cols-[92px_minmax(0,1fr)] gap-[10px] rounded-[var(--r-sm)] border-none bg-transparent px-[8px] py-[6px] text-left hover:bg-sunken"
             >
               <span className="font-mono text-[12px] text-dim">{node.position?.oz}</span>
-              <Snippet
-                text={
-                  hit.feld === 'kurztext'
-                    ? (node.position?.shortText ?? '')
-                    : (node.position?.longText ?? '')
-                }
-                hit={hit}
-              />
+              {hit.feld === 'position' ? (
+                // Trifft die Position als Ganzes (Angaben): Kurztext statt Ausschnitt.
+                <span className="truncate font-sans text-[12.5px] leading-[1.45] text-ink">
+                  {node.position?.shortText}
+                </span>
+              ) : (
+                <Snippet
+                  text={
+                    hit.feld === 'kurztext'
+                      ? (node.position?.shortText ?? '')
+                      : (node.position?.longText ?? '')
+                  }
+                  hit={hit}
+                />
+              )}
             </button>
           </li>
         ))}
@@ -131,9 +162,11 @@ function LinkPreview({ rule, positions }: { rule: Rule; positions: readonly LVNo
   const jump = useJumpToPosition();
   const links = annotations.links ?? [];
   const result = useMemo(() => {
-    if (!('verknuepfen' in rule.wirkung)) return { pairs: [], truncated: false };
-    const { ziel, gleich } = rule.wirkung.verknuepfen;
-    return suggestLinks(rule.bedingung, ziel, gleich, linkCandidatesOf(positions, parents));
+    const link = positionLinkOf(rule.wirkung);
+    if (link === null) return { pairs: [], truncated: false };
+    const { ziel, gleich } = link;
+    const candidates = linkCandidatesOf(positions, parents);
+    return suggestLinks(rule.bedingung, ziel, gleich, candidates, undefined, RULE_CONTEXT);
   }, [rule.bedingung, rule.wirkung, positions, parents]);
   const key = ruleKey(rule);
   const name = (id: string): string => {
@@ -248,7 +281,7 @@ function RuleListItem({
             {STATUS_LABEL[rule.status]}
           </span>
           {' · '}
-          {'verknuepfen' in rule.wirkung ? 'verbinden' : 'hervorheben'}
+          {effectLabel(rule)}
         </span>
       </button>
     </li>
@@ -284,7 +317,9 @@ export function RulesTab() {
 
   const own = ownRules.find((rule) => rule.id === selectedId);
   const rule = own ?? GRUNDSTOCK.find((entry) => entry.id === selectedId) ?? null;
-  const readOnly = own === undefined;
+  const grundstock = own === undefined;
+  // Regeln mit Teilen, die der Editor noch nicht kennt (0085), nur lesen.
+  const readOnly = grundstock || (rule !== null && !isEditable(rule));
   const positions = index.nodes;
   // Vorschau über alle Positionen hinter dem Tippen herlaufen lassen, nicht je Taste blockieren.
   const preview = useDeferredValue(rule);
@@ -440,13 +475,17 @@ export function RulesTab() {
             <>
               {readOnly && (
                 <p className="m-0 rounded-[var(--r-sm)] bg-amberS px-[10px] py-[6px] font-sans text-[12px] text-amber">
-                  Grundstock-Regel: für alle Firmen gleich, hier nur lesbar.
+                  {grundstock
+                    ? 'Grundstock-Regel: für alle Firmen gleich, hier nur lesbar.'
+                    : 'Diese Regel nutzt Bausteine, die der Editor noch nicht bearbeiten kann. ' +
+                      'Wortlisten, Einheiten-Gruppen und eingebaute Prüfungen wirken erst ' +
+                      'in einem späteren Schritt.'}
                 </p>
               )}
               <RuleEditor rule={rule} readOnly={readOnly} onChange={editRule} />
               <div className="flex flex-col gap-[6px] rounded-[var(--r-md)] border border-line p-[12px]">
                 <span className="font-display text-[13px] font-semibold text-ink">
-                  {'verknuepfen' in rule.wirkung
+                  {positionLinkOf(rule.wirkung) !== null
                     ? 'Vorschläge im geladenen LV'
                     : 'Treffer im geladenen LV'}
                 </span>
@@ -454,7 +493,7 @@ export function RulesTab() {
                   <span className="font-sans text-[12.5px] text-mute">
                     Erst ein LV öffnen, dann stehen hier die Treffer.
                   </span>
-                ) : 'verknuepfen' in preview.wirkung ? (
+                ) : positionLinkOf(preview.wirkung) !== null ? (
                   <LinkPreview rule={preview} positions={positions} />
                 ) : (
                   <HitPreview rule={preview} positions={positions} />
@@ -464,7 +503,7 @@ export function RulesTab() {
                 <button type="button" onClick={() => setShowJson((on) => !on)} className={BUTTON}>
                   {showJson ? 'JSON ausblenden' : 'JSON zeigen'}
                 </button>
-                {readOnly ? (
+                {grundstock ? (
                   <button type="button" onClick={() => copyAsOwn(rule)} className={BUTTON}>
                     Als eigene kopieren
                   </button>
