@@ -9,6 +9,18 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.45.2 — 30.10.2026 · Ein Regelformat, Schritt 2
+
+- **Prüfregeln sind jetzt Regeln:** V1–V10, G3 und M1 stehen im Grundstock (`regeln.json`)
+  und im Reiter „Regeln“ der Admin-Werkzeuge, nur zum Lesen. „Prüfung“ wertet sie im selben
+  Format aus wie alle anderen Regeln. Die Tabellen `pruefregeln*.csv` gibt es nicht mehr.
+- **Gleiche Funde wie vorher**, geprüft auf allen Test-LVs. Zwei kleine Unterschiede:
+  - V3 meldet einen Produktnamen im Kurztext, auch wenn „oder gleichwertig“ erst im Langtext
+    steht.
+  - V4 trifft nur ganze Wörter: „trägt der ANbieter“ zählt nicht mehr.
+- **Titel der Funde** nennen das gefundene Wort, z. B. „Ytong“ statt „Xella“ oder
+  „Einheit h (Stunde)“. V4 meldet eine Position einmal, mit allen Formulierungen im Titel.
+
 ## 0.45.1 — 29.10.2026 · Ein Regelformat, Schritt 1
 
 - **Unter der Haube:** Das Regelformat kennt jetzt auch Wortlisten, Einheiten-Gruppen,

@@ -63,12 +63,16 @@ function useOpenRule(): string | null {
   return first ?? null;
 }
 
+/** Kürzel wie „V1“, sonst der Name — eigene Regeln haben kein Kürzel. */
+const shortName = (rule: RuleStatus): string => rule.code || rule.label;
+const fullName = (rule: RuleStatus): string => `${rule.code} ${rule.label}`.trim();
+
 function Switch({ rule, on, onToggle }: { rule: RuleStatus; on: boolean; onToggle: () => void }) {
   return (
     <button
       type="button"
       aria-pressed={on}
-      aria-label={`Regel ${rule.id} anzeigen`}
+      aria-label={`Regel ${shortName(rule)} anzeigen`}
       title={on ? 'Regel abschalten' : 'Regel wieder anzeigen'}
       onClick={(event) => {
         // Der Schalter sitzt in der Zeile — ein Klick soll sie nicht aufklappen.
@@ -152,7 +156,7 @@ export function CheckCard() {
                 <section
                   key={rule.id}
                   ref={(node) => attachRow(rule.id, node)}
-                  aria-label={`${rule.id} ${rule.label}`}
+                  aria-label={fullName(rule)}
                   className={`-mx-[6px] grid grid-cols-[auto_1fr_auto_auto] items-center gap-[8px] border-t border-grid px-[6px] py-[6px] ${
                     open ? 'bg-accent-soft shadow-[inset_2px_0_0_var(--accent)]' : 'hover:bg-sunken'
                   }`}
@@ -172,9 +176,11 @@ export function CheckCard() {
                       open ? 'text-accent-ink' : 'text-ink'
                     } ${muted ? 'opacity-45' : ''}`}
                   >
-                    <span className="mr-[6px] font-mono text-[11px] font-normal text-mute">
-                      {rule.id}
-                    </span>
+                    {rule.code !== '' && (
+                      <span className="mr-[6px] font-mono text-[11px] font-normal text-mute">
+                        {rule.code}
+                      </span>
+                    )}
                     {rule.label}
                   </button>
                   <span
@@ -198,16 +204,16 @@ export function CheckCard() {
 
       {ohneTreffer.length > 0 && (
         <p className="mt-[10px] border-t border-grid pt-[8px] font-mono text-[11.5px] text-mute">
-          Ohne Treffer: {ohneTreffer.map((rule) => rule.id).join(', ')}
+          Ohne Treffer: {ohneTreffer.map(shortName).join(', ')}
         </p>
       )}
       {inaktiv.map((rule) => (
         <section
           key={rule.id}
-          aria-label={`${rule.id} ${rule.label}`}
+          aria-label={fullName(rule)}
           className="mt-[6px] font-mono text-[11.5px] text-mute"
         >
-          <span className="mr-[6px]">{rule.id}</span>
+          <span className="mr-[6px]">{shortName(rule)}</span>
           <span>inaktiv</span>
           {rule.inactiveReason !== null && <span className="block">{rule.inactiveReason}</span>}
         </section>
@@ -239,12 +245,12 @@ export function CheckFlyout() {
 
   return (
     <section
-      aria-label={`Funde ${rule.id}`}
+      aria-label={`Funde ${shortName(rule)}`}
       className="flex max-h-[55%] shrink-0 flex-col overflow-hidden border-t border-line bg-surface"
     >
       <div className="flex shrink-0 items-center gap-[8px] border-b border-line px-[14px] py-[10px]">
         <span className="min-w-0 flex-1 truncate font-display text-[14px] font-semibold text-ink">
-          {rule.id} · {formatCount(flags.length)} {flags.length === 1 ? 'Fund' : 'Funde'}
+          {shortName(rule)} · {formatCount(flags.length)} {flags.length === 1 ? 'Fund' : 'Funde'}
         </span>
         <button
           type="button"

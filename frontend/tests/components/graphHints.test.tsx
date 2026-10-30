@@ -28,8 +28,11 @@ function loadFixture() {
 const lv = loadFixture();
 const hints = hintsByPosition(lv.check);
 
+const V1 = 'v1-bedarfsposition';
+const V2 = 'v2-stundenlohn';
+
 /** Eine Position der Musterdatei, an der Regel V1 etwas gefunden hat. */
-const MIT_V1 = [...hints].find(([, found]) => found.flags.some((flag) => flag.id === 'V1'))?.[0];
+const MIT_V1 = [...hints].find(([, found]) => found.flags.some((flag) => flag.id === V1))?.[0];
 /** Eine Position ohne jeden Fund. */
 const OHNE_HINWEIS = [...lv.check.rules].length > 0 ? 'position:002.001.0010' : '';
 
@@ -39,7 +42,7 @@ function labelOf(id: string): string {
 
 function Harness({
   positionId,
-  stumm = 'V1',
+  stumm = V1,
   children,
 }: {
   positionId: string;
@@ -84,7 +87,7 @@ function Harness({
   );
 }
 
-function renderBlock(positionId: string, stumm = 'V1') {
+function renderBlock(positionId: string, stumm = V1) {
   const result = render(
     <ViewerProvider>
       <Harness positionId={positionId} stumm={stumm} />
@@ -99,7 +102,7 @@ describe('HintBlock', () => {
     expect(MIT_V1).toBeDefined();
     renderBlock(MIT_V1 as string);
     expect(screen.getByRole('region', { name: 'Hinweise' })).toBeInTheDocument();
-    expect(screen.getByText(labelOf('V1'))).toBeInTheDocument();
+    expect(screen.getByText(labelOf(V1))).toBeInTheDocument();
   });
 
   it('nennt dieselbe Zahl Funde, die die Prüfung für diese Position führt', () => {
@@ -125,11 +128,11 @@ describe('HintBlock', () => {
 
   it('verschwindet, sobald die Regel in der Prüfung abgeschaltet wird', () => {
     const nurV1 = [...hints].find(
-      ([, found]) => found.flags.length > 0 && found.flags.every((flag) => flag.id === 'V1'),
+      ([, found]) => found.flags.length > 0 && found.flags.every((flag) => flag.id === V1),
     )?.[0];
     renderBlock(nurV1 ?? (MIT_V1 as string));
     fireEvent.click(screen.getByRole('button', { name: 'Regel stumm' }));
-    expect(screen.queryByText(labelOf('V1'))).toBeNull();
+    expect(screen.queryByText(labelOf(V1))).toBeNull();
   });
 
   it('springt in die Prüfkarte, klappt die Regel auf und nimmt die Auswahl mit', () => {
@@ -138,7 +141,7 @@ describe('HintBlock', () => {
     // Die Prüfung ist ein Reiter im Seitenfenster über dem Graphen.
     expect(screen.getByTestId('ansicht')).toHaveTextContent('graph');
     expect(screen.getByTestId('seitenfenster')).toHaveTextContent('check');
-    expect(screen.getByTestId('offene-regeln').textContent?.split(',')).toContain('V1');
+    expect(screen.getByTestId('offene-regeln').textContent?.split(',')).toContain(V1);
     expect(screen.getByTestId('auswahl')).toHaveTextContent(MIT_V1 as string);
   });
 
@@ -147,7 +150,7 @@ describe('HintBlock', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'In der Prüfung zeigen' })[0]);
     // Die Prüfansicht selbst ist hier nicht gerendert, also bleibt das
     // Merkzeichen stehen — genau das trägt den Sprung dorthin.
-    expect(screen.getByTestId('holt-regel')).toHaveTextContent('V1');
+    expect(screen.getByTestId('holt-regel')).toHaveTextContent(V1);
   });
 
   it('klappt die Regel beim zweiten Sprung nicht wieder zu', () => {
@@ -156,7 +159,7 @@ describe('HintBlock', () => {
       screen.getAllByRole('button', { name: 'In der Prüfung zeigen' })[0];
     fireEvent.click(knopf());
     fireEvent.click(knopf());
-    expect(screen.getByTestId('offene-regeln').textContent?.split(',')).toContain('V1');
+    expect(screen.getByTestId('offene-regeln').textContent?.split(',')).toContain(V1);
   });
 });
 
@@ -164,7 +167,7 @@ describe('Legende im Graph-Kopf', () => {
   function renderHeader() {
     const result = render(
       <ViewerProvider>
-        <Harness positionId={OHNE_HINWEIS} stumm="V2">
+        <Harness positionId={OHNE_HINWEIS} stumm={V2}>
           <GraphHeader root={lv.tree} />
         </Harness>
       </ViewerProvider>,
@@ -183,7 +186,7 @@ describe('Legende im Graph-Kopf', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Regel stumm' }));
     // V2 ist die einzige Regel an den Stundenlohn-Positionen — ohne sie fallen
     // sie ganz aus der Markierung heraus.
-    const ohneV2 = hintsByPosition(lv.check, new Set(['V2'])).size;
+    const ohneV2 = hintsByPosition(lv.check, new Set([V2])).size;
     expect(ohneV2).toBeLessThan(hints.size);
     expect(screen.getByText(`${ohneV2} mit Hinweis`)).toBeInTheDocument();
   });

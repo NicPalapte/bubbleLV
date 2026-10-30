@@ -80,8 +80,11 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
 - `buildTree(draft): LVNode` erzeugt den rekursiven Baum für Tree, Graph und Tabelle –
   reine Funktion, kein Fetch. Für Filter, Summen und Beziehungen kommt ein **flacher
   Positions-Index** dazu (WP-I) – der Baum bleibt die Struktur, der Index die Rechenbasis.
-- Prüfregeln liegen in `frontend/src/lib/check/` hinter einer Registry, ein Modul je
-  Regel; Katalog und Norm-Verweise: @docs/domain/vob-pruefungen.md
+- Prüfregeln sind Grundstock-Regeln `bubble-rule-v1` mit Wirkung `pruefhinweis` in
+  `docs/domain/reference/regeln.json` (Entscheidung 0086); Auswertung in
+  `frontend/src/lib/check/index.ts`, eingebaute Logik nur in `lib/check/builtins.ts`,
+  Wortlisten als CSV (`lib/rules/wissen.ts`). Katalog und Norm-Verweise:
+  @docs/domain/vob-pruefungen.md
 - Große LVs (Richtung ~10k Positionen): Parsing + Klassifizierung laufen in einem
   Web Worker, damit die UI nicht blockiert.
 

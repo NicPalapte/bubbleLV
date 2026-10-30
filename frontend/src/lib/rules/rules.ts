@@ -18,10 +18,12 @@ import {
   type RuleBlock,
   type RuleCondition,
   type RuleContext,
+  type RuleParam,
   type RuleText,
   type TextRange,
 } from '@core';
 import { attrSpans } from '../attributes';
+import { WISSEN } from './wissen';
 import type { Span } from '../classify';
 import type { LVNode, PositionSummary } from '../../types/lvNode';
 
@@ -38,11 +40,24 @@ function readGrundstock(raw: string): Rule[] {
 export const GRUNDSTOCK: readonly Rule[] = readGrundstock(grundstockJson);
 
 /**
- * Inhalte für die Bausteine aus 0085 (Wortlisten, Einheiten-Gruppen, eingebaute Logik).
- * Noch leer: Sie kommen mit den Schritten 2–4. Alle Auswertungen der App nutzen diesen
- * einen Kontext, damit die Regeln dann überall gleich wirken.
+ * Inhalte für die Bausteine aus 0085: Wortlisten und Einheiten-Gruppen aus den CSV. Alle
+ * Auswertungen der App nutzen diesen einen Kontext, damit die Regeln überall gleich wirken.
  */
-export const RULE_CONTEXT: RuleContext = {};
+export const RULE_CONTEXT: RuleContext = WISSEN;
+
+/**
+ * Parameter eines eingebauten Bausteins aus dem Grundstock, z. B. die Mindestlänge einer
+ * Punktreihe für `offene-stelle`. `undefined`, wenn keine Regel ihn setzt.
+ */
+export function builtinParameter(name: string, key: string): RuleParam | undefined {
+  for (const rule of GRUNDSTOCK) {
+    const [block] = blocksOf(rule.bedingung);
+    if (block !== undefined && 'eingebaut' in block && block.eingebaut === name) {
+      return block.parameter?.[key];
+    }
+  }
+  return undefined;
+}
 
 /** Regel wirkt im LV: freigegeben. Entwürfe zeigen nur der Editor und seine Vorschau. */
 export const isActive = (rule: Rule): boolean => rule.status === 'freigegeben';

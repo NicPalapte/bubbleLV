@@ -1,4 +1,5 @@
-// Prüfregeln (WP-K). Was hier entsteht, sind **Hinweise, keine Urteile**
+// Prüfregeln (WP-K), seit Entscheidung 0085 Regeln im Format `bubble-rule-v1` mit der
+// Wirkung „Prüfhinweis“ (docs/domain/reference/regeln.json). Was hier entsteht, sind **Hinweise, keine Urteile**
 // (docs/domain/vob-pruefungen.md):
 //  - jede Meldung zeigt die Fundstelle, nie nur eine Behauptung,
 //  - jede Regel ist einzeln abschaltbar,
@@ -18,7 +19,7 @@ export type FlagSeverity = 'hinweis' | 'beachten';
 
 /** Ein Fund an einer Position. */
 export interface Flag {
-  /** Regel-ID, z. B. "V1". */
+  /** Kennung der Regel, z. B. „v1-bedarfsposition“. */
   id: string;
   category: FlagCategory;
   severity: FlagSeverity;
@@ -40,45 +41,20 @@ export interface CheckContext {
   parents: ReadonlyMap<string, LVNode | null>;
 }
 
-/** Was eine Prüffunktion meldet; Regel-ID, Kategorie und Schwere setzt `runChecks`. */
-export type Fund = Omit<Flag, 'id' | 'category' | 'severity'> & {
-  /** Nur wenn ein Fund von der Schwere der Regel abweicht (V4: je Formulierung). */
-  severity?: FlagSeverity;
-};
-
-/**
- * Die Logik einer Regel. Name, Hinweis, Kategorie, Schwere, Status und
- * Norm-Verweis stehen nicht hier, sondern in docs/domain/reference/pruefregeln.csv.
- */
-export interface CheckRule {
-  /** Stabile ID, zugleich Schlüssel in docs/domain/reference/pruefregeln.csv. */
-  id: string;
-  /**
-   * Prüffunktion. Fehlt sie, ist die Regel angemeldet, aber noch nicht
-   * umgesetzt — sie erscheint in der Liste als inaktiv, statt still zu fehlen.
-   */
-  check?(context: CheckContext): Fund[];
-  /**
-   * Referenzdatei, ohne deren Inhalt die Regel nicht laufen kann. Enthält sie
-   * nur die Kopfzeile, bleibt die Regel inaktiv — kein Fehler, nur ein
-   * sichtbarer Grund in der Prüfliste.
-   */
-  requires?: {
-    /** Pfad, wie ihn der Owner kennt. */
-    file: string;
-    /** Ob die Datei Zeilen enthält, mit denen die Regel arbeiten kann. */
-    available(): boolean;
-  };
-}
+/** Was eine eingebaute Logik je Position meldet; den Rest setzt `runChecks`. */
+export type Fund = Pick<Flag, 'title' | 'span'>;
 
 /** Eine Regel mit ihrem Zustand für diesen Datensatz. */
 export interface RuleStatus {
+  /** Kennung der Regel (`bubble-rule-v1`), z. B. „v1-bedarfsposition“. */
   id: string;
+  /** Kurzzeichen für die Liste, z. B. „V1“; leer bei Regeln ohne. */
+  code: string;
   label: string;
   category: FlagCategory;
   severity: FlagSeverity;
   hint: string;
-  /** Norm-Verweis aus der Referenzdatei; leer, wenn es keinen gibt. */
+  /** Norm-Verweis aus der Regel; leer, wenn es keinen gibt. */
   ruleRef: string;
   /**
    * `true`, sobald der Owner den Norm-Verweis bestätigt hat. Solange `false`,

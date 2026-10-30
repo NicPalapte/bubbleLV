@@ -1,6 +1,7 @@
 # 0049 – Prüfregeln als Tabelle, keine wertenden Kennzahlen
 
-- **Status:** akzeptiert
+- **Status:** Tabellen-Teil ersetzt durch [0086](0086-pruefregeln-als-regeln.md); keine
+  wertenden Kennzahlen gilt weiter
 - **Datum:** 2026-10-15
 - **Betrifft:** Prüfregeln (`frontend/src/lib/check/`), `docs/domain/reference/`
 - **Ergänzt:** [0045](0045-materialwissen-als-tabelle.md), [0048](0048-referenzdaten-ohne-kopie.md)

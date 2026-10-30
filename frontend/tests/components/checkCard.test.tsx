@@ -39,7 +39,7 @@ function WithLv({ children }: { children: ReactNode }) {
       </button>
       {/* Der Sprung aus dem Graphen (WP-R, R1): Regel aufklappen und ins
           Fenster holen. */}
-      <button type="button" onClick={() => dispatch({ type: 'openRule', id: 'V7' })}>
+      <button type="button" onClick={() => dispatch({ type: 'openRule', id: 'v7-offene-stelle' })}>
         zu V7 springen
       </button>
       {children}
@@ -69,7 +69,7 @@ function gesamtzahl(): number {
   return Number((text.match(/^([\d.]+)/)?.[1] ?? '0').replace(/\./g, ''));
 }
 
-/** Die Zeile einer Regel — erkennbar an ihrer ID. */
+/** Die Zeile einer Regel — erkennbar an ihrem Kürzel. */
 function sectionOf(id: string): HTMLElement {
   const heading = screen.getByText(id, { selector: 'span' });
   return heading.closest('section') as HTMLElement;
@@ -86,8 +86,8 @@ describe('CheckCard', () => {
     renderView();
     const ohneTreffer = screen.getByText(/^Ohne Treffer:/).textContent ?? '';
     for (const rule of lv.check.rules) {
-      if (rule.count === 0) expect(ohneTreffer).toContain(rule.id);
-      else expect(sectionOf(rule.id)).toBeTruthy();
+      if (rule.count === 0) expect(ohneTreffer).toContain(rule.code);
+      else expect(sectionOf(rule.code)).toBeTruthy();
     }
   });
 
@@ -98,7 +98,7 @@ describe('CheckCard', () => {
       check: {
         ...lv.check,
         rules: lv.check.rules.map((rule) =>
-          rule.id === 'V1' ? { ...rule, refConfirmed: false } : rule,
+          rule.code === 'V1' ? { ...rule, refConfirmed: false } : rule,
         ),
       },
     };
@@ -120,7 +120,7 @@ describe('CheckCard', () => {
       check: {
         ...lv.check,
         rules: lv.check.rules.map((rule) =>
-          rule.id === 'V3'
+          rule.code === 'V3'
             ? { ...rule, active: false, count: 0, inactiveReason: 'Noch nicht umgesetzt.' }
             : rule,
         ),

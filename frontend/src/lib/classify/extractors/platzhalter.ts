@@ -6,19 +6,20 @@
 //     die Bieter-Textergänzungen). Sie zählen immer — die Datei sagt es selbst.
 //  2. Punkt- oder Unterstrichreihen im übrigen Text. Drei Punkte sind oft nur
 //     eine Auslassung („usw. ..."), deshalb zählen sie erst ab der Mindestlänge
-//     aus pruefregeln-parameter.csv (V7, `punktreihe_mindestlaenge`). Fehlt der
-//     Wert, zählen nur die Eingabefelder aus 1.
+//     der Grundstock-Regel V7 (`offene-stelle`, `punktreihe-mindestlaenge`,
+//     docs/domain/reference/regeln.json). Fehlt der Wert, zählen nur die Eingabefelder aus 1.
 //  3. Ausformulierte Lücken („Fabrikat: vom Bieter einzutragen").
 //
 // Das ist der Rohstoff für den VOB-Hinweis „unvollständige Leistungsbeschreibung"
 // in WP-K; hier wird nur gefunden, nicht bewertet.
 //
-// Die Wörter stehen als Zeilen V7 in docs/domain/reference/pruefregeln-stichworte.csv.
-// Hier bleibt nur die Form: was eine Lücke ist, und dass ein „offenes Feld" ein
-// Feldname mit Doppelpunkt vor einer Lücke ist.
+// Die Wörter stehen als Wortlisten `bieterangabe` und `offenes-feld` in
+// docs/domain/reference/wortlisten.csv. Hier bleibt nur die Form: was eine Lücke ist, und
+// dass ein „offenes Feld" ein Feldname mit Doppelpunkt vor einer Lücke ist.
 
-import { regelParameter, regelStichworte } from '../../check/referenz';
-import { findeStichworte, stichwortQuelle } from '../material/stichwort';
+import { builtinParameter } from '../../rules/rules';
+import { WISSEN } from '../../rules/wissen';
+import { compileStichworte, findeStichworte, stichwortQuelle } from '../material/stichwort';
 import { collect, tidy, type Hit } from './spans';
 import type { Extractor, ExtractorContext, ExtractorResult } from './types';
 
@@ -35,8 +36,7 @@ let luecke: RegExp | null | undefined;
  */
 function lueckenMuster(): RegExp | null {
   if (luecke !== undefined) return luecke;
-  const roh = regelParameter('V7', 'punktreihe_mindestlaenge');
-  const n = roh === undefined ? NaN : Number(roh);
+  const n = Number(builtinParameter('offene-stelle', 'punktreihe-mindestlaenge'));
   luecke =
     Number.isInteger(n) && n > 0
       ? new RegExp(`\\.{${n},}|_{${n},}|…{${Math.ceil(n / 3)},}`, 'g')
@@ -44,8 +44,10 @@ function lueckenMuster(): RegExp | null {
   return luecke;
 }
 
-/** Zeile in pruefregeln-stichworte.csv, deren Wörter Feldnamen vor einer Lücke sind. */
+/** Wert für Feldnamen vor einer Lücke (Wortliste `offenes-feld`). */
 const OFFENES_FELD = 'Offenes Feld';
+/** Wert für ausformulierte Aufforderungen (Wortliste `bieterangabe`). */
+const BIETERANGABE = 'Bieterangabe';
 
 /** Feldname, Doppelpunkt, danach nichts oder nur eine Lücke. */
 function offenesFeld(namen: readonly string[]): RegExp | null {
@@ -55,6 +57,17 @@ function offenesFeld(namen: readonly string[]): RegExp | null {
     `(?<![\\p{L}\\p{N}])(?:${quelle})\\s*:\\s*(?=\\s*(?:\\.{3,}|_{3,}|…|$))`,
     'giu',
   );
+}
+
+let worte: { bitte: RegExp | null; feld: RegExp | null } | undefined;
+
+function wortMuster(): { bitte: RegExp | null; feld: RegExp | null } {
+  const liste = (name: string): readonly string[] => WISSEN.listen?.get(name) ?? [];
+  worte ??= {
+    bitte: liste('bieterangabe').length === 0 ? null : compileStichworte(liste('bieterangabe')),
+    feld: offenesFeld(liste('offenes-feld')),
+  };
+  return worte;
 }
 
 /** Wie viele Zeichen vor der Lücke als Beschriftung dienen. */
@@ -82,23 +95,26 @@ export function findPlatzhalter(
   inputFields: readonly { start: number; end: number }[] = [],
 ): Hit[] {
   const hits: Hit[] = [...findFelder(longText, inputFields), ...findLuecken(longText, inputFields)];
-  for (const zeile of regelStichworte('V7')) {
-    if (zeile.wert === OFFENES_FELD) {
-      const pattern = offenesFeld(zeile.stichworte);
-      if (pattern === null) continue;
-      for (const match of longText.matchAll(pattern)) {
-        const start = match.index ?? 0;
-        hits.push({
-          value: zeile.wert,
-          start,
-          end: start + match[0].length,
-          label: tidy(match[0]),
-        });
-      }
-      continue;
+  const { bitte, feld } = wortMuster();
+  if (bitte !== null) {
+    for (const treffer of findeStichworte(longText, bitte, null)) {
+      hits.push({
+        value: BIETERANGABE,
+        start: treffer.start,
+        end: treffer.end,
+        label: treffer.text,
+      });
     }
-    for (const treffer of findeStichworte(longText, zeile.pattern, zeile.ausser)) {
-      hits.push({ value: zeile.wert, start: treffer.start, end: treffer.end, label: treffer.text });
+  }
+  if (feld !== null) {
+    for (const match of longText.matchAll(feld)) {
+      const start = match.index ?? 0;
+      hits.push({
+        value: OFFENES_FELD,
+        start,
+        end: start + match[0].length,
+        label: tidy(match[0]),
+      });
     }
   }
   return hits.sort((a, b) => a.start - b.start);
