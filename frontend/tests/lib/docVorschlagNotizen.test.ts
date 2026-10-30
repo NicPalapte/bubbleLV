@@ -16,6 +16,8 @@ import {
   paintDocMark,
   pendingSuggestions,
   rejectSuggestion,
+  showSuggestions,
+  shownSuggestions,
   unlinkDocMark,
   type DocSpot,
 } from '../../src/lib/docs/docNotes';
@@ -116,6 +118,28 @@ describe('Speichern', () => {
     const documents = rejectSuggestion(EMPTY_DOC_NOTES, MENGE, 'p1', 2);
     const stored = toStored(rekey({ ...EMPTY_ANNOTATIONS, documents }, keys.toHash));
     expect(stored.documents.rejected).toMatchObject([{ id: 'h1' }]);
+  });
+
+  it('ausgeblendete Arten von Vorschlag bleiben für dieses LV gemerkt (0087)', () => {
+    expect(shownSuggestions(EMPTY_DOC_NOTES)).toEqual({ oz: true, menge: true });
+    const aus = showSuggestions(EMPTY_DOC_NOTES, 'menge', false);
+    expect(showSuggestions(aus, 'menge', false)).toBe(aus);
+    expect(shownSuggestions(aus)).toEqual({ oz: true, menge: false });
+    const back = fromStored(
+      JSON.parse(JSON.stringify(toStored({ ...EMPTY_ANNOTATIONS, documents: aus }))),
+    );
+    expect(shownSuggestions(back.documents)).toEqual({ oz: true, menge: false });
+    const wieder = showSuggestions(back.documents, 'menge', true);
+    expect(shownSuggestions(wieder)).toEqual({ oz: true, menge: true });
+    expect(toStored({ ...EMPTY_ANNOTATIONS, documents: wieder }).documents).not.toHaveProperty(
+      'hidden',
+    );
+    // Kaputte Einträge zählen nicht.
+    const kaputt = fromStored({
+      ...JSON.parse(JSON.stringify(toStored(EMPTY_ANNOTATIONS))),
+      documents: { docs: [], marks: [], hidden: ['oz', 'preis', 3] },
+    });
+    expect(shownSuggestions(kaputt.documents)).toEqual({ oz: false, menge: true });
   });
 
   it('Notiz-Datei: „quelle“ und „abgelehnt“ je Position, an der neuen Position wieder da', () => {

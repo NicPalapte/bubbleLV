@@ -49,6 +49,7 @@ import {
   paintDocMark,
   registerDoc,
   rejectSuggestion,
+  showSuggestions,
   unlinkDocMark,
   unpaintDocMark,
   type DocNotes,
@@ -143,6 +144,8 @@ type LvAction =
   | { type: 'docUnlink'; spot: DocSpot; id: string }
   /** Vorschlag abgelehnt: Stelle gehört nicht zu dieser Position (Entscheidung 0080). */
   | { type: 'docReject'; spot: DocSpot; id: string; at: number }
+  /** Eine Art von Vorschlag im Dokument zeigen oder ausblenden, für dieses LV (0087). */
+  | { type: 'docSuggest'; source: LinkSource; on: boolean }
   /** Vorschlag einer Regel bestätigt oder verworfen (Entscheidung 0081); Knoten-IDs. */
   | { type: 'judgeLink'; x: string; y: string; status: LinkVerdict; regel: string; at: number }
   /** Urteil über ein Paar zurücknehmen: wieder offen. */
@@ -249,7 +252,8 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     case 'docPaint':
     case 'docLink':
     case 'docUnlink':
-    case 'docReject': {
+    case 'docReject':
+    case 'docSuggest': {
       const before = state.annotations.documents;
       const documents = docNotesReducer(before, action);
       return documents === before
@@ -457,7 +461,7 @@ export function useViewerDispatch(): Dispatch<ViewerAction> {
 
 type DocAction = Extract<
   LvAction,
-  { type: 'docRegister' | 'docPaint' | 'docLink' | 'docUnlink' | 'docReject' }
+  { type: 'docRegister' | 'docPaint' | 'docLink' | 'docUnlink' | 'docReject' | 'docSuggest' }
 >;
 
 function docNotesReducer(notes: DocNotes, action: DocAction): DocNotes {
@@ -474,5 +478,7 @@ function docNotesReducer(notes: DocNotes, action: DocAction): DocNotes {
       return unlinkDocMark(notes, action.spot, action.id);
     case 'docReject':
       return rejectSuggestion(notes, action.spot, action.id, action.at);
+    case 'docSuggest':
+      return showSuggestions(notes, action.source, action.on);
   }
 }

@@ -1,0 +1,256 @@
+[
+  [
+    {
+      "page": 1,
+      "start": 6,
+      "text": "01.02.0030",
+      "id": "p1",
+      "source": "oz"
+    },
+    {
+      "page": 1,
+      "start": 21,
+      "text": "1.2.40",
+      "id": "p2",
+      "source": "oz"
+    },
+    {
+      "page": 1,
+      "start": 34,
+      "text": "01-03-0050",
+      "id": "p4",
+      "source": "oz"
+    },
+    {
+      "page": 1,
+      "start": 53,
+      "text": "01.02.\n0030",
+      "id": "p1",
+      "source": "oz"
+    }
+  ],
+  [
+    {
+      "page": 2,
+      "start": 0,
+      "text": "02 01 0070",
+      "id": "p7",
+      "source": "oz",
+      "amount": {
+        "pdf": "42,75 t",
+        "lv": "42,75 t",
+        "same": true
+      }
+    }
+  ],
+  [],
+  [
+    {
+      "page": 4,
+      "start": 5,
+      "text": "70",
+      "id": "p7",
+      "source": "oz",
+      "amount": {
+        "pdf": "70 Stück",
+        "lv": "42,75 t",
+        "same": false
+      }
+    },
+    {
+      "page": 4,
+      "start": 73,
+      "text": "3.30",
+      "id": "p3",
+      "source": "oz"
+    },
+    {
+      "page": 4,
+      "start": 85,
+      "text": "2.30",
+      "id": "p1",
+      "source": "oz"
+    }
+  ],
+  [
+    {
+      "page": 5,
+      "start": 8,
+      "text": "1.234,50 m²",
+      "id": "p2",
+      "source": "menge"
+    },
+    {
+      "page": 5,
+      "start": 36,
+      "text": "120 cbm",
+      "id": "p1",
+      "source": "menge"
+    }
+  ],
+  [
+    {
+      "page": 6,
+      "start": 13,
+      "text": "Danach werden ca. 42,75 t Betonstahl verlegt.",
+      "id": "p7",
+      "source": "menge",
+      "words": [
+        "Betonstahl"
+      ]
+    }
+  ],
+  [
+    {
+      "page": 7,
+      "start": 0,
+      "text": "Im Hof sind 88 m Kabelschutzrohre zu verlegen.",
+      "id": "p5",
+      "source": "menge",
+      "words": [
+        "Kabelschutzrohre"
+      ]
+    },
+    {
+      "page": 7,
+      "start": 47,
+      "text": "Es folgen 88 m Ortbetonrinne.",
+      "id": "p4",
+      "source": "menge",
+      "words": [
+        "Ortbetonrinne"
+      ]
+    }
+  ],
+  [
+    {
+      "page": 8,
+      "start": 0,
+      "text": "Es folgen 88 m Rinne neben dem Kabelschutzrohr.",
+      "id": "p4",
+      "source": "menge",
+      "words": [
+        "Rinne"
+      ]
+    }
+  ],
+  [
+    {
+      "page": 9,
+      "start": 33,
+      "text": "Schottertragschicht rd. 350 m³",
+      "id": "p8",
+      "source": "menge",
+      "words": [
+        "Schottertragschicht"
+      ]
+    },
+    {
+      "page": 9,
+      "start": 65,
+      "text": "Asphaltbinderschicht AC 16 BN",
+      "id": "p9",
+      "source": "menge",
+      "words": [
+        "Asphaltbinderschicht"
+      ]
+    },
+    {
+      "page": 9,
+      "start": 99,
+      "text": "Asphaltdeckschicht AC 8 DN auf\nje rd. 2.300 m².",
+      "id": "p10",
+      "source": "menge",
+      "words": [
+        "Asphaltdeckschicht"
+      ]
+    }
+  ],
+  [
+    {
+      "page": 10,
+      "start": 5,
+      "text": "01.02.0030",
+      "id": "p1",
+      "source": "oz",
+      "amount": {
+        "pdf": "110 m³",
+        "lv": "120 m3",
+        "same": false
+      }
+    },
+    {
+      "page": 10,
+      "start": 42,
+      "text": "3.1.40",
+      "id": "p11",
+      "source": "oz",
+      "amount": {
+        "pdf": "8 St",
+        "lv": "8 St",
+        "same": true
+      }
+    }
+  ],
+  [
+    {
+      "page": 11,
+      "start": 5,
+      "text": "01.02.0040",
+      "id": "p2",
+      "source": "oz"
+    },
+    {
+      "page": 11,
+      "start": 140,
+      "text": "1.234,50 m² Estrich",
+      "id": "p2",
+      "source": "menge",
+      "words": [
+        "Estrich"
+      ]
+    },
+    {
+      "page": 11,
+      "start": 161,
+      "text": "3.1.10",
+      "id": "p8",
+      "source": "oz",
+      "amount": {
+        "pdf": "350 m³",
+        "lv": "350 m3",
+        "same": true
+      }
+    }
+  ],
+  [
+    {
+      "page": 12,
+      "start": 0,
+      "text": "Asphaltbinderschicht 2.300 m²",
+      "id": "p9",
+      "source": "menge",
+      "words": [
+        "Asphaltbinderschicht"
+      ]
+    },
+    {
+      "page": 12,
+      "start": 54,
+      "text": "120 m³ Boden",
+      "id": "p1",
+      "source": "menge",
+      "words": [
+        "Boden",
+        "lösen"
+      ]
+    },
+    {
+      "page": 12,
+      "start": 74,
+      "text": "42,75 t.",
+      "id": "p7",
+      "source": "menge"
+    }
+  ]
+]

@@ -1,5 +1,7 @@
 // Vorschläge zum Verknüpfen im Begleitdokument (Entscheidung 0080): OZ und Mengen aus
-// dem geladenen LV im Seitentext wiederfinden. Nur exakter Abgleich mit dem LV, keine
+// dem geladenen LV im Seitentext wiederfinden. Ein- und ausgeschaltet und eingestellt
+// über die Grundstock-Regeln „OZ im Dokument“ und „Menge im Dokument“ (0087,
+// `suggestRules.ts`). Nur exakter Abgleich mit dem LV, keine
 // Deutung des Textes — was nicht eindeutig zu genau einer Position passt, wird kein
 // Vorschlag. Übernommen wird erst per Klick (KI/Automatik schlägt vor, Mensch entscheidet).
 //
@@ -48,6 +50,14 @@ export interface SuggestIndex {
   readonly amountOf: ReadonlyMap<string, { readonly text: string; readonly key: string }>;
   /** Einheiten, die im LV vorkommen (Vergleichsschlüssel). */
   readonly units: ReadonlySet<string>;
+  /** Welche Arten von Vorschlag aktiv sind und mit welchen Werten. */
+  readonly rules: SuggestRules;
+}
+
+/** Einstellungen aus den Regeln „OZ im Dokument“ und „Menge im Dokument“; `null`: aus. */
+export interface SuggestRules {
+  readonly oz: { readonly nearOz: number } | null;
+  readonly menge: { readonly minInteger: number } | null;
 }
 
 export interface DocSuggestion {
@@ -69,10 +79,16 @@ export interface DocSuggestion {
 
 export { SENTENCE_REACH } from '@core';
 
+// Ersatzwerte, falls die Regel keinen Parameter setzt; gelten tut, was in regeln.json steht.
 /** Kleinere ganze Zahlen sind als Menge zu allgemein („2 St“, „1 m“). */
 export const AMOUNT_MIN_INTEGER = 10;
 /** So viele Zeichen hinter einer OZ zählt eine Menge noch zu ihr. */
 export const AMOUNT_NEAR_OZ = 80;
+/** Beide Arten an, mit den Ersatzwerten — für Tests und ohne Regeln. */
+export const DEFAULT_SUGGEST_RULES: SuggestRules = {
+  oz: { nearOz: AMOUNT_NEAR_OZ },
+  menge: { minInteger: AMOUNT_MIN_INTEGER },
+};
 /** Längstes Glied einer OZ; längere Ziffernfolgen sind Telefon-, Auftrags- oder Seriennummern. */
 const MAX_PART = 6;
 
@@ -164,7 +180,10 @@ function addUnique(map: Map<string, string | null>, key: string, id: string): vo
 }
 
 /** Verzeichnis aus den Positionen des LV; einmal je geladenem LV. */
-export function suggestIndexOf(positions: Iterable<SuggestPosition>): SuggestIndex {
+export function suggestIndexOf(
+  positions: Iterable<SuggestPosition>,
+  rules: SuggestRules = DEFAULT_SUGGEST_RULES,
+): SuggestIndex {
   const full = new Map<string, string | null>();
   const tail = new Map<string, string | null>();
   const amount = new Map<string, string | null>();
@@ -196,7 +215,7 @@ export function suggestIndexOf(positions: Iterable<SuggestPosition>): SuggestInd
       words.set(position.id, [...new Set(wordsIn(position.shortText).map((w) => w.stem))]);
     }
   }
-  return { full, tail, amount, amountIds, words, amountOf, units };
+  return { full, tail, amount, amountIds, words, amountOf, units, rules };
 }
 
 interface Run {
@@ -435,6 +454,9 @@ const overlaps = (a: { start: number; end: number }, b: { start: number; end: nu
  * ihr und erscheint dort zum Vergleich. Andere Mengen werden nur vorgeschlagen, wenn
  * Wert und Einheit genau eine Position im LV treffen oder Wörter aus dem Kurztext
  * zeigen, welche der Positionen mit dieser Menge gemeint sind (`pickAmount`).
+ *
+ * Ist eine Art per Regel aus, wird trotzdem alles gesucht und nur ihr Ergebnis
+ * weggelassen — die übrigen Vorschläge bleiben so, wie wenn sie an wäre.
  */
 export function suggestionsInPage(
   text: string,
@@ -443,10 +465,12 @@ export function suggestionsInPage(
 ): DocSuggestion[] {
   const ozs = findOz(text, index);
   const amounts = findAmounts(text, index).filter((item) => !ozs.some((oz) => overlaps(oz, item)));
+  const nearOz = index.rules.oz?.nearOz ?? AMOUNT_NEAR_OZ;
+  const minInteger = index.rules.menge?.minInteger ?? AMOUNT_MIN_INTEGER;
   const near = new Set<Amount>();
   const out: DocSuggestion[] = [];
   ozs.forEach((oz, i) => {
-    const limit = Math.min(oz.end + AMOUNT_NEAR_OZ, ozs[i + 1]?.start ?? text.length);
+    const limit = Math.min(oz.end + nearOz, ozs[i + 1]?.start ?? text.length);
     const amount = amounts.find((item) => item.start >= oz.end && item.start < limit);
     const own = index.amountOf.get(oz.id) ?? null;
     let extra: DocSuggestion['amount'];
@@ -471,7 +495,7 @@ export function suggestionsInPage(
   const taken: Span[] = [...ozs];
   for (const amount of amounts) {
     if (near.has(amount)) continue;
-    if (Number.isInteger(amount.value) && amount.value < AMOUNT_MIN_INTEGER) continue;
+    if (Number.isInteger(amount.value) && amount.value < minInteger) continue;
     const candidates = index.amountIds.get(amountKey(amount.value, amount.unit));
     if (candidates === undefined) continue;
     const sentence = sentenceAround(text, amount.start, amount.end);
@@ -501,5 +525,5 @@ export function suggestionsInPage(
       });
     }
   }
-  return out.sort((a, b) => a.start - b.start);
+  return out.filter((item) => index.rules[item.source] !== null).sort((a, b) => a.start - b.start);
 }

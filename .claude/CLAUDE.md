@@ -49,7 +49,8 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
 - **IndexedDB nur über `frontend/src/lib/persist/lastLv.ts`:** genau ein Projekt
   (Original-Bytes + Angaben der zuletzt geöffneten eigenen Datei + Marker, Kommentar-Verlauf
   und Textmarkierungen je Positions-Hash `hashes.id`, `lib/annotations.ts`, Entscheidung 0057,
-  dazu Stellen in Begleit-PDFs `lib/docs/docNotes.ts`, 0072),
+  dazu Stellen in Begleit-PDFs und ausgeblendete Vorschlagsarten `lib/docs/docNotes.ts`,
+  0072, 0087),
   löschbar auf der Startseite. Dazu, unabhängig von der Datei, die im Admin-Werkzeug gelernten
   Begriffe (`lib/highlight/terms.ts`), die eigenen Namen der Markierfarben
   (`lib/paintNames.ts`, `state/paintNames.tsx`) und der Merker der Kurzumfrage
@@ -153,7 +154,8 @@ Fenster „Dokument“ lesen, anstreichen, Stellen von Hand mit Positionen verkn
 Interpretation (`components/docs/`, `docs/decisions/0072-begleitdokument-pdf.md`); Vorschläge nur
 bei exakt passender OZ oder eindeutiger Menge+Einheit (gleiche Menge: eigene Kurztext-Wörter im
 Satzteil, bei Aufzählung/„je“ mehrere Positionen), Übernahme erst per Klick, „Nein“ gemerkt,
-kein inhaltliches Matching (`lib/docs/docSuggest.ts`, `docs/decisions/0080`);
+kein inhaltliches Matching (`lib/docs/docSuggest.ts`, `docs/decisions/0080`; an/aus und Werte nur
+über Grundstock-Regeln `pdf-oz`/`pdf-menge`, `lib/docs/suggestRules.ts`, 0087);
 Suchleiste nur fürs LV, eigenes Suchfeld im Dokument nur fürs PDF, filtert das LV nie
 (`docs/decisions/0084`). Matrix und
 Ähnlichkeit sind entfernt (`docs/decisions/0031-drei-ansichten.md`); keine
