@@ -303,9 +303,9 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
     () => suggestIndexOf(suggestPositions(index), JSON.parse(suggestRulesKey) as SuggestRules),
     [index, suggestRulesKey],
   );
-  const wanted =
-    (suggest.oz && suggestIndex.rules.oz !== null) ||
-    (suggest.menge && suggestIndex.rules.menge !== null);
+  // Nur an den Regeln, nicht an den Schaltern: Die Schalter zählen die Vorschläge und
+  // blieben sonst weg, wenn beide aus sind — gemerkt in den Notizen, also dauerhaft.
+  const wanted = suggestIndex.rules.oz !== null || suggestIndex.rules.menge !== null;
   const [suggested, setSuggested] = useState<{
     index: SuggestIndex | null;
     byDoc: ReadonlyMap<string, readonly DocSuggestion[]>;
