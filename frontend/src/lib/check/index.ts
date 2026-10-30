@@ -76,13 +76,13 @@ const ART_LABELS: Readonly<Record<PositionSummary['positionType'], string>> = {
 
 /** Was an der Position stimmt, z. B. „keine Menge“ oder „Einheit h (Stunde)“. */
 function factLabel(block: RuleBlock, position: PositionSummary): string | null {
-  if ('einheit' in block) return `Einheit ${position.unit ?? ''} (${block.einheit.gruppe})`;
+  if ('einheit' in block) return `Einheit ${position.unit ?? '–'} (${block.einheit.gruppe})`;
   if (!('feld' in block)) return null;
   if (block.feld === 'art') return ART_LABELS[position.positionType];
   if (block.feld === 'menge') {
     return block.ist === 'leer' ? 'keine Menge' : `Menge ${String(position.quantity)}`;
   }
-  return block.ist === 'leer' ? 'keine Einheit' : `Einheit ${position.unit ?? ''}`;
+  return block.ist === 'leer' ? 'keine Einheit' : `Einheit ${position.unit ?? '–'}`;
 }
 
 /** Titel und Fundstelle eines Treffers: gefundene Wörter, dann stimmende Angaben. */
@@ -119,7 +119,8 @@ function fundOf(
       add(factLabel(block, position) ?? '');
     }
   }
-  return { title: parts.join(', '), span };
+  // Ohne Wort und Angabe bleibt der Name der Regel, nie ein leerer Fund.
+  return { title: parts.length > 0 ? parts.join(', ') : rule.name, span };
 }
 
 /** Funde einer Regel je Position (Slot), ohne Regel-ID, Kategorie und Schwere. */
@@ -200,7 +201,8 @@ export function runChecks(
     }
 
     const active = grund === null;
-    if (active) flags.push(...found);
+    // Schleife statt `push(...found)`: sehr viele Funde sprengen sonst die Argumentgrenze.
+    if (active) for (const flag of found) flags.push(flag);
 
     statuses.push({
       id: rule.id,
