@@ -177,7 +177,7 @@ export function runChecks(
   for (const rule of rules) {
     if (rule.status !== 'freigegeben') continue;
     const hint = rule.wirkung.pruefhinweis;
-    let grund: string | null = null;
+    let grund: string | null;
     let found: Flag[] = [];
 
     try {
