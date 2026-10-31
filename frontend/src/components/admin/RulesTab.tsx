@@ -462,7 +462,8 @@ export function RulesTab() {
           </div>
           {ownRules.length === 0 ? (
             <p className="m-0 px-[14px] py-[6px] font-sans text-[12px] text-mute">
-              Noch keine. „+ Neue Regel“ oder im Langtext Text markieren → „Als Regel…“.
+              Noch keine. „+ Neue Regel“ oder im Langtext Text markieren → „Als Regel…“ oder
+              „Begriff lernen…“.
             </p>
           ) : (
             <ul className="m-0 list-none p-0">

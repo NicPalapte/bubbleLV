@@ -12,33 +12,12 @@ gepflegt werden — nicht vom Modell erfunden oder aus dem Internet geraten (sie
 | [`hersteller-produktnamen.csv`](hersteller-produktnamen.csv) | Wortliste `hersteller`: Namen und Produktnamen — Regel V3                                                                                                                                                                 | Owner                                              |
 | [`vob-nebenleistungen.csv`](vob-nebenleistungen.csv)         | Nebenleistungen je ATV — Regeln V8, V9                                                                                                                                                                                    | VOB/C des Owners                                   |
 | [`einheiten-gruppen.csv`](einheiten-gruppen.csv)             | Einheiten, die dasselbe bedeuten („Stk" = „Stück")                                                                                                                                                                        | Owner                                              |
-| [`hervorhebungen.csv`](hervorhebungen.csv)                   | Begriffe, die im Langtext hervorgehoben werden (Material, Maße, Wichtig, nicht hervorheben) — Entscheidung 0053. Pflege: [`../../setup/admin-werkzeuge.md`](../../setup/admin-werkzeuge.md)                               | Owner (Admin-Werkzeuge)                            |
-| [`regeln.json`](regeln.json)                                 | Grundstock-Regeln `bubble-rule-v1` für alle Firmen (hervorheben, Positionen verbinden, Prüfregeln V1–V10, G3, M1, PDF-Vorschläge `pdf-oz` und `pdf-menge`) — Entscheidungen 0081, 0086, 0087. Pflege: [`../../setup/admin-werkzeuge.md`](../../setup/admin-werkzeuge.md) | Owner (Admin-Werkzeuge)                            |
+| [`regeln.json`](regeln.json)                                 | Grundstock-Regeln `bubble-rule-v1` für alle Firmen (hervorheben, Positionen verbinden, Prüfregeln V1–V10, G3, M1, PDF-Vorschläge `pdf-oz` und `pdf-menge`; gelernte Begriffe als eigene Regeln) — Entscheidungen 0081, 0086, 0087, 0088. Pflege: [`../../setup/admin-werkzeuge.md`](../../setup/admin-werkzeuge.md) | Owner (Admin-Werkzeuge)                            |
 
 ## Prüfregeln — in `regeln.json`
 
 Seit Entscheidung 0086 steht jede Prüfregel als Grundstock-Regel in
 [`regeln.json`](regeln.json). Pflege: [`../../setup/pruefregeln.md`](../../setup/pruefregeln.md).
-
-## `hervorhebungen.csv` — Begriffe im Langtext
-
-Färbt Begriffe im Langtext der Positionskarte ein. Kein Filter, kein Attribut, keine
-Prüfregel. Pflege mit den Admin-Werkzeugen oder von Hand:
-[`../../setup/admin-werkzeuge.md`](../../setup/admin-werkzeuge.md).
-
-| Spalte      | Bedeutung                                                                                       |
-| ----------- | ----------------------------------------------------------------------------------------------- |
-| `begriff`   | Wort oder Muster, ohne Groß/klein. `#` = eine Zahl, `*` = Buchstaben oder Ziffern, z. B. `C#/#` |
-| `kategorie` | `material` (grün) · `masse` (violett) · `wichtig` (rot) · `aus` (nicht hervorheben)             |
-| `bemerkung` | frei, wird nicht ausgewertet                                                                    |
-
-- **Vorrang:** Was die App selbst findet (Normen, Maße, Fristen …), bleibt. Ein Begriff
-  färbt nur Stellen, die noch frei sind.
-- **`aus`** nimmt jede Markierung weg, die den Begriff berührt, auch eine der App.
-- **Längere Begriffe zuerst:** „Sichtbetonklasse SB#" gewinnt gegen „SB#".
-- Zeilen mit leerem Begriff oder unbekannter Kategorie werden still übersprungen.
-- Im Browser gelernte Begriffe kommen dazu und gelten nur dort, bis die Datei hier
-  ersetzt ist.
 
 ## `einheiten-gruppen.csv`
 

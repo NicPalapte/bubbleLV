@@ -1,8 +1,10 @@
-# Admin-Werkzeuge: Begriffe im Langtext lernen
+# Admin-Werkzeuge: Begriffe lernen und Regeln bauen
 
-Ergebnis: Du markierst wichtige Begriffe im Langtext (Material, Maße, Wichtig). Erst
-nur in deinem Browser, nach dem Übernehmen ins Repo für alle.
-Hintergrund: [Entscheidung 0053](../decisions/0053-marker-verlauf-und-gelernte-begriffe.md).
+Ergebnis: Du markierst wichtige Begriffe im Langtext (Material, Maße, Wichtig). Jeder
+gelernte Begriff ist eine eigene Regel. Erst gilt sie nur in deinem Browser, nach dem
+Übernehmen ins Repo für alle.
+Hintergrund: [Entscheidung 0053](../decisions/0053-marker-verlauf-und-gelernte-begriffe.md),
+[0088](../decisions/0088-gelernte-begriffe-als-regeln.md).
 
 ## Anmelden
 
@@ -17,27 +19,12 @@ Hintergrund: [Entscheidung 0053](../decisions/0053-marker-verlauf-und-gelernte-b
 3. Enthält der Begriff eine Zahl, kannst du **als Muster** lernen: „C30/37“ wird
    „C#/#“ und trifft jede Festigkeitsklasse.
 
-Der Begriff wirkt sofort, in jeder Datei, aber **nur in diesem Browser**.
+Der Begriff wirkt sofort, in jeder Datei, aber **nur in diesem Browser**. Er steht als
+eigene Regel im Reiter „Regeln“ unter „Eigene Regeln“. Dort kannst du ihn ändern,
+abschalten oder löschen. Begriffe aus älteren Versionen zieht die App beim Start einmal
+dorthin um.
 
-## Für alle übernehmen
-
-1. Logo → **Admin-Werkzeuge** → **Als CSV herunterladen**. Die Datei enthält die
-   Tabelle aus dem Repo plus deine Begriffe.
-2. Die Datei ersetzt `docs/domain/reference/hervorhebungen.csv` (per Pull Request
-   oder auf GitHub hochladen).
-3. Danach gelten die Begriffe für alle. Die Einträge „von dir“ kannst du im Fenster
-   mit ✕ löschen.
-
-Lässt du Schritt 2 aus, sieht nur dein Browser die Begriffe. Löschst du die
-Website-Daten des Browsers, sind sie weg.
-
-Spalten der Tabelle:
-
-| Spalte      | Inhalt                                                       |
-| ----------- | ------------------------------------------------------------ |
-| `begriff`   | Wort oder Muster (`#` = Zahl, `*` = Buchstaben/Ziffern)      |
-| `kategorie` | `material` · `masse` · `wichtig` · `aus` (nicht hervorheben) |
-| `bemerkung` | frei, wird nicht ausgewertet                                 |
+Für alle übernehmen: wie jede Regel, siehe unten „Regel in den Grundstock übernehmen“.
 
 ## Regeln bauen (Reiter „Regeln“, Prototyp)
 

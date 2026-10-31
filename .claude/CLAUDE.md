@@ -51,8 +51,9 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
   und Textmarkierungen je Positions-Hash `hashes.id`, `lib/annotations.ts`, Entscheidung 0057,
   dazu Stellen in Begleit-PDFs und ausgeblendete Vorschlagsarten `lib/docs/docNotes.ts`,
   0072, 0087),
-  löschbar auf der Startseite. Dazu, unabhängig von der Datei, die im Admin-Werkzeug gelernten
-  Begriffe (`lib/highlight/terms.ts`), die eigenen Namen der Markierfarben
+  löschbar auf der Startseite. Dazu, unabhängig von der Datei, der Altbestand gelernter
+  Begriffe (`readLearnedTerms`, beim Start einmal zu eigenen Regeln, 0088), die eigenen Namen
+  der Markierfarben
   (`lib/paintNames.ts`, `state/paintNames.tsx`) und der Merker der Kurzumfrage
   (`state/survey.tsx`, Schlüssel `umfrage`, Entscheidung 0071) und die letzte Anordnung
   im Splitscreen (`state/ViewerProvider.tsx`, Schlüssel `anordnung`, Entscheidung 0073)
@@ -144,7 +145,8 @@ gemerkt: `docs/decisions/0073-splitscreen-frei-teilen-und-merken.md`) · Beziehu
 ähnliche Positionen im Vergleich, keine wertende Prüfregel (`docs/decisions/0049`) · eigene Marker (Fortschritt Offen/In Bearbeitung/Fertig + Wichtig, `docs/decisions/0062`) + Kommentar-Verlauf je Position zur letzten
 Datei (`docs/decisions/0047-kommentare-und-markierungen.md`, `docs/decisions/0053`) ·
 eigene Textmarkierungen im Langtext (6 feste Farben mit eigenen Namen, `docs/decisions/0063`) ·
-gelernte Hervorhebungen im Langtext nur über Admin-Werkzeug (0053) · Regeleditor im
+gelernte Hervorhebungen im Langtext nur über Admin-Werkzeug, je Begriff eine eigene Regel
+(0053, 0088) · Regeleditor im
 Admin-Werkzeug (`bubble-rule-v1`, Auswerter nur in `packages/core/src/rules/`; Verbindungen
 zwischen Positionen nur als Vorschlag, gilt erst nach Bestätigung, `docs/decisions/0081`;
 ein Format für alle Regelarten, Wortlisten/Einheiten-Gruppen liefert die App, `docs/decisions/0085`) · lokaler Export/Druck über das

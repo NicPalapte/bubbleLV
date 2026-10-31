@@ -3,12 +3,13 @@
 
 import 'fake-indexeddb/auto';
 import { readFileSync } from 'node:fs';
+import { StrictMode } from 'react';
 import { resolve } from 'node:path';
 import { IDBFactory } from 'fake-indexeddb';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '../../src/App';
-import { readLearnedTerms } from '../../src/lib/persist/lastLv';
+import { readLearnedTerms, readOwnRules, saveLearnedTerms } from '../../src/lib/persist/lastLv';
 import { ADMIN_PASSWORD_SHA256 } from '../../src/state/admin';
 
 const NAME = 'gaeb-xml-beispiel.x83';
@@ -109,7 +110,7 @@ describe('Admin-Werkzeuge', () => {
     expect(screen.queryByRole('button', { name: 'Admin beenden' })).toBeNull();
   });
 
-  it('lernt einen Begriff im Langtext und zeigt ihn in der Liste', async () => {
+  it('lernt einen Begriff im Langtext als eigene Regel (0088)', async () => {
     await ladeDatei();
     // Ohne Admin bietet die Leiste nur Farben zum Anstreichen.
     markiereWort(await langtextBlock());
@@ -134,20 +135,47 @@ describe('Admin-Werkzeuge', () => {
       expect(document.querySelectorAll('[data-span-key="wichtig"]').length).toBeGreaterThan(0),
     );
     await waitFor(async () =>
-      expect(await readLearnedTerms()).toEqual([{ begriff: wort, kategorie: 'wichtig' }]),
+      expect(await readOwnRules()).toMatchObject([
+        { name: wort, wirkung: { hervorheben: 'wichtig' }, status: 'freigegeben' },
+      ]),
     );
+    expect(await readLearnedTerms()).toEqual([]);
 
     fireEvent.click(screen.getByRole('button', { name: 'Admin' }));
     const dialog = await screen.findByRole('dialog', { name: 'Admin-Werkzeuge' });
-    expect(within(dialog).getByText(wort)).toBeInTheDocument();
+    const liste = within(dialog).getByRole('navigation', { name: 'Regeln' });
+    fireEvent.click(within(liste).getByText(wort));
     // Das Treffer-Protokoll sitzt hier, nicht mehr im Logo-Menü (Entscheidung 0079).
     const geladen = fangeDownloads();
     fireEvent.click(within(dialog).getByRole('button', { name: 'Treffer-Protokoll (CSV)' }));
     expect(geladen).toEqual([expect.stringMatching(/treffer.*\.csv$/)]);
-    fireEvent.click(within(dialog).getByRole('button', { name: `${wort} vergessen` }));
-    await waitFor(async () => expect(await readLearnedTerms()).toEqual([]));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Löschen' }));
+    await waitFor(async () => expect(await readOwnRules()).toEqual([]));
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Admin beenden' }));
     expect(screen.queryByRole('button', { name: 'Admin' })).toBeNull();
+  });
+
+  it('zieht Begriffe älterer Versionen einmal in eigene Regeln um', async () => {
+    await saveLearnedTerms([
+      { begriff: 'bauseits', kategorie: 'wichtig' },
+      { begriff: 'Kies', kategorie: 'material' },
+    ]);
+    // StrictMode liest zweimal; der Umzug darf trotzdem nur einmal laufen.
+    render(
+      <StrictMode>
+        <App />
+      </StrictMode>,
+    );
+    await waitFor(async () =>
+      expect((await readOwnRules())?.map((rule) => [rule.name, rule.wirkung])).toEqual([
+        ['bauseits', { hervorheben: 'wichtig' }],
+        ['Kies', { hervorheben: 'material' }],
+      ]),
+    );
+    expect(await readLearnedTerms()).toEqual([]);
+    // Nach dem Umzug bleibt der Stand, auch wenn ein späterer Lauf schreibt.
+    await new Promise((done) => setTimeout(done, 50));
+    expect((await readOwnRules())?.map((rule) => rule.name)).toEqual(['bauseits', 'Kies']);
   });
 });

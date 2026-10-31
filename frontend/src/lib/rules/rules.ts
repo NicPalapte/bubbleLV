@@ -124,32 +124,42 @@ export function linkCandidatesOf(
   return out;
 }
 
+const overlaps = (a: TextRange, b: TextRange): boolean => a.start < b.end && b.start < a.end;
+
 /**
- * Fundstellen aktiver Hervorhebungsregeln im Langtext, ohne Überschneidung mit
- * `spans` (Klassifizierung und gelernte Begriffe haben Vorrang).
+ * Fundstellen aktiver Hervorhebungsregeln im Langtext, dazu `spans` (Erkennung der
+ * Klassifizierung). `aus`-Regeln nehmen jede Fundstelle weg, die sie berühren. Sonst
+ * haben `spans` Vorrang, dann längere Treffer: „Sichtbetonklasse SB2" vor „SB2" —
+ * so wie früher die gelernten Begriffe (Entscheidung 0088).
  */
 export function applyRules(
   position: PositionSummary,
   spans: readonly Span[],
   rules: readonly Rule[],
 ): Span[] {
-  const out = [...spans];
   const input = ruleTextOf(position);
+  const blocked: TextRange[] = [];
+  const marks: Span[] = [];
   for (const rule of rules) {
     if (!isActive(rule) || !('hervorheben' in rule.wirkung)) continue;
     if (!rule.bedingung.wo.includes('langtext')) continue;
+    const key = rule.wirkung.hervorheben;
     const condition: RuleCondition = { ...rule.bedingung, wo: ['langtext'] };
     for (const hit of matchCondition(condition, input, RULE_CONTEXT)) {
       for (const mark of hit.marks) {
-        if (out.some((span) => span.start < mark.end && mark.start < span.end)) continue;
-        out.push({
-          key: rule.wirkung.hervorheben,
-          start: mark.start,
-          end: mark.end,
-          label: rule.name,
-        });
+        if (mark.end <= mark.start) continue;
+        if (key === 'aus') blocked.push(mark);
+        else marks.push({ key, start: mark.start, end: mark.end, label: rule.name });
       }
     }
+  }
+  const out = spans.filter((span) => !blocked.some((range) => overlaps(span, range)));
+  // Stabil sortiert: bei gleicher Länge zählt die Reihenfolge der Regeln.
+  marks.sort((a, b) => b.end - b.start - (a.end - a.start));
+  for (const mark of marks) {
+    if (blocked.some((range) => overlaps(mark, range))) continue;
+    if (out.some((span) => overlaps(span, mark))) continue;
+    out.push(mark);
   }
   return out.sort((a, b) => a.start - b.start);
 }

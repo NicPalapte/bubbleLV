@@ -1,25 +1,21 @@
-// Gelernte Hervorhebungen im Langtext (Entscheidung 0053).
+// Gelernte Begriffe im Langtext (Entscheidung 0053, seit 0088 als Regeln).
 //
-// Zwei Quellen, dieselbe Form:
-//  - die gepflegte Tabelle docs/domain/reference/hervorhebungen.csv — gilt für alle;
-//  - Begriffe, die der Admin im Browser lernt (lib/persist/lastLv.ts) — gelten nur
-//    dort, bis er sie als CSV herunterlädt und in die Tabelle übernimmt.
+// Ein gelernter Begriff ist eine eigene Regel `bubble-rule-v1`: ein Baustein „Begriff“,
+// Suchort Langtext, Wirkung „hervorheben“ (Material, Maße, Wichtig oder „Nicht
+// hervorheben“). Angewendet wird er wie jede Regel (`applyRules` in lib/rules/rules.ts).
+// Begriffe, die ältere Versionen getrennt im Browser gespeichert haben, zieht
+// `state/admin.tsx` beim Start einmal in eigene Regeln um.
 //
 // Schreibweise wie in den Materialtabellen (lib/classify/material/stichwort.ts):
 // `#` = eine Zahl, `*` = beliebige Buchstaben, sonst wörtlich, ohne Groß/klein.
 //
-// Gelernte Begriffe färben ein und werden kein Attribut; deshalb laufen sie beim
-// Anzeigen einer Position statt in der Klassifizierung. Ausnahme: Begriffe der
-// Kategorie „Material" stehen auch im Filter „Material" (Entscheidung 0066).
+// Begriffe der Kategorie „Material" stehen auch im Filter „Material" (Entscheidung 0066).
 
-import hervorhebungenCsv from '@reference/hervorhebungen.csv?raw';
+import { blocksOf, ruleIdOf, RULE_SCHEMA, type Rule, type RuleHighlight } from '@core';
 import { compileStichworte } from '../classify/material/stichwort';
-import { parseCsv } from '../csv';
-import { csvText } from '../export/csvText';
-import type { Span } from '../classify';
 
-/** `aus` = nie hervorheben: nimmt eine Fundstelle der Klassifizierung weg. */
-export type TermCategory = 'material' | 'masse' | 'wichtig' | 'aus';
+/** Wie die Wirkung „hervorheben“; `aus` = nie hervorheben. */
+export type TermCategory = RuleHighlight;
 
 export const TERM_CATEGORIES: readonly TermCategory[] = ['material', 'masse', 'wichtig', 'aus'];
 
@@ -35,32 +31,6 @@ export interface LearnedTerm {
   readonly begriff: string;
   readonly kategorie: TermCategory;
 }
-
-function isCategory(value: string): value is TermCategory {
-  return (TERM_CATEGORIES as readonly string[]).includes(value);
-}
-
-/** Zeilen `begriff,kategorie`; unbekannte Kategorien und leere Begriffe fallen weg. */
-export function parseTerms(csv: string): LearnedTerm[] {
-  const out: LearnedTerm[] = [];
-  for (const row of parseCsv(csv)) {
-    const begriff = row.get('begriff').trim();
-    const kategorie = row.get('kategorie').trim().toLowerCase();
-    if (begriff !== '' && isCategory(kategorie)) out.push({ begriff, kategorie });
-  }
-  return out;
-}
-
-/** CSV im Format der Tabelle — zum Übernehmen nach docs/domain/reference/. */
-export function termsCsv(terms: readonly LearnedTerm[]): string {
-  return csvText([
-    ['begriff', 'kategorie', 'bemerkung'],
-    ...terms.map((term) => [term.begriff, term.kategorie, '']),
-  ]);
-}
-
-/** Begriffe aus der gepflegten Tabelle, einmal beim Laden des Moduls gelesen. */
-export const TABLE_TERMS: readonly LearnedTerm[] = parseTerms(hervorhebungenCsv);
 
 /** Gleicher Begriff ohne Rücksicht auf Groß/klein und Leerraum. */
 export function sameTerm(a: string, b: string): boolean {
@@ -107,35 +77,85 @@ export function termFound(text: string, begriff: string): boolean {
   return matches(text, begriff).length > 0;
 }
 
-const overlaps = (a: { start: number; end: number }, b: { start: number; end: number }) =>
-  a.start < b.end && b.start < a.end;
+/** Ein Begriff als eigene Regel: im Langtext, sofort aktiv, Name = Begriff. */
+export function termRule(term: LearnedTerm, taken: ReadonlySet<string>): Rule {
+  const begriff = term.begriff.trim();
+  return {
+    schema: RULE_SCHEMA,
+    id: ruleIdOf(begriff, taken),
+    version: 1,
+    name: begriff,
+    bedingung: { alle: [{ begriff }], bereich: 'satz', wo: ['langtext'] },
+    wirkung: { hervorheben: term.kategorie },
+    geltung: 'unternehmen',
+    status: 'freigegeben',
+    herkunft: 'nutzer',
+    bemerkung: 'Gelernter Begriff',
+  };
+}
+
+/** Der Begriff einer Regel, die nur aus einem Begriff im Langtext besteht; sonst `null`. */
+export function termOfRule(rule: Rule): LearnedTerm | null {
+  if (!('hervorheben' in rule.wirkung)) return null;
+  const { bedingung } = rule;
+  if ((bedingung.nicht ?? []).length > 0) return null;
+  if (bedingung.wo.length !== 1 || bedingung.wo[0] !== 'langtext') return null;
+  const blocks = blocksOf(bedingung);
+  if (blocks.length !== 1) return null;
+  const [block] = blocks;
+  return 'begriff' in block
+    ? { begriff: block.begriff, kategorie: rule.wirkung.hervorheben }
+    : null;
+}
 
 /**
- * Fundstellen der Klassifizierung plus gelernte Begriffe, überschneidungsfrei
- * und nach `start` sortiert. Fundstellen der Klassifizierung haben Vorrang;
- * `aus` nimmt jede Fundstelle weg, die einen solchen Begriff berührt.
+ * „Immer hervorheben als …“: eigene Regel für den Begriff. Gibt es schon eine eigene Regel
+ * mit genau diesem Begriff, bekommt sie die neue Kategorie und behält alles andere. Sie
+ * wird wieder aktiv: Neu lernen ist ausdrücklich „immer hervorheben“.
  */
-export function applyTerms(
-  text: string,
-  spans: readonly Span[],
-  terms: readonly LearnedTerm[],
-): Span[] {
-  if (terms.length === 0 || text === '') return [...spans];
-  const blocked: Array<{ start: number; end: number }> = [];
-  for (const term of terms)
-    if (term.kategorie === 'aus') blocked.push(...matches(text, term.begriff));
+export function learnedRule(
+  ownRules: readonly Rule[],
+  term: LearnedTerm,
+  taken: ReadonlySet<string>,
+): Rule {
+  const known = ownRules.find((rule) => {
+    const own = termOfRule(rule);
+    return own !== null && sameTerm(own.begriff, term.begriff);
+  });
+  if (known === undefined) return termRule(term, taken);
+  return {
+    ...known,
+    wirkung: { hervorheben: term.kategorie },
+    status: 'freigegeben',
+    version: known.version + 1,
+  };
+}
 
-  const out: Span[] = spans.filter((span) => !blocked.some((b) => overlaps(span, b)));
-  // Längere Begriffe zuerst: „Sichtbetonklasse SB2" vor „SB2".
-  const learned = terms
-    .filter((term) => term.kategorie !== 'aus')
-    .sort((a, b) => b.begriff.length - a.begriff.length);
-  for (const term of learned) {
-    for (const hit of matches(text, term.begriff)) {
-      if (blocked.some((b) => overlaps(hit, b))) continue;
-      if (out.some((span) => overlaps(span, hit))) continue;
-      out.push({ key: term.kategorie, start: hit.start, end: hit.end, label: term.begriff });
-    }
+/** Altbestand aus dem Browser als eigene Regeln; Kennungen ohne Doppelte. */
+export function termsToRules(terms: readonly LearnedTerm[], ownRules: readonly Rule[]): Rule[] {
+  const taken = new Set(ownRules.map((rule) => rule.id));
+  const out: Rule[] = [];
+  for (const term of terms) {
+    if (term.begriff.trim() === '') continue;
+    const known = [...ownRules, ...out].some((rule) => {
+      const own = termOfRule(rule);
+      return own !== null && sameTerm(own.begriff, term.begriff);
+    });
+    if (known) continue;
+    const rule = termRule(term, taken);
+    taken.add(rule.id);
+    out.push(rule);
   }
-  return out.sort((a, b) => a.start - b.start);
+  return out;
+}
+
+/** Aktive Begriffe der Kategorie „Material“ aus den Regeln, für den Filter „Material“. */
+export function materialTermsOf(rules: readonly Rule[]): LearnedTerm[] {
+  const out: LearnedTerm[] = [];
+  for (const rule of rules) {
+    if (rule.status !== 'freigegeben') continue;
+    const term = termOfRule(rule);
+    if (term !== null && term.kategorie === 'material') out.push(term);
+  }
+  return out;
 }

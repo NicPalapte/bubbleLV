@@ -59,7 +59,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0050 | [Eingabefelder aus der Datei](0050-eingabefelder-aus-der-datei.md)                                             | akzeptiert                         | 2026-10-15 |
 | 0052 | [Kein Bauteiltyp](0052-kein-bauteiltyp.md)                                                                     | akzeptiert                         | 2026-10-15 |
 | 0051 | [Kein Status-Filter](0051-kein-status-filter.md)                                                               | akzeptiert                         | 2026-10-15 |
-| 0053 | [Drei Marker, Kommentar-Verlauf, Mengenstufe, gelernte Begriffe](0053-marker-verlauf-und-gelernte-begriffe.md) | teilweise ersetzt durch 0062       | 2026-10-16 |
+| 0053 | [Drei Marker, Kommentar-Verlauf, Mengenstufe, gelernte Begriffe](0053-marker-verlauf-und-gelernte-begriffe.md) | teils ersetzt d. 0062, 0088        | 2026-10-16 |
 | 0054 | [Kern als eigenes Paket im selben Repo](0054-kern-als-paket.md)                                                | akzeptiert                         | 2026-10-17 |
 | 0055 | [Positions-Hash und Datei-ID im Link](0055-positions-hash.md)                                                  | akzeptiert                         | 2026-10-17 |
 | 0056 | [Anonyme Nutzungszählung mit GoatCounter](0056-anonyme-nutzungszaehlung.md)                                    | akzeptiert                         | 2026-10-17 |
@@ -91,9 +91,10 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0082 | [Eigene Domain conocto.app](0082-eigene-domain.md)                                                             | akzeptiert                         | 2026-10-28 |
 | 0083 | [Nicht in Suchmaschinen, keine KI-Crawler](0083-nicht-in-suchmaschinen.md)                                     | akzeptiert                         | 2026-10-28 |
 | 0084 | [Eigene Suche im PDF](0084-eigene-suche-im-pdf.md)                                                             | akzeptiert                         | 2026-10-28 |
-| 0085 | [Ein Regelformat für alles](0085-ein-regelformat-fuer-alles.md)                                                | akzeptiert (Schritt 3 von 5)       | 2026-10-29 |
+| 0085 | [Ein Regelformat für alles](0085-ein-regelformat-fuer-alles.md)                                                | akzeptiert (Schritt 4 von 5)       | 2026-10-29 |
 | 0086 | [Prüfregeln als Regeln](0086-pruefregeln-als-regeln.md)                                                        | akzeptiert                         | 2026-10-30 |
 | 0087 | [PDF-Vorschläge als Regeln](0087-pdf-vorschlaege-als-regeln.md)                                                | akzeptiert                         | 2026-10-30 |
+| 0088 | [Gelernte Begriffe als Regeln](0088-gelernte-begriffe-als-regeln.md)                                           | akzeptiert                         | 2026-10-31 |
 
 ## Wann schreibe ich eine neue Datei?
 
