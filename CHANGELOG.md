@@ -9,6 +9,17 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.45.4 — 31.10.2026 · Ein Regelformat, Schritt 4
+
+- **Gelernte Begriffe sind jetzt Regeln:** „Immer hervorheben als …“ legt eine eigene Regel
+  an. Sie steht in den Admin-Werkzeugen unter „Regeln“ → „Eigene Regeln“ und lässt sich
+  dort ändern, abschalten oder löschen. Der Reiter „Begriffe“ entfällt.
+- **Schon gelernte Begriffe** zieht die App beim ersten Start einmal in eigene Regeln um.
+- **„Nicht hervorheben“** gibt es jetzt auch im Regeleditor.
+- **Gleiche Hervorhebungen wie vorher**, geprüft auf allen Test-LVs.
+- Die leere Tabelle `hervorhebungen.csv` entfällt. Für alle übernommen wird ein Begriff wie
+  jede Regel über „regeln.json herunterladen“.
+
 ## 0.45.3 — 30.10.2026 · Ein Regelformat, Schritt 3
 
 - **PDF-Vorschläge sind jetzt Regeln:** „OZ im Dokument“ und „Menge im Dokument“ stehen im

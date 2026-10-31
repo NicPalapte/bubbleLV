@@ -20,7 +20,8 @@ import {
   filterMask,
   type PositionIndex,
 } from '../lib/index/positionIndex';
-import { materialTerms, withLearnedMaterials } from '../lib/index/learnedMaterials';
+import { withLearnedMaterials } from '../lib/index/learnedMaterials';
+import { materialTermsOf, type LearnedTerm } from '../lib/highlight/terms';
 import { EMPTY_SUMMARY, summarize, type LVSummary } from '../lib/index/summary';
 import { prepareFilters, type ActiveFilters } from '../lib/matchPos';
 import { measure } from '../lib/perf';
@@ -102,8 +103,13 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
   // Als Material gelernte Begriffe zählen in der Facette „Material" mit (Entscheidung
   // 0066). Nur bei neuem LV oder geänderten Begriffen; ohne Begriffe derselbe Index
   // und die Zählung aus dem Laden.
-  const { terms } = useAdmin();
-  const learnedMaterials = useMemo(() => materialTerms(terms), [terms]);
+  const { rules } = useAdmin();
+  // Als Text verglichen: `rules` ist nach jeder Änderung an eigenen Regeln neu.
+  const materialKey = JSON.stringify(materialTermsOf(rules));
+  const learnedMaterials = useMemo(
+    () => JSON.parse(materialKey) as readonly LearnedTerm[],
+    [materialKey],
+  );
   const index = useMemo<PositionIndex>(
     () => measure('Gelernte Materialien', () => withLearnedMaterials(baseIndex, learnedMaterials)),
     [baseIndex, learnedMaterials],
