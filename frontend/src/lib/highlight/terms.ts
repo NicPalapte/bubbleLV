@@ -110,7 +110,8 @@ export function termOfRule(rule: Rule): LearnedTerm | null {
 
 /**
  * „Immer hervorheben als …“: eigene Regel für den Begriff. Gibt es schon eine eigene Regel
- * mit genau diesem Begriff, behält sie ihre Kennung und bekommt die neue Kategorie.
+ * mit genau diesem Begriff, bekommt sie die neue Kategorie und behält alles andere. Sie
+ * wird wieder aktiv: Neu lernen ist ausdrücklich „immer hervorheben“.
  */
 export function learnedRule(
   ownRules: readonly Rule[],
@@ -121,8 +122,13 @@ export function learnedRule(
     const own = termOfRule(rule);
     return own !== null && sameTerm(own.begriff, term.begriff);
   });
-  const fresh = termRule(term, taken);
-  return known === undefined ? fresh : { ...fresh, id: known.id, version: known.version + 1 };
+  if (known === undefined) return termRule(term, taken);
+  return {
+    ...known,
+    wirkung: { hervorheben: term.kategorie },
+    status: 'freigegeben',
+    version: known.version + 1,
+  };
 }
 
 /** Altbestand aus dem Browser als eigene Regeln; Kennungen ohne Doppelte. */

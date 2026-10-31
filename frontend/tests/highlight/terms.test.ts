@@ -74,9 +74,18 @@ describe('Begriff als Regel', () => {
 
 describe('Lernen und Umzug', () => {
   it('neu lernen ersetzt die Regel mit gleichem Begriff und behält ihre Kennung', () => {
-    const [alt] = regeln([{ begriff: 'Bauseits', kategorie: 'wichtig' }]);
+    const [erst] = regeln([{ begriff: 'Bauseits', kategorie: 'wichtig' }]);
+    const alt: Rule = { ...erst, status: 'aus', bemerkung: 'Eigene Notiz' };
     const neu = learnedRule([alt], { begriff: 'bauseits', kategorie: 'aus' }, new Set([alt.id]));
-    expect(neu).toMatchObject({ id: alt.id, version: 2, wirkung: { hervorheben: 'aus' } });
+    // Neu lernen schaltet wieder an und behält Name und Bemerkung.
+    expect(neu).toMatchObject({
+      id: alt.id,
+      version: 2,
+      name: 'Bauseits',
+      bemerkung: 'Eigene Notiz',
+      status: 'freigegeben',
+      wirkung: { hervorheben: 'aus' },
+    });
     const andere = learnedRule(
       [alt],
       { begriff: 'Kies', kategorie: 'material' },

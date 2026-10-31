@@ -24,7 +24,8 @@
   die der Treffer berührt, auch eine der Erkennung. Gilt jetzt auch für Treffer anderer
   Regeln.
 - **„Immer hervorheben als …“** an einer Markierung legt direkt eine eigene Regel an. Ein
-  zweites Mal mit demselben Begriff ändert diese Regel, statt eine neue anzulegen.
+  zweites Mal mit demselben Begriff ändert nur die Farbe dieser Regel und schaltet sie wieder
+  an; Name und Bemerkung bleiben.
 - **Einmaliger Umzug:** Begriffe, die ältere Versionen im Browser gespeichert haben, werden
   beim Start eigene Regeln. Erst wenn die Regeln gesichert sind, wird die alte Liste geleert.
 - **Vorrang wie bisher:** Erkennung der App zuerst, dann längere Treffer vor kürzeren
