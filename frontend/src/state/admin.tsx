@@ -113,11 +113,13 @@ function usePersistedList<T>(
 let ownRulesOnce: Promise<Rule[] | null> | null = null;
 
 function readOwnRulesAndTerms(): Promise<Rule[] | null> {
-  ownRulesOnce ??= migrateTerms().then((rules) => {
-    // Nur das erste Lesen teilt sich den Umzug; spätere Provider lesen frisch.
-    ownRulesOnce = null;
-    return rules;
-  });
+  // Ein Fehler zählt wie gescheitertes Lesen (`null`): ohne Speicher weiter, nichts schreiben.
+  ownRulesOnce ??= migrateTerms()
+    .catch(() => null)
+    .finally(() => {
+      // Nur das erste Lesen teilt sich den Umzug; spätere Provider lesen frisch.
+      ownRulesOnce = null;
+    });
   return ownRulesOnce;
 }
 
