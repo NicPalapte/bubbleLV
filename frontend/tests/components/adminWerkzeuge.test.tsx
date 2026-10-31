@@ -3,6 +3,7 @@
 
 import 'fake-indexeddb/auto';
 import { readFileSync } from 'node:fs';
+import { StrictMode } from 'react';
 import { resolve } from 'node:path';
 import { IDBFactory } from 'fake-indexeddb';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
@@ -160,7 +161,12 @@ describe('Admin-Werkzeuge', () => {
       { begriff: 'bauseits', kategorie: 'wichtig' },
       { begriff: 'Kies', kategorie: 'material' },
     ]);
-    render(<App />);
+    // StrictMode liest zweimal; der Umzug darf trotzdem nur einmal laufen.
+    render(
+      <StrictMode>
+        <App />
+      </StrictMode>,
+    );
     await waitFor(async () =>
       expect((await readOwnRules())?.map((rule) => [rule.name, rule.wirkung])).toEqual([
         ['bauseits', { hervorheben: 'wichtig' }],
@@ -168,5 +174,8 @@ describe('Admin-Werkzeuge', () => {
       ]),
     );
     expect(await readLearnedTerms()).toEqual([]);
+    // Nach dem Umzug bleibt der Stand, auch wenn ein späterer Lauf schreibt.
+    await new Promise((done) => setTimeout(done, 50));
+    expect((await readOwnRules())?.map((rule) => rule.name)).toEqual(['bauseits', 'Kies']);
   });
 });

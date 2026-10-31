@@ -108,7 +108,20 @@ function usePersistedList<T>(
  * (Entscheidung 0088). Erst die Regeln sichern, dann die Begriffe leeren: scheitert das
  * Sichern, bleiben die Begriffe und der Umzug läuft beim nächsten Start noch einmal.
  */
-async function readOwnRulesAndTerms(): Promise<Rule[] | null> {
+// Einmal je Seitenaufruf: Ein zweiter Lauf (StrictMode, neuer Provider) läse sonst die
+// Regeln vor und die Begriffe nach dem Umzug des ersten und überschriebe dessen Ergebnis.
+let ownRulesOnce: Promise<Rule[] | null> | null = null;
+
+function readOwnRulesAndTerms(): Promise<Rule[] | null> {
+  ownRulesOnce ??= migrateTerms().then((rules) => {
+    // Nur das erste Lesen teilt sich den Umzug; spätere Provider lesen frisch.
+    ownRulesOnce = null;
+    return rules;
+  });
+  return ownRulesOnce;
+}
+
+async function migrateTerms(): Promise<Rule[] | null> {
   const rules = await readOwnRules();
   if (rules === null) return null;
   const terms = await readLearnedTerms();
