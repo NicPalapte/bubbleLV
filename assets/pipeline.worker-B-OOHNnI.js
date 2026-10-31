@@ -403,6 +403,48 @@ Pauschal,psch.|pau.,
       "status": "aus",
       "herkunft": "nutzer",
       "bemerkung": "Eingebaut: liest die Materialtabellen beton.csv und betonstahl.csv und nennt den Betonstahl im selben Hauptabschnitt."
+    },
+    {
+      "schema": "bubble-rule-v1",
+      "id": "pdf-oz",
+      "version": 1,
+      "name": "OZ im Dokument",
+      "bedingung": {
+        "alle": [
+          {
+            "eingebaut": "oz-im-pdf",
+            "parameter": { "menge-hinter-oz": 80 }
+          }
+        ],
+        "bereich": "feld",
+        "wo": ["pdf"]
+      },
+      "wirkung": { "verknuepfen": { "ziel": "pdf" } },
+      "geltung": "allgemein",
+      "status": "freigegeben",
+      "herkunft": "nutzer",
+      "bemerkung": "Eingebaut: findet OZ aus dem LV im Text des PDF, nur wenn sie genau eine Position treffen. Kurzformen nur nach „Pos.“ oder „OZ“. Eine Menge bis zu so vielen Zeichen hinter der OZ steht zum Vergleich daneben."
+    },
+    {
+      "schema": "bubble-rule-v1",
+      "id": "pdf-menge",
+      "version": 1,
+      "name": "Menge im Dokument",
+      "bedingung": {
+        "alle": [
+          {
+            "eingebaut": "menge-im-pdf",
+            "parameter": { "kleinste-ganze-zahl": 10 }
+          }
+        ],
+        "bereich": "satz",
+        "wo": ["pdf"]
+      },
+      "wirkung": { "verknuepfen": { "ziel": "pdf" } },
+      "geltung": "allgemein",
+      "status": "freigegeben",
+      "herkunft": "nutzer",
+      "bemerkung": "Eingebaut: findet Menge und Einheit aus dem LV im Text des PDF. Eindeutig über Wert und Einheit oder über eigene Wörter aus dem Kurztext im Satzteil. Ganze Zahlen darunter sind zu allgemein."
     }
   ]
 }
