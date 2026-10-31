@@ -124,4 +124,20 @@ describe('Vorschläge im Dokument', { timeout: 30_000 }, () => {
     fireEvent.click(oz);
     expect(await screen.findByRole('button', { name: 'Vorschlag 1.2.20' })).toBeInTheDocument();
   });
+
+  it('beide Arten aus: die Schalter bleiben da und blenden wieder ein (0087)', async () => {
+    await ladeAppMitPdf();
+    const schalter = screen.getByRole('group', { name: 'Vorschläge' });
+    await waitFor(() => expect(within(schalter).getByText(/Mengen 1/)).toBeInTheDocument());
+    fireEvent.click(within(schalter).getByRole('button', { name: /OZ/ }));
+    fireEvent.click(within(schalter).getByRole('button', { name: /Mengen/ }));
+    expect(screen.queryByRole('button', { name: 'Vorschlag 1.2.20' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Vorschlag 783,03 m³' })).toBeNull();
+    const menge = within(screen.getByRole('group', { name: 'Vorschläge' })).getByRole('button', {
+      name: /Mengen/,
+    });
+    expect(menge).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(menge);
+    expect(await screen.findByRole('button', { name: 'Vorschlag 783,03 m³' })).toBeInTheDocument();
+  });
 });

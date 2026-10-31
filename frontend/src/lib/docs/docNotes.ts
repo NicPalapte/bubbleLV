@@ -6,6 +6,8 @@
 // Verknüpfung mit Positionen oder beides. Verknüpft wird von Hand oder per Klick auf
 // einen Vorschlag (OZ oder Menge, Entscheidung 0080); woher eine Verknüpfung kam, steht
 // in `sources`. Abgelehnte Vorschläge stehen in `rejected`, damit sie nicht wiederkommen.
+// Ausgeblendete Arten von Vorschlag stehen in `hidden` (Entscheidung 0087): Sie gelten für
+// dieses LV, ein neues LV beginnt mit allen.
 //
 // Das Dokument selbst wird nicht gespeichert, nur seine Kennung (SHA-256 der Bytes)
 // und sein Name. Positionen stehen in der Sitzung unter der Knoten-ID, im Speicher
@@ -52,6 +54,8 @@ export interface DocNotes {
   readonly marks: readonly DocMark[];
   /** Abgelehnte Vorschläge (Entscheidung 0080); fehlt, solange es keine gibt. */
   readonly rejected?: readonly DocRejection[];
+  /** Ausgeblendete Arten von Vorschlag (0087); leer oder fehlt: alle gezeigt. */
+  readonly hidden?: readonly LinkSource[];
 }
 
 export const EMPTY_DOC_NOTES: DocNotes = { docs: new Map(), marks: [] };
@@ -200,6 +204,19 @@ export function isRejected(notes: DocNotes, spot: DocSpot, id: string): boolean 
   return (notes.rejected ?? []).some((entry) => sameRejection(entry, { ...spot, id }));
 }
 
+/** Welche Arten von Vorschlag gezeigt werden. */
+export function shownSuggestions(notes: DocNotes): Record<LinkSource, boolean> {
+  const hidden = notes.hidden ?? [];
+  return { oz: !hidden.includes('oz'), menge: !hidden.includes('menge') };
+}
+
+/** Eine Art von Vorschlag zeigen oder ausblenden. */
+export function showSuggestions(notes: DocNotes, source: LinkSource, on: boolean): DocNotes {
+  const hidden = notes.hidden ?? [];
+  if (hidden.includes(source) !== on) return notes;
+  return { ...notes, hidden: on ? hidden.filter((item) => item !== source) : [...hidden, source] };
+}
+
 /** Abgelehnte Vorschläge zu einer Position, für die Notiz-Datei. */
 export function rejectionsOfPosition(notes: DocNotes, id: string): DocRejection[] {
   return (notes.rejected ?? []).filter((entry) => entry.id === id);
@@ -298,13 +315,19 @@ export interface StoredDocNotes {
   readonly marks: readonly DocMark[];
   /** Seit 0080; ältere Fassungen lesen das Feld nicht und behalten den Rest. */
   readonly rejected?: readonly DocRejection[];
+  /** Seit 0087, ebenso. */
+  readonly hidden?: readonly LinkSource[];
 }
 
 export function toStoredDocNotes(notes: DocNotes): StoredDocNotes {
   const rejected = notes.rejected ?? [];
-  return rejected.length === 0
-    ? { docs: [...notes.docs], marks: notes.marks }
-    : { docs: [...notes.docs], marks: notes.marks, rejected };
+  const hidden = notes.hidden ?? [];
+  return {
+    docs: [...notes.docs],
+    marks: notes.marks,
+    ...(rejected.length === 0 ? {} : { rejected }),
+    ...(hidden.length === 0 ? {} : { hidden }),
+  };
 }
 
 /** Eine Stelle aus Speicher oder Notiz-Datei; Unbrauchbares wird `null`. */
@@ -376,8 +399,14 @@ export function fromStoredDocNotes(value: unknown): DocNotes {
       .filter((entry): entry is DocRejection => entry !== null);
     notes = mergeDocNotes(notes, { docs: new Map(), marks: [], rejected });
   }
+  if (Array.isArray(raw.hidden)) {
+    for (const source of raw.hidden) {
+      if (isLinkSource(source)) notes = showSuggestions(notes, source, false);
+    }
+  }
   const empty = notes.docs.size === 0 && notes.marks.length === 0;
-  return empty && (notes.rejected ?? []).length === 0 ? EMPTY_DOC_NOTES : notes;
+  const plain = (notes.rejected ?? []).length === 0 && (notes.hidden ?? []).length === 0;
+  return empty && plain ? EMPTY_DOC_NOTES : notes;
 }
 
 /** Stelle im Seitentext wiederfinden: erst an ihrer Lage, sonst irgendwo auf der Seite. */

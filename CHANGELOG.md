@@ -9,6 +9,16 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.45.3 — 30.10.2026 · Ein Regelformat, Schritt 3
+
+- **PDF-Vorschläge sind jetzt Regeln:** „OZ im Dokument“ und „Menge im Dokument“ stehen im
+  Grundstock (`regeln.json`) und im Reiter „Regeln“ der Admin-Werkzeuge, nur zum Lesen.
+  Ihre Zahlen (Menge bis 80 Zeichen hinter der OZ, ganze Zahlen erst ab 10) stehen dort als
+  Parameter.
+- **Gleiche Vorschläge wie vorher**, geprüft auf erfundenen PDF-Seiten.
+- **Schalter „OZ“ und „Mengen“ im Dokument bleiben gemerkt**, auch nach einem Neuladen.
+  Ein neues LV beginnt wieder mit beiden an.
+
 ## 0.45.2 — 30.10.2026 · Ein Regelformat, Schritt 2
 
 - **Prüfregeln sind jetzt Regeln:** V1–V10, G3 und M1 stehen im Grundstock (`regeln.json`)

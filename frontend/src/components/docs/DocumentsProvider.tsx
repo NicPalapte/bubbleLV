@@ -11,6 +11,7 @@
 //
 // Vorschläge zum Verknüpfen (OZ und Mengen, Entscheidung 0080) rechnet ein Worker Seite
 // für Seite; hier liegen sie roh, ohne Abgleich mit Notizen — den macht die Anzeige.
+// Welche Arten es gibt, sagen die Regeln (0087); welche gezeigt werden, die Notizen.
 
 import {
   createContext,
@@ -22,7 +23,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { DocSpot } from '../../lib/docs/docNotes';
+import { shownSuggestions, type DocSpot } from '../../lib/docs/docNotes';
 import { docNeedleOf, hitsInPage, type DocHit } from '../../lib/docs/docSearch';
 import {
   suggestIndexOf,
@@ -30,10 +31,13 @@ import {
   type LinkSource,
   type SuggestIndex,
   type SuggestPosition,
+  type SuggestRules,
 } from '../../lib/docs/docSuggest';
 import { createSuggester, type Suggester } from '../../lib/docs/suggester';
+import { suggestRulesOf } from '../../lib/docs/suggestRules';
 import type { PositionIndex } from '../../lib/index/positionIndex';
 import { isPdfFile, openPdf, PdfOpenError, type OpenedPdf } from '../../lib/docs/pdf';
+import { useAdmin } from '../../state/admin';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 
 /** Sprungziel: Stelle im Dokument; `nonce` macht denselben Sprung wiederholbar. */
@@ -67,7 +71,7 @@ export interface DocumentsApi {
   pageText: (doc: OpenedPdf, page: number) => Promise<string>;
   /** Vorschläge je offenem Dokument (Entscheidung 0080), noch ohne Notizen abgeglichen. */
   readonly suggestions: ReadonlyMap<string, readonly DocSuggestion[]>;
-  /** Welche Vorschläge gezeigt werden; Standard: alle. Übersteht keinen Reload. */
+  /** Welche Vorschläge gezeigt werden; Standard: alle. Gemerkt in den Notizen des LV. */
   readonly suggest: Readonly<Record<LinkSource, boolean>>;
   setSuggest: (source: LinkSource, on: boolean) => void;
 }
@@ -91,10 +95,10 @@ const DocumentsContext = createContext<DocumentsApi | null>(null);
 const NO_SEARCH_HITS: ReadonlyMap<string, readonly DocHit[]> = new Map();
 const NO_FOUND = { needle: '', hits: NO_SEARCH_HITS };
 const NO_SUGGESTIONS: ReadonlyMap<string, readonly DocSuggestion[]> = new Map();
-const ALL_SUGGESTIONS: Readonly<Record<LinkSource, boolean>> = { oz: true, menge: true };
 
 export function DocumentsProvider({ children }: { children: ReactNode }) {
-  const { lv, index } = useViewer();
+  const { lv, index, annotations } = useViewer();
+  const { rules } = useAdmin();
   const dispatch = useViewerDispatch();
   const [docs, setDocs] = useState<OpenedPdf[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -287,12 +291,21 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
   const searchHits = needle !== '' && found.needle === needle ? found.hits : NO_SEARCH_HITS;
 
   // Vorschläge: einmal je LV ein Verzeichnis, dann je Dokument alle Seiten im Worker.
-  const [suggest, setSuggestState] = useState(ALL_SUGGESTIONS);
-  const setSuggest = useCallback((source: LinkSource, on: boolean): void => {
-    setSuggestState((current) => (current[source] === on ? current : { ...current, [source]: on }));
-  }, []);
-  const suggestIndex = useMemo(() => suggestIndexOf(suggestPositions(index)), [index]);
-  const wanted = suggest.oz || suggest.menge;
+  const { oz: ozShown, menge: mengeShown } = shownSuggestions(annotations.documents);
+  const suggest = useMemo(() => ({ oz: ozShown, menge: mengeShown }), [ozShown, mengeShown]);
+  const setSuggest = useCallback(
+    (source: LinkSource, on: boolean): void => dispatch({ type: 'docSuggest', source, on }),
+    [dispatch],
+  );
+  // Als Text verglichen: `rules` ist nach jeder Änderung an eigenen Regeln neu.
+  const suggestRulesKey = JSON.stringify(suggestRulesOf(rules));
+  const suggestIndex = useMemo(
+    () => suggestIndexOf(suggestPositions(index), JSON.parse(suggestRulesKey) as SuggestRules),
+    [index, suggestRulesKey],
+  );
+  // Nur an den Regeln, nicht an den Schaltern: Die Schalter zählen die Vorschläge und
+  // blieben sonst weg, wenn beide aus sind — gemerkt in den Notizen, also dauerhaft.
+  const wanted = suggestIndex.rules.oz !== null || suggestIndex.rules.menge !== null;
   const [suggested, setSuggested] = useState<{
     index: SuggestIndex | null;
     byDoc: ReadonlyMap<string, readonly DocSuggestion[]>;

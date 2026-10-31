@@ -1,6 +1,7 @@
 # 0080 – Vorschläge im PDF: OZ und Mengen aus dem LV
 
-- **Status:** akzeptiert
+- **Status:** akzeptiert (Schalter und Schwellwerte ersetzt durch
+  [0087](0087-pdf-vorschlaege-als-regeln.md))
 - **Datum:** 2026-10-27
 - **Betrifft:** Vorschläge (`frontend/src/lib/docs/docSuggest.ts`, Worker
   `suggest.worker.ts`, `suggester.ts`), Notizen (`frontend/src/lib/docs/docNotes.ts`,
