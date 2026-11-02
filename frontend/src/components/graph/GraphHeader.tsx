@@ -84,9 +84,7 @@ export function GraphHeader({ root, width, controls }: GraphHeaderProps) {
       {keineTreffer && (
         <div
           className={`pointer-events-none absolute z-[7] flex gap-[8px] ${
-            narrow
-              ? `left-[16px] ${BELOW_KPIS}`
-              : 'left-1/2 top-[16px] -translate-x-1/2'
+            narrow ? `left-[16px] ${BELOW_KPIS}` : 'left-1/2 top-[16px] -translate-x-1/2'
           }`}
         >
           <span className="ov-pill inline-flex h-[32px] items-center px-[14px] font-mono text-[12px] text-dim">

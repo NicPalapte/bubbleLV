@@ -416,4 +416,3 @@ describe('Abschnitt hervorheben (Entscheidung 0075)', () => {
     expect(hervorgehoben()).toBe(false);
   });
 });
-

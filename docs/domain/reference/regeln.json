@@ -44,7 +44,7 @@
       "schema": "conocto-rule-v1",
       "id": "betonstahl-zu-ortbeton",
       "version": 1,
-      "name": "Betonstahl zu Ortbeton im selben Abschnitt",
+      "name": "Betonstahl zu Ortbeton",
       "bedingung": {
         "alle": [{ "begriff": "Betonstahl*" }],
         "bereich": "feld",
@@ -91,7 +91,7 @@
       "schema": "conocto-rule-v1",
       "id": "v2-stundenlohn",
       "version": 1,
-      "name": "Angehängte Stundenlohnarbeiten",
+      "name": "Stundenlohnarbeiten",
       "bedingung": {
         "eines": [
           { "einheit": { "gruppe": "Stunde" } },
@@ -156,7 +156,7 @@
       "schema": "conocto-rule-v1",
       "id": "v4-risiko",
       "version": 1,
-      "name": "Risiko auf den Auftragnehmer übertragen",
+      "name": "Risiko auf Auftragnehmer",
       "bedingung": {
         "alle": [{ "liste": "risiko" }],
         "bereich": "satz",
@@ -205,7 +205,7 @@
       "schema": "conocto-rule-v1",
       "id": "v6-verweis",
       "version": 1,
-      "name": "Verweis auf ein anderes Dokument",
+      "name": "Verweis auf Dokument",
       "bedingung": {
         "eines": [
           { "liste": "verweis-anlage" },
@@ -285,7 +285,7 @@
       "schema": "conocto-rule-v1",
       "id": "v9-besondere-leistung",
       "version": 1,
-      "name": "Besondere Leistung ohne eigene Position",
+      "name": "Besondere Leistung ohne Position",
       "bedingung": {
         "alle": [{ "eingebaut": "besondere-leistung" }],
         "bereich": "feld",
@@ -337,7 +337,7 @@
       "schema": "conocto-rule-v1",
       "id": "g3-einheit-schreibweise",
       "version": 1,
-      "name": "Einheit uneinheitlich geschrieben",
+      "name": "Einheit uneinheitlich",
       "bedingung": {
         "alle": [{ "eingebaut": "einheit-schreibweise" }],
         "bereich": "feld",
@@ -359,7 +359,7 @@
       "schema": "conocto-rule-v1",
       "id": "m1-bewehrung",
       "version": 1,
-      "name": "Betonposition ohne Angabe zur Bewehrung",
+      "name": "Beton ohne Bewehrung",
       "bedingung": {
         "alle": [
           {

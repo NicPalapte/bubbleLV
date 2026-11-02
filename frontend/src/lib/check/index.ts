@@ -277,6 +277,7 @@ export type {
   CheckResult,
   Flag,
   FlagCategory,
+  FlagGroup,
   FlagSeverity,
   Fund,
   RuleStatus,

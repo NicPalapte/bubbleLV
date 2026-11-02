@@ -222,7 +222,11 @@ export function ReportDialog({ context, vorbelegung = '', onClose }: ReportDialo
             </Chip>
             <Chip
               onClick={() =>
-                window.open(issueUrl(context, beschreibung, erwartet), '_blank', 'noopener,noreferrer')
+                window.open(
+                  issueUrl(context, beschreibung, erwartet),
+                  '_blank',
+                  'noopener,noreferrer',
+                )
               }
               title="Öffnet ein vorbefülltes Formular auf GitHub"
             >

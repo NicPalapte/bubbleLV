@@ -371,7 +371,8 @@ export function BubbleGraph({ root }: { root: LVNode }) {
       out.push({
         slot,
         id,
-        label: `⚠ ${flag.id} · ${ruleLabels.get(flag.id) ?? flag.title}`,
+        // Nur der Regelname, ohne Kennung: das Schild soll kurz bleiben (Issue #191).
+        label: `⚠ ${ruleLabels.get(flag.id) ?? flag.title}`,
         strong: found.severity === 'beachten',
       });
     }

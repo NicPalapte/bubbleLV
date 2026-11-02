@@ -238,7 +238,7 @@ describe('V7 · Offene Textergänzung', () => {
   });
 });
 
-describe('G3 · Einheit uneinheitlich geschrieben', () => {
+describe('G3 · Einheit uneinheitlich', () => {
   it('meldet dieselbe Einheit in zwei Schreibweisen', () => {
     const result = check(
       position({ oz: '01.001.0010', unit: 'psch' }),
@@ -247,6 +247,20 @@ describe('G3 · Einheit uneinheitlich geschrieben', () => {
     const flags = flagsOf(result, 'G3');
     expect(flags).toHaveLength(2);
     expect(flags[0].title).toContain('PSCH');
+  });
+
+  it('bündelt die Funde je Einheit und teilt nach Schreibweise auf', () => {
+    const result = check(
+      position({ oz: '01.001.0010', unit: 'Stk.' }),
+      position({ oz: '01.001.0020', unit: 'St' }),
+      position({ oz: '01.001.0030', unit: 'St' }),
+    );
+    const flags = flagsOf(result, 'G3');
+    expect(flags).toHaveLength(3);
+    expect(new Set(flags.map((flag) => flag.group?.label))).toEqual(
+      new Set(['Stück: mehrere Schreibweisen (St, Stk.)']),
+    );
+    expect(flags.map((flag) => flag.group?.part).sort()).toEqual(['„St"', '„St"', '„Stk."']);
   });
 
   it('schweigt bei einheitlicher Schreibweise', () => {
