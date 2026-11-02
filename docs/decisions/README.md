@@ -75,7 +75,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0066 | [Als Material gelernte Begriffe stehen im Filter „Material"](0066-gelernte-materialien-im-filter.md)           | akzeptiert                         | 2026-10-22 |
 | 0067 | [Tabelle als Arbeitsliste](0067-tabelle-als-arbeitsliste.md)                                                   | akzeptiert                         | 2026-10-22 |
 | 0068 | [LV als JSON für das Matching-Labor bauonto](0068-lv-export-fuer-bauonto.md)                                   | vorgeschlagen                      | 2026-10-22 |
-| 0069 | [Neuer Name Conocto und Apple-Look](0069-conocto-look.md)                                                      | akzeptiert                         | 2026-10-22 |
+| 0069 | [Neuer Name Conocto und Apple-Look](0069-conocto-look.md)                                                      | teilweise ersetzt durch 0091       | 2026-10-22 |
 | 0070 | [Splitscreen nahtlos, Bereiche stapelbar](0070-splitscreen-nahtlos-stapeln.md)                                 | teilweise ersetzt durch 0073       | 2026-10-23 |
 | 0071 | [Kurzumfrage nach einigen Minuten Nutzung](0071-kurzumfrage.md)                                                | akzeptiert                         | 2026-10-23 |
 | 0072 | [Begleitdokument als PDF anstreichen und verknüpfen](0072-begleitdokument-pdf.md)                              | ergänzt 0077, teilw. ersetzt 0080  | 2026-10-23 |
@@ -97,7 +97,8 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0088 | [Gelernte Begriffe als Regeln](0088-gelernte-begriffe-als-regeln.md)                                           | akzeptiert                         | 2026-10-31 |
 | 0089 | [Regeleditor für alle Regeln](0089-regeleditor-fuer-alle-regeln.md)                                            | akzeptiert                         | 2026-11-02 |
 | 0090 | [Eigene Wortlisten](0090-eigene-wortlisten.md)                                                                 | akzeptiert                         | 2026-11-02 |
-| 0091 | [Startseite auf conocto.app, Viewer unter /doc/](0091-startseite-und-viewer-unter-doc.md)                      | akzeptiert                         | 2026-11-02 |
+| 0091 | [Kennungen heißen conocto statt bubble](0091-kennungen-conocto.md)                                             | akzeptiert                         | 2026-11-02 |
+| 0092 | [Startseite auf conocto.app, Viewer unter /doc/](0092-startseite-und-viewer-unter-doc.md)                      | akzeptiert                         | 2026-11-02 |
 
 ## Wann schreibe ich eine neue Datei?
 

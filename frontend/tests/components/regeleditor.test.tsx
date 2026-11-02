@@ -173,7 +173,7 @@ describe('Regeleditor', () => {
       readFileSync(resolve(process.cwd(), '../docs/domain/reference/regeln.json'), 'utf8'),
     ) as { regeln: unknown[] };
     const file = {
-      schema: 'bubble-rule-v1',
+      schema: 'conocto-rule-v1',
       regeln: [{ ...own, name: 'Von Kollegin' }, grundstock.regeln[0], { kaputt: true }],
     };
     fireEvent.change(within(dialog).getByLabelText('Regeln importieren'), {
@@ -198,10 +198,10 @@ describe('Regeleditor', () => {
     const dialog = await screen.findByRole('dialog', { name: 'Admin-Werkzeuge' });
     fireEvent.click(within(dialog).getByRole('radio', { name: 'Regeln' }));
     const file = {
-      schema: 'bubble-rule-v1',
+      schema: 'conocto-rule-v1',
       regeln: [
         {
-          schema: 'bubble-rule-v1',
+          schema: 'conocto-rule-v1',
           id: 'normale-positionen',
           version: 1,
           name: 'Normale Positionen',

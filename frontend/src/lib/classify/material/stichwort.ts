@@ -7,7 +7,7 @@
 // Stichwort trifft nur ganze Wörter: „beton" trifft nicht „Betonstahl".
 
 // Übersetzung der Schreibweise liegt im Kern (packages/core/src/text/stichwort.ts), weil
-// auch die Regeln (bubble-rule-v1) sie brauchen. Hier bleibt, was nur die App nutzt.
+// auch die Regeln (conocto-rule-v1) sie brauchen. Hier bleibt, was nur die App nutzt.
 import { stichwortSource } from '@core';
 
 export { compileStichworte, stichwortQuelle, WORD_CHAR } from '@core';

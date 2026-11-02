@@ -1,4 +1,4 @@
-// Der eine Auswerter für `bubble-rule-v1` (Entscheidung 0081). Reine Funktionen, kein
+// Der eine Auswerter für `conocto-rule-v1` (Entscheidung 0081). Reine Funktionen, kein
 // Zustand: Doc ruft sie im Browser, bauonto über `npm run`-Befehle — so kann die
 // Auswertung nie auseinanderlaufen.
 

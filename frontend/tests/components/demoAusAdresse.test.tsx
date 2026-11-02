@@ -1,4 +1,4 @@
-// „Demo starten" auf der Startseite verlinkt `doc/?demo=muster` (Entscheidung 0091):
+// „Demo starten" auf der Startseite verlinkt `doc/?demo=muster` (Entscheidung 0092):
 // Der Viewer öffnet die Demo ohne Preise direkt und nimmt den Parameter aus der Adresse.
 
 import { readFileSync } from 'node:fs';

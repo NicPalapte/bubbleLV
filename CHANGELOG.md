@@ -9,14 +9,21 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
-## 0.48.0 — 02.11.2026 · Startseite auf conocto.app
+## 0.49.0 — 02.11.2026 · Startseite auf conocto.app
 
 - **Neue Startseite unter conocto.app:** zeigt in einer kurzen Animation, was Conocto kann,
   dazu der Funktionsumfang und der Hinweis „Beta“.
-- **Der Viewer liegt jetzt unter conocto.app/doc/.** Alte Links auf conocto.app mit
+- **Der Viewer liegt jetzt unter conocto.app/doc/.** Links auf conocto.app mit
   Ansicht oder Position führen automatisch dorthin.
 - **„Demo starten“** öffnet die Demo ohne Preise direkt, ohne Umweg über die Ablage.
 - Die zuletzt geöffnete Datei und ihre Notizen bleiben erhalten.
+
+## 0.48.0 — 02.11.2026 · Kennungen heißen Conocto
+
+- **Alle Dateiformate heißen jetzt `conocto-…`** statt `bubble-…`: Notiz-Datei, Regeln,
+  LV-Export, Fingerabdruck der Positionen.
+- **Einmaliger Neustart:** alte Links, gesicherte Notizen und eigene Regeln werden nicht
+  mehr erkannt. Die zuletzt geöffnete Datei muss einmal neu geladen werden.
 
 ## 0.47.0 — 02.11.2026 · Ein Regelformat, Schritt 5b: Wortlisten
 

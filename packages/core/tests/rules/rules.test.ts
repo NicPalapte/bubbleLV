@@ -1,4 +1,4 @@
-// Testfälle für `bubble-rule-v1`: erfundene Texte, Regel, erwartete Treffer.
+// Testfälle für `conocto-rule-v1`: erfundene Texte, Regel, erwartete Treffer.
 import { describe, expect, it } from 'vitest';
 import {
   blocksFromSelection,
@@ -163,7 +163,7 @@ describe('suggestLinks', () => {
 
 describe('toRule / parseRuleFile', () => {
   const rule = {
-    schema: 'bubble-rule-v1',
+    schema: 'conocto-rule-v1',
     id: 'nachtrag',
     version: 1,
     name: 'Nachtrag ausgeschlossen',
@@ -198,7 +198,7 @@ describe('toRule / parseRuleFile', () => {
   });
 
   it('nimmt aus einer Datei nur brauchbare Regeln, jede Kennung einmal', () => {
-    const file = { schema: 'bubble-rule-v1', regeln: [rule, rule, { kaputt: true }] };
+    const file = { schema: 'conocto-rule-v1', regeln: [rule, rule, { kaputt: true }] };
     expect(parseRuleFile(file)).toHaveLength(1);
     expect(parseRuleFile({ regeln: [rule] })).toEqual([]);
   });

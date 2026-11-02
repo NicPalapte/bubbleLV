@@ -1,4 +1,4 @@
-// Startseite conocto.app (Entscheidung 0091): Wechselzeile unter dem Logo und die
+// Startseite conocto.app (Entscheidung 0092): Wechselzeile unter dem Logo und die
 // 24-s-Animation „Was Conocto kann" in vier Szenen. Bewusst ohne React und ohne
 // App-Code: die Seite soll sofort stehen und nur Schriften + dieses Skript laden.
 // Drehbuch und Bildaufbau: Mockup „Bubble Startseite" (Nico, 2026-11-02).

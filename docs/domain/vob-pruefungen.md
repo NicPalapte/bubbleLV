@@ -27,7 +27,7 @@
 | G4                     | **entfernt** (15.10.2026): ein „auffälliger" Einheitspreis ist eine Deutung der Software, keine Tatsache aus der Datei                                    |
 | M1                     | **aus** (15.10.2026): unbewehrte Bauteile erkennt der Fachmann selbst, der Hinweis überlud die Oberfläche                                                 |
 
-Jede Prüfregel ist eine Grundstock-Regel im Format `bubble-rule-v1` mit der Wirkung
+Jede Prüfregel ist eine Grundstock-Regel im Format `conocto-rule-v1` mit der Wirkung
 „Prüfhinweis“ in [`reference/regeln.json`](reference/regeln.json) (Entscheidung
 [0086](../decisions/0086-pruefregeln-als-regeln.md)): Status, Norm-Verweis mit Stand, Name,
 Kategorie, Schwere, Hinweistext und Schwellwerte. Suchwörter stehen in Wortlisten (CSV,

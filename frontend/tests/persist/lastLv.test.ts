@@ -95,7 +95,7 @@ describe('letzte Datei — Randfälle', () => {
   it('liefert null, wenn zu den Angaben die Bytes fehlen', async () => {
     await saveLastLv(meta, bytesOf('x'));
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open('bubble');
+      const request = indexedDB.open('conocto');
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
@@ -227,5 +227,25 @@ describe('Anordnung im Splitscreen (Entscheidung 0073)', () => {
     const back = toStoredWorkspace(await readWorkspace(), INITIAL_WORKSPACE.closed);
     expect(back?.root).toEqual(moved.root);
     expect(back?.closed).toEqual(moved.closed);
+  });
+});
+
+describe('alter Speicher vor Entscheidung 0091', () => {
+  it('löscht die Datenbank „bubble“ beim ersten Zugriff', async () => {
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open('bubble');
+      request.onsuccess = () => {
+        request.result.close();
+        resolve();
+      };
+      request.onerror = () => reject(request.error);
+    });
+    vi.resetModules();
+    const frisch = await import('../../src/lib/persist/lastLv');
+    await frisch.readLastLvMeta();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const namen = (await indexedDB.databases()).map((db) => db.name);
+    expect(namen).not.toContain('bubble');
+    expect(namen).toContain('conocto');
   });
 });

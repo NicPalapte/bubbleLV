@@ -1,5 +1,5 @@
 // Regeln in der App (Entscheidung 0081): Grundstock aus dem Repo, eigene Regeln aus dem
-// Browser, beide im Format `bubble-rule-v1` des Kerns. Hier steht nur, was die App
+// Browser, beide im Format `conocto-rule-v1` des Kerns. Hier steht nur, was die App
 // drumherum braucht — Auswerten tut allein der Kern (`matchCondition`, `suggestLinks`).
 
 import grundstockJson from '@reference/regeln.json?raw';

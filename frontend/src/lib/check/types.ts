@@ -1,4 +1,4 @@
-// Prüfregeln (WP-K), seit Entscheidung 0085 Regeln im Format `bubble-rule-v1` mit der
+// Prüfregeln (WP-K), seit Entscheidung 0085 Regeln im Format `conocto-rule-v1` mit der
 // Wirkung „Prüfhinweis“ (docs/domain/reference/regeln.json). Was hier entsteht, sind **Hinweise, keine Urteile**
 // (docs/domain/vob-pruefungen.md):
 //  - jede Meldung zeigt die Fundstelle, nie nur eine Behauptung,
@@ -46,7 +46,7 @@ export type Fund = Pick<Flag, 'title' | 'span'>;
 
 /** Eine Regel mit ihrem Zustand für diesen Datensatz. */
 export interface RuleStatus {
-  /** Kennung der Regel (`bubble-rule-v1`), z. B. „v1-bedarfsposition“. */
+  /** Kennung der Regel (`conocto-rule-v1`), z. B. „v1-bedarfsposition“. */
   id: string;
   /** Kurzzeichen für die Liste, z. B. „V1“; leer bei Regeln ohne. */
   code: string;

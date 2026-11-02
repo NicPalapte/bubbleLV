@@ -44,7 +44,7 @@ import type { LVNode } from '../types/lvNode';
 
 // Kennung aus der Zeit vor dem Namen Conocto — bleibt, sonst ließen sich
 // gesicherte Notiz-Dateien nicht mehr laden (Entscheidung 0069).
-export const NOTES_FILE_KIND = 'bubble-notizen';
+export const NOTES_FILE_KIND = 'conocto-notizen';
 /**
  * Seit 0080 dazu je Position `quelle` an Dokumentstellen und `abgelehnt` — nur ergänzt,
  * deshalb weiter Version 4: ältere Fassungen lesen die Datei und übergehen die Felder.

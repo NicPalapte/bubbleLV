@@ -1,4 +1,4 @@
-# 0091 – Startseite auf conocto.app, Viewer unter conocto.app/doc/
+# 0092 – Startseite auf conocto.app, Viewer unter conocto.app/doc/
 
 - **Status:** akzeptiert
 - **Datum:** 2026-11-02

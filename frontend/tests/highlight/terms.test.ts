@@ -63,7 +63,7 @@ describe('Begriff als Regel', () => {
     ).toEqual([['wichtig', 'Sichtbetonklasse SB2']]);
   });
 
-  it('ist eine gültige Regel im Format bubble-rule-v1, die der Begriff wiedererkennt', () => {
+  it('ist eine gültige Regel im Format conocto-rule-v1, die der Begriff wiedererkennt', () => {
     const rule = termRule({ begriff: ' d = # cm ', kategorie: 'masse' }, new Set());
     expect(toRule(JSON.parse(JSON.stringify(rule)))).toEqual(rule);
     expect(rule).toMatchObject({ id: 'd-cm', name: 'd = # cm', status: 'freigegeben' });

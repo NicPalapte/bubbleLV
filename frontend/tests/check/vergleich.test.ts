@@ -1,5 +1,5 @@
 // Vergleich alt/neu (Entscheidung 0085, Schritt 2): Die Prüfregeln laufen seit 0.46.0 als
-// Regeln im Format `bubble-rule-v1`. `funde-vorher.json` hält fest, welche Positionen die
+// Regeln im Format `conocto-rule-v1`. `funde-vorher.json` hält fest, welche Positionen die
 // alten Prüffunktionen je Regel gemeldet haben — auf allen Test-LVs und einem erfundenen
 // Prüf-LV mit Grenzfällen. Die neuen Regeln müssen dieselben Positionen melden; jede
 // Abweichung steht unten mit Grund.
@@ -18,7 +18,7 @@ const DATEIEN: Readonly<Record<string, string>> = {
   'sample.X83': '../packages/core/tests/fixtures/sample.X83',
   'zeilenumbruch-export.x83': '../packages/core/tests/fixtures/zeilenumbruch-export.x83',
   'bvbs-gaeb-musterdatei.x83': 'src/assets/demo/bvbs-gaeb-musterdatei.x83',
-  'bubble-demo-angebot.x84': 'src/assets/demo/bubble-demo-angebot.x84',
+  'conocto-demo-angebot.x84': 'src/assets/demo/conocto-demo-angebot.x84',
 };
 
 /** Gewollte Abweichungen im Prüf-LV: Regel → OZ → `neu` = nur neu gemeldet, `alt` = nur alt. */

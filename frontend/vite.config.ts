@@ -24,7 +24,7 @@ const CORE = fileURLToPath(new URL('../packages/core', import.meta.url));
 export default defineConfig({
   resolve: { alias: { '@reference': REFERENCE, '@core': `${CORE}/src/index.ts` } },
   plugins: [react(), thirdPartyLicenses(fileURLToPath(new URL('.', import.meta.url)))],
-  // Zwei Seiten (Entscheidung 0091): Startseite in der Wurzel (index.html, ohne React),
+  // Zwei Seiten (Entscheidung 0092): Startseite in der Wurzel (index.html, ohne React),
   // der Viewer unter doc/ (doc/index.html). Beide teilen sich den Ordner assets/.
   build: {
     rolldownOptions: {

@@ -76,7 +76,7 @@ describe('loadDemoLv · Angebot mit Preisen', () => {
 
     const lv = await loadDemoLv(demo);
 
-    expect(lv.fileName).toBe('bubble-demo-angebot.x84');
+    expect(lv.fileName).toBe('conocto-demo-angebot.x84');
     expect(lv.tree.positionCount).toBeGreaterThan(70);
     expect(lv.summary.unitPrice).not.toBeNull();
     // Keine Zertifizierungs-Extremwerte mehr: die Summe bleibt in der
@@ -99,7 +99,7 @@ describe('DEMO_LVS', () => {
   });
 });
 
-// „Demo starten" auf der Startseite verlinkt `doc/?demo=muster` (Entscheidung 0091).
+// „Demo starten" auf der Startseite verlinkt `doc/?demo=muster` (Entscheidung 0092).
 describe('takeDemoFromUrl', () => {
   afterEach(() => {
     window.history.replaceState(null, '', '/');
