@@ -14,7 +14,6 @@ liest beides beim nächsten Build.
 | `risiko-formulierungen.csv`   | Formulierungen für V4                                              |
 | `hersteller-produktnamen.csv` | Hersteller und Produktnamen für V3                                 |
 | `einheiten-gruppen.csv`       | Einheiten, die dasselbe meinen (V2, G3)                            |
-| `hervorhebungen.csv`          | Begriffe im Langtext einfärben (keine Prüfregel)                   |
 
 ## In `regeln.json`
 
@@ -62,17 +61,6 @@ Grund.
 - Risiko: eine Formulierung je Zeile, dazu die Quelle (`quelle_version`).
 - Hersteller: `name` und weitere Produktnamen in `stichworte`, pipe-getrennt. Im Fund steht
   das gefundene Wort, z. B. „Ytong“.
-
-## `hervorhebungen.csv`
-
-Keine Prüfregel, aber dieselbe Art Tabelle: Sie färbt Begriffe im Langtext ein und
-ändert nichts an der Prüfung.
-
-- `begriff`: Wort oder Muster, Schreibweise wie oben (`#` = Zahl, `*` = Buchstaben oder Ziffern).
-- `kategorie`: `material`, `masse`, `wichtig` oder `aus` (nicht hervorheben).
-- Am einfachsten pflegst du sie über die Admin-Werkzeuge in der App und lädst die CSV
-  herunter: [`admin-werkzeuge.md`](admin-werkzeuge.md). Spalten und Regeln:
-  [`../domain/reference/README.md`](../domain/reference/README.md#hervorhebungencsv--begriffe-im-langtext).
 
 ## Was im Code bleibt
 

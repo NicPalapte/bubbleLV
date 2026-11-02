@@ -1,6 +1,7 @@
 # 0066 – Als Material gelernte Begriffe stehen im Filter „Material"
 
-- **Status:** akzeptiert
+- **Status:** akzeptiert (Begriffe kommen seit [0088](0088-gelernte-begriffe-als-regeln.md)
+  aus den Regeln)
 - **Datum:** 2026-10-22
 - **Betrifft:** Filter „Material" (`frontend/src/components/filter/FilterBar.tsx`),
   `frontend/src/lib/index/learnedMaterials.ts`, `frontend/src/state/ViewerProvider.tsx`

@@ -1,4 +1,4 @@
-// Begriff lernen (Entscheidung 0053, nur mit Admin-Zugang): Text im Langtext
+// Begriff lernen (Entscheidungen 0053, 0088, nur mit Admin-Zugang): Text im Langtext
 // markieren, dann Kategorie wählen. Enthält der Begriff eine Zahl, lässt er sich
 // auch als Muster lernen — „C30/37" wird „C#/#" und trifft jede Festigkeitsklasse.
 

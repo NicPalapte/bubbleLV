@@ -16,6 +16,7 @@ export const HIGHLIGHT_LABELS: Readonly<Record<RuleHighlight, string>> = {
   wichtig: 'Wichtig',
   material: 'Material',
   masse: 'Maße',
+  aus: 'Nicht hervorheben',
 };
 
 export const FIELD_LABELS: Readonly<Record<RuleField, string>> = {
@@ -74,6 +75,7 @@ function conditionWords(condition: RuleCondition): string {
 export function ruleSentence(rule: Rule): string {
   const when = `Wenn ${conditionWords(rule.bedingung)}`;
   if ('hervorheben' in rule.wirkung) {
+    if (rule.wirkung.hervorheben === 'aus') return `${when}, dann dort nichts hervorheben.`;
     return `${when}, dann als „${HIGHLIGHT_LABELS[rule.wirkung.hervorheben]}“ hervorheben.`;
   }
   if ('pruefhinweis' in rule.wirkung) {

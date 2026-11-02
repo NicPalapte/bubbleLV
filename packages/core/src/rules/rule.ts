@@ -90,9 +90,10 @@ export interface RuleCondition {
   readonly wo: readonly RuleField[];
 }
 
-export type RuleHighlight = 'wichtig' | 'material' | 'masse';
+/** `aus` = nie hervorheben: nimmt jede Fundstelle weg, die der Treffer berührt. */
+export type RuleHighlight = 'wichtig' | 'material' | 'masse' | 'aus';
 
-export const RULE_HIGHLIGHTS: readonly RuleHighlight[] = ['wichtig', 'material', 'masse'];
+export const RULE_HIGHLIGHTS: readonly RuleHighlight[] = ['wichtig', 'material', 'masse', 'aus'];
 
 /** Was zwei verknüpfte Positionen gemeinsam haben müssen. Vorgruppierung, kein All-Paare. */
 export type RuleLinkSame = 'abschnitt' | 'einheit';

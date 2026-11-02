@@ -1,0 +1,1098 @@
+{
+  "gaeb-xml-beispiel.x83": {
+    "001.001.0010": [
+      {
+        "key": "wichtig",
+        "start": 226,
+        "end": 234,
+        "label": "bauseits"
+      }
+    ],
+    "001.002.0010": [],
+    "001.002.0020": [],
+    "001.002.0030": [
+      {
+        "key": "masse",
+        "start": 173,
+        "end": 178,
+        "label": "# cm"
+      }
+    ],
+    "001.002.0040": [
+      {
+        "key": "normen",
+        "start": 14,
+        "end": 23,
+        "label": "ZTV P-StB"
+      },
+      {
+        "key": "material",
+        "start": 107,
+        "end": 112,
+        "label": "Beton"
+      },
+      {
+        "key": "masse",
+        "start": 216,
+        "end": 222,
+        "label": "# mm"
+      },
+      {
+        "key": "hoehe",
+        "start": 224,
+        "end": 234,
+        "label": "Höhe 80 mm"
+      },
+      {
+        "key": "masse",
+        "start": 313,
+        "end": 317,
+        "label": "# cm"
+      }
+    ],
+    "001.003.0010": [
+      {
+        "key": "dicke",
+        "start": 219,
+        "end": 232,
+        "label": "dicke 11,5 cm"
+      }
+    ],
+    "001.003.0020": [
+      {
+        "key": "dicke",
+        "start": 219,
+        "end": 232,
+        "label": "dicke 17,5 cm"
+      }
+    ],
+    "001.003.0030": [
+      {
+        "key": "dicke",
+        "start": 238,
+        "end": 251,
+        "label": "dicke 36,5 cm"
+      },
+      {
+        "key": "masse",
+        "start": 337,
+        "end": 343,
+        "label": "# mm"
+      },
+      {
+        "key": "masse",
+        "start": 351,
+        "end": 357,
+        "label": "# mm"
+      }
+    ],
+    "001.003.0040": [
+      {
+        "key": "dicke",
+        "start": 194,
+        "end": 207,
+        "label": "dicke 36,5 cm"
+      }
+    ],
+    "001.004.0010": [
+      {
+        "key": "material",
+        "start": 64,
+        "end": 76,
+        "label": "Beton"
+      },
+      {
+        "key": "material",
+        "start": 151,
+        "end": 166,
+        "label": "Beton"
+      }
+    ],
+    "001.004.0020": [
+      {
+        "key": "material",
+        "start": 0,
+        "end": 8,
+        "label": "Bauweise: Ortbeton"
+      },
+      {
+        "key": "material",
+        "start": 34,
+        "end": 45,
+        "label": "Beton"
+      },
+      {
+        "key": "material",
+        "start": 62,
+        "end": 72,
+        "label": "Beton"
+      },
+      {
+        "key": "material",
+        "start": 74,
+        "end": 85,
+        "label": "Art: Normalbeton"
+      },
+      {
+        "key": "dicke",
+        "start": 120,
+        "end": 131,
+        "label": "Dicke 20 cm"
+      }
+    ],
+    "001.004.0030": [
+      {
+        "key": "material",
+        "start": 0,
+        "end": 8,
+        "label": "Bauweise: Ortbeton"
+      },
+      {
+        "key": "dicke",
+        "start": 25,
+        "end": 36,
+        "label": "Dicke 24 cm"
+      },
+      {
+        "key": "material",
+        "start": 42,
+        "end": 52,
+        "label": "Beton"
+      },
+      {
+        "key": "material",
+        "start": 54,
+        "end": 65,
+        "label": "Art: Normalbeton"
+      },
+      {
+        "key": "material",
+        "start": 118,
+        "end": 132,
+        "label": "Beton"
+      },
+      {
+        "key": "material",
+        "start": 163,
+        "end": 166,
+        "label": "Beton"
+      },
+      {
+        "key": "material",
+        "start": 186,
+        "end": 200,
+        "label": "Beton"
+      },
+      {
+        "key": "material",
+        "start": 226,
+        "end": 229,
+        "label": "Beton"
+      }
+    ],
+    "002.002.0010": [
+      {
+        "key": "masse",
+        "start": 66,
+        "end": 72,
+        "label": "# mm"
+      }
+    ],
+    "002.002.0030": [
+      {
+        "key": "masse",
+        "start": 65,
+        "end": 71,
+        "label": "# mm"
+      }
+    ],
+    "002.003.0010": [
+      {
+        "key": "material",
+        "start": 1219,
+        "end": 1224,
+        "label": "Stahl"
+      }
+    ],
+    "999.999.9999": [
+      {
+        "key": "wichtig",
+        "start": 40,
+        "end": 53,
+        "label": "auf Anordnung*"
+      }
+    ],
+    "999.999.9999.y": [
+      {
+        "key": "wichtig",
+        "start": 38,
+        "end": 51,
+        "label": "auf Anordnung*"
+      }
+    ],
+    "999.999.9999.z": [
+      {
+        "key": "wichtig",
+        "start": 37,
+        "end": 50,
+        "label": "auf Anordnung*"
+      }
+    ]
+  },
+  "sample-3.2.x83": {
+    "01.01.0010": [
+      {
+        "key": "masse",
+        "start": 57,
+        "end": 62,
+        "label": "# cm"
+      }
+    ]
+  },
+  "sample.X83": {
+    "01.01.0010": [
+      {
+        "key": "masse",
+        "start": 57,
+        "end": 62,
+        "label": "# cm"
+      }
+    ]
+  },
+  "zeilenumbruch-export.x83": {},
+  "bvbs-gaeb-musterdatei.x83": {
+    "001.001.0010": [
+      {
+        "key": "wichtig",
+        "start": 226,
+        "end": 234,
+        "label": "bauseits"
+      }
+    ],
+    "001.002.0010": [],
+    "001.002.0020": [],
+    "001.002.0030": [
+      {
+        "key": "masse",
+        "start": 173,
+        "end": 178,
+        "label": "# cm"
+      }
+    ],
+    "001.002.0040": [
+      {
+        "key": "normen",
+        "start": 14,
+        "end": 23,
+        "label": "ZTV P-StB"
+      },
+      {
+        "key": "material",
+        "start": 107,
+        "end": 112,
+        "label": "Beton"
+      },
+      {
+        "key": "masse",
+        "start": 216,
+        "end": 222,
+        "label": "# mm"
+      },
+      {
+        "key": "hoehe",
+        "start": 224,
+        "end": 234,
+        "label": "Höhe 80 mm"
+      },
+      {
+        "key": "masse",
+        "start": 313,
+        "end": 317,
+        "label": "# cm"
+      }
+    ],
+    "001.003.0010": [
+      {
+        "key": "dicke",
+        "start": 219,
+        "end": 232,
+        "label": "dicke 11,5 cm"
+      }
+    ],
+    "001.003.0020": [
+      {
+        "key": "dicke",
+        "start": 219,
+        "end": 232,
+        "label": "dicke 17,5 cm"
+      }
+    ],
+    "001.003.0030": [
+      {
+        "key": "dicke",
+        "start": 238,
+        "end": 251,
+        "label": "dicke 36,5 cm"
+      },
+      {
+        "key": "masse",
+        "start": 337,
+        "end": 343,
+        "label": "# mm"
+      },
+      {
+        "key": "masse",
+        "start": 351,
+        "end": 357,
+        "label": "# mm"
+      }
+    ],
+    "001.003.0040": [
+      {
+        "key": "dicke",
+        "start": 194,
+        "end": 207,
+        "label": "dicke 36,5 cm"
+      }
+    ],
+    "001.004.0010": [
+      {
+        "key": "material",
+        "start": 64,
+        "end": 76,
+        "label": "Beton"
+      },
+      {
+        "key": "material",
+        "start": 151,
+        "end": 166,
+        "label": "Beton"
+      }
+    ],
+    "001.004.0020": [
+      {
+        "key": "material",
+        "start": 0,
+        "end": 8,
+        "label": "Bauweise: Ortbeton"
+      },
+      {
+        "key": "material",
+        "start": 34,
+        "end": 45,
+        "label": "Beton"
+      },
+      {
+        "key": "material",
+        "start": 62,
+        "end": 72,
+        "label": "Beton"
+      },
+      {
+        "key": "material",
+        "start": 74,
+        "end": 85,
+        "label": "Art: Normalbeton"
+      },
+      {
+        "key": "dicke",
+        "start": 120,
+        "end": 131,
+        "label": "Dicke 20 cm"
+      }
+    ],
+    "001.004.0030": [
+      {
+        "key": "material",
+        "start": 0,
+        "end": 8,
+        "label": "Bauweise: Ortbeton"
+      },
+      {
+        "key": "dicke",
+        "start": 25,
+        "end": 36,
+        "label": "Dicke 24 cm"
+      },
+      {
+        "key": "material",
+        "start": 42,
+        "end": 52,
+        "label": "Beton"
+      },
+      {
+        "key": "material",
+        "start": 54,
+        "end": 65,
+        "label": "Art: Normalbeton"
+      },
+      {
+        "key": "material",
+        "start": 118,
+        "end": 132,
+        "label": "Beton"
+      },
+      {
+        "key": "material",
+        "start": 163,
+        "end": 166,
+        "label": "Beton"
+      },
+      {
+        "key": "material",
+        "start": 186,
+        "end": 200,
+        "label": "Beton"
+      },
+      {
+        "key": "material",
+        "start": 226,
+        "end": 229,
+        "label": "Beton"
+      }
+    ],
+    "002.002.0010": [
+      {
+        "key": "masse",
+        "start": 66,
+        "end": 72,
+        "label": "# mm"
+      }
+    ],
+    "002.002.0030": [
+      {
+        "key": "masse",
+        "start": 65,
+        "end": 71,
+        "label": "# mm"
+      }
+    ],
+    "002.003.0010": [
+      {
+        "key": "material",
+        "start": 1219,
+        "end": 1224,
+        "label": "Stahl"
+      }
+    ],
+    "999.999.9999": [
+      {
+        "key": "wichtig",
+        "start": 40,
+        "end": 53,
+        "label": "auf Anordnung*"
+      }
+    ],
+    "999.999.9999.y": [
+      {
+        "key": "wichtig",
+        "start": 38,
+        "end": 51,
+        "label": "auf Anordnung*"
+      }
+    ],
+    "999.999.9999.z": [
+      {
+        "key": "wichtig",
+        "start": 37,
+        "end": 50,
+        "label": "auf Anordnung*"
+      }
+    ]
+  },
+  "bubble-demo-angebot.x84": {
+    "001.001.0010": [
+      {
+        "key": "wichtig",
+        "start": 226,
+        "end": 234,
+        "label": "bauseits"
+      }
+    ],
+    "001.002.0010": [],
+    "001.002.0020": [],
+    "001.002.0030": [
+      {
+        "key": "masse",
+        "start": 173,
+        "end": 178,
+        "label": "# cm"
+      }
+    ],
+    "001.002.0040": [
+      {
+        "key": "normen",
+        "start": 14,
+        "end": 23,
+        "label": "ZTV P-StB"
+      },
+      {
+        "key": "material",
+        "start": 107,
+        "end": 112,
+        "label": "Beton"
+      },
+      {
+        "key": "masse",
+        "start": 216,
+        "end": 222,
+        "label": "# mm"
+      },
+      {
+        "key": "hoehe",
+        "start": 224,
+        "end": 234,
+        "label": "Höhe 80 mm"
+      },
+      {
+        "key": "masse",
+        "start": 313,
+        "end": 317,
+        "label": "# cm"
+      }
+    ],
+    "001.003.0010": [
+      {
+        "key": "dicke",
+        "start": 219,
+        "end": 232,
+        "label": "dicke 11,5 cm"
+      }
+    ],
+    "001.003.0020": [
+      {
+        "key": "dicke",
+        "start": 219,
+        "end": 232,
+        "label": "dicke 17,5 cm"
+      }
+    ],
+    "001.003.0030": [
+      {
+        "key": "dicke",
+        "start": 238,
+        "end": 251,
+        "label": "dicke 36,5 cm"
+      },
+      {
+        "key": "masse",
+        "start": 337,
+        "end": 343,
+        "label": "# mm"
+      },
+      {
+        "key": "masse",
+        "start": 351,
+        "end": 357,
+        "label": "# mm"
+      }
+    ],
+    "001.003.0040": [
+      {
+        "key": "dicke",
+        "start": 194,
+        "end": 207,
+        "label": "dicke 36,5 cm"
+      }
+    ],
+    "001.004.0010": [
+      {
+        "key": "material",
+        "start": 64,
+        "end": 76,
+        "label": "Beton"
+      },
+      {
+        "key": "material",
+        "start": 151,
+        "end": 166,
+        "label": "Beton"
+      }
+    ],
+    "001.004.0020": [
+      {
+        "key": "material",
+        "start": 0,
+        "end": 8,
+        "label": "Bauweise: Ortbeton"
+      },
+      {
+        "key": "material",
+        "start": 34,
+        "end": 45,
+        "label": "Beton"
+      },
+      {
+        "key": "material",
+        "start": 62,
+        "end": 72,
+        "label": "Beton"
+      },
+      {
+        "key": "material",
+        "start": 74,
+        "end": 85,
+        "label": "Art: Normalbeton"
+      },
+      {
+        "key": "dicke",
+        "start": 120,
+        "end": 131,
+        "label": "Dicke 20 cm"
+      }
+    ],
+    "001.004.0030": [
+      {
+        "key": "material",
+        "start": 0,
+        "end": 8,
+        "label": "Bauweise: Ortbeton"
+      },
+      {
+        "key": "dicke",
+        "start": 25,
+        "end": 36,
+        "label": "Dicke 24 cm"
+      },
+      {
+        "key": "material",
+        "start": 42,
+        "end": 52,
+        "label": "Beton"
+      },
+      {
+        "key": "material",
+        "start": 54,
+        "end": 65,
+        "label": "Art: Normalbeton"
+      },
+      {
+        "key": "material",
+        "start": 118,
+        "end": 132,
+        "label": "Beton"
+      },
+      {
+        "key": "material",
+        "start": 163,
+        "end": 166,
+        "label": "Beton"
+      },
+      {
+        "key": "material",
+        "start": 186,
+        "end": 200,
+        "label": "Beton"
+      },
+      {
+        "key": "material",
+        "start": 226,
+        "end": 229,
+        "label": "Beton"
+      }
+    ],
+    "001.005.0010": [],
+    "001.005.0030": [],
+    "001.005.0050": [],
+    "001.006.0010": [],
+    "001.006.0020": [
+      {
+        "key": "masse",
+        "start": 81,
+        "end": 86,
+        "label": "# cm"
+      }
+    ],
+    "001.006.0030": [
+      {
+        "key": "dicke",
+        "start": 46,
+        "end": 56,
+        "label": "d = 120 mm"
+      }
+    ],
+    "001.006.0040": [],
+    "001.007.0010": [],
+    "001.007.0020": [],
+    "001.007.0030": [
+      {
+        "key": "platzhalter",
+        "start": 173,
+        "end": 185,
+        "label": "Farbton nach Wahl des Auftraggebers: …"
+      }
+    ],
+    "002.002.0010": [
+      {
+        "key": "masse",
+        "start": 66,
+        "end": 72,
+        "label": "# mm"
+      }
+    ],
+    "002.002.0030": [
+      {
+        "key": "masse",
+        "start": 65,
+        "end": 71,
+        "label": "# mm"
+      }
+    ],
+    "002.003.0010": [
+      {
+        "key": "material",
+        "start": 1219,
+        "end": 1224,
+        "label": "Stahl"
+      }
+    ],
+    "003.001.0010": [],
+    "003.001.0030": [
+      {
+        "key": "masse",
+        "start": 36,
+        "end": 42,
+        "label": "# mm"
+      }
+    ],
+    "003.001.0040": [
+      {
+        "key": "material",
+        "start": 23,
+        "end": 27,
+        "label": "Holz*"
+      },
+      {
+        "key": "masse",
+        "start": 84,
+        "end": 90,
+        "label": "# cm"
+      },
+      {
+        "key": "platzhalter",
+        "start": 143,
+        "end": 153,
+        "label": "Fabrikat:"
+      },
+      {
+        "key": "platzhalter",
+        "start": 153,
+        "end": 165,
+        "label": "Fabrikat: …"
+      }
+    ],
+    "003.001.0050": [
+      {
+        "key": "masse",
+        "start": 84,
+        "end": 89,
+        "label": "# cm"
+      }
+    ],
+    "003.002.0010": [
+      {
+        "key": "dicke",
+        "start": 72,
+        "end": 83,
+        "label": "dicke 60 mm"
+      }
+    ],
+    "003.002.0020": [
+      {
+        "key": "masse",
+        "start": 26,
+        "end": 30,
+        "label": "# mm"
+      }
+    ],
+    "003.002.0040": [],
+    "003.003.0010": [
+      {
+        "key": "masse",
+        "start": 38,
+        "end": 43,
+        "label": "# cm"
+      },
+      {
+        "key": "masse",
+        "start": 106,
+        "end": 110,
+        "label": "# mm"
+      },
+      {
+        "key": "platzhalter",
+        "start": 154,
+        "end": 166,
+        "label": "Fabrikat und Farbe: …"
+      }
+    ],
+    "003.003.0020": [
+      {
+        "key": "masse",
+        "start": 78,
+        "end": 83,
+        "label": "# cm"
+      }
+    ],
+    "003.003.0030": [],
+    "003.004.0010": [
+      {
+        "key": "masse",
+        "start": 127,
+        "end": 132,
+        "label": "# mm"
+      }
+    ],
+    "003.004.0020": [
+      {
+        "key": "dicke",
+        "start": 57,
+        "end": 68,
+        "label": "d = 12,5 mm"
+      },
+      {
+        "key": "masse",
+        "start": 85,
+        "end": 91,
+        "label": "# mm"
+      }
+    ],
+    "003.004.0030": [
+      {
+        "key": "masse",
+        "start": 90,
+        "end": 95,
+        "label": "# mm"
+      }
+    ],
+    "003.004.0040": [
+      {
+        "key": "masse",
+        "start": 22,
+        "end": 28,
+        "label": "# mm"
+      }
+    ],
+    "003.005.0010": [
+      {
+        "key": "platzhalter",
+        "start": 184,
+        "end": 196,
+        "label": "Farbton nach Wahl des Auftraggebers: …"
+      }
+    ],
+    "003.005.0020": [],
+    "003.006.0010": [
+      {
+        "key": "dicke",
+        "start": 38,
+        "end": 48,
+        "label": "d = 2,0 mm"
+      }
+    ],
+    "003.006.0040": [
+      {
+        "key": "dicke",
+        "start": 84,
+        "end": 94,
+        "label": "dicke 3 mm"
+      }
+    ],
+    "004.001.0010": [
+      {
+        "key": "platzhalter",
+        "start": 142,
+        "end": 152,
+        "label": "Fabrikat:"
+      },
+      {
+        "key": "platzhalter",
+        "start": 152,
+        "end": 164,
+        "label": "Fabrikat: …"
+      }
+    ],
+    "004.001.0030": [
+      {
+        "key": "masse",
+        "start": 32,
+        "end": 39,
+        "label": "# mm"
+      }
+    ],
+    "004.001.0040": [
+      {
+        "key": "material",
+        "start": 26,
+        "end": 31,
+        "label": "Stahl"
+      },
+      {
+        "key": "masse",
+        "start": 32,
+        "end": 37,
+        "label": "DN #"
+      }
+    ],
+    "004.002.0010": [],
+    "004.002.0020": [
+      {
+        "key": "masse",
+        "start": 11,
+        "end": 17,
+        "label": "# mm"
+      }
+    ],
+    "004.003.0020": [],
+    "004.003.0030": [
+      {
+        "key": "masse",
+        "start": 22,
+        "end": 28,
+        "label": "DN #"
+      }
+    ],
+    "004.004.0010": [
+      {
+        "key": "masse",
+        "start": 47,
+        "end": 51,
+        "label": "# mm"
+      }
+    ],
+    "004.004.0020": [],
+    "999.999.9999": [
+      {
+        "key": "wichtig",
+        "start": 40,
+        "end": 53,
+        "label": "auf Anordnung*"
+      }
+    ],
+    "999.999.9999.y": [
+      {
+        "key": "wichtig",
+        "start": 38,
+        "end": 51,
+        "label": "auf Anordnung*"
+      }
+    ],
+    "999.999.9999.z": [
+      {
+        "key": "wichtig",
+        "start": 37,
+        "end": 50,
+        "label": "auf Anordnung*"
+      }
+    ]
+  },
+  "texte": [
+    [
+      {
+        "key": "material",
+        "start": 0,
+        "end": 10,
+        "label": "Beton*"
+      },
+      {
+        "key": "material",
+        "start": 20,
+        "end": 25,
+        "label": "Beton*"
+      },
+      {
+        "key": "wichtig",
+        "start": 38,
+        "end": 67,
+        "label": "Abstimmung mit der Bauleitung"
+      }
+    ],
+    [
+      {
+        "key": "masse",
+        "start": 5,
+        "end": 11,
+        "label": "DN #"
+      },
+      {
+        "key": "masse",
+        "start": 24,
+        "end": 33,
+        "label": "d = # cm"
+      },
+      {
+        "key": "masse",
+        "start": 41,
+        "end": 46,
+        "label": "# mm"
+      },
+      {
+        "key": "wichtig",
+        "start": 48,
+        "end": 56,
+        "label": "bauseits"
+      }
+    ],
+    [
+      {
+        "key": "material",
+        "start": 0,
+        "end": 12,
+        "label": "Holz*"
+      },
+      {
+        "key": "material",
+        "start": 30,
+        "end": 42,
+        "label": "Mörtel*"
+      },
+      {
+        "key": "material",
+        "start": 48,
+        "end": 52,
+        "label": "Kies"
+      }
+    ],
+    [
+      {
+        "key": "wichtig",
+        "start": 4,
+        "end": 17,
+        "label": "auf Anordnung*"
+      },
+      {
+        "key": "wichtig",
+        "start": 22,
+        "end": 32,
+        "label": "Bauleitung"
+      },
+      {
+        "key": "material",
+        "start": 50,
+        "end": 55,
+        "label": "Stahl"
+      }
+    ],
+    [
+      {
+        "key": "wichtig",
+        "start": 27,
+        "end": 40,
+        "label": "auf Anordnung*"
+      },
+      {
+        "key": "wichtig",
+        "start": 45,
+        "end": 55,
+        "label": "Bauleitung"
+      },
+      {
+        "key": "wichtig",
+        "start": 63,
+        "end": 77,
+        "label": "Vertragsstrafe"
+      }
+    ],
+    []
+  ]
+}

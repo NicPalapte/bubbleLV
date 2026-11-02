@@ -1,6 +1,7 @@
 # 0053 – Drei Marker, Kommentar-Verlauf, Mengenstufe, gelernte Begriffe
 
-- **Status:** teilweise ersetzt durch 0062 (die drei Marker)
+- **Status:** teilweise ersetzt durch 0062 (die drei Marker) und
+  [0088](0088-gelernte-begriffe-als-regeln.md) (gelernte Begriffe)
 - **Datum:** 2026-10-16
 - **Betrifft:** eigene Notizen (`frontend/src/lib/annotations.ts`), Matrix
   (`frontend/src/lib/graph/layoutMap.ts`), Langtext-Hervorhebung

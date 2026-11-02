@@ -33,7 +33,6 @@ import { formatEuro, formatNumber } from '../../lib/format';
 import { categoryOf, keysOfLabel, presentCategories } from '../../lib/spanCategories';
 import { headingOf } from '../../lib/tree/heading';
 import { mainSectionOf } from '../../lib/tree/mainSection';
-import { applyTerms } from '../../lib/highlight/terms';
 import { blocksFromSelection } from '@core';
 import { applyRules, nameOf, newRule } from '../../lib/rules/rules';
 import { PositionLinks } from './PositionLinks';
@@ -154,17 +153,12 @@ export function PositionDetails({ node, position }: { node: LVNode; position: Po
   const keywords = attrStrings(position.attributes, 'keywords');
   const attributes = displayAttributes(position);
 
-  // Gelernte Begriffe (Entscheidung 0053) und aktive Regeln (0081) kommen beim Anzeigen
-  // dazu, nicht in der Klassifizierung: sie färben nur ein und sind kein Filter.
+  // Aktive Regeln (0081), auch gelernte Begriffe (0088), kommen beim Anzeigen dazu,
+  // nicht in der Klassifizierung: sie färben nur ein.
   const admin = useAdmin();
   const spans = useMemo(
-    () =>
-      applyRules(
-        position,
-        applyTerms(position.longText, attrSpans(position.attributes), admin.terms),
-        admin.rules,
-      ),
-    [position, admin.terms, admin.rules],
+    () => applyRules(position, attrSpans(position.attributes), admin.rules),
+    [position, admin.rules],
   );
   const longTextRef = useRef<HTMLDivElement>(null);
   // Zusätzlich als Zustand: Die Tablet-Leiste muss mitbekommen, wann der Langtext da ist.

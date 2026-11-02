@@ -1,16 +1,16 @@
-// Admin-Werkzeuge (Entscheidung 0053): Begriffe im Langtext lernen.
+// Admin-Werkzeuge (Entscheidung 0053): Begriffe im Langtext lernen und eigene Regeln.
 //
 // Das Passwort ist ein Sichtschutz, kein Zugriffsschutz: ohne Server steht die
 // Prüfung im ausgelieferten Code, wer sucht, kommt daran vorbei. Das ist hier
 // in Ordnung — hinter dem Zugang liegen keine fremden Daten, nur eine Funktion,
 // die normale Nutzer nicht sehen sollen.
 //
-// „Freigeschaltet" ist reiner UI-Zustand und überlebt keinen Reload. Die gelernten
-// Begriffe dagegen bleiben in diesem Browser (lib/persist/lastLv.ts) und färben
-// den Langtext auch ohne Admin-Zugang — es ist ja der Browser des Admins.
-//
-// Ebenso die eigenen Regeln aus dem Regeleditor (Entscheidung 0081). Der Grundstock
-// kommt aus docs/domain/reference/regeln.json und lässt sich hier nicht ändern.
+// „Freigeschaltet" ist reiner UI-Zustand und überlebt keinen Reload. Die eigenen Regeln
+// aus dem Regeleditor (Entscheidung 0081) dagegen bleiben in diesem Browser
+// (lib/persist/lastLv.ts) und wirken auch ohne Admin-Zugang — es ist ja der Browser des
+// Admins. Ein gelernter Begriff ist seit 0088 eine solche Regel; Begriffe älterer
+// Versionen zieht `readOwnRulesAndTerms` beim Start einmal um. Der Grundstock kommt aus
+// docs/domain/reference/regeln.json und lässt sich hier nicht ändern.
 
 import {
   createContext,
@@ -28,7 +28,7 @@ import {
   saveLearnedTerms,
   saveOwnRules,
 } from '../lib/persist/lastLv';
-import { sameTerm, TABLE_TERMS, type LearnedTerm } from '../lib/highlight/terms';
+import { learnedRule, termsToRules, type LearnedTerm } from '../lib/highlight/terms';
 import { GRUNDSTOCK } from '../lib/rules/rules';
 
 const GRUNDSTOCK_IDS: ReadonlySet<string> = new Set(GRUNDSTOCK.map((rule) => rule.id));
@@ -47,13 +47,8 @@ interface AdminContextValue {
   /** Prüft das Passwort; `true` = freigeschaltet. */
   unlock(password: string): Promise<boolean>;
   lock(): void;
-  /** Im Browser gelernte Begriffe, ohne die aus der Tabelle. */
-  readonly learned: readonly LearnedTerm[];
-  /** Tabelle + gelernt — das, was der Langtext anwendet. */
-  readonly terms: readonly LearnedTerm[];
-  /** Lernt einen Begriff; ein gleicher Begriff wird ersetzt. */
+  /** Lernt einen Begriff als eigene Regel; eine Regel mit gleichem Begriff wird ersetzt. */
   learn(term: LearnedTerm): void;
-  forget(begriff: string): void;
   /** Eigene Regeln (Geltung `unternehmen`), im Browser gespeichert. */
   readonly ownRules: readonly Rule[];
   /** Grundstock + eigene — das, was Langtext und Positionskarte anwenden. */
@@ -108,15 +103,43 @@ function usePersistedList<T>(
   return [items, setItems];
 }
 
-const sameLearned = (a: LearnedTerm, b: LearnedTerm): boolean => sameTerm(a.begriff, b.begriff);
+/**
+ * Eigene Regeln lesen und gelernte Begriffe älterer Versionen einmal als Regeln dazunehmen
+ * (Entscheidung 0088). Erst die Regeln sichern, dann die Begriffe leeren: scheitert das
+ * Sichern, bleiben die Begriffe und der Umzug läuft beim nächsten Start noch einmal.
+ */
+// Einmal je Seitenaufruf: Ein zweiter Lauf (StrictMode, neuer Provider) läse sonst die
+// Regeln vor und die Begriffe nach dem Umzug des ersten und überschriebe dessen Ergebnis.
+let ownRulesOnce: Promise<Rule[] | null> | null = null;
+
+function readOwnRulesAndTerms(): Promise<Rule[] | null> {
+  // Ein Fehler zählt wie gescheitertes Lesen (`null`): ohne Speicher weiter, nichts schreiben.
+  ownRulesOnce ??= migrateTerms()
+    .catch(() => null)
+    .finally(() => {
+      // Nur das erste Lesen teilt sich den Umzug; spätere Provider lesen frisch.
+      ownRulesOnce = null;
+    });
+  return ownRulesOnce;
+}
+
+async function migrateTerms(): Promise<Rule[] | null> {
+  const rules = await readOwnRules();
+  if (rules === null) return null;
+  const terms = await readLearnedTerms();
+  if (terms === null || terms.length === 0) return rules;
+  const merged = [...rules, ...termsToRules(terms, [...GRUNDSTOCK, ...rules])];
+  if (await saveOwnRules(merged)) await saveLearnedTerms([]);
+  return merged;
+}
+
 const sameRule = (a: Rule, b: Rule): boolean => a.id === b.id;
 
 const AdminContext = createContext<AdminContextValue | null>(null);
 
 export function AdminProvider({ children }: { children: ReactNode }) {
   const [unlocked, setUnlocked] = useState(false);
-  const [learned, change] = usePersistedList(readLearnedTerms, saveLearnedTerms, sameLearned);
-  const [ownRules, changeRules] = usePersistedList(readOwnRules, saveOwnRules, sameRule);
+  const [ownRules, changeRules] = usePersistedList(readOwnRulesAndTerms, saveOwnRules, sameRule);
   const [ruleRequest, setRuleRequest] = useState<Rule | null>(null);
 
   const value = useMemo<AdminContextValue>(
@@ -132,15 +155,13 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         return ok;
       },
       lock: () => setUnlocked(false),
-      learned,
-      terms: [...TABLE_TERMS, ...learned],
       learn: (term) =>
-        change((current) => [
-          ...current.filter((own) => !sameTerm(own.begriff, term.begriff)),
-          term,
-        ]),
-      forget: (begriff) =>
-        change((current) => current.filter((own) => !sameTerm(own.begriff, begriff))),
+        changeRules((current) => {
+          const taken = new Set([...GRUNDSTOCK_IDS, ...current.map((rule) => rule.id)]);
+          const rule = learnedRule(current, term, taken);
+          const at = current.findIndex((other) => other.id === rule.id);
+          return at < 0 ? [...current, rule] : current.map((other, i) => (i === at ? rule : other));
+        }),
       ownRules,
       // Kennungen sind eindeutig: bei gleicher Kennung gilt der Grundstock.
       rules: [...GRUNDSTOCK, ...ownRules.filter((rule) => !GRUNDSTOCK_IDS.has(rule.id))],
@@ -155,7 +176,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       ruleRequest,
       requestRule: setRuleRequest,
     }),
-    [unlocked, learned, change, ownRules, changeRules, ruleRequest],
+    [unlocked, ownRules, changeRules, ruleRequest],
   );
 
   return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;
@@ -165,10 +186,7 @@ const OUTSIDE: AdminContextValue = {
   unlocked: false,
   unlock: () => Promise.resolve(false),
   lock: () => undefined,
-  learned: [],
-  terms: TABLE_TERMS,
   learn: () => undefined,
-  forget: () => undefined,
   ownRules: [],
   rules: GRUNDSTOCK,
   saveRule: () => undefined,
@@ -177,7 +195,7 @@ const OUTSIDE: AdminContextValue = {
   requestRule: () => undefined,
 };
 
-/** Außerhalb des Providers (Tests einzelner Komponenten): nur die Tabelle, kein Admin. */
+/** Außerhalb des Providers (Tests einzelner Komponenten): nur der Grundstock, kein Admin. */
 export function useAdmin(): AdminContextValue {
   return useContext(AdminContext) ?? OUTSIDE;
 }

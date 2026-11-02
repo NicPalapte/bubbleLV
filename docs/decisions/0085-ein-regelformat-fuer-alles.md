@@ -1,6 +1,6 @@
 # 0085 – Ein Regelformat für alles
 
-- **Status:** akzeptiert (Schritt 3 von 5 umgesetzt; Norm-Pflicht im Grundstock geändert
+- **Status:** akzeptiert (Schritt 4 von 5 umgesetzt; Norm-Pflicht im Grundstock geändert
   durch [0086](0086-pruefregeln-als-regeln.md))
 - **Datum:** 2026-10-29
 - **Betrifft:** Kern (`packages/core/src/rules/rule.ts`, `evaluate.ts`), Regeln in der App
