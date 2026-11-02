@@ -446,7 +446,7 @@ export function RulesTab() {
         const skipped = total - added.length;
         setImportNote(
           added.length === 0
-            ? 'Keine Regeln gefunden. Erwartet wird eine regeln.json (bubble-rule-v1).'
+            ? 'Keine Regeln gefunden. Erwartet wird eine regeln.json (conocto-rule-v1).'
             : `${added.length} Regel${added.length === 1 ? '' : 'n'} übernommen` +
                 (skipped > 0 ? `, ${skipped} übersprungen (Grundstock oder unlesbar).` : '.'),
         );

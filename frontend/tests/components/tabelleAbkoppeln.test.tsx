@@ -118,7 +118,7 @@ describe('Tabelle abkoppeln', () => {
     const spy = renderTable(popup);
     abkoppeln();
 
-    expect(spy).toHaveBeenCalledWith('', 'bubble-tabelle', expect.stringContaining('popup'));
+    expect(spy).toHaveBeenCalledWith('', 'conocto-tabelle', expect.stringContaining('popup'));
     expect(screen.queryByRole('region', { name: 'Tabelle — Bereich' })).toBeNull();
     const fern = within(popup.document.body).getByRole('region', {
       name: 'Tabelle — eigenes Fenster',

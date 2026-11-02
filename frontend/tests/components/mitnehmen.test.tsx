@@ -65,7 +65,7 @@ async function ladeApp(pfad = resolve(FIXTURE_DIR, 'gaeb-xml-beispiel.x83')): Pr
 }
 
 /** Die Demo-Datei ist die einzige mit Preisen (x84). */
-const MIT_PREISEN = resolve(process.cwd(), 'src/assets/demo/bubble-demo-angebot.x84');
+const MIT_PREISEN = resolve(process.cwd(), 'src/assets/demo/conocto-demo-angebot.x84');
 
 /** Das Logo-Menü „Über diese App" öffnen. */
 function oeffneMenue(): void {

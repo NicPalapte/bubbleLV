@@ -69,7 +69,7 @@ frontend/
     │   ├── check/                    # Prüfregeln + Hinweise (WP-K, Entscheidung 0086)
     │   │   ├── index.ts              # runChecks: Grundstock-Regeln mit Prüfhinweis
     │   │   └── builtins.ts           # eingebaute Logik (V7, G3, M1)
-    │   ├── rules/                    # Regeln bubble-rule-v1 in der App (0081, 0085)
+    │   ├── rules/                    # Regeln conocto-rule-v1 in der App (0081, 0085)
     │   │   ├── rules.ts              # Grundstock, Kontext, Texte einer Position
     │   │   └── wissen.ts             # Wortlisten und Einheiten-Gruppen aus den CSV
     │   ├── pipeline/                 # Datei → LoadedLV, inkl. Web Worker

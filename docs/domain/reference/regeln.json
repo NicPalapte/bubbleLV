@@ -1,8 +1,8 @@
 {
-  "schema": "bubble-rule-v1",
+  "schema": "conocto-rule-v1",
   "regeln": [
     {
-      "schema": "bubble-rule-v1",
+      "schema": "conocto-rule-v1",
       "id": "frist-in-tagen",
       "version": 1,
       "name": "Frist in Tagen",
@@ -22,7 +22,7 @@
       "bemerkung": "Beispielregel für den Grundstock. Hebt Fristangaben wie „14 Tage“ hervor."
     },
     {
-      "schema": "bubble-rule-v1",
+      "schema": "conocto-rule-v1",
       "id": "vertragsstrafe",
       "version": 1,
       "name": "Vertragsstrafe",
@@ -41,7 +41,7 @@
       "bemerkung": "Beispielregel für den Grundstock."
     },
     {
-      "schema": "bubble-rule-v1",
+      "schema": "conocto-rule-v1",
       "id": "betonstahl-zu-ortbeton",
       "version": 1,
       "name": "Betonstahl zu Ortbeton im selben Abschnitt",
@@ -66,7 +66,7 @@
       "bemerkung": "Beispiel für eine Verknüpfungsregel. Schlägt vor, Betonstahl mit den Ortbeton-Positionen desselben Abschnitts zu verbinden."
     },
     {
-      "schema": "bubble-rule-v1",
+      "schema": "conocto-rule-v1",
       "id": "v1-bedarfsposition",
       "version": 1,
       "name": "Bedarfs- oder Alternativposition",
@@ -88,7 +88,7 @@
       "herkunft": "nutzer"
     },
     {
-      "schema": "bubble-rule-v1",
+      "schema": "conocto-rule-v1",
       "id": "v2-stundenlohn",
       "version": 1,
       "name": "Angehängte Stundenlohnarbeiten",
@@ -119,7 +119,7 @@
       "bemerkung": "Einheit aus der Gruppe „Stunde“ (einheiten-gruppen.csv) oder ein Stundenlohn-Wort im Text."
     },
     {
-      "schema": "bubble-rule-v1",
+      "schema": "conocto-rule-v1",
       "id": "v3-produktname",
       "version": 1,
       "name": "Produktname ohne „oder gleichwertig“",
@@ -153,7 +153,7 @@
       "bemerkung": "Namen aus hersteller-produktnamen.csv. Der Zusatz gilt nur bis 80 Zeichen vor oder hinter dem Namen."
     },
     {
-      "schema": "bubble-rule-v1",
+      "schema": "conocto-rule-v1",
       "id": "v4-risiko",
       "version": 1,
       "name": "Risiko auf den Auftragnehmer übertragen",
@@ -176,7 +176,7 @@
       "bemerkung": "Formulierungen aus risiko-formulierungen.csv."
     },
     {
-      "schema": "bubble-rule-v1",
+      "schema": "conocto-rule-v1",
       "id": "v5-menge-einheit",
       "version": 1,
       "name": "Menge oder Einheit fehlt",
@@ -202,7 +202,7 @@
       "herkunft": "nutzer"
     },
     {
-      "schema": "bubble-rule-v1",
+      "schema": "conocto-rule-v1",
       "id": "v6-verweis",
       "version": 1,
       "name": "Verweis auf ein anderes Dokument",
@@ -229,7 +229,7 @@
       "bemerkung": "Wortlisten verweis-anlage, verweis-plan, verweis-gutachten aus wortlisten.csv. Ein Verweis auf eine andere Position zählt nicht."
     },
     {
-      "schema": "bubble-rule-v1",
+      "schema": "conocto-rule-v1",
       "id": "v7-offene-stelle",
       "version": 1,
       "name": "Offene Textergänzung",
@@ -256,7 +256,7 @@
       "bemerkung": "Eingebaut: Eingabefelder aus der Datei zählen immer, Punkt- oder Unterstrichreihen ab der Mindestlänge, dazu die Wortlisten bieterangabe und offenes-feld (wortlisten.csv). Kein Norm-Verweis."
     },
     {
-      "schema": "bubble-rule-v1",
+      "schema": "conocto-rule-v1",
       "id": "v8-nebenleistung",
       "version": 1,
       "name": "Ausgeschriebene Nebenleistung",
@@ -282,7 +282,7 @@
       "bemerkung": "Noch ohne Logik. Braucht vob-nebenleistungen.csv."
     },
     {
-      "schema": "bubble-rule-v1",
+      "schema": "conocto-rule-v1",
       "id": "v9-besondere-leistung",
       "version": 1,
       "name": "Besondere Leistung ohne eigene Position",
@@ -308,7 +308,7 @@
       "bemerkung": "Noch ohne Logik. Braucht vob-nebenleistungen.csv."
     },
     {
-      "schema": "bubble-rule-v1",
+      "schema": "conocto-rule-v1",
       "id": "v10-homogenbereiche",
       "version": 1,
       "name": "Erdarbeiten ohne Homogenbereiche",
@@ -334,7 +334,7 @@
       "bemerkung": "Noch ohne Logik. Braucht die Zuordnung zu den Erdarbeiten (Entscheidung 0044)."
     },
     {
-      "schema": "bubble-rule-v1",
+      "schema": "conocto-rule-v1",
       "id": "g3-einheit-schreibweise",
       "version": 1,
       "name": "Einheit uneinheitlich geschrieben",
@@ -356,7 +356,7 @@
       "bemerkung": "Eingebaut: vergleicht die Einheiten im ganzen LV. Kennzahl aus der Datei, kein Norm-Verweis."
     },
     {
-      "schema": "bubble-rule-v1",
+      "schema": "conocto-rule-v1",
       "id": "m1-bewehrung",
       "version": 1,
       "name": "Betonposition ohne Angabe zur Bewehrung",
@@ -383,7 +383,7 @@
       "bemerkung": "Eingebaut: liest die Materialtabellen beton.csv und betonstahl.csv und nennt den Betonstahl im selben Hauptabschnitt."
     },
     {
-      "schema": "bubble-rule-v1",
+      "schema": "conocto-rule-v1",
       "id": "pdf-oz",
       "version": 1,
       "name": "OZ im Dokument",
@@ -404,7 +404,7 @@
       "bemerkung": "Eingebaut: findet OZ aus dem LV im Text des PDF, nur wenn sie genau eine Position treffen. Kurzformen nur nach „Pos.“ oder „OZ“. Eine Menge bis zu so vielen Zeichen hinter der OZ steht zum Vergleich daneben."
     },
     {
-      "schema": "bubble-rule-v1",
+      "schema": "conocto-rule-v1",
       "id": "pdf-menge",
       "version": 1,
       "name": "Menge im Dokument",

@@ -57,7 +57,7 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
   (`lib/paintNames.ts`, `state/paintNames.tsx`) und der Merker der Kurzumfrage
   (`state/survey.tsx`, Schlüssel `umfrage`, Entscheidung 0071) und die letzte Anordnung
   im Splitscreen (`state/ViewerProvider.tsx`, Schlüssel `anordnung`, Entscheidung 0073)
-  und die eigenen Regeln `bubble-rule-v1` (`state/admin.tsx`, Schlüssel `regeln`, 0081)
+  und die eigenen Regeln `conocto-rule-v1` (`state/admin.tsx`, Schlüssel `regeln`, 0081)
   und die abgeschalteten Grundstock-Regeln (Schlüssel `grundstock-aus`, 0089)
   und die eigenen Wortlisten (Schlüssel `wortlisten`, `lib/rules/wordLists.ts`, 0090).
   Urteile über Verbindungen aus Regeln liegen in den Notizen der Datei (`links`, 0081).
@@ -75,7 +75,7 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
   React und kein Import aus `frontend/`. Neue Fachlogik ohne UI-Bezug gehört dorthin.
 - Positionen tragen Inhalts-Hashes (`PositionHashes`, Entscheidung 0055). Preis,
   Klassifizierung und Notizen gehen nie in den Hash ein; Normierung nur mit neuer
-  Schema-Kennung (`bubble-pos-v1`) ändern.
+  Schema-Kennung (`conocto-pos-v1`) ändern.
 - Klassifizierung läuft über das `LVDraft` **vor** dem Baum-Aufbau und schreibt nach
   `Position.attributes` – quellenunabhängig, siehe `docs/architecture/data-model.md`.
 - Klassifizierung liegt hinter `ClassifierProtocol`-äquivalentem TS-Interface
@@ -84,7 +84,7 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
 - `buildTree(draft): LVNode` erzeugt den rekursiven Baum für Tree, Graph und Tabelle –
   reine Funktion, kein Fetch. Für Filter, Summen und Beziehungen kommt ein **flacher
   Positions-Index** dazu (WP-I) – der Baum bleibt die Struktur, der Index die Rechenbasis.
-- Prüfregeln sind Grundstock-Regeln `bubble-rule-v1` mit Wirkung `pruefhinweis` in
+- Prüfregeln sind Grundstock-Regeln `conocto-rule-v1` mit Wirkung `pruefhinweis` in
   `docs/domain/reference/regeln.json` (Entscheidung 0086); Auswertung in
   `frontend/src/lib/check/index.ts`, eingebaute Logik nur in `lib/check/builtins.ts`,
   Wortlisten als CSV (`lib/rules/wissen.ts`). Katalog und Norm-Verweise:
@@ -102,10 +102,11 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
   Zustand getrennt in `filterState` / `selectionState` / `viewState`
 
 ## Code-Style
-- Produktname **Conocto** (`docs/decisions/0069-conocto-look.md`). Alt-Kennungen mit
-  `bubble` nicht umbenennen – bricht gespeicherte Daten und Links: `DB_NAME`,
-  `NOTES_FILE_KIND`, `bubble-pos-v1`, `bubble-graph-v1`, GoatCounter-Code, Repo `bubbleLV`,
-  `@bubble/core`. „Bubble" als Blase im Graphen (`BubbleGraph`) bleibt.
+- Produktname **Conocto** (`docs/decisions/0069-conocto-look.md`). Kennungen heißen `conocto-…`
+  (Entscheidung 0091): `conocto-pos-v1`, `conocto-graph-v1`, `conocto-lv-export-v1`,
+  `conocto-rule-v1`, `conocto-notizen`, `@conocto/core`, IndexedDB `conocto`. Keine neuen
+  Kennungen mit `bubble`. Ausnahmen: GoatCounter-Code `bubble` (externes Konto), Repo-Name,
+  „Bubble" als Blase im Graphen (`BubbleGraph`).
 - Farben nur über CSS-Variablen aus dem Paket `@conocto/design` (`tokens.css`, Entscheidung
   0076); `--accent*` ist der Ziegelrot-Akzent (Auswahl, Interaktion). Neue/geänderte Tokens
   im Repo `conocto-design`, nicht in `frontend/src/index.css`. Hinweise amber, nie rot. Titel `font-display`
@@ -149,7 +150,7 @@ Datei (`docs/decisions/0047-kommentare-und-markierungen.md`, `docs/decisions/005
 eigene Textmarkierungen im Langtext (6 feste Farben mit eigenen Namen, `docs/decisions/0063`) ·
 gelernte Hervorhebungen im Langtext nur über Admin-Werkzeug, je Begriff eine eigene Regel
 (0053, 0088) · Regeleditor im
-Admin-Werkzeug (`bubble-rule-v1`, Auswerter nur in `packages/core/src/rules/`; Verbindungen
+Admin-Werkzeug (`conocto-rule-v1`, Auswerter nur in `packages/core/src/rules/`; Verbindungen
 zwischen Positionen nur als Vorschlag, gilt erst nach Bestätigung, `docs/decisions/0081`;
 ein Format für alle Regelarten, Wortlisten/Einheiten-Gruppen liefert die App, `docs/decisions/0085`;
 jede Regel an/aus, Grundstock nur abschalten oder kopieren, eigene Prüfhinweise,

@@ -9,6 +9,13 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.48.0 — 02.11.2026 · Kennungen heißen Conocto
+
+- **Alle Dateiformate heißen jetzt `conocto-…`** statt `bubble-…`: Notiz-Datei, Regeln,
+  LV-Export, Fingerabdruck der Positionen.
+- **Einmaliger Neustart:** alte Links, gesicherte Notizen und eigene Regeln werden nicht
+  mehr erkannt. Die zuletzt geöffnete Datei muss einmal neu geladen werden.
+
 ## 0.47.0 — 02.11.2026 · Ein Regelformat, Schritt 5b: Wortlisten
 
 - **Neuer Reiter „Wortlisten“** in den Admin-Werkzeugen. Grundstock-Wörter lassen sich per

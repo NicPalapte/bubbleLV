@@ -1,4 +1,4 @@
-// Regelformat `bubble-rule-v1` (Entscheidung 0081): eine Regel ist ein kleiner JSON-Eintrag,
+// Regelformat `conocto-rule-v1` (Entscheidung 0081): eine Regel ist ein kleiner JSON-Eintrag,
 // den Doc im Browser und bauonto per Befehl gleich auswerten. Eine Regel enthält nur
 // Begriffe, Muster und Einstellungen — nie Text aus einem LV oder einer Baubeschreibung.
 //
@@ -11,7 +11,7 @@
 // Wirkungen Prüfhinweis und Verknüpfen mit einer Stelle im PDF. Ältere Versionen lesen
 // solche Regeln nicht ein (`toRule` → `null`) und laufen ohne sie weiter.
 
-export const RULE_SCHEMA = 'bubble-rule-v1';
+export const RULE_SCHEMA = 'conocto-rule-v1';
 
 /** Angabe einer Position, die der Baustein `feld` prüft. */
 export type RuleFact = 'menge' | 'einheit' | 'art';

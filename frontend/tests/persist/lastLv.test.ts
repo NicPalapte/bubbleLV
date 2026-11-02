@@ -95,7 +95,7 @@ describe('letzte Datei — Randfälle', () => {
   it('liefert null, wenn zu den Angaben die Bytes fehlen', async () => {
     await saveLastLv(meta, bytesOf('x'));
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open('bubble');
+      const request = indexedDB.open('conocto');
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });

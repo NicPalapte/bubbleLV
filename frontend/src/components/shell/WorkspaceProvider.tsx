@@ -24,9 +24,9 @@ const BLOCKED_HINT_MS = 5000;
 
 const POPUP: Record<PopPane, { name: string; title: string; width: number; height: number }> = {
   // Name des zweiten Fensters — ein zweiter Klick übernimmt dasselbe Fenster.
-  table: { name: 'bubble-tabelle', title: 'Conocto — Tabelle', width: 900, height: 720 },
-  graph: { name: 'bubble-graph', title: 'Conocto — Graph', width: 1200, height: 800 },
-  doc: { name: 'bubble-dokument', title: 'Conocto — Dokument', width: 900, height: 1000 },
+  table: { name: 'conocto-tabelle', title: 'Conocto — Tabelle', width: 900, height: 720 },
+  graph: { name: 'conocto-graph', title: 'Conocto — Graph', width: 1200, height: 800 },
+  doc: { name: 'conocto-dokument', title: 'Conocto — Dokument', width: 900, height: 1000 },
 };
 
 export interface WorkspaceApi {

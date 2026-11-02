@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Bubble Demo-LV mit Preisen (GAEB DA XML 3.3, DA84).
+<!-- Conocto Demo-LV mit Preisen (GAEB DA XML 3.3, DA84).
      Grundlage: frei verfügbare BVBS-Musterdatei 3.3 (Leistungsbeschreibung, x83),
      umgestellt auf die Datenaustauschphase 84 und um weitere Titel ergänzt.
      Alle Preise und die zusätzlichen Positionen sind erfunden — Demomaterial,
@@ -11,12 +11,12 @@
   <VersDate>2021-05</VersDate>
   <Date>2026-09-16</Date>
   <Time>09:00:00</Time>
-  <ProgSystem>Bubble Demo-Generator</ProgSystem>
-  <ProgName>Bubble</ProgName>
+  <ProgSystem>Conocto Demo-Generator</ProgSystem>
+  <ProgName>Conocto</ProgName>
  </GAEBInfo>
  <PrjInfo>
-  <NamePrj>Bubble Demo Angebot</NamePrj>
-  <LblPrj>Bubble Demo-LV 3.3 · Angebot mit Preisen</LblPrj>
+  <NamePrj>Conocto Demo Angebot</NamePrj>
+  <LblPrj>Conocto Demo-LV 3.3 · Angebot mit Preisen</LblPrj>
   <Cur>EUR</Cur>
   <CurLbl />
   <BidCommPerm>No</BidCommPerm>
@@ -74,7 +74,7 @@
   </AddText>
   <BoQ ID="ID0F921988">
    <BoQInfo>
-    <Name>Bubble Demo Angebot</Name>
+    <Name>Conocto Demo Angebot</Name>
     <LblBoQ>Demo-LV mit Preisen — Neubau Verwaltungsgebäude</LblBoQ>
     <Date>2024-04-04</Date>
     <OutlCompl>AllTxt</OutlCompl>

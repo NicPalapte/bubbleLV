@@ -34,7 +34,7 @@ import {
 
 // Name aus der Zeit vor Conocto — bleibt, sonst wäre die zuletzt geöffnete
 // Datei samt Notizen nach dem Update weg (Entscheidung 0069).
-const DB_NAME = 'bubble';
+const DB_NAME = 'conocto';
 const DB_VERSION = 1;
 const STORE = 'letztesLv';
 // Angaben und Bytes unter getrennten Schlüsseln: die Startseite liest nur die
@@ -49,7 +49,7 @@ const KEY_PAINT_NAMES = 'farbnamen';
 const KEY_SURVEY = 'umfrage';
 /** Letzte Anordnung im Splitscreen (Entscheidung 0073), unabhängig von der Datei. */
 const KEY_WORKSPACE = 'anordnung';
-/** Eigene Regeln `bubble-rule-v1` (Entscheidung 0081), unabhängig von der Datei. */
+/** Eigene Regeln `conocto-rule-v1` (Entscheidung 0081), unabhängig von der Datei. */
 const KEY_RULES = 'regeln';
 /** Kennungen abgeschalteter Grundstock-Regeln (Entscheidung 0089), unabhängig von der Datei. */
 const KEY_GRUNDSTOCK_OFF = 'grundstock-aus';

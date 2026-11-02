@@ -154,7 +154,7 @@ describe('Logo-Menü', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Meine Notizen' }));
     fireEvent.click(screen.getByRole('button', { name: /Notizen sichern/ }));
     const datei = downloads.find((d) => d.name.endsWith('.json'));
-    expect(datei?.text).toContain('"art": "bubble-notizen"');
+    expect(datei?.text).toContain('"art": "conocto-notizen"');
   });
 
   it('lädt eine Notiz-Datei und übernimmt sie nach Bestätigung', async () => {
@@ -189,7 +189,7 @@ describe('Logo-Menü', () => {
     await oeffneGespeicherte();
     const oz = positionen()[0].position?.oz ?? '';
     const fremd = JSON.stringify({
-      art: 'bubble-notizen',
+      art: 'conocto-notizen',
       version: 1,
       datei: 'anderes.x83',
       positionen: [{ hash: 'fremd', text: 'fremd', oz, marker: 'wichtig', verlauf: [] }],

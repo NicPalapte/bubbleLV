@@ -1,5 +1,5 @@
 // Satzgrenzen in LV- und Dokumenttext. Eine Logik für Vorschläge im PDF (Entscheidung
-// 0080) und Regeln (bubble-rule-v1, Entscheidung 0081): Langtexte haben oft keine
+// 0080) und Regeln (conocto-rule-v1, Entscheidung 0081): Langtexte haben oft keine
 // sauberen Sätze, Punkte stehen in Zahlen („1.050“) und Abkürzungen („rd.“, „ca.“).
 
 /** So weit reicht ein Satz höchstens in jede Richtung um die Fundstelle. */

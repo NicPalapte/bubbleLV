@@ -20,7 +20,7 @@ const DATEIEN: Readonly<Record<string, string>> = {
   'sample.X83': '../packages/core/tests/fixtures/sample.X83',
   'zeilenumbruch-export.x83': '../packages/core/tests/fixtures/zeilenumbruch-export.x83',
   'bvbs-gaeb-musterdatei.x83': 'src/assets/demo/bvbs-gaeb-musterdatei.x83',
-  'bubble-demo-angebot.x84': 'src/assets/demo/bubble-demo-angebot.x84',
+  'conocto-demo-angebot.x84': 'src/assets/demo/conocto-demo-angebot.x84',
 };
 
 // Wie in der App: Grundstock vorn, eigene Regeln dahinter.

@@ -16,7 +16,7 @@ describe('npm run export-lv', () => {
 
     expect(result.status).toBe(0);
     const exported = JSON.parse(result.stdout) as { schema: string; projectName: string };
-    expect(exported.schema).toBe('bubble-lv-export-v1');
+    expect(exported.schema).toBe('conocto-lv-export-v1');
     expect(exported.projectName).toBe('Testprojekt Umbau');
   }, 30_000);
 
