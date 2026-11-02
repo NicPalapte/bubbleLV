@@ -409,16 +409,27 @@ function startStage(): void {
     t = REST;
     setStopped(true);
   }
+  const stage = byId('stage');
+  // Außerhalb des Bildschirms ruht die Bühne: kein Zeitfortschritt, kein Rendern.
+  let onScreen = true;
+  if (typeof IntersectionObserver === 'function') {
+    new IntersectionObserver((entries) => {
+      onScreen = entries.some((entry) => entry.isIntersecting);
+    }).observe(stage);
+  }
+  let lastT = -1;
   const frame = (now: number): void => {
     const dt = Math.min(0.1, (now - last) / 1000);
     last = now;
-    if (!hover && !stopped) t = (t + dt) % TOTAL;
-    render(t);
+    if (onScreen) {
+      if (!hover && !stopped) t = (t + dt) % TOTAL;
+      if (t !== lastT) render(t);
+      lastT = t;
+    }
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
 
-  const stage = byId('stage');
   stage.addEventListener('mouseenter', () => {
     hover = true;
   });
@@ -436,7 +447,8 @@ function startStage(): void {
 /** Wechselzeile unter dem Logo: alle 3 s kippt die Zeile nach oben weg, die nächste kommt. */
 function startRotator(): void {
   const lines = [...document.querySelectorAll<HTMLElement>('#rot span')];
-  if (lines.length < 2) return;
+  // Bei „Bewegung reduzieren" bleibt die erste Zeile stehen.
+  if (lines.length < 2 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   let index = 0;
   window.setInterval(() => {
     const current = lines[index];

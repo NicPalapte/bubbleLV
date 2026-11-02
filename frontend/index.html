@@ -16,7 +16,7 @@
       // Seit der Startseite liegt der Viewer unter doc/ (Entscheidung 0091): Links mit
       // Fragment dorthin weiterreichen, bevor die Startseite zu sehen ist. Relativ,
       // damit es auch in den PR-Vorschauen (pr-preview/pr-<nr>/) passt.
-      if (location.hash.length > 1) location.replace('doc/' + location.hash);
+      if (location.hash.length > 1) location.replace('doc/' + location.search + location.hash);
     </script>
   </head>
   <body>
