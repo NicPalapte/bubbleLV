@@ -10,7 +10,7 @@ import type { RuleParam } from '@core';
 import { attrSpans, attrString, attrStrings } from '../attributes';
 import { materialKatalog, type MaterialDefinition } from '../classify/material/katalog';
 import { mainSectionOf, NO_SECTION_KEY } from '../tree/mainSection';
-import { canonicalUnit, unitSpelling } from '../units';
+import { canonicalUnit, unitLabel, unitSpelling } from '../units';
 import type { CheckContext, Fund } from './types';
 import type { LVNode } from '../../types/lvNode';
 
@@ -73,12 +73,18 @@ const einheitSchreibweise: CheckBuiltin = {
     return (slot) => {
       const { unit } = index.positions[slot];
       const key = canonicalUnit(unit);
-      const varianten = key === null ? undefined : uneinheitlich.get(key);
+      if (key === null) return [];
+      const varianten = uneinheitlich.get(key);
       if (varianten === undefined) return [];
       const andere = varianten.filter((variante) => variante !== unit);
       return [
         {
           title: `„${unit}" — im LV auch als ${andere.map((variante) => `„${variante}"`).join(', ')}`,
+          // Die Fundliste bündelt je Einheit und teilt nach Schreibweise auf (Issue #191).
+          group: {
+            label: `${unitLabel(key)}: mehrere Schreibweisen (${varianten.join(', ')})`,
+            part: `„${unit}"`,
+          },
         },
       ];
     };

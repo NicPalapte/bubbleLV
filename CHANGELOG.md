@@ -9,10 +9,22 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
-## 0.49.1 — 02.11.2026 · Startseite im Vollbild
+## 0.49.2 — 02.11.2026 · Startseite im Vollbild
 
 - **Erster Bildschirm füllt das Fenster:** Logo, Animation und Startknöpfe passen genau
   hinein. Der Funktionsumfang erscheint erst beim Runterscrollen.
+
+## 0.49.1 — 02.11.2026 · Funde aus dem Praxistest
+
+- **Fehler melden:** neues Feld „Was war zu erwarten?“. Ein Klick auf „ESC“ oben rechts
+  schließt das Fenster.
+- **Hervorgehobener Abschnitt:** keine eigene Leiste mehr oben rechts im Graphen. Aufheben
+  per Klick ins Leere oder mit Escape.
+- **Suchleiste:** ✕ löscht den ganzen Suchtext.
+- **Einheit uneinheitlich:** die Funde stehen je Einheit gebündelt, z. B. „Stück: mehrere
+  Schreibweisen (St, Stk.)“, darunter die Positionen je Schreibweise.
+- **Kürzere Hinweisschilder im Graphen:** nur noch der Regelname, ohne Kennung. Mehrere
+  Regelnamen sind kürzer.
 
 ## 0.49.0 — 02.11.2026 · Startseite auf conocto.app
 

@@ -356,8 +356,19 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
         : state.view;
       return { ...state, selection, view };
     }
-    case 'hover':
-    case 'back':
+    case 'hover': {
+      const selection = selectionReducer(state.selection, action);
+      return selection === state.selection ? state : { ...state, selection };
+    }
+    case 'back': {
+      const selection = selectionReducer(state.selection, action);
+      if (selection !== state.selection) return { ...state, selection };
+      // Nichts mehr ausgewählt: Escape hebt als Nächstes die Hervorhebung im Graphen auf —
+      // nur in „nach LV“, wo sie zu sehen ist (Entscheidung 0075).
+      const { spotlight, layout } = state.view.graph;
+      if (spotlight === null || layout !== 'lv') return state;
+      return { ...state, view: viewReducer(state.view, { type: 'graphSpotlight', id: null }) };
+    }
     case 'closeSelection': {
       const selection = selectionReducer(state.selection, action);
       return selection === state.selection ? state : { ...state, selection };

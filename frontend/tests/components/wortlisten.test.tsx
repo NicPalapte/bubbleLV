@@ -39,7 +39,7 @@ describe('Reiter „Wortlisten“', () => {
     fireEvent.click(within(detail).getByRole('button', { name: 'Hinzufügen' }));
     expect(within(detail).getByText('bauseits gestellt')).toBeInTheDocument();
     expect(within(nav).getByText('geändert')).toBeInTheDocument();
-    expect(within(detail).getByText('Risiko auf den Auftragnehmer übertragen')).toBeInTheDocument();
+    expect(within(detail).getByText('Risiko auf Auftragnehmer')).toBeInTheDocument();
     await waitFor(async () =>
       expect(await readWordLists()).toEqual([
         { art: 'aus', liste: 'risiko', wort: first },

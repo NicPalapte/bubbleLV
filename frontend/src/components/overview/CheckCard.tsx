@@ -12,7 +12,7 @@
 // **Ein Filterzustand, alle Ansichten** (.claude/CLAUDE.md): gezählt und gelistet
 // werden nur Funde zu Positionen, die der aktive Filter durchlässt.
 
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { useJumpToPosition } from '../common/useJumpToPosition';
 import { formatCount } from '../../lib/format';
 import { matchCount } from '../../lib/tree/matchCounts';
@@ -224,6 +224,28 @@ export function CheckCard() {
 }
 
 /**
+ * Funde einer Regel, die sie selbst bündelt (z. B. G3 je Einheit), als Gruppe → Teil → Funde.
+ * `null`, wenn die Regel nicht bündelt.
+ */
+function gruppiere(flags: readonly Flag[]): Array<[string, Array<[string, Flag[]]>]> | null {
+  if (!flags.some((flag) => flag.group !== undefined)) return null;
+  const gruppen = new Map<string, Map<string, Flag[]>>();
+  for (const flag of flags) {
+    const label = flag.group?.label ?? flag.title;
+    const teil = flag.group?.part ?? '';
+    const teile = gruppen.get(label) ?? new Map<string, Flag[]>();
+    const funde = teile.get(teil) ?? [];
+    funde.push(flag);
+    teile.set(teil, funde);
+    gruppen.set(label, teile);
+  }
+  const deutsch = (a: string, b: string): number => a.localeCompare(b, 'de');
+  return [...gruppen]
+    .sort(([a], [b]) => deutsch(a, b))
+    .map(([label, teile]) => [label, [...teile].sort(([a], [b]) => deutsch(a, b))]);
+}
+
+/**
  * Klappkarte unter der Liste: Hinweistext, Verweis und Funde der aufgeklappten
  * Regel. Ein Fund wählt die Position im Graphen aus.
  */
@@ -242,6 +264,36 @@ export function CheckFlyout() {
   const rule = lv?.check.rules.find((entry) => entry.id === openRule) ?? null;
   const flags = rule === null ? [] : (byRule.get(rule.id) ?? []);
   if (rule === null || !rule.active || mutedRules.has(rule.id) || flags.length === 0) return null;
+
+  const zeile = (flag: Flag, index: number, mitTitel: boolean): ReactNode => {
+    const position = nodes.get(flag.positionId)?.position ?? null;
+    const isSelected = selected === flag.positionId;
+    return (
+      <button
+        key={`${flag.positionId}-${index}`}
+        type="button"
+        onClick={() => jumpTo(flag.positionId, { stayInView: true })}
+        disabled={position === null}
+        aria-current={isSelected ? 'true' : undefined}
+        className={`-mx-[6px] block w-[calc(100%+12px)] cursor-pointer border-none border-t border-solid border-grid px-[6px] py-[6px] text-left disabled:cursor-default ${
+          isSelected
+            ? 'bg-accent-soft shadow-[inset_2px_0_0_var(--accent)]'
+            : 'bg-transparent hover:bg-sunken'
+        }`}
+      >
+        <span className="flex min-w-0 gap-[8px]">
+          <span className="shrink-0 font-mono text-[11px] text-dim">{position?.oz ?? '—'}</span>
+          <span className="min-w-0 truncate font-sans text-[12.5px] text-ink">
+            {position?.shortText ?? 'Position nicht gefunden'}
+          </span>
+        </span>
+        {mitTitel && (
+          <span className="mt-[1px] block font-mono text-[11px] text-mute">{flag.title}</span>
+        )}
+      </button>
+    );
+  };
+  const gruppen = gruppiere(flags);
 
   return (
     <section
@@ -279,34 +331,22 @@ export function CheckFlyout() {
             )}
           </p>
         )}
-        {flags.map((flag, index) => {
-          const position = nodes.get(flag.positionId)?.position ?? null;
-          const isSelected = selected === flag.positionId;
-          return (
-            <button
-              key={`${flag.positionId}-${index}`}
-              type="button"
-              onClick={() => jumpTo(flag.positionId, { stayInView: true })}
-              disabled={position === null}
-              aria-current={isSelected ? 'true' : undefined}
-              className={`-mx-[6px] block w-[calc(100%+12px)] cursor-pointer border-none border-t border-solid border-grid px-[6px] py-[6px] text-left disabled:cursor-default ${
-                isSelected
-                  ? 'bg-accent-soft shadow-[inset_2px_0_0_var(--accent)]'
-                  : 'bg-transparent hover:bg-sunken'
-              }`}
-            >
-              <span className="flex min-w-0 gap-[8px]">
-                <span className="shrink-0 font-mono text-[11px] text-dim">
-                  {position?.oz ?? '—'}
-                </span>
-                <span className="min-w-0 truncate font-sans text-[12.5px] text-ink">
-                  {position?.shortText ?? 'Position nicht gefunden'}
-                </span>
-              </span>
-              <span className="mt-[1px] block font-mono text-[11px] text-mute">{flag.title}</span>
-            </button>
-          );
-        })}
+        {gruppen === null
+          ? flags.map((flag, index) => zeile(flag, index, true))
+          : gruppen.map(([label, teile]) => (
+              <div key={label} className="mt-[8px]">
+                <p className="font-display text-[13px] font-semibold text-ink">{label}</p>
+                {teile.map(([teil, funde]) => (
+                  <div key={teil}>
+                    <p className="mt-[4px] font-mono text-[11px] text-mute">
+                      {teil} · {formatCount(funde.length)}{' '}
+                      {funde.length === 1 ? 'Position' : 'Positionen'}
+                    </p>
+                    {funde.map((flag, index) => zeile(flag, index, false))}
+                  </div>
+                ))}
+              </div>
+            ))}
       </div>
     </section>
   );

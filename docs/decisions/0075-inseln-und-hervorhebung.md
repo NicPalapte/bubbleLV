@@ -55,3 +55,10 @@
 
 - Nichts einmalig zu tun.
 - Der Graph braucht etwas mehr Fläche als vorher; beim Laden passt er sich wie bisher ein.
+
+## Nachtrag 02.11.2026 (Issue #191)
+
+- Die Leiste oben rechts mit Abschnittsname und ✕ ist entfallen. Der Graph zeigt die
+  Hervorhebung selbst.
+- Aufheben: Klick ins Leere oder Escape. Escape nimmt erst die Auswahl zurück, dann
+  die Hervorhebung.

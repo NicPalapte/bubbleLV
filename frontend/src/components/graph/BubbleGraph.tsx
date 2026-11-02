@@ -25,7 +25,7 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from 'react';
 import { GraphControls } from './GraphControls';
-import { BELOW_KPIS, GraphHeader, HEADER_NARROW_WIDTH } from './GraphHeader';
+import { GraphHeader } from './GraphHeader';
 import { useHostWindow } from '../common/hostWindow';
 import { usePositionMenu } from '../common/positionMenuContext';
 import {
@@ -322,14 +322,6 @@ export function BubbleGraph({ root }: { root: LVNode }) {
     (slot: number): number => (inSpot === null ? 1 : spotFade(inSpot(index.nodes[slot].id))),
     [inSpot, spotFade, index],
   );
-  const spotTitle = useMemo(() => {
-    if (inSpot === null) return null;
-    const hull = map.hulls.find((candidate) => candidate.id === spotNode);
-    if (hull !== undefined) return hull.title;
-    const group = map.groups.find((candidate) => candidate.nodeId === spotNode);
-    if (group === undefined) return null;
-    return group.context === '' ? group.title : `${group.context} · ${group.title}`;
-  }, [inSpot, spotNode, map]);
   // Auswahl außerhalb der Hervorhebung (etwa aus der Tabelle) hebt sie auf.
   useEffect(() => {
     if (inSpot === null) return;
@@ -379,7 +371,8 @@ export function BubbleGraph({ root }: { root: LVNode }) {
       out.push({
         slot,
         id,
-        label: `⚠ ${flag.id} · ${ruleLabels.get(flag.id) ?? flag.title}`,
+        // Nur der Regelname, ohne Kennung: das Schild soll kurz bleiben (Issue #191).
+        label: `⚠ ${ruleLabels.get(flag.id) ?? flag.title}`,
         strong: found.severity === 'beachten',
       });
     }
@@ -1510,33 +1503,6 @@ export function BubbleGraph({ root }: { root: LVNode }) {
               {index.positions[tooltipSlot].unit ?? ''}
             </span>
           )}
-        </div>
-      )}
-
-      {spotTitle !== null && (
-        <div
-          {...graphOverlayProps}
-          role="group"
-          aria-label="Hervorhebung"
-          className={`ov-pill absolute right-[12px] z-10 flex max-w-[calc(100%-24px)] items-center gap-[8px] p-[4px] pr-[6px] text-[12px] text-dim ${
-            // Schmal stieße sie an die Kennzahlen oben links — dann darunter.
-            w < HEADER_NARROW_WIDTH ? BELOW_KPIS : 'top-[12px]'
-          }`}
-        >
-          <span className="inline-flex min-w-0 items-center gap-[6px] rounded-[var(--r-pill)] border border-accent bg-accent-soft py-[3px] pl-[12px] pr-[4px] font-semibold text-accent-ink">
-            <span className="truncate" title={spotTitle}>
-              {spotTitle}
-            </span>
-            <button
-              type="button"
-              aria-label="Hervorhebung aufheben"
-              title="Hervorhebung aufheben"
-              onClick={clearSpotlight}
-              className="inline-flex h-[20px] w-[20px] cursor-pointer items-center justify-center rounded-full border-none bg-transparent p-0 text-accent-ink hover:bg-surface"
-            >
-              ✕
-            </button>
-          </span>
         </div>
       )}
 
