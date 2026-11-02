@@ -15,8 +15,10 @@
       // Alte Links auf den Viewer zeigten auf die Wurzel (conocto.app/#lv=…~pos=…).
       // Seit der Startseite liegt der Viewer unter doc/ (Entscheidung 0091): Links mit
       // Fragment dorthin weiterreichen, bevor die Startseite zu sehen ist. Relativ,
-      // damit es auch in den PR-Vorschauen (pr-preview/pr-<nr>/) passt.
-      if (location.hash.length > 1) location.replace('doc/' + location.search + location.hash);
+      // damit es auch in den PR-Vorschauen (pr-preview/pr-<nr>/) passt. Nur Viewer-Fragmente
+      // (Schlüssel=Wert, Entscheidung 0023), damit spätere Anker der Startseite bleiben.
+      if (/^#[^=]+=/.test(location.hash))
+        location.replace('doc/' + location.search + location.hash);
     </script>
   </head>
   <body>
