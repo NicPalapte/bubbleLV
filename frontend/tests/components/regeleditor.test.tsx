@@ -1,5 +1,5 @@
-// Regeleditor in den Admin-Werkzeugen (Entscheidung 0081): Regel aus einer Markierung
-// im Langtext, Bausteine ändern, Treffer-Vorschau, Speichern im Browser.
+// Regeleditor in den Admin-Werkzeugen (Entscheidungen 0081, 0089): Regel aus einer Markierung
+// im Langtext, Bausteine ändern, Treffer-Vorschau, Schalter an/aus, Speichern im Browser.
 
 import 'fake-indexeddb/auto';
 import { readFileSync } from 'node:fs';
@@ -8,7 +8,8 @@ import { IDBFactory } from 'fake-indexeddb';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '../../src/App';
-import { readOwnRules } from '../../src/lib/persist/lastLv';
+import { readGrundstockOff, readOwnRules } from '../../src/lib/persist/lastLv';
+import { GRUNDSTOCK } from '../../src/lib/rules/rules';
 import { ADMIN_PASSWORD_SHA256 } from '../../src/state/admin';
 
 const NAME = 'gaeb-xml-beispiel.x83';
@@ -87,7 +88,7 @@ describe('Regeleditor', () => {
     expect(within(leiste).queryByRole('button', { name: 'Als Regel…' })).toBeNull();
   });
 
-  it('macht aus einer Markierung eine Regel, zeigt Treffer und färbt nach „Aktiv“', async () => {
+  it('macht aus einer Markierung eine Regel, zeigt Treffer und färbt nach dem Anschalten', async () => {
     await ladeDatei();
     await oeffneAdmin(PASSWORT);
     await screen.findByRole('button', { name: 'Admin' });
@@ -101,10 +102,13 @@ describe('Regeleditor', () => {
     // Die markierte Stelle selbst trifft mindestens eine Position.
     expect(within(dialog).getByText(/von \d+ Positionen/).textContent).not.toMatch(/^0 /);
     await waitFor(async () =>
-      expect((await readOwnRules())?.map((rule) => rule.status)).toEqual(['entwurf']),
+      expect((await readOwnRules())?.map((rule) => rule.status)).toEqual(['aus']),
     );
+    // Neue Regeln starten aus; „Entwurf“ gibt es nicht mehr (Entscheidung 0089).
+    expect(within(dialog).queryByRole('radio', { name: 'Entwurf' })).toBeNull();
+    expect(within(dialog).getAllByText('eigene')).toHaveLength(2);
 
-    fireEvent.click(within(dialog).getByRole('radio', { name: 'Aktiv' }));
+    fireEvent.click(within(dialog).getAllByRole('switch', { name: `${wort} an` })[0]);
     await waitFor(async () =>
       expect((await readOwnRules())?.map((rule) => rule.status)).toEqual(['freigegeben']),
     );
@@ -114,7 +118,7 @@ describe('Regeleditor', () => {
     );
   });
 
-  it('Grundstock ist nur lesbar und lässt sich als eigene Regel kopieren', async () => {
+  it('Grundstock lässt sich nur schalten und als eigene Regel kopieren', async () => {
     render(<App />);
     await oeffneAdmin(PASSWORT);
     fireEvent.click(await screen.findByRole('button', { name: 'Admin' }));
@@ -123,6 +127,13 @@ describe('Regeleditor', () => {
     expect(await within(dialog).findByText(/Grundstock-Regel/)).toBeInTheDocument();
     expect(within(dialog).getByRole('textbox', { name: 'Name der Regel' })).toBeDisabled();
     expect(within(dialog).getByText(/Erst ein LV öffnen/)).toBeInTheDocument();
+    const [base] = GRUNDSTOCK;
+    const [schalter] = within(dialog).getAllByRole('switch', { name: `${base.name} an` });
+    expect(schalter).toHaveAttribute('aria-checked', 'true');
+    fireEvent.click(schalter);
+    await waitFor(async () => expect(await readGrundstockOff()).toEqual([base.id]));
+    fireEvent.click(schalter);
+    await waitFor(async () => expect(await readGrundstockOff()).toEqual([]));
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Als eigene kopieren' }));
     expect(within(dialog).getByRole('textbox', { name: 'Name der Regel' })).toBeEnabled();
@@ -130,11 +141,13 @@ describe('Regeleditor', () => {
     await waitFor(async () => {
       const [own] = (await readOwnRules()) ?? [];
       expect(own.geltung).toBe('unternehmen');
-      expect(own.status).toBe('entwurf');
+      expect(own.status).toBe('freigegeben');
       expect(JSON.stringify(own.bedingung)).toContain('"norm":{}');
       // Urteile hängen an id@version: die erste inhaltliche Änderung ist eine neue Version.
       expect(own.version).toBe(2);
     });
+    // Die Kopie ersetzt das Original: es ist jetzt aus.
+    expect(await readGrundstockOff()).toEqual([base.id]);
     fireEvent.click(within(dialog).getByRole('button', { name: '+ Norm' }));
     await waitFor(async () => {
       const [own] = (await readOwnRules()) ?? [];
@@ -163,7 +176,7 @@ describe('Regeleditor', () => {
       schema: 'bubble-rule-v1',
       regeln: [{ ...own, name: 'Von Kollegin' }, grundstock.regeln[0], { kaputt: true }],
     };
-    fireEvent.change(within(dialog).getByLabelText('regeln.json laden'), {
+    fireEvent.change(within(dialog).getByLabelText('Regeln importieren'), {
       target: { files: [new File([JSON.stringify(file)], 'regeln.json')] },
     });
     expect(
@@ -178,7 +191,7 @@ describe('Regeleditor', () => {
     });
   });
 
-  it('zeigt Regeln mit neuen Bausteinen nur zum Lesen, Treffer mit Kurztext', async () => {
+  it('bearbeitet Regeln mit neuen Bausteinen, Treffer mit Kurztext', async () => {
     await ladeDatei();
     await oeffneAdmin(PASSWORT);
     fireEvent.click(await screen.findByRole('button', { name: 'Admin' }));
@@ -203,16 +216,28 @@ describe('Regeleditor', () => {
         },
       ],
     };
-    fireEvent.change(within(dialog).getByLabelText('regeln.json laden'), {
+    fireEvent.change(within(dialog).getByLabelText('Regeln importieren'), {
       target: { files: [new File([JSON.stringify(file)], 'regeln.json')] },
     });
     fireEvent.click(await within(dialog).findByRole('button', { name: /Normale Positionen/ }));
-    expect(
-      await within(dialog).findByText(
-        /^Diese Regel nutzt Bausteine, die der Editor noch nicht bearbeiten kann\./,
-      ),
-    ).toBeInTheDocument();
-    expect(within(dialog).getByLabelText('Name der Regel')).toBeDisabled();
+    expect(within(dialog).getByLabelText('Name der Regel')).toBeEnabled();
+    expect(within(dialog).getByRole('combobox', { name: 'Angabe' })).toHaveValue('art');
+    expect(within(dialog).getByRole('combobox', { name: 'Wert der Angabe' })).toHaveValue('normal');
     expect(within(dialog).getByText(/von \d+ Positionen/).textContent).not.toMatch(/^0 von/);
+
+    // Neue Bausteine und Wirkung „Prüfhinweis“ (Entscheidung 0089).
+    fireEvent.click(within(dialog).getByRole('button', { name: '+ Wortliste' }));
+    fireEvent.click(within(dialog).getByRole('radio', { name: 'Prüfhinweis' }));
+    fireEvent.change(within(dialog).getByRole('textbox', { name: 'Text des Prüfhinweises' }), {
+      target: { value: 'Bitte prüfen.' },
+    });
+    await waitFor(async () => {
+      const [own] = (await readOwnRules()) ?? [];
+      expect(JSON.stringify(own.bedingung)).toContain('"liste"');
+      expect(own.wirkung).toEqual({
+        pruefhinweis: { kategorie: 'risiko', schwere: 'hinweis', text: 'Bitte prüfen.' },
+      });
+    });
+    expect(within(dialog).getByText('So erscheint es in „Prüfung“')).toBeInTheDocument();
   });
 });

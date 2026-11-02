@@ -2,12 +2,15 @@
 // Vorschläge aktiver Verbindungsregeln laufen beim ersten Öffnen einer Positionskarte
 // auf dem UI-Thread, die Treffer-Vorschau bei jeder Änderung einer Regel im Editor.
 // Beides muss im Ziel „Fenster öffnen < 200 ms" (docs/scope.md) bleiben; sonst gehört
-// die Rechnung in den Worker.
+// die Rechnung in den Worker. Eigene Prüfregeln (Entscheidung 0089) laufen nach dem Laden
+// auf dem UI-Thread — nur sie, der Grundstock kommt aus dem Worker.
 
 import { describe, expect, it } from 'vitest';
 import { matchCondition, type Rule } from '@core';
 import { buildPositionIndex } from '../../src/lib/index/positionIndex';
 import { linkSuggestionsOf } from '../../src/lib/rules/linkSuggestions';
+import { runChecks } from '../../src/lib/check';
+import { summarize } from '../../src/lib/index/summary';
 import { newRule, ruleTextOf } from '../../src/lib/rules/rules';
 import { buildTree, indexParents } from '../../src/lib/tree/buildTree';
 import { syntheticDraft } from '../support/syntheticLv';
@@ -73,6 +76,24 @@ describe(`Regeln bei ${POSITIONS} Positionen`, () => {
       }
       expect(hits).toBe(POSITIONS);
     });
+    expect(ms).toBeLessThan(WINDOW_BUDGET_MS);
+  });
+
+  it('Prüfung eigener Prüfregeln nach dem Laden', () => {
+    const summary = summarize(index);
+    const own = {
+      ...base,
+      status: 'freigegeben' as const,
+      bedingung: {
+        alle: [{ begriff: 'Herstellen' }, { feld: 'menge' as const, ist: 'leer' as const }],
+        bereich: 'feld' as const,
+        wo: ['langtext' as const],
+      },
+      wirkung: {
+        pruefhinweis: { kategorie: 'risiko' as const, schwere: 'hinweis' as const, text: 'x' },
+      },
+    };
+    const ms = timeMedian(() => runChecks(index, summary, [own, own, own], parents));
     expect(ms).toBeLessThan(WINDOW_BUDGET_MS);
   });
 });

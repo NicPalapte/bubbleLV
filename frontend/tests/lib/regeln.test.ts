@@ -9,7 +9,8 @@ import { linkSuggestionsOf } from '../../src/lib/rules/linkSuggestions';
 import {
   applyRules,
   GRUNDSTOCK,
-  isEditable,
+  copyOf,
+  ruleGroupOf,
   nameOf,
   newRule,
   ruleTextOf,
@@ -113,13 +114,24 @@ describe('Neue Bausteine und Wirkungen (Entscheidung 0085)', () => {
     );
   });
 
-  it('der Editor bearbeitet nur, was er kennt', () => {
-    expect(isEditable(rule({}))).toBe(true);
-    expect(isEditable(hint)).toBe(false);
-    const liste = rule({
-      bedingung: { alle: [{ liste: 'hersteller' }], bereich: 'satz', wo: ['langtext'] },
+  it('gruppiert nach Wirkung (Entscheidung 0089)', () => {
+    expect(ruleGroupOf(rule({}))).toBe('hervorheben');
+    expect(ruleGroupOf(hint)).toBe('pruefhinweis');
+    expect(GRUNDSTOCK.map(ruleGroupOf)).toContain('pdf');
+    expect(GRUNDSTOCK.map(ruleGroupOf)).toContain('verknuepfen');
+  });
+
+  it('kopiert eine Grundstock-Regel als eigene, gleich an', () => {
+    const copy = copyOf(hint, new Set([hint.id]));
+    expect(copy).toMatchObject({
+      name: `${hint.name} (eigene)`,
+      version: 1,
+      geltung: 'unternehmen',
+      status: 'freigegeben',
+      bedingung: hint.bedingung,
+      wirkung: hint.wirkung,
     });
-    expect(isEditable(liste)).toBe(false);
+    expect(copy.id).not.toBe(hint.id);
   });
 
   it('gibt dem Auswerter die Angaben der Position mit', () => {

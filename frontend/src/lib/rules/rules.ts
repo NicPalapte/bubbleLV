@@ -10,7 +10,6 @@ import {
   parseRuleFile,
   positionLinkOf,
   ruleIdOf,
-  RULE_FIELDS,
   RULE_SCHEMA,
   type LinkCandidate,
   type RulePositionKind,
@@ -59,7 +58,10 @@ export function builtinParameter(name: string, key: string): RuleParam | undefin
   return undefined;
 }
 
-/** Regel wirkt im LV: freigegeben. Entwürfe zeigen nur der Editor und seine Vorschau. */
+/**
+ * Regel wirkt im LV: freigegeben. `aus` und Entwürfe älterer Versionen zeigen nur der Editor
+ * und seine Vorschau; der Editor kennt seit 0089 nur noch an/aus.
+ */
 export const isActive = (rule: Rule): boolean => rule.status === 'freigegeben';
 
 /** Texte einer Position für den Auswerter; Normen kommen vom Extraktor der App. */
@@ -86,24 +88,37 @@ const KIND_OF: Readonly<Record<PositionSummary['positionType'], RulePositionKind
   ZULAGENPOSITION: 'zulage',
 };
 
-const EDITABLE_BLOCKS = new Set(['begriff', 'menge', 'norm']);
+/** Gruppe in der Liste des Regeleditors: nach Wirkung (Entscheidung 0089). */
+export type RuleGroup = 'hervorheben' | 'pruefhinweis' | 'verknuepfen' | 'pdf';
+
+export const RULE_GROUP_LABELS: Readonly<Record<RuleGroup, string>> = {
+  hervorheben: 'Hervorheben',
+  pruefhinweis: 'Prüfhinweise',
+  verknuepfen: 'Verbindungen',
+  pdf: 'PDF-Vorschläge',
+};
+
+export function ruleGroupOf(rule: Rule): RuleGroup {
+  if ('hervorheben' in rule.wirkung) return 'hervorheben';
+  if ('pruefhinweis' in rule.wirkung) return 'pruefhinweis';
+  return positionLinkOf(rule.wirkung) === null ? 'pdf' : 'verknuepfen';
+}
 
 /**
- * Kann der Editor die Regel bearbeiten? Nur Bausteine Begriff/Menge/Norm, nur Kurz- und
- * Langtext, Wirkung hervorheben oder Positionen verbinden. Alles andere (Entscheidung 0085)
- * zeigt er nur an, bis der Editor es kennt.
+ * Eigene Kopie einer Grundstock-Regel (Entscheidung 0089): gleiche Bedingung und Wirkung,
+ * neue Kennung, gleich an. Das Original schaltet der Aufrufer ab, damit die Kopie es ersetzt.
  */
-export function isEditable(rule: Rule): boolean {
-  const conditions = [rule.bedingung];
-  const link = positionLinkOf(rule.wirkung);
-  if (link !== null) conditions.push(link.ziel);
-  else if (!('hervorheben' in rule.wirkung)) return false;
-  return conditions.every(
-    (condition) =>
-      [...blocksOf(condition), ...(condition.nicht ?? [])].every((block) =>
-        EDITABLE_BLOCKS.has(blockKindOf(block)),
-      ) && condition.wo.every((field) => RULE_FIELDS.some((own) => own === field)),
-  );
+export function copyOf(source: Rule, taken: ReadonlySet<string>): Rule {
+  const name = `${source.name} (eigene)`;
+  return {
+    ...source,
+    id: ruleIdOf(name, taken),
+    version: 1,
+    name,
+    geltung: 'unternehmen',
+    status: 'freigegeben',
+    herkunft: 'nutzer',
+  };
 }
 
 /** Kandidaten fürs Verknüpfen; Abschnitt = Elternknoten der Position. */
@@ -164,7 +179,7 @@ export function applyRules(
   return out.sort((a, b) => a.start - b.start);
 }
 
-/** Leere eigene Regel; `blocks` z. B. aus einer Markierung. */
+/** Leere eigene Regel, aus bis man sie anschaltet; `blocks` z. B. aus einer Markierung. */
 export function newRule(
   taken: ReadonlySet<string>,
   blocks: readonly RuleBlock[] = [{ begriff: '' }],
@@ -178,7 +193,7 @@ export function newRule(
     bedingung: { alle: blocks, bereich: 'satz', wo: ['langtext'] },
     wirkung: { hervorheben: 'wichtig' },
     geltung: 'unternehmen',
-    status: 'entwurf',
+    status: 'aus',
     herkunft: 'nutzer',
   };
 }

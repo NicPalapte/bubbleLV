@@ -11,6 +11,7 @@ import {
   type RuleHintCategory,
   type RuleLinkSame,
 } from '@core';
+import { builtinInfoOf } from './builtinInfo';
 
 export const HIGHLIGHT_LABELS: Readonly<Record<RuleHighlight, string>> = {
   wichtig: 'Wichtig',
@@ -52,7 +53,7 @@ function blockWords(block: RuleBlock): string {
     const what = FACT_WORDS[block.feld];
     return block.ist === 'leer' ? `${what} leer` : `${what} ${block.ist.join(' oder ')}`;
   }
-  return `die eingebaute Prüfung „${block.eingebaut}“`;
+  return `die eingebaute Prüfung „${builtinInfoOf(block.eingebaut).name}“`;
 }
 
 function conditionWords(condition: RuleCondition): string {

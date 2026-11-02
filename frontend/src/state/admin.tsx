@@ -10,7 +10,8 @@
 // (lib/persist/lastLv.ts) und wirken auch ohne Admin-Zugang — es ist ja der Browser des
 // Admins. Ein gelernter Begriff ist seit 0088 eine solche Regel; Begriffe älterer
 // Versionen zieht `readOwnRulesAndTerms` beim Start einmal um. Der Grundstock kommt aus
-// docs/domain/reference/regeln.json und lässt sich hier nicht ändern.
+// docs/domain/reference/regeln.json und lässt sich hier nicht ändern, nur je Regel abschalten
+// (Entscheidung 0089); die Liste der abgeschalteten bleibt ebenfalls in diesem Browser.
 
 import {
   createContext,
@@ -23,8 +24,10 @@ import {
 } from 'react';
 import type { Rule } from '@core';
 import {
+  readGrundstockOff,
   readLearnedTerms,
   readOwnRules,
+  saveGrundstockOff,
   saveLearnedTerms,
   saveOwnRules,
 } from '../lib/persist/lastLv';
@@ -51,8 +54,15 @@ interface AdminContextValue {
   learn(term: LearnedTerm): void;
   /** Eigene Regeln (Geltung `unternehmen`), im Browser gespeichert. */
   readonly ownRules: readonly Rule[];
-  /** Grundstock + eigene — das, was Langtext und Positionskarte anwenden. */
+  /**
+   * Grundstock + eigene — das, was Langtext, Positionskarte, „Prüfung“ und „Dokument“
+   * anwenden. Abgeschaltete Grundstock-Regeln stehen darin mit Status `aus` (0089).
+   */
   readonly rules: readonly Rule[];
+  /** Kennungen der Grundstock-Regeln, die diese Firma abgeschaltet hat (Entscheidung 0089). */
+  readonly grundstockOff: ReadonlySet<string>;
+  /** Grundstock-Regel an- oder abschalten; ändern lässt sie sich nicht. */
+  setGrundstockOn(id: string, on: boolean): void;
   /** Speichert eine eigene Regel; gleiche `id` wird ersetzt. */
   saveRule(rule: Rule): void;
   deleteRule(id: string): void;
@@ -134,12 +144,14 @@ async function migrateTerms(): Promise<Rule[] | null> {
 }
 
 const sameRule = (a: Rule, b: Rule): boolean => a.id === b.id;
+const sameId = (a: string, b: string): boolean => a === b;
 
 const AdminContext = createContext<AdminContextValue | null>(null);
 
 export function AdminProvider({ children }: { children: ReactNode }) {
   const [unlocked, setUnlocked] = useState(false);
   const [ownRules, changeRules] = usePersistedList(readOwnRulesAndTerms, saveOwnRules, sameRule);
+  const [offIds, changeOff] = usePersistedList(readGrundstockOff, saveGrundstockOff, sameId);
   const [ruleRequest, setRuleRequest] = useState<Rule | null>(null);
 
   const value = useMemo<AdminContextValue>(
@@ -164,7 +176,18 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         }),
       ownRules,
       // Kennungen sind eindeutig: bei gleicher Kennung gilt der Grundstock.
-      rules: [...GRUNDSTOCK, ...ownRules.filter((rule) => !GRUNDSTOCK_IDS.has(rule.id))],
+      rules: [
+        ...GRUNDSTOCK.map((rule): Rule =>
+          offIds.includes(rule.id) ? { ...rule, status: 'aus' } : rule,
+        ),
+        ...ownRules.filter((rule) => !GRUNDSTOCK_IDS.has(rule.id)),
+      ],
+      grundstockOff: new Set(offIds),
+      setGrundstockOn: (id, on) =>
+        changeOff((current) => {
+          const rest = current.filter((other) => other !== id);
+          return on || !GRUNDSTOCK_IDS.has(id) ? rest : [...rest, id];
+        }),
       saveRule: (rule) =>
         changeRules((current) => {
           if (GRUNDSTOCK_IDS.has(rule.id)) return [...current];
@@ -176,7 +199,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       ruleRequest,
       requestRule: setRuleRequest,
     }),
-    [unlocked, ownRules, changeRules, ruleRequest],
+    [unlocked, ownRules, changeRules, offIds, changeOff, ruleRequest],
   );
 
   return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;
@@ -189,6 +212,8 @@ const OUTSIDE: AdminContextValue = {
   learn: () => undefined,
   ownRules: [],
   rules: GRUNDSTOCK,
+  grundstockOff: new Set(),
+  setGrundstockOn: () => undefined,
   saveRule: () => undefined,
   deleteRule: () => undefined,
   ruleRequest: null,

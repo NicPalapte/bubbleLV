@@ -26,27 +26,44 @@ dorthin um.
 
 Für alle übernehmen: wie jede Regel, siehe unten „Regel in den Grundstock übernehmen“.
 
-## Regeln bauen (Reiter „Regeln“, Prototyp)
+## Regeln bauen (Reiter „Regeln“)
 
-Ergebnis: Eine aktive Regel färbt den Langtext ein oder schlägt Verbindungen zwischen
-Positionen vor. Hintergrund: Entscheidung 0081.
+Ergebnis: Eine Regel färbt den Langtext ein, zeigt einen Hinweis in „Prüfung“, schlägt
+Verbindungen zwischen Positionen vor oder schlägt Stellen im Begleit-PDF vor.
+Hintergrund: Entscheidungen 0081 und 0089.
 
 1. Logo-Menü → Admin-Werkzeuge → Reiter „Regeln“ → „+ Neue Regel“.
    Oder: im Langtext Text markieren, Rechtsklick → „Als Regel…“.
-2. Bausteine zusammenstellen, Abstand und Text wählen. Unten stehen sofort die Treffer.
-3. Oben auf „Aktiv“ stellen. Erst dann wirkt die Regel im LV.
-4. Bei „Positionen verbinden“: Vorschläge mit „Ja“ oder „Nein“ beantworten, im Editor oder
+2. Bausteine zusammenstellen: Begriff, Menge, Norm, Wortliste, Einheit oder Angabe aus der
+   Datei (Menge, Einheit, Positionsart). Dazu Abstand und Text wählen. Unten stehen sofort
+   die Treffer.
+3. Bei „Dann“ die Wirkung wählen: hervorheben, Prüfhinweis oder Positionen verbinden.
+   Beim Prüfhinweis: Art, Gewicht und Text. Einen Norm-Verweis nur eintragen, wenn du ihn
+   geprüft hast; dann „Verweis geprüft“ anhaken.
+4. Schalter oben rechts anschalten. Neue Regeln starten aus; erst angeschaltet wirkt die
+   Regel im LV.
+5. Bei „Positionen verbinden“: Vorschläge mit „Ja“ oder „Nein“ beantworten, im Editor oder
    in der Positionskarte unter „Verbunden“.
+
+Grundstock-Regeln (gelten für alle Firmen):
+
+- **Abschalten:** Schalter in der Liste. Gilt nur in diesem Browser.
+- **Ändern:** „Als eigene kopieren“. Die Kopie ist an, das Original wird abgeschaltet. In
+  der Kopie lassen sich auch Werte eingebauter Prüfungen ändern, z. B. wie viele
+  Betonstahl-Positionen ein Hinweis nennt.
+- Was im Grundstock schon aus ist (z. B. Regeln ohne fertige Logik), lässt sich nicht
+  anschalten.
 
 Regel in den Grundstock übernehmen (gilt dann für alle):
 
-1. „regeln.json herunterladen“.
+1. „Regeln exportieren“. Du bekommst die Datei `regeln.json` mit deinen eigenen Regeln.
 2. Die gewünschten Einträge in `docs/domain/reference/regeln.json` kopieren und dort
    `"geltung": "allgemein"` setzen.
 3. Datei committen.
 
 Lässt du das aus, gilt die Regel nur in deinem Browser. Löschst du die Website-Daten,
-ist sie weg; vorher „regeln.json herunterladen“ sichert sie.
+ist sie weg; vorher „Regeln exportieren“ sichert sie. Mit „Regeln importieren“ holst du
+eine `regeln.json` wieder herein; vorhandene Regeln werden dabei nie überschrieben.
 
 ## Passwort ändern
 

@@ -32,8 +32,13 @@ export type CheckRule = Rule & { readonly wirkung: { readonly pruefhinweis: Rule
 
 const isCheckRule = (rule: Rule): rule is CheckRule => 'pruefhinweis' in rule.wirkung;
 
+/** Prüfregeln unter `rules`, in deren Reihenfolge: Grundstock + eigene (Entscheidung 0089). */
+export function checkRulesOf(rules: readonly Rule[]): CheckRule[] {
+  return rules.filter(isCheckRule);
+}
+
 /** Die Prüfregeln des Grundstocks, in der Reihenfolge der Datei. */
-export const CHECK_RULES: readonly CheckRule[] = GRUNDSTOCK.filter(isCheckRule);
+export const CHECK_RULES: readonly CheckRule[] = checkRulesOf(GRUNDSTOCK);
 
 /** „v1-bedarfsposition“ → „V1“; Regeln ohne solches Kürzel bleiben ohne. */
 export function codeOf(id: string): string {
@@ -223,6 +228,23 @@ export function runChecks(
   }
 
   return { flags, rules: statuses };
+}
+
+/**
+ * Prüfung mit den Regeln dieser Firma (Entscheidung 0089): das Ergebnis aus dem Laden ohne
+ * abgeschaltete Grundstock-Regeln, dazu das Ergebnis eigener Regeln. Ohne beides `loaded`
+ * selbst — so bleibt das Objekt aus dem Laden, solange niemand etwas umstellt.
+ */
+export function mergeChecks(
+  loaded: CheckResult,
+  off: ReadonlySet<string>,
+  own: CheckResult | null,
+): CheckResult {
+  if (off.size === 0 && (own === null || own.rules.length === 0)) return loaded;
+  return {
+    flags: [...loaded.flags.filter((flag) => !off.has(flag.id)), ...(own?.flags ?? [])],
+    rules: [...loaded.rules.filter((rule) => !off.has(rule.id)), ...(own?.rules ?? [])],
+  };
 }
 
 export { CHECK_BUILTINS, checkBewehrung } from './builtins';

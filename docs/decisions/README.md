@@ -95,6 +95,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0086 | [Prüfregeln als Regeln](0086-pruefregeln-als-regeln.md)                                                        | akzeptiert                         | 2026-10-30 |
 | 0087 | [PDF-Vorschläge als Regeln](0087-pdf-vorschlaege-als-regeln.md)                                                | akzeptiert                         | 2026-10-30 |
 | 0088 | [Gelernte Begriffe als Regeln](0088-gelernte-begriffe-als-regeln.md)                                           | akzeptiert                         | 2026-10-31 |
+| 0089 | [Regeleditor für alle Regeln](0089-regeleditor-fuer-alle-regeln.md)                                            | akzeptiert                         | 2026-11-02 |
 
 ## Wann schreibe ich eine neue Datei?
 
