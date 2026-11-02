@@ -193,3 +193,46 @@ describe('CheckCard', () => {
     expect(within(funde).getByText(/offene Stellen/)).toBeTruthy();
   });
 });
+
+describe('CheckFlyout · gebündelte Funde (Issue #191)', () => {
+  it('zeigt G3 je Einheit mit Teilzeilen je Schreibweise, sortiert und gezählt', () => {
+    const ids = [...new Set(lv.check.flags.map((flag) => flag.positionId))].slice(0, 3);
+    expect(ids).toHaveLength(3);
+    const g3 = lv.check.rules.find((rule) => rule.code === 'G3');
+    expect(g3).toBeDefined();
+    const label = 'Stück: mehrere Schreibweisen (St, Stk.)';
+    const fund = (positionId: string, part: string) => ({
+      id: g3?.id ?? '',
+      category: g3?.category ?? 'menge',
+      severity: g3?.severity ?? 'hinweis',
+      positionId,
+      title: `${part} — im LV auch als …`,
+      group: { label, part },
+    });
+    geladen = {
+      ...lv,
+      check: {
+        flags: [
+          ...lv.check.flags.filter((flag) => flag.id !== g3?.id),
+          fund(ids[0], '„Stk."'),
+          fund(ids[1], '„St"'),
+          fund(ids[2], '„St"'),
+        ],
+        rules: lv.check.rules.map((rule) => (rule.code === 'G3' ? { ...rule, count: 3 } : rule)),
+      },
+    };
+    try {
+      renderView();
+      const flyout = openFlyout('G3');
+      expect(within(flyout).getByText(label)).toBeTruthy();
+      const teile = within(flyout)
+        .getAllByText(/Position(en)?$/)
+        .map((element) => element.textContent);
+      expect(teile).toEqual(['„St" · 2 Positionen', '„Stk." · 1 Position']);
+      // In der Bündelung steht der Halbsatz je Fund nicht noch einmal.
+      expect(within(flyout).queryByText(/im LV auch als/)).toBeNull();
+    } finally {
+      geladen = lv;
+    }
+  });
+});
