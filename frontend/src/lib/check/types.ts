@@ -29,6 +29,16 @@ export interface Flag {
   title: string;
   /** Fundstelle im Langtext, wo es eine gibt. */
   span?: Span;
+  /** Gruppe in der Fundliste, wo die Regel ihre Funde bündelt (z. B. je Einheit). */
+  group?: FlagGroup;
+}
+
+/** Bündel von Funden einer Regel, mit Unterteilung — etwa „Stück“ mit „St“ und „Stk.“. */
+export interface FlagGroup {
+  /** Kopfzeile, z. B. „Stück: mehrere Schreibweisen (St, Stk.)“. */
+  label: string;
+  /** Unterteilung innerhalb der Gruppe, z. B. „„Stk.““. */
+  part: string;
 }
 
 /** Warum eine Regel nicht läuft. `null` = sie läuft. */
@@ -42,7 +52,7 @@ export interface CheckContext {
 }
 
 /** Was eine eingebaute Logik je Position meldet; den Rest setzt `runChecks`. */
-export type Fund = Pick<Flag, 'title' | 'span'>;
+export type Fund = Pick<Flag, 'title' | 'span' | 'group'>;
 
 /** Eine Regel mit ihrem Zustand für diesen Datensatz. */
 export interface RuleStatus {

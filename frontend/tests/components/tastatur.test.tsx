@@ -121,6 +121,16 @@ describe('Tabelle · Tastatur', () => {
     expect(grid.style.outline).toBe('');
   });
 
+  it('löscht den Suchtext mit ✕ in der Suchleiste', async () => {
+    await ladeApp();
+    const suche = screen.getByLabelText('Suche');
+    expect(screen.queryByRole('button', { name: 'Suchtext löschen' })).toBeNull();
+    fireEvent.change(suche, { target: { value: 'Beton' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Suchtext löschen' }));
+    expect(suche).toHaveValue('');
+    expect(screen.queryByRole('button', { name: 'Suchtext löschen' })).toBeNull();
+  });
+
   it('sortiert mit Enter im Spaltenkopf, ohne nebenbei eine Zeile zu wählen', async () => {
     await ladeApp();
     await ansicht('Tabelle');

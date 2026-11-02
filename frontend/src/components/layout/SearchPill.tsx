@@ -227,9 +227,24 @@ export function SearchPill({
         aria-label="Suche"
         className="min-w-[60px] flex-1 border-none bg-transparent font-mono text-[13px] text-ink outline-none placeholder:text-mute"
       />
-      <span className="hidden rounded-[5px] border border-line bg-sunken px-[5px] py-[1px] font-mono text-[11px] text-mute [@media(pointer:fine)]:inline">
-        /
-      </span>
+      {draft === '' ? (
+        <span className="hidden rounded-[5px] border border-line bg-sunken px-[5px] py-[1px] font-mono text-[11px] text-mute [@media(pointer:fine)]:inline">
+          /
+        </span>
+      ) : (
+        <button
+          type="button"
+          aria-label="Suchtext löschen"
+          title="Suchtext löschen"
+          onClick={() => {
+            changeSearch('');
+            inputRef.current?.focus();
+          }}
+          className="inline-flex h-[24px] w-[24px] shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-transparent p-0 text-[12px] text-mute hover:bg-sunken hover:text-ink"
+        >
+          ✕
+        </button>
+      )}
       {(active.filtering || spotlighted) && <HideModeToggle />}
       <button
         type="button"

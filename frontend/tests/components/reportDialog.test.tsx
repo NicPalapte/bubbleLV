@@ -107,6 +107,24 @@ describe('Fehler melden · der Text', () => {
   });
 });
 
+describe('Fehler melden · Erwartung und Schließen', () => {
+  it('trägt, was zu erwarten war, in den eigenen Abschnitt', async () => {
+    const fenster = await oeffneMeldung();
+    fireEvent.change(within(fenster).getByLabelText(/Was war zu erwarten/), {
+      target: { value: 'Der Graph zeigt alle Positionen.' },
+    });
+    const meldetext = (within(fenster).getByLabelText('Meldetext') as HTMLTextAreaElement).value;
+    const abschnitt = meldetext.split('## Was war zu erwarten?')[1].split('## Umgebung')[0];
+    expect(abschnitt).toContain('Der Graph zeigt alle Positionen.');
+  });
+
+  it('schließt per Klick auf „ESC“ in der Kopfzeile', async () => {
+    const fenster = await oeffneMeldung();
+    fireEvent.click(within(fenster).getByRole('button', { name: 'Fehler melden schließen' }));
+    expect(screen.queryByRole('dialog', { name: 'Fehler melden' })).toBeNull();
+  });
+});
+
 describe('Fehler melden · die drei Wege', () => {
   it('kopiert den Text in die Zwischenablage', async () => {
     const fenster = await oeffneMeldung();
