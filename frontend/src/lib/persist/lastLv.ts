@@ -50,6 +50,8 @@ const KEY_SURVEY = 'umfrage';
 const KEY_WORKSPACE = 'anordnung';
 /** Eigene Regeln `bubble-rule-v1` (Entscheidung 0081), unabhängig von der Datei. */
 const KEY_RULES = 'regeln';
+/** Kennungen abgeschalteter Grundstock-Regeln (Entscheidung 0089), unabhängig von der Datei. */
+const KEY_GRUNDSTOCK_OFF = 'grundstock-aus';
 /** Kennung für Einträge aus v0.14, die noch keine eigene `id` haben. */
 const LEGACY_ID = 'v0.14';
 
@@ -479,6 +481,42 @@ export async function saveOwnRules(rules: readonly Rule[]): Promise<boolean> {
     const tx = db.transaction(STORE, 'readwrite');
     // Über JSON: nur reine Daten in den Speicher, keine geteilten Referenzen aus dem State.
     tx.objectStore(STORE).put(JSON.parse(JSON.stringify(rules)) as unknown, KEY_RULES);
+    await transactionDone(tx);
+    return true;
+  } catch {
+    return false;
+  } finally {
+    db.close();
+  }
+}
+
+/**
+ * Kennungen abgeschalteter Grundstock-Regeln. Leer ohne IndexedDB; `null`, wenn das Lesen
+ * scheitert — dann nicht darüber schreiben.
+ */
+export async function readGrundstockOff(): Promise<string[] | null> {
+  if (typeof indexedDB === 'undefined') return [];
+  const db = await openDb();
+  if (db === null) return null;
+  try {
+    const stored: unknown = await requestResult(
+      db.transaction(STORE, 'readonly').objectStore(STORE).get(KEY_GRUNDSTOCK_OFF),
+    );
+    return Array.isArray(stored) ? stored.filter((id): id is string => typeof id === 'string') : [];
+  } catch {
+    return null;
+  } finally {
+    db.close();
+  }
+}
+
+/** Ersetzt die Liste abgeschalteter Grundstock-Regeln. Gibt zurück, ob es geklappt hat. */
+export async function saveGrundstockOff(ids: readonly string[]): Promise<boolean> {
+  const db = await openDb();
+  if (db === null) return false;
+  try {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).put([...ids], KEY_GRUNDSTOCK_OFF);
     await transactionDone(tx);
     return true;
   } catch {

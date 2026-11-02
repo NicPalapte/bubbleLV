@@ -13,7 +13,16 @@ import {
   type ReactNode,
 } from 'react';
 import { annotationAllowList } from '../lib/annotations';
-import { EMPTY_HINTS, hintsByPosition, type HintIndex } from '../lib/check';
+import {
+  checkRulesOf,
+  EMPTY_HINTS,
+  hintsByPosition,
+  mergeChecks,
+  runChecks,
+  type CheckResult,
+  type HintIndex,
+} from '../lib/check';
+import { GRUNDSTOCK, isActive } from '../lib/rules/rules';
 import {
   buildPositionIndex,
   EMPTY_POSITION_INDEX,
@@ -45,9 +54,13 @@ import { useAdmin } from './admin';
 import { readWorkspace, saveWorkspace } from '../lib/persist/lastLv';
 import { toStoredWorkspace } from '../lib/workspace/split';
 import { INITIAL_WORKSPACE } from './viewState';
+import type { LoadedLV } from '../lib/pipeline/runPipeline';
 import type { LVNode } from '../types/lvNode';
 
 const EMPTY_NODES: ReadonlyMap<string, LVNode> = new Map();
+const GRUNDSTOCK_IDS: ReadonlySet<string> = new Set(GRUNDSTOCK.map((rule) => rule.id));
+/** Pause nach der letzten Regeländerung, bevor neu geprüft wird (Tippen im Editor). */
+const RECHECK_DELAY = 250;
 const EMPTY_PARENTS: ReadonlyMap<string, LVNode | null> = new Map();
 const EMPTY_MATCHES: MatchIndex = { counts: new Map(), filtering: false };
 
@@ -103,7 +116,7 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
   // Als Material gelernte Begriffe zählen in der Facette „Material" mit (Entscheidung
   // 0066). Nur bei neuem LV oder geänderten Begriffen; ohne Begriffe derselbe Index
   // und die Zählung aus dem Laden.
-  const { rules } = useAdmin();
+  const { rules, grundstockOff } = useAdmin();
   // Als Text verglichen: `rules` ist nach jeder Änderung an eigenen Regeln neu.
   const materialKey = JSON.stringify(materialTermsOf(rules));
   const learnedMaterials = useMemo(
@@ -158,14 +171,55 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
     [tree, index, active],
   );
 
+  // Prüfung mit den Regeln dieser Firma (Entscheidung 0089): Der Worker prüft beim Laden mit
+  // dem Grundstock. Abgeschaltete Grundstock-Regeln fallen hier nur weg; eigene Prüfregeln
+  // laufen dazu — im Effekt und kurz verzögert, nie im Render und nicht je Taste.
+  const offKey = JSON.stringify([...grundstockOff].sort());
+  const ownCheckKey = JSON.stringify(
+    checkRulesOf(rules).filter((rule) => !GRUNDSTOCK_IDS.has(rule.id) && isActive(rule)),
+  );
+  const [ownCheck, setOwnCheck] = useState<{
+    lv: LoadedLV;
+    check: CheckResult;
+  } | null>(null);
+  useEffect(() => {
+    const lv = state.lv;
+    if (lv === null || ownCheckKey === '[]') return;
+    const timer = setTimeout(() => {
+      const ownRules = JSON.parse(ownCheckKey) as ReturnType<typeof checkRulesOf>;
+      const check = measure('Eigene Prüfregeln', () =>
+        runChecks(baseIndex, lv.summary, ownRules, structure.parents),
+      );
+      setOwnCheck({ lv, check });
+    }, RECHECK_DELAY);
+    return () => clearTimeout(timer);
+  }, [state.lv, ownCheckKey, baseIndex, structure.parents]);
+  // Bis die neue Rechnung fertig ist, gelten die letzten Funde eigener Regeln für dieses LV.
+  const own = ownCheckKey !== '[]' && ownCheck?.lv === state.lv ? ownCheck.check : null;
+  const loadedCheck = state.lv?.check ?? null;
+  const check = useMemo(
+    () =>
+      loadedCheck === null
+        ? null
+        : mergeChecks(loadedCheck, new Set(JSON.parse(offKey) as string[]), own),
+    [loadedCheck, offKey, own],
+  );
+  const lv = useMemo(
+    // Ohne Änderung dasselbe Objekt wie geladen — manche Stellen vergleichen `lv`.
+    () =>
+      state.lv === null || check === null || check === state.lv.check
+        ? state.lv
+        : { ...state.lv, check },
+    [state.lv, check],
+  );
+
   // Hinweise je Position (WP-R, R1). Hängt am Import und am Regel-Schalter,
   // nicht am Filter: was hier steht, gilt für das ganze LV — der Ring an der
   // Bubble verschwindet ohnehin mit der Bubble, sobald der Filter sie ausblendet.
   const hints = useMemo<HintIndex>(() => {
-    const check = state.lv?.check ?? null;
     if (check === null) return EMPTY_HINTS;
     return hintsByPosition(check, state.filter.mutedRules);
-  }, [state.lv, state.filter.mutedRules]);
+  }, [check, state.filter.mutedRules]);
 
   const comparePositions = useMemo<readonly LVNode[]>(
     () =>
@@ -214,7 +268,7 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
     ],
   );
 
-  const value = useMemo(() => ({ ...state, ...derived }), [state, derived]);
+  const value = useMemo(() => ({ ...state, ...derived, lv }), [state, derived, lv]);
 
   return (
     <ViewerStateContext.Provider value={value}>

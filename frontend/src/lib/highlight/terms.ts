@@ -77,6 +77,9 @@ export function termFound(text: string, begriff: string): boolean {
   return matches(text, begriff).length > 0;
 }
 
+/** Bemerkung einer Regel aus „Begriff lernen…“ — der Regeleditor zeigt sie als „gelernt“. */
+export const LEARNED_NOTE = 'Gelernter Begriff';
+
 /** Ein Begriff als eigene Regel: im Langtext, sofort aktiv, Name = Begriff. */
 export function termRule(term: LearnedTerm, taken: ReadonlySet<string>): Rule {
   const begriff = term.begriff.trim();
@@ -90,7 +93,7 @@ export function termRule(term: LearnedTerm, taken: ReadonlySet<string>): Rule {
     geltung: 'unternehmen',
     status: 'freigegeben',
     herkunft: 'nutzer',
-    bemerkung: 'Gelernter Begriff',
+    bemerkung: LEARNED_NOTE,
   };
 }
 

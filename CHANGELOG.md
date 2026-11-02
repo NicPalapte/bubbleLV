@@ -9,6 +9,22 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.46.0 — 02.11.2026 · Ein Regelformat, Schritt 5a: Regeleditor
+
+- **Jede Regel hat einen Schalter an/aus**, auch Grundstock-Regeln. Abgeschaltete
+  Grundstock-Regeln gelten nur in diesem Browser nicht mehr.
+- **„Entwurf“ entfällt:** Eine neue Regel startet aus, die Treffer siehst du trotzdem.
+- **Liste nach Wirkung gruppiert** (Hervorheben, Prüfhinweise, Verbindungen,
+  PDF-Vorschläge), mit Suche. Eigene Regeln tragen das Label „eigene“, gelernte Begriffe
+  „gelernt“.
+- **„Als eigene kopieren“** ersetzt die Grundstock-Regel: Die Kopie ist an, das Original aus.
+  In der Kopie lassen sich auch die Werte eingebauter Prüfungen ändern.
+- **Neue Bausteine:** Wortliste, Einheit und Angabe aus der Datei (Menge, Einheit,
+  Positionsart).
+- **Eigene Prüfhinweise:** Wirkung „Prüfhinweis“ mit Art, Gewicht, Text und freiwilligem
+  Norm-Verweis. Sie erscheinen in „Prüfung“ wie die des Grundstocks.
+- Knöpfe heißen jetzt „Regeln importieren“ und „Regeln exportieren“.
+
 ## 0.45.4 — 31.10.2026 · Ein Regelformat, Schritt 4
 
 - **Gelernte Begriffe sind jetzt Regeln:** „Immer hervorheben als …“ legt eine eigene Regel

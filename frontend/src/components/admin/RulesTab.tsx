@@ -1,7 +1,8 @@
-// Reiter „Regeln" der Admin-Werkzeuge (Entscheidung 0081): links Grundstock und eigene
-// Regeln, rechts der Baukasten und die Treffer im geladenen LV. Eigene Regeln speichern
-// sich bei jeder Änderung im Browser; der Grundstock (docs/domain/reference/regeln.json)
-// ist nur lesbar und lässt sich als eigene Regel kopieren. Austausch über `regeln.json`.
+// Reiter „Regeln" der Admin-Werkzeuge (Entscheidungen 0081, 0089): links alle Regeln nach
+// Wirkung gruppiert, jede mit Schalter, rechts der Baukasten und die Treffer im geladenen LV.
+// Eigene Regeln speichern sich bei jeder Änderung im Browser; der Grundstock
+// (docs/domain/reference/regeln.json) lässt sich nur abschalten oder als eigene Regel
+// kopieren. Austausch über „Regeln importieren/exportieren“ (`regeln.json`).
 
 import { useDeferredValue, useMemo, useRef, useState } from 'react';
 import {
@@ -17,17 +18,23 @@ import {
   type RuleHit,
 } from '@core';
 import { RuleEditor } from './RuleEditor';
+import { RuleSwitch } from './RuleSwitch';
 import { useJumpToPosition } from '../common/useJumpToPosition';
 import { downloadText } from '../../lib/export/download';
 import { linkOf } from '../../lib/positionLinks';
+import { LEARNED_NOTE } from '../../lib/highlight/terms';
 import {
+  copyOf,
   GRUNDSTOCK,
-  isEditable,
   linkCandidatesOf,
   newRule,
   RULE_CONTEXT,
+  RULE_GROUP_LABELS,
+  ruleGroupOf,
   ruleTextOf,
+  type RuleGroup,
 } from '../../lib/rules/rules';
+import { HINT_LABELS } from '../../lib/rules/sentence';
 import { useAdmin } from '../../state/admin';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { LVNode } from '../../types/lvNode';
@@ -40,17 +47,17 @@ const SNIPPET = 140;
 const BUTTON =
   'inline-flex h-[28px] cursor-pointer items-center rounded-[var(--r-pill)] border border-line bg-surface px-[12px] font-mono text-[11.5px] text-ink hover:border-line2 disabled:cursor-default disabled:opacity-40';
 
-const STATUS_LABEL: Readonly<Record<Rule['status'], string>> = {
-  entwurf: 'Entwurf',
-  freigegeben: 'aktiv',
-  aus: 'aus',
-};
+/** Grundstock-Regeln, die schon in regeln.json aus sind: nur abschalten erlaubt (0089). */
+const lockedIds: ReadonlySet<string> = new Set(
+  GRUNDSTOCK.filter((rule) => rule.status !== 'freigegeben').map((rule) => rule.id),
+);
 
-/** Kurz, was die Regel tut — in der Liste neben dem Status. */
-function effectLabel(rule: Rule): string {
-  if ('hervorheben' in rule.wirkung) return 'hervorheben';
-  if ('pruefhinweis' in rule.wirkung) return 'prüfen';
-  return positionLinkOf(rule.wirkung) === null ? 'mit PDF verknüpfen' : 'verbinden';
+const GROUPS: readonly RuleGroup[] = ['hervorheben', 'pruefhinweis', 'verknuepfen', 'pdf'];
+
+/** Label neben dem Namen: „gelernt“ (Begriff aus dem Langtext, 0088), „eigene“; Grundstock ohne. */
+function labelOf(rule: Rule, grundstock: boolean): string | null {
+  if (grundstock) return null;
+  return rule.bemerkung === LEARNED_NOTE ? 'gelernt' : 'eigene';
 }
 
 /** Brauchbare Regeln einer `regeln.json` und wie viele Einträge die Datei hatte. */
@@ -265,45 +272,93 @@ function LinkPreview({ rule, positions }: { rule: Rule; positions: readonly LVNo
 
 function RuleListItem({
   rule,
+  label,
+  locked,
   selected,
   onSelect,
+  onToggle,
 }: {
   rule: Rule;
+  label: string | null;
+  locked: boolean;
   selected: boolean;
   onSelect: () => void;
+  onToggle: () => void;
 }) {
+  const on = rule.status === 'freigegeben';
   return (
-    <li>
+    <li
+      className={`flex items-center gap-[8px] border-0 border-l-[3px] px-[14px] py-[6px] ${
+        selected ? 'border-accent bg-accent-soft' : 'border-transparent hover:bg-sunken'
+      }`}
+    >
+      <RuleSwitch on={on} label={rule.name} locked={locked} onToggle={onToggle} />
       <button
         type="button"
         aria-current={selected}
         onClick={onSelect}
-        className={`flex w-full cursor-pointer flex-col gap-[2px] border-0 border-l-[3px] px-[14px] py-[7px] text-left ${
-          selected
-            ? 'border-accent bg-accent-soft'
-            : 'border-transparent bg-transparent hover:bg-sunken'
+        title={rule.name}
+        className={`min-w-0 flex-1 cursor-pointer truncate border-none bg-transparent p-0 text-left font-sans text-[13px] ${
+          on ? 'text-ink' : 'text-mute line-through'
         }`}
       >
-        <span className="font-sans text-[13px] text-ink">{rule.name}</span>
-        <span className="font-mono text-[11px] text-mute">
-          <span className={rule.status === 'freigegeben' ? 'text-greenD' : undefined}>
-            {STATUS_LABEL[rule.status]}
-          </span>
-          {' · '}
-          {effectLabel(rule)}
-        </span>
+        {rule.name}
       </button>
+      {label !== null && (
+        <span className="shrink-0 rounded-[var(--r-pill)] bg-cyanS px-[7px] py-[1px] font-mono text-[10.5px] text-cyan">
+          {label}
+        </span>
+      )}
     </li>
   );
 }
 
+/** So erscheint ein Prüfhinweis in „Prüfung“ — Vorschau im Editor. */
+function HintCard({ rule, own }: { rule: Rule; own: boolean }) {
+  if (!('pruefhinweis' in rule.wirkung)) return null;
+  const hint = rule.wirkung.pruefhinweis;
+  return (
+    <div className="flex flex-col gap-[6px] rounded-[var(--r-md)] border border-line p-[12px]">
+      <span className="font-display text-[13px] font-semibold text-ink">
+        So erscheint es in „Prüfung“
+      </span>
+      <div
+        className={`flex flex-col gap-[3px] rounded-[var(--r-sm)] border border-l-[3px] border-line bg-surface px-[10px] py-[8px] ${
+          hint.schwere === 'beachten' ? 'border-l-amber' : 'border-l-line2'
+        }`}
+      >
+        <span className="flex flex-wrap items-center gap-[8px] font-sans text-[13px] font-semibold text-ink">
+          {rule.name}
+          <span className="rounded-[var(--r-pill)] bg-sunken px-[7px] font-mono text-[10.5px] font-normal text-mute">
+            {HINT_LABELS[hint.kategorie]}
+          </span>
+          {own && (
+            <span className="rounded-[var(--r-pill)] bg-cyanS px-[7px] font-mono text-[10.5px] font-normal text-cyan">
+              eigene Regel
+            </span>
+          )}
+        </span>
+        <span className="font-sans text-[12.5px] text-ink">{hint.text}</span>
+        {hint.norm !== undefined && (
+          <span className="font-mono text-[11px] text-mute">
+            {hint.norm.verweis}
+            {hint.norm.stand === 'bestaetigt' ? '' : ' · Verweis zu bestätigen'}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function RulesTab() {
-  const { ownRules, saveRule, deleteRule, ruleRequest } = useAdmin();
+  const { ownRules, saveRule, deleteRule, ruleRequest, grundstockOff, setGrundstockOn } =
+    useAdmin();
   const { index, lv } = useViewer();
   const [selectedId, setSelectedId] = useState<string | null>(
     ruleRequest?.id ?? ownRules[0]?.id ?? GRUNDSTOCK[0]?.id ?? null,
   );
   const [showJson, setShowJson] = useState(false);
+  const [query, setQuery] = useState('');
   const [importNote, setImportNote] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const taken = (): Set<string> => new Set([...GRUNDSTOCK, ...ownRules].map((rule) => rule.id));
@@ -324,11 +379,18 @@ export function RulesTab() {
     setBumpedFor(null);
   }
 
+  // Grundstock mit dem Schalter dieser Firma: abgeschaltet heißt Status `aus` (0089).
+  const grundstockRules = useMemo(
+    () =>
+      GRUNDSTOCK.map((entry): Rule =>
+        grundstockOff.has(entry.id) ? { ...entry, status: 'aus' } : entry,
+      ),
+    [grundstockOff],
+  );
   const own = ownRules.find((rule) => rule.id === selectedId);
-  const rule = own ?? GRUNDSTOCK.find((entry) => entry.id === selectedId) ?? null;
+  const rule = own ?? grundstockRules.find((entry) => entry.id === selectedId) ?? null;
   const grundstock = own === undefined;
-  // Regeln mit Teilen, die der Editor noch nicht kennt (0085), nur lesen.
-  const readOnly = grundstock || (rule !== null && !isEditable(rule));
+  const readOnly = grundstock;
   const positions = index.nodes;
   // Vorschau über alle Positionen hinter dem Tippen herlaufen lassen, nicht je Taste blockieren.
   const preview = useDeferredValue(rule);
@@ -344,19 +406,26 @@ export function RulesTab() {
     saveRule(next);
   };
 
+  const toggle = (entry: Rule): void => {
+    const on = entry.status === 'freigegeben';
+    if (GRUNDSTOCK.some((base) => base.id === entry.id)) setGrundstockOn(entry.id, !on);
+    // Nur der Status ändert sich: keine neue Version, Urteile über Verbindungen bleiben.
+    else saveRule({ ...entry, status: on ? 'aus' : 'freigegeben' });
+  };
+
+  // Die Kopie ersetzt das Original: Grundstock-Regel aus, Kopie an (Entscheidung 0089).
   const copyAsOwn = (source: Rule): void => {
-    const name = `${source.name} (eigene)`;
-    const copy: Rule = {
-      ...source,
-      id: ruleIdOf(name, taken()),
-      version: 1,
-      name,
-      geltung: 'unternehmen',
-      status: 'entwurf',
-    };
+    const copy = copyOf(source, taken());
     saveRule(copy);
+    setGrundstockOn(source.id, false);
     setSelectedId(copy.id);
   };
+
+  const needle = query.trim().toLowerCase();
+  const listed = [
+    ...grundstockRules.map((entry) => ({ rule: entry, grundstock: true })),
+    ...ownRules.map((entry) => ({ rule: entry, grundstock: false })),
+  ].filter(({ rule: entry }) => needle === '' || entry.name.toLowerCase().includes(needle));
 
   const importFile = (file: File): void => {
     void file.text().then(
@@ -402,14 +471,14 @@ export function RulesTab() {
         </button>
         <span className="flex-1" />
         <button type="button" onClick={() => fileRef.current?.click()} className={BUTTON}>
-          regeln.json laden
+          Regeln importieren
         </button>
         <input
           ref={fileRef}
           type="file"
           accept=".json,application/json"
           className="hidden"
-          aria-label="regeln.json laden"
+          aria-label="Regeln importieren"
           onChange={(event) => {
             const file = event.target.files?.[0];
             if (file !== undefined) importFile(file);
@@ -426,10 +495,10 @@ export function RulesTab() {
               'json',
             )
           }
-          title="Deine eigenen Regeln als Datei — zum Weitergeben oder für den Grundstock"
+          title="Deine eigenen Regeln als Datei regeln.json — zum Weitergeben oder für den Grundstock"
           className={BUTTON}
         >
-          regeln.json herunterladen
+          Regeln exportieren
         </button>
       </div>
       {importNote !== null && (
@@ -442,40 +511,54 @@ export function RulesTab() {
           aria-label="Regeln"
           className="border-b border-line py-[8px] md:border-b-0 md:border-r"
         >
-          <div className="flex justify-between px-[14px] pb-[4px] pt-[6px] font-mono text-[10.5px] uppercase tracking-[0.06em] text-mute">
-            <span>Grundstock</span>
-            <span>alle Firmen</span>
+          <div className="px-[14px] pb-[4px] pt-[2px]">
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              aria-label="Regel suchen"
+              placeholder="Regel suchen"
+              className="h-[30px] w-full rounded-[var(--r-sm)] border border-line bg-surface px-[8px] font-sans text-[12.5px] text-ink outline-none focus:border-accent"
+            />
           </div>
-          <ul className="m-0 list-none p-0">
-            {GRUNDSTOCK.map((entry) => (
-              <RuleListItem
-                key={entry.id}
-                rule={entry}
-                selected={entry.id === selectedId}
-                onSelect={() => setSelectedId(entry.id)}
-              />
-            ))}
-          </ul>
-          <div className="flex justify-between px-[14px] pb-[4px] pt-[12px] font-mono text-[10.5px] uppercase tracking-[0.06em] text-mute">
-            <span>Eigene Regeln</span>
-            <span>deine Firma</span>
-          </div>
-          {ownRules.length === 0 ? (
+          {GROUPS.map((group) => {
+            const entries = listed.filter(({ rule: entry }) => ruleGroupOf(entry) === group);
+            if (entries.length === 0) return null;
+            const on = entries.filter(({ rule: entry }) => entry.status === 'freigegeben');
+            return (
+              <section key={group} aria-label={RULE_GROUP_LABELS[group]}>
+                <div className="flex justify-between px-[14px] pb-[4px] pt-[12px] font-mono text-[10.5px] uppercase tracking-[0.06em] text-mute">
+                  <span>{RULE_GROUP_LABELS[group]}</span>
+                  <span>
+                    {on.length} von {entries.length} an
+                  </span>
+                </div>
+                <ul className="m-0 list-none p-0">
+                  {entries.map(({ rule: entry, grundstock: base }) => (
+                    <RuleListItem
+                      key={entry.id}
+                      rule={entry}
+                      label={labelOf(entry, base)}
+                      locked={lockedIds.has(entry.id)}
+                      selected={entry.id === selectedId}
+                      onSelect={() => setSelectedId(entry.id)}
+                      onToggle={() => toggle(entry)}
+                    />
+                  ))}
+                </ul>
+              </section>
+            );
+          })}
+          {listed.length === 0 && (
             <p className="m-0 px-[14px] py-[6px] font-sans text-[12px] text-mute">
-              Noch keine. „+ Neue Regel“ oder im Langtext Text markieren → „Als Regel…“ oder
+              Keine Regel mit diesem Namen.
+            </p>
+          )}
+          {ownRules.length === 0 && needle === '' && (
+            <p className="m-0 px-[14px] pt-[12px] font-sans text-[12px] text-mute">
+              Eigene Regeln: „+ Neue Regel“ oder im Langtext Text markieren → „Als Regel…“ oder
               „Begriff lernen…“.
             </p>
-          ) : (
-            <ul className="m-0 list-none p-0">
-              {ownRules.map((entry) => (
-                <RuleListItem
-                  key={entry.id}
-                  rule={entry}
-                  selected={entry.id === selectedId}
-                  onSelect={() => setSelectedId(entry.id)}
-                />
-              ))}
-            </ul>
           )}
         </nav>
         <section className="flex min-w-0 flex-col gap-[14px] p-[16px]">
@@ -483,16 +566,26 @@ export function RulesTab() {
             <p className="m-0 font-sans text-[13px] text-mute">Links eine Regel wählen.</p>
           ) : (
             <>
-              {readOnly && (
-                <p className="m-0 rounded-[var(--r-sm)] bg-amberS px-[10px] py-[6px] font-sans text-[12px] text-amber">
-                  {grundstock
-                    ? 'Grundstock-Regel: für alle Firmen gleich, hier nur lesbar.'
-                    : 'Diese Regel nutzt Bausteine, die der Editor noch nicht bearbeiten kann. ' +
-                      'Prüfhinweise eigener Regeln zeigt „Prüfung“ erst in einem ' +
-                      'späteren Schritt.'}
+              {grundstock && (
+                <p className="m-0 flex flex-wrap items-center gap-[10px] rounded-[var(--r-sm)] bg-amberS px-[10px] py-[6px] font-sans text-[12px] text-amber">
+                  <span className="min-w-[200px] flex-1">
+                    Grundstock-Regel: für alle Firmen gleich. Du kannst sie für deine Firma
+                    abschalten oder als eigene Regel kopieren und die Kopie ändern.
+                  </span>
+                  <button type="button" onClick={() => copyAsOwn(rule)} className={BUTTON}>
+                    Als eigene kopieren
+                  </button>
                 </p>
               )}
-              <RuleEditor rule={rule} readOnly={readOnly} onChange={editRule} />
+              <RuleEditor
+                rule={rule}
+                readOnly={readOnly}
+                label={labelOf(rule, grundstock)}
+                locked={lockedIds.has(rule.id)}
+                onToggle={() => toggle(rule)}
+                onChange={editRule}
+              />
+              <HintCard rule={rule} own={!grundstock} />
               <div className="flex flex-col gap-[6px] rounded-[var(--r-md)] border border-line p-[12px]">
                 <span className="font-display text-[13px] font-semibold text-ink">
                   {positionLinkOf(rule.wirkung) !== null
@@ -513,11 +606,7 @@ export function RulesTab() {
                 <button type="button" onClick={() => setShowJson((on) => !on)} className={BUTTON}>
                   {showJson ? 'JSON ausblenden' : 'JSON zeigen'}
                 </button>
-                {grundstock ? (
-                  <button type="button" onClick={() => copyAsOwn(rule)} className={BUTTON}>
-                    Als eigene kopieren
-                  </button>
-                ) : (
+                {!grundstock && (
                   <button
                     type="button"
                     onClick={() => {
