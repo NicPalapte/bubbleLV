@@ -17,7 +17,7 @@ body {
   font-family: var(--mono);
   font-size: 12px;
   margin: 0;
-  padding-block: 40px 56px;
+  padding-block: 0 56px;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
@@ -48,6 +48,25 @@ a:focus-visible {
   flex-direction: column;
   align-items: center;
   gap: 24px;
+}
+/* Erster Bildschirm: so hoch wie das Fenster, der Funktionsumfang folgt beim Scrollen.
+   Die Bühne wird so breit, dass Logo, Bühne, Reiter und Knöpfe in die Höhe passen
+   (--hero-rest = Höhe aller übrigen Teile). */
+.hero {
+  --hero-rest: 420px;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding-block: 24px;
+}
+.hero > .show {
+  width: min(100%, calc((100vh - var(--hero-rest)) * 760 / 300 + 26px));
+  width: min(100%, calc((100svh - var(--hero-rest)) * 760 / 300 + 26px));
 }
 .start-brand {
   width: 100%;

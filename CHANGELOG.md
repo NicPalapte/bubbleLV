@@ -9,6 +9,11 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.49.1 — 02.11.2026 · Startseite im Vollbild
+
+- **Erster Bildschirm füllt das Fenster:** Logo, Animation und Startknöpfe passen genau
+  hinein. Der Funktionsumfang erscheint erst beim Runterscrollen.
+
 ## 0.49.0 — 02.11.2026 · Startseite auf conocto.app
 
 - **Neue Startseite unter conocto.app:** zeigt in einer kurzen Animation, was Conocto kann,
