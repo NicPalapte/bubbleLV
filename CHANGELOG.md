@@ -9,6 +9,11 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.49.2 — 02.11.2026 · Startseite im Vollbild
+
+- **Erster Bildschirm füllt das Fenster:** Logo, Animation und Startknöpfe passen genau
+  hinein. Der Funktionsumfang erscheint erst beim Runterscrollen.
+
 ## 0.49.1 — 02.11.2026 · Funde aus dem Praxistest
 
 - **Fehler melden:** neues Feld „Was war zu erwarten?“. Ein Klick auf „ESC“ oben rechts
