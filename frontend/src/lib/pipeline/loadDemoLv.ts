@@ -75,3 +75,19 @@ export async function loadDemoLv(demo: DemoLv, options: LoadOptions = {}): Promi
   }
   return loadLvFromBytes(bytes, demo.fileName, options);
 }
+
+/**
+ * Demo aus der Adresse, z. B. `doc/?demo=muster` vom Knopf „Demo starten" der
+ * Startseite (Entscheidung 0091). Nimmt den Parameter aus der Adresszeile, damit
+ * ein Neuladen die Startseite des Viewers zeigt statt die Demo erneut zu öffnen.
+ * Unbekannte Werte werden ebenfalls entfernt und öffnen nichts.
+ */
+export function takeDemoFromUrl(): DemoLv | undefined {
+  if (typeof window === 'undefined') return undefined;
+  const url = new URL(window.location.href);
+  const id = url.searchParams.get('demo');
+  if (id === null) return undefined;
+  url.searchParams.delete('demo');
+  window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
+  return demoLvById(id);
+}

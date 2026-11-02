@@ -97,6 +97,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0088 | [Gelernte Begriffe als Regeln](0088-gelernte-begriffe-als-regeln.md)                                           | akzeptiert                         | 2026-10-31 |
 | 0089 | [Regeleditor für alle Regeln](0089-regeleditor-fuer-alle-regeln.md)                                            | akzeptiert                         | 2026-11-02 |
 | 0090 | [Eigene Wortlisten](0090-eigene-wortlisten.md)                                                                 | akzeptiert                         | 2026-11-02 |
+| 0091 | [Startseite auf conocto.app, Viewer unter /doc/](0091-startseite-und-viewer-unter-doc.md)                      | akzeptiert                         | 2026-11-02 |
 
 ## Wann schreibe ich eine neue Datei?
 

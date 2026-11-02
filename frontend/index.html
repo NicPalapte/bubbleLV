@@ -4,15 +4,293 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Conocto – LV-Viewer</title>
+    <title>Conocto – Leistungsverzeichnis im Browser lesen</title>
+    <meta
+      name="description"
+      content="Leistungsverzeichnis (GAEB) im Browser öffnen, im Graphen durchsuchen, filtern und prüfen. Keine Daten verlassen den Browser."
+    />
     <!-- Beta: nicht in Suchmaschinen aufnehmen (docs/decisions/0083-nicht-in-suchmaschinen.md). -->
     <meta name="robots" content="noindex, nofollow" />
-    <!-- Markenschriften des Design-Systems werden selbst gehostet (@fontsource/*,
-         eingebunden in src/main.tsx) statt über Google Fonts geladen — kein
-         Fremdaufruf beim Start der App. Siehe docs/decisions/0069-conocto-look.md. -->
+    <script>
+      // Alte Links auf den Viewer zeigten auf die Wurzel (conocto.app/#lv=…~pos=…).
+      // Seit der Startseite liegt der Viewer unter doc/ (Entscheidung 0091): Links mit
+      // Fragment dorthin weiterreichen, bevor die Startseite zu sehen ist. Relativ,
+      // damit es auch in den PR-Vorschauen (pr-preview/pr-<nr>/) passt.
+      if (location.hash.length > 1) location.replace('doc/' + location.hash);
+    </script>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <main class="start-in">
+      <div class="start-brand">
+        <div class="logo" aria-label="conocto Beta">
+          <svg width="44" height="44" viewBox="0 0 100 100" aria-hidden="true">
+            <g fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round">
+              <path
+                d="M50.0 31.0Q57.7 19.0 72.4 16.8 M63.4 36.6Q77.4 33.5 89.3 42.4 M69.0 50.0Q81.0 57.7 83.2 72.4 M63.4 63.4Q66.5 77.4 57.6 89.3 M50.0 69.0Q42.3 81.0 27.6 83.2 M36.6 63.4Q22.6 66.5 10.7 57.6 M31.0 50.0Q19.0 42.3 16.8 27.6 M36.6 36.6Q33.5 22.6 42.4 10.7"
+              />
+            </g>
+            <circle cx="50" cy="50" r="14" fill="currentColor" />
+          </svg>
+          <span>conocto</span>
+          <em class="beta">Beta</em>
+        </div>
+        <h1 class="sr-only">conocto – Leistungsverzeichnis im Browser lesen</h1>
+        <p class="start-tag rot" id="rot" aria-live="off">
+          <span class="on"><b>Leistungsverzeichnis</b>&nbsp;einfach im Browser öffnen</span>
+          <span>Texterkennung von Eigenschaften, Regeln und Einheiten</span>
+          <span>Ansicht im interaktiven Graphen wie nie zuvor</span>
+          <span>Intelligente Filter nach Abschnitt, Einheit und Menge</span>
+          <span>Matrix nach eigenen Kriterien</span>
+        </p>
+      </div>
+
+      <section class="show" aria-label="Was Conocto kann">
+        <div class="stage-scroll">
+          <div class="stage" id="stage">
+            <svg viewBox="0 0 760 300" aria-hidden="true">
+              <defs>
+                <pattern id="pt" width="14" height="14" patternUnits="userSpaceOnUse">
+                  <circle cx="1" cy="1" r=".9" style="fill: var(--grid2)" />
+                </pattern>
+              </defs>
+              <rect width="760" height="300" style="fill: var(--paper)" />
+              <g id="mx" class="mx"></g>
+              <g id="graph" class="graph">
+                <g id="groups"></g>
+                <line id="pinline" class="pin-line" x1="0" y1="0" x2="180" y2="279" />
+                <g id="dots"></g>
+                <circle id="ringA" class="ring-a" r="10" cx="0" cy="0" />
+                <circle id="ring" class="ring" r="11" cx="0" cy="0" />
+              </g>
+            </svg>
+
+            <div class="ov bar">
+              <span class="lg">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 100 100"
+                  aria-hidden="true"
+                  style="width: calc(16 * var(--u)); height: calc(16 * var(--u))"
+                >
+                  <g fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round">
+                    <path
+                      d="M50.0 31.0Q57.7 19.0 72.4 16.8 M63.4 36.6Q77.4 33.5 89.3 42.4 M69.0 50.0Q81.0 57.7 83.2 72.4 M63.4 63.4Q66.5 77.4 57.6 89.3 M50.0 69.0Q42.3 81.0 27.6 83.2 M36.6 63.4Q22.6 66.5 10.7 57.6 M31.0 50.0Q19.0 42.3 16.8 27.6 M36.6 36.6Q33.5 22.6 42.4 10.7"
+                    />
+                  </g>
+                  <circle cx="50" cy="50" r="15" fill="currentColor" /></svg
+                >conocto
+              </span>
+              <span class="fn u-fade" id="fn">Rohbau_Los1.x83</span>
+              <span class="search"
+                ><span class="q">⌕ Positionen, OZ, Langtext</span
+                ><span class="chip" id="chip">Einheit: m³ ✕</span></span
+              >
+              <span class="local" id="local">● lokal · kein Upload</span>
+              <button type="button" class="pause" id="pause" aria-label="Animation anhalten">
+                ❚❚
+              </button>
+            </div>
+
+            <div class="ov kpi u-fade" id="kpi">
+              <span><b id="k-pos">0</b><i>POSITIONEN</i></span>
+              <span><b id="k-abs">0</b><i>ABSCHNITTE</i></span>
+              <span class="w"><b id="k-hw">0</b><i>HINWEISE ⚠</i></span>
+            </div>
+
+            <div class="ov drop u-fade" id="drop">
+              <span class="rg">⇪</span>GAEB-Datei hierher ziehen
+            </div>
+            <div class="ov file" id="file">
+              <span class="ext">x83</span
+              ><span class="nm">Rohbau_Los1.x83<span>GAEB DA XML · 2,4 MB</span></span>
+            </div>
+
+            <div class="ov win" id="tbl">
+              <div class="win-h"><b>Tabelle</b> 36 Positionen<span class="x">✕</span></div>
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th>OZ</th>
+                    <th>KURZTEXT</th>
+                    <th class="r">MENGE</th>
+                    <th>ME</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody"></tbody>
+              </table>
+            </div>
+
+            <div class="ov win" id="card">
+              <div class="win-h"><b>Position</b><span class="x">✕</span></div>
+              <div class="card-b">
+                <div class="pc-oz">02.0030 <span class="pc-sec">Beton- und Stahlbeton</span></div>
+                <div class="pc-t">Ortbeton Wand C30/37</div>
+                <div class="pc-m">
+                  <span
+                    ><i>Menge</i><b>267 <small>m³</small></b></span
+                  >
+                  <span><i>EP</i><b>–</b></span>
+                  <span><i>Positionsart</i><b>Normal</b></span>
+                </div>
+                <div class="pc-cnt">
+                  <span class="cnt n" id="c-n">Normen 2</span>
+                  <span class="cnt m" id="c-m">Maße 1</span>
+                  <span class="cnt f" id="c-f">Fristen 1</span>
+                  <span class="cnt o" id="c-o">Offen 1</span>
+                </div>
+                <p class="pc-lt">
+                  Stahlbetonwand aus Ortbeton C30/37, XC4, XF1, Dicke
+                  <span class="hl m" id="h-m">24 cm</span>, nach
+                  <span class="hl n" id="h-n1">DIN EN 206-1</span> und
+                  <span class="hl n" id="h-n2">DIN 1045-2</span>. Ausführung
+                  <span class="hl f" id="h-f">bis 6 Wochen nach Abruf</span>. Bewehrung wird
+                  gesondert vergütet. Fabrikat: <span class="hl o" id="h-o">……………</span>
+                </p>
+                <div class="pc-act">
+                  <span class="mk" id="mk"><span id="mk-t">⚑ Markieren</span><span>▾</span></span>
+                  <span class="cm" id="cm"
+                    >✎ <span id="cm-t"></span><span class="caret"></span
+                  ></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="ov pin" id="pin">⚠ V7 · Offene Textergänzung</div>
+            <div class="ov cur" id="cur"></div>
+          </div>
+        </div>
+
+        <div class="steps" id="steps">
+          <button type="button" class="step" data-i="0">
+            <span class="no">1</span
+            ><span class="tt">Im Browser gelesen<small>Nichts verlässt den Rechner</small></span
+            ><span class="bar-p"></span>
+          </button>
+          <button type="button" class="step" data-i="1">
+            <span class="no">2</span
+            ><span class="tt">Graph und Tabelle<small>Eine Auswahl, beide Ansichten</small></span
+            ><span class="bar-p"></span>
+          </button>
+          <button type="button" class="step" data-i="2">
+            <span class="no">3</span
+            ><span class="tt"
+              >Hervorheben · Filtern · Prüfen<small>VOB-Hinweise, Marker, Kommentare</small></span
+            ><span class="bar-p"></span>
+          </button>
+          <button type="button" class="step" data-i="3">
+            <span class="no">4</span
+            ><span class="tt">Matrix<small>Positionen nach eigenen Kriterien</small></span
+            ><span class="bar-p"></span>
+          </button>
+        </div>
+      </section>
+
+      <div class="cta">
+        <div class="cta-row">
+          <a class="cta-btn" href="doc/"
+            >Mit eigenen Daten ausprobieren <span aria-hidden="true">→</span></a
+          >
+          <a class="cta-btn sec" href="doc/?demo=muster">Demo starten</a>
+        </div>
+        <span class="cta-safe"
+          ><i aria-hidden="true">●</i> Keine Daten verlassen den Browser · kein Server · kein Upload
+          · kein Konto</span
+        >
+      </div>
+
+      <section class="feat" aria-labelledby="f-h">
+        <h2 id="f-h">Funktionsumfang</h2>
+        <ul class="f-list">
+          <li>
+            <svg viewBox="0 0 64 48" aria-hidden="true">
+              <circle class="fx-g" cx="22" cy="24" r="15" />
+              <circle class="fx-g" cx="46" cy="18" r="10" />
+              <circle class="fx-d1" cx="17" cy="20" r="3.5" />
+              <circle class="fx-d1" cx="25" cy="28" r="3" />
+              <circle class="fx-d1" cx="19" cy="30" r="2.5" />
+              <circle class="fx-a" cx="27" cy="19" r="3.5" />
+              <circle class="fx-d2" cx="44" cy="16" r="3" />
+              <circle class="fx-d2" cx="49" cy="21" r="2.5" />
+            </svg>
+            <span
+              ><b>Interaktiver Graph</b
+              ><small>Abschnitte als Inseln, Klick öffnet die Position</small></span
+            >
+          </li>
+          <li>
+            <svg viewBox="0 0 64 48" aria-hidden="true">
+              <rect class="fx-p" x="6" y="8" width="52" height="32" rx="5" />
+              <line class="fx-l" x1="6" y1="16" x2="58" y2="16" />
+              <rect class="fx-sel" x="6" y="23" width="52" height="7" />
+              <line class="fx-t" x1="11" y1="20" x2="40" y2="20" />
+              <line class="fx-ta" x1="11" y1="26.5" x2="44" y2="26.5" />
+              <line class="fx-t" x1="11" y1="34" x2="36" y2="34" />
+            </svg>
+            <span><b>Tabelle daneben</b><small>Graph und Tabelle mit einer Auswahl</small></span>
+          </li>
+          <li>
+            <svg viewBox="0 0 64 48" aria-hidden="true">
+              <line class="fx-t" x1="8" y1="14" x2="56" y2="14" />
+              <rect class="fx-hn" x="8" y="20" width="20" height="7" rx="2" />
+              <line class="fx-t" x1="32" y1="23.5" x2="56" y2="23.5" />
+              <line class="fx-t" x1="8" y1="33" x2="30" y2="33" />
+              <rect class="fx-hf" x="34" y="29.5" width="22" height="7" rx="2" />
+            </svg>
+            <span
+              ><b>Texterkennung</b
+              ><small>Normen, Maße, Fristen und offene Stellen im Langtext</small></span
+            >
+          </li>
+          <li>
+            <svg viewBox="0 0 64 48" aria-hidden="true">
+              <rect class="fx-chip" x="8" y="6" width="26" height="9" rx="4.5" />
+              <circle class="fx-dim" cx="14" cy="32" r="3" />
+              <circle class="fx-d1" cx="26" cy="28" r="3.5" />
+              <circle class="fx-dim" cx="36" cy="36" r="2.5" />
+              <circle class="fx-d1" cx="46" cy="27" r="3" />
+              <circle class="fx-w" cx="46" cy="27" r="6.5" />
+            </svg>
+            <span
+              ><b>Filter und VOB-Hinweise</b
+              ><small>Nach Abschnitt, Einheit und Menge; Hinweise mit Fundstelle</small></span
+            >
+          </li>
+          <li>
+            <svg viewBox="0 0 64 48" aria-hidden="true">
+              <rect class="fx-mk" x="8" y="9" width="22" height="10" rx="5" />
+              <line class="fx-t" x1="8" y1="27" x2="54" y2="27" />
+              <line class="fx-ta" x1="8" y1="35" x2="40" y2="35" />
+            </svg>
+            <span
+              ><b>Notizen</b
+              ><small>Marker, Kommentare und Textmarkierungen je Position</small></span
+            >
+          </li>
+          <li>
+            <svg viewBox="0 0 64 48" aria-hidden="true">
+              <rect class="fx-p" x="8" y="5" width="28" height="38" rx="3" />
+              <line class="fx-t" x1="13" y1="13" x2="31" y2="13" />
+              <rect class="fx-hf" x="12" y="18" width="20" height="6" rx="1.5" />
+              <line class="fx-t" x1="13" y1="30" x2="29" y2="30" />
+              <line class="fx-link" x1="32" y1="21" x2="50" y2="28" />
+              <circle class="fx-a" cx="52" cy="29" r="4" />
+            </svg>
+            <span
+              ><b>PDF-Dokumente <em>Neu</em></b
+              ><small
+                >Baubeschreibung daneben lesen, anstreichen, mit Positionen verknüpfen</small
+              ></span
+            >
+          </li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <span>Impressum folgt</span><span aria-hidden="true">·</span><span>Datenschutz folgt</span>
+    </footer>
+
+    <script type="module" src="/src/landing/main.ts"></script>
   </body>
 </html>

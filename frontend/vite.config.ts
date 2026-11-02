@@ -24,6 +24,16 @@ const CORE = fileURLToPath(new URL('../packages/core', import.meta.url));
 export default defineConfig({
   resolve: { alias: { '@reference': REFERENCE, '@core': `${CORE}/src/index.ts` } },
   plugins: [react(), thirdPartyLicenses(fileURLToPath(new URL('.', import.meta.url)))],
+  // Zwei Seiten (Entscheidung 0091): Startseite in der Wurzel (index.html, ohne React),
+  // der Viewer unter doc/ (doc/index.html). Beide teilen sich den Ordner assets/.
+  build: {
+    rolldownOptions: {
+      input: {
+        start: fileURLToPath(new URL('./index.html', import.meta.url)),
+        doc: fileURLToPath(new URL('./doc/index.html', import.meta.url)),
+      },
+    },
+  },
   // Bau-Stand für „Fehler melden" (WP-P): in GitHub Actions steht der Commit
   // in GITHUB_SHA, lokal gibt es keinen — dann „dev". Bewusst kein Aufruf von
   // `git`: der Build darf nicht daran scheitern, dass es kein Repo gibt.

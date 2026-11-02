@@ -93,6 +93,10 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
   Web Worker, damit die UI nicht blockiert.
 
 ### Frontend
+- Zwei Seiten in einem Build (`docs/decisions/0091`): Startseite `frontend/index.html` +
+  `frontend/src/landing/` (ohne React, kein Import aus App-Code außer `@conocto/design/fonts`),
+  Viewer `frontend/doc/index.html` → `conocto.app/doc/`. Demo-Start nur über
+  `?demo=<id>` (`takeDemoFromUrl`)
 - Daten kommen aus der lokalen Pipeline (Datei → Parser → Klassifizierung → Baum) –
   **keine** Fixture-Daten, **kein** `localStorage` für Fachdaten
 - `matchPos` ist die einzige Quelle für Filter-/Suchlogik
