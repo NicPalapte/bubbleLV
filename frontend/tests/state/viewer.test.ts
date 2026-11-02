@@ -439,3 +439,34 @@ describe('viewerReducer · Abschnitte der Tabelle zuklappen', () => {
     expect(loadedState(state).view.table.collapsed.size).toBe(0);
   });
 });
+
+describe('Escape und Hervorhebung im Graphen (Issue #191)', () => {
+  const hervorgehoben = viewerReducer(
+    viewerReducer(base, { type: 'graphSpotlight', id: 'section:001' }),
+    { type: 'selectPosition', nodeId: 'section:001', positionId: 'position:001.0010' },
+  );
+
+  it('nimmt erst die Auswahl zurück, dann die Hervorhebung', () => {
+    const eins = viewerReducer(hervorgehoben, { type: 'back' });
+    expect(eins.selection.positionId).toBeNull();
+    expect(eins.selection.nodeId).toBe('section:001');
+    expect(eins.view.graph.spotlight).toBe('section:001');
+
+    const zwei = viewerReducer(eins, { type: 'back' });
+    expect(zwei.selection.nodeId).toBeNull();
+    expect(zwei.view.graph.spotlight).toBe('section:001');
+
+    const drei = viewerReducer(zwei, { type: 'back' });
+    expect(drei.view.graph.spotlight).toBeNull();
+    expect(viewerReducer(drei, { type: 'back' })).toBe(drei);
+  });
+
+  it('lässt die Hervorhebung beim Darüberfahren stehen', () => {
+    const ohneAuswahl = viewerReducer(hervorgehoben, { type: 'closeSelection' });
+    const hover = viewerReducer(ohneAuswahl, {
+      type: 'hover',
+      id: ohneAuswahl.selection.hoveredNodeId,
+    });
+    expect(hover.view.graph.spotlight).toBe('section:001');
+  });
+});

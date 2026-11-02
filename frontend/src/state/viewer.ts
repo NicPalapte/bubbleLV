@@ -356,7 +356,10 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
         : state.view;
       return { ...state, selection, view };
     }
-    case 'hover':
+    case 'hover': {
+      const selection = selectionReducer(state.selection, action);
+      return selection === state.selection ? state : { ...state, selection };
+    }
     case 'back': {
       const selection = selectionReducer(state.selection, action);
       if (selection !== state.selection) return { ...state, selection };
