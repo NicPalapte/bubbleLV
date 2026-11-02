@@ -32,9 +32,11 @@ import {
   type Annotations,
 } from '../annotations';
 
-// Name aus der Zeit vor Conocto — bleibt, sonst wäre die zuletzt geöffnete
-// Datei samt Notizen nach dem Update weg (Entscheidung 0069).
-const DB_NAME = 'bubble';
+const DB_NAME = 'conocto';
+// Speicher aus der Zeit vor Entscheidung 0091. Wird nicht mehr gelesen, aber einmal gelöscht,
+// damit keine Fachdaten zurückbleiben, die „Löschen" auf der Startseite nicht mehr erreicht.
+const LEGACY_DB_NAME = 'bubble';
+let legacyRemoved = false;
 const DB_VERSION = 1;
 const STORE = 'letztesLv';
 // Angaben und Bytes unter getrennten Schlüsseln: die Startseite liest nur die
@@ -49,7 +51,7 @@ const KEY_PAINT_NAMES = 'farbnamen';
 const KEY_SURVEY = 'umfrage';
 /** Letzte Anordnung im Splitscreen (Entscheidung 0073), unabhängig von der Datei. */
 const KEY_WORKSPACE = 'anordnung';
-/** Eigene Regeln `bubble-rule-v1` (Entscheidung 0081), unabhängig von der Datei. */
+/** Eigene Regeln `conocto-rule-v1` (Entscheidung 0081), unabhängig von der Datei. */
 const KEY_RULES = 'regeln';
 /** Kennungen abgeschalteter Grundstock-Regeln (Entscheidung 0089), unabhängig von der Datei. */
 const KEY_GRUNDSTOCK_OFF = 'grundstock-aus';
@@ -112,8 +114,19 @@ function transactionDone(tx: IDBTransaction): Promise<void> {
   });
 }
 
+function removeLegacyDb(): void {
+  if (legacyRemoved) return;
+  legacyRemoved = true;
+  try {
+    indexedDB.deleteDatabase(LEGACY_DB_NAME);
+  } catch {
+    // Ohne Löschen weiter: der alte Speicher wird ohnehin nicht gelesen.
+  }
+}
+
 async function openDb(): Promise<IDBDatabase | null> {
   if (typeof indexedDB === 'undefined') return null;
+  removeLegacyDb();
   try {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
     request.onupgradeneeded = () => {

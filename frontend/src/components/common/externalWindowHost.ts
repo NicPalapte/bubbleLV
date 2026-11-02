@@ -8,7 +8,7 @@ export interface ExternalHost {
 }
 
 /** Markiert die übernommenen Stile im zweiten Fenster. */
-const COPY_ATTR = 'data-bubble-kopie';
+const COPY_ATTR = 'data-conocto-kopie';
 
 /** Je Zieldokument: Quellknoten im Hauptfenster → seine Kopie. */
 const copiesByDocument = new WeakMap<Document, Map<Element, HTMLElement>>();

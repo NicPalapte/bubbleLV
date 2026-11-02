@@ -54,7 +54,6 @@ labels are mono code + Space Grotesk name + mono count. Connectors are
 `0.8px --line` dashed `2 3`. Never add a legend the labels already provide.
 
 ## Persistence
-Everything the user arranges is stored in localStorage under `bubble-*` keys
-(`bubble-leftW`, `bubble-rightW`, `bubble-treeCollapsed`, `bubble-sizeMode`,
-`bubble-hideMode`, `bubble-demo`, `bubble-assignees`, `bubble-tasks`, `bubble-notes`).
-Follow that prefix for anything new.
+The old prototypes in `design/claude-design/` keep layout in localStorage under `bubble-*`
+keys. The app does not copy that: UI state lives in React state; the few saved settings go
+only through IndexedDB `conocto` (`frontend/src/lib/persist/lastLv.ts`, decision 0091).

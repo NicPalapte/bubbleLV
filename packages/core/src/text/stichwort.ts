@@ -4,7 +4,7 @@
 //   ` `   beliebiger Leerraum, auch Zeilenumbruch
 // Alles andere gilt wörtlich, ohne Rücksicht auf Groß-/Kleinschreibung. Ein
 // Stichwort trifft nur ganze Wörter: „beton" trifft nicht „Betonstahl".
-// Im Kern, weil Materialtabellen, gelernte Begriffe und Regeln (bubble-rule-v1) sie teilen.
+// Im Kern, weil Materialtabellen, gelernte Begriffe und Regeln (conocto-rule-v1) sie teilen.
 
 /** Buchstabe oder Ziffer, auch Umlaute — die Wortgrenze der Stichworte. */
 export const WORD_CHAR = '[\\p{L}\\p{N}]';

@@ -15,7 +15,7 @@
 // und schickt nichts nach draußen; die Fachdaten-Regel bleibt unberührt
 // (docs/decisions/0009-demo-lv.md).
 
-import angebotUrl from '../../assets/demo/bubble-demo-angebot.x84?url';
+import angebotUrl from '../../assets/demo/conocto-demo-angebot.x84?url';
 import musterUrl from '../../assets/demo/bvbs-gaeb-musterdatei.x83?url';
 import { loadLvFromBytes, LVLoadError, type LoadOptions } from './loadLv';
 import type { LoadedLV } from './runPipeline';
@@ -39,7 +39,7 @@ export const DEMO_LVS: readonly DemoLv[] = [
     label: 'Demo mit Preisen',
     title: 'Conocto Demo-LV 3.3 · Angebot mit Preisen',
     hint: 'Angebot (x84) mit Einheitspreisen — 78 Positionen, rund 1,6 Mio. €.',
-    fileName: 'bubble-demo-angebot.x84',
+    fileName: 'conocto-demo-angebot.x84',
     url: angebotUrl,
   },
   {

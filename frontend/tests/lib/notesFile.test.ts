@@ -56,7 +56,7 @@ function gesichert(): string {
 describe('notesFileText und parseNotesFile', () => {
   it('schreibt lesbares JSON und liest es verlustfrei zurück', () => {
     const text = gesichert();
-    expect(text).toContain('"art": "bubble-notizen"');
+    expect(text).toContain('"art": "conocto-notizen"');
     expect(text).toContain('"kurztext": "Kurztext 01.0010"');
     const file = parseNotesFile(text);
     expect(file.datei).toBe('rohbau.x83');
@@ -72,7 +72,7 @@ describe('notesFileText und parseNotesFile', () => {
   it('liest Notiz-Dateien mit drei Markern (Version 1) und deutet sie um', () => {
     const alt = parseNotesFile(
       JSON.stringify({
-        art: 'bubble-notizen',
+        art: 'conocto-notizen',
         version: 1,
         positionen: [
           {
@@ -116,7 +116,7 @@ describe('notesFileText und parseNotesFile', () => {
     ]);
     const v2 = parseNotesFile(
       JSON.stringify({
-        art: 'bubble-notizen',
+        art: 'conocto-notizen',
         version: 2,
         positionen: [{ hash: 'h1', wichtig: true, verlauf: [] }],
       }),
@@ -134,7 +134,7 @@ describe('notesFileText und parseNotesFile', () => {
   it('meldet fremde, kaputte und zu neue Dateien verständlich', () => {
     expect(() => parseNotesFile('kein json')).toThrow(NotesFileError);
     expect(() => parseNotesFile('{"art":"etwas"}')).toThrow('keine Notiz-Datei');
-    expect(() => parseNotesFile('{"art":"bubble-notizen","version":5,"positionen":[]}')).toThrow(
+    expect(() => parseNotesFile('{"art":"conocto-notizen","version":5,"positionen":[]}')).toThrow(
       'neueren Conocto-Version',
     );
   });
@@ -188,7 +188,7 @@ describe('matchNotes: jede Position nur einmal', () => {
   function datei(...eintraege: Array<[string, string, string]>) {
     return parseNotesFile(
       JSON.stringify({
-        art: 'bubble-notizen',
+        art: 'conocto-notizen',
         version: 1,
         positionen: eintraege.map(([hash, text, oz]) => ({ hash, text, oz, marker: 'wichtig' })),
       }),

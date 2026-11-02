@@ -1,6 +1,6 @@
 // Gelernte Begriffe im Langtext (Entscheidung 0053, seit 0088 als Regeln).
 //
-// Ein gelernter Begriff ist eine eigene Regel `bubble-rule-v1`: ein Baustein „Begriff“,
+// Ein gelernter Begriff ist eine eigene Regel `conocto-rule-v1`: ein Baustein „Begriff“,
 // Suchort Langtext, Wirkung „hervorheben“ (Material, Maße, Wichtig oder „Nicht
 // hervorheben“). Angewendet wird er wie jede Regel (`applyRules` in lib/rules/rules.ts).
 // Begriffe, die ältere Versionen getrennt im Browser gespeichert haben, zieht

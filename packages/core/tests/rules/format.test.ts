@@ -29,7 +29,7 @@ const base = (condition: Partial<RuleCondition>): RuleCondition => ({
 });
 
 const rule = (overrides: Record<string, unknown>): unknown => ({
-  schema: 'bubble-rule-v1',
+  schema: 'conocto-rule-v1',
   id: 'test-regel',
   version: 1,
   name: 'Test',

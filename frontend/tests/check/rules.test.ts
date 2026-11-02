@@ -4,7 +4,7 @@
 // Zusätzlich die Zusagen aus docs/domain/vob-pruefungen.md: fehlende
 // Referenzdaten machen eine Regel inaktiv statt fehlerhaft, und ein nicht
 // bestätigter Norm-Verweis ist als solcher markiert. Seit Entscheidung 0085 sind die
-// Prüfregeln Regeln im Format `bubble-rule-v1` (docs/domain/reference/regeln.json).
+// Prüfregeln Regeln im Format `conocto-rule-v1` (docs/domain/reference/regeln.json).
 
 import { describe, expect, it } from 'vitest';
 import { CHECK_RULES, checkBewehrung, codeOf, runChecks } from '../../src/lib/check';

@@ -71,7 +71,7 @@ describe('loadDemoLv · Angebot mit Preisen', () => {
 
     const lv = await loadDemoLv(demo);
 
-    expect(lv.fileName).toBe('bubble-demo-angebot.x84');
+    expect(lv.fileName).toBe('conocto-demo-angebot.x84');
     expect(lv.tree.positionCount).toBeGreaterThan(70);
     expect(lv.summary.unitPrice).not.toBeNull();
     // Keine Zertifizierungs-Extremwerte mehr: die Summe bleibt in der

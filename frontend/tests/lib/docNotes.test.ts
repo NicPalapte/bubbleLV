@@ -176,7 +176,7 @@ describe('Notiz-Datei Version 4', () => {
 
   it('liest Version 3 weiter, ohne Dokumentstellen', () => {
     const file = parseNotesFile(
-      JSON.stringify({ art: 'bubble-notizen', version: 3, positionen: [] }),
+      JSON.stringify({ art: 'conocto-notizen', version: 3, positionen: [] }),
     );
     expect(file.dokumente).toBe(EMPTY_DOC_NOTES);
   });

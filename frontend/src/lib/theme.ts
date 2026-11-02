@@ -7,7 +7,7 @@
 
 export type Theme = 'light' | 'dark';
 
-const CHANGE_EVENT = 'bubble:theme';
+const CHANGE_EVENT = 'conocto:theme';
 const DARK_QUERY = '(prefers-color-scheme: dark)';
 
 function systemTheme(): Theme {
