@@ -1,141 +1,11 @@
 /* Startseite conocto.app (Entscheidung 0091). Eigenes Stylesheet ohne Tailwind und ohne
-   App-CSS: die Seite lädt nur Schriften, dieses CSS und die Animation. Tokens nach
-   Conocto-CI (Ziegelrot, Weiß/Schwarz, Hanken Grotesk + Schibsted Grotesk). */
+   App-CSS: die Seite lädt nur Schriften, Design-Tokens, dieses CSS und die Animation. */
+/* Farben, Radien, Schatten und Schriften kommen aus @conocto/design/tokens.css (hell und
+   dunkel). Hier nur Kurznamen aus dem Mockup als Alias darauf. */
 :root {
-  --paper: #ffffff;
-  --panel: #f5f5f7;
-  --surface: #ffffff;
-  --sunken: #f5f5f7;
-  --glass: rgba(255, 255, 255, 0.86);
-  --glass-strong: rgba(255, 255, 255, 0.94);
-  --grid: #f2f2f7;
-  --grid2: #e5e5ea;
-  --line: #e5e5ea;
-  --line2: #d1d1d6;
-  --ink: #1d1d1f;
-  --dim: #6e6e73;
-  --mute: #6e6e73;
-  --blue: #c8362b;
-  --blueS: #fdeceb;
-  --blueD: #a8281f;
-  --cyan: #6e6e73;
-  --cyanS: #f2f2f7;
-  --amber: #b86a00;
-  --amberS: #fff4e5;
-  --amberD: #9a5300;
-  --greenD: #1a7f3c;
-  --greenS: #e9f7ee;
-  --red: #c8362b;
-  --redD: #a8281f;
-  --redS: #fdeceb;
-  --violetD: #5e3bb0;
-  --violetS: #f1ecfb;
-  --dot-1: #c9d3dd;
-  --dot-2: #c4d9d3;
-  --dot-6: #e3d3bf;
-  --dot-line: rgba(0, 0, 0, 0.14);
-  --grp-fill: #f7f7f9;
-  --heat-1: #f5f5f7;
-  --heat-2: #eceef2;
-  --heat-3: #e0e4ea;
-  --heat-4: #d2d8e0;
-  --heat-5: #c2cad5;
-  --r-sm: 9px;
-  --r-md: 12px;
-  --r-lg: 20px;
-  --r-pill: 999px;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 30px rgba(0, 0, 0, 0.08);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
-  --mono: 'Schibsted Grotesk', system-ui, sans-serif;
-  --sans: 'Hanken Grotesk', system-ui, sans-serif;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --paper: #000000;
-    --panel: #1c1c1e;
-    --surface: #1c1c1e;
-    --sunken: #2c2c2e;
-    --glass: rgba(28, 28, 30, 0.82);
-    --glass-strong: rgba(28, 28, 30, 0.94);
-    --grid: #1c1c1e;
-    --grid2: #2c2c2e;
-    --line: #2c2c2e;
-    --line2: #38383a;
-    --ink: #f5f5f7;
-    --dim: #98989d;
-    --mute: #98989d;
-    --blue: #e5554a;
-    --blueS: rgba(229, 85, 74, 0.16);
-    --blueD: #ff8a80;
-    --cyan: #98989d;
-    --cyanS: #2c2c2e;
-    --amber: #ffb340;
-    --amberS: rgba(255, 179, 64, 0.16);
-    --amberD: #ffc66b;
-    --greenD: #30d158;
-    --greenS: rgba(48, 209, 88, 0.14);
-    --red: #e5554a;
-    --redD: #ff8a80;
-    --redS: rgba(229, 85, 74, 0.16);
-    --violetD: #c4a8ff;
-    --violetS: rgba(150, 110, 255, 0.18);
-    --dot-1: #8e9aa6;
-    --dot-2: #88a69c;
-    --dot-6: #b59e86;
-    --dot-line: rgba(255, 255, 255, 0.2);
-    --grp-fill: rgba(255, 255, 255, 0.035);
-    --heat-1: #141416;
-    --heat-2: #1c1d20;
-    --heat-3: #25272b;
-    --heat-4: #2f3238;
-    --heat-5: #3a3e46;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 30px rgba(0, 0, 0, 0.5);
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
-    color-scheme: dark;
-  }
-}
-:root[data-theme='dark'] {
-  --paper: #000000;
-  --panel: #1c1c1e;
-  --surface: #1c1c1e;
-  --sunken: #2c2c2e;
-  --glass: rgba(28, 28, 30, 0.82);
-  --glass-strong: rgba(28, 28, 30, 0.94);
-  --grid: #1c1c1e;
-  --grid2: #2c2c2e;
-  --line: #2c2c2e;
-  --line2: #38383a;
-  --ink: #f5f5f7;
-  --dim: #98989d;
-  --mute: #98989d;
-  --blue: #e5554a;
-  --blueS: rgba(229, 85, 74, 0.16);
-  --blueD: #ff8a80;
-  --cyan: #98989d;
-  --cyanS: #2c2c2e;
-  --amber: #ffb340;
-  --amberS: rgba(255, 179, 64, 0.16);
-  --amberD: #ffc66b;
-  --greenD: #30d158;
-  --greenS: rgba(48, 209, 88, 0.14);
-  --red: #e5554a;
-  --redD: #ff8a80;
-  --redS: rgba(229, 85, 74, 0.16);
-  --violetD: #c4a8ff;
-  --violetS: rgba(150, 110, 255, 0.18);
-  --dot-1: #8e9aa6;
-  --dot-2: #88a69c;
-  --dot-6: #b59e86;
-  --dot-line: rgba(255, 255, 255, 0.2);
-  --grp-fill: rgba(255, 255, 255, 0.035);
-  --heat-1: #141416;
-  --heat-2: #1c1d20;
-  --heat-3: #25272b;
-  --heat-4: #2f3238;
-  --heat-5: #3a3e46;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 30px rgba(0, 0, 0, 0.5);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
-  color-scheme: dark;
+  --blue: var(--accent);
+  --blueS: var(--accent-soft);
+  --blueD: var(--accent-ink);
 }
 
 * {
@@ -196,14 +66,14 @@ a:focus-visible {
   color: var(--blue);
 }
 .logo span {
-  font-family: var(--sans);
+  font-family: var(--display);
   font-weight: 600;
   font-size: 40px;
   letter-spacing: -0.035em;
 }
 .start-tag {
   margin: 0;
-  font-family: var(--sans);
+  font-family: var(--display);
   font-size: 17px;
   color: var(--dim);
   text-wrap: balance;
@@ -270,10 +140,10 @@ a:focus-visible {
   padding: 0 36px;
   border: 0;
   border-radius: var(--r-pill);
-  background: var(--blue);
+  background: var(--accent-fill);
   color: #fff;
   cursor: pointer;
-  font-family: var(--sans);
+  font-family: var(--display);
   font-size: 20px;
   font-weight: 600;
   letter-spacing: -0.2px;
@@ -283,7 +153,7 @@ a:focus-visible {
   transition: background 0.12s;
 }
 .cta-btn:hover {
-  background: var(--blueD);
+  background: var(--accent-fill-hover);
 }
 .cta-row {
   display: flex;
@@ -457,7 +327,7 @@ a:focus-visible {
   fill: var(--ink);
 }
 .mx-row {
-  font-family: var(--sans);
+  font-family: var(--display);
   font-size: 10.5px;
   font-weight: 600;
   fill: var(--ink);
@@ -492,7 +362,7 @@ a:focus-visible {
   display: flex;
   align-items: center;
   gap: calc(5 * var(--u));
-  font-family: var(--sans);
+  font-family: var(--display);
   font-weight: 700;
   font-size: calc(12 * var(--u));
 }
@@ -737,7 +607,7 @@ a:focus-visible {
   font-size: calc(7.5 * var(--u));
   color: var(--dim);
   background: var(--panel);
-  font-family: var(--sans);
+  font-family: var(--display);
   font-weight: 600;
 }
 .tbl tr.sel td {
@@ -779,7 +649,7 @@ a:focus-visible {
   background: var(--dot-1);
 }
 .pc-t {
-  font-family: var(--sans);
+  font-family: var(--display);
   font-weight: 600;
   font-size: calc(13.5 * var(--u));
   letter-spacing: -0.1px;
@@ -797,7 +667,7 @@ a:focus-visible {
   color: var(--mute);
 }
 .pc-m b {
-  font-family: var(--sans);
+  font-family: var(--display);
   font-weight: 600;
   font-size: calc(10.5 * var(--u));
 }
@@ -843,7 +713,7 @@ a:focus-visible {
 }
 .pc-lt {
   margin: 0;
-  font-family: var(--sans);
+  font-family: var(--display);
   font-size: calc(9.6 * var(--u));
   line-height: 1.55;
 }
@@ -1085,7 +955,7 @@ a:focus-visible {
 .feat h2 {
   margin: 0;
   text-align: center;
-  font-family: var(--sans);
+  font-family: var(--display);
   font-size: 26px;
   font-weight: 600;
   letter-spacing: -0.02em;
@@ -1128,7 +998,7 @@ a:focus-visible {
   gap: 2px;
 }
 .f-list b {
-  font-family: var(--sans);
+  font-family: var(--display);
   font-size: 15px;
   font-weight: 600;
   display: flex;

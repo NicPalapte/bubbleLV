@@ -8,6 +8,7 @@
 // reduzieren" ändern nur t bzw. die Uhr, nie den Ablauf selbst.
 
 import '@conocto/design/fonts';
+import '@conocto/design/tokens.css';
 import './landing.css';
 
 const NS = 'http://www.w3.org/2000/svg';
