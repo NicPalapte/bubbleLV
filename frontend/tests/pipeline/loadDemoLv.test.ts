@@ -6,7 +6,12 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DEMO_LVS, demoLvById, loadDemoLv } from '../../src/lib/pipeline/loadDemoLv';
+import {
+  DEMO_LVS,
+  demoLvById,
+  loadDemoLv,
+  takeDemoFromUrl,
+} from '../../src/lib/pipeline/loadDemoLv';
 import { LVLoadError } from '../../src/lib/pipeline/loadLv';
 
 function demoBytes(fileName: string): ArrayBuffer {
@@ -91,5 +96,34 @@ describe('DEMO_LVS', () => {
       expect(demo.label).not.toBe('');
       expect(demo.hint).not.toBe('');
     }
+  });
+});
+
+// „Demo starten" auf der Startseite verlinkt `doc/?demo=muster` (Entscheidung 0092).
+describe('takeDemoFromUrl', () => {
+  afterEach(() => {
+    window.history.replaceState(null, '', '/');
+  });
+
+  it('liest die Demo und nimmt den Parameter aus der Adresse', () => {
+    window.history.replaceState(null, '', '/doc/?demo=muster#v=table');
+    expect(takeDemoFromUrl()?.id).toBe('muster');
+    expect(window.location.pathname).toBe('/doc/');
+    expect(window.location.search).toBe('');
+    expect(window.location.hash).toBe('#v=table');
+    // Ein zweiter Aufruf (StrictMode, Neuladen) öffnet nichts mehr.
+    expect(takeDemoFromUrl()).toBeUndefined();
+  });
+
+  it('entfernt unbekannte Werte, ohne etwas zu öffnen', () => {
+    window.history.replaceState(null, '', '/doc/?demo=gibtsnicht&x=1');
+    expect(takeDemoFromUrl()).toBeUndefined();
+    expect(window.location.search).toBe('?x=1');
+  });
+
+  it('ohne Parameter bleibt die Adresse unverändert', () => {
+    window.history.replaceState(null, '', '/doc/?x=1');
+    expect(takeDemoFromUrl()).toBeUndefined();
+    expect(window.location.search).toBe('?x=1');
   });
 });

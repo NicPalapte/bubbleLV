@@ -93,6 +93,10 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
   Web Worker, damit die UI nicht blockiert.
 
 ### Frontend
+- Zwei Seiten in einem Build (`docs/decisions/0092`): Startseite `frontend/index.html` +
+  `frontend/src/landing/` (ohne React, kein Import aus App-Code außer `@conocto/design/fonts`),
+  Viewer `frontend/doc/index.html` → `conocto.app/doc/`. Demo-Start nur über
+  `?demo=<id>` (`takeDemoFromUrl`)
 - Daten kommen aus der lokalen Pipeline (Datei → Parser → Klassifizierung → Baum) –
   **keine** Fixture-Daten, **kein** `localStorage` für Fachdaten
 - `matchPos` ist die einzige Quelle für Filter-/Suchlogik
@@ -165,8 +169,9 @@ Satzteil, bei Aufzählung/„je“ mehrere Positionen), Übernahme erst per Klic
 kein inhaltliches Matching (`lib/docs/docSuggest.ts`, `docs/decisions/0080`; an/aus und Werte nur
 über Grundstock-Regeln `pdf-oz`/`pdf-menge`, `lib/docs/suggestRules.ts`, 0087);
 Suchleiste nur fürs LV, eigenes Suchfeld im Dokument nur fürs PDF, filtert das LV nie
-(`docs/decisions/0084`). Matrix und
-Ähnlichkeit sind entfernt (`docs/decisions/0031-drei-ansichten.md`); keine
+(`docs/decisions/0084`). Eigene Matrix-Ansicht und
+Ähnlichkeit sind entfernt (`docs/decisions/0031-drei-ansichten.md`); die Matrix lebt als
+Graph-Gliederung weiter (`docs/decisions/0035`, `docs/decisions/0059`); keine
 Befehlspalette (`docs/decisions/0038-keine-befehlspalette.md`).
 
 **Out of Scope** (ablehnen / vertrösten): Server jeglicher Art, Persistenz über die

@@ -2,7 +2,7 @@
 // Farben/Fonts spiegeln die Design-Tokens wider; die CSS-Variablen selbst stehen
 // in src/index.css (docs/decisions/0069-conocto-look.md).
 export default {
-  content: ['./index.html', './src/**/*.{ts,tsx}'],
+  content: ['./doc/index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
       colors: {

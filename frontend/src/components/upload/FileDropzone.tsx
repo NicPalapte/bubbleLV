@@ -7,7 +7,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ConoctoLogo } from '@conocto/design';
-import { DEMO_LVS, loadDemoLv, type DemoLv } from '../../lib/pipeline/loadDemoLv';
+import { DEMO_LVS, loadDemoLv, takeDemoFromUrl, type DemoLv } from '../../lib/pipeline/loadDemoLv';
 import { GAEB_ENDUNGEN } from '@core';
 import { formatPositions, formatWhen } from '../../lib/format';
 import {
@@ -108,6 +108,17 @@ export function FileDropzone() {
     },
     [dispatch],
   );
+
+  // „Demo starten" auf der Startseite verlinkt `doc/?demo=muster`: die Demo öffnet
+  // direkt. Der Parameter verschwindet beim ersten Lesen — im StrictMode-Doppellauf
+  // findet der zweite Durchgang deshalb nichts mehr.
+  useEffect(() => {
+    const demo = takeDemoFromUrl();
+    if (demo === undefined) return;
+    void run(async (onNotice) => ({ lv: await loadDemoLv(demo, { onNotice }) })).then((lv) => {
+      if (lv !== null) countEvent('demo-geoeffnet');
+    });
+  }, [run]);
 
   const handleFiles = useCallback(
     async (files: readonly File[]): Promise<void> => {
