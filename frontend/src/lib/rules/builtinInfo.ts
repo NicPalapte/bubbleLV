@@ -31,7 +31,7 @@ const INFO: Readonly<Record<string, BuiltinInfo>> = {
       },
     },
   },
-  'einheit-schreibweise': { name: 'Einheit uneinheitlich geschrieben', params: {} },
+  'einheit-schreibweise': { name: 'Einheit uneinheitlich', params: {} },
   bewehrung: {
     name: 'Beton ohne Angabe zur Bewehrung',
     params: {
@@ -43,7 +43,7 @@ const INFO: Readonly<Record<string, BuiltinInfo>> = {
     },
   },
   nebenleistung: { name: 'Ausgeschriebene Nebenleistung', params: {} },
-  'besondere-leistung': { name: 'Besondere Leistung ohne eigene Position', params: {} },
+  'besondere-leistung': { name: 'Besondere Leistung ohne Position', params: {} },
   homogenbereiche: { name: 'Erdarbeiten ohne Homogenbereiche', params: {} },
   'oz-im-pdf': {
     name: 'OZ im Dokument',

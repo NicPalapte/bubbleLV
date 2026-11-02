@@ -470,3 +470,11 @@ describe('Escape und Hervorhebung im Graphen (Issue #191)', () => {
     expect(hover.view.graph.spotlight).toBe('section:001');
   });
 });
+
+it('lässt die Hervorhebung in der Matrix stehen, wo sie nicht zu sehen ist', () => {
+  const matrix = viewerReducer(viewerReducer(base, { type: 'graphSpotlight', id: 'section:001' }), {
+    type: 'graphLayout',
+    value: 'matrix',
+  });
+  expect(viewerReducer(matrix, { type: 'back' })).toBe(matrix);
+});
