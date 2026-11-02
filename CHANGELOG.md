@@ -9,6 +9,17 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.47.0 — 02.11.2026 · Ein Regelformat, Schritt 5b: Wortlisten
+
+- **Neuer Reiter „Wortlisten“** in den Admin-Werkzeugen. Grundstock-Wörter lassen sich per
+  Klick abschalten, eigene Wörter kommen dazu.
+- **Eigene Listen** anlegen, umbenennen, löschen. Sie stehen im Regeleditor beim Baustein
+  „Wortliste“ zur Auswahl.
+- **Alle Regeln suchen mit den eigenen Wörtern:** Langtext, Treffer-Vorschau, Verbindungen
+  und „Prüfung“ (z. B. „Risiko auf den Auftragnehmer übertragen“).
+- **„Wortlisten exportieren“** gibt eine `wortlisten.csv` zum Übernehmen in den Grundstock.
+- Gespeichert nur in diesem Browser, wie die eigenen Regeln.
+
 ## 0.46.0 — 02.11.2026 · Ein Regelformat, Schritt 5a: Regeleditor
 
 - **Jede Regel hat einen Schalter an/aus**, auch Grundstock-Regeln. Abgeschaltete

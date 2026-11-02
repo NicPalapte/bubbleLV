@@ -15,10 +15,11 @@
 // hat. Sie hängen an keiner Datei: weder eine neue Datei noch „Letzte Datei
 // löschen" nimmt sie mit. Ebenso die Farbnamen (0063), der Merker der
 // Kurzumfrage (0071), die letzte Anordnung im Splitscreen (0073) und die eigenen
-// Regeln aus dem Admin-Werkzeug (0081).
+// Regeln aus dem Admin-Werkzeug (0081) und die eigenen Wortlisten (0090).
 
 import { toRule, type Rule } from '@core';
 import type { LearnedTerm } from '../highlight/terms';
+import { toWordListEntry, type WordListEntry } from '../rules/wordLists';
 import { NO_PAINT_NAMES, toPaintNames, type PaintNames } from '../paintNames';
 import { toSurveyDone, type SurveyDone } from '../survey';
 import type { StoredWorkspace } from '../workspace/split';
@@ -52,6 +53,8 @@ const KEY_WORKSPACE = 'anordnung';
 const KEY_RULES = 'regeln';
 /** Kennungen abgeschalteter Grundstock-Regeln (Entscheidung 0089), unabhängig von der Datei. */
 const KEY_GRUNDSTOCK_OFF = 'grundstock-aus';
+/** Eigene Wörter und Listen (Entscheidung 0090), unabhängig von der Datei. */
+const KEY_WORD_LISTS = 'wortlisten';
 /** Kennung für Einträge aus v0.14, die noch keine eigene `id` haben. */
 const LEGACY_ID = 'v0.14';
 
@@ -517,6 +520,44 @@ export async function saveGrundstockOff(ids: readonly string[]): Promise<boolean
   try {
     const tx = db.transaction(STORE, 'readwrite');
     tx.objectStore(STORE).put([...ids], KEY_GRUNDSTOCK_OFF);
+    await transactionDone(tx);
+    return true;
+  } catch {
+    return false;
+  } finally {
+    db.close();
+  }
+}
+
+/**
+ * Eigene Wörter, abgeschaltete Grundstock-Wörter und eigene Listen. Leer ohne IndexedDB;
+ * `null`, wenn das Lesen scheitert — dann nicht darüber schreiben.
+ */
+export async function readWordLists(): Promise<WordListEntry[] | null> {
+  if (typeof indexedDB === 'undefined') return [];
+  const db = await openDb();
+  if (db === null) return null;
+  try {
+    const stored: unknown = await requestResult(
+      db.transaction(STORE, 'readonly').objectStore(STORE).get(KEY_WORD_LISTS),
+    );
+    return Array.isArray(stored)
+      ? stored.map(toWordListEntry).filter((entry): entry is WordListEntry => entry !== null)
+      : [];
+  } catch {
+    return null;
+  } finally {
+    db.close();
+  }
+}
+
+/** Ersetzt die eigenen Wortlisten. Gibt zurück, ob es geklappt hat. */
+export async function saveWordLists(entries: readonly WordListEntry[]): Promise<boolean> {
+  const db = await openDb();
+  if (db === null) return false;
+  try {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).put(JSON.parse(JSON.stringify(entries)) as unknown, KEY_WORD_LISTS);
     await transactionDone(tx);
     return true;
   } catch {

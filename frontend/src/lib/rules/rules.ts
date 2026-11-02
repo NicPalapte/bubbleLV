@@ -151,6 +151,7 @@ export function applyRules(
   position: PositionSummary,
   spans: readonly Span[],
   rules: readonly Rule[],
+  context: RuleContext = RULE_CONTEXT,
 ): Span[] {
   const input = ruleTextOf(position);
   const blocked: TextRange[] = [];
@@ -160,7 +161,7 @@ export function applyRules(
     if (!rule.bedingung.wo.includes('langtext')) continue;
     const key = rule.wirkung.hervorheben;
     const condition: RuleCondition = { ...rule.bedingung, wo: ['langtext'] };
-    for (const hit of matchCondition(condition, input, RULE_CONTEXT)) {
+    for (const hit of matchCondition(condition, input, context)) {
       for (const mark of hit.marks) {
         if (mark.end <= mark.start) continue;
         if (key === 'aus') blocked.push(mark);

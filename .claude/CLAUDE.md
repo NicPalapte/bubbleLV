@@ -58,7 +58,8 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
   (`state/survey.tsx`, Schlüssel `umfrage`, Entscheidung 0071) und die letzte Anordnung
   im Splitscreen (`state/ViewerProvider.tsx`, Schlüssel `anordnung`, Entscheidung 0073)
   und die eigenen Regeln `bubble-rule-v1` (`state/admin.tsx`, Schlüssel `regeln`, 0081)
-  und die abgeschalteten Grundstock-Regeln (Schlüssel `grundstock-aus`, 0089).
+  und die abgeschalteten Grundstock-Regeln (Schlüssel `grundstock-aus`, 0089)
+  und die eigenen Wortlisten (Schlüssel `wortlisten`, `lib/rules/wordLists.ts`, 0090).
   Urteile über Verbindungen aus Regeln liegen in den Notizen der Datei (`links`, 0081).
   Kein geparstes LV speichern, keine Demo-LVs, keine zweite Datei, keine PDF-Bytes. Notizen
   nur schreiben, wenn die Projekt-Kennung (`persistIdOf`) noch passt. Fehlt IndexedDB ⇒ still ohne
@@ -152,7 +153,8 @@ Admin-Werkzeug (`bubble-rule-v1`, Auswerter nur in `packages/core/src/rules/`; V
 zwischen Positionen nur als Vorschlag, gilt erst nach Bestätigung, `docs/decisions/0081`;
 ein Format für alle Regelarten, Wortlisten/Einheiten-Gruppen liefert die App, `docs/decisions/0085`;
 jede Regel an/aus, Grundstock nur abschalten oder kopieren, eigene Prüfhinweise,
-`docs/decisions/0089`) · lokaler Export/Druck über das
+`docs/decisions/0089`; Wortlisten: Grundstock-Wörter nur abschalten, eigene Wörter/Listen,
+Regeln suchen nur über `useAdmin().context`, `docs/decisions/0090`) · lokaler Export/Druck über das
 Logo-Menü · Notizen als Datei sichern/laden (`lib/notesFile.ts`, 0061) · freiwillige Kurzumfrage
 zum Produkt (Owner-Wunsch, `docs/decisions/0071-kurzumfrage.md`). · Begleit-PDF im
 Fenster „Dokument“ lesen, anstreichen, Stellen von Hand mit Positionen verknüpfen, keine
