@@ -243,7 +243,11 @@ export function mergeChecks(
   own: CheckResult | null,
 ): CheckResult {
   if (off.size === 0 && (own === null || own.rules.length === 0)) return loaded;
-  const redone = new Map((own?.rules ?? []).map((rule) => [rule.id, rule]));
+  // Auch neu Gerechnetes ohne abgeschaltete Regeln: ein Ergebnis von vor dem Abschalten
+  // gilt bis zur nächsten Rechnung weiter (ViewerProvider, RECHECK_DELAY).
+  const redone = new Map(
+    (own?.rules ?? []).filter((rule) => !off.has(rule.id)).map((rule) => [rule.id, rule]),
+  );
   const rules = loaded.rules
     .filter((rule) => !off.has(rule.id))
     .map((rule) => redone.get(rule.id) ?? rule);
@@ -251,7 +255,7 @@ export function mergeChecks(
   return {
     flags: [
       ...loaded.flags.filter((flag) => !off.has(flag.id) && !redone.has(flag.id)),
-      ...(own?.flags ?? []),
+      ...(own?.flags ?? []).filter((flag) => !off.has(flag.id)),
     ],
     rules: [...rules, ...[...redone.values()].filter((rule) => !kept.has(rule.id))],
   };

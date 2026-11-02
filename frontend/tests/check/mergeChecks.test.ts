@@ -42,4 +42,13 @@ describe('mergeChecks', () => {
     expect(merged.rules).toEqual([status('a', 1), status('b', 2)]);
     expect(merged.flags.map((f) => `${f.id}:${f.positionId}`)).toEqual(['a:p1', 'b:p7', 'b:p8']);
   });
+
+  it('lässt abgeschaltete Regeln auch aus dem neu Gerechneten weg', () => {
+    const merged = mergeChecks(LOADED, new Set(['b']), {
+      flags: [flag('b', 'p7')],
+      rules: [status('b', 1)],
+    });
+    expect(merged.rules.map((rule) => rule.id)).toEqual(['a', 'c']);
+    expect(merged.flags.map((f) => f.id)).toEqual(['a', 'c']);
+  });
 });
