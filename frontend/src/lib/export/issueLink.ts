@@ -68,8 +68,9 @@ function umgebung({ view, loaded }: IssueContext): string[] {
  * bleibt die Überschrift mit einem Hinweis stehen, damit der Text auch dann
  * brauchbar ist, wenn jemand ihn unausgefüllt weitergibt.
  */
-export function issueBody(context: IssueContext, beschreibung = ''): string {
+export function issueBody(context: IssueContext, beschreibung = '', erwartet = ''): string {
   const text = beschreibung.trim();
+  const soll = erwartet.trim();
   return [
     '## Was ist passiert?',
     '',
@@ -80,6 +81,7 @@ export function issueBody(context: IssueContext, beschreibung = ''): string {
     '',
     '## Was war zu erwarten?',
     '',
+    soll === '' ? '(nichts eingetragen)' : soll,
     '',
     '## Umgebung',
     '',
@@ -98,11 +100,11 @@ const BETREFF = 'Fehler in Conocto';
  * GitHub kennt keine anonymen Meldungen, wer nicht angemeldet ist, landet
  * auf der Anmeldeseite. Für alle anderen gibt es Mail und Zwischenablage.
  */
-export function issueUrl(context: IssueContext, beschreibung = ''): string {
+export function issueUrl(context: IssueContext, beschreibung = '', erwartet = ''): string {
   const params = new URLSearchParams({
     title: `${BETREFF}: `,
     labels: 'bug',
-    body: issueBody(context, beschreibung),
+    body: issueBody(context, beschreibung, erwartet),
   });
   return `${REPO}/issues/new?${params.toString()}`;
 }
@@ -112,10 +114,10 @@ export function issueUrl(context: IssueContext, beschreibung = ''): string {
  * `mailto:` erzeugt keinen Request; es übergibt den Text an das Programm,
  * das der Rechner für Mail eingerichtet hat.
  */
-export function mailtoUrl(context: IssueContext, beschreibung = ''): string {
+export function mailtoUrl(context: IssueContext, beschreibung = '', erwartet = ''): string {
   const params = new URLSearchParams({
     subject: BETREFF,
-    body: issueBody(context, beschreibung),
+    body: issueBody(context, beschreibung, erwartet),
   });
   // `URLSearchParams` kodiert Leerzeichen als „+"; in einem mailto-Text
   // stünde dann wörtlich ein Pluszeichen statt eines Leerzeichens.

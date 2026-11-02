@@ -42,11 +42,12 @@ type Kopierstand = 'bereit' | 'kopiert' | 'fehlgeschlagen';
 
 export function ReportDialog({ context, vorbelegung = '', onClose }: ReportDialogProps) {
   const [beschreibung, setBeschreibung] = useState(vorbelegung);
+  const [erwartet, setErwartet] = useState('');
   const [kopiert, setKopiert] = useState<Kopierstand>('bereit');
   const feldRef = useRef<HTMLTextAreaElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
-  const text = issueBody(context, beschreibung);
-  const mailZuLang = mailtoUrl(context, beschreibung).length > MAILTO_GRENZE;
+  const text = issueBody(context, beschreibung, erwartet);
+  const mailZuLang = mailtoUrl(context, beschreibung, erwartet).length > MAILTO_GRENZE;
 
   // Escape und Klick daneben über dasselbe Muster wie jedes Popover: der
   // Handler hängt in der Capture-Phase und stoppt die Weitergabe. Sonst
@@ -121,7 +122,23 @@ export function ReportDialog({ context, vorbelegung = '', onClose }: ReportDialo
           }}
         >
           <span>Fehler melden</span>
-          <span>ESC</span>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fehler melden schließen"
+            title="Schließen (Esc)"
+            style={{
+              border: 'none',
+              background: 'transparent',
+              padding: '2px 4px',
+              font: 'inherit',
+              letterSpacing: 'inherit',
+              color: 'inherit',
+              cursor: 'pointer',
+            }}
+          >
+            ESC
+          </button>
         </div>
 
         <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -134,8 +151,28 @@ export function ReportDialog({ context, vorbelegung = '', onClose }: ReportDialo
                 setBeschreibung(event.target.value);
                 setKopiert('bereit');
               }}
-              rows={4}
-              placeholder="Kurz beschreiben — was war zu sehen, was wurde erwartet?"
+              rows={3}
+              placeholder="Kurz beschreiben — was war zu sehen?"
+              style={{
+                border: '1px solid var(--line2)',
+                padding: '8px',
+                font: 'inherit',
+                color: 'var(--ink)',
+                resize: 'vertical',
+              }}
+            />
+          </label>
+
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span style={{ color: 'var(--dim)' }}>Was war zu erwarten?</span>
+            <textarea
+              value={erwartet}
+              onChange={(event) => {
+                setErwartet(event.target.value);
+                setKopiert('bereit');
+              }}
+              rows={3}
+              placeholder="Was hätte stattdessen passieren sollen?"
               style={{
                 border: '1px solid var(--line2)',
                 padding: '8px',
@@ -177,7 +214,7 @@ export function ReportDialog({ context, vorbelegung = '', onClose }: ReportDialo
             </Chip>
             <Chip
               onClick={() => {
-                window.location.href = mailtoUrl(context, beschreibung);
+                window.location.href = mailtoUrl(context, beschreibung, erwartet);
               }}
               title="Öffnet eine neue Mail an das Conocto-Team"
             >
@@ -185,7 +222,7 @@ export function ReportDialog({ context, vorbelegung = '', onClose }: ReportDialo
             </Chip>
             <Chip
               onClick={() =>
-                window.open(issueUrl(context, beschreibung), '_blank', 'noopener,noreferrer')
+                window.open(issueUrl(context, beschreibung, erwartet), '_blank', 'noopener,noreferrer')
               }
               title="Öffnet ein vorbefülltes Formular auf GitHub"
             >
