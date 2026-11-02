@@ -357,7 +357,13 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
       return { ...state, selection, view };
     }
     case 'hover':
-    case 'back':
+    case 'back': {
+      const selection = selectionReducer(state.selection, action);
+      if (selection !== state.selection) return { ...state, selection };
+      // Nichts mehr ausgewählt: Escape hebt als Nächstes die Hervorhebung im Graphen auf.
+      if (state.view.graph.spotlight === null) return state;
+      return { ...state, view: viewReducer(state.view, { type: 'graphSpotlight', id: null }) };
+    }
     case 'closeSelection': {
       const selection = selectionReducer(state.selection, action);
       return selection === state.selection ? state : { ...state, selection };

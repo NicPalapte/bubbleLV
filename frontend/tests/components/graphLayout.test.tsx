@@ -354,17 +354,19 @@ describe('Rechtsklick im Graphen (Issue #155)', () => {
 });
 
 describe('Abschnitt hervorheben (Entscheidung 0075)', () => {
-  it('hebt per Klick auf eine Insel den Hauptabschnitt hervor, ✕ hebt es auf', async () => {
+  // Blass: Punkte außerhalb der Hervorhebung, mit wenig Deckkraft.
+  const hervorgehoben = (): boolean =>
+    [...graph().querySelectorAll('[data-slot]')].some(
+      (el) => Number(el.getAttribute('opacity')) < 0.5,
+    );
+
+  it('hebt per Klick auf eine Insel den Hauptabschnitt hervor, Escape hebt es auf', async () => {
     await loadAndShowGraph();
     const insel = [...graph().querySelectorAll('[data-hull]')].at(-1) as SVGGElement;
-    const titel = insel.querySelector('title')?.textContent ?? '';
     fireEvent.click(insel.querySelector('rect') as SVGRectElement);
 
-    const bar = screen.getByRole('group', { name: 'Hervorhebung' });
-    const leiste = within(bar);
-    expect(titel).not.toBe('');
-    expect(bar.textContent).toContain(titel);
-    // Blass: die anderen Gruppen bleiben, mit wenig Deckkraft.
+    // Issue #191: keine eigene Leiste oben rechts — der Graph zeigt es selbst.
+    expect(screen.queryByRole('group', { name: 'Hervorhebung' })).toBeNull();
     const blass = (): number =>
       [...graph().querySelectorAll('[data-group]')].filter(
         (g) => Number(g.getAttribute('opacity')) < 0.5,
@@ -374,13 +376,14 @@ describe('Abschnitt hervorheben (Entscheidung 0075)', () => {
     // Die Suche bleibt leer — die Hervorhebung ist kein Filter.
     expect(screen.getByLabelText('Suche')).toHaveValue('');
     // Blass/ausblenden hängt am Schalter „Nicht-Treffer" in der Suche (Entscheidung 0078).
-    expect(leiste.queryByRole('radio')).toBeNull();
     const schalter = screen.getByRole('radiogroup', { name: 'Nicht-Treffer' });
     fireEvent.click(within(schalter).getByRole('radio', { name: 'ausblenden' }));
     expect(graph().querySelectorAll('[data-group]').length).toBeLessThan(alle);
 
-    fireEvent.click(leiste.getByRole('button', { name: 'Hervorhebung aufheben' }));
-    expect(screen.queryByRole('group', { name: 'Hervorhebung' })).toBeNull();
+    // Escape nimmt erst die Auswahl zurück, dann die Hervorhebung.
+    fireEvent.keyDown(window, { key: 'Escape' });
+    fireEvent.keyDown(window, { key: 'Escape' });
+    fireEvent.keyDown(window, { key: 'Escape' });
     expect(graph().querySelectorAll('[data-group]').length).toBe(alle);
     expect(blass()).toBe(0);
     // Ohne Filter und ohne Hervorhebung braucht es den Schalter nicht.
@@ -391,25 +394,26 @@ describe('Abschnitt hervorheben (Entscheidung 0075)', () => {
     await loadAndShowGraph();
     const kreis = graph().querySelector('[data-group] circle') as SVGCircleElement;
     fireEvent.click(kreis);
-    expect(screen.getByRole('group', { name: 'Hervorhebung' })).toBeInTheDocument();
+    expect(hervorgehoben()).toBe(true);
     // Eine Position außerhalb wählen (hier: ein blasser Punkt) beendet die Hervorhebung.
     const draussen = [...graph().querySelectorAll('[data-slot]')].find(
       (el) => Number(el.getAttribute('opacity')) < 0.5,
     );
     expect(draussen).toBeDefined();
     fireEvent.click(draussen as Element);
-    expect(screen.queryByRole('group', { name: 'Hervorhebung' })).toBeNull();
+    expect(hervorgehoben()).toBe(false);
     fireEvent.click(kreis);
-    expect(screen.getByRole('group', { name: 'Hervorhebung' })).toBeInTheDocument();
+    expect(hervorgehoben()).toBe(true);
     // Verschieben endet mit einem Klick — der hebt die Hervorhebung nicht auf.
     const leer = graph().querySelector('svg > rect') as SVGRectElement;
     fireEvent.mouseDown(leer, { button: 0, clientX: 100, clientY: 100 });
     fireEvent.mouseMove(window, { clientX: 160, clientY: 130 });
     fireEvent.mouseUp(window);
     fireEvent.click(leer);
-    expect(screen.getByRole('group', { name: 'Hervorhebung' })).toBeInTheDocument();
+    expect(hervorgehoben()).toBe(true);
     // Klick ins Leere hebt die Hervorhebung auf.
     fireEvent.click(graph().querySelector('svg > rect') as SVGRectElement);
-    expect(screen.queryByRole('group', { name: 'Hervorhebung' })).toBeNull();
+    expect(hervorgehoben()).toBe(false);
   });
 });
+
