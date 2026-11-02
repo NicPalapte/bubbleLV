@@ -20,189 +20,192 @@
       if (/^#[^=]+=/.test(location.hash))
         location.replace('doc/' + location.search + location.hash);
     </script>
-    <script type="module" crossorigin src="/assets/start-1C551fLC.js"></script>
+    <script type="module" crossorigin src="/assets/start-BZJZtUKM.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/tokens-X6qB_hJB.js">
     <link rel="stylesheet" crossorigin href="/assets/tokens-D4O26HUy.css">
-    <link rel="stylesheet" crossorigin href="/assets/start-CA_3S25A.css">
+    <link rel="stylesheet" crossorigin href="/assets/start-B44LjPmi.css">
   </head>
   <body>
     <main class="start-in">
-      <div class="start-brand">
-        <div class="logo" aria-label="conocto Beta">
-          <svg width="44" height="44" viewBox="0 0 100 100" aria-hidden="true">
-            <g fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round">
-              <path
-                d="M50.0 31.0Q57.7 19.0 72.4 16.8 M63.4 36.6Q77.4 33.5 89.3 42.4 M69.0 50.0Q81.0 57.7 83.2 72.4 M63.4 63.4Q66.5 77.4 57.6 89.3 M50.0 69.0Q42.3 81.0 27.6 83.2 M36.6 63.4Q22.6 66.5 10.7 57.6 M31.0 50.0Q19.0 42.3 16.8 27.6 M36.6 36.6Q33.5 22.6 42.4 10.7"
-              />
-            </g>
-            <circle cx="50" cy="50" r="14" fill="currentColor" />
-          </svg>
-          <span>conocto</span>
-          <em class="beta">Beta</em>
-        </div>
-        <h1 class="sr-only">conocto – Leistungsverzeichnis im Browser lesen</h1>
-        <p class="start-tag rot" id="rot" aria-live="off">
-          <span class="on"><b>Leistungsverzeichnis</b>&nbsp;einfach im Browser öffnen</span>
-          <span>Texterkennung von Eigenschaften, Regeln und Einheiten</span>
-          <span>Ansicht im interaktiven Graphen wie nie zuvor</span>
-          <span>Intelligente Filter nach Abschnitt, Einheit und Menge</span>
-          <span>Matrix nach eigenen Kriterien</span>
-        </p>
-      </div>
-
-      <section class="show" aria-label="Was Conocto kann">
-        <div class="stage-scroll">
-          <div class="stage" id="stage">
-            <svg viewBox="0 0 760 300" aria-hidden="true">
-              <defs>
-                <pattern id="pt" width="14" height="14" patternUnits="userSpaceOnUse">
-                  <circle cx="1" cy="1" r=".9" style="fill: var(--grid2)" />
-                </pattern>
-              </defs>
-              <rect width="760" height="300" style="fill: var(--paper)" />
-              <g id="mx" class="mx"></g>
-              <g id="graph" class="graph">
-                <g id="groups"></g>
-                <line id="pinline" class="pin-line" x1="0" y1="0" x2="180" y2="279" />
-                <g id="dots"></g>
-                <circle id="ringA" class="ring-a" r="10" cx="0" cy="0" />
-                <circle id="ring" class="ring" r="11" cx="0" cy="0" />
+      <!-- Erster Bildschirm: Logo, Animation und Knöpfe füllen genau das Fenster. -->
+      <div class="hero">
+        <div class="start-brand">
+          <div class="logo" aria-label="conocto Beta">
+            <svg width="44" height="44" viewBox="0 0 100 100" aria-hidden="true">
+              <g fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round">
+                <path
+                  d="M50.0 31.0Q57.7 19.0 72.4 16.8 M63.4 36.6Q77.4 33.5 89.3 42.4 M69.0 50.0Q81.0 57.7 83.2 72.4 M63.4 63.4Q66.5 77.4 57.6 89.3 M50.0 69.0Q42.3 81.0 27.6 83.2 M36.6 63.4Q22.6 66.5 10.7 57.6 M31.0 50.0Q19.0 42.3 16.8 27.6 M36.6 36.6Q33.5 22.6 42.4 10.7"
+                />
               </g>
+              <circle cx="50" cy="50" r="14" fill="currentColor" />
             </svg>
+            <span>conocto</span>
+            <em class="beta">Beta</em>
+          </div>
+          <h1 class="sr-only">conocto – Leistungsverzeichnis im Browser lesen</h1>
+          <p class="start-tag rot" id="rot" aria-live="off">
+            <span class="on"><b>Leistungsverzeichnis</b>&nbsp;einfach im Browser öffnen</span>
+            <span>Texterkennung von Eigenschaften, Regeln und Einheiten</span>
+            <span>Ansicht im interaktiven Graphen wie nie zuvor</span>
+            <span>Intelligente Filter nach Abschnitt, Einheit und Menge</span>
+            <span>Matrix nach eigenen Kriterien</span>
+          </p>
+        </div>
 
-            <div class="ov bar">
-              <span class="lg">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 100 100"
-                  aria-hidden="true"
-                  style="width: calc(16 * var(--u)); height: calc(16 * var(--u))"
-                >
-                  <g fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round">
-                    <path
-                      d="M50.0 31.0Q57.7 19.0 72.4 16.8 M63.4 36.6Q77.4 33.5 89.3 42.4 M69.0 50.0Q81.0 57.7 83.2 72.4 M63.4 63.4Q66.5 77.4 57.6 89.3 M50.0 69.0Q42.3 81.0 27.6 83.2 M36.6 63.4Q22.6 66.5 10.7 57.6 M31.0 50.0Q19.0 42.3 16.8 27.6 M36.6 36.6Q33.5 22.6 42.4 10.7"
-                    />
-                  </g>
-                  <circle cx="50" cy="50" r="15" fill="currentColor" /></svg
-                >conocto
-              </span>
-              <span class="fn u-fade" id="fn">Rohbau_Los1.x83</span>
-              <span class="search"
-                ><span class="q">⌕ Positionen, OZ, Langtext</span
-                ><span class="chip" id="chip">Einheit: m³ ✕</span></span
-              >
-              <span class="local" id="local">● lokal · kein Upload</span>
-              <button type="button" class="pause" id="pause" aria-label="Animation anhalten">
-                ❚❚
-              </button>
-            </div>
+        <section class="show" aria-label="Was Conocto kann">
+          <div class="stage-scroll">
+            <div class="stage" id="stage">
+              <svg viewBox="0 0 760 300" aria-hidden="true">
+                <defs>
+                  <pattern id="pt" width="14" height="14" patternUnits="userSpaceOnUse">
+                    <circle cx="1" cy="1" r=".9" style="fill: var(--grid2)" />
+                  </pattern>
+                </defs>
+                <rect width="760" height="300" style="fill: var(--paper)" />
+                <g id="mx" class="mx"></g>
+                <g id="graph" class="graph">
+                  <g id="groups"></g>
+                  <line id="pinline" class="pin-line" x1="0" y1="0" x2="180" y2="279" />
+                  <g id="dots"></g>
+                  <circle id="ringA" class="ring-a" r="10" cx="0" cy="0" />
+                  <circle id="ring" class="ring" r="11" cx="0" cy="0" />
+                </g>
+              </svg>
 
-            <div class="ov kpi u-fade" id="kpi">
-              <span><b id="k-pos">0</b><i>POSITIONEN</i></span>
-              <span><b id="k-abs">0</b><i>ABSCHNITTE</i></span>
-              <span class="w"><b id="k-hw">0</b><i>HINWEISE ⚠</i></span>
-            </div>
-
-            <div class="ov drop u-fade" id="drop">
-              <span class="rg">⇪</span>GAEB-Datei hierher ziehen
-            </div>
-            <div class="ov file" id="file">
-              <span class="ext">x83</span
-              ><span class="nm">Rohbau_Los1.x83<span>GAEB DA XML · 2,4 MB</span></span>
-            </div>
-
-            <div class="ov win" id="tbl">
-              <div class="win-h"><b>Tabelle</b> 36 Positionen<span class="x">✕</span></div>
-              <table class="tbl">
-                <thead>
-                  <tr>
-                    <th>OZ</th>
-                    <th>KURZTEXT</th>
-                    <th class="r">MENGE</th>
-                    <th>ME</th>
-                  </tr>
-                </thead>
-                <tbody id="tbody"></tbody>
-              </table>
-            </div>
-
-            <div class="ov win" id="card">
-              <div class="win-h"><b>Position</b><span class="x">✕</span></div>
-              <div class="card-b">
-                <div class="pc-oz">02.0030 <span class="pc-sec">Beton- und Stahlbeton</span></div>
-                <div class="pc-t">Ortbeton Wand C30/37</div>
-                <div class="pc-m">
-                  <span
-                    ><i>Menge</i><b>267 <small>m³</small></b></span
+              <div class="ov bar">
+                <span class="lg">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 100 100"
+                    aria-hidden="true"
+                    style="width: calc(16 * var(--u)); height: calc(16 * var(--u))"
                   >
-                  <span><i>EP</i><b>–</b></span>
-                  <span><i>Positionsart</i><b>Normal</b></span>
-                </div>
-                <div class="pc-cnt">
-                  <span class="cnt n" id="c-n">Normen 2</span>
-                  <span class="cnt m" id="c-m">Maße 1</span>
-                  <span class="cnt f" id="c-f">Fristen 1</span>
-                  <span class="cnt o" id="c-o">Offen 1</span>
-                </div>
-                <p class="pc-lt">
-                  Stahlbetonwand aus Ortbeton C30/37, XC4, XF1, Dicke
-                  <span class="hl m" id="h-m">24 cm</span>, nach
-                  <span class="hl n" id="h-n1">DIN EN 206-1</span> und
-                  <span class="hl n" id="h-n2">DIN 1045-2</span>. Ausführung
-                  <span class="hl f" id="h-f">bis 6 Wochen nach Abruf</span>. Bewehrung wird
-                  gesondert vergütet. Fabrikat: <span class="hl o" id="h-o">……………</span>
-                </p>
-                <div class="pc-act">
-                  <span class="mk" id="mk"><span id="mk-t">⚑ Markieren</span><span>▾</span></span>
-                  <span class="cm" id="cm"
-                    >✎ <span id="cm-t"></span><span class="caret"></span
-                  ></span>
+                    <g fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round">
+                      <path
+                        d="M50.0 31.0Q57.7 19.0 72.4 16.8 M63.4 36.6Q77.4 33.5 89.3 42.4 M69.0 50.0Q81.0 57.7 83.2 72.4 M63.4 63.4Q66.5 77.4 57.6 89.3 M50.0 69.0Q42.3 81.0 27.6 83.2 M36.6 63.4Q22.6 66.5 10.7 57.6 M31.0 50.0Q19.0 42.3 16.8 27.6 M36.6 36.6Q33.5 22.6 42.4 10.7"
+                      />
+                    </g>
+                    <circle cx="50" cy="50" r="15" fill="currentColor" /></svg
+                  >conocto
+                </span>
+                <span class="fn u-fade" id="fn">Rohbau_Los1.x83</span>
+                <span class="search"
+                  ><span class="q">⌕ Positionen, OZ, Langtext</span
+                  ><span class="chip" id="chip">Einheit: m³ ✕</span></span
+                >
+                <span class="local" id="local">● lokal · kein Upload</span>
+                <button type="button" class="pause" id="pause" aria-label="Animation anhalten">
+                  ❚❚
+                </button>
+              </div>
+
+              <div class="ov kpi u-fade" id="kpi">
+                <span><b id="k-pos">0</b><i>POSITIONEN</i></span>
+                <span><b id="k-abs">0</b><i>ABSCHNITTE</i></span>
+                <span class="w"><b id="k-hw">0</b><i>HINWEISE ⚠</i></span>
+              </div>
+
+              <div class="ov drop u-fade" id="drop">
+                <span class="rg">⇪</span>GAEB-Datei hierher ziehen
+              </div>
+              <div class="ov file" id="file">
+                <span class="ext">x83</span
+                ><span class="nm">Rohbau_Los1.x83<span>GAEB DA XML · 2,4 MB</span></span>
+              </div>
+
+              <div class="ov win" id="tbl">
+                <div class="win-h"><b>Tabelle</b> 36 Positionen<span class="x">✕</span></div>
+                <table class="tbl">
+                  <thead>
+                    <tr>
+                      <th>OZ</th>
+                      <th>KURZTEXT</th>
+                      <th class="r">MENGE</th>
+                      <th>ME</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbody"></tbody>
+                </table>
+              </div>
+
+              <div class="ov win" id="card">
+                <div class="win-h"><b>Position</b><span class="x">✕</span></div>
+                <div class="card-b">
+                  <div class="pc-oz">02.0030 <span class="pc-sec">Beton- und Stahlbeton</span></div>
+                  <div class="pc-t">Ortbeton Wand C30/37</div>
+                  <div class="pc-m">
+                    <span
+                      ><i>Menge</i><b>267 <small>m³</small></b></span
+                    >
+                    <span><i>EP</i><b>–</b></span>
+                    <span><i>Positionsart</i><b>Normal</b></span>
+                  </div>
+                  <div class="pc-cnt">
+                    <span class="cnt n" id="c-n">Normen 2</span>
+                    <span class="cnt m" id="c-m">Maße 1</span>
+                    <span class="cnt f" id="c-f">Fristen 1</span>
+                    <span class="cnt o" id="c-o">Offen 1</span>
+                  </div>
+                  <p class="pc-lt">
+                    Stahlbetonwand aus Ortbeton C30/37, XC4, XF1, Dicke
+                    <span class="hl m" id="h-m">24 cm</span>, nach
+                    <span class="hl n" id="h-n1">DIN EN 206-1</span> und
+                    <span class="hl n" id="h-n2">DIN 1045-2</span>. Ausführung
+                    <span class="hl f" id="h-f">bis 6 Wochen nach Abruf</span>. Bewehrung wird
+                    gesondert vergütet. Fabrikat: <span class="hl o" id="h-o">……………</span>
+                  </p>
+                  <div class="pc-act">
+                    <span class="mk" id="mk"><span id="mk-t">⚑ Markieren</span><span>▾</span></span>
+                    <span class="cm" id="cm"
+                      >✎ <span id="cm-t"></span><span class="caret"></span
+                    ></span>
+                  </div>
                 </div>
               </div>
+
+              <div class="ov pin" id="pin">⚠ V7 · Offene Textergänzung</div>
+              <div class="ov cur" id="cur"></div>
             </div>
-
-            <div class="ov pin" id="pin">⚠ V7 · Offene Textergänzung</div>
-            <div class="ov cur" id="cur"></div>
           </div>
-        </div>
 
-        <div class="steps" id="steps">
-          <button type="button" class="step" data-i="0">
-            <span class="no">1</span
-            ><span class="tt">Im Browser gelesen<small>Nichts verlässt den Rechner</small></span
-            ><span class="bar-p"></span>
-          </button>
-          <button type="button" class="step" data-i="1">
-            <span class="no">2</span
-            ><span class="tt">Graph und Tabelle<small>Eine Auswahl, beide Ansichten</small></span
-            ><span class="bar-p"></span>
-          </button>
-          <button type="button" class="step" data-i="2">
-            <span class="no">3</span
-            ><span class="tt"
-              >Hervorheben · Filtern · Prüfen<small>VOB-Hinweise, Marker, Kommentare</small></span
-            ><span class="bar-p"></span>
-          </button>
-          <button type="button" class="step" data-i="3">
-            <span class="no">4</span
-            ><span class="tt">Matrix<small>Positionen nach eigenen Kriterien</small></span
-            ><span class="bar-p"></span>
-          </button>
-        </div>
-      </section>
+          <div class="steps" id="steps">
+            <button type="button" class="step" data-i="0">
+              <span class="no">1</span
+              ><span class="tt">Im Browser gelesen<small>Nichts verlässt den Rechner</small></span
+              ><span class="bar-p"></span>
+            </button>
+            <button type="button" class="step" data-i="1">
+              <span class="no">2</span
+              ><span class="tt">Graph und Tabelle<small>Eine Auswahl, beide Ansichten</small></span
+              ><span class="bar-p"></span>
+            </button>
+            <button type="button" class="step" data-i="2">
+              <span class="no">3</span
+              ><span class="tt"
+                >Hervorheben · Filtern · Prüfen<small>VOB-Hinweise, Marker, Kommentare</small></span
+              ><span class="bar-p"></span>
+            </button>
+            <button type="button" class="step" data-i="3">
+              <span class="no">4</span
+              ><span class="tt">Matrix<small>Positionen nach eigenen Kriterien</small></span
+              ><span class="bar-p"></span>
+            </button>
+          </div>
+        </section>
 
-      <div class="cta">
-        <div class="cta-row">
-          <a class="cta-btn" href="doc/"
-            >Mit eigenen Daten ausprobieren <span aria-hidden="true">→</span></a
+        <div class="cta">
+          <div class="cta-row">
+            <a class="cta-btn" href="doc/"
+              >Mit eigenen Daten ausprobieren <span aria-hidden="true">→</span></a
+            >
+            <a class="cta-btn sec" href="doc/?demo=muster">Demo starten</a>
+          </div>
+          <span class="cta-safe"
+            ><i aria-hidden="true">●</i> Keine Daten verlassen den Browser · kein Server · kein
+            Upload · kein Konto</span
           >
-          <a class="cta-btn sec" href="doc/?demo=muster">Demo starten</a>
         </div>
-        <span class="cta-safe"
-          ><i aria-hidden="true">●</i> Keine Daten verlassen den Browser · kein Server · kein Upload
-          · kein Konto</span
-        >
       </div>
 
       <section class="feat" aria-labelledby="f-h">
