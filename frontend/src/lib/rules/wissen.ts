@@ -14,9 +14,11 @@ import { unitGroups } from '../units';
 const REFERENCE = 'docs/domain/reference';
 
 /** Wortliste je Name, dazu die Datei, in der sie gepflegt wird. */
-interface WordList {
+export interface WordList {
   readonly words: readonly string[];
   readonly file: string;
+  /** Spalte `bemerkung` der wortlisten.csv: wofür die Liste da ist. */
+  readonly note?: string;
 }
 
 function readLists(): Map<string, WordList> {
@@ -38,15 +40,20 @@ function readLists(): Map<string, WordList> {
     const name = row.get('liste');
     if (name === '') continue;
     const known = lists.get(name)?.words ?? [];
+    const note = row.get('bemerkung');
     lists.set(name, {
       file: `${REFERENCE}/wortlisten.csv`,
       words: [...known, ...splitStichworte(row.get('stichworte'))],
+      ...(note === '' ? {} : { note }),
     });
   }
   return lists;
 }
 
 const LISTS = readLists();
+
+/** Wortlisten des Grundstocks aus den CSV, je Name (Reiter „Wortlisten“, Entscheidung 0090). */
+export const GRUNDSTOCK_LISTS: ReadonlyMap<string, WordList> = LISTS;
 
 /** Datei, in der eine Wortliste gepflegt wird — für den Grund, warum eine Regel ruht. */
 export function listFileOf(name: string): string {

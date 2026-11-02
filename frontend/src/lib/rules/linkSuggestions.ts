@@ -2,7 +2,14 @@
 // Regelstand berechnet und zwischengespeichert, nie je Render: die Positionskarte liest
 // nur nach. Vorgruppiert nach Abschnitt bzw. Einheit (`suggestLinks` im Kern).
 
-import { MAX_LINK_SUGGESTIONS, positionLinkOf, ruleKey, suggestLinks, type Rule } from '@core';
+import {
+  MAX_LINK_SUGGESTIONS,
+  positionLinkOf,
+  ruleKey,
+  suggestLinks,
+  type Rule,
+  type RuleContext,
+} from '@core';
 import type { PositionIndex } from '../index/positionIndex';
 import type { LVNode } from '../../types/lvNode';
 import { isActive, linkCandidatesOf, RULE_CONTEXT } from './rules';
@@ -29,6 +36,7 @@ const cache = new WeakMap<
     rules: readonly Rule[];
     parents: ReadonlyMap<string, LVNode | null>;
     limit: number;
+    context: RuleContext;
     result: LinkSuggestions;
   }
 >();
@@ -42,6 +50,7 @@ export function linkSuggestionsOf(
   parents: ReadonlyMap<string, LVNode | null>,
   rules: readonly Rule[],
   limit = MAX_LINK_SUGGESTIONS,
+  context: RuleContext = RULE_CONTEXT,
 ): LinkSuggestions {
   const linking = rules.filter((rule) => isActive(rule) && positionLinkOf(rule.wirkung) !== null);
   if (linking.length === 0) return EMPTY;
@@ -50,6 +59,7 @@ export function linkSuggestionsOf(
     cached !== undefined &&
     cached.parents === parents &&
     cached.limit === limit &&
+    cached.context === context &&
     sameRules(cached.rules, linking)
   ) {
     return cached.result;
@@ -67,7 +77,7 @@ export function linkSuggestionsOf(
     if (link === null) continue;
     const { ziel, gleich } = link;
     const key = ruleKey(rule);
-    const found = suggestLinks(rule.bedingung, ziel, gleich, candidates, limit, RULE_CONTEXT);
+    const found = suggestLinks(rule.bedingung, ziel, gleich, candidates, limit, context);
     if (found.truncated) truncated.push(rule);
     for (const pair of found.pairs) {
       add(pair.from, { other: pair.to, rule, key });
@@ -75,6 +85,6 @@ export function linkSuggestionsOf(
     }
   }
   const result: LinkSuggestions = { byId: out, truncated };
-  cache.set(index, { rules: linking, parents, limit, result });
+  cache.set(index, { rules: linking, parents, limit, context, result });
   return result;
 }

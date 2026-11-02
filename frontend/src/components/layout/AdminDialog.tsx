@@ -1,6 +1,7 @@
 // „Admin-Werkzeuge" aus dem Logo-Menü (Entscheidung 0053): erst Passwort, dann der
 // Reiter „Regeln“ mit dem visuellen Regeleditor (Entscheidung 0081,
-// components/admin/RulesTab.tsx). Gelernte Begriffe sind dort eigene Regeln (0088);
+// components/admin/RulesTab.tsx) und „Wortlisten“ (Entscheidung 0090,
+// components/admin/WordListsTab.tsx). Gelernte Begriffe sind dort eigene Regeln (0088);
 // gelernt wird im Langtext der Positionskarte — Text markieren, Kategorie wählen. Dazu
 // das Treffer-Protokoll der Materialtabellen — ein Prüfwerkzeug, kein Export für
 // Kalkulatoren, deshalb nicht im Logo-Menü (Entscheidung 0079).
@@ -11,9 +12,13 @@ import { useDismiss } from '../common/useDismiss';
 import { SegmentedControl } from '@conocto/design';
 import { useAdmin } from '../../state/admin';
 import { RulesTab } from '../admin/RulesTab';
+import { WordListsTab } from '../admin/WordListsTab';
+
+type Tab = 'regeln' | 'listen';
 
 const TABS = [
   { value: 'regeln', label: 'Regeln' },
+  { value: 'listen', label: 'Wortlisten' },
   { value: 'material', label: 'Material', disabled: true, title: 'Kommt später' },
 ];
 
@@ -69,6 +74,7 @@ export interface AdminDialogProps {
 
 export function AdminDialog({ onClose, onTrefferProtokoll }: AdminDialogProps) {
   const { unlocked, lock } = useAdmin();
+  const [tab, setTab] = useState<Tab>('regeln');
   const dialogRef = useRef<HTMLDivElement>(null);
   useDismiss(dialogRef, true, onClose);
 
@@ -104,8 +110,8 @@ export function AdminDialog({ onClose, onTrefferProtokoll }: AdminDialogProps) {
               <SegmentedControl
                 label="Bereich"
                 options={TABS}
-                value="regeln"
-                onChange={() => undefined}
+                value={tab}
+                onChange={(value) => setTab(value === 'listen' ? 'listen' : 'regeln')}
               />
               <span className="flex-1" />
               {onTrefferProtokoll !== undefined && (
@@ -129,7 +135,7 @@ export function AdminDialog({ onClose, onTrefferProtokoll }: AdminDialogProps) {
                 Admin beenden
               </button>
             </div>
-            <RulesTab />
+            {tab === 'listen' ? <WordListsTab /> : <RulesTab />}
           </>
         ) : (
           <Passwort onDone={onClose} />

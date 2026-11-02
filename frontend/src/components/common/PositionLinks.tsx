@@ -21,11 +21,11 @@ export function PositionLinks({ positionId }: { positionId: string }) {
   const { annotations, nodes, index, parents } = useViewer();
   const dispatch = useViewerDispatch();
   const jump = useJumpToPosition();
-  const { rules } = useAdmin();
+  const { rules, context } = useAdmin();
   const links = annotations.links ?? [];
   const suggestions = useMemo(
-    () => linkSuggestionsOf(index, parents, rules),
-    [index, parents, rules],
+    () => linkSuggestionsOf(index, parents, rules, undefined, context),
+    [index, parents, rules, context],
   );
   const confirmed = confirmedWith(links, positionId);
   const open = (suggestions.byId.get(positionId) ?? []).filter(

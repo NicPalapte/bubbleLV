@@ -231,9 +231,11 @@ export function runChecks(
 }
 
 /**
- * Prüfung mit den Regeln dieser Firma (Entscheidung 0089): das Ergebnis aus dem Laden ohne
- * abgeschaltete Grundstock-Regeln, dazu das Ergebnis eigener Regeln. Ohne beides `loaded`
- * selbst — so bleibt das Objekt aus dem Laden, solange niemand etwas umstellt.
+ * Prüfung mit den Regeln dieser Firma (Entscheidungen 0089, 0090): das Ergebnis aus dem Laden
+ * ohne abgeschaltete Grundstock-Regeln, dazu das Ergebnis von `own`. Regeln, die `own` neu
+ * gerechnet hat (z. B. mit eigenen Wörtern), ersetzen ihr Ergebnis aus dem Laden an derselben
+ * Stelle. Ohne beides `loaded` selbst — so bleibt das Objekt aus dem Laden, solange niemand
+ * etwas umstellt.
  */
 export function mergeChecks(
   loaded: CheckResult,
@@ -241,10 +243,28 @@ export function mergeChecks(
   own: CheckResult | null,
 ): CheckResult {
   if (off.size === 0 && (own === null || own.rules.length === 0)) return loaded;
+  // Auch neu Gerechnetes ohne abgeschaltete Regeln: ein Ergebnis von vor dem Abschalten
+  // gilt bis zur nächsten Rechnung weiter (ViewerProvider, RECHECK_DELAY).
+  const redone = new Map(
+    (own?.rules ?? []).filter((rule) => !off.has(rule.id)).map((rule) => [rule.id, rule]),
+  );
+  const rules = loaded.rules
+    .filter((rule) => !off.has(rule.id))
+    .map((rule) => redone.get(rule.id) ?? rule);
+  const kept = new Set(rules.map((rule) => rule.id));
   return {
-    flags: [...loaded.flags.filter((flag) => !off.has(flag.id)), ...(own?.flags ?? [])],
-    rules: [...loaded.rules.filter((rule) => !off.has(rule.id)), ...(own?.rules ?? [])],
+    flags: [
+      ...loaded.flags.filter((flag) => !off.has(flag.id) && !redone.has(flag.id)),
+      ...(own?.flags ?? []).filter((flag) => !off.has(flag.id)),
+    ],
+    rules: [...rules, ...[...redone.values()].filter((rule) => !kept.has(rule.id))],
   };
+}
+
+/** Wortlisten, die eine Regel benutzt — auch unter „nicht“. */
+export function listsOfRule(rule: Rule): string[] {
+  const blocks = [...blocksOf(rule.bedingung), ...(rule.bedingung.nicht ?? [])];
+  return blocks.flatMap((block) => ('liste' in block ? [block.liste] : []));
 }
 
 export { CHECK_BUILTINS, checkBewehrung } from './builtins';

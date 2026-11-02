@@ -64,6 +64,32 @@ Regel in den Grundstock übernehmen (gilt dann für alle):
 Lässt du das aus, gilt die Regel nur in deinem Browser. Löschst du die Website-Daten,
 ist sie weg; vorher „Regeln exportieren“ sichert sie. Mit „Regeln importieren“ holst du
 eine `regeln.json` wieder herein; vorhandene Regeln werden dabei nie überschrieben.
+Importierte Regeln mit Status `freigegeben` sind gleich an, alle anderen aus.
+
+## Wortlisten pflegen (Reiter „Wortlisten“)
+
+Ergebnis: Regeln mit dem Baustein „Wortliste“ finden auch deine eigenen Wörter, z. B. eine
+weitere Risiko-Formulierung. Hintergrund: Entscheidung 0090.
+
+1. Logo-Menü → Admin-Werkzeuge → Reiter „Wortlisten“ → links eine Liste wählen.
+2. Eigenes Wort unten eintragen → „Hinzufügen“. `*` = beliebige Endung, `#` = eine Zahl.
+3. Ein Grundstock-Wort stört? Draufklicken schaltet es ab (durchgestrichen), noch einmal
+   klicken schaltet es wieder an.
+4. Eigene Liste: „+ Neue Liste“, Namen eintragen, Wörter hinzufügen. Im Reiter „Regeln“
+   dann beim Baustein „Wortliste“ auswählen.
+
+„Benutzt von“ zeigt, welche Regeln die Liste verwenden. Die Listen `bieterangabe` und
+`offenes-feld` wirken schon beim Einlesen der Datei; eigene Wörter dort gelten noch nicht.
+
+In den Grundstock übernehmen (gilt dann für alle):
+
+1. „Wortlisten exportieren“. Du bekommst `wortlisten.csv` mit den geänderten und eigenen
+   Listen.
+2. Zeilen in die passende Datei unter `docs/domain/reference/` übernehmen (`risiko` →
+   `risiko-formulierungen.csv`, `hersteller` → `hersteller-produktnamen.csv`, sonst
+   `wortlisten.csv`). Datei committen.
+
+Lässt du das aus, gelten die Wörter nur in deinem Browser. Website-Daten löschen nimmt sie mit.
 
 ## Passwort ändern
 

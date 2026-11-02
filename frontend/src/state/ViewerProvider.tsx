@@ -15,6 +15,7 @@ import {
 import { annotationAllowList } from '../lib/annotations';
 import {
   checkRulesOf,
+  listsOfRule,
   EMPTY_HINTS,
   hintsByPosition,
   mergeChecks,
@@ -23,6 +24,7 @@ import {
   type HintIndex,
 } from '../lib/check';
 import { GRUNDSTOCK, isActive } from '../lib/rules/rules';
+import { changedLists } from '../lib/rules/wordLists';
 import {
   buildPositionIndex,
   EMPTY_POSITION_INDEX,
@@ -116,7 +118,7 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
   // Als Material gelernte Begriffe zählen in der Facette „Material" mit (Entscheidung
   // 0066). Nur bei neuem LV oder geänderten Begriffen; ohne Begriffe derselbe Index
   // und die Zählung aus dem Laden.
-  const { rules, grundstockOff } = useAdmin();
+  const { rules, grundstockOff, wordEntries, context } = useAdmin();
   // Als Text verglichen: `rules` ist nach jeder Änderung an eigenen Regeln neu.
   const materialKey = JSON.stringify(materialTermsOf(rules));
   const learnedMaterials = useMemo(
@@ -173,10 +175,16 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
 
   // Prüfung mit den Regeln dieser Firma (Entscheidung 0089): Der Worker prüft beim Laden mit
   // dem Grundstock. Abgeschaltete Grundstock-Regeln fallen hier nur weg; eigene Prüfregeln
-  // laufen dazu — im Effekt und kurz verzögert, nie im Render und nicht je Taste.
+  // laufen dazu — im Effekt und kurz verzögert, nie im Render und nicht je Taste. Mit eigenen
+  // Wörtern (0090) rechnen auch die Grundstock-Regeln neu, die eine geänderte Liste benutzen.
   const offKey = JSON.stringify([...grundstockOff].sort());
+  const changed = useMemo(() => changedLists(wordEntries), [wordEntries]);
   const ownCheckKey = JSON.stringify(
-    checkRulesOf(rules).filter((rule) => !GRUNDSTOCK_IDS.has(rule.id) && isActive(rule)),
+    checkRulesOf(rules).filter(
+      (rule) =>
+        isActive(rule) &&
+        (!GRUNDSTOCK_IDS.has(rule.id) || listsOfRule(rule).some((list) => changed.has(list))),
+    ),
   );
   const [ownCheck, setOwnCheck] = useState<{
     lv: LoadedLV;
@@ -188,12 +196,12 @@ export function ViewerProvider({ children }: { children: ReactNode }) {
     const timer = setTimeout(() => {
       const ownRules = JSON.parse(ownCheckKey) as ReturnType<typeof checkRulesOf>;
       const check = measure('Eigene Prüfregeln', () =>
-        runChecks(baseIndex, lv.summary, ownRules, structure.parents),
+        runChecks(baseIndex, lv.summary, ownRules, structure.parents, context),
       );
       setOwnCheck({ lv, check });
     }, RECHECK_DELAY);
     return () => clearTimeout(timer);
-  }, [state.lv, ownCheckKey, baseIndex, structure.parents]);
+  }, [state.lv, ownCheckKey, baseIndex, structure.parents, context]);
   // Bis die neue Rechnung fertig ist, gelten die letzten Funde eigener Regeln für dieses LV.
   const own = ownCheckKey !== '[]' && ownCheck?.lv === state.lv ? ownCheck.check : null;
   const loadedCheck = state.lv?.check ?? null;

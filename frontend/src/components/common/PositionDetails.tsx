@@ -157,8 +157,8 @@ export function PositionDetails({ node, position }: { node: LVNode; position: Po
   // nicht in der Klassifizierung: sie färben nur ein.
   const admin = useAdmin();
   const spans = useMemo(
-    () => applyRules(position, attrSpans(position.attributes), admin.rules),
-    [position, admin.rules],
+    () => applyRules(position, attrSpans(position.attributes), admin.rules, admin.context),
+    [position, admin.rules, admin.context],
   );
   const longTextRef = useRef<HTMLDivElement>(null);
   // Zusätzlich als Zustand: Die Tablet-Leiste muss mitbekommen, wann der Langtext da ist.

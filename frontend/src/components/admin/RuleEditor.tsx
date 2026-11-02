@@ -25,6 +25,7 @@ import { RuleSwitch } from './RuleSwitch';
 import { categoryOf } from '../../lib/spanCategories';
 import { builtinInfoOf } from '../../lib/rules/builtinInfo';
 import { builtinParameter, RULE_CONTEXT } from '../../lib/rules/rules';
+import { useAdmin } from '../../state/admin';
 import {
   FIELD_LABELS,
   HIGHLIGHT_LABELS,
@@ -69,6 +70,7 @@ const KIND_LABELS: Readonly<Record<RulePositionKind, string>> = {
   zulage: 'Zulage',
 };
 
+// Erste Liste für einen neuen Baustein; welche es gibt, liest BlockRow aus `useAdmin().context`.
 const LIST_NAMES: readonly string[] = [...(RULE_CONTEXT.listen?.keys() ?? [])];
 const UNIT_GROUPS: readonly string[] = [...(RULE_CONTEXT.einheitGruppen?.keys() ?? [])];
 
@@ -131,6 +133,8 @@ function BlockRow({
   onChange: (block: RuleBlock) => void;
   onRemove: () => void;
 }) {
+  // Eigene Wörter und Listen (0090) gehören dazu.
+  const { context, wordLists } = useAdmin();
   let body;
   if ('begriff' in block) {
     body = (
@@ -170,7 +174,8 @@ function BlockRow({
       </span>
     );
   } else if ('liste' in block) {
-    const words = RULE_CONTEXT.listen?.get(block.liste) ?? [];
+    const words = context.listen?.get(block.liste) ?? [];
+    const nameOf = (id: string): string => wordLists.find((list) => list.id === id)?.name ?? id;
     body = (
       <>
         <select
@@ -181,9 +186,9 @@ function BlockRow({
           className={INPUT}
         >
           {/* Eine Liste aus einer importierten Regel, die es hier nicht gibt, bleibt wählbar. */}
-          {[...new Set([block.liste, ...LIST_NAMES])].map((name) => (
-            <option key={name} value={name}>
-              {name}
+          {[...new Set([block.liste, ...(context.listen?.keys() ?? [])])].map((id) => (
+            <option key={id} value={id}>
+              {nameOf(id)}
             </option>
           ))}
         </select>

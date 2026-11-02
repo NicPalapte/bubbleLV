@@ -28,7 +28,6 @@ import {
   GRUNDSTOCK,
   linkCandidatesOf,
   newRule,
-  RULE_CONTEXT,
   RULE_GROUP_LABELS,
   ruleGroupOf,
   ruleTextOf,
@@ -107,15 +106,16 @@ function Snippet({ text, hit }: { text: string; hit: RuleHit }) {
 
 function HitPreview({ rule, positions }: { rule: Rule; positions: readonly LVNode[] }) {
   const jump = useJumpToPosition();
+  const { context } = useAdmin();
   const hits = useMemo(() => {
     const out: Array<{ node: LVNode; hit: RuleHit }> = [];
     for (const node of positions) {
       if (node.position === null) continue;
-      const hit = matchCondition(rule.bedingung, ruleTextOf(node.position), RULE_CONTEXT)[0];
+      const hit = matchCondition(rule.bedingung, ruleTextOf(node.position), context)[0];
       if (hit !== undefined) out.push({ node, hit });
     }
     return out;
-  }, [rule.bedingung, positions]);
+  }, [rule.bedingung, positions, context]);
 
   // PDF-Regeln (0085) treffen keine Position; ihre Vorschau braucht ein offenes PDF.
   if (rule.bedingung.wo.every((field) => field === 'pdf')) {
@@ -176,14 +176,15 @@ function LinkPreview({ rule, positions }: { rule: Rule; positions: readonly LVNo
   const { parents, nodes, annotations } = useViewer();
   const dispatch = useViewerDispatch();
   const jump = useJumpToPosition();
+  const { context } = useAdmin();
   const links = annotations.links ?? [];
   const result = useMemo(() => {
     const link = positionLinkOf(rule.wirkung);
     if (link === null) return { pairs: [], truncated: false };
     const { ziel, gleich } = link;
     const candidates = linkCandidatesOf(positions, parents);
-    return suggestLinks(rule.bedingung, ziel, gleich, candidates, undefined, RULE_CONTEXT);
-  }, [rule.bedingung, rule.wirkung, positions, parents]);
+    return suggestLinks(rule.bedingung, ziel, gleich, candidates, undefined, context);
+  }, [rule.bedingung, rule.wirkung, positions, parents, context]);
   const key = ruleKey(rule);
   const name = (id: string): string => {
     const position = nodes.get(id)?.position;

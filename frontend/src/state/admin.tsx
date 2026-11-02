@@ -12,6 +12,8 @@
 // Versionen zieht `readOwnRulesAndTerms` beim Start einmal um. Der Grundstock kommt aus
 // docs/domain/reference/regeln.json und lässt sich hier nicht ändern, nur je Regel abschalten
 // (Entscheidung 0089); die Liste der abgeschalteten bleibt ebenfalls in diesem Browser.
+// Ebenso die eigenen Wörter und Listen (Entscheidung 0090): `context` ist das, womit alle
+// Regeln suchen.
 
 import {
   createContext,
@@ -22,17 +24,29 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { Rule } from '@core';
+import type { Rule, RuleContext } from '@core';
 import {
   readGrundstockOff,
   readLearnedTerms,
   readOwnRules,
+  readWordLists,
   saveGrundstockOff,
   saveLearnedTerms,
   saveOwnRules,
+  saveWordLists,
 } from '../lib/persist/lastLv';
 import { learnedRule, termsToRules, type LearnedTerm } from '../lib/highlight/terms';
 import { GRUNDSTOCK } from '../lib/rules/rules';
+import { WISSEN } from '../lib/rules/wissen';
+import {
+  cleanWord,
+  contextWith,
+  listIdOf,
+  sameEntry,
+  wordListsOf,
+  type WordListEntry,
+  type WordListView,
+} from '../lib/rules/wordLists';
 
 const GRUNDSTOCK_IDS: ReadonlySet<string> = new Set(GRUNDSTOCK.map((rule) => rule.id));
 
@@ -66,6 +80,23 @@ interface AdminContextValue {
   /** Speichert eine eigene Regel; gleiche `id` wird ersetzt. */
   saveRule(rule: Rule): void;
   deleteRule(id: string): void;
+  /** Eigene Wörter, abgeschaltete Grundstock-Wörter und eigene Listen (Entscheidung 0090). */
+  readonly wordEntries: readonly WordListEntry[];
+  /** Alle Listen für den Reiter „Wortlisten“. */
+  readonly wordLists: readonly WordListView[];
+  /** Wortlisten und Einheiten-Gruppen, mit denen die Regeln suchen. */
+  readonly context: RuleContext;
+  /** Eigenes Wort in eine Liste; leere oder doppelte Wörter ändern nichts. */
+  addWord(liste: string, wort: string): void;
+  /** Eigenes Wort aus einer Liste nehmen. */
+  removeWord(liste: string, wort: string): void;
+  /** Grundstock-Wort an- oder abschalten. */
+  setWordOn(liste: string, wort: string, on: boolean): void;
+  /** Neue eigene Liste; gibt ihre Kennung zurück. */
+  addList(name: string): string;
+  renameList(liste: string, name: string): void;
+  /** Eigene Liste samt ihrer Wörter löschen. */
+  deleteList(liste: string): void;
   /** Regel im Editor öffnen, z. B. aus einer Markierung im Langtext. */
   readonly ruleRequest: Rule | null;
   requestRule(rule: Rule | null): void;
@@ -152,7 +183,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const [unlocked, setUnlocked] = useState(false);
   const [ownRules, changeRules] = usePersistedList(readOwnRulesAndTerms, saveOwnRules, sameRule);
   const [offIds, changeOff] = usePersistedList(readGrundstockOff, saveGrundstockOff, sameId);
+  const [wordEntries, changeWords] = usePersistedList(readWordLists, saveWordLists, sameEntry);
   const [ruleRequest, setRuleRequest] = useState<Rule | null>(null);
+  const wordLists = useMemo(() => wordListsOf(wordEntries), [wordEntries]);
+  const context = useMemo(() => contextWith(wordEntries), [wordEntries]);
 
   const value = useMemo<AdminContextValue>(
     () => ({
@@ -196,10 +230,74 @@ export function AdminProvider({ children }: { children: ReactNode }) {
           return at < 0 ? [...current, own] : current.map((other, i) => (i === at ? own : other));
         }),
       deleteRule: (id) => changeRules((current) => current.filter((rule) => rule.id !== id)),
+      wordEntries,
+      wordLists,
+      context,
+      addWord: (liste, raw) => {
+        const wort = cleanWord(raw);
+        const list = wordLists.find((other) => other.id === liste);
+        if (wort === null || list === undefined) return;
+        if (list.base.includes(wort)) {
+          // Steht schon im Grundstock: nur wieder anschalten.
+          changeWords((current) =>
+            current.filter((e) => !sameEntry(e, { art: 'aus', liste, wort })),
+          );
+          return;
+        }
+        changeWords((current) =>
+          current.some((e) => sameEntry(e, { art: 'wort', liste, wort }))
+            ? [...current]
+            : [...current, { art: 'wort', liste, wort }],
+        );
+      },
+      removeWord: (liste, wort) =>
+        changeWords((current) =>
+          current.filter((e) => !sameEntry(e, { art: 'wort', liste, wort })),
+        ),
+      setWordOn: (liste, wort, on) =>
+        changeWords((current) => {
+          const rest = current.filter((e) => !sameEntry(e, { art: 'aus', liste, wort }));
+          return on ? rest : [...rest, { art: 'aus', liste, wort }];
+        }),
+      addList: (raw) => {
+        const name = raw.trim().slice(0, 100) || 'Neue Liste';
+        const taken = new Set([
+          ...(WISSEN.listen?.keys() ?? []),
+          ...wordLists.map((list) => list.id),
+        ]);
+        const liste = listIdOf(name, taken);
+        changeWords((current) => [...current, { art: 'liste', liste, name }]);
+        return liste;
+      },
+      renameList: (liste, raw) => {
+        const name = raw.trim().slice(0, 100);
+        if (name === '') return;
+        changeWords((current) =>
+          current.map((e) => (e.art === 'liste' && e.liste === liste ? { ...e, name } : e)),
+        );
+      },
+      deleteList: (liste) =>
+        changeWords((current) =>
+          // Grundstock-Listen lassen sich nicht löschen, nur ihre eigenen Wörter.
+          wordLists.some((list) => list.id === liste && !list.grundstock)
+            ? current.filter((e) => e.liste !== liste)
+            : [...current],
+        ),
       ruleRequest,
       requestRule: setRuleRequest,
     }),
-    [unlocked, ownRules, changeRules, offIds, changeOff, ruleRequest],
+    [
+      unlocked,
+      ownRules,
+      changeRules,
+      offIds,
+      changeOff,
+      wordEntries,
+      wordLists,
+      context,
+      changeWords,
+      ruleRequest,
+    ],
   );
 
   return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;
@@ -216,6 +314,15 @@ const OUTSIDE: AdminContextValue = {
   setGrundstockOn: () => undefined,
   saveRule: () => undefined,
   deleteRule: () => undefined,
+  wordEntries: [],
+  wordLists: wordListsOf([]),
+  context: WISSEN,
+  addWord: () => undefined,
+  removeWord: () => undefined,
+  setWordOn: () => undefined,
+  addList: () => '',
+  renameList: () => undefined,
+  deleteList: () => undefined,
   ruleRequest: null,
   requestRule: () => undefined,
 };
