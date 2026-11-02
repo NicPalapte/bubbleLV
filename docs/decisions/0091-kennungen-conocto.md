@@ -37,7 +37,7 @@
 ## Folgen
 
 - Alte Links `#lv=…~pos=…`, gespeicherte Notizen, eigene Regeln und die zuletzt geöffnete
-  Datei in diesem Browser gehen einmal verloren. Die alte IndexedDB `bubble` bleibt liegen,
-  wird aber nicht mehr gelesen (Browserdaten löschen räumt sie weg).
+  Datei in diesem Browser gehen einmal verloren. Die alte IndexedDB `bubble` wird beim
+  ersten Zugriff still gelöscht, ohne sie zu lesen.
 - bauonto und conocto-bim ziehen im selben Zug nach (eigene PRs). Erst alle drei mergen,
   dann neu exportieren.

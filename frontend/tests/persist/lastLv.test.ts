@@ -229,3 +229,23 @@ describe('Anordnung im Splitscreen (Entscheidung 0073)', () => {
     expect(back?.closed).toEqual(moved.closed);
   });
 });
+
+describe('alter Speicher vor Entscheidung 0091', () => {
+  it('löscht die Datenbank „bubble“ beim ersten Zugriff', async () => {
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open('bubble');
+      request.onsuccess = () => {
+        request.result.close();
+        resolve();
+      };
+      request.onerror = () => reject(request.error);
+    });
+    vi.resetModules();
+    const frisch = await import('../../src/lib/persist/lastLv');
+    await frisch.readLastLvMeta();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const namen = (await indexedDB.databases()).map((db) => db.name);
+    expect(namen).not.toContain('bubble');
+    expect(namen).toContain('conocto');
+  });
+});
