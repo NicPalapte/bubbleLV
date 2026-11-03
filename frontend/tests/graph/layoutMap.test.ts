@@ -5,6 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import { FACETS } from '../../src/lib/facets';
 import { groupRadius } from '../../src/lib/graph/constants';
+import { AXIS_LABEL_MAX } from '../../src/lib/graph/labels';
 import {
   layoutMap,
   NO_VALUE,
@@ -487,5 +488,40 @@ describe('Hinweisschilder', () => {
       [],
     );
     expect(pins[0].anchor.id).toBe('schwer');
+  });
+});
+
+describe('Lange Abschnittsnamen (Issue #196)', () => {
+  const LANG =
+    'Erdarbeiten einschließlich Aushub, Verbau, Wasserhaltung, Verfüllung und ' +
+    'Verdichtung sowie alle Nebenleistungen nach den Vorbemerkungen dieses Abschnitts';
+  const langDraft: LVDraft = {
+    ...draft,
+    lots: [{ ...draft.lots[0], sections: [{ ...draft.lots[0].sections[0], label: LANG }] }],
+  };
+  const langTree = buildTree(langDraft);
+  const langIndex = buildPositionIndex(langTree);
+  const langParents = indexParents(langTree);
+  const langOptions = (overrides: Partial<MapOptions>): MapOptions => ({
+    ...options(overrides),
+    radii: positionRadii(langIndex, 'uniform'),
+  });
+
+  it('macht die Matrix-Spalte nicht so breit wie der ganze Name', () => {
+    const map = layoutMap(
+      langIndex,
+      langParents,
+      langOptions({ layout: 'matrix', rows: 'einheit', cols: SECTION_AXIS }),
+    );
+    const widths = map.axes?.grid?.colW ?? [];
+    expect(widths.length).toBeGreaterThan(0);
+    for (const width of widths) expect(width).toBeLessThanOrEqual(AXIS_LABEL_MAX + 16);
+    // Der volle Name bleibt erhalten — für Tooltip und Karte.
+    expect(map.axes?.cols.some((col) => col.label.includes(LANG))).toBe(true);
+  });
+
+  it('behält in der Insel den vollen Titel, gekürzt wird erst beim Zeichnen', () => {
+    const map = layoutMap(langIndex, langParents, langOptions({ layout: 'lv' }));
+    expect(map.hulls.some((hull) => hull.title.includes(LANG))).toBe(true);
   });
 });

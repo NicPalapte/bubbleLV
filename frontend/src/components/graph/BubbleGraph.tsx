@@ -46,6 +46,7 @@ import {
   type Progress,
 } from '../../lib/annotations';
 import { cullBounds, isInView } from '../../lib/graph/culling';
+import { MONO_CHAR, SANS_CHAR, axisText, fitText, hullPill } from '../../lib/graph/labels';
 import { layoutMap, type MapGroup, type MapHull } from '../../lib/graph/layoutMap';
 import { graphOverlayProps, isOverlayEvent } from '../../lib/graph/overlay';
 import { placePins, type PinAnchor, type PlacedPin, type Rect } from '../../lib/graph/pins';
@@ -86,22 +87,9 @@ function prefersReducedMotion(): boolean {
     : false;
 }
 
-/** Zeichenbreite der Gruppenbeschriftung in Weltkoordinaten (14px Sans, 10,5px Mono). */
-const SANS_CHAR = 8.6;
-const MONO_CHAR = 6.4;
-
 /** Platz für die Beschriftung über einem Kreis: so breit wie der Kreis plus Abstand. */
 function labelWidth(group: MapGroup): number {
   return 2 * group.r + GROUP_GAP - 12;
-}
-
-/**
- * Kürzt eine Beschriftung auf die Breite ihres Kreises. Lange Abschnittsnamen
- * liefen sonst in die Nachbarn; der volle Text steht im Tooltip und in der Karte.
- */
-function fitText(text: string, width: number, charWidth: number): string {
-  const max = Math.floor(width / charWidth);
-  return text.length <= max ? text : `${text.slice(0, Math.max(1, max - 1)).trimEnd()}…`;
 }
 
 /** Rahmen einer Hülle samt Titel darüber (die Pille ragt 15 über den Rand). */
@@ -891,11 +879,11 @@ export function BubbleGraph({ root }: { root: LVNode }) {
         h: 22 * view.k,
       });
       for (const row of axes.rows) {
-        const width = row.label.length * SANS_CHAR;
+        const width = axisText(row.label).length * SANS_CHAR;
         blocked.push(toScreen(axes.x0 - 10 - width, row.y + 5, width));
       }
       for (const col of axes.cols) {
-        const width = col.label.length * SANS_CHAR;
+        const width = axisText(col.label).length * SANS_CHAR;
         blocked.push(toScreen(col.x - width / 2, axes.y0 - 8, width));
       }
     }
@@ -1024,7 +1012,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
           <g key={arrangement} className="graph-frame">
             {map.hulls.map((hull, h) => {
               const hits = hitCounts?.hulls[h] ?? hull.slots.length;
-              const width = hull.title.length * 9.4 + 28;
+              const pill = hullPill(hull.title, hull.r);
               const fade = spotFade(spotAbove.has(hull.id) || (inSpot?.(hull.id) ?? true));
               if (fade === 0) return null;
               const chosen = selectedPosition === null && selectedNode?.id === hull.id;
@@ -1048,9 +1036,9 @@ export function BubbleGraph({ root }: { root: LVNode }) {
                     strokeLinecap="round"
                   />
                   <rect
-                    x={hull.x - width / 2}
+                    x={hull.x - pill.width / 2}
                     y={hull.y - hull.r - 15}
-                    width={width}
+                    width={pill.width}
                     height={30}
                     rx={15}
                     fill="var(--surface)"
@@ -1065,7 +1053,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
                     fontWeight={700}
                     fill="var(--ink)"
                   >
-                    {hull.title}
+                    {pill.text}
                   </text>
                 </g>
               );
@@ -1084,7 +1072,8 @@ export function BubbleGraph({ root }: { root: LVNode }) {
                     textAnchor="middle"
                     className={hotCell?.col === j ? 'graph-axis is-on' : 'graph-axis'}
                   >
-                    {col.label}
+                    <title>{col.label}</title>
+                    {axisText(col.label)}
                   </text>
                 ))}
                 <text
@@ -1103,7 +1092,8 @@ export function BubbleGraph({ root }: { root: LVNode }) {
                     textAnchor="end"
                     className={hotCell?.row === i ? 'graph-axis is-on' : 'graph-axis'}
                   >
-                    {row.label}
+                    <title>{row.label}</title>
+                    {axisText(row.label)}
                   </text>
                 ))}
               </g>
