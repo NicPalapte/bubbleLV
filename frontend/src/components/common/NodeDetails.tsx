@@ -43,6 +43,14 @@ export function NodeDetails({ node }: { node: LVNode }) {
         ]}
       />
       <div className="flex min-h-0 flex-1 flex-col gap-[16px] overflow-auto px-[16px] pb-[16px] pt-[14px]">
+        {node.text !== undefined && (
+          // Text, den die Datei in die Bezeichnung geschrieben hat (Issue #196).
+          <Section title={`Text zum ${kind === 'Los' ? 'Los' : 'Abschnitt'}`}>
+            <p className="m-0 whitespace-pre-line font-sans text-[13px] leading-[1.55] text-ink">
+              {node.text}
+            </p>
+          </Section>
+        )}
         <Section title="Kennzahlen">
           <PropTable rows={rows} />
         </Section>

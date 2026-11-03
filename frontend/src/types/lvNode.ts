@@ -31,6 +31,8 @@ export interface LVNode {
    */
   ownCode: string;
   label: string | null;
+  /** Abschnitt/Los: weiterer Text aus der Bezeichnung (Issue #196); fehlt ohne solchen. */
+  text?: string;
   positionCount: number;
   totalPrice: number;
   children: LVNode[];
