@@ -16,10 +16,13 @@ import {
   type DragEvent,
   type MouseEvent as ReactMouseEvent,
 } from 'react';
+import { DocOverview } from './DocOverview';
+import { DocPicker } from './DocPicker';
 import { DocSearchField } from './DocSearchField';
 import { useDocuments } from './DocumentsProvider';
 import { LinkBadge } from './LinkBadge';
 import { LinkDialog } from './LinkDialog';
+import { DOC_TOOL as TOOL, PdfInput } from './PdfInput';
 import { PdfPage, type PageSize } from './PdfPage';
 import { SuggestBar } from './SuggestBar';
 import type { DocHighlightItem } from './docHighlights';
@@ -51,40 +54,15 @@ const GUTTER = 16;
 /** So lange leuchtet die Stelle nach einem Sprung. */
 const FLASH_MS = 1800;
 
-const TOOL =
-  'inline-flex h-[26px] shrink-0 cursor-pointer items-center justify-center rounded-[var(--r-sm)] border border-line bg-surface px-[8px] font-mono text-[11.5px] text-ink hover:border-line2 disabled:cursor-default disabled:opacity-40';
-
 /** Auswahl im Dokument samt Seite; Grundlage für Menü und Verknüpfen. */
 interface Picked {
   readonly target: PaintTarget;
   readonly page: number;
 }
 
-function PdfInput({ label, onFile }: { label: string; onFile: (file: File) => void }) {
-  const input = useRef<HTMLInputElement>(null);
-  return (
-    <>
-      <button type="button" onClick={() => input.current?.click()} className={TOOL}>
-        {label}
-      </button>
-      <input
-        ref={input}
-        type="file"
-        accept="application/pdf,.pdf"
-        className="hidden"
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          event.target.value = '';
-          if (file !== undefined) onFile(file);
-        }}
-      />
-    </>
-  );
-}
-
 /** Ohne offenes Dokument: hineinziehen oder wählen; dazu, was schon verknüpft war. */
 function EmptyDocument() {
-  const { open, busy, error } = useDocuments();
+  const { openFiles, busy, error } = useDocuments();
   const { annotations } = useViewer();
   const [over, setOver] = useState(false);
   const { docs, marks } = annotations.documents;
@@ -94,8 +72,8 @@ function EmptyDocument() {
   const drop = (event: DragEvent): void => {
     event.preventDefault();
     setOver(false);
-    const file = event.dataTransfer.files[0];
-    if (file !== undefined) void open(file);
+    // Alle abgelegten Dateien, nicht nur die erste (Issue #211).
+    void openFiles([...event.dataTransfer.files]);
   };
 
   return (
@@ -111,8 +89,11 @@ function EmptyDocument() {
           over ? 'border-accent bg-accent-soft' : 'border-line2'
         }`}
       >
-        <span className="font-sans text-[14px] text-ink">PDF hierher ziehen</span>
-        <PdfInput label={busy ? 'Öffnet…' : 'PDF öffnen'} onFile={(file) => void open(file)} />
+        <span className="font-sans text-[14px] text-ink">PDFs hierher ziehen</span>
+        <PdfInput
+          label={busy ? 'Öffnet…' : 'PDF öffnen'}
+          onFiles={(files) => void openFiles(files)}
+        />
         <span className="font-mono text-[11px] text-mute">Bleibt in diesem Browser.</span>
         {error !== null && (
           <span role="alert" className="font-mono text-[12px] text-red">
@@ -138,7 +119,7 @@ function EmptyDocument() {
                   {counts.get(id)} {counts.get(id) === 1 ? 'Stelle' : 'Stellen'}
                 </span>
               </span>
-              <PdfInput label="Erneut öffnen" onFile={(file) => void open(file)} />
+              <PdfInput label="Erneut öffnen" onFiles={(files) => void openFiles(files)} />
             </li>
           ))}
         </ul>
@@ -149,11 +130,7 @@ function EmptyDocument() {
 
 function OpenDocument({ doc }: { doc: OpenedPdf }) {
   const {
-    docs,
-    activate,
     close,
-    open,
-    busy,
     error,
     jump,
     docSearch,
@@ -424,27 +401,7 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
   return (
     <div ref={rootRef} className="flex min-h-0 flex-1 flex-col">
       <div className="flex shrink-0 flex-wrap items-center gap-[6px] border-b border-line px-[10px] py-[6px]">
-        {docs.length > 1 ? (
-          <select
-            aria-label="Dokument wählen"
-            value={doc.id}
-            onChange={(event) => activate(event.target.value)}
-            className="h-[26px] max-w-[220px] rounded-[var(--r-sm)] border border-line bg-surface px-[6px] font-mono text-[11.5px] text-ink"
-          >
-            {docs.map((entry) => (
-              <option key={entry.id} value={entry.id}>
-                {entry.name}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <span
-            className="max-w-[220px] truncate font-mono text-[11.5px] text-ink"
-            title={doc.name}
-          >
-            {doc.name}
-          </span>
-        )}
+        <DocPicker doc={doc} />
         <span className="font-mono text-[11.5px] text-mute">
           {current} / {pages}
         </span>
@@ -494,7 +451,6 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
         >
           +
         </button>
-        <PdfInput label={busy ? 'Öffnet…' : 'PDF öffnen'} onFile={(file) => void open(file)} />
         <button
           type="button"
           aria-label={`${doc.name} schließen`}
@@ -723,6 +679,7 @@ function SuggestToggles({
 }
 
 export function DocumentView() {
-  const { active } = useDocuments();
-  return active === null ? <EmptyDocument /> : <OpenDocument key={active.id} doc={active} />;
+  const { active, overview } = useDocuments();
+  if (active === null) return <EmptyDocument />;
+  return overview ? <DocOverview /> : <OpenDocument key={active.id} doc={active} />;
 }
