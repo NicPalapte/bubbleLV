@@ -14,6 +14,7 @@
 // an der Treffermenge, nie am Ausschnitt.
 
 import { GROUP_GAP, HULL_GAP, HULL_PAD, ISLAND_PAD, groupRadius } from './constants';
+import { AXIS_LABEL_MAX } from './labels';
 import { packCircles, type Circle } from './pack';
 import { isPauschal } from './sizes';
 import { FACETS, facetOptionLabel, type Facet } from '../facets';
@@ -625,7 +626,10 @@ function layoutFree(
     for (const g of cellGroups) mostInCol[g.col] = Math.max(mostInCol[g.col], g.slots.length);
     const perRow = mostInCol.map((most) => Math.max(3, Math.ceil(Math.sqrt(most * 2.2))));
     const colW = perRow.map((k, j) =>
-      Math.max(k * pitch + 2 * TILE_PAD, colLabels[j].length * AXIS_CHAR + 16),
+      Math.max(
+        k * pitch + 2 * TILE_PAD,
+        Math.min(colLabels[j].length * AXIS_CHAR, AXIS_LABEL_MAX) + 16,
+      ),
     );
     const linesInRow = rowValues.map(() => 1);
     for (const g of cellGroups) {

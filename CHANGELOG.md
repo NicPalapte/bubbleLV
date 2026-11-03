@@ -9,6 +9,12 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.49.3 — 03.11.2026 · Lange Abschnittsnamen im Graphen
+
+- **Lange Namen von Abschnitten und Losen:** die Titel über den Inseln im Graphen enden
+  jetzt mit „…“, statt über den ganzen Graphen zu laufen. Der volle Name steht im Tooltip.
+  Dasselbe gilt für die Achsen der Matrix.
+
 ## 0.49.2 — 02.11.2026 · Startseite im Vollbild
 
 - **Erster Bildschirm füllt das Fenster:** Logo, Animation und Startknöpfe passen genau
