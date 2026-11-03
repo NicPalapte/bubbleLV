@@ -10,7 +10,7 @@ import { useMemo, useState } from 'react';
 import { useJumpToPosition } from '../common/useJumpToPosition';
 import { formatCount, formatPositions } from '../../lib/format';
 import { buildImportLog, type LogEntry } from '../../lib/overview/importLog';
-import { useViewer } from '../../state/viewer';
+import { useViewer, useViewerDispatch } from '../../state/viewer';
 
 /** Mehr Zeilen liest niemand mehr ab; der Rest steht als Zusatz darunter. */
 const MAX_ROWS = 50;
@@ -21,9 +21,10 @@ const LEVEL_COLOR: Record<LogEntry['level'], string> = {
 };
 
 export function ImportLogCard() {
-  const { index, notices, nodes } = useViewer();
+  const { index, notices, nodes, tree } = useViewer();
+  const dispatch = useViewerDispatch();
   const jumpTo = useJumpToPosition();
-  const log = useMemo(() => buildImportLog(index), [index]);
+  const log = useMemo(() => buildImportLog(index, tree), [index, tree]);
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
 
   const toggle = (kind: string): void =>
@@ -33,7 +34,14 @@ export function ImportLogCard() {
       return next;
     });
 
-  if (log.entries.length === 0 && notices.length === 0) {
+  // Abschnitt wählen: die Karte zeigt den vollen Text der Bezeichnung.
+  const showNode = (id: string): void => {
+    dispatch({ type: 'selectNode', id });
+    dispatch({ type: 'showPane', pane: 'card' });
+  };
+  const labelOpen = open.has('bezeichnungMitText');
+
+  if (log.entries.length === 0 && log.labelText.length === 0 && notices.length === 0) {
     return (
       <p className="font-sans text-[13px] text-dim">
         Beim Import ist nichts aufgefallen: alle {formatPositions(log.total)} haben Einheit und
@@ -104,6 +112,52 @@ export function ImportLogCard() {
           </section>
         );
       })}
+      {log.labelText.length > 0 && (
+        <section className="border-b border-grid py-[8px]">
+          <button
+            type="button"
+            onClick={() => toggle('bezeichnungMitText')}
+            aria-expanded={labelOpen}
+            className="flex w-full cursor-pointer items-baseline gap-[8px] border-none bg-transparent p-0 text-left"
+          >
+            <span className="font-display text-[13.5px] font-semibold text-ink">
+              Abschnitte mit Text in der Bezeichnung
+            </span>
+            <span className="font-mono text-[11px]" style={{ color: LEVEL_COLOR.hinweis }}>
+              {formatCount(log.labelText.length)}
+            </span>
+            <span className="flex-1" />
+            <span aria-hidden="true" className="font-mono text-[11px] text-mute">
+              {labelOpen ? '▾' : '▸'}
+            </span>
+          </button>
+          <p className="mt-[2px] font-sans text-[12px] leading-[1.5] text-dim">
+            Als Name gilt der erste Absatz. Der übrige Text steht in der Karte des Abschnitts.
+          </p>
+          {labelOpen && (
+            <div className="mt-[6px] border-t border-grid">
+              {log.labelText.map((id) => {
+                const node = nodes.get(id) ?? null;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => showNode(id)}
+                    className="flex w-full cursor-pointer items-baseline gap-[10px] border-none border-b border-solid border-grid bg-transparent px-0 py-[4px] text-left"
+                  >
+                    <span className="w-[110px] shrink-0 font-mono text-[11px] text-dim">
+                      {node?.code || '—'}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate font-sans text-[12.5px] text-ink">
+                      {node?.label ?? 'Ohne Bezeichnung'}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
     </div>
   );
 }

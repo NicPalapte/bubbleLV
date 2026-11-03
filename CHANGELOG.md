@@ -9,6 +9,14 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.49.4 — 03.11.2026 · Text in der Abschnittsbezeichnung
+
+- **Abschnitt mit langem Text in der Überschrift:** als Name gilt nur noch der erste
+  Absatz, z. B. „Nachhaltigkeit“. Der übrige Text steht in der Karte des Abschnitts unter
+  „Text zum Abschnitt“. Gilt auch für Lose.
+- **Import-Log:** neuer Hinweis „Abschnitte mit Text in der Bezeichnung“; ein Klick wählt
+  den Abschnitt aus.
+
 ## 0.49.3 — 03.11.2026 · Lange Abschnittsnamen im Graphen
 
 - **Lange Namen von Abschnitten und Losen:** die Titel über den Inseln im Graphen enden
