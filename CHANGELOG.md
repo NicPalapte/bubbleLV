@@ -9,6 +9,16 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.50.0 — 03.11.2026 · Mehrere PDFs übersichtlich
+
+- **Dokumentliste:** Der Name des PDFs oben im Bereich „Dokument“ öffnet eine Liste aller
+  offenen PDFs mit Seiten und verknüpften Stellen, ab 6 PDFs mit Suche. Von dort geht es zu
+  „+ PDF hinzufügen“ und „Alle als Übersicht“.
+- **Übersicht:** Alle offenen PDFs als Miniatur der ersten Seite, sortierbar nach
+  Reihenfolge, Name oder Verknüpfungen. Ein Klick öffnet das PDF zum Lesen.
+- **Mehrere auf einmal:** Wer mehrere PDFs zusammen öffnet, sieht zuerst die Übersicht. Im
+  leeren Bereich „Dokument“ öffnen jetzt auch alle gewählten oder hineingezogenen PDFs.
+
 ## 0.49.4 — 03.11.2026 · Text in der Abschnittsbezeichnung
 
 - **Abschnitt mit langem Text in der Überschrift:** als Name gilt nur noch der erste
