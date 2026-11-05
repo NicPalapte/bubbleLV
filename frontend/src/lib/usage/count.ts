@@ -48,6 +48,9 @@ export const USAGE_EVENTS = [
   'dokument-geoeffnet',
   'dokument-anstreichung',
   'dokument-verknuepft',
+  // Pläne messen (Entscheidung 0093): nur das Ereignis, nie Werte oder Positionen.
+  'plan-massstab',
+  'plan-gemessen',
 ] as const;
 
 export type UsageEvent = (typeof USAGE_EVENTS)[number];
@@ -107,6 +110,10 @@ export function usageEventOf(action: ViewerAction): UsageEvent | null {
       return action.paint === null ? null : 'dokument-anstreichung';
     case 'docLink':
       return action.ids.length === 0 ? null : 'dokument-verknuepft';
+    case 'planScale':
+      return action.scale === null ? null : 'plan-massstab';
+    case 'planMeasure':
+      return 'plan-gemessen';
     default:
       return null;
   }

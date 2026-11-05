@@ -95,9 +95,7 @@
       "text": "Danach werden ca. 42,75 t Betonstahl verlegt.",
       "id": "p7",
       "source": "menge",
-      "words": [
-        "Betonstahl"
-      ]
+      "words": ["Betonstahl"]
     }
   ],
   [
@@ -107,9 +105,7 @@
       "text": "Im Hof sind 88 m Kabelschutzrohre zu verlegen.",
       "id": "p5",
       "source": "menge",
-      "words": [
-        "Kabelschutzrohre"
-      ]
+      "words": ["Kabelschutzrohre"]
     },
     {
       "page": 7,
@@ -117,9 +113,7 @@
       "text": "Es folgen 88 m Ortbetonrinne.",
       "id": "p4",
       "source": "menge",
-      "words": [
-        "Ortbetonrinne"
-      ]
+      "words": ["Ortbetonrinne"]
     }
   ],
   [
@@ -129,9 +123,7 @@
       "text": "Es folgen 88 m Rinne neben dem Kabelschutzrohr.",
       "id": "p4",
       "source": "menge",
-      "words": [
-        "Rinne"
-      ]
+      "words": ["Rinne"]
     }
   ],
   [
@@ -141,9 +133,7 @@
       "text": "Schottertragschicht rd. 350 m³",
       "id": "p8",
       "source": "menge",
-      "words": [
-        "Schottertragschicht"
-      ]
+      "words": ["Schottertragschicht"]
     },
     {
       "page": 9,
@@ -151,9 +141,7 @@
       "text": "Asphaltbinderschicht AC 16 BN",
       "id": "p9",
       "source": "menge",
-      "words": [
-        "Asphaltbinderschicht"
-      ]
+      "words": ["Asphaltbinderschicht"]
     },
     {
       "page": 9,
@@ -161,9 +149,7 @@
       "text": "Asphaltdeckschicht AC 8 DN auf\nje rd. 2.300 m².",
       "id": "p10",
       "source": "menge",
-      "words": [
-        "Asphaltdeckschicht"
-      ]
+      "words": ["Asphaltdeckschicht"]
     }
   ],
   [
@@ -206,9 +192,7 @@
       "text": "1.234,50 m² Estrich",
       "id": "p2",
       "source": "menge",
-      "words": [
-        "Estrich"
-      ]
+      "words": ["Estrich"]
     },
     {
       "page": 11,
@@ -230,9 +214,7 @@
       "text": "Asphaltbinderschicht 2.300 m²",
       "id": "p9",
       "source": "menge",
-      "words": [
-        "Asphaltbinderschicht"
-      ]
+      "words": ["Asphaltbinderschicht"]
     },
     {
       "page": 12,
@@ -240,10 +222,7 @@
       "text": "120 m³ Boden",
       "id": "p1",
       "source": "menge",
-      "words": [
-        "Boden",
-        "lösen"
-      ]
+      "words": ["Boden", "lösen"]
     },
     {
       "page": 12,

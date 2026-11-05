@@ -62,6 +62,7 @@ import {
   type MarkerValue,
   type Progress,
 } from '../../lib/annotations';
+import { EMPTY_PLAN_NOTES, positionsWithVa, vaOf } from '../../lib/docs/planNotes';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 import type { LVNode, PositionSummary } from '../../types/lvNode';
 import type { PositionType } from '@core';
@@ -262,6 +263,22 @@ const CELL_BUTTON =
 /** Spalten aus den eigenen Markern und Kommentaren. */
 function annotationRender(key: string, cells: NoteCells): Column<Row>['render'] {
   const { annotations, filling } = cells;
+  if (key === 'va' || key === 'herkunft') {
+    const plans = annotations.plans ?? EMPTY_PLAN_NOTES;
+    return (r) => {
+      const va = vaOf(plans, r.node.id);
+      if (va === null) return <span className="text-mute">—</span>;
+      if (key === 'herkunft') return va.herkunft;
+      if (va.value === null) {
+        return (
+          <span className="text-amber" title={va.reason ?? undefined}>
+            —
+          </span>
+        );
+      }
+      return formatNumber(va.value);
+    };
+  }
   const covered = (column: FillColumn, id: string): boolean =>
     filling !== null && filling.column === column && filling.ids.has(id);
   if (key === 'progress') {
@@ -487,6 +504,15 @@ function sectionInfo(count: number, done: number): GroupHead['info'] {
     </span>
   );
 }
+
+/**
+ * Pläne messen (Entscheidung 0093): nur da, sobald eine Position eine VA-Menge hat, dann
+ * direkt hinter „Menge“. Inhalt aus den Notizen, siehe `annotationRender`.
+ */
+const PLAN_COLUMNS: ReadonlyArray<Column<Row>> = [
+  { key: 'va', label: 'VA-Menge', width: 96, align: 'right', sortable: false, render: () => '' },
+  { key: 'herkunft', label: 'Herkunft', width: 104, sortable: false, render: () => '' },
+];
 
 const COLUMNS_BY_KEY = new Map(COLUMNS.map((column) => [column.key, column]));
 const DEFAULT_ORDER: readonly string[] = COLUMNS.map((column) => column.key);
@@ -865,13 +891,22 @@ export function PositionsTable({ root }: { root: LVNode }) {
       toggleImportant: (id) => setImportantNow(dispatch, id, !annotations.important.has(id)),
       startFill,
     };
-    return visibleColumnKeys(columnConfig).flatMap((key) => {
+    const shown = visibleColumnKeys(columnConfig).flatMap((key) => {
       const column = COLUMNS_BY_KEY.get(key);
       if (column === undefined) return [];
       const render =
         annotationRender(key, cells) ?? searchRender(key, active.query) ?? column.render;
       return [{ ...column, render, width: columnConfig.widths[key] }];
     });
+    if (positionsWithVa(annotations.plans ?? EMPTY_PLAN_NOTES).size === 0) return shown;
+    const plan = PLAN_COLUMNS.map((column) => ({
+      ...column,
+      render: annotationRender(column.key, cells) ?? column.render,
+    }));
+    const at = shown.findIndex((column) => column.key === 'quantity');
+    return at < 0
+      ? [...shown, ...plan]
+      : [...shown.slice(0, at + 1), ...plan, ...shown.slice(at + 1)];
   }, [columnConfig, active.query, annotations, filling, dispatch, startFill]);
 
   // Kopfzeile je Abschnitt: Name, Anzahl der gezeigten Positionen, davon erledigt.

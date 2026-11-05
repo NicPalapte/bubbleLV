@@ -45,6 +45,7 @@ function PdfPageView({
   badge,
   suggestions,
   onSuggestion,
+  overlay,
 }: {
   doc: OpenedPdf;
   page: number;
@@ -65,6 +66,8 @@ function PdfPageView({
   suggestions: readonly DocSuggestion[];
   /** Klick auf einen Vorschlag; `at` ist die Stelle darunter im Fenster. */
   onSuggestion: (suggestion: DocSuggestion, at: { left: number; top: number }) => void;
+  /** Ebene über der Seite, z. B. Messungen im Plan (Entscheidung 0093); stabil halten. */
+  overlay?: (page: number, size: PageSize, scale: number) => ReactNode;
 }) {
   const box = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -269,6 +272,7 @@ function PdfPageView({
         style={{ width, height, visibility: proxy === null ? 'hidden' : 'visible' }}
       />
       <div ref={textRef} className="textLayer doc-text" />
+      {overlay?.(page, size, scale)}
       {badges.map(({ spots, top }) => (
         <div
           key={`${spots[0].start}-${spots[0].text}`}

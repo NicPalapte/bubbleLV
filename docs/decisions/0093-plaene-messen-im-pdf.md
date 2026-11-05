@@ -32,10 +32,12 @@
   aktuellen Maßstab gerechnet, nie gespeichert.
 - **Verknüpfen:** Jede Messung hängt an einer oder mehreren Positionen, gespeichert über
   den Positions-Hash (0055).
-- **VA-Menge und Herkunft:** Tabelle und Positionskarte zeigen die VA-Menge (Summe der
-  Messungen × Faktor, z. B. Tiefe für m² → m³) und ihre Herkunft. Herkunft heute „Plan“
-  oder „Rechenansatz“ (eigene Rechnung in der Positionskarte, hat Vorrang). „BIM“ kommt,
-  wenn Conocto BIM Mengen übergeben kann.
+- **VA-Menge und Herkunft:** Tabelle und Positionskarte zeigen die VA-Menge und ihre
+  Herkunft. „Plan“ = Summe der verknüpften Messungen. „Rechenansatz“ hat Vorrang: Bausteine
+  werden im Plan angetippt (gedruckte Maße einer Maßkette oder eigene Messungen), dazwischen
+  Rechenzeichen (+ − × : Klammern). Zahlen werden nie von Hand getippt, damit jede Zahl
+  eine Fundstelle im Plan hat. „BIM“ kommt, wenn Conocto BIM Mengen übergeben kann.
+  Die Spalten erscheinen in der Tabelle erst, wenn eine Position eine VA-Menge hat.
 - **Keine Wertung:** Die Differenz zur LV-Menge wird nur gezeigt, nie als Hinweis oder
   Fehler.
 - **Speicher:** In den Notizen der letzten Datei (IndexedDB, weiter Version 6) als

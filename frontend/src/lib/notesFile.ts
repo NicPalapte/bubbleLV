@@ -41,6 +41,16 @@ import {
 import { isLinkSource, type LinkSource } from './docs/docSuggest';
 import { NO_PAINT_NAMES, toPaintNames, type PaintNames } from './paintNames';
 import type { LVNode } from '../types/lvNode';
+import {
+  EMPTY_PLAN_NOTES,
+  fromStoredPlanNotes,
+  isEmptyPlanNotes,
+  mergePlanNotes,
+  positionsWithVa,
+  rekeyPlanNotes,
+  toStoredPlanNotes,
+  type PlanNotes,
+} from './docs/planNotes';
 
 // Kennung aus der Zeit vor dem Namen Conocto — bleibt, sonst ließen sich
 // gesicherte Notiz-Dateien nicht mehr laden (Entscheidung 0069).
@@ -116,6 +126,8 @@ export interface NotesFile {
   readonly positionen: readonly NotesFilePosition[];
   /** Bekannte Begleitdokumente und angestrichene Stellen ohne Verknüpfung. */
   readonly dokumente: DocNotes;
+  /** Pläne messen (Entscheidung 0093); Positionen unter ihrem Hash. */
+  readonly plaene: PlanNotes;
 }
 
 /** Datei ist keine Notiz-Datei oder kaputt. Die Meldung ist für Menschen. */
@@ -180,13 +192,20 @@ export function notesFileText(
   const byId = new Map<string, LVNode>();
   for (const node of nodes) if (node.position !== null) byId.set(node.id, node);
   const { documents } = annotations;
+  const plans = annotations.plans ?? EMPTY_PLAN_NOTES;
   const ids = new Set([
     ...markedIds(annotations),
     ...annotations.highlights.keys(),
     ...annotations.log.keys(),
     ...linkedIds(documents),
     ...(documents.rejected ?? []).map((entry) => entry.id),
+    ...positionsWithVa(plans),
   ]);
+  const toHash = new Map<string, string>();
+  for (const id of ids) {
+    const hash = byId.get(id)?.position?.hashes.id;
+    if (hash !== undefined) toHash.set(id, hash);
+  }
   const positionen = [...ids].map((id) => {
     const position = byId.get(id)?.position ?? null;
     const abgelehnt = rejectionsOfPosition(documents, id).map(fileRejection);
@@ -226,6 +245,9 @@ export function notesFileText(
     dokumentstellen: documents.marks
       .filter((mark) => mark.links.length === 0)
       .map((mark) => fileDocSpot(mark)),
+    ...(isEmptyPlanNotes(plans)
+      ? {}
+      : { plaene: toStoredPlanNotes(rekeyPlanNotes(plans, toHash)) }),
   };
   return `${JSON.stringify(file, null, 2)}\n`;
 }
@@ -424,6 +446,7 @@ export function parseNotesFile(content: string): NotesFile {
       .map((position) => readPosition(position, version))
       .filter((position): position is NotesFilePosition => position !== null),
     dokumente: readDokumente(file),
+    plaene: fromStoredPlanNotes(file.plaene),
   };
 }
 
@@ -557,8 +580,15 @@ export function mergeNotes(
   current: Annotations,
   matches: readonly NotesMatch[],
   dokumente: DocNotes = EMPTY_DOC_NOTES,
+  plaene: PlanNotes = EMPTY_PLAN_NOTES,
 ): Annotations {
-  if (matches.length === 0 && dokumente.docs.size === 0 && dokumente.marks.length === 0) {
+  const noPlans = isEmptyPlanNotes(plaene);
+  if (
+    matches.length === 0 &&
+    dokumente.docs.size === 0 &&
+    dokumente.marks.length === 0 &&
+    noPlans
+  ) {
     return current;
   }
   const progress = new Map(current.progress);
@@ -612,7 +642,12 @@ export function mergeNotes(
     marks: linked,
     rejected,
   });
-  return { ...out, documents };
+  if (noPlans) return { ...out, documents };
+  // Nur Positionen der Auswahl: Messungen anderer bleiben unter ihrem Hash stehen und
+  // finden ihre Position, wenn sie später passt (wie `rekey`).
+  const toNode = new Map(matches.map(({ entry, nodeId }) => [entry.hash, nodeId]));
+  const plans = mergePlanNotes(current.plans ?? EMPTY_PLAN_NOTES, rekeyPlanNotes(plaene, toNode));
+  return { ...out, documents, plans };
 }
 
 /**
@@ -627,6 +662,7 @@ export function notesCount(annotations: Annotations): number {
       ...annotations.highlights.keys(),
       ...annotations.log.keys(),
       ...linkedIds(documents),
+      ...positionsWithVa(annotations.plans ?? EMPTY_PLAN_NOTES),
     ]).size + documents.marks.filter((mark) => mark.links.length === 0).length
   );
 }

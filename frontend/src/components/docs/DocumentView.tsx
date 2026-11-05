@@ -22,6 +22,9 @@ import { LinkBadge } from './LinkBadge';
 import { LinkDialog } from './LinkDialog';
 import { PdfPage, type PageSize } from './PdfPage';
 import { SuggestBar } from './SuggestBar';
+import { PlanLayer, type PlanDraft, type PlanTool } from './PlanLayer';
+import { MeasureBar, PlanToolbar, ScalePanel } from './PlanControls';
+import { usePageInfo } from './usePageInfo';
 import type { DocHighlightItem } from './docHighlights';
 import { PaintBar, PaintNamesDialog } from '../common/PaintBar';
 import {
@@ -42,6 +45,19 @@ import type { DocSuggestion, LinkSource } from '../../lib/docs/docSuggest';
 import type { OpenedPdf } from '../../lib/docs/pdf';
 import { docNeedleOf, type DocHit } from '../../lib/docs/docSearch';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
+import { polylineLength, type PageKind, type PlanPoint } from '@core';
+import {
+  appendTerm,
+  EMPTY_PLAN_NOTES,
+  MEASURE_LABEL,
+  measuresOfPage,
+  pageKindOf,
+  parseMass,
+  scaleOf,
+  type AnsatzTerm,
+  type MeasureKind,
+  type PlanMeasure,
+} from '../../lib/docs/planNotes';
 
 const ZOOM_MIN = 0.5;
 const ZOOM_MAX = 3;
@@ -162,6 +178,9 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     suggestions,
     suggest,
     setSuggest,
+    pageText,
+    ansatzFor,
+    setAnsatzFor,
   } = useDocuments();
   const { annotations, index } = useViewer();
   const dispatch = useViewerDispatch();
@@ -171,7 +190,7 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
   const [width, setWidth] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [sizes, setSizes] = useState<ReadonlyMap<number, PageSize>>(new Map());
-  const [current, setCurrent] = useState(1);
+  const [scrolled, setCurrent] = useState(1);
   const [hitIndex, setHitIndex] = useState(0);
   const [picked, setPicked] = useState<Picked | null>(null);
   const [linking, setLinking] = useState<{ spot: DocSpot; left: number; top: number } | null>(null);
@@ -191,6 +210,225 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
   }, []);
 
   const pages = doc.pdf.numPages;
+
+  // --- Pläne messen (Entscheidung 0093) ---------------------------------------------
+  const plans = annotations.plans ?? EMPTY_PLAN_NOTES;
+  const pageInfo = usePageInfo(doc, pageText);
+  const [pageFilter, setPageFilter] = useState<'alle' | PageKind>('alle');
+  const [tool, setTool] = useState<PlanTool | null>(null);
+  const [draft, setDraft] = useState<PlanDraft | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [scalePage, setScalePage] = useState<number | null>(null);
+  const [distance, setDistance] = useState<{ page: number; length: number } | null>(null);
+  const [linkingMeasure, setLinkingMeasure] = useState<{
+    id: string;
+    left: number;
+    top: number;
+  } | null>(null);
+  const kindOf = useCallback(
+    (page: number): PageKind =>
+      pageKindOf(plans, { doc: doc.id, page }) ?? pageInfo.get(page)?.guess ?? 'text',
+    [plans, doc.id, pageInfo],
+  );
+  const planCount = useMemo(() => {
+    let count = 0;
+    for (let page = 1; page <= pages; page += 1) if (kindOf(page) === 'plan') count += 1;
+    return count;
+  }, [pages, kindOf]);
+  const shownPages = useMemo(() => {
+    const all = Array.from({ length: pages }, (_, i) => i + 1);
+    return pageFilter === 'alle' ? all : all.filter((page) => kindOf(page) === pageFilter);
+  }, [pages, pageFilter, kindOf]);
+  // Nach dem Filtern auf Pläne zählt die erste gezeigte Seite, nicht eine ausgeblendete.
+  const current = shownPages.includes(scrolled) ? scrolled : (shownPages[0] ?? scrolled);
+  const selectedMeasure = plans.measures.find((entry) => entry.id === selected) ?? null;
+  const ansatzNote = ansatzFor === null ? null : (plans.quantities.get(ansatzFor) ?? {});
+  const addToAnsatz = useCallback(
+    (term: AnsatzTerm): void => {
+      if (ansatzFor === null) return;
+      const note = plans.quantities.get(ansatzFor) ?? {};
+      dispatch({
+        type: 'planQuantity',
+        id: ansatzFor,
+        note: { ...note, ansatz: appendTerm(note.ansatz ?? [], term) },
+      });
+    },
+    [ansatzFor, plans, dispatch],
+  );
+
+  const finishDraft = useCallback(
+    (kind: MeasureKind, points: readonly PlanPoint[], page: number): void => {
+      const count = plans.measures.filter((entry) => entry.kind === kind).length + 1;
+      const id = `m-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+      const measure: PlanMeasure = {
+        id,
+        doc: doc.id,
+        page,
+        kind,
+        points,
+        name: `${MEASURE_LABEL[kind]} ${count}`,
+        links: [],
+        at: Date.now(),
+      };
+      dispatch({ type: 'planMeasure', measure });
+      setSelected(id);
+      setDraft(null);
+      if (ansatzFor !== null) addToAnsatz({ kind: 'messung', id });
+    },
+    [plans.measures, doc.id, dispatch, ansatzFor, addToAnsatz],
+  );
+  const minPoints = (kind: PlanTool): number =>
+    kind === 'flaeche' ? 3 : kind === 'stueck' ? 1 : 2;
+  const canFinish =
+    tool !== null &&
+    tool !== 'massstab' &&
+    draft !== null &&
+    draft.points.length >= minPoints(tool);
+  const finish = (): void => {
+    if (draft === null || tool === null || tool === 'massstab') return;
+    if (draft.points.length >= minPoints(tool)) finishDraft(tool, draft.points, draft.page);
+  };
+
+  const onTap = useCallback(
+    (page: number, point: PlanPoint, scale: number): void => {
+      if (tool === null) return;
+      const before = draft !== null && draft.page === page ? draft.points : [];
+      if (tool === 'massstab') {
+        const points = [...before, point];
+        if (points.length < 2) {
+          setDraft({ page, points });
+          return;
+        }
+        setDraft(null);
+        setDistance({ page, length: polylineLength(points.slice(-2)) });
+        setScalePage(page);
+        return;
+      }
+      // Fläche: Antippen nahe dem ersten Punkt schließt sie.
+      if (tool === 'flaeche' && before.length >= 3) {
+        const [x0, y0] = before[0];
+        if (Math.hypot(point[0] - x0, point[1] - y0) * scale < 22) {
+          finishDraft('flaeche', before, page);
+          return;
+        }
+      }
+      setDraft({ page, points: [...before, point] });
+    },
+    [tool, draft, finishDraft],
+  );
+
+  const pickMeasure = useCallback(
+    (id: string): void => {
+      if (ansatzFor !== null && tool === null) {
+        addToAnsatz({ kind: 'messung', id });
+        return;
+      }
+      setSelected((current) => (current === id ? null : id));
+    },
+    [ansatzFor, tool, addToAnsatz],
+  );
+
+  const overlay = useCallback(
+    (page: number, size: PageSize, scale: number) => {
+      const kind = kindOf(page);
+      const guess = pageInfo.get(page)?.guess ?? 'text';
+      const toggle = (
+        <button
+          type="button"
+          aria-label={`Seite ${page} ist ${kind === 'plan' ? 'Plan' : 'Text'} — umstellen`}
+          title={kind === 'plan' ? 'Als Text behandeln' : 'Als Plan behandeln'}
+          onClick={() => {
+            const next: PageKind = kind === 'plan' ? 'text' : 'plan';
+            dispatch({
+              type: 'planKind',
+              ref: { doc: doc.id, page },
+              kind: next === guess ? null : next,
+            });
+          }}
+          className="absolute left-[6px] top-[6px] z-[4] h-[28px] cursor-pointer rounded-[var(--r-pill)] border border-line bg-surface px-[10px] font-sans text-[11px] text-dim opacity-80 shadow-[var(--shadow-sm)] hover:opacity-100"
+        >
+          {kind === 'plan' ? 'Plan' : 'Text'}
+        </button>
+      );
+      if (kind !== 'plan') return toggle;
+      const ref = { doc: doc.id, page };
+      return (
+        <>
+          {toggle}
+          <PlanLayer
+            size={size}
+            scale={scale}
+            measures={measuresOfPage(plans, ref)}
+            planScale={scaleOf(plans, ref)}
+            draft={draft !== null && draft.page === page ? draft.points : null}
+            tool={tool}
+            selected={selected}
+            picking={ansatzFor !== null}
+            onTap={(point) => onTap(page, point, scale)}
+            onPick={pickMeasure}
+          />
+          {scaleOf(plans, ref) === null && (
+            <button
+              type="button"
+              onClick={() => {
+                setScalePage(page);
+                setDistance(null);
+              }}
+              className="absolute bottom-[6px] left-[6px] z-[4] h-[28px] cursor-pointer rounded-[var(--r-pill)] border border-amber bg-amberS px-[10px] font-sans text-[11px] text-amber"
+            >
+              Maßstab fehlt
+            </button>
+          )}
+        </>
+      );
+    },
+    [
+      kindOf,
+      pageInfo,
+      dispatch,
+      doc.id,
+      plans,
+      draft,
+      tool,
+      selected,
+      ansatzFor,
+      onTap,
+      pickMeasure,
+    ],
+  );
+
+  /** Gedrucktes Maß unter dem Finger: Zahl im Textinhalt der Seite (Rechenansatz). */
+  const massAt = (event: ReactMouseEvent): AnsatzTerm | null => {
+    const owner = (event.target as Element).ownerDocument;
+    const layer = (event.target as Element).closest<HTMLElement>('.doc-text');
+    const pageEl = layer?.closest<HTMLElement>('[data-page]');
+    if (layer == null || pageEl == null) return null;
+    const caret = owner.caretRangeFromPoint?.(event.clientX, event.clientY) ?? null;
+    if (caret === null || !layer.contains(caret.startContainer)) return null;
+    // Nur im angetippten Textstück suchen: der PDF-Text klebt Stücke ohne Trenner
+    // aneinander („6,50“ + „5,00“ wären sonst eine Zahl).
+    const node = caret.startContainer;
+    const before = owner.createRange();
+    before.setStart(layer, 0);
+    before.setEnd(node, 0);
+    const base = before.toString().length;
+    const offset = caret.startOffset;
+    for (const match of (node.textContent ?? '').matchAll(/\d[\d.,]*\d|\d/g)) {
+      const start = base + match.index;
+      if (offset < match.index - 1 || offset > match.index + match[0].length + 1) continue;
+      const value = parseMass(match[0]);
+      if (value === null) return null;
+      return {
+        kind: 'mass',
+        value,
+        doc: doc.id,
+        page: Number(pageEl.dataset.page),
+        start,
+        text: match[0],
+      };
+    }
+    return null;
+  };
   const marks = useMemo(() => marksOfDoc(annotations.documents, doc.id), [annotations, doc.id]);
   const byPage = useMemo(() => {
     const out = new Map<number, DocMark[]>();
@@ -448,6 +686,41 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
         <span className="font-mono text-[11.5px] text-mute">
           {current} / {pages}
         </span>
+        {planCount > 0 && (
+          <span role="radiogroup" aria-label="Seiten" className="flex items-center gap-[2px]">
+            {(
+              [
+                ['alle', `Alle ${pages}`],
+                ['text', `Text ${pages - planCount}`],
+                ['plan', `Pläne ${planCount}`],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                role="radio"
+                aria-checked={pageFilter === value}
+                onClick={() => setPageFilter(value)}
+                className={`${TOOL} ${pageFilter === value ? 'border-accent bg-accent-soft text-accent-ink' : ''}`}
+              >
+                {label}
+              </button>
+            ))}
+          </span>
+        )}
+        {planCount > 0 && (
+          <button
+            type="button"
+            aria-pressed={tool !== null}
+            onClick={() => {
+              setTool((current) => (current === null ? 'laenge' : null));
+              setDraft(null);
+            }}
+            className={`${TOOL} ${tool !== null ? 'border-accent bg-accent-soft text-accent-ink' : ''}`}
+          >
+            Messen
+          </button>
+        )}
         <span className="flex-1" />
         {counts.oz + counts.menge > 0 && (
           <SuggestToggles counts={counts} suggest={suggest} setSuggest={setSuggest} />
@@ -513,38 +786,176 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
           {error ?? 'Andere Fassung als beim Markieren — die Stellen von damals fehlen hier.'}
         </div>
       )}
-      <div
-        ref={attachScroller}
-        onContextMenu={onContextMenu}
-        className="relative min-h-0 flex-1 overflow-auto bg-grid2"
-        style={{ padding: GUTTER }}
-      >
-        <div className="flex flex-col items-center" style={{ gap: GUTTER }}>
-          {first !== null &&
-            Array.from({ length: pages }, (_, i) => i + 1).map((page) => (
-              <PdfPage
-                key={page}
-                doc={doc}
-                page={page}
-                scale={scale}
-                size={sizes.get(page) ?? first}
-                root={scroller}
-                marks={byPage.get(page) ?? NO_MARKS}
-                extra={extras.get(page) ?? NO_EXTRA}
-                reveal={
-                  flash !== null && flash.spot.page === page
-                    ? { start: flash.spot.start, text: flash.spot.text, nonce: flash.nonce }
-                    : null
-                }
-                onSize={onSize}
-                scrollBy={scrollBy}
-                badge={badge}
-                suggestions={pendingByPage.get(page) ?? NO_SUGGESTIONS}
-                onSuggestion={onSuggestion}
-              />
-            ))}
+      {ansatzFor !== null && ansatzNote !== null && (
+        <div
+          role="status"
+          className="flex shrink-0 items-center gap-[8px] border-b border-line bg-accent-soft px-[12px] py-[6px] font-sans text-[12.5px] text-accent-ink"
+        >
+          <span className="flex-1">
+            Ansatz für {positionOf(ansatzFor)?.oz ?? 'Position'}: Maß oder Messung im Plan antippen
+          </span>
+          <button type="button" className="cn-btn" onClick={() => setAnsatzFor(null)}>
+            Fertig
+          </button>
         </div>
+      )}
+      {/* Werkzeugleiste und Maßstab schweben über dem Plan, nicht über der Leiste. */}
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <div
+          ref={attachScroller}
+          onContextMenu={onContextMenu}
+          onClick={(event) => {
+            if (ansatzFor === null || tool !== null) return;
+            const term = massAt(event);
+            if (term === null) return;
+            host.getSelection()?.removeAllRanges();
+            addToAnsatz(term);
+          }}
+          className="relative min-h-0 flex-1 overflow-auto bg-grid2"
+          style={{ padding: GUTTER }}
+        >
+          <div className="flex flex-col items-center" style={{ gap: GUTTER }}>
+            {first !== null &&
+              shownPages.map((page) => (
+                <PdfPage
+                  key={page}
+                  doc={doc}
+                  page={page}
+                  scale={scale}
+                  size={sizes.get(page) ?? first}
+                  root={scroller}
+                  marks={byPage.get(page) ?? NO_MARKS}
+                  extra={extras.get(page) ?? NO_EXTRA}
+                  reveal={
+                    flash !== null && flash.spot.page === page
+                      ? { start: flash.spot.start, text: flash.spot.text, nonce: flash.nonce }
+                      : null
+                  }
+                  onSize={onSize}
+                  scrollBy={scrollBy}
+                  badge={badge}
+                  suggestions={pendingByPage.get(page) ?? NO_SUGGESTIONS}
+                  onSuggestion={onSuggestion}
+                  overlay={overlay}
+                />
+              ))}
+          </div>
+        </div>
+        {tool !== null && (
+          <PlanToolbar
+            tool={tool}
+            hasScale={scaleOf(plans, { doc: doc.id, page: current }) !== null}
+            canFinish={canFinish}
+            canUndo={draft !== null && draft.points.length > 0}
+            onTool={(next) => {
+              setTool(next);
+              setDraft(null);
+              if (next === 'massstab') {
+                setDistance(null);
+                setScalePage(current);
+              }
+            }}
+            onUndo={() =>
+              setDraft((value) =>
+                value === null || value.points.length <= 1
+                  ? null
+                  : { ...value, points: value.points.slice(0, -1) },
+              )
+            }
+            onFinish={finish}
+            onClose={() => {
+              setTool(null);
+              setDraft(null);
+            }}
+          />
+        )}
+        {scalePage !== null && (
+          <ScalePanel
+            page={scalePage}
+            current={scaleOf(plans, { doc: doc.id, page: scalePage })}
+            ratios={pageInfo.get(scalePage)?.ratios ?? []}
+            sameRatioPages={(ratio) =>
+              shownPagesAll(pages).filter(
+                (page) =>
+                  page !== scalePage &&
+                  kindOf(page) === 'plan' &&
+                  pageInfo.get(page)?.ratios[0] === ratio,
+              )
+            }
+            distance={distance !== null && distance.page === scalePage ? distance.length : null}
+            onApply={(unit, source, list) => {
+              dispatch({
+                type: 'planScale',
+                refs: list.map((page) => ({ doc: doc.id, page })),
+                scale: { unit, source, at: Date.now() },
+              });
+              setScalePage(null);
+              setDistance(null);
+              setTool((value) => (value === 'massstab' ? 'laenge' : value));
+            }}
+            onRemove={() =>
+              dispatch({
+                type: 'planScale',
+                refs: [{ doc: doc.id, page: scalePage }],
+                scale: null,
+              })
+            }
+            onMeasure={() => {
+              setDistance(null);
+              setDraft(null);
+              setTool('massstab');
+            }}
+            onClose={() => {
+              setScalePage(null);
+              setDistance(null);
+            }}
+          />
+        )}
       </div>
+      {selectedMeasure !== null && (
+        <MeasureBar
+          measure={selectedMeasure}
+          scale={scaleOf(plans, selectedMeasure)}
+          ozOf={(id) => positionOf(id)?.oz ?? '?'}
+          onRename={(name) =>
+            dispatch({ type: 'planMeasure', measure: { ...selectedMeasure, name } })
+          }
+          onLink={(anchor) => setLinkingMeasure({ id: selectedMeasure.id, ...anchor })}
+          onUnlink={(id) =>
+            dispatch({
+              type: 'planMeasure',
+              measure: {
+                ...selectedMeasure,
+                links: selectedMeasure.links.filter((entry) => entry !== id),
+              },
+            })
+          }
+          onShowPosition={(id) => jumpToPosition(id, { stayInView: true })}
+          onRemove={() => {
+            dispatch({ type: 'planRemove', id: selectedMeasure.id });
+            setSelected(null);
+          }}
+          onClose={() => setSelected(null)}
+        />
+      )}
+      {linkingMeasure !== null && (
+        <LinkDialog
+          left={linkingMeasure.left}
+          top={linkingMeasure.top}
+          already={plans.measures.find((entry) => entry.id === linkingMeasure.id)?.links ?? NO_IDS}
+          onLink={(ids) => {
+            const measure = plans.measures.find((entry) => entry.id === linkingMeasure.id);
+            if (measure !== undefined) {
+              dispatch({
+                type: 'planMeasure',
+                measure: { ...measure, links: [...measure.links, ...ids] },
+              });
+            }
+            setLinkingMeasure(null);
+          }}
+          onClose={() => setLinkingMeasure(null)}
+        />
+      )}
       {picked !== null && (
         <PaintBar
           target={picked.target}
@@ -667,6 +1078,8 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     </div>
   );
 }
+
+const shownPagesAll = (pages: number): number[] => Array.from({ length: pages }, (_, i) => i + 1);
 
 const NO_MARKS: readonly DocMark[] = [];
 const NO_HIT_LIST: readonly DocHit[] = [];

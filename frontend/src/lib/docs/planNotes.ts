@@ -14,7 +14,7 @@
 // Positions-Hash (Entscheidung 0055) — wie alle Notizen (`rekeyPlanNotes`). Das PDF
 // selbst wird nicht gespeichert. Reine Funktionen; Zeitpunkte kommen von außen.
 
-import { polygonArea, polylineLength, type PageKind, type PlanPoint } from '@core';
+import { polygonArea, polylineLength, ratioFromUnit, type PageKind, type PlanPoint } from '@core';
 
 export type MeasureKind = 'laenge' | 'flaeche' | 'stueck';
 
@@ -543,4 +543,58 @@ export function fromStoredPlanNotes(value: unknown): PlanNotes {
     });
   }
   return isEmptyPlanNotes(notes) ? EMPTY_PLAN_NOTES : notes;
+}
+
+/** Zahl deutsch mit zwei Nachkommastellen, z. B. „1.250,50“. */
+export function formatAmount(value: number, digits = 2): string {
+  return value.toLocaleString('de-DE', {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  });
+}
+
+/** Wert einer Messung mit Einheit; ohne Maßstab „—“. */
+export function formatMeasure(value: number | null, kind: MeasureKind): string {
+  if (value === null) return '—';
+  return `${formatAmount(value, kind === 'stueck' ? 0 : 2)} ${MEASURE_UNIT[kind]}`;
+}
+
+/** Mittelpunkt der Punkte, für die Beschriftung im Plan. */
+export function centerOf(points: readonly PlanPoint[]): PlanPoint {
+  if (points.length === 0) return [0, 0];
+  let x = 0;
+  let y = 0;
+  for (const [px, py] of points) {
+    x += px;
+    y += py;
+  }
+  return [x / points.length, y / points.length];
+}
+
+/**
+ * Baustein an einen Ansatz hängen: zwei Werte hintereinander verbindet ein „+“ (mehrere
+ * Maßketten), ein Rechenzeichen nach einem Rechenzeichen ersetzt es (Klammern bleiben).
+ */
+export function appendTerm(ansatz: readonly AnsatzTerm[], term: AnsatzTerm): AnsatzTerm[] {
+  const last = ansatz.at(-1);
+  const isValue = (item: AnsatzTerm | undefined): boolean =>
+    item !== undefined && (item.kind !== 'op' || item.op === ')');
+  if (term.kind !== 'op') {
+    return isValue(last) ? [...ansatz, { kind: 'op', op: '+' }, term] : [...ansatz, term];
+  }
+  const binary = (item: AnsatzTerm | undefined): boolean =>
+    item?.kind === 'op' && item.op !== '(' && item.op !== ')';
+  const opensGroup = last === undefined || (last.kind === 'op' && last.op === '(');
+  // Am Anfang oder nach „(“ ergibt nur Minus einen Sinn.
+  if (binary(term) && opensGroup && term.op !== '-') return [...ansatz];
+  if (binary(last) && binary(term)) return [...ansatz.slice(0, -1), term];
+  if (term.op === '(' && isValue(last)) return [...ansatz, { kind: 'op', op: '*' }, term];
+  return [...ansatz, term];
+}
+
+/** Maßstab als „1:100“; krumme Werte mit einer Nachkommastelle. */
+export function ratioLabel(unit: number): string {
+  const ratio = ratioFromUnit(unit);
+  const round = Math.round(ratio);
+  return `1:${Math.abs(ratio - round) < 0.05 ? String(round) : formatAmount(ratio, 1)}`;
 }

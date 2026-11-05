@@ -21,6 +21,7 @@ import { shownText } from './shownText';
 import { useTextSearches } from './useTextSearches';
 import { HintBlock, HintCount } from '../check/HintBlock';
 import { DocLinks } from '../docs/DocLinks';
+import { PlanQuantity } from '../docs/PlanQuantity';
 import {
   attributeLabel,
   attrMeta,
@@ -480,6 +481,8 @@ export function PositionDetails({ node, position }: { node: LVNode; position: Po
           text={shown}
           onRemove={(i) => dispatch({ type: 'removeHighlight', id: node.id, position: i })}
         />
+
+        <PlanQuantity positionId={node.id} quantity={position.quantity} unit={position.unit} />
 
         <DocLinks positionId={node.id} />
 

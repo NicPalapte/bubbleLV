@@ -56,6 +56,20 @@ import {
   type DocSpot,
 } from '../lib/docs/docNotes';
 import type { LinkSource } from '../lib/docs/docSuggest';
+import {
+  EMPTY_PLAN_NOTES,
+  putMeasure,
+  removeMeasure,
+  setPageKind,
+  setQuantity,
+  setScale,
+  type PageRef,
+  type PlanMeasure,
+  type PlanNotes,
+  type PlanScale,
+  type QuantityNote,
+} from '../lib/docs/planNotes';
+import type { PageKind } from '@core';
 import { forgetLink, judgeLink, type LinkVerdict } from '../lib/positionLinks';
 import type { HintIndex } from '../lib/check';
 import { AXIS_FACETS } from '../lib/graph/layoutMap';
@@ -146,6 +160,19 @@ type LvAction =
   | { type: 'docReject'; spot: DocSpot; id: string; at: number }
   /** Eine Art von Vorschlag im Dokument zeigen oder ausblenden, für dieses LV (0087). */
   | { type: 'docSuggest'; source: LinkSource; on: boolean }
+  /** Pläne messen (Entscheidung 0093): Seitenart von Hand; `null` nimmt sie zurück. */
+  | { type: 'planKind'; ref: PageRef; kind: PageKind | null }
+  /** Maßstab für eine oder mehrere Seiten übernehmen; `null` entfernt ihn. */
+  | {
+      type: 'planScale';
+      refs: readonly PageRef[];
+      scale: { unit: number; source: PlanScale['source']; at: number } | null;
+    }
+  /** Messung anlegen oder ändern (gleiche `id`); `links` sind Knoten-IDs. */
+  | { type: 'planMeasure'; measure: PlanMeasure }
+  | { type: 'planRemove'; id: string }
+  /** Eigene Angaben zur Menge einer Position (Knoten-ID): Faktor, Rechenansatz. */
+  | { type: 'planQuantity'; id: string; note: QuantityNote }
   /** Vorschlag einer Regel bestätigt oder verworfen (Entscheidung 0081); Knoten-IDs. */
   | { type: 'judgeLink'; x: string; y: string; status: LinkVerdict; regel: string; at: number }
   /** Urteil über ein Paar zurücknehmen: wieder offen. */
@@ -259,6 +286,15 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
       return documents === before
         ? state
         : { ...state, annotations: { ...state.annotations, documents } };
+    }
+    case 'planKind':
+    case 'planScale':
+    case 'planMeasure':
+    case 'planRemove':
+    case 'planQuantity': {
+      const before = state.annotations.plans ?? EMPTY_PLAN_NOTES;
+      const plans = planNotesReducer(before, action);
+      return plans === before ? state : { ...state, annotations: { ...state.annotations, plans } };
     }
     case 'judgeLink':
     case 'forgetLink': {
@@ -474,6 +510,26 @@ type DocAction = Extract<
   LvAction,
   { type: 'docRegister' | 'docPaint' | 'docLink' | 'docUnlink' | 'docReject' | 'docSuggest' }
 >;
+
+type PlanAction = Extract<
+  LvAction,
+  { type: 'planKind' | 'planScale' | 'planMeasure' | 'planRemove' | 'planQuantity' }
+>;
+
+function planNotesReducer(notes: PlanNotes, action: PlanAction): PlanNotes {
+  switch (action.type) {
+    case 'planKind':
+      return setPageKind(notes, action.ref, action.kind);
+    case 'planScale':
+      return action.refs.reduce((out, ref) => setScale(out, ref, action.scale), notes);
+    case 'planMeasure':
+      return putMeasure(notes, action.measure);
+    case 'planRemove':
+      return removeMeasure(notes, action.id);
+    case 'planQuantity':
+      return setQuantity(notes, action.id, action.note);
+  }
+}
 
 function docNotesReducer(notes: DocNotes, action: DocAction): DocNotes {
   switch (action.type) {

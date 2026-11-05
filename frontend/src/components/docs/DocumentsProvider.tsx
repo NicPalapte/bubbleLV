@@ -74,6 +74,12 @@ export interface DocumentsApi {
   /** Welche Vorschläge gezeigt werden; Standard: alle. Gemerkt in den Notizen des LV. */
   readonly suggest: Readonly<Record<LinkSource, boolean>>;
   setSuggest: (source: LinkSource, on: boolean) => void;
+  /**
+   * Position (Knoten-ID), für die gerade ein Rechenansatz gebildet wird (Entscheidung
+   * 0093): Antippen eines Maßes oder einer Messung im Plan hängt es an ihren Ansatz.
+   */
+  readonly ansatzFor: string | null;
+  setAnsatzFor: (id: string | null) => void;
 }
 
 function* suggestPositions(index: PositionIndex): Generator<SuggestPosition> {
@@ -106,6 +112,7 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [jump, setJump] = useState<DocJump | null>(null);
   const [docSearch, setDocSearch] = useState('');
+  const [ansatzFor, setAnsatzFor] = useState<string | null>(null);
   const texts = useRef(new Map<string, Promise<string>>());
   // Kennungen der angemeldeten Dokumente, sofort gesetzt: `docsRef` folgt erst nach dem
   // Rendern, zwei kurz nacheinander abgeworfene gleiche PDFs kämen sonst beide durch.
@@ -129,6 +136,7 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
     setJump(null);
     setError(null);
     setDocSearch('');
+    setAnsatzFor(null);
   }, [lv]);
   useEffect(
     () => () => {
@@ -383,6 +391,8 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
       suggestions,
       suggest,
       setSuggest,
+      ansatzFor,
+      setAnsatzFor,
     }),
     [
       docs,
@@ -402,6 +412,7 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
       suggestions,
       suggest,
       setSuggest,
+      ansatzFor,
     ],
   );
   return <DocumentsContext.Provider value={api}>{children}</DocumentsContext.Provider>;

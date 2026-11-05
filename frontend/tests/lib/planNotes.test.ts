@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import {
   EMPTY_PLAN_NOTES,
   ansatzText,
+  appendTerm,
   evaluateAnsatz,
   evaluateFormula,
   fromStoredPlanNotes,
@@ -178,5 +179,29 @@ describe('Speichern und Schlüssel', () => {
     expect(scaleOf(merged, page)?.unit).toBe(0.5);
     expect(merged.measures).toHaveLength(1);
     expect(merged.quantities.has('pos-a')).toBe(true);
+  });
+});
+
+describe('appendTerm', () => {
+  const m = (id: string): AnsatzTerm => ({ kind: 'messung', id });
+  it('verbindet zwei Werte mit plus und ersetzt doppelte Rechenzeichen', () => {
+    expect(appendTerm([m('a')], m('b'))).toEqual([m('a'), { kind: 'op', op: '+' }, m('b')]);
+    expect(appendTerm([m('a'), { kind: 'op', op: '+' }], { kind: 'op', op: '*' })).toEqual([
+      m('a'),
+      { kind: 'op', op: '*' },
+    ]);
+    expect(appendTerm([{ kind: 'op', op: '(' }], m('a'))).toEqual([
+      { kind: 'op', op: '(' },
+      m('a'),
+    ]);
+  });
+  it('ignoriert Rechenzeichen am Anfang, außer Minus, und setzt mal vor Klammer', () => {
+    expect(appendTerm([], { kind: 'op', op: '+' })).toEqual([]);
+    expect(appendTerm([], { kind: 'op', op: '-' })).toEqual([{ kind: 'op', op: '-' }]);
+    expect(appendTerm([m('a')], { kind: 'op', op: '(' })).toEqual([
+      m('a'),
+      { kind: 'op', op: '*' },
+      { kind: 'op', op: '(' },
+    ]);
   });
 });
