@@ -24,3 +24,14 @@ export { SENTENCE_REACH, sentenceAround } from './text/sentence';
 export * from './rules/rule';
 export * from './rules/evaluate';
 export { blocksFromSelection } from './rules/fromSelection';
+export {
+  guessPageKind,
+  polygonArea,
+  polylineLength,
+  ratioFromUnit,
+  ratiosInText,
+  unitFromDistance,
+  unitFromRatio,
+  type PageKind,
+  type PlanPoint,
+} from './plan/measure';

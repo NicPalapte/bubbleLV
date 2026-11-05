@@ -25,6 +25,14 @@ import {
   type DocNotes,
   type StoredDocNotes,
 } from './docs/docNotes';
+import {
+  fromStoredPlanNotes,
+  isEmptyPlanNotes,
+  rekeyPlanNotes,
+  toStoredPlanNotes,
+  type PlanNotes,
+  type StoredPlanNotes,
+} from './docs/planNotes';
 import { rekeyLinks, toLinks, type PositionLink } from './positionLinks';
 import type { LVNode } from '../types/lvNode';
 
@@ -86,6 +94,8 @@ export interface Annotations {
   readonly documents: DocNotes;
   /** Urteile über Verbindungen aus Regeln (Entscheidung 0081); fehlt = keine. */
   readonly links?: readonly PositionLink[];
+  /** Pläne messen (Entscheidung 0093); fehlt = nichts gemessen. */
+  readonly plans?: PlanNotes;
 }
 
 export const EMPTY_ANNOTATIONS: Annotations = {
@@ -360,7 +370,7 @@ export function storageKeys(nodes: Iterable<LVNode>): StorageKeys {
  * Notizen aus v0.21 und älter (Knoten-ID) finden ihre Position direkt.
  */
 export function rekey(annotations: Annotations, keys: ReadonlyMap<string, string>): Annotations {
-  const { progress, important, highlights, log, documents, links = [] } = annotations;
+  const { progress, important, highlights, log, documents, links = [], plans } = annotations;
   const empty =
     progress.size +
       important.size +
@@ -369,7 +379,8 @@ export function rekey(annotations: Annotations, keys: ReadonlyMap<string, string
       documents.marks.length +
       (documents.rejected ?? []).length +
       links.length ===
-    0;
+      0 &&
+    (plans === undefined || isEmptyPlanNotes(plans));
   if (empty) return annotations;
   const key = (id: string): string => keys.get(id) ?? id;
   return {
@@ -379,6 +390,9 @@ export function rekey(annotations: Annotations, keys: ReadonlyMap<string, string
     log: new Map([...log].map(([id, entries]) => [key(id), entries])),
     documents: rekeyDocNotes(documents, keys),
     ...(links.length > 0 ? { links: rekeyLinks(links, keys) } : {}),
+    ...(plans === undefined || isEmptyPlanNotes(plans)
+      ? {}
+      : { plans: rekeyPlanNotes(plans, keys) }),
   };
 }
 
@@ -399,6 +413,8 @@ export interface StoredAnnotations {
   readonly log: ReadonlyArray<readonly [string, readonly LogEntry[]]>;
   readonly documents: StoredDocNotes;
   readonly links?: readonly PositionLink[];
+  /** Seit 0093 (Pläne messen), ebenso optional. */
+  readonly plans?: StoredPlanNotes;
 }
 
 /** `annotations` muss schon nach Hash geschlüsselt sein (`rekey(…, keys.toHash)`). */
@@ -411,6 +427,9 @@ export function toStored(annotations: Annotations): StoredAnnotations {
     log: [...annotations.log],
     documents: toStoredDocNotes(annotations.documents),
     ...((annotations.links ?? []).length > 0 ? { links: annotations.links } : {}),
+    ...(annotations.plans === undefined || isEmptyPlanNotes(annotations.plans)
+      ? {}
+      : { plans: toStoredPlanNotes(annotations.plans) }),
   };
 }
 
@@ -543,6 +562,7 @@ export function fromStored(value: unknown): Annotations {
     }
     const documents = raw.v === 6 ? fromStoredDocNotes(raw.documents) : EMPTY_DOC_NOTES;
     const links = raw.v === 6 ? toLinks(raw.links) : [];
+    const plans = raw.v === 6 ? fromStoredPlanNotes(raw.plans) : null;
     return {
       progress,
       important,
@@ -550,6 +570,7 @@ export function fromStored(value: unknown): Annotations {
       log,
       documents,
       ...(links.length > 0 ? { links } : {}),
+      ...(plans === null || isEmptyPlanNotes(plans) ? {} : { plans }),
     };
   }
 
