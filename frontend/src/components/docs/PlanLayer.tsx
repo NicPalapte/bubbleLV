@@ -2,7 +2,7 @@
 // als SVG in Seiten-Einheiten, darüber die Werte. Im Messmodus nimmt die Ebene das
 // Antippen auf und meldet den Punkt in Seiten-Einheiten — unabhängig vom Zoom.
 
-import type { PointerEvent as ReactPointerEvent } from 'react';
+import { useRef, type PointerEvent as ReactPointerEvent } from 'react';
 import type { PlanPoint } from '@core';
 import type { PageSize } from './PdfPage';
 import {
@@ -111,11 +111,20 @@ export function PlanLayer({
   const width = Math.floor(size.width * scale);
   const height = Math.floor(size.height * scale);
   const capture = tool !== null;
-  const tap = (event: ReactPointerEvent<SVGSVGElement>): void => {
+  // Punkt erst beim Loslassen setzen: wer zieht, verschiebt den Plan (DocumentView).
+  const down = useRef<{ x: number; y: number } | null>(null);
+  const press = (event: ReactPointerEvent<SVGSVGElement>): void => {
     if (!capture || event.button > 0) return;
+    down.current = { x: event.clientX, y: event.clientY };
+    event.preventDefault();
+  };
+  const tap = (event: ReactPointerEvent<SVGSVGElement>): void => {
+    const start = down.current;
+    down.current = null;
+    if (!capture || start === null) return;
+    if (Math.hypot(event.clientX - start.x, event.clientY - start.y) >= 5) return;
     const box = event.currentTarget.getBoundingClientRect();
     onTap([(event.clientX - box.left) / scale, (event.clientY - box.top) / scale]);
-    event.preventDefault();
   };
   const draftColor = 'var(--accent)';
 
@@ -128,7 +137,8 @@ export function PlanLayer({
         viewBox={`0 0 ${size.width} ${size.height}`}
         width={width}
         height={height}
-        onPointerDown={tap}
+        onPointerDown={press}
+        onPointerUp={tap}
         className={capture ? 'pointer-events-auto cursor-crosshair touch-none' : ''}
       >
         {measures.map((measure) => (

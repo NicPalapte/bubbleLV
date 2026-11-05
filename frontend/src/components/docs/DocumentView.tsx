@@ -10,11 +10,13 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type DragEvent,
   type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
 } from 'react';
 import { DocOverview } from './DocOverview';
 import { DocPicker } from './DocPicker';
@@ -63,7 +65,8 @@ import {
 } from '../../lib/docs/planNotes';
 
 const ZOOM_MIN = 0.5;
-const ZOOM_MAX = 3;
+// Pläne brauchen viel Zoom für Maßketten; das Bild bleibt scharf (`pageCanvas.ts`).
+const ZOOM_MAX = 16;
 const ZOOM_STEP = 1.2;
 /** Rand links und rechts neben der Seite in px. */
 const GUTTER = 16;
@@ -475,8 +478,125 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
   }, [scroller]);
 
   const first = sizes.get(1) ?? null;
-  const fit = first === null || width === 0 ? 1 : (width - 2 * GUTTER) / first.width;
-  const scale = Math.max(0.2, fit * zoom);
+  // Jede Seite auf die Breite eingepasst: ein A0-Plan hinter A4-Text wird sonst riesig.
+  const pageScale = (size: PageSize): number =>
+    Math.max(0.05, (width === 0 ? 1 : (width - 2 * GUTTER) / size.width) * zoom);
+
+  // Zoomen um einen Punkt: dieselbe Stelle der Seite bleibt unter dem Mauszeiger.
+  const zoomRef = useRef(zoom);
+  const anchor = useRef<{ page: string; fx: number; fy: number; x: number; y: number } | null>(
+    null,
+  );
+  const zoomBy = useCallback((factor: number, at?: { x: number; y: number }): void => {
+    const el = scrollerRef.current;
+    const next = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoomRef.current * factor));
+    if (el === null || next === zoomRef.current) return;
+    const view = el.getBoundingClientRect();
+    const x = at?.x ?? view.left + view.width / 2;
+    const y = at?.y ?? view.top + view.height / 2;
+    const pages = [...el.querySelectorAll<HTMLElement>('[data-page]')];
+    const under =
+      pages.find((page) => {
+        const box = page.getBoundingClientRect();
+        return y >= box.top && y <= box.bottom;
+      }) ?? pages.find((page) => page.getBoundingClientRect().bottom >= y);
+    if (under !== undefined) {
+      const box = under.getBoundingClientRect();
+      anchor.current = {
+        page: under.dataset.page ?? '',
+        fx: (x - box.left) / box.width,
+        fy: (y - box.top) / box.height,
+        x,
+        y,
+      };
+    }
+    zoomRef.current = next;
+    setZoom(next);
+  }, []);
+  useLayoutEffect(() => {
+    const el = scrollerRef.current;
+    const at = anchor.current;
+    anchor.current = null;
+    if (el === null || at === null) return;
+    const page = el.querySelector<HTMLElement>(`[data-page="${at.page}"]`);
+    if (page === null) return;
+    const box = page.getBoundingClientRect();
+    el.scrollLeft += box.left + at.fx * box.width - at.x;
+    el.scrollTop += box.top + at.fy * box.height - at.y;
+  }, [zoom]);
+
+  // Mausrad: über Plänen zoomen, über Text blättern; mit Strg (auch Zwei-Finger-Zoom am
+  // Trackpad) überall zoomen. Eigener Listener, weil React `wheel` passiv anmeldet.
+  const kindRef = useRef(kindOf);
+  useLayoutEffect(() => {
+    zoomRef.current = zoom;
+    kindRef.current = kindOf;
+  }, [zoom, kindOf]);
+  useEffect(() => {
+    if (scroller === null) return;
+    const onWheel = (event: WheelEvent): void => {
+      const target = event.target as Element | null;
+      const page = target?.closest?.<HTMLElement>('[data-page]');
+      const onPlan = page != null && kindRef.current(Number(page.dataset.page)) === 'plan';
+      if (!event.ctrlKey && !event.metaKey && !onPlan) return;
+      event.preventDefault();
+      const lines = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? 400 : 1;
+      const delta = Math.max(-200, Math.min(200, event.deltaY * lines));
+      zoomBy(Math.exp(-delta * 0.002), { x: event.clientX, y: event.clientY });
+    };
+    scroller.addEventListener('wheel', onWheel, { passive: false });
+    return () => scroller.removeEventListener('wheel', onWheel);
+  }, [scroller, zoomBy]);
+
+  // Verschieben: mittlere Maustaste überall, linke auf Plänen (auch beim Messen). Erst ab
+  // ein paar Pixeln Weg — ein Antippen bleibt ein Antippen.
+  const pan = useRef<{
+    id: number;
+    x: number;
+    y: number;
+    left: number;
+    top: number;
+    moved: boolean;
+  } | null>(null);
+  const swallowClick = useRef(false);
+  const onPanStart = (event: ReactPointerEvent<HTMLDivElement>): void => {
+    if (event.pointerType === 'touch' && tool === null) return;
+    const target = event.target as Element;
+    if (target.closest('button, input, a, [role="dialog"]') !== null) return;
+    const page = target.closest<HTMLElement>('[data-page]');
+    const onPlan = page !== null && kindOf(Number(page.dataset.page)) === 'plan';
+    if (!(event.button === 1 || (event.button === 0 && onPlan))) return;
+    if (event.button === 1) event.preventDefault();
+    const el = event.currentTarget;
+    pan.current = {
+      id: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+      left: el.scrollLeft,
+      top: el.scrollTop,
+      moved: false,
+    };
+  };
+  const onPanMove = (event: ReactPointerEvent<HTMLDivElement>): void => {
+    const state = pan.current;
+    if (state === null || state.id !== event.pointerId) return;
+    const dx = event.clientX - state.x;
+    const dy = event.clientY - state.y;
+    if (!state.moved && Math.hypot(dx, dy) < 5) return;
+    if (!state.moved) {
+      state.moved = true;
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
+    host.getSelection()?.removeAllRanges();
+    event.currentTarget.scrollLeft = state.left - dx;
+    event.currentTarget.scrollTop = state.top - dy;
+  };
+  const onPanEnd = (event: ReactPointerEvent<HTMLDivElement>): void => {
+    const state = pan.current;
+    if (state === null || state.id !== event.pointerId) return;
+    pan.current = null;
+    swallowClick.current = state.moved;
+  };
 
   const scrollToPage = useCallback((page: number): void => {
     const el = scrollerRef.current;
@@ -710,7 +830,7 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
           type="button"
           aria-label="Verkleinern"
           disabled={zoom <= ZOOM_MIN}
-          onClick={() => setZoom((value) => Math.max(ZOOM_MIN, value / ZOOM_STEP))}
+          onClick={() => zoomBy(1 / ZOOM_STEP)}
           className={TOOL}
         >
           −
@@ -719,11 +839,21 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
           type="button"
           aria-label="Vergrößern"
           disabled={zoom >= ZOOM_MAX}
-          onClick={() => setZoom((value) => Math.min(ZOOM_MAX, value * ZOOM_STEP))}
+          onClick={() => zoomBy(ZOOM_STEP)}
           className={TOOL}
         >
           +
         </button>
+        {zoom !== 1 && (
+          <button
+            type="button"
+            title="Auf Breite einpassen"
+            onClick={() => zoomBy(1 / zoom)}
+            className={TOOL}
+          >
+            {Math.round(zoom * 100)} %
+          </button>
+        )}
         <button
           type="button"
           aria-label={`${doc.name} schließen`}
@@ -760,6 +890,17 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
         <div
           ref={attachScroller}
           onContextMenu={onContextMenu}
+          onPointerDown={onPanStart}
+          onPointerMove={onPanMove}
+          onPointerUp={onPanEnd}
+          onPointerCancel={onPanEnd}
+          onClickCapture={(event) => {
+            // Nach dem Verschieben ist das Loslassen kein Klick (Maß, Messung, Text).
+            if (!swallowClick.current) return;
+            swallowClick.current = false;
+            event.stopPropagation();
+            event.preventDefault();
+          }}
           onClick={(event) => {
             if (ansatzFor === null || tool !== null) return;
             const term = massAt(event);
@@ -770,14 +911,15 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
           className="relative min-h-0 flex-1 overflow-auto bg-grid2"
           style={{ padding: GUTTER }}
         >
-          <div className="flex flex-col items-center" style={{ gap: GUTTER }}>
+          {/* Ohne `items-center`: breiter als der Bereich wäre der linke Rand unerreichbar. */}
+          <div className="flex w-max min-w-full flex-col" style={{ gap: GUTTER }}>
             {first !== null &&
               shownPages.map((page) => (
                 <PdfPage
                   key={page}
                   doc={doc}
                   page={page}
-                  scale={scale}
+                  scale={pageScale(sizes.get(page) ?? first)}
                   size={sizes.get(page) ?? first}
                   root={scroller}
                   marks={byPage.get(page) ?? NO_MARKS}
@@ -838,6 +980,12 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
                   pageInfo.get(page)?.ratios[0] === ratio,
               )
             }
+            unscaledPages={shownPagesAll(pages).filter(
+              (page) =>
+                page !== scalePage &&
+                kindOf(page) === 'plan' &&
+                scaleOf(plans, { doc: doc.id, page }) === null,
+            )}
             distance={distance !== null && distance.page === scalePage ? distance.length : null}
             onApply={(unit, source, list) => {
               dispatch({

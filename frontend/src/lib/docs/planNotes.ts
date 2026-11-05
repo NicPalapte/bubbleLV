@@ -47,7 +47,7 @@ export interface PageKindEntry extends PageRef {
 export interface PlanScale extends PageRef {
   /** Meter in der Natur je Seiten-Einheit. */
   readonly unit: number;
-  readonly source: 'plankopf' | 'strecke';
+  readonly source: 'plankopf' | 'strecke' | 'hand';
   readonly at: number;
 }
 
@@ -508,7 +508,8 @@ export function fromStoredPlanNotes(value: unknown): PlanNotes {
     const entry = record(item);
     const ref = entry === null ? null : toPageRef(entry);
     if (ref === null || entry === null || typeof entry.unit !== 'number') continue;
-    const source = entry.source === 'strecke' ? 'strecke' : 'plankopf';
+    const source =
+      entry.source === 'strecke' || entry.source === 'hand' ? entry.source : 'plankopf';
     notes = setScale(notes, ref, { unit: entry.unit, source, at: atOf(entry) });
   }
   for (const item of Array.isArray(raw.measures) ? raw.measures : []) {

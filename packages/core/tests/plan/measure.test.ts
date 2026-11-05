@@ -64,6 +64,16 @@ describe('ratiosInText', () => {
     ]);
     expect(ratiosInText('Maßstab 1:50')).toEqual([50]);
   });
+  it('findet Maßstäbe auch in zusammengeklebtem PDF-Text', () => {
+    expect(ratiosInText('Grundriss EGM 1:100Datum')).toEqual([100]);
+    expect(ratiosInText('PlannummerM=1:50')).toEqual([50]);
+    expect(ratiosInText('MASSSTAB1:200')).toEqual([200]);
+  });
+  it('nimmt „1:100“ allein, wenn kein Vorwort da ist, aber keine kleinen', () => {
+    expect(ratiosInText('Maßstab | Datum | 1:100 | 05.11.2026')).toEqual([100]);
+    expect(ratiosInText('Gefälle 1:5')).toEqual([]);
+    expect(ratiosInText('2 cm 1:50')).toEqual([50]);
+  });
   it('übersieht Uhrzeiten, Verhältnisse und unübliche Zahlen', () => {
     expect(ratiosInText('Beginn 1:30 Uhr, Mischung 1:3, M 1:37')).toEqual([]);
   });

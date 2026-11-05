@@ -53,20 +53,31 @@ const COMMON_RATIOS = new Set([
   10000,
 ]);
 
-// „M 1:100“, „M. 1 : 50“, „Maßstab 1:200“, „1:100“ allein nur hinter M/Maßstab — sonst
-// fänge es Uhrzeiten oder Verhältnisse im Text.
-const RATIO_PATTERN = /(?:^|[^\p{L}])(?:M\.?|Ma(?:ß|ss)stab:?|Mst\.?)\s*1\s*:\s*(\d{1,5})(?!\d)/giu;
+// „M 1:100“, „M. 1 : 50“, „M=1:20“, „Maßstab 1:200“. PDF.js liefert die Textstücke ohne
+// Trenner („EG“ + „M 1:100“ = „EGM 1:100“), deshalb keine Wortgrenze davor. „M“ nur groß,
+// sonst passte „cm 1:50“.
+const RATIO_PATTERN =
+  /(?:M|[Mm]a(?:ß|ss)stab|MASSSTAB|MAßSTAB|Mstb?|MSTB?)\.?\s*[:=]?\s*1\s*:\s*(\d{1,5})(?![\d,.])/gu;
+// Ohne Vorwort nur „1:100“ allein (Plankopf als Tabelle: „Maßstab“ steht woanders), und
+// nur ab 1:10 — 1:2 oder 1:5 sind eher Gefälle oder Mischungen.
+const BARE_PATTERN = /(?<![\d.,:/])1\s?:\s?(\d{2,5})(?![\d,.:])/gu;
+
+function countRatios(text: string, pattern: RegExp, min: number): Map<number, number> {
+  const counts = new Map<number, number>();
+  for (const match of text.matchAll(pattern)) {
+    const ratio = Number(match[1]);
+    if (ratio >= min && COMMON_RATIOS.has(ratio)) counts.set(ratio, (counts.get(ratio) ?? 0) + 1);
+  }
+  return counts;
+}
 
 /**
  * Maßstäbe, die im Seitentext stehen, häufigste zuerst. Eine Seite mit mehreren
- * Ausschnitten kann mehrere haben; der Mensch wählt.
+ * Ausschnitten kann mehrere haben; der Mensch wählt. Nur ein Vorschlag (Entscheidung 0095).
  */
 export function ratiosInText(text: string): number[] {
-  const counts = new Map<number, number>();
-  for (const match of text.matchAll(RATIO_PATTERN)) {
-    const ratio = Number(match[1]);
-    if (COMMON_RATIOS.has(ratio)) counts.set(ratio, (counts.get(ratio) ?? 0) + 1);
-  }
+  let counts = countRatios(text, RATIO_PATTERN, 1);
+  if (counts.size === 0) counts = countRatios(text, BARE_PATTERN, 10);
   return [...counts].sort((a, b) => b[1] - a[1] || a[0] - b[0]).map(([ratio]) => ratio);
 }
 

@@ -27,6 +27,12 @@
   Maßstab vor (gilt nur bei PDF in Originalgröße). Er gilt erst nach „Übernehmen“.
   Sonst: bekannte Strecke messen und Länge eingeben. Der Maßstab gilt für die Seite oder
   für alle Pläne des Dokuments mit demselben Plankopf-Maßstab.
+- **Maßstab von Hand:** Findet Conocto keinen, trägt man „1 : x“ selbst ein (Herkunft
+  „von Hand“), auf Wunsch für alle Pläne ohne Maßstab.
+- **Zoom und Bild:** Jede Seite auf die Bereichsbreite eingepasst, Zoom bis 1600 %. Mausrad
+  zoomt über Plänen, Ziehen verschiebt. Eine Zeichenfläche hat höchstens 8 Mio.
+  Bildpunkte, sonst zeichnen Browser sie schwarz; bei großem Zoom kommt ein scharfes Bild nur
+  vom sichtbaren Ausschnitt dazu (`components/docs/pageCanvas.ts`).
 - **Messen:** Länge (Linienzug), Fläche (Vieleck), Stück (Punkte). Antippen setzt Punkte,
   „Fertig“ schließt ab. Punkte liegen in Seiten-Einheiten; der Wert wird immer aus dem
   aktuellen Maßstab gerechnet, nie gespeichert.

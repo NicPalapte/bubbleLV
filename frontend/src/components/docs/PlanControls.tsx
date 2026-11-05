@@ -16,6 +16,12 @@ import {
   type PlanScale,
 } from '../../lib/docs/planNotes';
 
+const SOURCE_LABEL: Readonly<Record<PlanScale['source'], string>> = {
+  plankopf: 'Plankopf',
+  strecke: 'Strecke',
+  hand: 'von Hand',
+};
+
 const PILL_BTN =
   'h-[40px] min-w-[40px] cursor-pointer whitespace-nowrap rounded-[var(--r-pill)] border-none px-[14px] font-sans text-[13px] disabled:cursor-default disabled:text-mute';
 const on = (active: boolean): string =>
@@ -46,7 +52,7 @@ export function PlanToolbar({
     <div
       role="toolbar"
       aria-label="Messen"
-      className="cn-pill absolute left-1/2 top-[8px] z-[5] flex -translate-x-1/2 items-center gap-[2px] p-[4px]"
+      className="cn-pill absolute left-1/2 top-[8px] z-[5] flex max-w-[calc(100%-16px)] -translate-x-1/2 items-center gap-[2px] overflow-x-auto p-[4px]"
     >
       <button
         type="button"
@@ -105,6 +111,7 @@ export function ScalePanel({
   current,
   ratios,
   sameRatioPages,
+  unscaledPages,
   distance,
   onApply,
   onRemove,
@@ -117,6 +124,8 @@ export function ScalePanel({
   ratios: readonly number[];
   /** Weitere Planseiten mit demselben ersten Plankopf-Maßstab. */
   sameRatioPages: (ratio: number) => readonly number[];
+  /** Weitere Planseiten ohne Maßstab — für den Maßstab von Hand. */
+  unscaledPages: readonly number[];
   /** Gemessene Strecke in Seiten-Einheiten, wenn es eine gibt. */
   distance: number | null;
   onApply: (unit: number, source: PlanScale['source'], pages: readonly number[]) => void;
@@ -126,6 +135,11 @@ export function ScalePanel({
 }) {
   const [meters, setMeters] = useState('');
   const [all, setAll] = useState(true);
+  const [typed, setTyped] = useState('');
+  const [allTyped, setAllTyped] = useState(true);
+  const typedRatio = /^\s*(?:1\s*:\s*)?(\d{1,5}(?:[.,]\d+)?)\s*$/.exec(typed);
+  const manual = typedRatio === null ? null : Number(typedRatio[1].replace(',', '.'));
+  const manualOk = manual !== null && manual >= 1;
   const value = parseMass(meters);
   const fromDistance =
     distance === null || value === null ? null : unitFromDistance(distance, value);
@@ -152,9 +166,7 @@ export function ScalePanel({
         <div className="flex items-center gap-[8px] border-b border-line px-[16px] py-[10px] font-sans text-[13px] text-ink">
           <span className="flex-1">
             {ratioLabel(current.unit)}{' '}
-            <span className="text-mute">
-              · {current.source === 'plankopf' ? 'Plankopf' : 'Strecke'}
-            </span>
+            <span className="text-mute">· {SOURCE_LABEL[current.source]}</span>
           </span>
           <button
             type="button"
@@ -197,6 +209,42 @@ export function ScalePanel({
           </span>
         </div>
       )}
+      <form
+        className="flex flex-col gap-[8px] border-b border-line px-[16px] py-[12px]"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (manual === null || !manualOk) return;
+          onApply(unitFromRatio(manual), 'hand', allTyped ? [page, ...unscaledPages] : [page]);
+        }}
+      >
+        <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.6px] text-mute">
+          Von Hand
+        </span>
+        <div className="flex items-center gap-[8px] font-sans text-[15px] text-ink">
+          <span>1 :</span>
+          <input
+            inputMode="decimal"
+            value={typed}
+            onChange={(event) => setTyped(event.target.value)}
+            aria-label="Maßstab 1 zu"
+            placeholder="100"
+            className="h-[40px] w-[96px] rounded-[var(--r-sm)] border border-line bg-surface px-[10px] font-sans text-[15px] text-ink focus:border-accent"
+          />
+          <button type="submit" className="cn-btn primary" disabled={!manualOk}>
+            Übernehmen
+          </button>
+        </div>
+        {unscaledPages.length > 0 && (
+          <label className="flex min-h-[32px] items-center gap-[8px] font-sans text-[12px] text-dim">
+            <input
+              type="checkbox"
+              checked={allTyped}
+              onChange={(e) => setAllTyped(e.target.checked)}
+            />
+            Auch für {unscaledPages.length} weitere Pläne ohne Maßstab
+          </label>
+        )}
+      </form>
       <div className="flex flex-col gap-[8px] px-[16px] py-[12px]">
         <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.6px] text-mute">
           Bekannte Strecke
