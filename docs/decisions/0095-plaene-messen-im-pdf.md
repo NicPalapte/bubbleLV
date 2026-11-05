@@ -33,8 +33,10 @@
   zoomt über Plänen, Ziehen verschiebt. Eine Zeichenfläche hat höchstens 8 Mio.
   Bildpunkte, sonst zeichnen Browser sie schwarz; bei großem Zoom kommt ein scharfes Bild nur
   vom sichtbaren Ausschnitt dazu (`components/docs/pageCanvas.ts`).
-- **Messen:** Länge (Linienzug), Fläche (Vieleck), Stück (Punkte). Antippen setzt Punkte,
-  „Fertig“ schließt ab. Punkte liegen in Seiten-Einheiten; der Wert wird immer aus dem
+- **Messen:** Länge (zwei Punkte), Maßkette (Linienzug mit Teilmaßen), Fläche als Rechteck
+  (zwei Ecken), Polygon oder Kreis (Mitte, Rand), Stück (Punkte). Bedienung wie im CAD: Esc
+  beendet den Befehl, Enter schließt ab, Entf löscht die gewählte Messung. Werkzeug „Maße“
+  sammelt gedruckte Maße als Summe und hängt sie an den Rechenansatz von Positionen. Punkte liegen in Seiten-Einheiten; der Wert wird immer aus dem
   aktuellen Maßstab gerechnet, nie gespeichert.
 - **Verknüpfen:** Jede Messung hängt an einer oder mehreren Positionen, gespeichert über
   den Positions-Hash (0055).

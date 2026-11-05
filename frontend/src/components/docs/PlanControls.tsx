@@ -4,10 +4,9 @@
 
 import { useState } from 'react';
 import { unitFromDistance, unitFromRatio } from '@core';
-import type { PlanTool } from './PlanLayer';
+import type { PlanTool } from './planTools';
 import {
   formatMeasure,
-  MEASURE_KINDS,
   MEASURE_LABEL,
   measureValue,
   parseMass,
@@ -21,6 +20,21 @@ const SOURCE_LABEL: Readonly<Record<PlanScale['source'], string>> = {
   strecke: 'Strecke',
   hand: 'von Hand',
 };
+
+/** Werkzeuge in Gruppen: Länge · Fläche · Stück · gedruckte Maße. */
+const TOOL_GROUPS: ReadonlyArray<ReadonlyArray<readonly [PlanTool, string, string]>> = [
+  [
+    ['laenge', 'Länge', 'Zwei Punkte'],
+    ['kette', 'Maßkette', 'Punkte nacheinander, Enter oder Esc beendet'],
+  ],
+  [
+    ['rechteck', 'Rechteck', 'Zwei Ecken'],
+    ['polygon', 'Polygon', 'Ecken nacheinander, ersten Punkt antippen schließt'],
+    ['kreis', 'Kreis', 'Mitte, dann Rand'],
+  ],
+  [['stueck', 'Stück', 'Je Bauteil ein Punkt, Enter oder Esc beendet']],
+  [['masse', 'Maße', 'Gedruckte Maße antippen, die Summe an Positionen hängen']],
+];
 
 const PILL_BTN =
   'h-[40px] min-w-[40px] cursor-pointer whitespace-nowrap rounded-[var(--r-pill)] border-none px-[14px] font-sans text-[13px] disabled:cursor-default disabled:text-mute';
@@ -63,16 +77,22 @@ export function PlanToolbar({
         Maßstab{hasScale ? ' ✓' : ''}
       </button>
       <span aria-hidden="true" className="mx-[4px] h-[22px] w-px bg-line" />
-      {MEASURE_KINDS.map((kind) => (
-        <button
-          key={kind}
-          type="button"
-          aria-pressed={tool === kind}
-          onClick={() => onTool(kind)}
-          className={`${PILL_BTN} ${on(tool === kind)}`}
-        >
-          {MEASURE_LABEL[kind]}
-        </button>
+      {TOOL_GROUPS.map((group, g) => (
+        <span key={g} className="flex items-center gap-[2px]">
+          {g > 0 && <span aria-hidden="true" className="mx-[4px] h-[22px] w-px bg-line" />}
+          {group.map(([value, label, title]) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={tool === value}
+              title={title}
+              onClick={() => onTool(value)}
+              className={`${PILL_BTN} ${on(tool === value)}`}
+            >
+              {label}
+            </button>
+          ))}
+        </span>
       ))}
       <span aria-hidden="true" className="mx-[4px] h-[22px] w-px bg-line" />
       <button

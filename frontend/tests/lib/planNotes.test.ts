@@ -14,6 +14,8 @@ import {
   pageKindOf,
   parseMass,
   putMeasure,
+  rectangleFrom,
+  segmentValues,
   rekeyPlanNotes,
   removeMeasure,
   scaleOf,
@@ -70,6 +72,45 @@ describe('Messungen', () => {
     expect(measureValue({ ...square, kind: 'laenge' }, scale)).toBeCloseTo(25);
     expect(measureValue({ ...square, kind: 'stueck' }, null)).toBe(4);
     expect(measureValue(square, null)).toBeNull();
+  });
+  it('rechnet Maßkette, Rechteck und Kreis', () => {
+    const scale = scaleOf(scaled(EMPTY_PLAN_NOTES), page);
+    const chain: PlanMeasure = {
+      ...square,
+      kind: 'kette',
+      points: [
+        [0, 0],
+        [20, 0],
+        [50, 0],
+      ],
+    };
+    expect(measureValue(chain, scale)).toBeCloseTo(5);
+    expect(segmentValues(chain.points, scale)).toEqual([2, 3]);
+    const rect = {
+      ...square,
+      shape: 'rechteck' as const,
+      points: rectangleFrom([0, 0], [100, 50]),
+    };
+    expect(measureValue(rect, scale)).toBeCloseTo(50);
+    const circle: PlanMeasure = {
+      ...square,
+      shape: 'kreis',
+      points: [
+        [0, 0],
+        [10, 0],
+      ],
+    };
+    expect(measureValue(circle, scale)).toBeCloseTo(Math.PI);
+    expect(putMeasure(EMPTY_PLAN_NOTES, circle).measures).toHaveLength(1);
+    const back = fromStoredPlanNotes(
+      JSON.parse(JSON.stringify(toStoredPlanNotes(putMeasure(EMPTY_PLAN_NOTES, circle)))),
+    );
+    expect(back.measures[0].shape).toBe('kreis');
+  });
+  it('Länge und Maßkette lassen sich zusammenzählen', () => {
+    let notes = scaled(putMeasure(EMPTY_PLAN_NOTES, { ...square, kind: 'laenge' }));
+    notes = putMeasure(notes, { ...square, id: 'm2', kind: 'kette' });
+    expect(vaOf(notes, 'pos-a')?.reason).toBeNull();
   });
   it('lehnt zu wenige Punkte ab und entfernt Messungen', () => {
     const bad = { ...square, points: [[0, 0] as const, [1, 1] as const] };

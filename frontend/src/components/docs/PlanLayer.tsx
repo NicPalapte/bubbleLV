@@ -2,19 +2,20 @@
 // als SVG in Seiten-Einheiten, darüber die Werte. Im Messmodus nimmt die Ebene das
 // Antippen auf und meldet den Punkt in Seiten-Einheiten — unabhängig vom Zoom.
 
-import { useRef, type PointerEvent as ReactPointerEvent } from 'react';
+import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import type { PlanPoint } from '@core';
 import type { PageSize } from './PdfPage';
+import type { PlanTool } from './planTools';
 import {
   centerOf,
+  formatAmount,
   formatMeasure,
   measureValue,
-  type MeasureKind,
+  rectangleFrom,
+  segmentValues,
   type PlanMeasure,
   type PlanScale,
 } from '../../lib/docs/planNotes';
-
-export type PlanTool = MeasureKind | 'massstab';
 
 export interface PlanDraft {
   readonly page: number;
@@ -27,6 +28,104 @@ const pointsAttr = (points: readonly PlanPoint[]): string =>
 function colorOf(measure: PlanMeasure, selected: boolean): string {
   if (selected) return 'var(--accent)';
   return measure.links.length === 0 ? 'var(--amber)' : 'var(--dot-7)';
+}
+
+/** Querstrich an einem Punkt der Maßkette, senkrecht zur Kette. */
+function Tick({
+  at,
+  points,
+  index,
+  scale,
+  color,
+}: {
+  at: PlanPoint;
+  points: readonly PlanPoint[];
+  index: number;
+  scale: number;
+  color: string;
+}) {
+  const a = points[Math.max(0, index - 1)];
+  const b = points[Math.min(points.length - 1, index + 1)];
+  const length = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+  const nx = (-(b[1] - a[1]) / length) * (8 / scale);
+  const ny = ((b[0] - a[0]) / length) * (8 / scale);
+  return (
+    <line
+      x1={at[0] - nx}
+      y1={at[1] - ny}
+      x2={at[0] + nx}
+      y2={at[1] + ny}
+      stroke={color}
+      strokeWidth={2}
+      vectorEffect="non-scaling-stroke"
+    />
+  );
+}
+
+/** Vorschau der begonnenen Messung bis zum Mauszeiger. */
+function DraftShape({
+  tool,
+  points,
+  hover,
+  scale,
+}: {
+  tool: PlanTool;
+  points: readonly PlanPoint[];
+  hover: PlanPoint | null;
+  scale: number;
+}) {
+  const color = 'var(--accent)';
+  const all = hover !== null && tool !== 'stueck' ? [...points, hover] : points;
+  const stroke = {
+    stroke: color,
+    strokeWidth: 2,
+    strokeDasharray: '6 4',
+    vectorEffect: 'non-scaling-stroke' as const,
+  };
+  let shape = null;
+  if (tool === 'rechteck' && all.length >= 2) {
+    shape = (
+      <polygon
+        points={pointsAttr(rectangleFrom(all[0], all[1]))}
+        fill={color}
+        fillOpacity={0.12}
+        {...stroke}
+      />
+    );
+  } else if (tool === 'kreis' && all.length >= 2) {
+    const [[cx, cy], [ex, ey]] = all;
+    shape = (
+      <circle
+        cx={cx}
+        cy={cy}
+        r={Math.hypot(ex - cx, ey - cy)}
+        fill={color}
+        fillOpacity={0.12}
+        {...stroke}
+      />
+    );
+  } else if (tool === 'polygon' && all.length > 2) {
+    shape = <polygon points={pointsAttr(all)} fill={color} fillOpacity={0.12} {...stroke} />;
+  } else if (tool !== 'stueck') {
+    shape = <polyline points={pointsAttr(all)} fill="none" {...stroke} />;
+  }
+  return (
+    <g>
+      {shape}
+      {points.map(([x, y], i) => (
+        <circle
+          key={i}
+          cx={x}
+          cy={y}
+          r={(i === 0 && tool === 'polygon' ? 9 : 6) / scale}
+          fill={i === 0 ? 'var(--surface)' : color}
+          stroke={color}
+          strokeWidth={2}
+          vectorEffect="non-scaling-stroke"
+        />
+      ))}
+    </g>
+  );
 }
 
 function Shape({
@@ -54,6 +153,37 @@ function Shape({
             strokeWidth={width}
             vectorEffect="non-scaling-stroke"
           />
+        ))}
+      </g>
+    );
+  }
+  if (measure.kind === 'flaeche' && measure.shape === 'kreis' && measure.points.length >= 2) {
+    const [[cx, cy], [ex, ey]] = measure.points;
+    return (
+      <circle
+        cx={cx}
+        cy={cy}
+        r={Math.hypot(ex - cx, ey - cy)}
+        fill={color}
+        fillOpacity={selected ? 0.28 : 0.16}
+        stroke={color}
+        strokeWidth={width}
+        vectorEffect="non-scaling-stroke"
+      />
+    );
+  }
+  if (measure.kind === 'kette') {
+    return (
+      <g>
+        <polyline
+          points={pointsAttr(measure.points)}
+          fill="none"
+          stroke={color}
+          strokeWidth={width}
+          vectorEffect="non-scaling-stroke"
+        />
+        {measure.points.map(([x, y], i) => (
+          <Tick key={i} at={[x, y]} points={measure.points} index={i} scale={scale} color={color} />
         ))}
       </g>
     );
@@ -110,7 +240,15 @@ export function PlanLayer({
 }) {
   const width = Math.floor(size.width * scale);
   const height = Math.floor(size.height * scale);
-  const capture = tool !== null;
+  const capture = tool !== null && tool !== 'masse';
+  const [hover, setHover] = useState<PlanPoint | null>(null);
+  const move = (event: ReactPointerEvent<SVGSVGElement>): void => {
+    if (!capture || draft === null || draft.length === 0 || event.pointerType === 'touch') {
+      return;
+    }
+    const box = event.currentTarget.getBoundingClientRect();
+    setHover([(event.clientX - box.left) / scale, (event.clientY - box.top) / scale]);
+  };
   // Punkt erst beim Loslassen setzen: wer zieht, verschiebt den Plan (DocumentView).
   const down = useRef<{ x: number; y: number } | null>(null);
   const press = (event: ReactPointerEvent<SVGSVGElement>): void => {
@@ -126,7 +264,6 @@ export function PlanLayer({
     const box = event.currentTarget.getBoundingClientRect();
     onTap([(event.clientX - box.left) / scale, (event.clientY - box.top) / scale]);
   };
-  const draftColor = 'var(--accent)';
 
   return (
     <div className="pointer-events-none absolute left-0 top-0 z-[3]" style={{ width, height }}>
@@ -139,6 +276,8 @@ export function PlanLayer({
         height={height}
         onPointerDown={press}
         onPointerUp={tap}
+        onPointerMove={move}
+        onPointerLeave={() => setHover(null)}
         className={capture ? 'pointer-events-auto cursor-crosshair touch-none' : ''}
       >
         {measures.map((measure) => (
@@ -149,43 +288,35 @@ export function PlanLayer({
             scale={scale}
           />
         ))}
-        {draft !== null && draft.length > 0 && (
-          <g>
-            {tool === 'flaeche' && draft.length > 2 && (
-              <polygon
-                points={pointsAttr(draft)}
-                fill={draftColor}
-                fillOpacity={0.12}
-                stroke="none"
-              />
-            )}
-            {tool !== 'stueck' && (
-              <polyline
-                points={pointsAttr(draft)}
-                fill="none"
-                stroke={draftColor}
-                strokeWidth={2}
-                strokeDasharray="6 4"
-                vectorEffect="non-scaling-stroke"
-              />
-            )}
-            {draft.map(([x, y], i) => (
-              <circle
-                key={i}
-                cx={x}
-                cy={y}
-                r={(i === 0 && tool === 'flaeche' ? 9 : 6) / scale}
-                fill={i === 0 ? 'var(--surface)' : draftColor}
-                stroke={draftColor}
-                strokeWidth={2}
-                vectorEffect="non-scaling-stroke"
-              />
-            ))}
-          </g>
+        {draft !== null && tool !== null && tool !== 'masse' && draft.length > 0 && (
+          <DraftShape tool={tool} points={draft} hover={hover} scale={scale} />
         )}
       </svg>
+      {measures.map((measure) =>
+        measure.kind !== 'kette'
+          ? null
+          : segmentValues(measure.points, planScale).map((value, i) => {
+              const [ax, ay] = measure.points[i];
+              const [bx, by] = measure.points[i + 1];
+              return (
+                <span
+                  key={`${measure.id}-${i}`}
+                  className="pointer-events-none absolute -translate-x-1/2 -translate-y-[130%] whitespace-nowrap rounded-[var(--r-sm)] bg-surface px-[4px] font-sans text-[11px] text-ink opacity-90"
+                  style={{ left: ((ax + bx) / 2) * scale, top: ((ay + by) / 2) * scale }}
+                >
+                  {value === null ? '—' : formatAmount(value, 2)}
+                </span>
+              );
+            }),
+      )}
       {measures.map((measure) => {
-        const [cx, cy] = centerOf(measure.points);
+        // Kreis: Wert in der Mitte; Maßkette: Summe hinter dem letzten Punkt.
+        const [cx, cy] =
+          measure.kind === 'flaeche' && measure.shape === 'kreis'
+            ? measure.points[0]
+            : measure.kind === 'kette'
+              ? measure.points[measure.points.length - 1]
+              : centerOf(measure.points);
         const value = measureValue(measure, planScale);
         const on = measure.id === selected;
         return (
@@ -194,7 +325,9 @@ export function PlanLayer({
             type="button"
             onClick={() => onPick(measure.id)}
             title={picking ? 'In den Ansatz übernehmen' : 'Messung zeigen'}
-            className={`pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer whitespace-nowrap rounded-[var(--r-pill)] border px-[8px] py-[3px] font-sans text-[12px] font-semibold shadow-[var(--shadow-sm)] ${
+            className={`pointer-events-auto absolute ${
+              measure.kind === 'kette' ? 'translate-x-[12px]' : '-translate-x-1/2'
+            } -translate-y-1/2 cursor-pointer whitespace-nowrap rounded-[var(--r-pill)] border px-[8px] py-[3px] font-sans text-[12px] font-semibold shadow-[var(--shadow-sm)] ${
               on
                 ? 'border-accent bg-accent-soft text-accent-ink'
                 : picking

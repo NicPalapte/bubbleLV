@@ -16,18 +16,23 @@
 
 import { polygonArea, polylineLength, ratioFromUnit, type PageKind, type PlanPoint } from '@core';
 
-export type MeasureKind = 'laenge' | 'flaeche' | 'stueck';
+export type MeasureKind = 'laenge' | 'kette' | 'flaeche' | 'stueck';
 
-export const MEASURE_KINDS: readonly MeasureKind[] = ['laenge', 'flaeche', 'stueck'];
+export const MEASURE_KINDS: readonly MeasureKind[] = ['laenge', 'kette', 'flaeche', 'stueck'];
+
+/** Form einer Fläche; ohne Angabe ein Vieleck. Ein Rechteck steht als vier Ecken da. */
+export type AreaShape = 'rechteck' | 'kreis';
 
 export const MEASURE_LABEL: Readonly<Record<MeasureKind, string>> = {
   laenge: 'Länge',
+  kette: 'Maßkette',
   flaeche: 'Fläche',
   stueck: 'Stück',
 };
 
 export const MEASURE_UNIT: Readonly<Record<MeasureKind, string>> = {
   laenge: 'm',
+  kette: 'm',
   flaeche: 'm²',
   stueck: 'St',
 };
@@ -56,6 +61,8 @@ export interface PlanMeasure extends PageRef {
   readonly kind: MeasureKind;
   /** Seiten-Einheiten bei Maßstab 1; bei Stück je Bauteil ein Punkt. */
   readonly points: readonly PlanPoint[];
+  /** Nur Fläche: Rechteck (vier Ecken) oder Kreis (Mitte, Punkt auf dem Rand). */
+  readonly shape?: AreaShape;
   readonly name: string;
   /** Verknüpfte Positionen, ohne Doppelte. */
   readonly links: readonly string[];
@@ -163,7 +170,15 @@ function validPoint(point: unknown): point is PlanPoint {
   );
 }
 
-const MIN_POINTS: Readonly<Record<MeasureKind, number>> = { laenge: 2, flaeche: 3, stueck: 1 };
+const MIN_POINTS: Readonly<Record<MeasureKind, number>> = {
+  laenge: 2,
+  kette: 2,
+  flaeche: 3,
+  stueck: 1,
+};
+
+const minPointsOf = (measure: Pick<PlanMeasure, 'kind' | 'shape'>): number =>
+  measure.kind === 'flaeche' && measure.shape === 'kreis' ? 2 : MIN_POINTS[measure.kind];
 
 function validMeasure(measure: PlanMeasure): boolean {
   return (
@@ -171,7 +186,7 @@ function validMeasure(measure: PlanMeasure): boolean {
     measure.doc !== '' &&
     Number.isInteger(measure.page) &&
     measure.page >= 1 &&
-    measure.points.length >= MIN_POINTS[measure.kind] &&
+    measure.points.length >= minPointsOf(measure) &&
     measure.points.every(validPoint)
   );
 }
@@ -208,9 +223,14 @@ export function measuresOfPosition(notes: PlanNotes, id: string): PlanMeasure[] 
 export function measureValue(measure: PlanMeasure, scale: PlanScale | null): number | null {
   if (measure.kind === 'stueck') return measure.points.length;
   if (scale === null) return null;
-  return measure.kind === 'laenge'
-    ? polylineLength(measure.points) * scale.unit
-    : polygonArea(measure.points) * scale.unit * scale.unit;
+  if (measure.kind === 'laenge' || measure.kind === 'kette') {
+    return polylineLength(measure.points) * scale.unit;
+  }
+  if (measure.shape === 'kreis') {
+    const radius = polylineLength(measure.points.slice(0, 2)) * scale.unit;
+    return Math.PI * radius * radius;
+  }
+  return polygonArea(measure.points) * scale.unit * scale.unit;
 }
 
 /** Eigene Angaben zur Menge; leere Angaben entfernen den Eintrag. */
@@ -384,8 +404,9 @@ export function vaOf(notes: PlanNotes, id: string): VaQuantity | null {
     };
   }
   if (parts.length === 0) return null;
-  const kinds = new Set(parts.map((part) => part.measure.kind));
-  const kind = kinds.size === 1 ? parts[0].measure.kind : null;
+  // Länge und Maßkette passen zusammen: es zählt die Einheit.
+  const units = new Set(parts.map((part) => MEASURE_UNIT[part.measure.kind]));
+  const kind = units.size === 1 ? parts[0].measure.kind : null;
   const missing = parts.some((part) => part.value === null);
   const base = missing ? null : parts.reduce((total, part) => total + (part.value ?? 0), 0);
   const reason = kind === null ? 'Messarten gemischt' : missing ? 'Maßstab fehlt' : null;
@@ -474,7 +495,7 @@ const atOf = (raw: Record<string, unknown>): number =>
   typeof raw.at === 'number' && Number.isFinite(raw.at) ? raw.at : 0;
 
 const isMeasureKind = (value: unknown): value is MeasureKind =>
-  value === 'laenge' || value === 'flaeche' || value === 'stueck';
+  value === 'laenge' || value === 'kette' || value === 'flaeche' || value === 'stueck';
 
 function toTerm(value: unknown): AnsatzTerm | null {
   const raw = record(value);
@@ -526,6 +547,9 @@ export function fromStoredPlanNotes(value: unknown): PlanNotes {
       id: entry.id,
       kind: entry.kind,
       points,
+      ...(entry.kind === 'flaeche' && (entry.shape === 'rechteck' || entry.shape === 'kreis')
+        ? { shape: entry.shape }
+        : {}),
       name: typeof entry.name === 'string' ? entry.name : '',
       links,
       at: atOf(entry),
@@ -598,4 +622,21 @@ export function ratioLabel(unit: number): string {
   const ratio = ratioFromUnit(unit);
   const round = Math.round(ratio);
   return `1:${Math.abs(ratio - round) < 0.05 ? String(round) : formatAmount(ratio, 1)}`;
+}
+
+/** Achsparalleles Rechteck aus zwei gegenüberliegenden Ecken. */
+export function rectangleFrom(a: PlanPoint, b: PlanPoint): PlanPoint[] {
+  return [a, [b[0], a[1]], b, [a[0], b[1]]];
+}
+
+/** Längen der Teilstrecken in m (Maßkette); ohne Maßstab `null` je Teil. */
+export function segmentValues(
+  points: readonly PlanPoint[],
+  scale: PlanScale | null,
+): (number | null)[] {
+  const out: (number | null)[] = [];
+  for (let i = 1; i < points.length; i += 1) {
+    out.push(scale === null ? null : polylineLength([points[i - 1], points[i]]) * scale.unit);
+  }
+  return out;
 }

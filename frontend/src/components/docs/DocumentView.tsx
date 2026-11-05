@@ -27,7 +27,8 @@ import { LinkDialog } from './LinkDialog';
 import { DOC_TOOL as TOOL, PdfInput } from './PdfInput';
 import { PdfPage, type PageSize } from './PdfPage';
 import { SuggestBar } from './SuggestBar';
-import { PlanLayer, type PlanDraft, type PlanTool } from './PlanLayer';
+import { PlanLayer, type PlanDraft } from './PlanLayer';
+import { TWO_POINT_TOOLS, type PlanTool } from './planTools';
 import { MeasureBar, PlanToolbar, ScalePanel } from './PlanControls';
 import { usePageInfo } from './usePageInfo';
 import type { DocHighlightItem } from './docHighlights';
@@ -54,7 +55,7 @@ import { polylineLength, type PageKind, type PlanPoint } from '@core';
 import {
   appendTerm,
   EMPTY_PLAN_NOTES,
-  MEASURE_LABEL,
+  formatAmount,
   measuresOfPage,
   pageKindOf,
   parseMass,
@@ -62,6 +63,7 @@ import {
   type AnsatzTerm,
   type MeasureKind,
   type PlanMeasure,
+  rectangleFrom,
 } from '../../lib/docs/planNotes';
 
 const ZOOM_MIN = 0.5;
@@ -237,7 +239,10 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
   );
 
   const finishDraft = useCallback(
-    (kind: MeasureKind, points: readonly PlanPoint[], page: number): void => {
+    (from: PlanTool, points: readonly PlanPoint[], page: number): void => {
+      if (from === 'massstab' || from === 'masse') return;
+      const kind = TOOL_KIND[from];
+      const shape = from === 'rechteck' || from === 'kreis' ? from : undefined;
       const count = plans.measures.filter((entry) => entry.kind === kind).length + 1;
       const id = `m-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
       const measure: PlanMeasure = {
@@ -245,8 +250,9 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
         doc: doc.id,
         page,
         kind,
-        points,
-        name: `${MEASURE_LABEL[kind]} ${count}`,
+        points: from === 'rechteck' ? rectangleFrom(points[0], points[1]) : points,
+        ...(shape === undefined ? {} : { shape }),
+        name: `${TOOL_NAME[from]} ${count}`,
         links: [],
         at: Date.now(),
       };
@@ -258,10 +264,11 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     [plans.measures, doc.id, dispatch, ansatzFor, addToAnsatz],
   );
   const minPoints = (kind: PlanTool): number =>
-    kind === 'flaeche' ? 3 : kind === 'stueck' ? 1 : 2;
+    kind === 'polygon' ? 3 : kind === 'stueck' ? 1 : 2;
   const canFinish =
     tool !== null &&
     tool !== 'massstab' &&
+    tool !== 'masse' &&
     draft !== null &&
     draft.points.length >= minPoints(tool);
   const finish = (): void => {
@@ -269,12 +276,16 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     if (draft.points.length >= minPoints(tool)) finishDraft(tool, draft.points, draft.page);
   };
 
+  // Gedruckte Maße sammeln (Werkzeug „Maße“): Summe, dann an Positionen hängen.
+  const [collected, setCollected] = useState<AnsatzTerm[]>([]);
+  const [linkingMasses, setLinkingMasses] = useState<{ left: number; top: number } | null>(null);
+
   const onTap = useCallback(
     (page: number, point: PlanPoint, scale: number): void => {
-      if (tool === null) return;
+      if (tool === null || tool === 'masse') return;
       const before = draft !== null && draft.page === page ? draft.points : [];
+      const points = [...before, point];
       if (tool === 'massstab') {
-        const points = [...before, point];
         if (points.length < 2) {
           setDraft({ page, points });
           return;
@@ -284,18 +295,79 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
         setScalePage(page);
         return;
       }
-      // Fläche: Antippen nahe dem ersten Punkt schließt sie.
-      if (tool === 'flaeche' && before.length >= 3) {
+      // Länge, Rechteck, Kreis: mit dem zweiten Punkt fertig.
+      if (TWO_POINT_TOOLS.has(tool) && points.length >= 2) {
+        finishDraft(tool, points.slice(-2), page);
+        return;
+      }
+      // Polygon: Antippen nahe dem ersten Punkt schließt es.
+      if (tool === 'polygon' && before.length >= 3) {
         const [x0, y0] = before[0];
         if (Math.hypot(point[0] - x0, point[1] - y0) * scale < 22) {
-          finishDraft('flaeche', before, page);
+          finishDraft('polygon', before, page);
           return;
         }
       }
-      setDraft({ page, points: [...before, point] });
+      setDraft({ page, points });
     },
     [tool, draft, finishDraft],
   );
+
+  // Tastatur wie im CAD: Esc beendet den Befehl, Enter schließt ab, Entf löscht die gewählte
+  // Messung, Rücktaste nimmt den letzten Punkt zurück. Nicht beim Tippen in Feldern.
+  const keys = useRef<(event: KeyboardEvent) => void>(() => undefined);
+  useLayoutEffect(() => {
+    keys.current = (event: KeyboardEvent): void => {
+      const target = event.target as Element | null;
+      const typing = target?.closest?.('input, textarea, select, [contenteditable="true"]');
+      if (typing != null) return;
+      if (event.key === 'Escape') {
+        if (linkingMeasure !== null || linkingMasses !== null || scalePage !== null) return;
+        if (draft !== null && tool !== null && tool !== 'massstab') {
+          if (draft.points.length >= minPoints(tool)) finishDraft(tool, draft.points, draft.page);
+          else setDraft(null);
+        } else if (draft !== null) {
+          setDraft(null);
+        } else if (tool !== null) {
+          setTool(null);
+          setCollected([]);
+        } else if (ansatzFor !== null) {
+          setAnsatzFor(null);
+        } else if (selected !== null) {
+          setSelected(null);
+        } else {
+          return;
+        }
+        event.preventDefault();
+        return;
+      }
+      if (event.key === 'Enter' && canFinish) {
+        finish();
+        event.preventDefault();
+        return;
+      }
+      if (event.key === 'Backspace' && draft !== null) {
+        setDraft(draft.points.length <= 1 ? null : { ...draft, points: draft.points.slice(0, -1) });
+        event.preventDefault();
+        return;
+      }
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        if (selected !== null) {
+          dispatch({ type: 'planRemove', id: selected });
+          setSelected(null);
+          event.preventDefault();
+        } else if (tool === 'masse' && collected.length > 0) {
+          setCollected((list) => list.slice(0, -1));
+          event.preventDefault();
+        }
+      }
+    };
+  });
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent): void => keys.current(event);
+    host.addEventListener('keydown', onKey);
+    return () => host.removeEventListener('keydown', onKey);
+  }, [host]);
 
   const pickMeasure = useCallback(
     (id: string): void => {
@@ -678,17 +750,26 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
       if (flash !== null && flash.spot.page === page) {
         out.push({ name: 'docflash', start: flash.spot.start, text: flash.spot.text });
       }
+      for (const term of collected) {
+        if (term.kind === 'mass' && term.page === page) {
+          out.push({ name: 'doclink', start: term.start, text: term.text });
+        }
+      }
       return out;
     },
-    [hits, currentHit, flash],
+    [hits, currentHit, flash, collected],
   );
   // Gleiche Liste je Seite, solange sich nichts ändert — sonst färbte jede Seite neu.
   const extras = useMemo(() => {
     const out = new Map<number, DocHighlightItem[]>();
-    const pagesWith = new Set([...hits.map((hit) => hit.page), flash?.spot.page ?? 0]);
+    const pagesWith = new Set([
+      ...hits.map((hit) => hit.page),
+      flash?.spot.page ?? 0,
+      ...collected.map((term) => (term.kind === 'mass' ? term.page : 0)),
+    ]);
     for (const page of pagesWith) if (page > 0) out.set(page, extraFor(page));
     return out;
-  }, [hits, flash, extraFor]);
+  }, [hits, flash, collected, extraFor]);
 
   /** Auswahl in der Textebene einer Seite; `at` legt die Leiste dorthin statt unter die Auswahl. */
   const pickFrom = (from: Element | null, at: { left: number; top: number } | null): boolean => {
@@ -902,11 +983,21 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
             event.preventDefault();
           }}
           onClick={(event) => {
-            if (ansatzFor === null || tool !== null) return;
+            const collecting = tool === 'masse';
+            if (!collecting && (ansatzFor === null || tool !== null)) return;
             const term = massAt(event);
-            if (term === null) return;
+            if (term === null || term.kind !== 'mass') return;
             host.getSelection()?.removeAllRanges();
-            addToAnsatz(term);
+            if (!collecting) {
+              addToAnsatz(term);
+              return;
+            }
+            // Dasselbe Maß noch einmal antippen nimmt es wieder heraus.
+            setCollected((list) =>
+              list.some((item) => sameMass(item, term))
+                ? list.filter((item) => !sameMass(item, term))
+                : [...list, term],
+            );
           }}
           className="relative min-h-0 flex-1 overflow-auto bg-grid2"
           style={{ padding: GUTTER }}
@@ -1040,6 +1131,33 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
             setSelected(null);
           }}
           onClose={() => setSelected(null)}
+        />
+      )}
+      {collected.length > 0 && (
+        <MassBar
+          terms={collected}
+          onRemove={(i) => setCollected((list) => list.filter((_, at) => at !== i))}
+          onLink={(anchor) => setLinkingMasses(anchor)}
+          onClear={() => setCollected([])}
+        />
+      )}
+      {linkingMasses !== null && (
+        <LinkDialog
+          left={linkingMasses.left}
+          top={linkingMasses.top}
+          already={NO_IDS}
+          onLink={(ids) => {
+            // Summe der Maße an den Rechenansatz jeder Position hängen.
+            for (const id of ids) {
+              const note = plans.quantities.get(id) ?? {};
+              let ansatz = note.ansatz ?? [];
+              for (const term of collected) ansatz = appendTerm(ansatz, term);
+              dispatch({ type: 'planQuantity', id, note: { ...note, ansatz } });
+            }
+            setCollected([]);
+            setLinkingMasses(null);
+          }}
+          onClose={() => setLinkingMasses(null)}
         />
       )}
       {linkingMeasure !== null && (
@@ -1183,6 +1301,25 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
   );
 }
 
+/** Messart je Werkzeug; Rechteck, Polygon und Kreis sind Flächen. */
+const TOOL_KIND: Readonly<Record<Exclude<PlanTool, 'massstab' | 'masse'>, MeasureKind>> = {
+  laenge: 'laenge',
+  kette: 'kette',
+  rechteck: 'flaeche',
+  polygon: 'flaeche',
+  kreis: 'flaeche',
+  stueck: 'stueck',
+};
+
+const TOOL_NAME: Readonly<Record<Exclude<PlanTool, 'massstab' | 'masse'>, string>> = {
+  laenge: 'Länge',
+  kette: 'Maßkette',
+  rechteck: 'Rechteck',
+  polygon: 'Fläche',
+  kreis: 'Kreis',
+  stueck: 'Stück',
+};
+
 const shownPagesAll = (pages: number): number[] => Array.from({ length: pages }, (_, i) => i + 1);
 
 const NO_MARKS: readonly DocMark[] = [];
@@ -1243,4 +1380,81 @@ export function DocumentView() {
   const { active, overview } = useDocuments();
   if (active === null) return <EmptyDocument />;
   return overview ? <DocOverview /> : <OpenDocument key={active.id} doc={active} />;
+}
+
+const sameMass = (a: AnsatzTerm, b: AnsatzTerm): boolean =>
+  a.kind === 'mass' &&
+  b.kind === 'mass' &&
+  a.doc === b.doc &&
+  a.page === b.page &&
+  a.start === b.start;
+
+/** Gesammelte gedruckte Maße mit Summe; „Mit Position verknüpfen“ hängt sie an. */
+function MassBar({
+  terms,
+  onRemove,
+  onLink,
+  onClear,
+}: {
+  terms: readonly AnsatzTerm[];
+  onRemove: (index: number) => void;
+  onLink: (anchor: { left: number; top: number }) => void;
+  onClear: () => void;
+}) {
+  const sum = terms.reduce((total, term) => total + (term.kind === 'mass' ? term.value : 0), 0);
+  // So viele Nachkommastellen wie das genaueste Maß.
+  const decimals = Math.max(
+    0,
+    ...terms.map((term) => (term.kind === 'mass' ? (term.text.split(',')[1]?.length ?? 0) : 0)),
+  );
+  return (
+    <div
+      role="group"
+      aria-label="Gesammelte Maße"
+      className="flex shrink-0 flex-wrap items-center gap-[6px] border-t border-line bg-surface px-[12px] py-[8px]"
+    >
+      <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.6px] text-mute">
+        Maße
+      </span>
+      {terms.map((term, i) =>
+        term.kind !== 'mass' ? null : (
+          <span key={`${term.page}-${term.start}`} className="flex items-center gap-[6px]">
+            {i > 0 && <span className="font-sans text-[13px] text-mute">+</span>}
+            <span className="flex h-[32px] items-center rounded-[var(--r-pill)] border border-line font-sans text-[13px] text-ink">
+              <span className="pl-[10px] pr-[4px]">{term.text}</span>
+              <button
+                type="button"
+                aria-label={`Maß ${term.text} entfernen`}
+                onClick={() => onRemove(i)}
+                className="h-full cursor-pointer rounded-r-[var(--r-pill)] border-none bg-transparent pl-[4px] pr-[10px] text-mute hover:bg-sunken hover:text-ink"
+              >
+                ✕
+              </button>
+            </span>
+          </span>
+        ),
+      )}
+      <span className="font-sans text-[14px] font-semibold text-ink">
+        = {formatAmount(sum, decimals)}
+      </span>
+      <span className="flex-1" />
+      <button
+        type="button"
+        onClick={(event) => {
+          const box = event.currentTarget.getBoundingClientRect();
+          onLink({ left: box.left, top: box.top - 8 });
+        }}
+        className="h-[36px] cursor-pointer rounded-[var(--r-sm)] border border-accent bg-accent-fill px-[12px] font-sans text-[13px] text-white"
+      >
+        Mit Position verknüpfen…
+      </button>
+      <button
+        type="button"
+        onClick={onClear}
+        className="h-[36px] cursor-pointer rounded-[var(--r-sm)] border border-line bg-surface px-[12px] font-sans text-[13px] text-ink hover:border-line2"
+      >
+        Leeren
+      </button>
+    </div>
+  );
 }

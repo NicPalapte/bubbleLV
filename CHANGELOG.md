@@ -22,7 +22,11 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
   Ziehen verschiebt den Plan. Große Pläne bleiben auch bei starkem Zoom scharf und werden
   nicht mehr schwarz; jede Seite ist auf die Breite eingepasst, ein Klick auf die Prozentzahl
   setzt den Zoom zurück.
-- **Messen:** Länge, Fläche und Stück direkt im Plan antippen, alles auch am Tablet.
+- **Messen:** Länge (zwei Punkte), Maßkette mit Teilmaßen, Fläche als Rechteck, Polygon oder
+  Kreis und Stück direkt im Plan antippen, alles auch am Tablet. Esc beendet den Befehl,
+  Enter schließt ab, Entf löscht die gewählte Messung.
+- **Maße sammeln:** gedruckte Maße nacheinander antippen, Conocto zählt sie zusammen; „Mit
+  Position verknüpfen…“ hängt die Summe an den Rechenansatz.
 - **VA-Menge:** Messungen hängen an Positionen. Positionskarte und Tabelle zeigen die
   VA-Menge mit Herkunft „Plan“ oder „Rechenansatz“ und die Differenz zur LV-Menge, ohne
   Wertung.
