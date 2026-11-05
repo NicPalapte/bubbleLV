@@ -9,6 +9,44 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.51.0 — 05.11.2026 · Pläne im PDF messen
+
+- **Text oder Plan:** Conocto erkennt, welche PDF-Seiten Pläne sind. Oben im Bereich
+  „Dokument“ lässt sich auf „Pläne“ oder „Text“ filtern; jede Seite ist von Hand umstellbar.
+- **Maßstab:** steht im Plankopf z. B. „M 1:100“, schlägt Conocto ihn vor. Er gilt erst nach
+  „Übernehmen“, auf Wunsch für alle Pläne mit demselben Maßstab. Alternativ zwei Punkte
+  einer bekannten Strecke antippen und die Länge eingeben.
+- **Messen:** Länge, Fläche und Stück direkt im Plan antippen, alles auch am Tablet.
+- **VA-Menge:** Messungen hängen an Positionen. Positionskarte und Tabelle zeigen die
+  VA-Menge mit Herkunft „Plan“ oder „Rechenansatz“ und die Differenz zur LV-Menge, ohne
+  Wertung.
+- **Rechenansatz per Klick:** gedruckte Maße einer Maßkette oder eigene Messungen im Plan
+  antippen, dazwischen + − × : und Klammern. Zahlen werden nie von Hand eingetippt.
+
+## 0.50.0 — 03.11.2026 · Mehrere PDFs übersichtlich
+
+- **Dokumentliste:** Der Name des PDFs oben im Bereich „Dokument“ öffnet eine Liste aller
+  offenen PDFs mit Seiten und verknüpften Stellen, ab 6 PDFs mit Suche. Von dort geht es zu
+  „+ PDF hinzufügen“ und „Alle als Übersicht“.
+- **Übersicht:** Alle offenen PDFs als Miniatur der ersten Seite, sortierbar nach
+  Reihenfolge, Name oder Verknüpfungen. Ein Klick öffnet das PDF zum Lesen.
+- **Mehrere auf einmal:** Wer mehrere PDFs zusammen öffnet, sieht zuerst die Übersicht. Im
+  leeren Bereich „Dokument“ öffnen jetzt auch alle gewählten oder hineingezogenen PDFs.
+
+## 0.49.4 — 03.11.2026 · Text in der Abschnittsbezeichnung
+
+- **Abschnitt mit langem Text in der Überschrift:** als Name gilt nur noch der erste
+  Absatz, z. B. „Nachhaltigkeit“. Der übrige Text steht in der Karte des Abschnitts unter
+  „Text zum Abschnitt“. Gilt auch für Lose.
+- **Import-Log:** neuer Hinweis „Abschnitte mit Text in der Bezeichnung“; ein Klick wählt
+  den Abschnitt aus.
+
+## 0.49.3 — 03.11.2026 · Lange Abschnittsnamen im Graphen
+
+- **Lange Namen von Abschnitten und Losen:** die Titel über den Inseln im Graphen enden
+  jetzt mit „…“, statt über den ganzen Graphen zu laufen. Der volle Name steht im Tooltip.
+  Dasselbe gilt für die Achsen der Matrix.
+
 ## 0.49.2 — 02.11.2026 · Startseite im Vollbild
 
 - **Erster Bildschirm füllt das Fenster:** Logo, Animation und Startknöpfe passen genau

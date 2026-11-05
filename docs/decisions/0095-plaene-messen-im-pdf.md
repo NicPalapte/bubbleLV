@@ -1,4 +1,4 @@
-# 0093 – Pläne im PDF messen: Ausnahme vom Feature-Freeze
+# 0095 – Pläne im PDF messen: Ausnahme vom Feature-Freeze
 
 - **Status:** akzeptiert
 - **Datum:** 2026-11-05

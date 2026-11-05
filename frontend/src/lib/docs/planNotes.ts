@@ -1,4 +1,4 @@
-// Pläne in Begleitdokumenten messen (Entscheidung 0093): eigene Notizen zur letzten
+// Pläne in Begleitdokumenten messen (Entscheidung 0095): eigene Notizen zur letzten
 // Datei, neben den Stellen aus Entscheidung 0072.
 //
 // - Seitenart: Conocto schätzt Text oder Plan selbst (`guessPageKind`); gespeichert

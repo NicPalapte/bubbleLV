@@ -56,7 +56,11 @@ export interface DocumentsApi {
   /** Öffnet alle PDFs der Liste nacheinander; andere Dateien bleiben liegen. */
   openFiles: (files: readonly File[]) => Promise<void>;
   close: (id: string) => void;
+  /** Zeigt dieses PDF zum Lesen (verlässt die Übersicht). */
   activate: (id: string) => void;
+  /** Übersicht mit Miniaturen statt eines PDFs zum Lesen (Entscheidung 0094). */
+  readonly overview: boolean;
+  setOverview: (on: boolean) => void;
   /** Zeigt die Stelle; ist ihr Dokument nicht offen, passiert nichts. */
   jumpTo: (spot: DocSpot) => void;
   /** Suchbegriff fürs PDF, für alle offenen PDFs derselbe; leert sich mit neuem LV. */
@@ -76,7 +80,7 @@ export interface DocumentsApi {
   setSuggest: (source: LinkSource, on: boolean) => void;
   /**
    * Position (Knoten-ID), für die gerade ein Rechenansatz gebildet wird (Entscheidung
-   * 0093): Antippen eines Maßes oder einer Messung im Plan hängt es an ihren Ansatz.
+   * 0095): Antippen eines Maßes oder einer Messung im Plan hängt es an ihren Ansatz.
    */
   readonly ansatzFor: string | null;
   setAnsatzFor: (id: string | null) => void;
@@ -113,6 +117,7 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
   const [jump, setJump] = useState<DocJump | null>(null);
   const [docSearch, setDocSearch] = useState('');
   const [ansatzFor, setAnsatzFor] = useState<string | null>(null);
+  const [overview, setOverview] = useState(false);
   const texts = useRef(new Map<string, Promise<string>>());
   // Kennungen der angemeldeten Dokumente, sofort gesetzt: `docsRef` folgt erst nach dem
   // Rendern, zwei kurz nacheinander abgeworfene gleiche PDFs kämen sonst beide durch.
@@ -137,6 +142,7 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
     setError(null);
     setDocSearch('');
     setAnsatzFor(null);
+    setOverview(false);
   }, [lv]);
   useEffect(
     () => () => {
@@ -189,6 +195,7 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
   const open = useCallback(
     async (file: File): Promise<void> => {
       setError(null);
+      setOverview(false);
       setError(await load(file));
     },
     [load],
@@ -206,6 +213,8 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
         const message = await load(file);
         if (message !== null) failed.push({ name: file.name, message });
       }
+      // Mehrere auf einmal: erst die Übersicht, damit man sieht, was alles da ist.
+      setOverview(pdfs.length - failed.length > 1);
       if (failed.length === 0) return;
       setError(
         pdfs.length === 1
@@ -230,12 +239,16 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
     setActiveId((current) => (current === id ? null : current));
   }, []);
 
-  const activate = useCallback((id: string): void => setActiveId(id), []);
+  const activate = useCallback((id: string): void => {
+    setActiveId(id);
+    setOverview(false);
+  }, []);
 
   const jumpTo = useCallback(
     (spot: DocSpot): void => {
       if (!docsRef.current.some((doc) => doc.id === spot.doc)) return;
       setActiveId(spot.doc);
+      setOverview(false);
       setJump((current) => ({ spot, nonce: (current?.nonce ?? 0) + 1 }));
       dispatch({ type: 'showPane', pane: 'doc' });
     },
@@ -383,6 +396,8 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
       openFiles,
       close,
       activate,
+      overview,
+      setOverview,
       jumpTo,
       docSearch,
       setDocSearch,
@@ -404,6 +419,8 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
       openFiles,
       close,
       activate,
+      overview,
+      setOverview,
       jumpTo,
       docSearch,
       setDocSearch,

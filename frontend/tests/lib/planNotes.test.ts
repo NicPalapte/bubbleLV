@@ -1,4 +1,4 @@
-// Pläne messen (Entscheidung 0093): Seitenart, Maßstab, Messungen, Rechenansatz,
+// Pläne messen (Entscheidung 0095): Seitenart, Maßstab, Messungen, Rechenansatz,
 // VA-Menge, Speicherform und Austausch der Schlüssel.
 
 import { describe, expect, it } from 'vitest';

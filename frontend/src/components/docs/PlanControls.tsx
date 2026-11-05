@@ -1,4 +1,4 @@
-// Bedienelemente zum Messen in Plänen (Entscheidung 0093): Werkzeugleiste über dem
+// Bedienelemente zum Messen in Plänen (Entscheidung 0095): Werkzeugleiste über dem
 // Plan, Maßstab festlegen, gewählte Messung benennen, verknüpfen oder löschen. Alles
 // antippbar am Tablet (mindestens 40 px hoch), so wenig Text wie möglich.
 

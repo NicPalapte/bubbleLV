@@ -160,7 +160,7 @@ type LvAction =
   | { type: 'docReject'; spot: DocSpot; id: string; at: number }
   /** Eine Art von Vorschlag im Dokument zeigen oder ausblenden, für dieses LV (0087). */
   | { type: 'docSuggest'; source: LinkSource; on: boolean }
-  /** Pläne messen (Entscheidung 0093): Seitenart von Hand; `null` nimmt sie zurück. */
+  /** Pläne messen (Entscheidung 0095): Seitenart von Hand; `null` nimmt sie zurück. */
   | { type: 'planKind'; ref: PageRef; kind: PageKind | null }
   /** Maßstab für eine oder mehrere Seiten übernehmen; `null` entfernt ihn. */
   | {

@@ -48,7 +48,7 @@ export const USAGE_EVENTS = [
   'dokument-geoeffnet',
   'dokument-anstreichung',
   'dokument-verknuepft',
-  // Pläne messen (Entscheidung 0093): nur das Ereignis, nie Werte oder Positionen.
+  // Pläne messen (Entscheidung 0095): nur das Ereignis, nie Werte oder Positionen.
   'plan-massstab',
   'plan-gemessen',
 ] as const;

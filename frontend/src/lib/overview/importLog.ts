@@ -11,6 +11,7 @@
 
 import { canonicalUnit } from '../units';
 import type { PositionIndex } from '../index/positionIndex';
+import type { LVNode } from '../../types/lvNode';
 
 export type LogLevel = 'hinweis' | 'beachten';
 
@@ -32,9 +33,27 @@ export interface ImportLog {
   total: number;
   /** Nur Einträge mit mindestens einem Fund. */
   entries: LogEntry[];
+  /**
+   * Abschnitte und Lose, deren Bezeichnung weiteren Text enthält (Issue #196):
+   * als Name gilt der erste Absatz, der Rest steht in der Abschnittskarte.
+   * Knoten-IDs in Dokumentreihenfolge.
+   */
+  labelText: string[];
 }
 
-export function buildImportLog(index: PositionIndex): ImportLog {
+/** Abschnitte und Lose mit weiterem Text in der Bezeichnung, in Dokumentreihenfolge. */
+export function nodesWithLabelText(root: LVNode | null): string[] {
+  const out: string[] = [];
+  const visit = (node: LVNode): void => {
+    if (node.kind === 'position') return;
+    if (node.text !== undefined) out.push(node.id);
+    for (const child of node.children) visit(child);
+  };
+  if (root !== null) visit(root);
+  return out;
+}
+
+export function buildImportLog(index: PositionIndex, root: LVNode | null = null): ImportLog {
   const ohneEinheit: string[] = [];
   const ohneMenge: string[] = [];
   const ohnePreis: string[] = [];
@@ -121,5 +140,5 @@ export function buildImportLog(index: PositionIndex): ImportLog {
     doppelteOz,
   );
 
-  return { total: index.size, entries };
+  return { total: index.size, entries, labelText: nodesWithLabelText(root) };
 }

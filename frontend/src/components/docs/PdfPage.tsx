@@ -66,7 +66,7 @@ function PdfPageView({
   suggestions: readonly DocSuggestion[];
   /** Klick auf einen Vorschlag; `at` ist die Stelle darunter im Fenster. */
   onSuggestion: (suggestion: DocSuggestion, at: { left: number; top: number }) => void;
-  /** Ebene über der Seite, z. B. Messungen im Plan (Entscheidung 0093); stabil halten. */
+  /** Ebene über der Seite, z. B. Messungen im Plan (Entscheidung 0095); stabil halten. */
   overlay?: (page: number, size: PageSize, scale: number) => ReactNode;
 }) {
   const box = useRef<HTMLDivElement>(null);

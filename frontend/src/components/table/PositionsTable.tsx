@@ -506,7 +506,7 @@ function sectionInfo(count: number, done: number): GroupHead['info'] {
 }
 
 /**
- * Pläne messen (Entscheidung 0093): nur da, sobald eine Position eine VA-Menge hat, dann
+ * Pläne messen (Entscheidung 0095): nur da, sobald eine Position eine VA-Menge hat, dann
  * direkt hinter „Menge“. Inhalt aus den Notizen, siehe `annotationRender`.
  */
 const PLAN_COLUMNS: ReadonlyArray<Column<Row>> = [

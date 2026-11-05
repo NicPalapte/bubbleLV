@@ -1,4 +1,4 @@
-// Messen in Plänen (Entscheidung 0093): reine Rechnungen ohne PDF- oder UI-Kenntnis.
+// Messen in Plänen (Entscheidung 0095): reine Rechnungen ohne PDF- oder UI-Kenntnis.
 //
 // Punkte liegen in Seiten-Einheiten des PDF bei Maßstab 1 (1 Einheit = 1/72 Zoll auf
 // dem Papier). Ein Maßstab ist „Meter in der Natur je Seiten-Einheit“. Aus einem

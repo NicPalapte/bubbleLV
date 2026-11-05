@@ -1,4 +1,4 @@
-// Messungen über einer Planseite (Entscheidung 0093): Linien, Flächen und Stückpunkte
+// Messungen über einer Planseite (Entscheidung 0095): Linien, Flächen und Stückpunkte
 // als SVG in Seiten-Einheiten, darüber die Werte. Im Messmodus nimmt die Ebene das
 // Antippen auf und meldet den Punkt in Seiten-Einheiten — unabhängig vom Zoom.
 

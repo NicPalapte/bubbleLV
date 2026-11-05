@@ -125,7 +125,9 @@ describe('Eigene Suche im PDF', () => {
     await waitFor(() => expect(within(liste).getAllByText('2')).toHaveLength(2));
 
     fireEvent.click(within(liste).getByRole('button', { name: /baubeschreibung\.pdf/ }));
-    expect(screen.getByRole('combobox', { name: 'Dokument wählen' })).toHaveValue('abc123def456');
+    expect(
+      screen.getByRole('button', { name: 'Dokument wählen: baubeschreibung.pdf' }),
+    ).toBeInTheDocument();
   });
 
   it('holt das Suchfeld mit Strg F, wenn zuletzt ins Dokument geklickt wurde', async () => {

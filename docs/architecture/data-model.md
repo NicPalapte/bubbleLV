@@ -35,6 +35,7 @@ interface PositionDraft {
 interface SectionDraft {
   number: string;
   label: string | null;
+  text?: string; // weitere Absätze aus der Bezeichnung (0093)
   positions: PositionDraft[];
   sections: SectionDraft[]; // self-nestable
 }
@@ -42,6 +43,7 @@ interface SectionDraft {
 interface LotDraft {
   number: string;
   label: string | null;
+  text?: string; // weitere Absätze aus der Bezeichnung (0093)
   sections: SectionDraft[];
 }
 

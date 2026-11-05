@@ -1,4 +1,4 @@
-// Abschnitt „VA-Menge“ der Positionskarte (Entscheidung 0093): Menge aus Plänen mit
+// Abschnitt „VA-Menge“ der Positionskarte (Entscheidung 0095): Menge aus Plänen mit
 // Herkunft. „Plan“ = Summe der verknüpften Messungen; „Rechenansatz“ = Bausteine, die im
 // Plan angetippt werden (gedruckte Maße einer Maßkette oder eigene Messungen), dazwischen
 // Rechenzeichen. Zahlen werden nie getippt. Die Differenz zur LV-Menge steht nur da,

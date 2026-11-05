@@ -94,7 +94,7 @@ export interface Annotations {
   readonly documents: DocNotes;
   /** Urteile über Verbindungen aus Regeln (Entscheidung 0081); fehlt = keine. */
   readonly links?: readonly PositionLink[];
-  /** Pläne messen (Entscheidung 0093); fehlt = nichts gemessen. */
+  /** Pläne messen (Entscheidung 0095); fehlt = nichts gemessen. */
   readonly plans?: PlanNotes;
 }
 
@@ -413,7 +413,7 @@ export interface StoredAnnotations {
   readonly log: ReadonlyArray<readonly [string, readonly LogEntry[]]>;
   readonly documents: StoredDocNotes;
   readonly links?: readonly PositionLink[];
-  /** Seit 0093 (Pläne messen), ebenso optional. */
+  /** Seit 0095 (Pläne messen), ebenso optional. */
   readonly plans?: StoredPlanNotes;
 }
 

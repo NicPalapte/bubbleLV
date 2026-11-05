@@ -1,5 +1,5 @@
 // Text oder Plan je Seite schätzen und Maßstäbe aus dem Plankopf lesen (Entscheidung
-// 0093). Läuft einmal je Dokument im Hintergrund, Seite für Seite; der Seitentext kommt
+// 0095). Läuft einmal je Dokument im Hintergrund, Seite für Seite; der Seitentext kommt
 // aus dem Zwischenspeicher der PDF-Suche.
 
 import { useEffect, useState } from 'react';

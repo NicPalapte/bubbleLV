@@ -126,7 +126,7 @@ export interface NotesFile {
   readonly positionen: readonly NotesFilePosition[];
   /** Bekannte Begleitdokumente und angestrichene Stellen ohne Verknüpfung. */
   readonly dokumente: DocNotes;
-  /** Pläne messen (Entscheidung 0093); Positionen unter ihrem Hash. */
+  /** Pläne messen (Entscheidung 0095); Positionen unter ihrem Hash. */
   readonly plaene: PlanNotes;
 }
 
