@@ -48,6 +48,14 @@
   alles, was das Fenster berührt. Shift ergänzt die Auswahl. Die Logik liegt rein
   geometrisch im Kern (`packages/core/src/plan/selectWindow.ts`), damit der BIM-Viewer sie
   später in Bildschirmkoordinaten genauso nutzt.
+- **Ansatz braucht einen Plan** (Nico, 06.11.): „Ansatz im Plan bilden“ öffnet den Bereich
+  „Dokument“ und zeigt nur die Pläne. Hat das offene PDF keine, springt der Bereich in die
+  Übersicht (0094), dort wird das PDF mit dem Plan gewählt.
+- **Bereich „Dokument“ aufgeräumt** (Nico, 06.11., ändert 0094): ✕ in der Kopfleiste führt
+  zur Übersicht, das PDF bleibt offen; „Alle als Übersicht“ in der Liste entfällt. Ein PDF
+  ganz entfernen nur über den Mülleimer auf seiner Karte in der Übersicht. Ist der Bereich
+  schmal, wandern Zoom, Treffer blättern und Vorschläge ins Menü „⋯“, ganz schmal auch die
+  Suche.
 - **Verknüpfen:** Jede Messung hängt an einer oder mehreren Positionen, gespeichert über
   den Positions-Hash (0055).
 - **VA-Menge und Herkunft:** Tabelle und Positionskarte zeigen die VA-Menge und ihre

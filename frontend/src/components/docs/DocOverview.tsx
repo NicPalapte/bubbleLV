@@ -43,10 +43,24 @@ function Thumbnail({ doc }: { doc: OpenedPdf }) {
   );
 }
 
-function DocCard({ row, doc, current }: { row: DocRow; doc: OpenedPdf; current: boolean }) {
-  const { activate } = useDocuments();
+function TrashIcon() {
   return (
-    <li className="flex">
+    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none">
+      <path
+        d="M2.5 4h11M6 4V2.5h4V4M4 4l.7 9.5h6.6L12 4M6.5 6.5v4.5M9.5 6.5v4.5"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function DocCard({ row, doc, current }: { row: DocRow; doc: OpenedPdf; current: boolean }) {
+  const { activate, close } = useDocuments();
+  return (
+    <li className="relative flex">
       <button
         type="button"
         onClick={() => activate(row.id)}
@@ -67,20 +81,49 @@ function DocCard({ row, doc, current }: { row: DocRow; doc: OpenedPdf; current: 
             </span>
           )}
         </span>
-        <span className="flex flex-col gap-[2px] px-[10px] py-[8px]">
+        <span className="flex flex-col gap-[2px] py-[8px] pl-[10px] pr-[42px]">
           <span className="truncate text-[12.5px] font-semibold">{row.name}</span>
           <span className="text-[11px] text-mute">
             {row.pages} {row.pages === 1 ? 'Seite' : 'Seiten'}
           </span>
         </span>
       </button>
+      {/* Nur hier entfernt man ein PDF ganz (Nico, 06.11.2026); Notizen dazu bleiben. */}
+      <button
+        type="button"
+        aria-label={`${row.name} entfernen`}
+        title="PDF entfernen — Notizen und Messungen bleiben"
+        onClick={() => close(row.id)}
+        className="absolute bottom-[8px] right-[8px] inline-flex h-[26px] w-[26px] cursor-pointer items-center justify-center rounded-[var(--r-sm)] border border-line bg-surface p-0 text-mute hover:border-line2 hover:text-ink"
+      >
+        <TrashIcon />
+      </button>
     </li>
   );
 }
 
 export function DocOverview() {
-  const { docs, active, openFiles, setOverview, busy, error } = useDocuments();
-  const { annotations } = useViewer();
+  const {
+    docs,
+    active,
+    openFiles,
+    setOverview,
+    busy,
+    error,
+    ansatzFor,
+    setAnsatzFor,
+    planWanted,
+    donePlanWanted,
+  } = useDocuments();
+  const { annotations, index } = useViewer();
+  // Ansatz ohne Plan gestartet: hier wird der Plan gewählt; danach kein Rücksprung mehr.
+  useEffect(() => {
+    if (planWanted) donePlanWanted();
+  }, [planWanted, donePlanWanted]);
+  const ansatzOz =
+    ansatzFor === null
+      ? null
+      : (index.nodes[index.slotOf.get(ansatzFor) ?? -1]?.position?.oz ?? 'Position');
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<DocSort>('geoeffnet');
   const linked = useMemo(() => linkedSpotsByDoc(annotations.documents), [annotations.documents]);
@@ -141,6 +184,17 @@ export function DocOverview() {
           className={`${DOC_TOOL} border-dashed border-line2 text-dim`}
         />
       </div>
+      {ansatzOz !== null && (
+        <div
+          role="status"
+          className="flex shrink-0 items-center gap-[8px] border-b border-line bg-accent-soft px-[12px] py-[6px] font-sans text-[12.5px] text-accent-ink"
+        >
+          <span className="flex-1">Ansatz für {ansatzOz}: PDF mit dem Plan wählen</span>
+          <button type="button" className="cn-btn" onClick={() => setAnsatzFor(null)}>
+            Abbrechen
+          </button>
+        </div>
+      )}
       {error !== null && (
         <div
           role="alert"

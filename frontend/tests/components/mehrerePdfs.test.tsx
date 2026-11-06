@@ -68,26 +68,30 @@ describe('Mehrere PDFs', () => {
     oeffne(['baubeschreibung.pdf', 'lageplan.pdf', 'gutachten.pdf']);
 
     const liste = await screen.findByRole('list', { name: 'Offene Dokumente' });
-    expect(within(liste).getAllByRole('button')).toHaveLength(3);
+    const karten = () =>
+      within(liste)
+        .getAllByRole('button')
+        .filter((knopf) => !knopf.hasAttribute('aria-label'));
+    expect(karten()).toHaveLength(3);
     expect(screen.getByRole('button', { name: 'Übersicht · 3' })).toBeInTheDocument();
 
     fireEvent.change(screen.getByRole('combobox', { name: 'Sortieren' }), {
       target: { value: 'name' },
     });
-    expect(
-      within(liste)
-        .getAllByRole('button')
-        .map((karte) => karte.title),
-    ).toEqual(['baubeschreibung.pdf', 'gutachten.pdf', 'lageplan.pdf']);
+    expect(karten().map((karte) => karte.title)).toEqual([
+      'baubeschreibung.pdf',
+      'gutachten.pdf',
+      'lageplan.pdf',
+    ]);
 
-    fireEvent.click(within(liste).getByRole('button', { name: /lageplan\.pdf/ }));
+    fireEvent.click(within(liste).getByTitle('lageplan.pdf'));
     expect(
       await screen.findByRole('button', { name: 'Dokument wählen: lageplan.pdf' }),
     ).toHaveTextContent('2 von 3');
     expect(screen.queryByRole('list', { name: 'Offene Dokumente' })).toBeNull();
   });
 
-  it('wechselt über die Dokumentliste und kommt von dort zur Übersicht', async () => {
+  it('wechselt über die Dokumentliste, ✕ führt zur Übersicht, entfernt nur dort', async () => {
     await ladeApp();
     oeffne(['baubeschreibung.pdf']);
     oeffne(['gutachten.pdf']);
@@ -102,12 +106,18 @@ describe('Mehrere PDFs', () => {
       screen.getByRole('button', { name: 'Dokument wählen: baubeschreibung.pdf' }),
     ).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Dokument wählen: baubeschreibung.pdf' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Alle als Übersicht' }));
-    expect(await screen.findByRole('list', { name: 'Offene Dokumente' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Zur Übersicht' }));
+    const liste = await screen.findByRole('list', { name: 'Offene Dokumente' });
+    expect(screen.getByRole('button', { name: 'Übersicht · 2' })).toBeInTheDocument();
+
+    fireEvent.click(within(liste).getByRole('button', { name: 'gutachten.pdf entfernen' }));
+    expect(await screen.findByRole('button', { name: 'Übersicht · 1' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Lesen' }));
     expect(screen.queryByRole('list', { name: 'Offene Dokumente' })).toBeNull();
+    expect(
+      screen.getByRole('button', { name: 'Dokument wählen: baubeschreibung.pdf' }),
+    ).toBeInTheDocument();
   });
 
   it('öffnet im leeren Bereich alle gewählten Dateien, nicht nur die erste', async () => {

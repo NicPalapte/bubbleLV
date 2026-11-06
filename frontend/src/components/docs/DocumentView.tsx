@@ -30,6 +30,7 @@ import { SuggestBar } from './SuggestBar';
 import { PlanLayer, type PlanDraft } from './PlanLayer';
 import { GROUP_OF, SNAP_TOOLS, TWO_POINT_TOOLS, type PlanTool, type ToolGroup } from './planTools';
 import { MeasureBar, PlanToolbar, ScalePanel } from './PlanControls';
+import { MoreMenu } from './MoreMenu';
 import { usePageInfo } from './usePageInfo';
 import { pageMaskOf, snapAt, type PageMask, type Snap } from './pageMask';
 import type { DocHighlightItem } from './docHighlights';
@@ -82,6 +83,9 @@ const ZOOM_MIN = 0.5;
 // Pläne brauchen viel Zoom für Maßketten; das Bild bleibt scharf (`pageCanvas.ts`).
 const ZOOM_MAX = 16;
 const ZOOM_STEP = 1.2;
+/** Ab dieser Breite der Kopfleiste (px) wandern Knöpfe ins Menü „⋯“, darunter auch die Suche. */
+const NARROW_BAR = 640;
+const TIGHT_BAR = 440;
 /** Rand links und rechts neben der Seite in px. */
 const GUTTER = 16;
 /** So lange leuchtet die Stelle nach einem Sprung. */
@@ -163,7 +167,9 @@ function EmptyDocument() {
 
 function OpenDocument({ doc }: { doc: OpenedPdf }) {
   const {
-    close,
+    setOverview,
+    planWanted,
+    donePlanWanted,
     error,
     jump,
     docSearch,
@@ -229,6 +235,23 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     for (let page = 1; page <= pages; page += 1) if (kindOf(page) === 'plan') count += 1;
     return count;
   }, [pages, kindOf]);
+  // Ansatz gestartet (Nico, 06.11.2026): nur die Pläne zeigen; hat dieses PDF keine,
+  // in die Übersicht springen, damit ein Plan gewählt wird. Erst wenn alle Seiten geschätzt
+  // sind, sonst wirkt ein großer Plansatz am Anfang planlos.
+  const pagesKnown = pageInfo.size >= pages;
+  const hasPlans = planCount > 0;
+  // Je Ansatz einmal auf die Pläne stellen; danach darf man selbst umschalten.
+  const planFor = ansatzFor !== null && pagesKnown && hasPlans ? ansatzFor : null;
+  const [plansShownFor, setPlansShownFor] = useState<string | null>(null);
+  if (planFor !== null && planFor !== plansShownFor) {
+    setPlansShownFor(planFor);
+    setPageFilter('plan');
+  }
+  useEffect(() => {
+    if (!planWanted || ansatzFor === null || !pagesKnown) return;
+    donePlanWanted();
+    if (!hasPlans) setOverview(true);
+  }, [ansatzFor, pagesKnown, hasPlans, planWanted, donePlanWanted, setOverview]);
   const shownPages = useMemo(() => {
     const all = Array.from({ length: pages }, (_, i) => i + 1);
     return pageFilter === 'alle' ? all : all.filter((page) => kindOf(page) === pageFilter);
@@ -994,13 +1017,80 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     [index, jumpToPosition],
   );
 
+  // Schmaler Bereich: seltene Knöpfe wandern ins Menü „⋯“, ganz schmal auch die Suche.
+  const narrow = width > 0 && width < NARROW_BAR;
+  const tight = width > 0 && width < TIGHT_BAR;
+  const suggestEl =
+    counts.oz + counts.menge > 0 ? (
+      <SuggestToggles counts={counts} suggest={suggest} setSuggest={setSuggest} />
+    ) : null;
+  const searchEl = (
+    <DocSearchField rootRef={rootRef} hitCount={hits.length} hitIndex={hitIndex} onStep={stepHit} />
+  );
+  const stepEls = (
+    <>
+      <button
+        type="button"
+        aria-label="Vorheriger Treffer"
+        disabled={hits.length === 0}
+        onClick={() => stepHit(-1)}
+        className={TOOL}
+      >
+        ▲
+      </button>
+      <button
+        type="button"
+        aria-label="Nächster Treffer"
+        disabled={hits.length === 0}
+        onClick={() => stepHit(1)}
+        className={TOOL}
+      >
+        ▼
+      </button>
+    </>
+  );
+  const zoomEls = (
+    <>
+      <button
+        type="button"
+        aria-label="Verkleinern"
+        disabled={zoom <= ZOOM_MIN}
+        onClick={() => zoomBy(1 / ZOOM_STEP)}
+        className={TOOL}
+      >
+        −
+      </button>
+      <button
+        type="button"
+        aria-label="Vergrößern"
+        disabled={zoom >= ZOOM_MAX}
+        onClick={() => zoomBy(ZOOM_STEP)}
+        className={TOOL}
+      >
+        +
+      </button>
+      {zoom !== 1 && (
+        <button
+          type="button"
+          title="Auf Breite einpassen"
+          onClick={() => zoomBy(1 / zoom)}
+          className={TOOL}
+        >
+          {Math.round(zoom * 100)} %
+        </button>
+      )}
+    </>
+  );
+
   return (
     <div ref={rootRef} className="flex min-h-0 flex-1 flex-col">
-      <div className="flex shrink-0 flex-wrap items-center gap-[6px] border-b border-line px-[10px] py-[6px]">
+      <div className="flex shrink-0 items-center gap-[6px] border-b border-line px-[10px] py-[6px]">
         <DocPicker doc={doc} />
-        <span className="font-mono text-[11.5px] text-mute">
-          {current} / {pages}
-        </span>
+        {!tight && (
+          <span className="shrink-0 font-mono text-[11.5px] text-mute">
+            {current} / {pages}
+          </span>
+        )}
         {planCount > 0 && (
           <span role="radiogroup" aria-label="Seiten" className="flex items-center gap-[2px]">
             {(
@@ -1037,66 +1127,23 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
           </button>
         )}
         <span className="flex-1" />
-        {counts.oz + counts.menge > 0 && (
-          <SuggestToggles counts={counts} suggest={suggest} setSuggest={setSuggest} />
-        )}
-        <DocSearchField
-          rootRef={rootRef}
-          hitCount={hits.length}
-          hitIndex={hitIndex}
-          onStep={stepHit}
-        />
-        <button
-          type="button"
-          aria-label="Vorheriger Treffer"
-          disabled={hits.length === 0}
-          onClick={() => stepHit(-1)}
-          className={TOOL}
-        >
-          ▲
-        </button>
-        <button
-          type="button"
-          aria-label="Nächster Treffer"
-          disabled={hits.length === 0}
-          onClick={() => stepHit(1)}
-          className={TOOL}
-        >
-          ▼
-        </button>
-        <button
-          type="button"
-          aria-label="Verkleinern"
-          disabled={zoom <= ZOOM_MIN}
-          onClick={() => zoomBy(1 / ZOOM_STEP)}
-          className={TOOL}
-        >
-          −
-        </button>
-        <button
-          type="button"
-          aria-label="Vergrößern"
-          disabled={zoom >= ZOOM_MAX}
-          onClick={() => zoomBy(ZOOM_STEP)}
-          className={TOOL}
-        >
-          +
-        </button>
-        {zoom !== 1 && (
-          <button
-            type="button"
-            title="Auf Breite einpassen"
-            onClick={() => zoomBy(1 / zoom)}
-            className={TOOL}
-          >
-            {Math.round(zoom * 100)} %
-          </button>
+        {!narrow && suggestEl}
+        {!tight && searchEl}
+        {!narrow && stepEls}
+        {!narrow && zoomEls}
+        {narrow && (
+          <MoreMenu>
+            {tight && searchEl}
+            {stepEls}
+            {zoomEls}
+            {suggestEl}
+          </MoreMenu>
         )}
         <button
           type="button"
-          aria-label={`${doc.name} schließen`}
-          title="Dokument schließen — Notizen bleiben"
-          onClick={() => close(doc.id)}
+          aria-label="Zur Übersicht"
+          title="Zur Übersicht aller PDFs — das PDF bleibt offen"
+          onClick={() => setOverview(true)}
           className={TOOL}
         >
           ✕

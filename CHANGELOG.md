@@ -11,6 +11,12 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ## 0.51.0 — 05.11.2026 · Pläne im PDF messen
 
+- **Ansatz im Plan bilden:** zeigt im Bereich „Dokument“ gleich nur die Pläne. Hat das offene
+  PDF keine, springt der Bereich in die Übersicht, dort das PDF mit dem Plan wählen.
+- **Übersicht statt Schließen:** ✕ oben im Bereich „Dokument“ führt zur Übersicht aller PDFs.
+  Ein PDF ganz entfernen geht nur noch über den Mülleimer auf seiner Karte dort.
+- **Schmales Fenster:** Ist der Bereich „Dokument“ schmal, wandern selten gebrauchte Knöpfe
+  ins Menü „⋯“, statt die Kopfleiste zu sprengen.
 - **Text oder Plan:** Conocto erkennt, welche PDF-Seiten Pläne sind. Oben im Bereich
   „Dokument“ lässt sich auf „Pläne“ oder „Text“ filtern; jede Seite ist von Hand umstellbar.
 - **Maßstab:** steht im Plankopf z. B. „M 1:100“, schlägt Conocto ihn vor. Er gilt erst nach
