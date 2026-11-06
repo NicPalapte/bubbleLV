@@ -29,19 +29,19 @@
   für alle Pläne des Dokuments mit demselben Plankopf-Maßstab.
 - **Maßstab von Hand:** Findet Conocto keinen, trägt man „1 : x“ selbst ein (Herkunft
   „von Hand“), auf Wunsch für alle Pläne ohne Maßstab.
-- **Raum erkennen:** Antippen füllt das Seitenbild von der Stelle aus bis zu dunklen Linien
-  (`packages/core/src/plan/region.ts`, Bild statt Vektoren: geht auch bei Scans). Der Rand ist
-  nur ein Vorschlag, gilt erst nach „Fertig“. Erreicht die Füllung den Seitenrand, gibt es
-  keinen Vorschlag. Stückzahl per Symbol erkennen kommt später (Nico, 06.11.).
+- **Fläche erkennen:** Bei Rechteck und Kreis wird die geschlossene Linie unter dem
+  Mauszeiger erkannt: Seitenbild einmal als Linienmaske, von der Stelle aus füllen
+  (`packages/core/src/plan/region.ts`, Bild statt Vektoren: geht auch bei Scans). Nur ein
+  Vorschlag, gilt erst nach dem Klick; offene Räume (Tür) ergeben keinen. Am Tablet ohne
+  Hover nicht verfügbar. Stückzahl per Symbol erkennen kommt später (Nico, 06.11.).
 - **Zoom und Bild:** Jede Seite auf die Bereichsbreite eingepasst, Zoom bis 1600 %. Mausrad
   zoomt über Plänen, Ziehen verschiebt. Eine Zeichenfläche hat höchstens 8 Mio.
   Bildpunkte, sonst zeichnen Browser sie schwarz; bei großem Zoom kommt ein scharfes Bild nur
   vom sichtbaren Ausschnitt dazu (`components/docs/pageCanvas.ts`).
-- **Messen:** Länge (zwei Punkte), Maßkette (Linienzug mit Teilmaßen), Fläche als Rechteck
-  (zwei Ecken), Polygon oder Kreis (Mitte, Rand), Stück (Punkte). Bedienung wie im CAD: Esc
-  beendet den Befehl, Enter schließt ab, Entf löscht die gewählte Messung. Werkzeug „Maße“
-  sammelt gedruckte Maße als Summe und hängt sie an den Rechenansatz von Positionen. Punkte liegen in Seiten-Einheiten; der Wert wird immer aus dem
-  aktuellen Maßstab gerechnet, nie gespeichert.
+- **Messen:** Werkzeuge nur Länge, Fläche, Stück (Nico, 06.11.). Länge als Strecke (zwei
+  Punkte) oder Kette (Doppelklick beendet), Fläche als Rechteck, Kreis oder Polygon. Bedienung
+  wie im CAD: Esc beendet den Befehl, Enter schließt ab, Entf löscht die Auswahl. Mit Shift
+  mehrere Messungen wählen; verknüpfen nur bei gleicher Art (gleiche Einheit).
 - **Verknüpfen:** Jede Messung hängt an einer oder mehreren Positionen, gespeichert über
   den Positions-Hash (0055).
 - **VA-Menge und Herkunft:** Tabelle und Positionskarte zeigen die VA-Menge und ihre

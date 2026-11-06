@@ -6,6 +6,7 @@ import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import type { PlanPoint } from '@core';
 import type { PageSize } from './PdfPage';
 import type { PlanTool } from './planTools';
+import type { Snap } from './pageMask';
 import {
   centerOf,
   formatAmount,
@@ -75,7 +76,7 @@ function DraftShape({
   scale: number;
 }) {
   const color = 'var(--accent)';
-  const all = hover !== null && tool !== 'stueck' && tool !== 'raum' ? [...points, hover] : points;
+  const all = hover !== null && tool !== 'stueck' ? [...points, hover] : points;
   const stroke = {
     stroke: color,
     strokeWidth: 2,
@@ -104,7 +105,7 @@ function DraftShape({
         {...stroke}
       />
     );
-  } else if ((tool === 'polygon' || tool === 'raum') && all.length > 2) {
+  } else if (tool === 'polygon' && all.length > 2) {
     shape = <polygon points={pointsAttr(all)} fill={color} fillOpacity={0.12} {...stroke} />;
   } else if (tool !== 'stueck') {
     shape = <polyline points={pointsAttr(all)} fill="none" {...stroke} />;
@@ -117,7 +118,7 @@ function DraftShape({
           key={i}
           cx={x}
           cy={y}
-          r={(tool === 'raum' ? 4 : i === 0 && tool === 'polygon' ? 9 : 6) / scale}
+          r={(i === 0 && tool === 'polygon' ? 9 : 6) / scale}
           fill={i === 0 ? 'var(--surface)' : color}
           stroke={color}
           strokeWidth={2}
@@ -126,6 +127,22 @@ function DraftShape({
       ))}
     </g>
   );
+}
+
+/** Erkannte Fläche: kräftig hinterlegt, damit klar ist, was ein Klick übernimmt. */
+function SnapShape({ snap }: { snap: Snap }) {
+  const look = {
+    fill: 'var(--accent)',
+    fillOpacity: 0.2,
+    stroke: 'var(--accent)',
+    strokeWidth: 2,
+    vectorEffect: 'non-scaling-stroke' as const,
+  };
+  if (snap.shape === 'kreis' && snap.points.length >= 2) {
+    const [[cx, cy], [ex, ey]] = snap.points;
+    return <circle cx={cx} cy={cy} r={Math.hypot(ex - cx, ey - cy)} {...look} />;
+  }
+  return <polygon points={pointsAttr(snap.points)} {...look} />;
 }
 
 function Shape({
@@ -221,8 +238,10 @@ export function PlanLayer({
   tool,
   selected,
   picking,
+  snap,
   onTap,
   onPick,
+  onHover,
 }: {
   size: PageSize;
   scale: number;
@@ -232,22 +251,30 @@ export function PlanLayer({
   draft: readonly PlanPoint[] | null;
   /** Aktives Werkzeug; `null`: nur zeigen. */
   tool: PlanTool | null;
-  selected: string | null;
+  selected: readonly string[];
+  /** Erkannte Fläche unter dem Mauszeiger; ein Klick übernimmt sie. */
+  snap: Snap | null;
   /** Rechenansatz wird gebildet: Messungen sind antippbar. */
   picking: boolean;
   onTap: (point: PlanPoint) => void;
-  onPick: (id: string) => void;
+  /** `add`: mit Shift zur Auswahl dazu. */
+  onPick: (id: string, add: boolean) => void;
+  /** Mauszeiger über der Seite (Seiten-Einheiten); `free` = Alt, nicht erkennen. */
+  onHover: (point: PlanPoint | null, free: boolean) => void;
 }) {
   const width = Math.floor(size.width * scale);
   const height = Math.floor(size.height * scale);
-  const capture = tool !== null && tool !== 'masse';
+  const capture = tool !== null;
   const [hover, setHover] = useState<PlanPoint | null>(null);
   const move = (event: ReactPointerEvent<SVGSVGElement>): void => {
-    if (!capture || draft === null || draft.length === 0 || event.pointerType === 'touch') {
-      return;
-    }
+    if (!capture || event.pointerType === 'touch') return;
     const box = event.currentTarget.getBoundingClientRect();
-    setHover([(event.clientX - box.left) / scale, (event.clientY - box.top) / scale]);
+    const point: PlanPoint = [
+      (event.clientX - box.left) / scale,
+      (event.clientY - box.top) / scale,
+    ];
+    onHover(point, event.altKey);
+    if (draft !== null && draft.length > 0) setHover(point);
   };
   // Punkt erst beim Loslassen setzen: wer zieht, verschiebt den Plan (DocumentView).
   const down = useRef<{ x: number; y: number } | null>(null);
@@ -277,18 +304,22 @@ export function PlanLayer({
         onPointerDown={press}
         onPointerUp={tap}
         onPointerMove={move}
-        onPointerLeave={() => setHover(null)}
+        onPointerLeave={() => {
+          setHover(null);
+          onHover(null, false);
+        }}
         className={capture ? 'pointer-events-auto cursor-crosshair touch-none' : ''}
       >
         {measures.map((measure) => (
           <Shape
             key={measure.id}
             measure={measure}
-            selected={measure.id === selected}
+            selected={selected.includes(measure.id)}
             scale={scale}
           />
         ))}
-        {draft !== null && tool !== null && tool !== 'masse' && draft.length > 0 && (
+        {snap !== null && <SnapShape snap={snap} />}
+        {draft !== null && tool !== null && draft.length > 0 && (
           <DraftShape tool={tool} points={draft} hover={hover} scale={scale} />
         )}
       </svg>
@@ -318,12 +349,12 @@ export function PlanLayer({
               ? measure.points[measure.points.length - 1]
               : centerOf(measure.points);
         const value = measureValue(measure, planScale);
-        const on = measure.id === selected;
+        const on = selected.includes(measure.id);
         return (
           <button
             key={measure.id}
             type="button"
-            onClick={() => onPick(measure.id)}
+            onClick={(event) => onPick(measure.id, event.shiftKey)}
             title={picking ? 'In den Ansatz übernehmen' : 'Messung zeigen'}
             className={`pointer-events-auto absolute ${
               measure.kind === 'kette' ? 'translate-x-[12px]' : '-translate-x-1/2'

@@ -28,10 +28,10 @@ import { DOC_TOOL as TOOL, PdfInput } from './PdfInput';
 import { PdfPage, type PageSize } from './PdfPage';
 import { SuggestBar } from './SuggestBar';
 import { PlanLayer, type PlanDraft } from './PlanLayer';
-import { TWO_POINT_TOOLS, type PlanTool } from './planTools';
+import { GROUP_OF, SNAP_TOOLS, TWO_POINT_TOOLS, type PlanTool, type ToolGroup } from './planTools';
 import { MeasureBar, PlanToolbar, ScalePanel } from './PlanControls';
 import { usePageInfo } from './usePageInfo';
-import { detectArea } from './detectArea';
+import { pageMaskOf, snapAt, type PageMask, type Snap } from './pageMask';
 import type { DocHighlightItem } from './docHighlights';
 import { PaintBar, PaintNamesDialog } from '../common/PaintBar';
 import {
@@ -56,8 +56,10 @@ import { polylineLength, type PageKind, type PlanPoint } from '@core';
 import {
   appendTerm,
   EMPTY_PLAN_NOTES,
-  formatAmount,
+  formatMeasure,
+  MEASURE_UNIT,
   measuresOfPage,
+  measureValue,
   pageKindOf,
   parseMass,
   scaleOf,
@@ -200,11 +202,11 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
   const [pageFilter, setPageFilter] = useState<'alle' | PageKind>('alle');
   const [tool, setTool] = useState<PlanTool | null>(null);
   const [draft, setDraft] = useState<PlanDraft | null>(null);
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<readonly string[]>(NO_IDS);
   const [scalePage, setScalePage] = useState<number | null>(null);
   const [distance, setDistance] = useState<{ page: number; length: number } | null>(null);
   const [linkingMeasure, setLinkingMeasure] = useState<{
-    id: string;
+    ids: readonly string[];
     left: number;
     top: number;
   } | null>(null);
@@ -224,7 +226,8 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
   }, [pages, pageFilter, kindOf]);
   // Nach dem Filtern auf Pläne zählt die erste gezeigte Seite, nicht eine ausgeblendete.
   const current = shownPages.includes(scrolled) ? scrolled : (shownPages[0] ?? scrolled);
-  const selectedMeasure = plans.measures.find((entry) => entry.id === selected) ?? null;
+  const selectedMeasures = plans.measures.filter((entry) => selected.includes(entry.id));
+  const selectedMeasure = selectedMeasures.length === 1 ? selectedMeasures[0] : null;
   const ansatzNote = ansatzFor === null ? null : (plans.quantities.get(ansatzFor) ?? {});
   const addToAnsatz = useCallback(
     (term: AnsatzTerm): void => {
@@ -240,10 +243,15 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
   );
 
   const finishDraft = useCallback(
-    (from: PlanTool, points: readonly PlanPoint[], page: number): void => {
-      if (from === 'massstab' || from === 'masse') return;
+    (from: PlanTool, points: readonly PlanPoint[], page: number, snapped?: Snap): void => {
+      if (from === 'massstab') return;
       const kind = TOOL_KIND[from];
-      const shape = from === 'rechteck' || from === 'kreis' ? from : undefined;
+      const shape =
+        snapped !== undefined
+          ? snapped.shape
+          : from === 'rechteck' || from === 'kreis'
+            ? from
+            : undefined;
       const count = plans.measures.filter((entry) => entry.kind === kind).length + 1;
       const id = `m-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
       const measure: PlanMeasure = {
@@ -251,25 +259,29 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
         doc: doc.id,
         page,
         kind,
-        points: from === 'rechteck' ? rectangleFrom(points[0], points[1]) : points,
+        points:
+          snapped !== undefined
+            ? snapped.points
+            : from === 'rechteck'
+              ? rectangleFrom(points[0], points[1])
+              : points,
         ...(shape === undefined ? {} : { shape }),
         name: `${TOOL_NAME[from]} ${count}`,
         links: [],
         at: Date.now(),
       };
       dispatch({ type: 'planMeasure', measure });
-      setSelected(id);
+      setSelected([id]);
       setDraft(null);
       if (ansatzFor !== null) addToAnsatz({ kind: 'messung', id });
     },
     [plans.measures, doc.id, dispatch, ansatzFor, addToAnsatz],
   );
   const minPoints = (kind: PlanTool): number =>
-    kind === 'polygon' || kind === 'raum' ? 3 : kind === 'stueck' ? 1 : 2;
+    kind === 'polygon' ? 3 : kind === 'stueck' ? 1 : 2;
   const canFinish =
     tool !== null &&
     tool !== 'massstab' &&
-    tool !== 'masse' &&
     draft !== null &&
     draft.points.length >= minPoints(tool);
   const finish = (): void => {
@@ -277,34 +289,69 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     if (draft.points.length >= minPoints(tool)) finishDraft(tool, draft.points, draft.page);
   };
 
-  // Werkzeug „Raum“: Suche läuft oder Grund, warum nichts gefunden wurde.
-  const [areaHint, setAreaHint] = useState<string | null>(null);
+  const [snap, setSnap] = useState<(Snap & { page: number }) | null>(null);
+  // Zuletzt gewählte Form je Hauptwerkzeug (Länge: Strecke/Kette, Fläche: Rechteck/…).
+  const [lastShape, setLastShape] = useState<Readonly<Record<ToolGroup, PlanTool>>>({
+    laenge: 'laenge',
+    flaeche: 'rechteck',
+    stueck: 'stueck',
+  });
+  const chooseTool = (next: PlanTool): void => {
+    setTool(next);
+    setDraft(null);
+    setSnap(null);
+    if (next !== 'massstab') setLastShape((map) => ({ ...map, [GROUP_OF[next]]: next }));
+  };
 
-  // Gedruckte Maße sammeln (Werkzeug „Maße“): Summe, dann an Positionen hängen.
-  const [collected, setCollected] = useState<AnsatzTerm[]>([]);
-  const [linkingMasses, setLinkingMasses] = useState<{ left: number; top: number } | null>(null);
+  // Erkannte Fläche unter dem Mauszeiger (Rechteck, Kreis). Die Linienmaske je Seite wird
+  // einmal gezeichnet und gemerkt.
+  const masks = useRef(new Map<number, Promise<PageMask | null>>());
+  const hoverTimer = useRef(0);
+  const onHover = useCallback(
+    (page: number, point: PlanPoint | null, free: boolean): void => {
+      host.clearTimeout(hoverTimer.current);
+      const busy = draft !== null && draft.points.length > 0;
+      if (point === null || free || busy || tool === null || !SNAP_TOOLS.has(tool)) {
+        setSnap((current) => (current === null ? current : null));
+        return;
+      }
+      const circle = tool === 'kreis';
+      hoverTimer.current = host.setTimeout(() => {
+        let mask = masks.current.get(page);
+        if (mask === undefined) {
+          mask = doc.pdf
+            .getPage(page)
+            .then(pageMaskOf)
+            .catch(() => null);
+          masks.current.set(page, mask);
+        }
+        void mask.then((ready) => {
+          const found = ready === null ? null : snapAt(ready, point, circle);
+          setSnap(found === null ? null : { ...found, page });
+        });
+      }, 120);
+    },
+    [host, draft, tool, doc.pdf],
+  );
 
   const onTap = useCallback(
     (page: number, point: PlanPoint, scale: number): void => {
-      if (tool === null || tool === 'masse') return;
-      if (tool === 'raum') {
-        setAreaHint('Suche Fläche…');
-        void doc.pdf
-          .getPage(page)
-          .then((proxy) => detectArea(proxy, point))
-          .then((guess) => {
-            if (guess.ok) {
-              setDraft({ page, points: guess.points });
-              setAreaHint(null);
-            } else {
-              setDraft(null);
-              setAreaHint(guess.reason);
-            }
-          })
-          .catch(() => setAreaHint('Fläche nicht erkannt'));
+      if (tool === null) return;
+      const before = draft !== null && draft.page === page ? draft.points : [];
+      // Erkannte Fläche unter dem Zeiger: ein Klick übernimmt sie.
+      if (SNAP_TOOLS.has(tool) && before.length === 0 && snap !== null && snap.page === page) {
+        finishDraft(tool, snap.points, page, snap);
+        setSnap(null);
         return;
       }
-      const before = draft !== null && draft.page === page ? draft.points : [];
+      // Kette: Doppelklick (zweiter Klick auf dieselbe Stelle) beendet sie.
+      if (tool === 'kette' && before.length > 0) {
+        const [lx, ly] = before[before.length - 1];
+        if (Math.hypot(point[0] - lx, point[1] - ly) * scale < 6) {
+          if (before.length >= 2) finishDraft('kette', before, page);
+          return;
+        }
+      }
       const points = [...before, point];
       if (tool === 'massstab') {
         if (points.length < 2) {
@@ -331,7 +378,7 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
       }
       setDraft({ page, points });
     },
-    [tool, draft, finishDraft, doc.pdf],
+    [tool, draft, finishDraft, snap],
   );
 
   // Tastatur wie im CAD: Esc beendet den Befehl, Enter schließt ab, Entf löscht die gewählte
@@ -343,21 +390,19 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
       const typing = target?.closest?.('input, textarea, select, [contenteditable="true"]');
       if (typing != null) return;
       if (event.key === 'Escape') {
-        if (linkingMeasure !== null || linkingMasses !== null || scalePage !== null) return;
-        if (draft !== null && tool === 'raum') {
-          setDraft(null);
-        } else if (draft !== null && tool !== null && tool !== 'massstab') {
+        if (linkingMeasure !== null || scalePage !== null) return;
+        if (draft !== null && tool !== null && tool !== 'massstab') {
           if (draft.points.length >= minPoints(tool)) finishDraft(tool, draft.points, draft.page);
           else setDraft(null);
         } else if (draft !== null) {
           setDraft(null);
         } else if (tool !== null) {
           setTool(null);
-          setCollected([]);
+          setSnap(null);
         } else if (ansatzFor !== null) {
           setAnsatzFor(null);
-        } else if (selected !== null) {
-          setSelected(null);
+        } else if (selected.length > 0) {
+          setSelected(NO_IDS);
         } else {
           return;
         }
@@ -375,12 +420,9 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
         return;
       }
       if (event.key === 'Delete' || event.key === 'Backspace') {
-        if (selected !== null) {
-          dispatch({ type: 'planRemove', id: selected });
-          setSelected(null);
-          event.preventDefault();
-        } else if (tool === 'masse' && collected.length > 0) {
-          setCollected((list) => list.slice(0, -1));
+        if (selected.length > 0) {
+          for (const id of selected) dispatch({ type: 'planRemove', id });
+          setSelected(NO_IDS);
           event.preventDefault();
         }
       }
@@ -393,12 +435,18 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
   }, [host]);
 
   const pickMeasure = useCallback(
-    (id: string): void => {
+    (id: string, add: boolean): void => {
       if (ansatzFor !== null && tool === null) {
         addToAnsatz({ kind: 'messung', id });
         return;
       }
-      setSelected((current) => (current === id ? null : id));
+      // Mit Shift mehrere wählen; ohne Shift nur diese (oder keine, wenn schon allein gewählt).
+      setSelected((current) => {
+        if (add) {
+          return current.includes(id) ? current.filter((entry) => entry !== id) : [...current, id];
+        }
+        return current.length === 1 && current[0] === id ? NO_IDS : [id];
+      });
     },
     [ansatzFor, tool, addToAnsatz],
   );
@@ -439,8 +487,10 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
             tool={tool}
             selected={selected}
             picking={ansatzFor !== null}
+            snap={snap !== null && snap.page === page ? snap : null}
             onTap={(point) => onTap(page, point, scale)}
             onPick={pickMeasure}
+            onHover={(point, free) => onHover(page, point, free)}
           />
           {scaleOf(plans, ref) === null && (
             <button
@@ -469,6 +519,8 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
       ansatzFor,
       onTap,
       pickMeasure,
+      snap,
+      onHover,
     ],
   );
 
@@ -773,26 +825,17 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
       if (flash !== null && flash.spot.page === page) {
         out.push({ name: 'docflash', start: flash.spot.start, text: flash.spot.text });
       }
-      for (const term of collected) {
-        if (term.kind === 'mass' && term.page === page) {
-          out.push({ name: 'doclink', start: term.start, text: term.text });
-        }
-      }
       return out;
     },
-    [hits, currentHit, flash, collected],
+    [hits, currentHit, flash],
   );
   // Gleiche Liste je Seite, solange sich nichts ändert — sonst färbte jede Seite neu.
   const extras = useMemo(() => {
     const out = new Map<number, DocHighlightItem[]>();
-    const pagesWith = new Set([
-      ...hits.map((hit) => hit.page),
-      flash?.spot.page ?? 0,
-      ...collected.map((term) => (term.kind === 'mass' ? term.page : 0)),
-    ]);
+    const pagesWith = new Set([...hits.map((hit) => hit.page), flash?.spot.page ?? 0]);
     for (const page of pagesWith) if (page > 0) out.set(page, extraFor(page));
     return out;
-  }, [hits, flash, collected, extraFor]);
+  }, [hits, flash, extraFor]);
 
   /** Auswahl in der Textebene einer Seite; `at` legt die Leiste dorthin statt unter die Auswahl. */
   const pickFrom = (from: Element | null, at: { left: number; top: number } | null): boolean => {
@@ -976,21 +1019,6 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
           {error ?? 'Andere Fassung als beim Markieren — die Stellen von damals fehlen hier.'}
         </div>
       )}
-      {tool === 'raum' && (
-        <div
-          role="status"
-          className={`shrink-0 border-b border-line px-[12px] py-[6px] font-sans text-[12.5px] ${
-            areaHint === null || areaHint === 'Suche Fläche…'
-              ? 'bg-surface text-dim'
-              : 'bg-amberS text-amber'
-          }`}
-        >
-          {areaHint ??
-            (draft === null
-              ? 'In eine Fläche tippen — Conocto schlägt den Rand vor'
-              : 'Vorschlag: Enter oder „Fertig“ übernimmt, Esc verwirft')}
-        </div>
-      )}
       {ansatzFor !== null && ansatzNote !== null && (
         <div
           role="status"
@@ -1021,21 +1049,11 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
             event.preventDefault();
           }}
           onClick={(event) => {
-            const collecting = tool === 'masse';
-            if (!collecting && (ansatzFor === null || tool !== null)) return;
+            if (ansatzFor === null || tool !== null) return;
             const term = massAt(event);
-            if (term === null || term.kind !== 'mass') return;
+            if (term === null) return;
             host.getSelection()?.removeAllRanges();
-            if (!collecting) {
-              addToAnsatz(term);
-              return;
-            }
-            // Dasselbe Maß noch einmal antippen nimmt es wieder heraus.
-            setCollected((list) =>
-              list.some((item) => sameMass(item, term))
-                ? list.filter((item) => !sameMass(item, term))
-                : [...list, term],
-            );
+            addToAnsatz(term);
           }}
           className="relative min-h-0 flex-1 overflow-auto bg-grid2"
           style={{ padding: GUTTER }}
@@ -1074,9 +1092,9 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
             hasScale={scaleOf(plans, { doc: doc.id, page: current }) !== null}
             canFinish={canFinish}
             canUndo={draft !== null && draft.points.length > 0}
+            onGroup={(group) => chooseTool(lastShape[group])}
             onTool={(next) => {
-              setTool(next);
-              setDraft(null);
+              chooseTool(next);
               if (next === 'massstab') {
                 setDistance(null);
                 setScalePage(current);
@@ -1153,7 +1171,7 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
           onRename={(name) =>
             dispatch({ type: 'planMeasure', measure: { ...selectedMeasure, name } })
           }
-          onLink={(anchor) => setLinkingMeasure({ id: selectedMeasure.id, ...anchor })}
+          onLink={(anchor) => setLinkingMeasure({ ids: [selectedMeasure.id], ...anchor })}
           onUnlink={(id) =>
             dispatch({
               type: 'planMeasure',
@@ -1166,49 +1184,43 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
           onShowPosition={(id) => jumpToPosition(id, { stayInView: true })}
           onRemove={() => {
             dispatch({ type: 'planRemove', id: selectedMeasure.id });
-            setSelected(null);
+            setSelected(NO_IDS);
           }}
-          onClose={() => setSelected(null)}
+          onClose={() => setSelected(NO_IDS)}
         />
       )}
-      {collected.length > 0 && (
-        <MassBar
-          terms={collected}
-          onRemove={(i) => setCollected((list) => list.filter((_, at) => at !== i))}
-          onLink={(anchor) => setLinkingMasses(anchor)}
-          onClear={() => setCollected([])}
-        />
-      )}
-      {linkingMasses !== null && (
-        <LinkDialog
-          left={linkingMasses.left}
-          top={linkingMasses.top}
-          already={NO_IDS}
-          onLink={(ids) => {
-            // Summe der Maße an den Rechenansatz jeder Position hängen.
-            for (const id of ids) {
-              const note = plans.quantities.get(id) ?? {};
-              let ansatz = note.ansatz ?? [];
-              for (const term of collected) ansatz = appendTerm(ansatz, term);
-              dispatch({ type: 'planQuantity', id, note: { ...note, ansatz } });
+      {selectedMeasures.length > 1 && (
+        <SelectionBar
+          measures={selectedMeasures}
+          valueOf={(measure) => measureValue(measure, scaleOf(plans, measure))}
+          onLink={(anchor) =>
+            setLinkingMeasure({ ids: selectedMeasures.map((entry) => entry.id), ...anchor })
+          }
+          onRemove={() => {
+            for (const measure of selectedMeasures) {
+              dispatch({ type: 'planRemove', id: measure.id });
             }
-            setCollected([]);
-            setLinkingMasses(null);
+            setSelected(NO_IDS);
           }}
-          onClose={() => setLinkingMasses(null)}
+          onClose={() => setSelected(NO_IDS)}
         />
       )}
       {linkingMeasure !== null && (
         <LinkDialog
           left={linkingMeasure.left}
           top={linkingMeasure.top}
-          already={plans.measures.find((entry) => entry.id === linkingMeasure.id)?.links ?? NO_IDS}
+          already={
+            linkingMeasure.ids.length === 1
+              ? (plans.measures.find((entry) => entry.id === linkingMeasure.ids[0])?.links ??
+                NO_IDS)
+              : NO_IDS
+          }
           onLink={(ids) => {
-            const measure = plans.measures.find((entry) => entry.id === linkingMeasure.id);
-            if (measure !== undefined) {
+            for (const measure of plans.measures) {
+              if (!linkingMeasure.ids.includes(measure.id)) continue;
               dispatch({
                 type: 'planMeasure',
-                measure: { ...measure, links: [...measure.links, ...ids] },
+                measure: { ...measure, links: [...new Set([...measure.links, ...ids])] },
               });
             }
             setLinkingMeasure(null);
@@ -1340,23 +1352,21 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
 }
 
 /** Messart je Werkzeug; Rechteck, Polygon und Kreis sind Flächen. */
-const TOOL_KIND: Readonly<Record<Exclude<PlanTool, 'massstab' | 'masse'>, MeasureKind>> = {
+const TOOL_KIND: Readonly<Record<Exclude<PlanTool, 'massstab'>, MeasureKind>> = {
   laenge: 'laenge',
   kette: 'kette',
   rechteck: 'flaeche',
   polygon: 'flaeche',
   kreis: 'flaeche',
-  raum: 'flaeche',
   stueck: 'stueck',
 };
 
-const TOOL_NAME: Readonly<Record<Exclude<PlanTool, 'massstab' | 'masse'>, string>> = {
+const TOOL_NAME: Readonly<Record<Exclude<PlanTool, 'massstab'>, string>> = {
   laenge: 'Länge',
-  kette: 'Maßkette',
-  rechteck: 'Rechteck',
+  kette: 'Kette',
+  rechteck: 'Fläche',
   polygon: 'Fläche',
-  kreis: 'Kreis',
-  raum: 'Raum',
+  kreis: 'Fläche',
   stueck: 'Stück',
 };
 
@@ -1422,78 +1432,73 @@ export function DocumentView() {
   return overview ? <DocOverview /> : <OpenDocument key={active.id} doc={active} />;
 }
 
-const sameMass = (a: AnsatzTerm, b: AnsatzTerm): boolean =>
-  a.kind === 'mass' &&
-  b.kind === 'mass' &&
-  a.doc === b.doc &&
-  a.page === b.page &&
-  a.start === b.start;
-
-/** Gesammelte gedruckte Maße mit Summe; „Mit Position verknüpfen“ hängt sie an. */
-function MassBar({
-  terms,
-  onRemove,
+/**
+ * Mehrere Messungen gewählt (Shift): Summe und Verknüpfen nur bei gleicher Art (gleiche
+ * Einheit, Länge und Kette zählen zusammen); verschiedene Arten lassen sich nur löschen.
+ */
+function SelectionBar({
+  measures,
+  valueOf,
   onLink,
-  onClear,
+  onRemove,
+  onClose,
 }: {
-  terms: readonly AnsatzTerm[];
-  onRemove: (index: number) => void;
+  measures: readonly PlanMeasure[];
+  valueOf: (measure: PlanMeasure) => number | null;
   onLink: (anchor: { left: number; top: number }) => void;
-  onClear: () => void;
+  onRemove: () => void;
+  onClose: () => void;
 }) {
-  const sum = terms.reduce((total, term) => total + (term.kind === 'mass' ? term.value : 0), 0);
-  // So viele Nachkommastellen wie das genaueste Maß.
-  const decimals = Math.max(
-    0,
-    ...terms.map((term) => (term.kind === 'mass' ? (term.text.split(',')[1]?.length ?? 0) : 0)),
-  );
+  const units = new Set(measures.map((measure) => MEASURE_UNIT[measure.kind]));
+  const same = units.size === 1;
+  const values = measures.map(valueOf);
+  const sum =
+    same && values.every((value) => value !== null)
+      ? values.reduce<number>((total, value) => total + (value ?? 0), 0)
+      : null;
   return (
     <div
       role="group"
-      aria-label="Gesammelte Maße"
-      className="flex shrink-0 flex-wrap items-center gap-[6px] border-t border-line bg-surface px-[12px] py-[8px]"
+      aria-label="Gewählte Messungen"
+      className="flex shrink-0 flex-wrap items-center gap-[8px] border-t border-line bg-surface px-[12px] py-[8px]"
     >
       <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.6px] text-mute">
-        Maße
+        {measures.length} gewählt
       </span>
-      {terms.map((term, i) =>
-        term.kind !== 'mass' ? null : (
-          <span key={`${term.page}-${term.start}`} className="flex items-center gap-[6px]">
-            {i > 0 && <span className="font-sans text-[13px] text-mute">+</span>}
-            <span className="flex h-[32px] items-center rounded-[var(--r-pill)] border border-line font-sans text-[13px] text-ink">
-              <span className="pl-[10px] pr-[4px]">{term.text}</span>
-              <button
-                type="button"
-                aria-label={`Maß ${term.text} entfernen`}
-                onClick={() => onRemove(i)}
-                className="h-full cursor-pointer rounded-r-[var(--r-pill)] border-none bg-transparent pl-[4px] pr-[10px] text-mute hover:bg-sunken hover:text-ink"
-              >
-                ✕
-              </button>
-            </span>
-          </span>
-        ),
+      {same ? (
+        <span className="font-sans text-[14px] font-semibold text-ink">
+          Σ {formatMeasure(sum, measures[0].kind)}
+        </span>
+      ) : (
+        <span className="font-sans text-[12px] text-amber">Verschiedene Arten</span>
       )}
-      <span className="font-sans text-[14px] font-semibold text-ink">
-        = {formatAmount(sum, decimals)}
-      </span>
       <span className="flex-1" />
       <button
         type="button"
+        disabled={!same}
+        title={same ? undefined : 'Nur Messungen gleicher Art verknüpfen'}
         onClick={(event) => {
           const box = event.currentTarget.getBoundingClientRect();
           onLink({ left: box.left, top: box.top - 8 });
         }}
-        className="h-[36px] cursor-pointer rounded-[var(--r-sm)] border border-accent bg-accent-fill px-[12px] font-sans text-[13px] text-white"
+        className="h-[36px] cursor-pointer rounded-[var(--r-sm)] border border-accent bg-accent-fill px-[12px] font-sans text-[13px] text-white disabled:cursor-default disabled:border-line disabled:bg-sunken disabled:text-mute"
       >
         Mit Position verknüpfen…
       </button>
       <button
         type="button"
-        onClick={onClear}
+        onClick={onRemove}
         className="h-[36px] cursor-pointer rounded-[var(--r-sm)] border border-line bg-surface px-[12px] font-sans text-[13px] text-ink hover:border-line2"
       >
-        Leeren
+        Löschen
+      </button>
+      <button
+        type="button"
+        aria-label="Auswahl aufheben"
+        onClick={onClose}
+        className="h-[36px] w-[36px] cursor-pointer rounded-[var(--r-pill)] border-none bg-transparent text-mute hover:bg-sunken hover:text-ink"
+      >
+        ✕
       </button>
     </div>
   );

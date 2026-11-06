@@ -4,7 +4,7 @@
 
 import { useState } from 'react';
 import { unitFromDistance, unitFromRatio } from '@core';
-import type { PlanTool } from './planTools';
+import { GROUP_OF, type PlanTool, type ToolGroup } from './planTools';
 import {
   formatMeasure,
   MEASURE_LABEL,
@@ -21,21 +21,26 @@ const SOURCE_LABEL: Readonly<Record<PlanScale['source'], string>> = {
   hand: 'von Hand',
 };
 
-/** Werkzeuge in Gruppen: Länge · Fläche · Stück · gedruckte Maße. */
-const TOOL_GROUPS: ReadonlyArray<ReadonlyArray<readonly [PlanTool, string, string]>> = [
-  [
-    ['laenge', 'Länge', 'Zwei Punkte'],
-    ['kette', 'Maßkette', 'Punkte nacheinander, Enter oder Esc beendet'],
-  ],
-  [
-    ['rechteck', 'Rechteck', 'Zwei Ecken'],
-    ['polygon', 'Polygon', 'Ecken nacheinander, ersten Punkt antippen schließt'],
-    ['kreis', 'Kreis', 'Mitte, dann Rand'],
-    ['raum', 'Raum', 'In eine Fläche tippen: Conocto schlägt den Rand vor'],
-  ],
-  [['stueck', 'Stück', 'Je Bauteil ein Punkt, Enter oder Esc beendet']],
-  [['masse', 'Maße', 'Gedruckte Maße antippen, die Summe an Positionen hängen']],
+const GROUPS: ReadonlyArray<readonly [ToolGroup, string]> = [
+  ['laenge', 'Länge'],
+  ['flaeche', 'Fläche'],
+  ['stueck', 'Stück'],
 ];
+
+/** Formen je Gruppe; ohne Eintrag gibt es keine Unterwahl. */
+const SHAPES: Readonly<
+  Partial<Record<ToolGroup, ReadonlyArray<readonly [PlanTool, string, string]>>>
+> = {
+  laenge: [
+    ['laenge', 'Strecke', 'Zwei Punkte'],
+    ['kette', 'Kette', 'Punkte nacheinander, Doppelklick beendet'],
+  ],
+  flaeche: [
+    ['rechteck', 'Rechteck', 'Zwei Ecken — oder über eine Fläche fahren und klicken'],
+    ['kreis', 'Kreis', 'Mitte, dann Rand — oder über eine Fläche fahren und klicken'],
+    ['polygon', 'Polygon', 'Ecken nacheinander, ersten Punkt antippen schließt'],
+  ],
+};
 
 const PILL_BTN =
   'h-[40px] min-w-[40px] cursor-pointer whitespace-nowrap rounded-[var(--r-pill)] border-none px-[14px] font-sans text-[13px] disabled:cursor-default disabled:text-mute';
@@ -50,11 +55,14 @@ export function PlanToolbar({
   canFinish,
   canUndo,
   onTool,
+  onGroup,
   onUndo,
   onFinish,
   onClose,
 }: {
   tool: PlanTool;
+  /** Hauptwerkzeug wählen; die Form merkt sich der Aufrufer. */
+  onGroup: (group: ToolGroup) => void;
   hasScale: boolean;
   canFinish: boolean;
   canUndo: boolean;
@@ -63,6 +71,7 @@ export function PlanToolbar({
   onFinish: () => void;
   onClose: () => void;
 }) {
+  const current = tool === 'massstab' ? null : GROUP_OF[tool];
   return (
     <div
       role="toolbar"
@@ -78,23 +87,38 @@ export function PlanToolbar({
         Maßstab{hasScale ? ' ✓' : ''}
       </button>
       <span aria-hidden="true" className="mx-[4px] h-[22px] w-px bg-line" />
-      {TOOL_GROUPS.map((group, g) => (
-        <span key={g} className="flex items-center gap-[2px]">
-          {g > 0 && <span aria-hidden="true" className="mx-[4px] h-[22px] w-px bg-line" />}
-          {group.map(([value, label, title]) => (
+      {GROUPS.map(([group, label]) => (
+        <button
+          key={group}
+          type="button"
+          aria-pressed={current === group}
+          onClick={() => onGroup(group)}
+          className={`${PILL_BTN} ${on(current === group)}`}
+        >
+          {label}
+        </button>
+      ))}
+      {current !== null && SHAPES[current] !== undefined && (
+        <>
+          <span aria-hidden="true" className="mx-[4px] h-[22px] w-px bg-line" />
+          {SHAPES[current]?.map(([value, label, title]) => (
             <button
               key={value}
               type="button"
               aria-pressed={tool === value}
               title={title}
               onClick={() => onTool(value)}
-              className={`${PILL_BTN} ${on(tool === value)}`}
+              className={`${PILL_BTN} ${
+                tool === value
+                  ? 'bg-sunken font-semibold text-ink'
+                  : 'bg-transparent text-dim hover:bg-sunken'
+              }`}
             >
               {label}
             </button>
           ))}
-        </span>
-      ))}
+        </>
+      )}
       <span aria-hidden="true" className="mx-[4px] h-[22px] w-px bg-line" />
       <button
         type="button"
