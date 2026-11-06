@@ -164,7 +164,7 @@ Logo-Menü · Notizen als Datei sichern/laden (`lib/notesFile.ts`, 0061) · frei
 zum Produkt (Owner-Wunsch, `docs/decisions/0071-kurzumfrage.md`). · Begleit-PDF im
 Fenster „Dokument“ lesen, anstreichen, Stellen von Hand mit Positionen verknüpfen, keine
 Interpretation (`components/docs/`, `docs/decisions/0072-begleitdokument-pdf.md`; im
-Graphen als PDF-Karten am Rand mit Linien, nur Anzeige, `docs/decisions/0096`); Vorschläge nur
+Graphen als PDF-Karten am Rand mit Linien, nur Anzeige, `docs/decisions/0097`); Vorschläge nur
 bei exakt passender OZ oder eindeutiger Menge+Einheit (gleiche Menge: eigene Kurztext-Wörter im
 Satzteil, bei Aufzählung/„je“ mehrere Positionen), Übernahme erst per Klick, „Nein“ gemerkt,
 kein inhaltliches Matching (`lib/docs/docSuggest.ts`, `docs/decisions/0080`; an/aus und Werte nur

@@ -1,4 +1,4 @@
-// PDF-Karten am Rand des Graphen (Entscheidung 0096): Kopf hebt das PDF hervor, Stellen
+// PDF-Karten am Rand des Graphen (Entscheidung 0097): Kopf hebt das PDF hervor, Stellen
 // der gewählten Position stehen in der Karte, eine Stelle wählt ihre Position.
 
 import { fireEvent, render, screen } from '@testing-library/react';

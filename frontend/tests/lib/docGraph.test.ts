@@ -1,4 +1,4 @@
-// Verknüpfungen mit Begleit-PDFs im Graphen (Entscheidung 0096): Karten je PDF und Zahl der
+// Verknüpfungen mit Begleit-PDFs im Graphen (Entscheidung 0097): Karten je PDF und Zahl der
 // Stellen je Position, nur aus verknüpften Stellen und nur für bekannte Positionen.
 
 import { describe, expect, it } from 'vitest';

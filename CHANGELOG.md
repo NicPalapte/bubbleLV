@@ -9,7 +9,7 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
-## 0.52.0 — 06.11.2026 · PDF-Verknüpfungen im Graphen
+## 0.53.0 — 06.11.2026 · PDF-Verknüpfungen im Graphen
 
 - **PDFs im Graphen:** Jedes PDF mit verknüpften Stellen steht als Karte oben rechts im Graphen.
   Dünne Linien führen zu den verknüpften Positionen, eine kleine Zahl am Punkt nennt die Zahl
@@ -19,6 +19,16 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
   offen ist.
 - **Position wählen:** ihre Linien werden kräftig, die Karten zeigen ihre Stellen.
 - **Schalter „Dokumente“** unten rechts blendet alles aus und wieder ein.
+
+## 0.52.0 — 06.11.2026 · PDFs nach Dokumentart
+
+- **Dokumentart:** Jedes PDF trägt ein Etikett wie „Baubeschreibung“, „Gutachten“ oder „Plan“.
+  Conocto erkennt die Art am Dateinamen, an einer ersten Seite größer als A3 (Plan) oder am
+  Titel auf Seite 1. Was nicht passt, steht als „Nicht erkannt“ da.
+- **Art ändern:** Etikett antippen und eine Art wählen. Die Wahl bleibt beim nächsten Öffnen
+  und geht in die Notiz-Datei. „Zurück auf erkannte Art“ nimmt sie wieder weg.
+- **Sortieren nach Art:** Übersicht und Dokumentliste sortieren jetzt standardmäßig nach
+  Dokumentart, mit Überschrift je Art.
 
 ## 0.51.0 — 05.11.2026 · Pläne im PDF messen
 

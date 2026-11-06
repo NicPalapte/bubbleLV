@@ -102,7 +102,8 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0093 | [Abschnittsbezeichnung mit Text: erster Absatz ist der Name](0093-bezeichnung-mit-text.md)                     | akzeptiert                         | 2026-11-03 |
 | 0094 | [Mehrere PDFs: Dokumentliste und Übersicht mit Miniaturen](0094-mehrere-pdfs-liste-und-uebersicht.md)          | akzeptiert                         | 2026-11-03 |
 | 0095 | [Pläne im PDF messen: Ausnahme vom Feature-Freeze](0095-plaene-messen-im-pdf.md)                               | akzeptiert                         | 2026-11-05 |
-| 0096 | [PDF-Verknüpfungen im Graphen: Karten am Rand mit Linien](0096-pdf-verknuepfungen-im-graphen.md)               | akzeptiert                         | 2026-11-06 |
+| 0096 | [Dokumentart der PDFs: erkennen, ändern, sortieren](0096-dokumentart-der-pdfs.md)                              | akzeptiert                         | 2026-11-06 |
+| 0097 | [PDF-Verknüpfungen im Graphen: Karten am Rand mit Linien](0097-pdf-verknuepfungen-im-graphen.md)               | akzeptiert                         | 2026-11-06 |
 
 ## Wann schreibe ich eine neue Datei?
 

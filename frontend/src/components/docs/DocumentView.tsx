@@ -18,6 +18,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
 } from 'react';
+import { DocKindChip } from './DocKindChip';
 import { DocOverview } from './DocOverview';
 import { DocPicker } from './DocPicker';
 import { DocSearchField } from './DocSearchField';
@@ -1086,6 +1087,11 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     <div ref={rootRef} className="flex min-h-0 flex-1 flex-col">
       <div className="flex shrink-0 items-center gap-[6px] border-b border-line px-[10px] py-[6px]">
         <DocPicker doc={doc} />
+        {!tight && (
+          <div className="shrink-0">
+            <DocKindChip id={doc.id} name={doc.name} />
+          </div>
+        )}
         {!tight && (
           <span className="shrink-0 font-mono text-[11.5px] text-mute">
             {current} / {pages}

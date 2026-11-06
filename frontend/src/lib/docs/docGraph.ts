@@ -1,4 +1,4 @@
-// Verknüpfungen mit Begleit-PDFs für den Graphen (Entscheidung 0096): je PDF eine Karte
+// Verknüpfungen mit Begleit-PDFs für den Graphen (Entscheidung 0097): je PDF eine Karte
 // am Rand mit ihren verknüpften Stellen und Positionen, je Position die Zahl der Stellen.
 //
 // Rein und einmal je Notizstand gerechnet, nie je Frame: der Graph liest nur nach.

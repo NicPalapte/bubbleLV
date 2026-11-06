@@ -479,7 +479,7 @@ it('lässt die Hervorhebung in der Matrix stehen, wo sie nicht zu sehen ist', ()
   expect(viewerReducer(matrix, { type: 'back' })).toBe(matrix);
 });
 
-describe('PDF-Verknüpfungen im Graphen (Entscheidung 0096)', () => {
+describe('PDF-Verknüpfungen im Graphen (Entscheidung 0097)', () => {
   it('zeigt die Verknüpfungen standardmäßig und hebt ein PDF ohne Filter oder Auswahl hervor', () => {
     expect(base.view.graph.showDocs).toBe(true);
     const next = viewerReducer(base, { type: 'graphDocSpotlight', doc: 'aaaaaaaaaaa1' });

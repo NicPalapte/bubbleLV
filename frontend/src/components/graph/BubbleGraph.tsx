@@ -308,7 +308,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
     (on: boolean): number => (inSpot === null || on ? 1 : spotlightHide ? 0 : SPOT_FADE),
     [inSpot, spotlightHide],
   );
-  // ── Verknüpfungen mit Begleit-PDFs (Entscheidung 0096): Karten, Linien, Zahl am Punkt.
+  // ── Verknüpfungen mit Begleit-PDFs (Entscheidung 0097): Karten, Linien, Zahl am Punkt.
   const docGraph = useMemo(
     () => docGraphOf(annotations.documents, (id) => index.slotOf.has(id)),
     [annotations.documents, index],
@@ -1488,7 +1488,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
               );
             })}
 
-          {/* Zahl der verknüpften PDF-Stellen oben links am Punkt (Entscheidung 0096). */}
+          {/* Zahl der verknüpften PDF-Stellen oben links am Punkt (Entscheidung 0097). */}
           {docsOn &&
             !morphing &&
             [...docGraph.countOf].map(([id, count]) => {

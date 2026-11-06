@@ -6,7 +6,7 @@
 // Datei-ID des LV) und ihr Name, damit Notizen nach einem Reload zur selben Datei
 // finden.
 
-import { fileIdOf } from '@core';
+import { fileIdOf, titleOfPage, type FirstPage } from '@core';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { DOC_ID_LENGTH } from './docNotes';
 
@@ -98,4 +98,22 @@ export async function openPdf(file: File): Promise<OpenedPdf> {
 /** PDF.js-Bausteine für Seiten: Textebene und Ausgabeskalierung. */
 export function pdfLib(): Promise<PdfJs> {
   return loadPdfJs();
+}
+
+/**
+ * Format und Titel der ersten Seite für die Dokumentart (Entscheidung 0096). Bleibt im
+ * Browser; `null`, wenn die Seite nicht lesbar ist.
+ */
+export async function firstPageOf(pdf: PDFDocumentProxy): Promise<FirstPage | null> {
+  try {
+    const page = await pdf.getPage(1);
+    const view = page.getViewport({ scale: 1 });
+    const content = await page.getTextContent();
+    const items = content.items.flatMap((item) =>
+      'str' in item ? [{ str: item.str, height: Math.abs(item.height) }] : [],
+    );
+    return { width: view.width, height: view.height, title: titleOfPage(items) };
+  } catch {
+    return null;
+  }
 }

@@ -1,7 +1,7 @@
 // Steuerung unten rechts am Graphen, in einer Zeile mit der Legende (GraphHeader):
-// Zoom und Einpassen, Hinweise und PDF-Verknüpfungen (0096) ein/aus und die Darstellung — Größe der Positionen
-// und Gliederung (docs/decisions/0035-graph-gliederung.md). Die Darstellung ist
-// eingeklappt; der Knopf nennt den Stand und klappt sie darüber auf (Issue #154:
+// Zoom und Einpassen, Hinweise und PDF-Verknüpfungen (0097) ein/aus und die Darstellung —
+// Größe der Positionen und Gliederung (docs/decisions/0035-graph-gliederung.md). Die
+// Darstellung ist eingeklappt; der Knopf nennt den Stand und klappt sie darüber auf (Issue #154:
 // „Visualisierung" kam aus dem Filterfenster).
 // Liest und schreibt direkt im Viewer-Zustand; Zoom gehört dem Graphen.
 
@@ -36,7 +36,7 @@ export function GraphControls({ onFit, onFitSelection, onZoom }: GraphControlsPr
   } = useViewer();
   const dispatch = useViewerDispatch();
   const swallow = (event: { stopPropagation: () => void }): void => event.stopPropagation();
-  // Nur mit mindestens einer verknüpften PDF-Stelle (Entscheidung 0096).
+  // Nur mit mindestens einer verknüpften PDF-Stelle (Entscheidung 0097).
   const docLinks = annotations.documents.marks.some((mark) => mark.links.length > 0);
   const priceless = (lv?.tree.totalPrice ?? 0) === 0;
   const summary = `${layout === 'matrix' ? 'Matrix' : 'nach LV'} · ${

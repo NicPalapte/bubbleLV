@@ -1,4 +1,4 @@
-# 0096 – PDF-Verknüpfungen im Graphen: Karten am Rand mit Linien
+# 0097 – PDF-Verknüpfungen im Graphen: Karten am Rand mit Linien
 
 - **Status:** akzeptiert
 - **Datum:** 2026-11-06

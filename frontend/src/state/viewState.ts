@@ -82,10 +82,10 @@ export interface GraphViewState {
    * oder ausgeblendet folgt dem Schalter „Nicht-Treffer“ (Entscheidung 0078).
    */
   spotlight: string | null;
-  /** Verknüpfungen mit Begleit-PDFs im Graphen zeigen: Karten, Linien, Zahl (0096). */
+  /** Verknüpfungen mit Begleit-PDFs im Graphen zeigen: Karten, Linien, Zahl (0097). */
   showDocs: boolean;
   /**
-   * Hervorgehobenes PDF (Dokument-Kennung, Entscheidung 0096); `null` = keines. Wie
+   * Hervorgehobenes PDF (Dokument-Kennung, Entscheidung 0097); `null` = keines. Wie
    * `spotlight` nur Darstellung; beide schließen sich aus.
    */
   docSpotlight: string | null;
@@ -211,7 +211,7 @@ export type ViewAction =
   | { type: 'graphFocus' }
   /** Abschnitt im Graphen hervorheben; `null` hebt die Hervorhebung auf. */
   | { type: 'graphSpotlight'; id: string | null }
-  /** Verknüpfungen mit PDFs im Graphen zeigen oder nicht (Entscheidung 0096). */
+  /** Verknüpfungen mit PDFs im Graphen zeigen oder nicht (Entscheidung 0097). */
   | { type: 'graphDocs'; value: boolean }
   /** PDF im Graphen hervorheben; `null` hebt die Hervorhebung auf. */
   | { type: 'graphDocSpotlight'; doc: string | null }

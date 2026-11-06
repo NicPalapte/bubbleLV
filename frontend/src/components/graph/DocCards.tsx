@@ -1,4 +1,4 @@
-// Begleit-PDFs als Karten am rechten Rand des Graphen (Entscheidung 0096). Von jeder
+// Begleit-PDFs als Karten am rechten Rand des Graphen (Entscheidung 0097). Von jeder
 // Karte laufen Linien zu ihren Positionen; die zeichnet der Graph, er findet den
 // Ankerpunkt über `data-doc-anchor` am Kopf der Karte.
 //

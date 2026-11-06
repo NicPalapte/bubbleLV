@@ -52,3 +52,16 @@ export {
   type SelectWindow,
   type WindowMode,
 } from './plan/selectWindow';
+export {
+  DOC_KINDS,
+  DOC_KIND_LABEL,
+  guessDocKind,
+  isDocKind,
+  largerThanA3,
+  titleOfPage,
+  type DocKind,
+  type DocKindGuess,
+  type DocKindRule,
+  type FirstPage,
+  type PageTextItem,
+} from './docs/docKind';
