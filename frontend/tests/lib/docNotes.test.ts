@@ -21,6 +21,7 @@ import {
   paintDocMark,
   registerDoc,
   rekeyDocNotes,
+  setDocKind,
   toStoredDocNotes,
   unlinkDocMark,
   unpaintDocMark,
@@ -227,5 +228,40 @@ describe('PDF öffnen', () => {
       arrayBuffer: () => Promise.reject(new Error('gelesen')),
     } as unknown as File;
     await expect(openPdf(riesig)).rejects.toThrow('größer als 200 MB');
+  });
+});
+
+describe('Dokumentart von Hand (Entscheidung 0096)', () => {
+  it('bleibt beim erneuten Öffnen und übersteht Speicher und Notiz-Datei', () => {
+    let notes = registerDoc(EMPTY_DOC_NOTES, 'd0c', { name: 'a.pdf', pages: 3 });
+    notes = setDocKind(notes, 'd0c', 'gutachten');
+    notes = registerDoc(notes, 'd0c', { name: 'a-neu.pdf', pages: 3 });
+    expect(notes.docs.get('d0c')).toEqual({ name: 'a-neu.pdf', pages: 3, kind: 'gutachten' });
+    const back = fromStoredDocNotes(JSON.parse(JSON.stringify(toStoredDocNotes(notes))));
+    expect(back.docs.get('d0c')?.kind).toBe('gutachten');
+  });
+
+  it('unbekannte Art im Speicher wird übergangen', () => {
+    const back = fromStoredDocNotes({ docs: [['d0c', { name: 'a.pdf', pages: 1, kind: 'x' }]] });
+    expect(back.docs.get('d0c')).toEqual({ name: 'a.pdf', pages: 1 });
+  });
+
+  it('Notiz-Datei bringt eine Art nur, wo noch keine steht', () => {
+    const own = setDocKind(
+      registerDoc(EMPTY_DOC_NOTES, 'd0c', { name: 'a.pdf', pages: 1 }),
+      'd0c',
+      'plan',
+    );
+    const file = setDocKind(
+      registerDoc(registerDoc(EMPTY_DOC_NOTES, 'd0c', { name: 'a.pdf', pages: 1 }), 'e1f', {
+        name: 'b.pdf',
+        pages: 1,
+      }),
+      'd0c',
+      'vertrag',
+    );
+    const merged = mergeDocNotes(own, setDocKind(file, 'e1f', 'gutachten'));
+    expect(merged.docs.get('d0c')?.kind).toBe('plan');
+    expect(merged.docs.get('e1f')?.kind).toBe('gutachten');
   });
 });

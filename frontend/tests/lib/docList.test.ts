@@ -1,8 +1,15 @@
 // Liste der offenen PDFs (Entscheidung 0094): Suche im Namen, Sortierung, verknüpfte Stellen.
 
 import { describe, expect, it } from 'vitest';
-import { docRows, linkedSpotsByDoc } from '../../src/lib/docs/docList';
-import { EMPTY_DOC_NOTES, type DocMark, type DocNotes } from '../../src/lib/docs/docNotes';
+import type { DocKindGuess } from '@core';
+import { docRows, groupByKind, kindOfDoc, linkedSpotsByDoc } from '../../src/lib/docs/docList';
+import {
+  EMPTY_DOC_NOTES,
+  registerDoc,
+  setDocKind,
+  type DocMark,
+  type DocNotes,
+} from '../../src/lib/docs/docNotes';
 
 const doc = (id: string, name: string, numPages: number) => ({ id, name, pdf: { numPages } });
 
@@ -43,7 +50,39 @@ describe('docRows', () => {
   it('filtert nach einem Teil des Namens', () => {
     const rows = docRows(DOCS, new Map(), '  PLAN ', 'geoeffnet');
     expect(rows.map((row) => row.id)).toEqual(['a', 'c']);
-    expect(rows[0]).toEqual({ id: 'a', name: 'Plan 10.pdf', pages: 1, linked: 0 });
+    expect(rows[0]).toEqual({
+      id: 'a',
+      name: 'Plan 10.pdf',
+      pages: 1,
+      linked: 0,
+      kind: null,
+      manual: false,
+    });
+  });
+});
+
+describe('Dokumentart', () => {
+  const guesses = new Map<string, DocKindGuess>([
+    ['a', { kind: 'plan', rule: 'name', hit: 'plan' }],
+    ['b', { kind: 'baubeschreibung', rule: 'name', hit: 'baubeschreibung' }],
+    ['c', { kind: null, rule: null, hit: null }],
+  ]);
+
+  it('von Hand gewählt geht vor erkannt', () => {
+    let notes = registerDoc(EMPTY_DOC_NOTES, 'a', { name: 'Plan 10.pdf', pages: 1 });
+    expect(kindOfDoc('a', notes, guesses)).toMatchObject({ kind: 'plan', manual: false });
+    notes = setDocKind(notes, 'a', 'gutachten');
+    expect(kindOfDoc('a', notes, guesses)).toMatchObject({ kind: 'gutachten', manual: true });
+    notes = setDocKind(notes, 'a', null);
+    expect(kindOfDoc('a', notes, guesses)).toMatchObject({ kind: 'plan', manual: false });
+  });
+
+  it('sortiert nach Art, nicht erkannte zuletzt, und gruppiert', () => {
+    const rows = docRows(DOCS, new Map(), '', 'art', (id) =>
+      kindOfDoc(id, EMPTY_DOC_NOTES, guesses),
+    );
+    expect(rows.map((row) => row.id)).toEqual(['b', 'a', 'c']);
+    expect(groupByKind(rows).map((group) => group.kind)).toEqual(['baubeschreibung', 'plan', null]);
   });
 });
 

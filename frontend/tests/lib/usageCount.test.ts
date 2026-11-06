@@ -56,6 +56,8 @@ describe('usageEventOf', () => {
     );
     expect(usageEventOf({ type: 'docPaint', spot, paint: null, at: 1 })).toBeNull();
     expect(usageEventOf({ type: 'docLink', spot, ids: ['p1'], at: 1 })).toBe('dokument-verknuepft');
+    expect(usageEventOf({ type: 'docKind', doc: 'd', kind: 'plan' })).toBe('dokument-art');
+    expect(usageEventOf({ type: 'docKind', doc: 'd', kind: null })).toBeNull();
   });
 
   it('liefert nur Namen aus der festen Liste', () => {

@@ -12,6 +12,9 @@
 // Vorschläge zum Verknüpfen (OZ und Mengen, Entscheidung 0080) rechnet ein Worker Seite
 // für Seite; hier liegen sie roh, ohne Abgleich mit Notizen — den macht die Anzeige.
 // Welche Arten es gibt, sagen die Regeln (0087); welche gezeigt werden, die Notizen.
+//
+// Dokumentart (Entscheidung 0096): erkannt beim Öffnen aus Name und erster Seite, hier
+// als Schätzung; eine Wahl von Hand steht in den Notizen und geht vor.
 
 import {
   createContext,
@@ -36,7 +39,9 @@ import {
 import { createSuggester, type Suggester } from '../../lib/docs/suggester';
 import { suggestRulesOf } from '../../lib/docs/suggestRules';
 import type { PositionIndex } from '../../lib/index/positionIndex';
-import { isPdfFile, openPdf, PdfOpenError, type OpenedPdf } from '../../lib/docs/pdf';
+import { firstPageOf, isPdfFile, openPdf, PdfOpenError, type OpenedPdf } from '../../lib/docs/pdf';
+import { kindOfDoc, type DocKindOf, type DocSort } from '../../lib/docs/docList';
+import { guessDocKind, type DocKind, type DocKindGuess } from '@core';
 import { useAdmin } from '../../state/admin';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 
@@ -91,6 +96,13 @@ export interface DocumentsApi {
    */
   readonly planWanted: boolean;
   donePlanWanted: () => void;
+  /** Dokumentart eines Dokuments: von Hand gewählt vor erkannt (Entscheidung 0096). */
+  kindOf: (id: string) => DocKindOf;
+  /** Art von Hand setzen; `null`: zurück auf die erkannte. */
+  setKind: (id: string, kind: DocKind | null) => void;
+  /** Sortierung von Übersicht und Dokumentliste, für beide dieselbe. */
+  readonly docSort: DocSort;
+  setDocSort: (sort: DocSort) => void;
 }
 
 function* suggestPositions(index: PositionIndex): Generator<SuggestPosition> {
@@ -135,6 +147,8 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
   );
   const donePlanWanted = useCallback(() => setPlanWanted(false), []);
   const [overview, setOverview] = useState(false);
+  const [docSort, setDocSort] = useState<DocSort>('art');
+  const [guesses, setGuesses] = useState<ReadonlyMap<string, DocKindGuess>>(new Map());
   const texts = useRef(new Map<string, Promise<string>>());
   // Kennungen der angemeldeten Dokumente, sofort gesetzt: `docsRef` folgt erst nach dem
   // Rendern, zwei kurz nacheinander abgeworfene gleiche PDFs kämen sonst beide durch.
@@ -161,6 +175,7 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
     setAnsatzState(null);
     setPlanWanted(false);
     setOverview(false);
+    setGuesses(new Map());
   }, [lv]);
   useEffect(
     () => () => {
@@ -197,6 +212,10 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
             pages: opened.pdf.numPages,
           });
           setDocs((current) => [...current, opened]);
+          void firstPageOf(opened.pdf).then((first) => {
+            const guess = guessDocKind(opened.name, first);
+            setGuesses((current) => new Map(current).set(opened.id, guess));
+          });
         }
         setActiveId(opened.id);
         return null;
@@ -402,6 +421,16 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
   }, [wanted, docs, index, suggestIndex, pageText]);
   const suggestions = wanted && suggested.index === suggestIndex ? suggested.byDoc : NO_SUGGESTIONS;
 
+  const documents = annotations.documents;
+  const kindOf = useCallback(
+    (id: string): DocKindOf => kindOfDoc(id, documents, guesses),
+    [documents, guesses],
+  );
+  const setKind = useCallback(
+    (id: string, kind: DocKind | null): void => dispatch({ type: 'docKind', doc: id, kind }),
+    [dispatch],
+  );
+
   const active = docs.find((doc) => doc.id === activeId) ?? docs.at(-1) ?? null;
   const api = useMemo<DocumentsApi>(
     () => ({
@@ -428,6 +457,10 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
       setAnsatzFor,
       planWanted,
       donePlanWanted,
+      kindOf,
+      setKind,
+      docSort,
+      setDocSort,
     }),
     [
       docs,
@@ -453,6 +486,10 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
       setAnsatzFor,
       planWanted,
       donePlanWanted,
+      kindOf,
+      setKind,
+      docSort,
+      setDocSort,
     ],
   );
   return <DocumentsContext.Provider value={api}>{children}</DocumentsContext.Provider>;
