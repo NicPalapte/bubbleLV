@@ -1,13 +1,16 @@
 // Dokumentwahl im Bereich „Dokument“ (Entscheidung 0094): Knopf mit Name und „1 von 12“,
 // darunter eine Liste mit Suche, Seiten und verknüpften Stellen. Ersetzt die
 // Auswahlliste, die bei vielen PDFs unübersichtlich und am Tablet fummelig war.
+// Gleiche Sortierung wie die Übersicht; nach Dokumentart mit Überschrift je Art (0096).
 
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { KindDot } from './DocKindChip';
+import { kindLabel } from '../../lib/docs/docKindLook';
 import { useDocuments } from './DocumentsProvider';
 import { DOC_TOOL, PdfInput } from './PdfInput';
 import { useDismiss } from '../common/useDismiss';
 import { Popover } from '../ui/Popover';
-import { docRows, linkedSpotsByDoc } from '../../lib/docs/docList';
+import { docRows, groupByKind, linkedSpotsByDoc, type DocRow } from '../../lib/docs/docList';
 import type { OpenedPdf } from '../../lib/docs/pdf';
 import { useViewer } from '../../state/viewer';
 
@@ -18,7 +21,7 @@ const FOOT_BUTTON =
   'inline-flex h-[34px] flex-1 cursor-pointer items-center justify-center rounded-[var(--r-sm)] font-mono text-[12px]';
 
 export function DocPicker({ doc }: { doc: OpenedPdf }) {
-  const { docs, activate, openFiles, busy } = useDocuments();
+  const { docs, activate, openFiles, busy, docSort, kindOf } = useDocuments();
   const { annotations } = useViewer();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -31,7 +34,17 @@ export function DocPicker({ doc }: { doc: OpenedPdf }) {
   useDismiss([anchorRef, popoverRef], open, hide);
 
   const linked = useMemo(() => linkedSpotsByDoc(annotations.documents), [annotations.documents]);
-  const rows = useMemo(() => docRows(docs, linked, query, 'geoeffnet'), [docs, linked, query]);
+  const rows = useMemo(
+    () => docRows(docs, linked, query, docSort, kindOf),
+    [docs, linked, query, docSort, kindOf],
+  );
+  const heading = useMemo(() => {
+    // Überschrift vor der ersten Zeile jeder Art, nur bei Sortierung nach Art.
+    const out = new Map<string, DocRow>();
+    if (docSort === 'art')
+      for (const group of groupByKind(rows)) out.set(group.rows[0].id, group.rows[0]);
+    return out;
+  }, [rows, docSort]);
   const place = docs.findIndex((entry) => entry.id === doc.id) + 1;
 
   return (
@@ -76,8 +89,15 @@ export function DocPicker({ doc }: { doc: OpenedPdf }) {
           <ul className="m-0 flex max-h-[320px] list-none flex-col overflow-auto p-0">
             {rows.map((row) => {
               const current = row.id === doc.id;
+              const head = heading.get(row.id);
               return (
                 <li key={row.id}>
+                  {head !== undefined && (
+                    <span className="flex items-center gap-[8px] px-[10px] pb-[2px] pt-[8px] font-mono text-[11px] font-semibold uppercase tracking-[0.06em] text-mute">
+                      <KindDot kind={head.kind} />
+                      {kindLabel(head.kind)}
+                    </span>
+                  )}
                   <button
                     type="button"
                     aria-current={current ? 'true' : undefined}

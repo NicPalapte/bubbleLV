@@ -48,6 +48,7 @@ import {
   linkDocMark,
   paintDocMark,
   registerDoc,
+  setDocKind,
   rejectSuggestion,
   showSuggestions,
   unlinkDocMark,
@@ -69,7 +70,7 @@ import {
   type PlanScale,
   type QuantityNote,
 } from '../lib/docs/planNotes';
-import type { PageKind } from '@core';
+import type { DocKind, PageKind } from '@core';
 import { forgetLink, judgeLink, type LinkVerdict } from '../lib/positionLinks';
 import type { HintIndex } from '../lib/check';
 import { AXIS_FACETS } from '../lib/graph/layoutMap';
@@ -151,6 +152,8 @@ type LvAction =
   | { type: 'removeComment'; id: string; position: number }
   /** Begleitdokument geöffnet: Name und Seitenzahl merken (Entscheidung 0072). */
   | { type: 'docRegister'; doc: string; name: string; pages: number }
+  /** Dokumentart von Hand (Entscheidung 0096); `null`: zurück auf die erkannte. */
+  | { type: 'docKind'; doc: string; kind: DocKind | null }
   /** Stelle im Dokument anstreichen; `null` nimmt die Farbe weg. */
   | { type: 'docPaint'; spot: DocSpot; paint: Paint | null; at: number }
   /** Stelle mit Positionen verknüpfen (Knoten-IDs); `source` bei übernommenem Vorschlag. */
@@ -276,6 +279,7 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
       return annotations === state.annotations ? state : { ...state, annotations };
     }
     case 'docRegister':
+    case 'docKind':
     case 'docPaint':
     case 'docLink':
     case 'docUnlink':
@@ -508,7 +512,10 @@ export function useViewerDispatch(): Dispatch<ViewerAction> {
 
 type DocAction = Extract<
   LvAction,
-  { type: 'docRegister' | 'docPaint' | 'docLink' | 'docUnlink' | 'docReject' | 'docSuggest' }
+  {
+    type:
+      'docRegister' | 'docKind' | 'docPaint' | 'docLink' | 'docUnlink' | 'docReject' | 'docSuggest';
+  }
 >;
 
 type PlanAction = Extract<
@@ -535,6 +542,8 @@ function docNotesReducer(notes: DocNotes, action: DocAction): DocNotes {
   switch (action.type) {
     case 'docRegister':
       return registerDoc(notes, action.doc, { name: action.name, pages: action.pages });
+    case 'docKind':
+      return setDocKind(notes, action.doc, action.kind);
     case 'docPaint':
       return action.paint === null
         ? unpaintDocMark(notes, action.spot)

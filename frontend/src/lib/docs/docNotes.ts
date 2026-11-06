@@ -15,6 +15,7 @@
 //
 // Reine Funktionen über einem unveränderlichen Wert; Zeitpunkte kommen von außen.
 
+import { isDocKind, type DocKind } from '@core';
 import { isPaint, MAX_PAINT_LENGTH, type Paint } from '../paints';
 import { isLinkSource, type DocSuggestion, type LinkSource } from './docSuggest';
 
@@ -22,6 +23,8 @@ import { isLinkSource, type DocSuggestion, type LinkSource } from './docSuggest'
 export interface DocInfo {
   readonly name: string;
   readonly pages: number;
+  /** Von Hand gewählte Dokumentart (Entscheidung 0096); fehlt: die erkannte gilt. */
+  readonly kind?: DocKind;
 }
 
 /** Wo eine Stelle steht. `page` zählt ab 1; `start` im Textinhalt der Seite. */
@@ -96,12 +99,28 @@ export function markAt(notes: DocNotes, spot: DocSpot): DocMark | null {
   return notes.marks.find((mark) => sameSpot(mark, spot)) ?? null;
 }
 
-/** Merkt sich ein geöffnetes Dokument; ein neuer Name ersetzt den alten. */
+/** Merkt sich ein geöffnetes Dokument; ein neuer Name ersetzt den alten, die Art bleibt. */
 export function registerDoc(notes: DocNotes, id: string, info: DocInfo): DocNotes {
   const known = notes.docs.get(id);
-  if (known?.name === info.name && known.pages === info.pages) return notes;
+  const kind = info.kind ?? known?.kind;
+  if (known?.name === info.name && known.pages === info.pages && known.kind === kind) {
+    return notes;
+  }
   const docs = new Map(notes.docs);
-  docs.set(id, { name: info.name, pages: info.pages });
+  docs.set(id, { name: info.name, pages: info.pages, ...(kind === undefined ? {} : { kind }) });
+  return { ...notes, docs };
+}
+
+/** Dokumentart von Hand setzen; `null` nimmt die Wahl weg (dann gilt die erkannte). */
+export function setDocKind(notes: DocNotes, id: string, kind: DocKind | null): DocNotes {
+  const known = notes.docs.get(id);
+  if (known === undefined || (known.kind ?? null) === kind) return notes;
+  const docs = new Map(notes.docs);
+  docs.set(id, {
+    name: known.name,
+    pages: known.pages,
+    ...(kind === null ? {} : { kind }),
+  });
   return { ...notes, docs };
 }
 
@@ -272,7 +291,14 @@ export function rekeyDocNotes(notes: DocNotes, keys: ReadonlyMap<string, string>
 /** Stellen aus einer Notiz-Datei dazunehmen: Farbe aus `more`, Verknüpfungen vereinigt. */
 export function mergeDocNotes(notes: DocNotes, more: DocNotes): DocNotes {
   let out = notes;
-  for (const [id, info] of more.docs) if (!out.docs.has(id)) out = registerDoc(out, id, info);
+  for (const [id, info] of more.docs) {
+    const known = out.docs.get(id);
+    if (known === undefined) out = registerDoc(out, id, info);
+    // Eigene Wahl der Art bleibt; die Datei bringt nur eine, wo noch keine steht.
+    else if (known.kind === undefined && info.kind !== undefined) {
+      out = setDocKind(out, id, info.kind);
+    }
+  }
   for (const entry of more.rejected ?? []) out = rejectSuggestion(out, entry, entry.id, entry.at);
   if (more.marks.length === 0) return out;
   // Einmal über eine Tabelle statt Stelle für Stelle über `put`: Notiz-Dateien und der
@@ -372,7 +398,8 @@ function toDocInfo(value: unknown): DocInfo | null {
   const raw = value as Record<string, unknown>;
   if (typeof raw.name !== 'string') return null;
   const pages = typeof raw.pages === 'number' && Number.isInteger(raw.pages) ? raw.pages : 0;
-  return { name: raw.name, pages: Math.max(0, pages) };
+  const info = { name: raw.name, pages: Math.max(0, pages) };
+  return isDocKind(raw.kind) ? { ...info, kind: raw.kind } : info;
 }
 
 /** Liest die gespeicherte Form; fehlt sie oder ist kaputt, gibt es keine Stellen. */

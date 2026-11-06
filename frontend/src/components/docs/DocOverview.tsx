@@ -1,13 +1,16 @@
 // Übersicht im Bereich „Dokument“ (Entscheidung 0094): alle offenen PDFs als Miniatur der
 // ersten Seite, mit Suche im Namen und Sortierung. Ein Klick öffnet das PDF zum Lesen.
-// Gruppieren (z. B. nach Dokumentart) kommt erst, wenn der Kern die Art liefert.
+// Jede Karte trägt ihre Dokumentart (0096); nach Art sortiert, mit Überschrift je Art.
 
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
+import { DocKindChip, KindDot } from './DocKindChip';
+import { kindLabel } from '../../lib/docs/docKindLook';
 import { useDocuments } from './DocumentsProvider';
 import { DOC_TOOL, PdfInput } from './PdfInput';
 import {
   DOC_SORT_LABEL,
   docRows,
+  groupByKind,
   linkedSpotsByDoc,
   type DocRow,
   type DocSort,
@@ -16,7 +19,7 @@ import type { OpenedPdf } from '../../lib/docs/pdf';
 import { THUMB_WIDTH, thumbnailOf } from '../../lib/docs/thumbnail';
 import { useViewer } from '../../state/viewer';
 
-const SORTS: readonly DocSort[] = ['geoeffnet', 'name', 'verknuepft'];
+const SORTS: readonly DocSort[] = ['art', 'geoeffnet', 'name', 'verknuepft'];
 
 /** Höhe der Bildfläche einer Karte; Hochformat passt ganz, Pläne quer liegen mittig. */
 const THUMB_BOX = 156;
@@ -81,13 +84,18 @@ function DocCard({ row, doc, current }: { row: DocRow; doc: OpenedPdf; current: 
             </span>
           )}
         </span>
-        <span className="flex flex-col gap-[2px] py-[8px] pl-[10px] pr-[42px]">
+        <span className="flex flex-col gap-[2px] pb-[42px] pl-[10px] pr-[42px] pt-[8px]">
           <span className="truncate text-[12.5px] font-semibold">{row.name}</span>
           <span className="text-[11px] text-mute">
             {row.pages} {row.pages === 1 ? 'Seite' : 'Seiten'}
+            {row.manual && ' · Art von Hand'}
           </span>
         </span>
       </button>
+      {/* Neben dem Knopf der Karte, nicht darin: ein Knopf im Knopf geht nicht. */}
+      <div className="absolute bottom-[8px] left-[8px] right-[42px] flex">
+        <DocKindChip id={row.id} name={row.name} />
+      </div>
       {/* Nur hier entfernt man ein PDF ganz (Nico, 06.11.2026); Notizen dazu bleiben. */}
       <button
         type="button"
@@ -114,6 +122,9 @@ export function DocOverview() {
     setAnsatzFor,
     planWanted,
     donePlanWanted,
+    kindOf,
+    docSort: sort,
+    setDocSort: setSort,
   } = useDocuments();
   const { annotations, index } = useViewer();
   // Ansatz ohne Plan gestartet: hier wird der Plan gewählt; danach kein Rücksprung mehr.
@@ -125,9 +136,15 @@ export function DocOverview() {
       ? null
       : (index.nodes[index.slotOf.get(ansatzFor) ?? -1]?.position?.oz ?? 'Position');
   const [query, setQuery] = useState('');
-  const [sort, setSort] = useState<DocSort>('geoeffnet');
   const linked = useMemo(() => linkedSpotsByDoc(annotations.documents), [annotations.documents]);
-  const rows = useMemo(() => docRows(docs, linked, query, sort), [docs, linked, query, sort]);
+  const rows = useMemo(
+    () => docRows(docs, linked, query, sort, kindOf),
+    [docs, linked, query, sort, kindOf],
+  );
+  const groups = useMemo(
+    () => (sort === 'art' ? groupByKind(rows) : [{ kind: null, rows }]),
+    [rows, sort],
+  );
   const byId = useMemo(() => new Map(docs.map((doc) => [doc.id, doc])), [docs]);
 
   return (
@@ -209,12 +226,26 @@ export function DocOverview() {
           className="m-0 grid list-none gap-[14px] p-0"
           style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${THUMB_WIDTH}px, 1fr))` }}
         >
-          {rows.map((row) => {
-            const doc = byId.get(row.id);
-            return doc === undefined ? null : (
-              <DocCard key={row.id} row={row} doc={doc} current={row.id === active?.id} />
-            );
-          })}
+          {groups.map((group) => (
+            <Fragment key={group.kind ?? 'ohne'}>
+              {sort === 'art' && (
+                <li
+                  role="presentation"
+                  className="col-span-full mt-[4px] flex items-center gap-[8px] font-mono text-[11px] font-semibold uppercase tracking-[0.06em] text-mute first:mt-0"
+                >
+                  <KindDot kind={group.kind} />
+                  {kindLabel(group.kind)}
+                  <span className="font-normal">{group.rows.length}</span>
+                </li>
+              )}
+              {group.rows.map((row) => {
+                const doc = byId.get(row.id);
+                return doc === undefined ? null : (
+                  <DocCard key={row.id} row={row} doc={doc} current={row.id === active?.id} />
+                );
+              })}
+            </Fragment>
+          ))}
         </ul>
         {rows.length === 0 && <p className="m-0 font-mono text-[12px] text-mute">Kein Treffer</p>}
       </div>
