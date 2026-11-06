@@ -18,7 +18,7 @@ const FOOT_BUTTON =
   'inline-flex h-[34px] flex-1 cursor-pointer items-center justify-center rounded-[var(--r-sm)] font-mono text-[12px]';
 
 export function DocPicker({ doc }: { doc: OpenedPdf }) {
-  const { docs, activate, openFiles, setOverview, busy } = useDocuments();
+  const { docs, activate, openFiles, busy } = useDocuments();
   const { annotations } = useViewer();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -115,18 +115,6 @@ export function DocPicker({ doc }: { doc: OpenedPdf }) {
               }}
               className={`${FOOT_BUTTON} border border-dashed border-line2 bg-surface text-dim hover:text-ink`}
             />
-            {docs.length > 1 && (
-              <button
-                type="button"
-                onClick={() => {
-                  hide();
-                  setOverview(true);
-                }}
-                className={`${FOOT_BUTTON} border border-line bg-sunken text-ink hover:border-line2`}
-              >
-                Alle als Übersicht
-              </button>
-            )}
           </div>
         </div>
       </Popover>

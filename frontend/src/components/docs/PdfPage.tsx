@@ -5,7 +5,8 @@
 // die man sieht.
 
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import type { PDFPageProxy, RenderTask } from 'pdfjs-dist';
+import type { PDFPageProxy } from 'pdfjs-dist';
+import { drawRegion, pixelRatio, showDrawing, type PageDrawing } from './pageCanvas';
 import { useDocHighlights, rangeIn, type DocHighlightItem } from './docHighlights';
 import type { DocMark } from '../../lib/docs/docNotes';
 import { locateOnPage } from '../../lib/docs/docNotes';
@@ -15,6 +16,8 @@ import { bundleSpots, type Bundle } from '../../lib/docs/linkBundles';
 
 /** So weit außerhalb des sichtbaren Bereichs wird schon gezeichnet. */
 const NEAR = '800px 0px';
+/** So lange muss der Maßstab oder Bildlauf stehen, bis neu gezeichnet wird. */
+const SETTLE_MS = 140;
 
 export interface PageSize {
   readonly width: number;
@@ -45,6 +48,7 @@ function PdfPageView({
   badge,
   suggestions,
   onSuggestion,
+  overlay,
 }: {
   doc: OpenedPdf;
   page: number;
@@ -65,9 +69,12 @@ function PdfPageView({
   suggestions: readonly DocSuggestion[];
   /** Klick auf einen Vorschlag; `at` ist die Stelle darunter im Fenster. */
   onSuggestion: (suggestion: DocSuggestion, at: { left: number; top: number }) => void;
+  /** Ebene über der Seite, z. B. Messungen im Plan (Entscheidung 0095); stabil halten. */
+  overlay?: (page: number, size: PageSize, scale: number) => ReactNode;
 }) {
   const box = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const detailRef = useRef<HTMLCanvasElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const [near, setNear] = useState(false);
   const [proxy, setProxy] = useState<PDFPageProxy | null>(null);
@@ -108,59 +115,113 @@ function PdfPageView({
     };
   }, [near, proxy, doc, page, onSize]);
 
-  // Bild und Textebene zeichnen; neu bei anderem Maßstab.
+  // Bild und Textebene zeichnen; neu bei anderem Maßstab. Beim Zoomen erst, wenn der
+  // Maßstab kurz steht — bis dahin streckt der Browser das alte Bild.
+  const drawn = useRef(false);
+  const [coarse, setCoarse] = useState(false);
   useEffect(() => {
     const canvas = canvasRef.current;
     const layer = textRef.current;
     if (!near || proxy === null || canvas === null || layer === null) return;
     let alive = true;
-    let task: RenderTask | null = null;
+    let drawing: PageDrawing | null = null;
     let textLayer: { cancel: () => void } | null = null;
-    const viewport = proxy.getViewport({ scale });
-    const ratio = canvas.ownerDocument.defaultView?.devicePixelRatio ?? 1;
-    canvas.width = Math.floor(viewport.width * ratio);
-    canvas.height = Math.floor(viewport.height * ratio);
-    // Im zweiten Fenster (Entscheidung 0039) fehlen dort die Schriften, die PDF.js
-    // im Hauptfenster anmeldet — dann bliebe das Bild leer. Deshalb dort auf einer
-    // Fläche des Hauptfensters zeichnen und das fertige Bild hinüberkopieren.
-    const foreign = canvas.ownerDocument !== document;
-    const work = foreign ? document.createElement('canvas') : canvas;
-    work.width = canvas.width;
-    work.height = canvas.height;
-    task = proxy.render({
-      canvas: work,
-      viewport,
-      transform: ratio === 1 ? undefined : [ratio, 0, 0, ratio, 0, 0],
-    });
-    task.promise
-      .then(() => {
-        if (alive && foreign) canvas.getContext('2d')?.drawImage(work, 0, 0);
-      })
-      .catch(() => {
-        // Abgebrochen (neuer Maßstab, Seite weg) — kein Fehler für Menschen.
+    const run = (): void => {
+      const viewport = proxy.getViewport({ scale });
+      const wanted = canvas.ownerDocument.defaultView?.devicePixelRatio ?? 1;
+      const ratio = pixelRatio(viewport.width, viewport.height, wanted);
+      setCoarse(ratio < wanted * 0.9);
+      drawing = drawRegion(proxy, scale, ratio, {
+        x: 0,
+        y: 0,
+        width: viewport.width,
+        height: viewport.height,
       });
-    void pdfLib().then(({ TextLayer }) => {
-      if (!alive) return;
-      layer.replaceChildren();
-      const text = new TextLayer({
-        textContentSource: proxy.streamTextContent(),
-        container: layer,
-        viewport,
-      });
-      textLayer = text;
-      text
-        .render()
-        .then(() => {
-          if (alive) setVersion((value) => value + 1);
+      drawing.promise
+        .then((work) => {
+          if (!alive) return;
+          showDrawing(canvas, work);
+          drawn.current = true;
         })
-        .catch(() => {});
-    });
+        .catch(() => {
+          // Abgebrochen (neuer Maßstab, Seite weg) — kein Fehler für Menschen.
+        });
+      void pdfLib().then(({ TextLayer }) => {
+        if (!alive) return;
+        layer.replaceChildren();
+        const text = new TextLayer({
+          textContentSource: proxy.streamTextContent(),
+          container: layer,
+          viewport,
+        });
+        textLayer = text;
+        text
+          .render()
+          .then(() => {
+            if (alive) setVersion((value) => value + 1);
+          })
+          .catch(() => {});
+      });
+    };
+    const timer = drawn.current ? window.setTimeout(run, SETTLE_MS) : 0;
+    if (!drawn.current) run();
     return () => {
       alive = false;
-      task?.cancel();
+      window.clearTimeout(timer);
+      drawing?.cancel();
       textLayer?.cancel();
     };
   }, [near, proxy, scale]);
+
+  // Grobes Gesamtbild (großer Plan, hoher Zoom): sichtbaren Ausschnitt scharf darüber.
+  useEffect(() => {
+    const detail = detailRef.current;
+    const frame = box.current;
+    if (detail === null) return;
+    detail.style.display = 'none';
+    if (!near || !coarse || proxy === null || frame === null || root === null) return;
+    let alive = true;
+    let timer = 0;
+    let drawing: PageDrawing | null = null;
+    const run = (): void => {
+      drawing?.cancel();
+      const page = frame.getBoundingClientRect();
+      const view = root.getBoundingClientRect();
+      const x = Math.max(0, view.left - page.left);
+      const y = Math.max(0, view.top - page.top);
+      const width = Math.min(page.width, view.right - page.left) - x;
+      const height = Math.min(page.height, view.bottom - page.top) - y;
+      if (width <= 0 || height <= 0) return;
+      const wanted = detail.ownerDocument.defaultView?.devicePixelRatio ?? 1;
+      const region = { x, y, width, height };
+      drawing = drawRegion(proxy, scale, pixelRatio(width, height, wanted), region);
+      drawing.promise
+        .then((work) => {
+          if (!alive) return;
+          showDrawing(detail, work);
+          Object.assign(detail.style, {
+            display: 'block',
+            left: `${x}px`,
+            top: `${y}px`,
+            width: `${width}px`,
+            height: `${height}px`,
+          });
+        })
+        .catch(() => {});
+    };
+    const later = (): void => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(run, SETTLE_MS);
+    };
+    later();
+    root.addEventListener('scroll', later, { passive: true });
+    return () => {
+      alive = false;
+      window.clearTimeout(timer);
+      drawing?.cancel();
+      root.removeEventListener('scroll', later);
+    };
+  }, [near, coarse, proxy, scale, root]);
 
   // Weit weg: Speicher freigeben, beim nächsten Mal neu zeichnen.
   useEffect(() => {
@@ -168,6 +229,13 @@ function PdfPageView({
     if (near || proxy === null || canvas === null) return;
     canvas.width = 0;
     canvas.height = 0;
+    drawn.current = false;
+    const detail = detailRef.current;
+    if (detail !== null) {
+      detail.width = 0;
+      detail.height = 0;
+      detail.style.display = 'none';
+    }
     textRef.current?.replaceChildren();
     proxy.cleanup();
   }, [near, proxy]);
@@ -268,7 +336,14 @@ function PdfPageView({
         className="absolute left-0 top-0"
         style={{ width, height, visibility: proxy === null ? 'hidden' : 'visible' }}
       />
+      <canvas
+        ref={detailRef}
+        aria-hidden="true"
+        className="pointer-events-none absolute"
+        style={{ display: 'none' }}
+      />
       <div ref={textRef} className="textLayer doc-text" />
+      {overlay?.(page, size, scale)}
       {badges.map(({ spots, top }) => (
         <div
           key={`${spots[0].start}-${spots[0].text}`}

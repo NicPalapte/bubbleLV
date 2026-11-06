@@ -101,6 +101,7 @@ Entscheidung, fortlaufend nummeriert. Der Code zeigt das _Was_, diese Dateien da
 | 0092 | [Startseite auf conocto.app, Viewer unter /doc/](0092-startseite-und-viewer-unter-doc.md)                      | akzeptiert                         | 2026-11-02 |
 | 0093 | [Abschnittsbezeichnung mit Text: erster Absatz ist der Name](0093-bezeichnung-mit-text.md)                     | akzeptiert                         | 2026-11-03 |
 | 0094 | [Mehrere PDFs: Dokumentliste und Übersicht mit Miniaturen](0094-mehrere-pdfs-liste-und-uebersicht.md)          | akzeptiert                         | 2026-11-03 |
+| 0095 | [Pläne im PDF messen: Ausnahme vom Feature-Freeze](0095-plaene-messen-im-pdf.md)                               | akzeptiert                         | 2026-11-05 |
 
 ## Wann schreibe ich eine neue Datei?
 

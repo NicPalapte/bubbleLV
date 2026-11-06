@@ -78,6 +78,19 @@ export interface DocumentsApi {
   /** Welche Vorschläge gezeigt werden; Standard: alle. Gemerkt in den Notizen des LV. */
   readonly suggest: Readonly<Record<LinkSource, boolean>>;
   setSuggest: (source: LinkSource, on: boolean) => void;
+  /**
+   * Position (Knoten-ID), für die gerade ein Rechenansatz gebildet wird (Entscheidung
+   * 0095): Antippen eines Maßes oder einer Messung im Plan hängt es an ihren Ansatz.
+   */
+  readonly ansatzFor: string | null;
+  /** Startet einen Ansatz: zeigt den Bereich „Dokument“ und verlangt einen Plan. */
+  setAnsatzFor: (id: string | null) => void;
+  /**
+   * Ein Ansatz wurde gerade gestartet und braucht einen Plan (Nico, 06.11.2026): das offene
+   * PDF zeigt nur seine Pläne, hat es keine, springt der Bereich in die Übersicht.
+   */
+  readonly planWanted: boolean;
+  donePlanWanted: () => void;
 }
 
 function* suggestPositions(index: PositionIndex): Generator<SuggestPosition> {
@@ -110,6 +123,17 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [jump, setJump] = useState<DocJump | null>(null);
   const [docSearch, setDocSearch] = useState('');
+  const [ansatzFor, setAnsatzState] = useState<string | null>(null);
+  const [planWanted, setPlanWanted] = useState(false);
+  const setAnsatzFor = useCallback(
+    (id: string | null): void => {
+      setAnsatzState(id);
+      setPlanWanted(id !== null);
+      if (id !== null) dispatch({ type: 'showPane', pane: 'doc' });
+    },
+    [dispatch],
+  );
+  const donePlanWanted = useCallback(() => setPlanWanted(false), []);
   const [overview, setOverview] = useState(false);
   const texts = useRef(new Map<string, Promise<string>>());
   // Kennungen der angemeldeten Dokumente, sofort gesetzt: `docsRef` folgt erst nach dem
@@ -134,6 +158,8 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
     setJump(null);
     setError(null);
     setDocSearch('');
+    setAnsatzState(null);
+    setPlanWanted(false);
     setOverview(false);
   }, [lv]);
   useEffect(
@@ -398,6 +424,10 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
       suggestions,
       suggest,
       setSuggest,
+      ansatzFor,
+      setAnsatzFor,
+      planWanted,
+      donePlanWanted,
     }),
     [
       docs,
@@ -419,6 +449,10 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
       suggestions,
       suggest,
       setSuggest,
+      ansatzFor,
+      setAnsatzFor,
+      planWanted,
+      donePlanWanted,
     ],
   );
   return <DocumentsContext.Provider value={api}>{children}</DocumentsContext.Provider>;

@@ -9,6 +9,38 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.51.0 — 05.11.2026 · Pläne im PDF messen
+
+- **Ansatz im Plan bilden:** zeigt im Bereich „Dokument“ gleich nur die Pläne. Hat das offene
+  PDF keine, springt der Bereich in die Übersicht, dort das PDF mit dem Plan wählen.
+- **Übersicht statt Schließen:** ✕ oben im Bereich „Dokument“ führt zur Übersicht aller PDFs.
+  Ein PDF ganz entfernen geht nur noch über den Mülleimer auf seiner Karte dort.
+- **Schmales Fenster:** Ist der Bereich „Dokument“ schmal, wandern selten gebrauchte Knöpfe
+  ins Menü „⋯“, statt die Kopfleiste zu sprengen.
+- **Text oder Plan:** Conocto erkennt, welche PDF-Seiten Pläne sind. Oben im Bereich
+  „Dokument“ lässt sich auf „Pläne“ oder „Text“ filtern; jede Seite ist von Hand umstellbar.
+- **Maßstab:** steht im Plankopf z. B. „M 1:100“, schlägt Conocto ihn vor. Er gilt erst nach
+  „Übernehmen“, auf Wunsch für alle Pläne mit demselben Maßstab. Alternativ zwei Punkte
+  einer bekannten Strecke antippen und die Länge eingeben.
+- **Maßstab von Hand:** steht keiner im Plan, „1 : 100“ selbst eintragen, auf Wunsch für
+  alle Pläne ohne Maßstab.
+- **Zoomen und Verschieben:** Über einem Plan zoomt das Mausrad (Strg + Mausrad überall),
+  Verschieben mit mittlerer Maustaste oder Leertaste + Ziehen. Große Pläne bleiben auch bei starkem Zoom scharf und werden
+  nicht mehr schwarz; jede Seite ist auf die Breite eingepasst, ein Klick auf die Prozentzahl
+  setzt den Zoom zurück.
+- **Messen:** drei Werkzeuge: Länge (Strecke oder Kette, Doppelklick beendet die Kette),
+  Fläche (Rechteck, Kreis oder Polygon) und Stück. Bei Rechteck und Kreis erkennt Conocto
+  eine geschlossene Fläche unter dem Mauszeiger, ein Klick übernimmt sie (Alt gedrückt:
+  selbst zeichnen). Esc beendet den Befehl, Enter schließt ab, Entf löscht.
+- **Mehrere wählen:** mit Shift oder per Fenster wie im CAD: von links nach rechts
+  aufgezogen zählt, was ganz drin liegt, von rechts nach links alles, was berührt wird. Gleiche Art zeigt die Summe und
+  lässt sich mit Positionen verknüpfen, verschiedene Arten nur löschen.
+- **VA-Menge:** Messungen hängen an Positionen. Positionskarte und Tabelle zeigen die
+  VA-Menge mit Herkunft „Plan“ oder „Rechenansatz“ und die Differenz zur LV-Menge, ohne
+  Wertung.
+- **Rechenansatz per Klick:** gedruckte Maße einer Maßkette oder eigene Messungen im Plan
+  antippen, dazwischen + − × : und Klammern. Zahlen werden nie von Hand eingetippt.
+
 ## 0.50.0 — 03.11.2026 · Mehrere PDFs übersichtlich
 
 - **Dokumentliste:** Der Name des PDFs oben im Bereich „Dokument“ öffnet eine Liste aller
