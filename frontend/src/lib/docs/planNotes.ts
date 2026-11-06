@@ -14,7 +14,14 @@
 // Positions-Hash (Entscheidung 0055) — wie alle Notizen (`rekeyPlanNotes`). Das PDF
 // selbst wird nicht gespeichert. Reine Funktionen; Zeitpunkte kommen von außen.
 
-import { polygonArea, polylineLength, ratioFromUnit, type PageKind, type PlanPoint } from '@core';
+import {
+  polygonArea,
+  polylineLength,
+  ratioFromUnit,
+  type PageKind,
+  type PlanPoint,
+  type SelectShape,
+} from '@core';
 
 export type MeasureKind = 'laenge' | 'kette' | 'flaeche' | 'stueck';
 
@@ -585,6 +592,22 @@ export function formatMeasure(value: number | null, kind: MeasureKind): string {
 }
 
 /** Mittelpunkt der Punkte, für die Beschriftung im Plan. */
+/** Form einer Messung für die Fensterauswahl; ein Kreis wird zum 32-Eck. */
+export function selectShapeOf(measure: PlanMeasure): SelectShape {
+  const { kind, points, shape } = measure;
+  if (kind === 'flaeche' && shape === 'kreis' && points.length >= 2) {
+    const [cx, cy] = points[0];
+    const r = Math.hypot(points[1][0] - cx, points[1][1] - cy);
+    const ring: PlanPoint[] = [];
+    for (let i = 0; i < 32; i += 1) {
+      const a = (i / 32) * 2 * Math.PI;
+      ring.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]);
+    }
+    return { points: ring, closed: true };
+  }
+  return { points, closed: kind === 'flaeche', loose: kind === 'stueck' };
+}
+
 export function centerOf(points: readonly PlanPoint[]): PlanPoint {
   if (points.length === 0) return [0, 0];
   let x = 0;

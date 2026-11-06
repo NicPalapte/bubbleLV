@@ -43,3 +43,12 @@ export {
   type FoundRegion,
   type LineMask,
 } from './plan/region';
+export {
+  hitsWindow,
+  selectInWindow,
+  windowModeOf,
+  windowOf,
+  type SelectShape,
+  type SelectWindow,
+  type WindowMode,
+} from './plan/selectWindow';

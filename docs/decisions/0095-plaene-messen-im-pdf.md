@@ -35,13 +35,19 @@
   Vorschlag, gilt erst nach dem Klick; offene Räume (Tür) ergeben keinen. Am Tablet ohne
   Hover nicht verfügbar. Stückzahl per Symbol erkennen kommt später (Nico, 06.11.).
 - **Zoom und Bild:** Jede Seite auf die Bereichsbreite eingepasst, Zoom bis 1600 %. Mausrad
-  zoomt über Plänen, Ziehen verschiebt. Eine Zeichenfläche hat höchstens 8 Mio.
+  zoomt über Plänen. Verschieben mit mittlerer Maustaste, Leertaste + Ziehen oder beim
+  Messen mit links. Eine Zeichenfläche hat höchstens 8 Mio.
   Bildpunkte, sonst zeichnen Browser sie schwarz; bei großem Zoom kommt ein scharfes Bild nur
   vom sichtbaren Ausschnitt dazu (`components/docs/pageCanvas.ts`).
 - **Messen:** Werkzeuge nur Länge, Fläche, Stück (Nico, 06.11.). Länge als Strecke (zwei
   Punkte) oder Kette (Doppelklick beendet), Fläche als Rechteck, Kreis oder Polygon. Bedienung
   wie im CAD: Esc beendet den Befehl, Enter schließt ab, Entf löscht die Auswahl. Mit Shift
   mehrere Messungen wählen; verknüpfen nur bei gleicher Art (gleiche Einheit).
+- **Fensterauswahl wie im CAD** (Nico, 06.11.): ohne Werkzeug zieht die linke Maustaste ein
+  Fenster auf. Von links nach rechts zählt nur, was ganz drin liegt; von rechts nach links
+  alles, was das Fenster berührt. Shift ergänzt die Auswahl. Die Logik liegt rein
+  geometrisch im Kern (`packages/core/src/plan/selectWindow.ts`), damit der BIM-Viewer sie
+  später in Bildschirmkoordinaten genauso nutzt.
 - **Verknüpfen:** Jede Messung hängt an einer oder mehreren Positionen, gespeichert über
   den Positions-Hash (0055).
 - **VA-Menge und Herkunft:** Tabelle und Positionskarte zeigen die VA-Menge und ihre

@@ -52,7 +52,15 @@ import type { DocSuggestion, LinkSource } from '../../lib/docs/docSuggest';
 import type { OpenedPdf } from '../../lib/docs/pdf';
 import { docNeedleOf, type DocHit } from '../../lib/docs/docSearch';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
-import { polylineLength, type PageKind, type PlanPoint } from '@core';
+import {
+  polylineLength,
+  selectInWindow,
+  windowModeOf,
+  windowOf,
+  type PageKind,
+  type PlanPoint,
+  type WindowMode,
+} from '@core';
 import {
   appendTerm,
   EMPTY_PLAN_NOTES,
@@ -67,6 +75,7 @@ import {
   type MeasureKind,
   type PlanMeasure,
   rectangleFrom,
+  selectShapeOf,
 } from '../../lib/docs/planNotes';
 
 const ZOOM_MIN = 0.5;
@@ -381,6 +390,19 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     [tool, draft, finishDraft, snap],
   );
 
+  const pan = useRef<{
+    id: number;
+    x: number;
+    y: number;
+    left: number;
+    top: number;
+    moved: boolean;
+    /** Seite, auf der das Auswahlfenster beginnt; sonst wird verschoben. */
+    frame: HTMLElement | null;
+    add: boolean;
+  } | null>(null);
+  const space = useRef(false);
+
   // Tastatur wie im CAD: Esc beendet den Befehl, Enter schließt ab, Entf löscht die gewählte
   // Messung, Rücktaste nimmt den letzten Punkt zurück. Nicht beim Tippen in Feldern.
   const keys = useRef<(event: KeyboardEvent) => void>(() => undefined);
@@ -389,6 +411,12 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
       const target = event.target as Element | null;
       const typing = target?.closest?.('input, textarea, select, [contenteditable="true"]');
       if (typing != null) return;
+      if (event.key === ' ' && target?.closest?.('button') == null) {
+        // Leertaste gehalten: Ziehen verschiebt den Plan statt ein Fenster aufzuziehen.
+        space.current = true;
+        if (pan.current === null) event.preventDefault();
+        return;
+      }
       if (event.key === 'Escape') {
         if (linkingMeasure !== null || scalePage !== null) return;
         if (draft !== null && tool !== null && tool !== 'massstab') {
@@ -430,8 +458,20 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
   });
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => keys.current(event);
+    const onUp = (event: KeyboardEvent): void => {
+      if (event.key === ' ') space.current = false;
+    };
+    const onBlur = (): void => {
+      space.current = false;
+    };
     host.addEventListener('keydown', onKey);
-    return () => host.removeEventListener('keydown', onKey);
+    host.addEventListener('keyup', onUp);
+    host.addEventListener('blur', onBlur);
+    return () => {
+      host.removeEventListener('keydown', onKey);
+      host.removeEventListener('keyup', onUp);
+      host.removeEventListener('blur', onBlur);
+    };
   }, [host]);
 
   const pickMeasure = useCallback(
@@ -695,15 +735,15 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     return () => scroller.removeEventListener('wheel', onWheel);
   }, [scroller, zoomBy]);
 
-  // Verschieben: mittlere Maustaste überall, linke auf Plänen (auch beim Messen). Erst ab
-  // ein paar Pixeln Weg — ein Antippen bleibt ein Antippen.
-  const pan = useRef<{
-    id: number;
-    x: number;
-    y: number;
+  // Linke Maustaste auf Plänen ohne Werkzeug zieht ein Auswahlfenster wie im CAD (Nico,
+  // 06.11.2026). Verschieben: mittlere Maustaste, Leertaste + Ziehen, beim Messen auch links,
+  // am Touchscreen mit dem Finger. Erst ab ein paar Pixeln Weg — Antippen bleibt Antippen.
+  const [frameBox, setFrameBox] = useState<{
     left: number;
     top: number;
-    moved: boolean;
+    width: number;
+    height: number;
+    mode: WindowMode;
   } | null>(null);
   const swallowClick = useRef(false);
   const onPanStart = (event: ReactPointerEvent<HTMLDivElement>): void => {
@@ -714,6 +754,12 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     const onPlan = page !== null && kindOf(Number(page.dataset.page)) === 'plan';
     if (!(event.button === 1 || (event.button === 0 && onPlan))) return;
     if (event.button === 1) event.preventDefault();
+    const framing =
+      event.button === 0 &&
+      event.pointerType !== 'touch' &&
+      tool === null &&
+      ansatzFor === null &&
+      !space.current;
     const el = event.currentTarget;
     pan.current = {
       id: event.pointerId,
@@ -722,6 +768,8 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
       left: el.scrollLeft,
       top: el.scrollTop,
       moved: false,
+      frame: framing ? page : null,
+      add: event.shiftKey,
     };
   };
   const onPanMove = (event: ReactPointerEvent<HTMLDivElement>): void => {
@@ -735,6 +783,18 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
       event.currentTarget.setPointerCapture(event.pointerId);
     }
     host.getSelection()?.removeAllRanges();
+    if (state.frame !== null) {
+      const origin = event.currentTarget.parentElement?.getBoundingClientRect();
+      if (origin === undefined) return;
+      setFrameBox({
+        left: Math.min(state.x, event.clientX) - origin.left,
+        top: Math.min(state.y, event.clientY) - origin.top,
+        width: Math.abs(dx),
+        height: Math.abs(dy),
+        mode: windowModeOf([state.x, state.y], [event.clientX, event.clientY]),
+      });
+      return;
+    }
     event.currentTarget.scrollLeft = state.left - dx;
     event.currentTarget.scrollTop = state.top - dy;
   };
@@ -743,6 +803,37 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     if (state === null || state.id !== event.pointerId) return;
     pan.current = null;
     swallowClick.current = state.moved;
+    setFrameBox(null);
+    if (state.frame === null) return;
+    if (!state.moved) {
+      // Antippen ins Leere ohne Shift hebt die Auswahl auf, wie im CAD.
+      if (!state.add) setSelected(NO_IDS);
+      return;
+    }
+    if (event.type === 'pointercancel') return;
+    const pageNo = Number(state.frame.dataset.page);
+    const size = sizes.get(pageNo) ?? first;
+    if (size === null) return;
+    const box = state.frame.getBoundingClientRect();
+    const unit = size.width / box.width;
+    const toPage = (x: number, y: number): PlanPoint => [
+      (x - box.left) * unit,
+      (y - box.top) * unit,
+    ];
+    const start: PlanPoint = [state.x, state.y];
+    const end: PlanPoint = [event.clientX, event.clientY];
+    const shapes = plans.measures
+      .filter((entry) => entry.doc === doc.id && entry.page === pageNo)
+      .map((entry) => ({ id: entry.id, ...selectShapeOf(entry) }));
+    const hits = selectInWindow(
+      windowOf(toPage(...start), toPage(...end)),
+      shapes,
+      windowModeOf(start, end),
+    );
+    setSelected((current) => {
+      if (!state.add) return hits.length === 0 ? NO_IDS : hits;
+      return [...new Set([...current, ...hits])];
+    });
   };
 
   const scrollToPage = useCallback((page: number): void => {
@@ -1034,6 +1125,23 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
       )}
       {/* Werkzeugleiste und Maßstab schweben über dem Plan, nicht über der Leiste. */}
       <div className="relative flex min-h-0 flex-1 flex-col">
+        {frameBox !== null && (
+          // Durchgezogen: nur was ganz drin liegt; gestrichelt: alles, was berührt wird.
+          <div
+            aria-hidden
+            className={`pointer-events-none absolute z-[5] border border-accent ${
+              frameBox.mode === 'inside' ? 'border-solid' : 'border-dashed'
+            }`}
+            style={{
+              left: frameBox.left,
+              top: frameBox.top,
+              width: frameBox.width,
+              height: frameBox.height,
+            }}
+          >
+            <div className="absolute inset-0 bg-accent-soft opacity-40" />
+          </div>
+        )}
         <div
           ref={attachScroller}
           onContextMenu={onContextMenu}
