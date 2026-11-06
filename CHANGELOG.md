@@ -9,6 +9,17 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.52.0 — 06.11.2026 · PDF-Verknüpfungen im Graphen
+
+- **PDFs im Graphen:** Jedes PDF mit verknüpften Stellen steht als Karte oben rechts im Graphen.
+  Dünne Linien führen zu den verknüpften Positionen, eine kleine Zahl am Punkt nennt die Zahl
+  der Stellen.
+- **PDF antippen:** hebt seine Positionen hervor, die Linien werden kräftig und die Stellen
+  klappen auf. Eine Stelle antippen wählt die Position und zeigt die Stelle im PDF, wenn es
+  offen ist.
+- **Position wählen:** ihre Linien werden kräftig, die Karten zeigen ihre Stellen.
+- **Schalter „Dokumente“** unten rechts blendet alles aus und wieder ein.
+
 ## 0.51.0 — 05.11.2026 · Pläne im PDF messen
 
 - **Ansatz im Plan bilden:** zeigt im Bereich „Dokument“ gleich nur die Pläne. Hat das offene

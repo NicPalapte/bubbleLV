@@ -478,3 +478,37 @@ it('lässt die Hervorhebung in der Matrix stehen, wo sie nicht zu sehen ist', ()
   });
   expect(viewerReducer(matrix, { type: 'back' })).toBe(matrix);
 });
+
+describe('PDF-Verknüpfungen im Graphen (Entscheidung 0096)', () => {
+  it('zeigt die Verknüpfungen standardmäßig und hebt ein PDF ohne Filter oder Auswahl hervor', () => {
+    expect(base.view.graph.showDocs).toBe(true);
+    const next = viewerReducer(base, { type: 'graphDocSpotlight', doc: 'aaaaaaaaaaa1' });
+    expect(next.view.graph.docSpotlight).toBe('aaaaaaaaaaa1');
+    expect(next.filter).toBe(base.filter);
+    expect(next.selection).toBe(base.selection);
+  });
+
+  it('hebt PDF oder Abschnitt hervor, nie beides', () => {
+    const doc = viewerReducer(base, { type: 'graphDocSpotlight', doc: 'aaaaaaaaaaa1' });
+    const section = viewerReducer(doc, { type: 'graphSpotlight', id: 'section:001' });
+    expect(section.view.graph.docSpotlight).toBeNull();
+    const back = viewerReducer(section, { type: 'graphDocSpotlight', doc: 'aaaaaaaaaaa1' });
+    expect(back.view.graph.spotlight).toBeNull();
+  });
+
+  it('Ausschalten hebt die Hervorhebung auf, Escape ebenso', () => {
+    const doc = viewerReducer(base, { type: 'graphDocSpotlight', doc: 'aaaaaaaaaaa1' });
+    const off = viewerReducer(doc, { type: 'graphDocs', value: false });
+    expect(off.view.graph.showDocs).toBe(false);
+    expect(off.view.graph.docSpotlight).toBeNull();
+    expect(viewerReducer(doc, { type: 'back' }).view.graph.docSpotlight).toBeNull();
+  });
+
+  it('vergisst das hervorgehobene PDF bei einem neuen LV, der Schalter bleibt', () => {
+    let state = viewerReducer(loadedState(), { type: 'graphDocs', value: false });
+    state = viewerReducer(state, { type: 'graphDocSpotlight', doc: 'aaaaaaaaaaa1' });
+    const reloaded = loadedState(state);
+    expect(reloaded.view.graph.showDocs).toBe(false);
+    expect(reloaded.view.graph.docSpotlight).toBeNull();
+  });
+});

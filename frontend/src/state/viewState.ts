@@ -82,6 +82,13 @@ export interface GraphViewState {
    * oder ausgeblendet folgt dem Schalter „Nicht-Treffer“ (Entscheidung 0078).
    */
   spotlight: string | null;
+  /** Verknüpfungen mit Begleit-PDFs im Graphen zeigen: Karten, Linien, Zahl (0096). */
+  showDocs: boolean;
+  /**
+   * Hervorgehobenes PDF (Dokument-Kennung, Entscheidung 0096); `null` = keines. Wie
+   * `spotlight` nur Darstellung; beide schließen sich aus.
+   */
+  docSpotlight: string | null;
 }
 
 export interface TableViewState {
@@ -204,6 +211,10 @@ export type ViewAction =
   | { type: 'graphFocus' }
   /** Abschnitt im Graphen hervorheben; `null` hebt die Hervorhebung auf. */
   | { type: 'graphSpotlight'; id: string | null }
+  /** Verknüpfungen mit PDFs im Graphen zeigen oder nicht (Entscheidung 0096). */
+  | { type: 'graphDocs'; value: boolean }
+  /** PDF im Graphen hervorheben; `null` hebt die Hervorhebung auf. */
+  | { type: 'graphDocSpotlight'; doc: string | null }
   | { type: 'tableSort'; key: string }
   | { type: 'tableScope'; scope: TableScope }
   | { type: 'tableColumns'; columns: ColumnConfig | null }
@@ -262,6 +273,8 @@ export const INITIAL_VIEW_STATE: ViewState = {
     viewport: null,
     focus: 0,
     spotlight: null,
+    showDocs: true,
+    docSpotlight: null,
   },
   table: { sort: { key: 'oz', dir: 1 }, scope: 'node', columns: null, collapsed: new Set() },
   overview: { openRules: new Set(), revealRule: null },
@@ -279,7 +292,7 @@ export const INITIAL_VIEW_STATE: ViewState = {
 export function viewStateForNewLv(state: ViewState): ViewState {
   return {
     ...INITIAL_VIEW_STATE,
-    graph: { ...state.graph, viewport: null, spotlight: null },
+    graph: { ...state.graph, viewport: null, spotlight: null, docSpotlight: null },
     compareWindow: {
       ...INITIAL_VIEW_STATE.compareWindow,
       pos: state.compareWindow.pos,
@@ -358,7 +371,33 @@ export function viewReducer(state: ViewState, action: ViewAction): ViewState {
       };
     case 'graphSpotlight':
       if (state.graph.spotlight === action.id) return state;
-      return { ...state, graph: { ...state.graph, spotlight: action.id } };
+      return {
+        ...state,
+        graph: {
+          ...state.graph,
+          spotlight: action.id,
+          docSpotlight: action.id === null ? state.graph.docSpotlight : null,
+        },
+      };
+    case 'graphDocs':
+      return {
+        ...state,
+        graph: {
+          ...state.graph,
+          showDocs: action.value,
+          docSpotlight: action.value ? state.graph.docSpotlight : null,
+        },
+      };
+    case 'graphDocSpotlight':
+      if (state.graph.docSpotlight === action.doc) return state;
+      return {
+        ...state,
+        graph: {
+          ...state.graph,
+          docSpotlight: action.doc,
+          spotlight: action.doc === null ? state.graph.spotlight : null,
+        },
+      };
     case 'tableSort': {
       const { sort } = state.table;
       const dir: 1 | -1 = sort.key === action.key ? ((sort.dir * -1) as 1 | -1) : 1;

@@ -24,6 +24,7 @@ export default {
         'accent-fill': 'var(--accent-fill)',
         'accent-fill-hover': 'var(--accent-fill-hover)',
         cyan: 'var(--cyan)',
+        cyanS: 'var(--cyanS)',
         amber: 'var(--amber)',
         amberS: 'var(--amberS)',
         amberD: 'var(--amberD)',

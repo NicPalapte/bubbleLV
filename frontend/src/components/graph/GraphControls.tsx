@@ -1,5 +1,5 @@
 // Steuerung unten rechts am Graphen, in einer Zeile mit der Legende (GraphHeader):
-// Zoom und Einpassen, Hinweise ein/aus und die Darstellung — Größe der Positionen
+// Zoom und Einpassen, Hinweise und PDF-Verknüpfungen (0096) ein/aus und die Darstellung — Größe der Positionen
 // und Gliederung (docs/decisions/0035-graph-gliederung.md). Die Darstellung ist
 // eingeklappt; der Knopf nennt den Stand und klappt sie darüber auf (Issue #154:
 // „Visualisierung" kam aus dem Filterfenster).
@@ -28,13 +28,16 @@ export function GraphControls({ onFit, onFitSelection, onZoom }: GraphControlsPr
   const {
     lv,
     hints,
+    annotations,
     view: {
-      graph: { sizeMode, showHints, layout },
+      graph: { sizeMode, showHints, layout, showDocs },
       graphSettings,
     },
   } = useViewer();
   const dispatch = useViewerDispatch();
   const swallow = (event: { stopPropagation: () => void }): void => event.stopPropagation();
+  // Nur mit mindestens einer verknüpften PDF-Stelle (Entscheidung 0096).
+  const docLinks = annotations.documents.marks.some((mark) => mark.links.length > 0);
   const priceless = (lv?.tree.totalPrice ?? 0) === 0;
   const summary = `${layout === 'matrix' ? 'Matrix' : 'nach LV'} · ${
     SIZE_MODES.find((mode) => mode.id === sizeMode)?.label ?? ''
@@ -99,6 +102,22 @@ export function GraphControls({ onFit, onFitSelection, onZoom }: GraphControlsPr
           }`}
         >
           ⚠ Hinweise
+        </button>
+      )}
+
+      {docLinks && (
+        <button
+          type="button"
+          aria-pressed={showDocs}
+          title="Verknüpfungen mit PDFs im Graphen ein- oder ausblenden"
+          onClick={() => dispatch({ type: 'graphDocs', value: !showDocs })}
+          className={`h-[28px] cursor-pointer whitespace-nowrap rounded-[var(--r-sm)] border px-[10px] font-mono text-[11.5px] ${
+            showDocs
+              ? 'border-cyan bg-cyanS text-cyan'
+              : 'border-line bg-sunken text-mute line-through'
+          }`}
+        >
+          Dokumente
         </button>
       )}
 
