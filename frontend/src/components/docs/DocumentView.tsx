@@ -173,6 +173,7 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     donePlanWanted,
     error,
     jump,
+    doneJump,
     docSearch,
     setDocSearch,
     searchHits,
@@ -201,8 +202,8 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     left: number;
     top: number;
   } | null>(null);
-  /** Sprung, dessen Leuchten schon vorbei ist. */
-  const [faded, setFaded] = useState(0);
+  /** Sprung, zu dem schon gescrollt ist. */
+  const [landed, setLanded] = useState(0);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const attachScroller = useCallback((el: HTMLDivElement | null): void => {
@@ -253,6 +254,15 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     donePlanWanted();
     if (!hasPlans) setOverview(true);
   }, [ansatzFor, pagesKnown, hasPlans, planWanted, donePlanWanted, setOverview]);
+  // Liegt das Sprungziel auf einer ausgeblendeten Seite, wieder alle Seiten zeigen.
+  if (
+    jump !== null &&
+    jump.spot.doc === doc.id &&
+    pageFilter !== 'alle' &&
+    kindOf(jump.spot.page) !== pageFilter
+  ) {
+    setPageFilter('alle');
+  }
   const shownPages = useMemo(() => {
     const all = Array.from({ length: pages }, (_, i) => i + 1);
     return pageFilter === 'alle' ? all : all.filter((page) => kindOf(page) === pageFilter);
@@ -869,14 +879,25 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     if (scrollerRef.current !== null) scrollerRef.current.scrollTop += dy;
   }, []);
 
-  // Sprung aus der Positionskarte: hinscrollen, die Stelle leuchtet kurz.
-  const flash = jump !== null && jump.spot.doc === doc.id && jump.nonce !== faded ? jump : null;
+  // Sprung von einer Verknüpfung (Positionskarte, Graph): hinscrollen, sobald die Seite
+  // steht — frisch geöffnet ist sie das erst nach dem Messen der Seitengröße. Die Stelle
+  // leuchtet kurz, dann ist der Sprung erledigt und wiederholt sich beim nächsten Öffnen nicht.
+  const target = jump !== null && jump.spot.doc === doc.id ? jump : null;
   useEffect(() => {
-    if (jump === null || jump.spot.doc !== doc.id) return;
-    scrollToPage(jump.spot.page);
-    const timer = window.setTimeout(() => setFaded(jump.nonce), FLASH_MS);
+    if (target === null || target.nonce === landed) return;
+    // Andere Fassung des PDFs mit weniger Seiten: Ziel gibt es nicht, Sprung verwerfen.
+    if (target.spot.page > pages) return doneJump(target.nonce);
+    if (first === null) return;
+    if (scrollerRef.current?.querySelector(`[data-page="${target.spot.page}"]`) == null) return;
+    scrollToPage(target.spot.page);
+    setLanded(target.nonce);
+  }, [target, landed, first, shownPages, pages, scrollToPage, doneJump]);
+  const flash = target !== null && target.nonce === landed ? target : null;
+  useEffect(() => {
+    if (flash === null) return;
+    const timer = window.setTimeout(() => doneJump(flash.nonce), FLASH_MS);
     return () => window.clearTimeout(timer);
-  }, [jump, doc.id, scrollToPage]);
+  }, [flash, doneJump]);
 
   // Aktuelle Seite aus der Scrolllage.
   useEffect(() => {
@@ -1083,9 +1104,25 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     </>
   );
 
+  const pageChoices = [
+    ['alle', `Alle ${pages}`],
+    ['text', `Text ${pages - planCount}`],
+    ['plan', `Pläne ${planCount}`],
+  ] as const;
+
   return (
     <div ref={rootRef} className="flex min-h-0 flex-1 flex-col">
       <div className="flex shrink-0 items-center gap-[6px] border-b border-line px-[10px] py-[6px]">
+        {/* Links und als Pfeil, damit er nicht wie „Bereich schließen“ rechts daneben wirkt. */}
+        <button
+          type="button"
+          aria-label="Zur Übersicht"
+          title="Zur Übersicht aller PDFs — das PDF bleibt offen"
+          onClick={() => setOverview(true)}
+          className={TOOL}
+        >
+          ←
+        </button>
         <DocPicker doc={doc} />
         {!tight && (
           <div className="shrink-0">
@@ -1097,15 +1134,28 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
             {current} / {pages}
           </span>
         )}
-        {planCount > 0 && (
-          <span role="radiogroup" aria-label="Seiten" className="flex items-center gap-[2px]">
-            {(
-              [
-                ['alle', `Alle ${pages}`],
-                ['text', `Text ${pages - planCount}`],
-                ['plan', `Pläne ${planCount}`],
-              ] as const
-            ).map(([value, label]) => (
+        {planCount > 0 && narrow && (
+          // Schmal: eine Auswahl statt drei Knöpfen, sonst schieben sie sich übereinander.
+          <select
+            aria-label="Seiten"
+            value={pageFilter}
+            onChange={(event) => setPageFilter(event.target.value as 'alle' | PageKind)}
+            className={`${TOOL} ${pageFilter === 'alle' ? '' : 'border-accent bg-accent-soft text-accent-ink'}`}
+          >
+            {pageChoices.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        )}
+        {planCount > 0 && !narrow && (
+          <span
+            role="radiogroup"
+            aria-label="Seiten"
+            className="flex shrink-0 items-center gap-[2px]"
+          >
+            {pageChoices.map(([value, label]) => (
               <button
                 key={value}
                 type="button"
@@ -1145,15 +1195,6 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
             {suggestEl}
           </MoreMenu>
         )}
-        <button
-          type="button"
-          aria-label="Zur Übersicht"
-          title="Zur Übersicht aller PDFs — das PDF bleibt offen"
-          onClick={() => setOverview(true)}
-          className={TOOL}
-        >
-          ✕
-        </button>
       </div>
       {(otherVersion || error !== null) && (
         <div

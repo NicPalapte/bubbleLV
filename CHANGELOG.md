@@ -9,6 +9,17 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 
 ---
 
+## 0.53.1 — 06.11.2026 · Dokument: Sprung zur Stelle, Kopfzeile
+
+- **Sprung zur Stelle:** Ein Klick auf eine verknüpfte Stelle (Graph, Positionskarte) öffnet
+  das PDF jetzt direkt an dieser Stelle, auch wenn der Bereich „Dokument“ vorher zu war.
+  Bisher stand er dann auf Seite 1. Liegt die Stelle auf einer gerade ausgeblendeten Seite,
+  zeigt das PDF wieder alle Seiten.
+- **Zurück zur Übersicht:** ist jetzt ein Pfeil ← ganz links statt ✕ rechts. So verwechselt man
+  ihn nicht mehr mit „Bereich schließen“.
+- **Schmaler Bereich:** „Alle / Text / Pläne“ ist dort eine Auswahl statt drei Knöpfe; die
+  Knöpfe schieben sich nicht mehr übereinander.
+
 ## 0.53.0 — 06.11.2026 · PDF-Verknüpfungen im Graphen
 
 - **PDFs im Graphen:** Jedes PDF mit verknüpften Stellen steht als Karte oben rechts im Graphen.

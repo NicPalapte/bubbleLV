@@ -68,6 +68,8 @@ export interface DocumentsApi {
   setOverview: (on: boolean) => void;
   /** Zeigt die Stelle; ist ihr Dokument nicht offen, passiert nichts. */
   jumpTo: (spot: DocSpot) => void;
+  /** Der Sprung ist angekommen; ein neu geöffneter Bereich springt nicht noch einmal hin. */
+  doneJump: (nonce: number) => void;
   /** Suchbegriff fürs PDF, für alle offenen PDFs derselbe; leert sich mit neuem LV. */
   readonly docSearch: string;
   setDocSearch: (value: string) => void;
@@ -134,6 +136,7 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [jump, setJump] = useState<DocJump | null>(null);
+  const jumpCount = useRef(0);
   const [docSearch, setDocSearch] = useState('');
   const [ansatzFor, setAnsatzState] = useState<string | null>(null);
   const [planWanted, setPlanWanted] = useState(false);
@@ -286,11 +289,15 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
       if (!docsRef.current.some((doc) => doc.id === spot.doc)) return;
       setActiveId(spot.doc);
       setOverview(false);
-      setJump((current) => ({ spot, nonce: (current?.nonce ?? 0) + 1 }));
+      jumpCount.current += 1;
+      setJump({ spot, nonce: jumpCount.current });
       dispatch({ type: 'showPane', pane: 'doc' });
     },
     [dispatch],
   );
+  const doneJump = useCallback((nonce: number): void => {
+    setJump((current) => (current?.nonce === nonce ? null : current));
+  }, []);
 
   const pageText = useCallback((doc: OpenedPdf, page: number): Promise<string> => {
     const key = `${doc.id}:${page}`;
@@ -446,6 +453,7 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
       overview,
       setOverview,
       jumpTo,
+      doneJump,
       docSearch,
       setDocSearch,
       searchHits,
@@ -475,6 +483,7 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
       overview,
       setOverview,
       jumpTo,
+      doneJump,
       docSearch,
       setDocSearch,
       searchHits,
