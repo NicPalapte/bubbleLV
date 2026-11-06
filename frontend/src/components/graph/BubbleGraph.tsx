@@ -24,6 +24,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
 } from 'react';
+import { DocCards } from './DocCards';
 import { GraphControls } from './GraphControls';
 import { GraphHeader } from './GraphHeader';
 import { useHostWindow } from '../common/hostWindow';
@@ -45,6 +46,7 @@ import {
   type MarkerInfo,
   type Progress,
 } from '../../lib/annotations';
+import { docGraphOf } from '../../lib/docs/docGraph';
 import { cullBounds, isInView } from '../../lib/graph/culling';
 import { MONO_CHAR, SANS_CHAR, axisText, fitText, hullPill } from '../../lib/graph/labels';
 import { layoutMap, type MapGroup, type MapHull } from '../../lib/graph/layoutMap';
@@ -221,7 +223,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
   const openMenu = usePositionMenu();
   // Im eigenen Browserfenster (Entscheidung 0039) kommen Mausereignisse dort an.
   const hostWindow = useHostWindow();
-  const { layout, rows, cols, sizeMode, showHints, spotlight } = graph;
+  const { layout, rows, cols, sizeMode, showHints, spotlight, showDocs, docSpotlight } = graph;
   // Blass oder ausgeblendet regelt derselbe Schalter wie bei Filtern (Entscheidung 0078).
   const spotlightHide = hideMode === 'hide';
 
@@ -306,10 +308,36 @@ export function BubbleGraph({ root }: { root: LVNode }) {
     (on: boolean): number => (inSpot === null || on ? 1 : spotlightHide ? 0 : SPOT_FADE),
     [inSpot, spotlightHide],
   );
-  const slotFade = useCallback(
-    (slot: number): number => (inSpot === null ? 1 : spotFade(inSpot(index.nodes[slot].id))),
-    [inSpot, spotFade, index],
+  // ── Verknüpfungen mit Begleit-PDFs (Entscheidung 0097): Karten, Linien, Zahl am Punkt.
+  const docGraph = useMemo(
+    () => docGraphOf(annotations.documents, (id) => index.slotOf.has(id)),
+    [annotations.documents, index],
   );
+  const docsOn = showDocs && docGraph.cards.length > 0;
+  /** Breite der Spalte mit den PDF-Karten am rechten Rand. */
+  const docWidth = Math.round(Math.min(260, Math.max(180, w * 0.3)));
+  // Einpassen lässt die Spalte frei, solange daneben genug Graph bleibt.
+  const docPad = docsOn && w >= 640 ? docWidth + 48 : 32;
+  const docFocus =
+    docsOn && docGraph.cards.some((card) => card.doc === docSpotlight) ? docSpotlight : null;
+  /** Positionen des hervorgehobenen PDFs; `null` = keines hervorgehoben. */
+  const inDoc = useMemo(() => {
+    const card = docGraph.cards.find((candidate) => candidate.doc === docFocus);
+    return card === undefined ? null : new Set(card.positions);
+  }, [docGraph, docFocus]);
+  const slotFade = useCallback(
+    (slot: number): number => {
+      const id = index.nodes[slot].id;
+      const doc = inDoc === null || inDoc.has(id) ? 1 : spotlightHide ? 0 : SPOT_FADE;
+      return (inSpot === null ? 1 : spotFade(inSpot(id))) * doc;
+    },
+    [inSpot, spotFade, index, inDoc, spotlightHide],
+  );
+  // Eine Position außerhalb des hervorgehobenen PDFs wählen hebt die Hervorhebung auf.
+  useEffect(() => {
+    if (inDoc === null || selectedPosition === null) return;
+    if (!inDoc.has(selectedPosition.id)) dispatch({ type: 'graphDocSpotlight', doc: null });
+  }, [inDoc, selectedPosition, dispatch]);
   // Auswahl außerhalb der Hervorhebung (etwa aus der Tabelle) hebt sie auf.
   useEffect(() => {
     if (inSpot === null) return;
@@ -493,9 +521,9 @@ export function BubbleGraph({ root }: { root: LVNode }) {
     (box: { x0: number; y0: number; x1: number; y1: number }, maxZoom: number): View | null => {
       if (w === 0 || h === 0) return null;
       // Frei bleibt, was die festen Teile belegen: oben die Kennzahlen, unten Legende
-      // und Steuerung.
+      // und Steuerung, rechts die PDF-Karten.
       const padL = 32;
-      const padR = 32;
+      const padR = docPad;
       const padT = 96;
       const padB = 76;
       const availW = Math.max(80, w - padL - padR);
@@ -509,7 +537,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
         k,
       };
     },
-    [w, h],
+    [w, h, docPad],
   );
 
   const fitView = useCallback(() => viewAround(map.bounds, 1.6), [viewAround, map]);
@@ -693,6 +721,7 @@ export function BubbleGraph({ root }: { root: LVNode }) {
 
   const clearSpotlight = (): void => {
     if (spotlight !== null) dispatch({ type: 'graphSpotlight', id: null });
+    if (docSpotlight !== null) dispatch({ type: 'graphDocSpotlight', doc: null });
   };
 
   // Rechtsklick (Issue #155): Menü für Punkt oder Abschnitt, ohne die Auswahl zu ändern.
@@ -941,6 +970,33 @@ export function BubbleGraph({ root }: { root: LVNode }) {
     setOverlay((current) => (current.key === key ? current : { pins, leader, key }));
   });
 
+  // Ankerpunkte der PDF-Karten am Rand: nach dem Zeichnen gemessen, wie die Schilder.
+  // Ohne Abhängigkeitsliste; `key` bricht ab, solange die Karten stillstehen.
+  const [docAnchors, setDocAnchors] = useState<{
+    key: string;
+    at: ReadonlyMap<string, { x: number; y: number }>;
+  }>({ key: '', at: new Map() });
+  const [, setDocScroll] = useState(0);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useLayoutEffect(() => {
+    const wrap = wrapRef.current;
+    if (wrap === null) return;
+    const base = wrap.getBoundingClientRect();
+    const at = new Map<string, { x: number; y: number }>();
+    const parts: string[] = [];
+    for (const element of wrap.querySelectorAll('[data-doc-anchor]')) {
+      const doc = element.getAttribute('data-doc-anchor');
+      const r = element.getBoundingClientRect();
+      if (doc === null || r.height === 0) continue;
+      const x = Math.round(r.left - base.left);
+      const y = Math.round(r.top - base.top + r.height / 2);
+      at.set(doc, { x, y });
+      parts.push(`${doc}@${x},${y}`);
+    }
+    const key = parts.join(';');
+    setDocAnchors((current) => (current.key === key ? current : { key, at }));
+  });
+
   // ── Zeichnen
   const k = view.k;
   const labelFits = 14 * k >= LABEL_MIN_PX;
@@ -968,6 +1024,48 @@ export function BubbleGraph({ root }: { root: LVNode }) {
   const pickedGroup = selectedSlot >= 0 ? map.groupOf[selectedSlot] : -1;
   // Punkte: beim Gleiten alle, sonst nur die im Bild.
   const dotGroups = morphing ? map.groups.map((group, i) => ({ group, i })) : visibleGroups;
+
+  // Linien von den Punkten zu ihren PDF-Karten, in Weltkoordinaten unter den Punkten. Kleine
+  // Gruppen, deren Punkte als Fläche erscheinen, ziehen eine Linie je Gruppe statt je Punkt.
+  const pickedId = selectedPosition?.id ?? null;
+  const docLines: Array<{ key: string; d: string; strong: boolean; faint: boolean }> = [];
+  if (docsOn && !morphing && k > 0) {
+    const seen = new Set<string>();
+    for (const card of docGraph.cards) {
+      const anchor = docAnchors.at.get(card.doc);
+      if (anchor === undefined) continue;
+      const ex = (anchor.x - view.tx) / k;
+      const ey = (anchor.y - view.ty) / k;
+      for (const id of card.positions) {
+        const slot = index.slotOf.get(id);
+        if (slot === undefined || !Number.isFinite(map.px[slot])) continue;
+        const hit = isHit(slot);
+        if (!hit && hide) continue;
+        const fade = slotFade(slot);
+        if (fade === 0) continue;
+        const group = map.groups[map.groupOf[slot]];
+        const coarse = group !== undefined && isCoarse(group);
+        const x = coarse ? group.x : map.px[slot];
+        const y = coarse ? group.y : map.py[slot];
+        const r = coarse ? group.r : radii[slot];
+        const key = coarse ? `${card.doc}|g${map.groupOf[slot]}` : `${card.doc}|${slot}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const sx = x + r;
+        if (sx >= ex) continue;
+        const mx = (sx + ex) / 2;
+        docLines.push({
+          key,
+          d: `M${sx},${y} C${mx},${y} ${mx},${ey} ${ex},${ey}`,
+          strong: card.doc === docFocus || id === pickedId,
+          faint: !hit || fade < 1,
+        });
+      }
+    }
+    // Kräftige Linien zuletzt, damit sie über den dünnen liegen.
+    docLines.sort((a, b) => Number(a.strong) - Number(b.strong));
+  }
+  const docQuiet = docFocus !== null || pickedId !== null;
 
   return (
     <div
@@ -1242,6 +1340,22 @@ export function BubbleGraph({ root }: { root: LVNode }) {
             })}
           </g>
 
+          {docLines.length > 0 && (
+            <g pointerEvents="none" aria-hidden="true" data-doc-lines="">
+              {docLines.map((line) => (
+                <path
+                  key={line.key}
+                  d={line.d}
+                  fill="none"
+                  stroke={line.strong ? 'var(--cyan)' : 'var(--line2)'}
+                  strokeWidth={line.strong ? 2 : 1}
+                  vectorEffect="non-scaling-stroke"
+                  opacity={line.strong ? 1 : (docQuiet ? 0.45 : 0.9) * (line.faint ? 0.4 : 1)}
+                />
+              ))}
+            </g>
+          )}
+
           {/* Eine flache Liste, Schlüssel = Position: so bleibt jeder Punkt beim Wechsel
               der Gliederung dasselbe Element und kann an den neuen Platz gleiten. Die Lage
               steht im transform, die Formen darin um (0, 0). */}
@@ -1374,6 +1488,47 @@ export function BubbleGraph({ root }: { root: LVNode }) {
               );
             })}
 
+          {/* Zahl der verknüpften PDF-Stellen oben links am Punkt (Entscheidung 0097). */}
+          {docsOn &&
+            !morphing &&
+            [...docGraph.countOf].map(([id, count]) => {
+              const slot = index.slotOf.get(id);
+              if (slot === undefined) return null;
+              const x = map.px[slot];
+              const y = map.py[slot];
+              const r = radii[slot];
+              if (!Number.isFinite(x) || !isInView(cull, x, y, r + 12)) return null;
+              const group = map.groups[map.groupOf[slot]];
+              if (group === undefined || isCoarse(group)) return null;
+              const hit = isHit(slot);
+              if (!hit && hide) return null;
+              const fade = slotFade(slot);
+              if (fade === 0) return null;
+              const br = Math.max(2.6, Math.min(6, r * 0.65));
+              const cx = x - r * 0.7;
+              const cy = y - r - br * 0.4;
+              return (
+                <g
+                  key={id}
+                  data-doc-count={count}
+                  pointerEvents="none"
+                  opacity={(hit ? 1 : 0.22) * fade}
+                >
+                  <circle cx={cx} cy={cy} r={br} fill="var(--cyan)" stroke="var(--surface)" />
+                  <text
+                    x={cx}
+                    y={cy}
+                    fill="#fff"
+                    fontSize={br * 1.2}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                  >
+                    {count > 9 ? '9+' : count}
+                  </text>
+                </g>
+              );
+            })}
+
           {/* Nummer der Spalte im Vergleich, bildschirmfest neben dem Punkt. */}
           {!morphing &&
             compare.map((id, i) => {
@@ -1494,6 +1649,22 @@ export function BubbleGraph({ root }: { root: LVNode }) {
             </span>
           )}
         </div>
+      )}
+
+      {docsOn && (
+        <DocCards
+          cards={docGraph.cards}
+          focus={docFocus}
+          picked={pickedId}
+          index={index}
+          width={docWidth}
+          onFocus={(doc) => dispatch({ type: 'graphDocSpotlight', doc })}
+          onPick={(id) => {
+            const slot = index.slotOf.get(id);
+            if (slot !== undefined) selectSlot(slot);
+          }}
+          onScroll={() => setDocScroll((n) => n + 1)}
+        />
       )}
 
       <GraphHeader

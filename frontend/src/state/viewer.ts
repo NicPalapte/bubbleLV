@@ -405,7 +405,13 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
       if (selection !== state.selection) return { ...state, selection };
       // Nichts mehr ausgewählt: Escape hebt als Nächstes die Hervorhebung im Graphen auf —
       // nur in „nach LV“, wo sie zu sehen ist (Entscheidung 0075).
-      const { spotlight, layout } = state.view.graph;
+      const { spotlight, layout, docSpotlight } = state.view.graph;
+      if (docSpotlight !== null) {
+        return {
+          ...state,
+          view: viewReducer(state.view, { type: 'graphDocSpotlight', doc: null }),
+        };
+      }
       if (spotlight === null || layout !== 'lv') return state;
       return { ...state, view: viewReducer(state.view, { type: 'graphSpotlight', id: null }) };
     }
@@ -429,6 +435,8 @@ export function viewerReducer(state: ViewerState, action: ViewerAction): ViewerS
     case 'graphViewport':
     case 'graphFocus':
     case 'graphSpotlight':
+    case 'graphDocs':
+    case 'graphDocSpotlight':
     case 'tableSort':
     case 'tableScope':
     case 'tableColumns':
