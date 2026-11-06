@@ -25,6 +25,9 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
 - **Messen:** Länge (zwei Punkte), Maßkette mit Teilmaßen, Fläche als Rechteck, Polygon oder
   Kreis und Stück direkt im Plan antippen, alles auch am Tablet. Esc beendet den Befehl,
   Enter schließt ab, Entf löscht die gewählte Messung.
+- **Raum erkennen:** in eine Fläche tippen, Conocto schlägt ihren Rand vor (auch bei
+  Scans); Enter oder „Fertig“ übernimmt, Esc verwirft. Hat der Raum eine Öffnung, sagt
+  Conocto das statt zu raten.
 - **Maße sammeln:** gedruckte Maße nacheinander antippen, Conocto zählt sie zusammen; „Mit
   Position verknüpfen…“ hängt die Summe an den Rechenansatz.
 - **VA-Menge:** Messungen hängen an Positionen. Positionskarte und Tabelle zeigen die

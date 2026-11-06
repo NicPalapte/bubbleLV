@@ -31,6 +31,7 @@ const TOOL_GROUPS: ReadonlyArray<ReadonlyArray<readonly [PlanTool, string, strin
     ['rechteck', 'Rechteck', 'Zwei Ecken'],
     ['polygon', 'Polygon', 'Ecken nacheinander, ersten Punkt antippen schließt'],
     ['kreis', 'Kreis', 'Mitte, dann Rand'],
+    ['raum', 'Raum', 'In eine Fläche tippen: Conocto schlägt den Rand vor'],
   ],
   [['stueck', 'Stück', 'Je Bauteil ein Punkt, Enter oder Esc beendet']],
   [['masse', 'Maße', 'Gedruckte Maße antippen, die Summe an Positionen hängen']],

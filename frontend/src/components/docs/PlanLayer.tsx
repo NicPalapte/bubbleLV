@@ -75,7 +75,7 @@ function DraftShape({
   scale: number;
 }) {
   const color = 'var(--accent)';
-  const all = hover !== null && tool !== 'stueck' ? [...points, hover] : points;
+  const all = hover !== null && tool !== 'stueck' && tool !== 'raum' ? [...points, hover] : points;
   const stroke = {
     stroke: color,
     strokeWidth: 2,
@@ -104,7 +104,7 @@ function DraftShape({
         {...stroke}
       />
     );
-  } else if (tool === 'polygon' && all.length > 2) {
+  } else if ((tool === 'polygon' || tool === 'raum') && all.length > 2) {
     shape = <polygon points={pointsAttr(all)} fill={color} fillOpacity={0.12} {...stroke} />;
   } else if (tool !== 'stueck') {
     shape = <polyline points={pointsAttr(all)} fill="none" {...stroke} />;
@@ -117,7 +117,7 @@ function DraftShape({
           key={i}
           cx={x}
           cy={y}
-          r={(i === 0 && tool === 'polygon' ? 9 : 6) / scale}
+          r={(tool === 'raum' ? 4 : i === 0 && tool === 'polygon' ? 9 : 6) / scale}
           fill={i === 0 ? 'var(--surface)' : color}
           stroke={color}
           strokeWidth={2}

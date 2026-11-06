@@ -35,3 +35,11 @@ export {
   type PageKind,
   type PlanPoint,
 } from './plan/measure';
+export {
+  findRegion,
+  maskFromRgba,
+  simplify,
+  thicken,
+  type FoundRegion,
+  type LineMask,
+} from './plan/region';

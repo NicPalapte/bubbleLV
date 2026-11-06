@@ -29,6 +29,10 @@
   für alle Pläne des Dokuments mit demselben Plankopf-Maßstab.
 - **Maßstab von Hand:** Findet Conocto keinen, trägt man „1 : x“ selbst ein (Herkunft
   „von Hand“), auf Wunsch für alle Pläne ohne Maßstab.
+- **Raum erkennen:** Antippen füllt das Seitenbild von der Stelle aus bis zu dunklen Linien
+  (`packages/core/src/plan/region.ts`, Bild statt Vektoren: geht auch bei Scans). Der Rand ist
+  nur ein Vorschlag, gilt erst nach „Fertig“. Erreicht die Füllung den Seitenrand, gibt es
+  keinen Vorschlag. Stückzahl per Symbol erkennen kommt später (Nico, 06.11.).
 - **Zoom und Bild:** Jede Seite auf die Bereichsbreite eingepasst, Zoom bis 1600 %. Mausrad
   zoomt über Plänen, Ziehen verschiebt. Eine Zeichenfläche hat höchstens 8 Mio.
   Bildpunkte, sonst zeichnen Browser sie schwarz; bei großem Zoom kommt ein scharfes Bild nur

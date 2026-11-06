@@ -31,6 +31,7 @@ import { PlanLayer, type PlanDraft } from './PlanLayer';
 import { TWO_POINT_TOOLS, type PlanTool } from './planTools';
 import { MeasureBar, PlanToolbar, ScalePanel } from './PlanControls';
 import { usePageInfo } from './usePageInfo';
+import { detectArea } from './detectArea';
 import type { DocHighlightItem } from './docHighlights';
 import { PaintBar, PaintNamesDialog } from '../common/PaintBar';
 import {
@@ -264,7 +265,7 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     [plans.measures, doc.id, dispatch, ansatzFor, addToAnsatz],
   );
   const minPoints = (kind: PlanTool): number =>
-    kind === 'polygon' ? 3 : kind === 'stueck' ? 1 : 2;
+    kind === 'polygon' || kind === 'raum' ? 3 : kind === 'stueck' ? 1 : 2;
   const canFinish =
     tool !== null &&
     tool !== 'massstab' &&
@@ -276,6 +277,9 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     if (draft.points.length >= minPoints(tool)) finishDraft(tool, draft.points, draft.page);
   };
 
+  // Werkzeug „Raum“: Suche läuft oder Grund, warum nichts gefunden wurde.
+  const [areaHint, setAreaHint] = useState<string | null>(null);
+
   // Gedruckte Maße sammeln (Werkzeug „Maße“): Summe, dann an Positionen hängen.
   const [collected, setCollected] = useState<AnsatzTerm[]>([]);
   const [linkingMasses, setLinkingMasses] = useState<{ left: number; top: number } | null>(null);
@@ -283,6 +287,23 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
   const onTap = useCallback(
     (page: number, point: PlanPoint, scale: number): void => {
       if (tool === null || tool === 'masse') return;
+      if (tool === 'raum') {
+        setAreaHint('Suche Fläche…');
+        void doc.pdf
+          .getPage(page)
+          .then((proxy) => detectArea(proxy, point))
+          .then((guess) => {
+            if (guess.ok) {
+              setDraft({ page, points: guess.points });
+              setAreaHint(null);
+            } else {
+              setDraft(null);
+              setAreaHint(guess.reason);
+            }
+          })
+          .catch(() => setAreaHint('Fläche nicht erkannt'));
+        return;
+      }
       const before = draft !== null && draft.page === page ? draft.points : [];
       const points = [...before, point];
       if (tool === 'massstab') {
@@ -310,7 +331,7 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
       }
       setDraft({ page, points });
     },
-    [tool, draft, finishDraft],
+    [tool, draft, finishDraft, doc.pdf],
   );
 
   // Tastatur wie im CAD: Esc beendet den Befehl, Enter schließt ab, Entf löscht die gewählte
@@ -323,7 +344,9 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
       if (typing != null) return;
       if (event.key === 'Escape') {
         if (linkingMeasure !== null || linkingMasses !== null || scalePage !== null) return;
-        if (draft !== null && tool !== null && tool !== 'massstab') {
+        if (draft !== null && tool === 'raum') {
+          setDraft(null);
+        } else if (draft !== null && tool !== null && tool !== 'massstab') {
           if (draft.points.length >= minPoints(tool)) finishDraft(tool, draft.points, draft.page);
           else setDraft(null);
         } else if (draft !== null) {
@@ -953,6 +976,21 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
           {error ?? 'Andere Fassung als beim Markieren — die Stellen von damals fehlen hier.'}
         </div>
       )}
+      {tool === 'raum' && (
+        <div
+          role="status"
+          className={`shrink-0 border-b border-line px-[12px] py-[6px] font-sans text-[12.5px] ${
+            areaHint === null || areaHint === 'Suche Fläche…'
+              ? 'bg-surface text-dim'
+              : 'bg-amberS text-amber'
+          }`}
+        >
+          {areaHint ??
+            (draft === null
+              ? 'In eine Fläche tippen — Conocto schlägt den Rand vor'
+              : 'Vorschlag: Enter oder „Fertig“ übernimmt, Esc verwirft')}
+        </div>
+      )}
       {ansatzFor !== null && ansatzNote !== null && (
         <div
           role="status"
@@ -1308,6 +1346,7 @@ const TOOL_KIND: Readonly<Record<Exclude<PlanTool, 'massstab' | 'masse'>, Measur
   rechteck: 'flaeche',
   polygon: 'flaeche',
   kreis: 'flaeche',
+  raum: 'flaeche',
   stueck: 'stueck',
 };
 
@@ -1317,6 +1356,7 @@ const TOOL_NAME: Readonly<Record<Exclude<PlanTool, 'massstab' | 'masse'>, string
   rechteck: 'Rechteck',
   polygon: 'Fläche',
   kreis: 'Kreis',
+  raum: 'Raum',
   stueck: 'Stück',
 };
 
