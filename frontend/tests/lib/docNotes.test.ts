@@ -17,12 +17,15 @@ import {
   locateOnPage,
   marksOfPosition,
   marksOnPage,
+  isWholeDoc,
   mergeDocNotes,
+  nextMarkIndex,
   paintDocMark,
   registerDoc,
   rekeyDocNotes,
   setDocKind,
   toStoredDocNotes,
+  wholeDocSpot,
   unlinkDocMark,
   unpaintDocMark,
   type DocSpot,
@@ -263,5 +266,50 @@ describe('Dokumentart von Hand (Entscheidung 0096)', () => {
     const merged = mergeDocNotes(own, setDocKind(file, 'e1f', 'gutachten'));
     expect(merged.docs.get('d0c')?.kind).toBe('plan');
     expect(merged.docs.get('e1f')?.kind).toBe('gutachten');
+  });
+});
+
+describe('nextMarkIndex · vor/zurück durch die eigenen Stellen (Issue #191)', () => {
+  const stelle = (page: number, start: number) => ({ doc: 'd', page, start, text: 'x' });
+  const marks = [stelle(1, 0), stelle(3, 5), stelle(3, 40), stelle(7, 2)];
+
+  it('beginnt ohne letzte Wahl bei der aktuellen Seite', () => {
+    expect(nextMarkIndex(marks, 3, null, 1)).toBe(1);
+    expect(nextMarkIndex(marks, 3, null, -1)).toBe(0);
+    expect(nextMarkIndex(marks, 5, null, 1)).toBe(3);
+  });
+
+  it('geht am Ende von vorn weiter, in beide Richtungen', () => {
+    expect(nextMarkIndex(marks, 9, null, 1)).toBe(0);
+    expect(nextMarkIndex(marks, 9, null, -1)).toBe(3);
+    expect(nextMarkIndex(marks, 1, 3, 1)).toBe(0);
+    expect(nextMarkIndex(marks, 1, 0, -1)).toBe(3);
+  });
+
+  it('liefert ohne Stellen nichts', () => {
+    expect(nextMarkIndex([], 1, null, 1)).toBeNull();
+  });
+});
+
+describe('Ganzes Dokument verknüpfen (Issue #191, Entscheidung 0099)', () => {
+  const ganz = wholeDocSpot('doc-aia');
+
+  it('verknüpft ohne Textstelle und übersteht Speichern und Laden', () => {
+    const notes = linkDocMark(EMPTY_DOC_NOTES, ganz, ['p1', 'p2'], 5);
+    expect(notes.marks).toHaveLength(1);
+    expect(isWholeDoc(notes.marks[0])).toBe(true);
+    expect(notes.marks[0].links).toEqual(['p1', 'p2']);
+    const zurueck = fromStoredDocNotes(toStoredDocNotes(notes));
+    expect(zurueck.marks[0]).toMatchObject({ page: 0, text: '', links: ['p1', 'p2'] });
+  });
+
+  it('lässt sich nicht anstreichen und zählt nicht beim Blättern durch die Stellen', () => {
+    expect(paintDocMark(EMPTY_DOC_NOTES, ganz, 'blau', 1)).toBe(EMPTY_DOC_NOTES);
+    expect(nextMarkIndex([], 1, null, 1)).toBeNull();
+  });
+
+  it('nimmt Seite 0 nur ohne Text als ganzes Dokument', () => {
+    const halb = { doc: 'doc-aia', page: 0, start: 0, text: 'Wort' };
+    expect(linkDocMark(EMPTY_DOC_NOTES, halb, ['p1'], 1)).toBe(EMPTY_DOC_NOTES);
   });
 });

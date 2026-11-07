@@ -10,6 +10,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
+import { readTourSeen, saveTourSeen } from '../../lib/persist/lastLv';
 import { CARD_TARGET, POINT_TARGET, TOUR_STEPS, type TourPrepare } from './tourSteps';
 
 /**
@@ -137,6 +138,25 @@ export function Tour() {
   const { step: index, seen } = state.view.tour;
   const step = index === null ? undefined : TOUR_STEPS[index];
 
+  // Gesehen oder abgelehnt bleibt über das Neuladen gemerkt (Issue #191, Entscheidung 0098).
+  // `null`, solange der Merker noch gelesen wird — bis dahin kein Angebot, sonst blitzt es auf.
+  const [stored, setStored] = useState<boolean | null>(null);
+  useEffect(() => {
+    let active = true;
+    void readTourSeen().then((value) => {
+      if (active) setStored((current) => current ?? value);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+  const savedSeen = useRef(false);
+  useEffect(() => {
+    if (!seen || stored === true || savedSeen.current) return;
+    savedSeen.current = true;
+    void saveTourSeen();
+  }, [seen, stored]);
+
   const [box, setBox] = useState<Box | null>(null);
   /** Richtung der letzten Bewegung — ein fehlendes Ziel wird in dieselbe Richtung übersprungen. */
   const direction = useRef<1 | -1>(1);
@@ -254,7 +274,7 @@ export function Tour() {
   if (lv === null) return null;
 
   if (index === null) {
-    if (seen) return null;
+    if (seen || stored !== false) return null;
     return (
       <div
         // Kein `dialog`: das Angebot blockiert nichts, und Escape soll weiter

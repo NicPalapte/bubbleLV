@@ -49,6 +49,8 @@ const KEY_TERMS = 'begriffe';
 const KEY_PAINT_NAMES = 'farbnamen';
 /** Kurzumfrage beantwortet oder abgelehnt (Entscheidung 0071), unabhängig von der Datei. */
 const KEY_SURVEY = 'umfrage';
+/** „Kurze Tour“ gesehen oder abgelehnt (Entscheidung 0098), unabhängig von der Datei. */
+const KEY_TOUR = 'tour';
 /** Letzte Anordnung im Splitscreen (Entscheidung 0073), unabhängig von der Datei. */
 const KEY_WORKSPACE = 'anordnung';
 /** Eigene Regeln `conocto-rule-v1` (Entscheidung 0081), unabhängig von der Datei. */
@@ -423,6 +425,41 @@ export async function saveSurveyDone(done: SurveyDone): Promise<boolean> {
   try {
     const tx = db.transaction(STORE, 'readwrite');
     tx.objectStore(STORE).put(done, KEY_SURVEY);
+    await transactionDone(tx);
+    return true;
+  } catch {
+    return false;
+  } finally {
+    db.close();
+  }
+}
+
+/**
+ * Ob die „Kurze Tour“ schon gesehen oder abgelehnt ist. Ohne IndexedDB `false` — dann
+ * bietet sie sich in jeder Sitzung an, ohne Fehler.
+ */
+export async function readTourSeen(): Promise<boolean> {
+  const db = await openDb();
+  if (db === null) return false;
+  try {
+    const stored: unknown = await requestResult(
+      db.transaction(STORE, 'readonly').objectStore(STORE).get(KEY_TOUR),
+    );
+    return stored === true;
+  } catch {
+    return false;
+  } finally {
+    db.close();
+  }
+}
+
+/** Merkt sich, dass die Tour gesehen oder abgelehnt ist — nur ja, keine Inhalte. */
+export async function saveTourSeen(): Promise<boolean> {
+  const db = await openDb();
+  if (db === null) return false;
+  try {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).put(true, KEY_TOUR);
     await transactionDone(tx);
     return true;
   } catch {

@@ -1,7 +1,7 @@
 // Geführte Tour (components/tour/): Angebot nach dem ersten LV, Schritte mit
 // Spotlight auf echten Zielen, wartende Schritte und Überspringen fehlender Ziele.
 
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Tour } from '../../src/components/tour/Tour';
 import { TOUR_STEPS } from '../../src/components/tour/tourSteps';
@@ -85,13 +85,17 @@ function Harness({ without = [] }: { without?: readonly string[] }) {
   );
 }
 
-function setup(without?: readonly string[]) {
+async function setup(without?: readonly string[]): Promise<void> {
   render(
     <ViewerProvider>
       <Harness without={without} />
     </ViewerProvider>,
   );
   fireEvent.click(screen.getByText('laden'));
+  // Das Angebot wartet, bis der Merker „schon gesehen“ gelesen ist.
+  await act(async () => {
+    await Promise.resolve();
+  });
 }
 
 /** Alle Frames der Tour einmal laufen lassen. */
@@ -118,7 +122,7 @@ afterEach(() => {
 
 describe('Tour', () => {
   it('bietet sich nach dem ersten LV an und startet beim Punkt', async () => {
-    setup();
+    await setup();
     fireEvent.click(screen.getByRole('button', { name: 'Kurze Tour' }));
     await frames();
     expect(screen.getByRole('dialog', { name: tourTitle(0) })).toBeTruthy();
@@ -126,7 +130,7 @@ describe('Tour', () => {
   });
 
   it('geht weiter, sobald man den verlangten Klick selbst macht', async () => {
-    setup();
+    await setup();
     fireEvent.click(screen.getByRole('button', { name: 'Kurze Tour' }));
     await frames();
     fireEvent.click(screen.getByText('punkt'));
@@ -135,7 +139,7 @@ describe('Tour', () => {
   });
 
   it('läuft mit Weiter und Überspringen bis zum Ende durch', async () => {
-    setup();
+    await setup();
     fireEvent.click(screen.getByRole('button', { name: 'Kurze Tour' }));
     for (let index = 0; index < TOUR_STEPS.length; index++) {
       await frames();
@@ -147,7 +151,7 @@ describe('Tour', () => {
   });
 
   it('öffnet für ihren Schritt die Tabelle, die beim Start zu ist', async () => {
-    setup();
+    await setup();
     expect(screen.queryByText('tabelle')).toBeNull();
     const table = TOUR_STEPS.findIndex((step) => step.target === '[data-tour="table"]');
     fireEvent.click(screen.getByRole('button', { name: 'Kurze Tour' }));
@@ -161,7 +165,7 @@ describe('Tour', () => {
   });
 
   it('überspringt einen Schritt, dessen Ziel fehlt', async () => {
-    setup(['hints']);
+    await setup(['hints']);
     const hints = TOUR_STEPS.findIndex((step) => step.target === '[data-tour="hints"]');
     fireEvent.click(screen.getByRole('button', { name: 'Kurze Tour' }));
     for (let index = 0; index < hints; index++) {
@@ -174,7 +178,7 @@ describe('Tour', () => {
   });
 
   it('Escape beendet die Tour, das Angebot kommt nicht wieder', async () => {
-    setup();
+    await setup();
     fireEvent.click(screen.getByRole('button', { name: 'Kurze Tour' }));
     await frames();
     fireEvent.keyDown(window, { key: 'Escape' });
@@ -185,8 +189,8 @@ describe('Tour', () => {
     expect(screen.queryByRole('button', { name: 'Kurze Tour' })).toBeNull();
   });
 
-  it('✕ am Angebot blendet es für die Sitzung aus', async () => {
-    setup();
+  it('✕ am Angebot blendet es aus', async () => {
+    await setup();
     expect(screen.getByRole('group', { name: 'Tour anbieten' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Tour nicht anzeigen' }));
     await frames();
@@ -194,7 +198,7 @@ describe('Tour', () => {
   });
 
   it('überspringt rückwärts, wenn das Ziel beim Zurückgehen fehlt', async () => {
-    setup(['hints']);
+    await setup(['hints']);
     const hints = TOUR_STEPS.findIndex((step) => step.target === '[data-tour="hints"]');
     fireEvent.click(screen.getByRole('button', { name: 'Kurze Tour' }));
     for (let index = 0; index < hints; index++) {
@@ -210,7 +214,7 @@ describe('Tour', () => {
   });
 
   it('zeigt die Positionskarte auch, wenn der Punkt-Schritt übersprungen wurde', async () => {
-    setup();
+    await setup();
     fireEvent.click(screen.getByRole('button', { name: 'Kurze Tour' }));
     await frames();
     fireEvent.click(screen.getByRole('button', { name: 'Überspringen' }));
@@ -221,7 +225,7 @@ describe('Tour', () => {
   });
 
   it('gibt nach dem Ende die eigene Auswahl zurück', async () => {
-    setup();
+    await setup();
     fireEvent.click(screen.getByText('eigene wählen'));
     fireEvent.click(screen.getByRole('button', { name: 'Kurze Tour' }));
     await frames();
@@ -234,7 +238,7 @@ describe('Tour', () => {
   });
 
   it('Escape gehört zuerst einem anderen offenen Fenster', async () => {
-    setup();
+    await setup();
     fireEvent.click(screen.getByRole('button', { name: 'Kurze Tour' }));
     await frames();
     const other = document.createElement('div');
@@ -244,5 +248,41 @@ describe('Tour', () => {
     await frames();
     expect(screen.getByRole('dialog', { name: tourTitle(0) })).toBeTruthy();
     other.remove();
+  });
+});
+
+describe('Tour · gemerkt über das Neuladen (Issue #191)', () => {
+  beforeEach(async () => {
+    // fake-indexeddb antwortet über echte Zeitgeber.
+    vi.useRealTimers();
+    const { IDBFactory } = await import('fake-indexeddb');
+    globalThis.indexedDB = new IDBFactory();
+  });
+  afterEach(() => {
+    // @ts-expect-error — jsdom kennt kein IndexedDB; nach dem Test wieder wie vorher.
+    delete globalThis.indexedDB;
+  });
+
+  const oeffnen = () =>
+    render(
+      <ViewerProvider>
+        <Harness />
+      </ViewerProvider>,
+    );
+
+  it('bietet sich beim ersten Öffnen an, nach ✕ beim nächsten Öffnen nicht mehr', async () => {
+    const erstes = oeffnen();
+    fireEvent.click(screen.getByText('laden'));
+    fireEvent.click(await screen.findByRole('button', { name: 'Tour nicht anzeigen' }));
+    await waitFor(async () => {
+      const { readTourSeen } = await import('../../src/lib/persist/lastLv');
+      expect(await readTourSeen()).toBe(true);
+    });
+    erstes.unmount();
+
+    oeffnen();
+    fireEvent.click(screen.getByText('laden'));
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(screen.queryByRole('group', { name: 'Tour anbieten' })).toBeNull();
   });
 });

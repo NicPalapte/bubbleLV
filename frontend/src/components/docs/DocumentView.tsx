@@ -45,7 +45,10 @@ import {
 import { useHostWindow } from '../common/hostWindow';
 import { useJumpToPosition } from '../common/useJumpToPosition';
 import {
+  isWholeDoc,
   marksOfDoc,
+  nextMarkIndex,
+  wholeDocSpot,
   pendingSuggestions,
   type DocMark,
   type DocSpot,
@@ -173,6 +176,7 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     donePlanWanted,
     error,
     jump,
+    jumpTo,
     docSearch,
     setDocSearch,
     searchHits,
@@ -873,7 +877,8 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
   const flash = jump !== null && jump.spot.doc === doc.id && jump.nonce !== faded ? jump : null;
   useEffect(() => {
     if (jump === null || jump.spot.doc !== doc.id) return;
-    scrollToPage(jump.spot.page);
+    // Ganzes Dokument (Seite 0): an den Anfang.
+    scrollToPage(Math.max(1, jump.spot.page));
     const timer = window.setTimeout(() => setFaded(jump.nonce), FLASH_MS);
     return () => window.clearTimeout(timer);
   }, [jump, doc.id, scrollToPage]);
@@ -1050,6 +1055,75 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
       </button>
     </>
   );
+  // Vor/zurück durch die eigenen Stellen dieses PDFs (Issue #191): angestrichen oder verknüpft,
+  // in Lesereihenfolge. Ohne letzte Wahl geht es von der aktuellen Seite aus.
+  // `from`: Seite beim Sprung — bis der Sprung angekommen ist, gilt die Wahl weiter.
+  const [markPick, setMarkPick] = useState<{ index: number; from: number } | null>(null);
+  const [seenMarks, setSeenMarks] = useState(marks);
+  if (seenMarks !== marks) {
+    setSeenMarks(marks);
+    setMarkPick(null);
+  }
+  const spots = marks.filter((mark) => !isWholeDoc(mark));
+  // Nach eigenem Blättern passt die letzte Wahl nicht mehr zur Seite — dann von der Seite aus.
+  const pickedSpot = markPick === null ? undefined : spots[markPick.index];
+  const markIndex =
+    markPick !== null &&
+    pickedSpot !== undefined &&
+    (pickedSpot.page === current || markPick.from === current)
+      ? markPick.index
+      : null;
+  // Das ganze Dokument mit Positionen verknüpfen (Issue #191, Entscheidung 0099).
+  const wholeLinks = marks.find(isWholeDoc)?.links ?? NO_IDS;
+  const wholeEl = (
+    <button
+      type="button"
+      title="Das ganze Dokument mit Positionen verknüpfen, ohne Textstelle"
+      onClick={(event) => {
+        const box = event.currentTarget.getBoundingClientRect();
+        setLinking({ spot: wholeDocSpot(doc.id), left: box.left, top: box.bottom + 4 });
+      }}
+      className={`${TOOL} ${wholeLinks.length > 0 ? 'border-cyan bg-cyanS text-cyan' : ''}`}
+    >
+      {wholeLinks.length > 0 ? `Dokument verknüpft · ${wholeLinks.length}` : 'Dokument verknüpfen'}
+    </button>
+  );
+  const stepMark = (step: 1 | -1): void => {
+    const next = nextMarkIndex(spots, current, markIndex, step);
+    if (next === null) return;
+    setMarkPick({ index: next, from: current });
+    jumpTo(spots[next]);
+  };
+  const markEls =
+    spots.length > 0 ? (
+      <span
+        role="group"
+        aria-label="Eigene Stellen"
+        className="flex shrink-0 items-center gap-[2px]"
+      >
+        <button
+          type="button"
+          aria-label="Vorige Stelle"
+          title="Vorige angestrichene oder verknüpfte Stelle"
+          onClick={() => stepMark(-1)}
+          className={TOOL}
+        >
+          ‹
+        </button>
+        <span className="font-mono text-[11.5px] text-mute">
+          {markIndex === null ? '–' : markIndex + 1} / {spots.length}
+        </span>
+        <button
+          type="button"
+          aria-label="Nächste Stelle"
+          title="Nächste angestrichene oder verknüpfte Stelle"
+          onClick={() => stepMark(1)}
+          className={TOOL}
+        >
+          ›
+        </button>
+      </span>
+    ) : null;
   const zoomEls = (
     <>
       <button
@@ -1133,12 +1207,15 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
           </button>
         )}
         <span className="flex-1" />
+        {!narrow && wholeEl}
         {!narrow && suggestEl}
+        {markEls}
         {!tight && searchEl}
         {!narrow && stepEls}
         {!narrow && zoomEls}
         {narrow && (
           <MoreMenu>
+            {wholeEl}
             {tight && searchEl}
             {stepEls}
             {zoomEls}

@@ -290,7 +290,15 @@ function findOz(text: string, index: SuggestIndex): Found[] {
     if (sep !== null && sep !== undefined && sep !== ' ') {
       while (seps[j] === sep) j++;
     }
-    if (j > i && freeBefore(text, runs[i].start) && freeAfter(text, runs[j].end)) {
+    // „3-4“ oder „3/4“ liest sich als Bereich oder Bruch („LPH 3-4“), nicht als OZ 3.4 —
+    // zwei Glieder mit diesem Trenner zählen nur mit „Pos.“/„OZ“ davor (Issue #191).
+    const range = j === i + 1 && (sep === '-' || sep === '/');
+    if (
+      j > i &&
+      freeBefore(text, runs[i].start) &&
+      freeAfter(text, runs[j].end) &&
+      (!range || hasContext(text, runs[i].start))
+    ) {
       const key = keyOf(i, j);
       const id = key === null ? undefined : index.full.get(key);
       if (typeof id === 'string') take(i, j, id);

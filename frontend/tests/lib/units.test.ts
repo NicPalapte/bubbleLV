@@ -9,7 +9,13 @@
 
 import { describe, expect, it } from 'vitest';
 import { FACETS_BY_ID, facetOptionLabel } from '../../src/lib/facets';
-import { canonicalUnit, unitGroups, unitLabel, unitSpelling } from '../../src/lib/units';
+import {
+  canonicalUnit,
+  sumsByUnit,
+  unitGroups,
+  unitLabel,
+  unitSpelling,
+} from '../../src/lib/units';
 import type { PositionSummary } from '../../src/types/lvNode';
 import { TEST_HASHES } from '../support/hashes';
 
@@ -112,5 +118,39 @@ describe('Facette „Einheit"', () => {
 
   it('lässt eine Position ohne Einheit aus der Facette heraus', () => {
     expect(facet.get(pos(null))).toEqual([]);
+  });
+});
+
+describe('sumsByUnit · Mengen der Treffer je Einheit (Issue #191)', () => {
+  const pos = (quantity: number | null, unit: string | null, positionType = 'NORMAL') => ({
+    quantity,
+    unit,
+    positionType,
+  });
+
+  it('rechnet je Einheit, gleiche Einheit in anderer Schreibweise zusammen', () => {
+    const sums = sumsByUnit([
+      pos(10, 'm3'),
+      pos(2.5, 'M3'),
+      pos(3, 'Stk'),
+      pos(4, 'St'),
+      pos(1, 'St'),
+    ]);
+    expect(sums).toEqual([
+      { label: 'Stück', total: 8, count: 3 },
+      { label: 'm³', total: 12.5, count: 2 },
+    ]);
+  });
+
+  it('lässt Bedarf, Wahl und Zulage sowie Positionen ohne Menge oder Einheit weg', () => {
+    const sums = sumsByUnit([
+      pos(10, 'm3'),
+      pos(5, 'm3', 'BEDARF'),
+      pos(5, 'm3', 'ALTERNATIV'),
+      pos(5, 'm3', 'ZULAGENPOSITION'),
+      pos(null, 'm3'),
+      pos(7, null),
+    ]);
+    expect(sums).toEqual([{ label: 'm³', total: 10, count: 1 }]);
   });
 });

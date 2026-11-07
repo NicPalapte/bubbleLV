@@ -176,19 +176,11 @@ describe('Legende im Graph-Kopf', () => {
     return result;
   }
 
-  it('nennt, wie viele Positionen einen Ring tragen', () => {
+  it('erklärt die Ringe, ohne die Zahl noch einmal zu nennen', () => {
+    // Issue #191: die Zahl steht schon oben links bei den Kennzahlen.
     renderHeader();
-    expect(screen.getByText(`${hints.size} mit Hinweis`)).toBeInTheDocument();
-  });
-
-  it('zählt eine abgeschaltete Regel nicht mehr mit', () => {
-    renderHeader();
-    fireEvent.click(screen.getByRole('button', { name: 'Regel stumm' }));
-    // V2 ist die einzige Regel an den Stundenlohn-Positionen — ohne sie fallen
-    // sie ganz aus der Markierung heraus.
-    const ohneV2 = hintsByPosition(lv.check, new Set([V2])).size;
-    expect(ohneV2).toBeLessThan(hints.size);
-    expect(screen.getByText(`${ohneV2} mit Hinweis`)).toBeInTheDocument();
+    expect(screen.getByText('beachten')).toBeInTheDocument();
+    expect(screen.queryByText(/mit Hinweis/)).toBeNull();
   });
 });
 

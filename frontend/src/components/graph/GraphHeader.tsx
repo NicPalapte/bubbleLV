@@ -197,9 +197,6 @@ function LegendBody() {
               <Ring strong={false} />
               Hinweis
             </span>
-            <span title="Positionen, an denen eine Prüfregel etwas gefunden hat">
-              {formatCount(hintCount)} mit Hinweis
-            </span>
           </>
         )}
       </div>
