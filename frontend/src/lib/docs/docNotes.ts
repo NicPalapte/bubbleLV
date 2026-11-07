@@ -263,6 +263,25 @@ export function marksOfDoc(notes: DocNotes, doc: string): DocMark[] {
   return notes.marks.filter((mark) => mark.doc === doc);
 }
 
+/**
+ * Nächste (`step` 1) oder vorige (-1) Stelle in `marks` (Lesereihenfolge). Ohne letzte Wahl
+ * (`from` `null`) zählt die Seite `page`: vor zur ersten Stelle ab dieser Seite, zurück zur
+ * letzten davor. Am Ende geht es von vorn weiter. `null`, wenn es keine Stelle gibt.
+ */
+export function nextMarkIndex(
+  marks: readonly DocSpot[],
+  page: number,
+  from: number | null,
+  step: 1 | -1,
+): number | null {
+  const count = marks.length;
+  if (count === 0) return null;
+  if (from !== null) return (from + step + count) % count;
+  const ahead = marks.findIndex((mark) => mark.page >= page);
+  const start = ahead === -1 ? count : ahead;
+  return step === 1 ? start % count : (start - 1 + count) % count;
+}
+
 function spotOf(spot: DocSpot): DocSpot {
   return { doc: spot.doc, page: spot.page, start: spot.start, text: spot.text };
 }

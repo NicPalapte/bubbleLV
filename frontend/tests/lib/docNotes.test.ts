@@ -18,6 +18,7 @@ import {
   marksOfPosition,
   marksOnPage,
   mergeDocNotes,
+  nextMarkIndex,
   paintDocMark,
   registerDoc,
   rekeyDocNotes,
@@ -263,5 +264,27 @@ describe('Dokumentart von Hand (Entscheidung 0096)', () => {
     const merged = mergeDocNotes(own, setDocKind(file, 'e1f', 'gutachten'));
     expect(merged.docs.get('d0c')?.kind).toBe('plan');
     expect(merged.docs.get('e1f')?.kind).toBe('gutachten');
+  });
+});
+
+describe('nextMarkIndex · vor/zurück durch die eigenen Stellen (Issue #191)', () => {
+  const stelle = (page: number, start: number) => ({ doc: 'd', page, start, text: 'x' });
+  const marks = [stelle(1, 0), stelle(3, 5), stelle(3, 40), stelle(7, 2)];
+
+  it('beginnt ohne letzte Wahl bei der aktuellen Seite', () => {
+    expect(nextMarkIndex(marks, 3, null, 1)).toBe(1);
+    expect(nextMarkIndex(marks, 3, null, -1)).toBe(0);
+    expect(nextMarkIndex(marks, 5, null, 1)).toBe(3);
+  });
+
+  it('geht am Ende von vorn weiter, in beide Richtungen', () => {
+    expect(nextMarkIndex(marks, 9, null, 1)).toBe(0);
+    expect(nextMarkIndex(marks, 9, null, -1)).toBe(3);
+    expect(nextMarkIndex(marks, 1, 3, 1)).toBe(0);
+    expect(nextMarkIndex(marks, 1, 0, -1)).toBe(3);
+  });
+
+  it('liefert ohne Stellen nichts', () => {
+    expect(nextMarkIndex([], 1, null, 1)).toBeNull();
   });
 });

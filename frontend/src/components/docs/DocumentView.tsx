@@ -46,6 +46,7 @@ import { useHostWindow } from '../common/hostWindow';
 import { useJumpToPosition } from '../common/useJumpToPosition';
 import {
   marksOfDoc,
+  nextMarkIndex,
   pendingSuggestions,
   type DocMark,
   type DocSpot,
@@ -173,6 +174,7 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     donePlanWanted,
     error,
     jump,
+    jumpTo,
     docSearch,
     setDocSearch,
     searchHits,
@@ -1050,6 +1052,50 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
       </button>
     </>
   );
+  // Vor/zurück durch die eigenen Stellen dieses PDFs (Issue #191): angestrichen oder verknüpft,
+  // in Lesereihenfolge. Ohne letzte Wahl geht es von der aktuellen Seite aus.
+  const [markIndex, setMarkIndex] = useState<number | null>(null);
+  const [seenMarks, setSeenMarks] = useState(marks);
+  if (seenMarks !== marks) {
+    setSeenMarks(marks);
+    setMarkIndex(null);
+  }
+  const stepMark = (step: 1 | -1): void => {
+    const next = nextMarkIndex(marks, current, markIndex, step);
+    if (next === null) return;
+    setMarkIndex(next);
+    jumpTo(marks[next]);
+  };
+  const markEls =
+    marks.length > 0 ? (
+      <span
+        role="group"
+        aria-label="Eigene Stellen"
+        className="flex shrink-0 items-center gap-[2px]"
+      >
+        <button
+          type="button"
+          aria-label="Vorige Stelle"
+          title="Vorige angestrichene oder verknüpfte Stelle"
+          onClick={() => stepMark(-1)}
+          className={TOOL}
+        >
+          ‹
+        </button>
+        <span className="font-mono text-[11.5px] text-mute">
+          {markIndex === null ? '–' : markIndex + 1} / {marks.length}
+        </span>
+        <button
+          type="button"
+          aria-label="Nächste Stelle"
+          title="Nächste angestrichene oder verknüpfte Stelle"
+          onClick={() => stepMark(1)}
+          className={TOOL}
+        >
+          ›
+        </button>
+      </span>
+    ) : null;
   const zoomEls = (
     <>
       <button
@@ -1134,6 +1180,7 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
         )}
         <span className="flex-1" />
         {!narrow && suggestEl}
+        {markEls}
         {!tight && searchEl}
         {!narrow && stepEls}
         {!narrow && zoomEls}
