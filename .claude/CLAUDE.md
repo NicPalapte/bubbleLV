@@ -55,7 +55,8 @@ _Linting/Formatierung laufen automatisch via Claude Code Hook nach jedem Edit/Wr
   Begriffe (`readLearnedTerms`, beim Start einmal zu eigenen Regeln, 0088), die eigenen Namen
   der Markierfarben
   (`lib/paintNames.ts`, `state/paintNames.tsx`) und der Merker der Kurzumfrage
-  (`state/survey.tsx`, Schlüssel `umfrage`, Entscheidung 0071) und die letzte Anordnung
+  (`state/survey.tsx`, Schlüssel `umfrage`, Entscheidung 0071) und der Merker „Tour gesehen“
+  (`components/tour/Tour.tsx`, Schlüssel `tour`, Entscheidung 0098) und die letzte Anordnung
   im Splitscreen (`state/ViewerProvider.tsx`, Schlüssel `anordnung`, Entscheidung 0073)
   und die eigenen Regeln `conocto-rule-v1` (`state/admin.tsx`, Schlüssel `regeln`, 0081)
   und die abgeschalteten Grundstock-Regeln (Schlüssel `grundstock-aus`, 0089)
