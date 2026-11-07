@@ -150,9 +150,10 @@ export function Tour() {
       active = false;
     };
   }, []);
+  const savedSeen = useRef(false);
   useEffect(() => {
-    if (!seen || stored === true) return;
-    setStored(true);
+    if (!seen || stored === true || savedSeen.current) return;
+    savedSeen.current = true;
     void saveTourSeen();
   }, [seen, stored]);
 

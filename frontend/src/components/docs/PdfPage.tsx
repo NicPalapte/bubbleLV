@@ -125,11 +125,9 @@ function PdfPageView({
     const host = canvas.ownerDocument;
     const again = (): void => setRepaint((value) => value + 1);
     const onVisible = (): void => {
-      if (host.visibilityState !== 'visible' || !drawn.current) return;
-      const context = canvas.getContext('2d');
-      // Ohne `isContextLost` (ältere Browser) lieber einmal zu oft zeichnen.
-      if (context === null || typeof context.isContextLost !== 'function') again();
-      else if (context.isContextLost()) again();
+      // Immer neu zeichnen: nicht jeder Browser meldet den verlorenen Speicher über
+      // `isContextLost`, die Fläche bleibt dann trotzdem schwarz.
+      if (host.visibilityState === 'visible' && drawn.current) again();
     };
     canvas.addEventListener('contextrestored', again);
     host.addEventListener('visibilitychange', onVisible);

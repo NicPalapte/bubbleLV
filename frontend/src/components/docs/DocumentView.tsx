@@ -1057,13 +1057,22 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
   );
   // Vor/zurück durch die eigenen Stellen dieses PDFs (Issue #191): angestrichen oder verknüpft,
   // in Lesereihenfolge. Ohne letzte Wahl geht es von der aktuellen Seite aus.
-  const [markIndex, setMarkIndex] = useState<number | null>(null);
+  // `from`: Seite beim Sprung — bis der Sprung angekommen ist, gilt die Wahl weiter.
+  const [markPick, setMarkPick] = useState<{ index: number; from: number } | null>(null);
   const [seenMarks, setSeenMarks] = useState(marks);
   if (seenMarks !== marks) {
     setSeenMarks(marks);
-    setMarkIndex(null);
+    setMarkPick(null);
   }
   const spots = marks.filter((mark) => !isWholeDoc(mark));
+  // Nach eigenem Blättern passt die letzte Wahl nicht mehr zur Seite — dann von der Seite aus.
+  const pickedSpot = markPick === null ? undefined : spots[markPick.index];
+  const markIndex =
+    markPick !== null &&
+    pickedSpot !== undefined &&
+    (pickedSpot.page === current || markPick.from === current)
+      ? markPick.index
+      : null;
   // Das ganze Dokument mit Positionen verknüpfen (Issue #191, Entscheidung 0099).
   const wholeLinks = marks.find(isWholeDoc)?.links ?? NO_IDS;
   const wholeEl = (
@@ -1082,7 +1091,7 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
   const stepMark = (step: 1 | -1): void => {
     const next = nextMarkIndex(spots, current, markIndex, step);
     if (next === null) return;
-    setMarkIndex(next);
+    setMarkPick({ index: next, from: current });
     jumpTo(spots[next]);
   };
   const markEls =
