@@ -74,7 +74,23 @@ function order(a: DocMark, b: DocMark): number {
   return a.page - b.page || a.start - b.start;
 }
 
+/**
+ * Seite 0 steht für das ganze Dokument (Issue #191, Entscheidung 0099): eine Verknüpfung ohne
+ * Textstelle, etwa die AIA mit einer BIM-Position. Anstreichen geht dort nicht.
+ */
+export const WHOLE_DOC_PAGE = 0;
+
+/** Stelle „ganzes Dokument“ von `doc`. */
+export function wholeDocSpot(doc: string): DocSpot {
+  return { doc, page: WHOLE_DOC_PAGE, start: 0, text: '' };
+}
+
+export function isWholeDoc(spot: DocSpot): boolean {
+  return spot.page === WHOLE_DOC_PAGE && spot.start === 0 && spot.text === '';
+}
+
 function validSpot(spot: DocSpot): boolean {
+  if (isWholeDoc(spot)) return spot.doc !== '';
   return (
     spot.doc !== '' &&
     Number.isInteger(spot.page) &&
@@ -126,7 +142,7 @@ export function setDocKind(notes: DocNotes, id: string, kind: DocKind | null): D
 
 /** Streicht eine Stelle an; ist sie schon verknüpft, behält sie ihre Verknüpfungen. */
 export function paintDocMark(notes: DocNotes, spot: DocSpot, paint: Paint, at: number): DocNotes {
-  if (!validSpot(spot)) return notes;
+  if (!validSpot(spot) || isWholeDoc(spot)) return notes;
   const known = markAt(notes, spot);
   if (known?.paint === paint) return notes;
   return put(
@@ -387,7 +403,7 @@ export function toDocMark(value: unknown): DocMark | null {
   const links = Array.isArray(raw.links)
     ? [...new Set(raw.links.filter((id): id is string => typeof id === 'string' && id !== ''))]
     : [];
-  const ownPaint = isPaint(paint) ? paint : null;
+  const ownPaint = isPaint(paint) && !isWholeDoc(spot) ? paint : null;
   if (ownPaint === null && links.length === 0) return null;
   const at = typeof raw.at === 'number' && Number.isFinite(raw.at) ? raw.at : 0;
   const sources: Record<string, LinkSource> = {};

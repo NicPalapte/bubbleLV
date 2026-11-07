@@ -133,3 +133,27 @@ describe('Mehrere PDFs', () => {
     expect(await screen.findByRole('list', { name: 'Offene Dokumente' })).toBeInTheDocument();
   });
 });
+
+describe('Ganzes Dokument verknüpfen (Issue #191)', () => {
+  beforeEach(() => {
+    openPdf.mockReset();
+    openPdf.mockImplementation((file: File) => Promise.resolve(scheinPdf(file)));
+  });
+
+  it('verknüpft das PDF ohne Textstelle mit einer Position', async () => {
+    await ladeApp();
+    oeffne(['baubeschreibung.pdf']);
+    fireEvent.click(await screen.findByRole('button', { name: 'Dokument verknüpfen' }));
+    const dialog = screen.getByRole('dialog', { name: 'Mit Position verknüpfen' });
+    fireEvent.change(within(dialog).getByPlaceholderText('OZ oder Text suchen'), {
+      target: { value: '0010' },
+    });
+    fireEvent.click(within(dialog).getAllByRole('checkbox')[0]);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Verknüpfen' }));
+    expect(
+      await screen.findByRole('button', { name: 'Dokument verknüpft · 1' }),
+    ).toBeInTheDocument();
+    // Blättern durch die Stellen bleibt aus: das ganze Dokument ist keine Stelle.
+    expect(screen.queryByRole('group', { name: 'Eigene Stellen' })).toBeNull();
+  });
+});

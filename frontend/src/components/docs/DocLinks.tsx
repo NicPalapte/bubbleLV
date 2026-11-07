@@ -5,7 +5,7 @@
 
 import { useOptionalDocuments } from './DocumentsProvider';
 import { Section } from '../common/CardParts';
-import { marksOfPosition } from '../../lib/docs/docNotes';
+import { isWholeDoc, marksOfPosition } from '../../lib/docs/docNotes';
 import { useViewer, useViewerDispatch } from '../../state/viewer';
 
 export const DOC_LINKS_SECTION = 'Im Dokument';
@@ -44,15 +44,17 @@ export function DocLinks({ positionId }: { positionId: string }) {
                 className="min-w-0 flex-1 cursor-pointer border-none bg-transparent px-[12px] py-[7px] text-left hover:bg-sunken disabled:cursor-default disabled:hover:bg-transparent"
               >
                 <span className="block truncate font-mono text-[11px] text-mute">
-                  {name} · S. {mark.page}
+                  {name} · {isWholeDoc(mark) ? 'ganzes Dokument' : `S. ${mark.page}`}
                   {mark.sources?.[positionId] !== undefined && (
                     <span> · über {mark.sources[positionId] === 'oz' ? 'OZ' : 'Menge'}</span>
                   )}
                   {!open && <span className="text-amber"> · nicht geöffnet</span>}
                 </span>
-                <span className="block truncate font-sans text-[13px] text-ink" title={mark.text}>
-                  „{mark.text}“
-                </span>
+                {!isWholeDoc(mark) && (
+                  <span className="block truncate font-sans text-[13px] text-ink" title={mark.text}>
+                    „{mark.text}“
+                  </span>
+                )}
               </button>
               <button
                 type="button"

@@ -17,6 +17,7 @@ import {
   locateOnPage,
   marksOfPosition,
   marksOnPage,
+  isWholeDoc,
   mergeDocNotes,
   nextMarkIndex,
   paintDocMark,
@@ -24,6 +25,7 @@ import {
   rekeyDocNotes,
   setDocKind,
   toStoredDocNotes,
+  wholeDocSpot,
   unlinkDocMark,
   unpaintDocMark,
   type DocSpot,
@@ -286,5 +288,28 @@ describe('nextMarkIndex · vor/zurück durch die eigenen Stellen (Issue #191)', 
 
   it('liefert ohne Stellen nichts', () => {
     expect(nextMarkIndex([], 1, null, 1)).toBeNull();
+  });
+});
+
+describe('Ganzes Dokument verknüpfen (Issue #191, Entscheidung 0099)', () => {
+  const ganz = wholeDocSpot('doc-aia');
+
+  it('verknüpft ohne Textstelle und übersteht Speichern und Laden', () => {
+    const notes = linkDocMark(EMPTY_DOC_NOTES, ganz, ['p1', 'p2'], 5);
+    expect(notes.marks).toHaveLength(1);
+    expect(isWholeDoc(notes.marks[0])).toBe(true);
+    expect(notes.marks[0].links).toEqual(['p1', 'p2']);
+    const zurueck = fromStoredDocNotes(toStoredDocNotes(notes));
+    expect(zurueck.marks[0]).toMatchObject({ page: 0, text: '', links: ['p1', 'p2'] });
+  });
+
+  it('lässt sich nicht anstreichen und zählt nicht beim Blättern durch die Stellen', () => {
+    expect(paintDocMark(EMPTY_DOC_NOTES, ganz, 'blau', 1)).toBe(EMPTY_DOC_NOTES);
+    expect(nextMarkIndex([], 1, null, 1)).toBeNull();
+  });
+
+  it('nimmt Seite 0 nur ohne Text als ganzes Dokument', () => {
+    const halb = { doc: 'doc-aia', page: 0, start: 0, text: 'Wort' };
+    expect(linkDocMark(EMPTY_DOC_NOTES, halb, ['p1'], 1)).toBe(EMPTY_DOC_NOTES);
   });
 });

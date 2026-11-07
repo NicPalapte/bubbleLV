@@ -10,7 +10,7 @@
 import { useOptionalDocuments } from '../docs/DocumentsProvider';
 import { graphOverlayProps } from '../../lib/graph/overlay';
 import { marksForPosition, type DocCard } from '../../lib/docs/docGraph';
-import type { DocMark } from '../../lib/docs/docNotes';
+import { isWholeDoc, type DocMark } from '../../lib/docs/docNotes';
 import { formatCount } from '../../lib/format';
 import type { PositionIndex } from '../../lib/index/positionIndex';
 
@@ -57,12 +57,14 @@ function Row({
       className={`${ROW} ${strong ? 'bg-cyanS' : 'bg-transparent hover:bg-sunken'}`}
     >
       <span className="truncate font-mono text-[11px] font-semibold text-cyan">
-        S. {mark.page}
+        {isWholeDoc(mark) ? 'Ganzes Dokument' : `S. ${mark.page}`}
         {oz.length > 0 && ` → ${oz.slice(0, 3).join(', ')}${oz.length > 3 ? ' …' : ''}`}
       </span>
-      <span className="truncate text-[12px] text-dim" title={mark.text}>
-        „{mark.text}“
-      </span>
+      {!isWholeDoc(mark) && (
+        <span className="truncate text-[12px] text-dim" title={mark.text}>
+          „{mark.text}“
+        </span>
+      )}
     </button>
   );
 }

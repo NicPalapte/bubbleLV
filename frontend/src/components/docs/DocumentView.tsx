@@ -45,8 +45,10 @@ import {
 import { useHostWindow } from '../common/hostWindow';
 import { useJumpToPosition } from '../common/useJumpToPosition';
 import {
+  isWholeDoc,
   marksOfDoc,
   nextMarkIndex,
+  wholeDocSpot,
   pendingSuggestions,
   type DocMark,
   type DocSpot,
@@ -875,7 +877,8 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
   const flash = jump !== null && jump.spot.doc === doc.id && jump.nonce !== faded ? jump : null;
   useEffect(() => {
     if (jump === null || jump.spot.doc !== doc.id) return;
-    scrollToPage(jump.spot.page);
+    // Ganzes Dokument (Seite 0): an den Anfang.
+    scrollToPage(Math.max(1, jump.spot.page));
     const timer = window.setTimeout(() => setFaded(jump.nonce), FLASH_MS);
     return () => window.clearTimeout(timer);
   }, [jump, doc.id, scrollToPage]);
@@ -1060,14 +1063,30 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     setSeenMarks(marks);
     setMarkIndex(null);
   }
+  const spots = marks.filter((mark) => !isWholeDoc(mark));
+  // Das ganze Dokument mit Positionen verknüpfen (Issue #191, Entscheidung 0099).
+  const wholeLinks = marks.find(isWholeDoc)?.links ?? NO_IDS;
+  const wholeEl = (
+    <button
+      type="button"
+      title="Das ganze Dokument mit Positionen verknüpfen, ohne Textstelle"
+      onClick={(event) => {
+        const box = event.currentTarget.getBoundingClientRect();
+        setLinking({ spot: wholeDocSpot(doc.id), left: box.left, top: box.bottom + 4 });
+      }}
+      className={`${TOOL} ${wholeLinks.length > 0 ? 'border-cyan bg-cyanS text-cyan' : ''}`}
+    >
+      {wholeLinks.length > 0 ? `Dokument verknüpft · ${wholeLinks.length}` : 'Dokument verknüpfen'}
+    </button>
+  );
   const stepMark = (step: 1 | -1): void => {
-    const next = nextMarkIndex(marks, current, markIndex, step);
+    const next = nextMarkIndex(spots, current, markIndex, step);
     if (next === null) return;
     setMarkIndex(next);
-    jumpTo(marks[next]);
+    jumpTo(spots[next]);
   };
   const markEls =
-    marks.length > 0 ? (
+    spots.length > 0 ? (
       <span
         role="group"
         aria-label="Eigene Stellen"
@@ -1083,7 +1102,7 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
           ‹
         </button>
         <span className="font-mono text-[11.5px] text-mute">
-          {markIndex === null ? '–' : markIndex + 1} / {marks.length}
+          {markIndex === null ? '–' : markIndex + 1} / {spots.length}
         </span>
         <button
           type="button"
@@ -1179,6 +1198,7 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
           </button>
         )}
         <span className="flex-1" />
+        {!narrow && wholeEl}
         {!narrow && suggestEl}
         {markEls}
         {!tight && searchEl}
@@ -1186,6 +1206,7 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
         {!narrow && zoomEls}
         {narrow && (
           <MoreMenu>
+            {wholeEl}
             {tight && searchEl}
             {stepEls}
             {zoomEls}
