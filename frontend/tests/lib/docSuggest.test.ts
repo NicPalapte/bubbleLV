@@ -68,6 +68,17 @@ describe('OZ im Seitentext', () => {
     expect(finde('Ohne Kontext 2.30 nicht.')).toEqual([]);
   });
 
+  it('liest zwei Zahlen mit Bindestrich oder Schrägstrich als Bereich, nicht als OZ', () => {
+    // Issue #191: „LPH 3-4“ wurde als Pos. 3.4 vorgeschlagen.
+    const kurz = suggestIndexOf([
+      { id: 'q1', oz: '3.4', quantity: null, unit: null, shortText: 'Planung' },
+    ]);
+    const im = (text: string) => suggestionsInPage(text, kurz, 1).map((t) => t.id);
+    expect(im('Leistungen der LPH 3-4 und 3/4 Anteil')).toEqual([]);
+    expect(im('siehe Pos. 3-4')).toEqual(['q1']);
+    expect(im('siehe 3.4')).toEqual(['q1']);
+  });
+
   it('Lage und Text beziehen sich auf den Seitentext', () => {
     const text = 'Abschnitt A: 01.02.0040 Estrich';
     const [treffer] = suggestionsInPage(text, INDEX, 4);
