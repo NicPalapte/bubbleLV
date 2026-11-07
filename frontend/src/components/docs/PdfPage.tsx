@@ -115,9 +115,32 @@ function PdfPageView({
     };
   }, [near, proxy, doc, page, onSize]);
 
+  // Liegt ein Fenster lange verdeckt, gibt der Browser den Speicher der Zeichenflächen frei;
+  // zurück kommen sie schwarz oder leer (Issue #191, PDF im eigenen Fenster). Dann neu zeichnen.
+  const drawn = useRef(false);
+  const [repaint, setRepaint] = useState(0);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (canvas === null) return;
+    const host = canvas.ownerDocument;
+    const again = (): void => setRepaint((value) => value + 1);
+    const onVisible = (): void => {
+      if (host.visibilityState !== 'visible' || !drawn.current) return;
+      const context = canvas.getContext('2d');
+      // Ohne `isContextLost` (ältere Browser) lieber einmal zu oft zeichnen.
+      if (context === null || typeof context.isContextLost !== 'function') again();
+      else if (context.isContextLost()) again();
+    };
+    canvas.addEventListener('contextrestored', again);
+    host.addEventListener('visibilitychange', onVisible);
+    return () => {
+      canvas.removeEventListener('contextrestored', again);
+      host.removeEventListener('visibilitychange', onVisible);
+    };
+  }, []);
+
   // Bild und Textebene zeichnen; neu bei anderem Maßstab. Beim Zoomen erst, wenn der
   // Maßstab kurz steht — bis dahin streckt der Browser das alte Bild.
-  const drawn = useRef(false);
   const [coarse, setCoarse] = useState(false);
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -171,7 +194,7 @@ function PdfPageView({
       drawing?.cancel();
       textLayer?.cancel();
     };
-  }, [near, proxy, scale]);
+  }, [near, proxy, scale, repaint]);
 
   // Grobes Gesamtbild (großer Plan, hoher Zoom): sichtbaren Ausschnitt scharf darüber.
   useEffect(() => {
@@ -221,7 +244,7 @@ function PdfPageView({
       drawing?.cancel();
       root.removeEventListener('scroll', later);
     };
-  }, [near, coarse, proxy, scale, root]);
+  }, [near, coarse, proxy, scale, root, repaint]);
 
   // Weit weg: Speicher freigeben, beim nächsten Mal neu zeichnen.
   useEffect(() => {
