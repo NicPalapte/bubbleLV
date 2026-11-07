@@ -48,7 +48,7 @@ export function DocPicker({ doc }: { doc: OpenedPdf }) {
   const place = docs.findIndex((entry) => entry.id === doc.id) + 1;
 
   return (
-    <div ref={anchorRef} className="flex min-w-0 items-center">
+    <div ref={anchorRef} className="flex min-w-[72px] items-center">
       <button
         type="button"
         aria-haspopup="dialog"
@@ -56,7 +56,7 @@ export function DocPicker({ doc }: { doc: OpenedPdf }) {
         aria-label={`Dokument wählen: ${doc.name}`}
         title={doc.name}
         onClick={() => (open ? hide() : setOpen(true))}
-        className={`${DOC_TOOL} min-w-0 max-w-[280px] gap-[6px] aria-expanded:border-accent aria-expanded:bg-accent-soft`}
+        className={`${DOC_TOOL} min-w-[72px] max-w-[280px] !shrink gap-[6px] aria-expanded:border-accent aria-expanded:bg-accent-soft`}
       >
         <span className="truncate font-semibold">{doc.name}</span>
         {docs.length > 1 && (

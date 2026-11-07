@@ -17,8 +17,10 @@ Zahl steigt bei neuen Funktionen, die **letzte** bei Korrekturen. Die **erste** 
   zeigt das PDF wieder alle Seiten.
 - **Zurück zur Übersicht:** ist jetzt ein Pfeil ← ganz links statt ✕ rechts. So verwechselt man
   ihn nicht mehr mit „Bereich schließen“.
-- **Schmaler Bereich:** „Alle / Text / Pläne“ ist dort eine Auswahl statt drei Knöpfe; die
-  Knöpfe schieben sich nicht mehr übereinander.
+- **Seitenangabe:** „3 / 14“ schwebt jetzt unten mittig über dem PDF statt in der Kopfleiste.
+- **Schmaler Bereich:** Dateiname, Dokumentart und Knöpfe schieben sich nicht mehr übereinander.
+  „Alle / Text / Pläne“ ist dort eine Auswahl, Suche, Zoom und Blättern liegen unter „⋯“; bei
+  PDFs mit Plänen schon etwas früher. Ein langer Dateiname wird gekürzt.
 
 ## 0.53.0 — 06.11.2026 · PDF-Verknüpfungen im Graphen
 

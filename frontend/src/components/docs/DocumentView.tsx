@@ -84,9 +84,13 @@ const ZOOM_MIN = 0.5;
 // Pläne brauchen viel Zoom für Maßketten; das Bild bleibt scharf (`pageCanvas.ts`).
 const ZOOM_MAX = 16;
 const ZOOM_STEP = 1.2;
-/** Ab dieser Breite der Kopfleiste (px) wandern Knöpfe ins Menü „⋯“, darunter auch die Suche. */
+/** Schmaler (px): Knöpfe und Suche wandern ins Menü „⋯“, sonst überlappt die Leiste. */
 const NARROW_BAR = 640;
+/** Schmaler als das (px): auch das Etikett „Dokumentart“ fällt weg. */
 const TIGHT_BAR = 440;
+/** `NARROW_BAR`/`TIGHT_BAR` bei PDFs mit Plänen: Seitenfilter und „Messen“ brauchen Platz. */
+const NARROW_BAR_PLANS = 860;
+const TIGHT_BAR_PLANS = 520;
 /** Rand links und rechts neben der Seite in px. */
 const GUTTER = 16;
 /** So lange leuchtet die Stelle nach einem Sprung. */
@@ -1040,8 +1044,8 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
   );
 
   // Schmaler Bereich: seltene Knöpfe wandern ins Menü „⋯“, ganz schmal auch die Suche.
-  const narrow = width > 0 && width < NARROW_BAR;
-  const tight = width > 0 && width < TIGHT_BAR;
+  const narrow = width > 0 && width < (planCount > 0 ? NARROW_BAR_PLANS : NARROW_BAR);
+  const tight = width > 0 && width < (planCount > 0 ? TIGHT_BAR_PLANS : TIGHT_BAR);
   const suggestEl =
     counts.oz + counts.menge > 0 ? (
       <SuggestToggles counts={counts} suggest={suggest} setSuggest={setSuggest} />
@@ -1125,14 +1129,9 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
         </button>
         <DocPicker doc={doc} />
         {!tight && (
-          <div className="shrink-0">
+          <div className="flex shrink-0">
             <DocKindChip id={doc.id} name={doc.name} />
           </div>
-        )}
-        {!tight && (
-          <span className="shrink-0 font-mono text-[11.5px] text-mute">
-            {current} / {pages}
-          </span>
         )}
         {planCount > 0 && narrow && (
           // Schmal: eine Auswahl statt drei Knöpfen, sonst schieben sie sich übereinander.
@@ -1184,12 +1183,12 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
         )}
         <span className="flex-1" />
         {!narrow && suggestEl}
-        {!tight && searchEl}
+        {!narrow && searchEl}
         {!narrow && stepEls}
         {!narrow && zoomEls}
         {narrow && (
           <MoreMenu>
-            {tight && searchEl}
+            {searchEl}
             {stepEls}
             {zoomEls}
             {suggestEl}
@@ -1288,6 +1287,10 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
               ))}
           </div>
         </div>
+        {/* Seitenangabe schwebt unten mittig, die Kopfleiste bleibt frei (Nico, 07.11.2026). */}
+        <span className="cn-pill pointer-events-none absolute bottom-[10px] left-1/2 z-[5] -translate-x-1/2 px-[10px] py-[3px] font-mono text-[11.5px] text-dim">
+          {current} / {pages}
+        </span>
         {tool !== null && (
           <PlanToolbar
             tool={tool}
