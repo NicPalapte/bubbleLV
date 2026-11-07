@@ -84,9 +84,13 @@ const ZOOM_MIN = 0.5;
 // Pläne brauchen viel Zoom für Maßketten; das Bild bleibt scharf (`pageCanvas.ts`).
 const ZOOM_MAX = 16;
 const ZOOM_STEP = 1.2;
-/** Ab dieser Breite der Kopfleiste (px) wandern Knöpfe ins Menü „⋯“, darunter auch die Suche. */
+/** Schmaler (px): Knöpfe und Suche wandern ins Menü „⋯“, sonst überlappt die Leiste. */
 const NARROW_BAR = 640;
+/** Schmaler als das (px): auch das Etikett „Dokumentart“ fällt weg. */
 const TIGHT_BAR = 440;
+/** `NARROW_BAR`/`TIGHT_BAR` bei PDFs mit Plänen: Seitenfilter und „Messen“ brauchen Platz. */
+const NARROW_BAR_PLANS = 860;
+const TIGHT_BAR_PLANS = 520;
 /** Rand links und rechts neben der Seite in px. */
 const GUTTER = 16;
 /** So lange leuchtet die Stelle nach einem Sprung. */
@@ -173,6 +177,7 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     donePlanWanted,
     error,
     jump,
+    doneJump,
     docSearch,
     setDocSearch,
     searchHits,
@@ -201,8 +206,8 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     left: number;
     top: number;
   } | null>(null);
-  /** Sprung, dessen Leuchten schon vorbei ist. */
-  const [faded, setFaded] = useState(0);
+  /** Sprung, zu dem schon gescrollt ist. */
+  const [landed, setLanded] = useState(0);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const attachScroller = useCallback((el: HTMLDivElement | null): void => {
@@ -253,6 +258,15 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     donePlanWanted();
     if (!hasPlans) setOverview(true);
   }, [ansatzFor, pagesKnown, hasPlans, planWanted, donePlanWanted, setOverview]);
+  // Liegt das Sprungziel auf einer ausgeblendeten Seite, wieder alle Seiten zeigen.
+  if (
+    jump !== null &&
+    jump.spot.doc === doc.id &&
+    pageFilter !== 'alle' &&
+    kindOf(jump.spot.page) !== pageFilter
+  ) {
+    setPageFilter('alle');
+  }
   const shownPages = useMemo(() => {
     const all = Array.from({ length: pages }, (_, i) => i + 1);
     return pageFilter === 'alle' ? all : all.filter((page) => kindOf(page) === pageFilter);
@@ -869,14 +883,25 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     if (scrollerRef.current !== null) scrollerRef.current.scrollTop += dy;
   }, []);
 
-  // Sprung aus der Positionskarte: hinscrollen, die Stelle leuchtet kurz.
-  const flash = jump !== null && jump.spot.doc === doc.id && jump.nonce !== faded ? jump : null;
+  // Sprung von einer Verknüpfung (Positionskarte, Graph): hinscrollen, sobald die Seite
+  // steht — frisch geöffnet ist sie das erst nach dem Messen der Seitengröße. Die Stelle
+  // leuchtet kurz, dann ist der Sprung erledigt und wiederholt sich beim nächsten Öffnen nicht.
+  const target = jump !== null && jump.spot.doc === doc.id ? jump : null;
   useEffect(() => {
-    if (jump === null || jump.spot.doc !== doc.id) return;
-    scrollToPage(jump.spot.page);
-    const timer = window.setTimeout(() => setFaded(jump.nonce), FLASH_MS);
+    if (target === null || target.nonce === landed) return;
+    // Andere Fassung des PDFs mit weniger Seiten: Ziel gibt es nicht, Sprung verwerfen.
+    if (target.spot.page > pages) return doneJump(target.nonce);
+    if (first === null) return;
+    if (scrollerRef.current?.querySelector(`[data-page="${target.spot.page}"]`) == null) return;
+    scrollToPage(target.spot.page);
+    setLanded(target.nonce);
+  }, [target, landed, first, shownPages, pages, scrollToPage, doneJump]);
+  const flash = target !== null && target.nonce === landed ? target : null;
+  useEffect(() => {
+    if (flash === null) return;
+    const timer = window.setTimeout(() => doneJump(flash.nonce), FLASH_MS);
     return () => window.clearTimeout(timer);
-  }, [jump, doc.id, scrollToPage]);
+  }, [flash, doneJump]);
 
   // Aktuelle Seite aus der Scrolllage.
   useEffect(() => {
@@ -1019,8 +1044,8 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
   );
 
   // Schmaler Bereich: seltene Knöpfe wandern ins Menü „⋯“, ganz schmal auch die Suche.
-  const narrow = width > 0 && width < NARROW_BAR;
-  const tight = width > 0 && width < TIGHT_BAR;
+  const narrow = width > 0 && width < (planCount > 0 ? NARROW_BAR_PLANS : NARROW_BAR);
+  const tight = width > 0 && width < (planCount > 0 ? TIGHT_BAR_PLANS : TIGHT_BAR);
   const suggestEl =
     counts.oz + counts.menge > 0 ? (
       <SuggestToggles counts={counts} suggest={suggest} setSuggest={setSuggest} />
@@ -1083,29 +1108,53 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
     </>
   );
 
+  const pageChoices = [
+    ['alle', `Alle ${pages}`],
+    ['text', `Text ${pages - planCount}`],
+    ['plan', `Pläne ${planCount}`],
+  ] as const;
+
   return (
     <div ref={rootRef} className="flex min-h-0 flex-1 flex-col">
       <div className="flex shrink-0 items-center gap-[6px] border-b border-line px-[10px] py-[6px]">
+        {/* Links und als Pfeil, damit er nicht wie „Bereich schließen“ rechts daneben wirkt. */}
+        <button
+          type="button"
+          aria-label="Zur Übersicht"
+          title="Zur Übersicht aller PDFs — das PDF bleibt offen"
+          onClick={() => setOverview(true)}
+          className={TOOL}
+        >
+          ←
+        </button>
         <DocPicker doc={doc} />
         {!tight && (
-          <div className="shrink-0">
+          <div className="flex shrink-0">
             <DocKindChip id={doc.id} name={doc.name} />
           </div>
         )}
-        {!tight && (
-          <span className="shrink-0 font-mono text-[11.5px] text-mute">
-            {current} / {pages}
-          </span>
+        {planCount > 0 && narrow && (
+          // Schmal: eine Auswahl statt drei Knöpfen, sonst schieben sie sich übereinander.
+          <select
+            aria-label="Seiten"
+            value={pageFilter}
+            onChange={(event) => setPageFilter(event.target.value as 'alle' | PageKind)}
+            className={`${TOOL} ${pageFilter === 'alle' ? '' : 'border-accent bg-accent-soft text-accent-ink'}`}
+          >
+            {pageChoices.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
         )}
-        {planCount > 0 && (
-          <span role="radiogroup" aria-label="Seiten" className="flex items-center gap-[2px]">
-            {(
-              [
-                ['alle', `Alle ${pages}`],
-                ['text', `Text ${pages - planCount}`],
-                ['plan', `Pläne ${planCount}`],
-              ] as const
-            ).map(([value, label]) => (
+        {planCount > 0 && !narrow && (
+          <span
+            role="radiogroup"
+            aria-label="Seiten"
+            className="flex shrink-0 items-center gap-[2px]"
+          >
+            {pageChoices.map(([value, label]) => (
               <button
                 key={value}
                 type="button"
@@ -1134,26 +1183,17 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
         )}
         <span className="flex-1" />
         {!narrow && suggestEl}
-        {!tight && searchEl}
+        {!narrow && searchEl}
         {!narrow && stepEls}
         {!narrow && zoomEls}
         {narrow && (
           <MoreMenu>
-            {tight && searchEl}
+            {searchEl}
             {stepEls}
             {zoomEls}
             {suggestEl}
           </MoreMenu>
         )}
-        <button
-          type="button"
-          aria-label="Zur Übersicht"
-          title="Zur Übersicht aller PDFs — das PDF bleibt offen"
-          onClick={() => setOverview(true)}
-          className={TOOL}
-        >
-          ✕
-        </button>
       </div>
       {(otherVersion || error !== null) && (
         <div
@@ -1247,6 +1287,10 @@ function OpenDocument({ doc }: { doc: OpenedPdf }) {
               ))}
           </div>
         </div>
+        {/* Seitenangabe schwebt unten mittig, die Kopfleiste bleibt frei (Nico, 07.11.2026). */}
+        <span className="cn-pill pointer-events-none absolute bottom-[10px] left-1/2 z-[5] -translate-x-1/2 px-[10px] py-[3px] font-mono text-[11.5px] text-dim">
+          {current} / {pages}
+        </span>
         {tool !== null && (
           <PlanToolbar
             tool={tool}
