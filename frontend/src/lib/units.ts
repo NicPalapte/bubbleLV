@@ -90,3 +90,40 @@ const LABELS: Readonly<Record<string, string>> = { m2: 'm²', m3: 'm³' };
 export function unitLabel(key: string): string {
   return LABELS[key] ?? key;
 }
+
+/** Summe der Mengen einer Einheit. */
+export interface UnitSum {
+  /** Anzeigename der Einheit, z. B. „m³“ oder „Stück“. */
+  label: string;
+  total: number;
+  /** So viele Positionen tragen dazu bei. */
+  count: number;
+}
+
+/**
+ * Mengen je Einheit, meiste Positionen zuerst. Nur Normalpositionen: Bedarfs- und
+ * Wahlpositionen sind nicht sicher beauftragt, Zulagen wiederholen die Menge ihrer
+ * Grundposition. Zusammen gerechnet wird nur, was dieselbe Einheit hat — eine Summe über
+ * m³ und m² wäre eine Scheingenauigkeit.
+ */
+export function sumsByUnit(
+  positions: Iterable<{
+    unit: string | null;
+    quantity: number | null;
+    positionType: string;
+  }>,
+): UnitSum[] {
+  const sums = new Map<string, UnitSum>();
+  for (const { unit, quantity, positionType } of positions) {
+    if (positionType !== 'NORMAL' || quantity === null || !Number.isFinite(quantity)) continue;
+    const key = canonicalUnit(unit);
+    if (key === null) continue;
+    const sum = sums.get(key) ?? { label: unitLabel(key), total: 0, count: 0 };
+    sum.total += quantity;
+    sum.count += 1;
+    sums.set(key, sum);
+  }
+  return [...sums.values()].sort(
+    (a, b) => b.count - a.count || a.label.localeCompare(b.label, 'de'),
+  );
+}

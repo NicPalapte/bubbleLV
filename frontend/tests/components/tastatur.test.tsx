@@ -121,6 +121,17 @@ describe('Tabelle · Tastatur', () => {
     expect(grid.style.outline).toBe('');
   });
 
+  it('nennt mit Suche die Mengen der Treffer je Einheit in der Tabellenzeile', async () => {
+    await ladeApp();
+    await ansicht('Tabelle');
+    const kopf = (): HTMLElement | null =>
+      within(tabellenfenster()).queryByLabelText('Mengen der Treffer je Einheit');
+    expect(kopf()).toBeNull();
+    fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'Beton' } });
+    await waitFor(() => expect(kopf()).not.toBeNull());
+    expect(kopf()?.textContent).toMatch(/^· ∑ [\d.,]+ \S+/);
+  });
+
   it('löscht den Suchtext mit ✕ in der Suchleiste', async () => {
     await ladeApp();
     const suche = screen.getByLabelText('Suche');

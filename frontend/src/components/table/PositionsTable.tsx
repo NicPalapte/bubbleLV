@@ -46,6 +46,7 @@ import { formatCount, formatEuro, formatNumber } from '../../lib/format';
 import { createPositionFilter } from '../../lib/index/positionIndex';
 import { flat, searchSnippet } from '../../lib/searchSnippet';
 import { headingOf } from '../../lib/tree/heading';
+import { sumsByUnit } from '../../lib/units';
 import {
   defaultColumnConfig,
   moveColumn,
@@ -70,6 +71,9 @@ import type { PositionType } from '@core';
 type SortKey = 'oz' | 'shortText' | 'positionsart' | 'beton' | 'unit' | 'quantity' | 'unitPrice';
 
 type Scope = 'node' | 'lv';
+
+/** So viele Einheiten nennt die Kopfzeile; der Rest steht im Tooltip. */
+const MAX_UNIT_SUMS = 3;
 
 interface Row {
   node: LVNode;
@@ -957,6 +961,11 @@ export function PositionsTable({ root }: { root: LVNode }) {
   // Bewusst keine Mengensumme: die Positionen eines Abschnitts haben gemischte
   // Einheiten (m³, m², Stck), eine Summe darüber wäre eine Scheingenauigkeit.
   const sumPrice = hits.reduce((total, row) => total + row.node.totalPrice, 0);
+  // Mit Filter oder Suche: Mengen der Treffer je Einheit, z. B. alle Fundamente (Issue #191).
+  const unitSums = useMemo(
+    () => (filtering ? sumsByUnit(hits.map((row) => row.position)) : []),
+    [filtering, hits],
+  );
   const parent = parents.get(root.id) ?? null;
 
   return (
@@ -992,6 +1001,24 @@ export function PositionsTable({ root }: { root: LVNode }) {
         </span>
         <span className="shrink-0 text-line2">·</span>
         <span className="shrink-0">∑ GP {formatEuro(sumPrice, 0)}</span>
+        {unitSums.length > 0 && (
+          <span
+            aria-label="Mengen der Treffer je Einheit"
+            title={`Mengen der Treffer je Einheit, nur Normalpositionen (ohne Bedarf, Wahl und Zulage):\n${unitSums
+              .map(
+                (sum) => `${formatNumber(sum.total)} ${sum.label} · ${formatCount(sum.count)} Pos.`,
+              )
+              .join('\n')}`}
+            className="min-w-0 truncate"
+          >
+            <span className="text-line2">· </span>∑{' '}
+            {unitSums
+              .slice(0, MAX_UNIT_SUMS)
+              .map((sum) => `${formatNumber(sum.total)} ${sum.label}`)
+              .join(' · ')}
+            {unitSums.length > MAX_UNIT_SUMS && ` +${unitSums.length - MAX_UNIT_SUMS}`}
+          </span>
+        )}
         {fellBack && (
           <span
             className="shrink-0 text-accent"
